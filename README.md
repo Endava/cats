@@ -1,3 +1,6 @@
+![Java CI with Maven](https://github.com/Endava/cats/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+
+
 ![CATS](images/cats.png)
 # Contract driven Auto-generated Tests for Swagger
 
