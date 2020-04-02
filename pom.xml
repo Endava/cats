@@ -74,16 +74,16 @@
     </licenses>
 
     <scm>
-        <url>https://milie@bitbucket.endava.com/scm/wp/cats.git</url>
-        <connection>scm:git:https://milie@bitbucket.endava.com/scm/wp/cats.git</connection>
-        <developerConnection>scm:git:https://milie@bitbucket.endava.com/scm/wp/cats.git</developerConnection>
+        <url>https://en-milie@github.com/Endava/cats.git</url>
+        <connection>scm:git:https://en-milie@github.com/Endava/cats.git</connection>
+        <developerConnection>scm:git:https://en-milie@github.com/Endava/cats.git</developerConnection>
     </scm>
 
     <distributionManagement>
         <repository>
             <id>github</id>
             <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/Endava/cats</url>
+            <url>https://maven.pkg.github.com/E ndava/cats</url>
         </repository>
     </distributionManagement>
 
