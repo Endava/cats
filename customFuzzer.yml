@@ -1,0 +1,19 @@
+/pets/{id}/move:
+  pet#id:
+    - stay
+    - at
+    - home
+/go:
+  test1:
+    homeId:
+      - 123
+      - 124
+      - 134
+    home#country: "mumu"
+    expectedResponseCode: 200
+  test2:
+    homeId:
+      - 123
+      - 124
+    home#country: "bubu"
+    expectedResponseCode: 200

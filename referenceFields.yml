@@ -1,0 +1,4 @@
+/pets/{id}/move:
+  pet#id: "000000"
+/pets/{id}:
+  petId: "251723059453558785"

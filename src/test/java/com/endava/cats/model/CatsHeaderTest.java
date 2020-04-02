@@ -1,0 +1,96 @@
+package com.endava.cats.model;
+
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import org.assertj.core.api.Assertions;
+import org.joda.time.DateTime;
+import org.junit.jupiter.api.Test;
+
+import java.util.UUID;
+
+public class CatsHeaderTest {
+
+    @Test
+    public void givenAUUIDParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+        Parameter parameter = new Parameter();
+        StringSchema schema = new StringSchema();
+        schema.setFormat("uuid");
+        parameter.setName("header");
+        parameter.setSchema(schema);
+
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.getName()).isEqualTo("header");
+        Assertions.assertThat(UUID.fromString(header.getValue())).isNotNull();
+    }
+
+    @Test
+    public void givenADateTimeParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+        Parameter parameter = new Parameter();
+        StringSchema schema = new StringSchema();
+        schema.setFormat("date-time");
+        parameter.setName("header");
+        parameter.setSchema(schema);
+
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.getName()).isEqualTo("header");
+        Assertions.assertThat(DateTime.parse(header.getValue())).isNotNull();
+    }
+
+    @Test
+    public void givenAStringParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+        Parameter parameter = new Parameter();
+        StringSchema schema = new StringSchema();
+        schema.setFormat("string");
+        parameter.setName("header");
+        parameter.setSchema(schema);
+
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.getName()).isEqualTo("header");
+        Assertions.assertThat(header.getValue()).isNotNull();
+    }
+
+    @Test
+    public void givenAStringParameterWithPattern_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+        Parameter parameter = new Parameter();
+        ObjectSchema schema = new ObjectSchema();
+        schema.setPattern("[A-Z]");
+        parameter.setName("header");
+        parameter.setSchema(schema);
+
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.getName()).isEqualTo("header");
+        Assertions.assertThat(header.getValue()).isNotNull();
+    }
+
+    @Test
+    public void givenAStringParameterWithExample_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+        Parameter parameter = new Parameter();
+        StringSchema schema = new StringSchema();
+        schema.setExample("headerValue");
+        parameter.setName("header");
+        parameter.setSchema(schema);
+
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.getName()).isEqualTo("header");
+        Assertions.assertThat(header.getValue()).isEqualTo("headerValue");
+    }
+
+    @Test
+    public void givenASimpleParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+        Parameter parameter = new Parameter();
+        ObjectSchema schema = new ObjectSchema();
+        parameter.setName("header");
+        parameter.setSchema(schema);
+
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.getName()).isEqualTo("header");
+        Assertions.assertThat(header.getValue()).isEqualTo("header");
+    }
+}

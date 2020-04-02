@@ -1,0 +1,11 @@
+*.iml
+.idea
+target
+test-report
+.DS_Store
+*.jar
+*.swp
+*.csv
+*.cer
+*.key
+*.txt

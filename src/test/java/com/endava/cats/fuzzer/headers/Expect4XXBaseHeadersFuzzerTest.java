@@ -1,0 +1,57 @@
+package com.endava.cats.fuzzer.headers;
+
+import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.report.TestCaseListener;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+@ExtendWith(SpringExtension.class)
+public class Expect4XXBaseHeadersFuzzerTest {
+    @Mock
+    private ServiceCaller serviceCaller;
+
+    @Mock
+    private TestCaseListener testCaseListener;
+
+    private Expect4XXBaseHeadersFuzzer expect4XXBaseHeadersFuzzer;
+
+    @BeforeEach
+    public void setup() {
+        expect4XXBaseHeadersFuzzer = new Expect4XXBaseHeadersFuzzerTest.My4XXFuzzer(serviceCaller, testCaseListener);
+    }
+
+    @Test
+    public void givenANewExpect4XXBaseHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheExpect4XXBaseHeadersFuzzer() {
+        Assertions.assertThat(expect4XXBaseHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(expect4XXBaseHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(expect4XXBaseHeadersFuzzer.toString()).isEqualTo(expect4XXBaseHeadersFuzzer.getClass().getSimpleName());
+    }
+
+    class My4XXFuzzer extends Expect4XXBaseHeadersFuzzer {
+
+        public My4XXFuzzer(ServiceCaller sc, TestCaseListener lr) {
+            super(sc, lr);
+        }
+
+        @Override
+        protected String typeOfDataSentToTheService() {
+            return null;
+        }
+
+        @Override
+        protected FuzzingStrategy fuzzStrategy() {
+            return null;
+        }
+
+        @Override
+        public String description() {
+            return null;
+        }
+    }
+}
