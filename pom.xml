@@ -79,6 +79,14 @@
         <developerConnection>scm:git:https://milie@bitbucket.endava.com/scm/wp/cats.git</developerConnection>
     </scm>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub OWNER Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/Endava/cats</url>
+        </repository>
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
