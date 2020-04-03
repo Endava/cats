@@ -182,7 +182,7 @@ This `Fuzzer` has a predefined list of `formats`. For all `strings` matching any
 The following formats are supported: `byte, date, date-time, hostname, ipv4, ipv6, ip, password, uri, url, uuid`
 The `Fuzzer` expects a `4XX` response code.
 
-## StringFormatTottalyWrongValuesFuzzer
+## StringFormatTotallyWrongValuesFuzzer
 This behaves in the same way as the previous `Fuzzer`, but the values sent for each format are totally invalid (like `aaa` for `email` for example).
 
 
