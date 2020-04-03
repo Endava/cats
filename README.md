@@ -326,3 +326,6 @@ If a response contains a free Map specified using the `additionalParameters` tag
 ### Regexes within 'pattern'
 
 Cats uses [Generex](https://github.com/mifmif/Generex) in order to generate Strings based on regexes.This has certain limitations mostly with complex patterns.
+
+# Contributing
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
