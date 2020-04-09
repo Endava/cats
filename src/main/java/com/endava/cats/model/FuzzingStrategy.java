@@ -53,7 +53,7 @@ public abstract class FuzzingStrategy {
             return new TrailFuzzingStrategy().withData(innerValue);
         }
 
-        return new ReplaceFuzzingStrategy().withData(innerValue);
+        return new ReplaceFuzzingStrategy().withData(value);
     }
 
     public FuzzingStrategy withData(String inner) {
