@@ -41,7 +41,7 @@ public class FuzzingStrategyTest {
     public void givenAStringWithNoSpaces_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
         String result = FuzzingStrategy.mergeFuzzing("test", "air", "replaced");
 
-        Assertions.assertThat(result).isEqualTo("replaced");
+        Assertions.assertThat(result).isEqualTo("test");
     }
 
     @Test
