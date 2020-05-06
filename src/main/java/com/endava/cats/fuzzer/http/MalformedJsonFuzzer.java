@@ -28,28 +28,21 @@ public class MalformedJsonFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(() ->
-                process(data)
-        );
+        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {
-        try {
-            testCaseListener.addScenario(LOGGER, "Scenario: send a malformed JSON");
-            testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 4XX response code");
+        testCaseListener.addScenario(LOGGER, "Scenario: send a malformed JSON");
+        testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 4XX response code");
 
-            ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                    .payload(data.getPayload() + "bla").replaceRefData(false).build();
+        ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+                .payload(data.getPayload() + "bla").replaceRefData(false).build();
 
-            if (catsUtil.isHttpMethodWithPayload(data.getMethod())) {
-                CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
-                testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
-            } else {
-                testCaseListener.skipTest(LOGGER, "Method " + data.getMethod() + " not supported by " + this.toString());
-            }
-
-        } catch (Exception e) {
-            testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e);
+        if (catsUtil.isHttpMethodWithPayload(data.getMethod())) {
+            CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
+            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
+        } else {
+            testCaseListener.skipTest(LOGGER, "Method " + data.getMethod() + " not supported by " + this.toString());
         }
     }
 

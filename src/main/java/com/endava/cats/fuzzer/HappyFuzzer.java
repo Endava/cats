@@ -28,21 +28,15 @@ public class HappyFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(() ->
-                process(data)
-        );
+        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {
-        try {
-            testCaseListener.addScenario(LOGGER, "Scenario: send a 'happy' flow request will all fields and all headers in");
-            testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 2XX response code");
-            CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).payload(data.getPayload()).build());
+        testCaseListener.addScenario(LOGGER, "Scenario: send a 'happy' flow request will all fields and all headers in");
+        testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 2XX response code");
+        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).payload(data.getPayload()).build());
 
-            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);
-        } catch (Exception e) {
-            testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
-        }
+        testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);
     }
 
     public String toString() {
