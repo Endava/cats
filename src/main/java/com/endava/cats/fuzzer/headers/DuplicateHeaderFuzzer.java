@@ -38,9 +38,7 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
             LOGGER.info("No headers to fuzz");
         }
 
-        testCaseListener.createAndExecuteTest(() ->
-                process(data)
-        );
+        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {

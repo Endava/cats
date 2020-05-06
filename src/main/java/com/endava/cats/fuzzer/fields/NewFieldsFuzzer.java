@@ -35,9 +35,7 @@ public class NewFieldsFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(() ->
-                process(data)
-        );
+        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {

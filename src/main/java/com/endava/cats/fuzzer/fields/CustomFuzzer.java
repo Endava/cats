@@ -61,11 +61,11 @@ public class CustomFuzzer implements Fuzzer {
 
     private void executeTestCases(FuzzingData data, String key, Object value) {
         LOGGER.info("Path [{}] has the following custom data [{}]", data.getPath(), value);
-        if (this.entryIsValid((Map<String, Object>) value)) {
 
+        if (this.entryIsValid((Map<String, Object>) value)) {
             List<Map<String, String>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
             for (Map<String, String> individualTestCase : individualTestCases) {
-                testCaseListener.createAndExecuteTest(() -> process(data, key, individualTestCase));
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, key, individualTestCase));
             }
         } else {
             LOGGER.warn("Skipping path [{}] as not valid. It either doesn't contain a valid expectedResponseCode or there is more than one list of values for a specific field", data.getPath());
@@ -74,18 +74,13 @@ public class CustomFuzzer implements Fuzzer {
 
     private void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
         testCaseListener.addScenario(LOGGER, "Scenario: send request with custom values supplied. Test key [{}]", testName);
-        try {
-            String expectedResponseCode = String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE));
-            testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}]", expectedResponseCode);
+        String expectedResponseCode = String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE));
+        testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}]", expectedResponseCode);
 
-            String payloadWithCustomValuesReplaced = this.getStringWithCustomValuesFromFile(data, currentPathValues);
-            CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).replaceRefData(false)
-                    .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).build());
-            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.from(expectedResponseCode));
-
-        } catch (Exception e) {
-            testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
-        }
+        String payloadWithCustomValuesReplaced = this.getStringWithCustomValuesFromFile(data, currentPathValues);
+        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).replaceRefData(false)
+                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).build());
+        testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.from(expectedResponseCode));
     }
 
     private String getStringWithCustomValuesFromFile(FuzzingData data, Map<String, String> currentPathValues) {

@@ -34,51 +34,37 @@ public class HttpMethodsFuzzer implements Fuzzer {
         Operation post = data.getPathItem().getPost();
 
         if (post == null) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data.getPath(), data.getHeaders(), serviceCaller::post)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::post));
         }
 
         Operation get = data.getPathItem().getGet();
         if (get == null) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data.getPath(), data.getHeaders(), serviceCaller::get)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::get));
         }
 
         Operation put = data.getPathItem().getPut();
         if (put == null) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data.getPath(), data.getHeaders(), serviceCaller::put)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::put));
         }
 
         Operation delete = data.getPathItem().getDelete();
         if (delete == null) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data.getPath(), data.getHeaders(), serviceCaller::delete)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::delete));
         }
 
         Operation patch = data.getPathItem().getPatch();
         if (patch == null) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data.getPath(), data.getHeaders(), serviceCaller::patch)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::patch));
         }
 
         Operation head = data.getPathItem().getHead();
         if (head == null && data.getPathItem().getGet() == null) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data.getPath(), data.getHeaders(), serviceCaller::head)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::head));
         }
 
         Operation trace = data.getPathItem().getTrace();
         if (trace == null) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data.getPath(), data.getHeaders(), serviceCaller::trace)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::trace));
         }
     }
 

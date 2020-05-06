@@ -37,9 +37,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(fuzzingData.getHeaders());
 
         for (CatsHeader header : clonedHeaders) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(fuzzingData, clonedHeaders, header)
-            );
+            testCaseListener.createAndExecuteTest(logger, this, () -> process(fuzzingData, clonedHeaders, header));
         }
     }
 
@@ -58,12 +56,8 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
             CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
 
             testCaseListener.reportResult(logger, data, response, this.getExpectedResultCode(isRequiredHeaderFuzzed));
-
-            /* we reset back the current header */
-        } catch (Exception e) {
-            testCaseListener.reportError(logger, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
-            logger.error("Exception: ", e);
         } finally {
+            /* we reset back the current header */
             header.withValue(previousHeaderValue);
         }
     }

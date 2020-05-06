@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsRequest;
@@ -37,6 +38,9 @@ public class TestCaseListenerTest {
     @Mock
     private Logger logger;
 
+    @Mock
+    private Fuzzer fuzzer;
+
     private TestCaseListener testCaseListener;
 
 
@@ -52,7 +56,7 @@ public class TestCaseListenerTest {
 
     @Test
     public void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
-        testCaseListener.createAndExecuteTest(() -> executionStatisticsListener.increaseSkipped());
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> executionStatisticsListener.increaseSkipped());
 
         Assertions.assertThat(testCaseListener.testCaseMap.get("Test 1")).isNotNull();
         Mockito.verify(testCaseExporter).writeToFile(Mockito.any());
@@ -64,7 +68,7 @@ public class TestCaseListenerTest {
 
         Assertions.assertThat(testCase).isNull();
 
-        testCaseListener.createAndExecuteTest(() -> {
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addScenario(logger, "Given a {} field", "string");
             testCaseListener.addRequest(new CatsRequest());
             testCaseListener.addResponse(CatsResponse.builder().build());
@@ -101,9 +105,7 @@ public class TestCaseListenerTest {
 
     @Test
     public void givenATestCase_whenExecutingItAndAWarnHappens_thenTheWarnIsCorrectlyReportedWithinTheTestCase() {
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportWarn(logger, "Warn {} happened", "1");
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportWarn(logger, "Warn {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
@@ -117,9 +119,7 @@ public class TestCaseListenerTest {
 
     @Test
     public void givenATestCase_whenExecutingItAndAnErrorHappens_thenTheErrorIsCorrectlyReportedWithinTheTestCase() {
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportError(logger, "Error {} happened", "1");
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportError(logger, "Error {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
@@ -133,9 +133,7 @@ public class TestCaseListenerTest {
 
     @Test
     public void givenATestCase_whenExecutingItAndASuccessHappens_thenTheSuccessIsCorrectlyReportedWithinTheTestCase() {
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportInfo(logger, "Success {} happened", "1");
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportInfo(logger, "Success {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
@@ -149,9 +147,7 @@ public class TestCaseListenerTest {
 
     @Test
     public void givenATestCase_whenSkippingIt_thenTheTestCaseIsCorrectlySkipped() {
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.skipTest(logger, "Skipper!");
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.skipTest(logger, "Skipper!"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
@@ -172,9 +168,7 @@ public class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("")));
         Mockito.when(response.responseCodeAsString()).thenReturn("200");
 
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
     }
 
@@ -187,9 +181,7 @@ public class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("nomatch")));
         Mockito.when(response.responseCodeAsString()).thenReturn("200");
 
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
@@ -205,9 +197,7 @@ public class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("test")));
         Mockito.when(response.responseCodeAsString()).thenReturn("200");
 
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
@@ -223,9 +213,7 @@ public class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("test")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
 
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
@@ -241,9 +229,7 @@ public class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("test")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
 
-        testCaseListener.createAndExecuteTest(() -> {
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
-        });
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");

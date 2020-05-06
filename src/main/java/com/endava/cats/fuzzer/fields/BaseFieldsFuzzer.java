@@ -40,9 +40,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         logger.info("All fields {}", data.getAllFieldsAsSingleSet());
 
         for (String fuzzedField : data.getAllFieldsAsSingleSet()) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data, fuzzedField)
-            );
+            testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField));
         }
     }
 
@@ -58,19 +56,16 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             FuzzingResult fuzzingResult = catsUtil.replaceFieldWithFuzzedValue(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
 
-            try {
-                ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
-                        .headers(data.getHeaders()).payload(fuzzingResult.getJson().toString())
-                        .fuzzedField(fuzzedField).build();
-                CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
 
-                ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
+            ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
+                    .headers(data.getHeaders()).payload(fuzzingResult.getJson().toString())
+                    .fuzzedField(fuzzedField).build();
+            CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
 
-                testCaseListener.addExpectedResult(logger, "Expected result: should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
-                testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints);
-            } catch (Exception e) {
-                testCaseListener.reportError(logger, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
-            }
+            ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
+
+            testCaseListener.addExpectedResult(logger, "Expected result: should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
+            testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints);
         } else {
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);
             testCaseListener.skipTest(logger, strategy.process(""));

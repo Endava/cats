@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsRequest;
@@ -56,10 +57,14 @@ public class TestCaseListener {
         return message;
     }
 
-    public void createAndExecuteTest(Runnable s) {
+    public void createAndExecuteTest(Logger externalLogger, Fuzzer fuzzer, Runnable s) {
         MDC.put(ID, "Test " + CatsMain.TEST.incrementAndGet());
         this.startTestCase();
-        s.run();
+        try {
+            s.run();
+        } catch (Exception e) {
+            this.reportError(externalLogger, "Fuzzer [{}] failed due to [{}]", fuzzer.getClass().getSimpleName(), e.getMessage());
+        }
         this.endTestCase();
         LOGGER.info("{} {}", StringUtils.repeat("-", 150), "\n");
         MDC.put(ID, "");
