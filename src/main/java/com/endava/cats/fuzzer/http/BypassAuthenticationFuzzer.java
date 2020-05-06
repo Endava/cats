@@ -60,27 +60,21 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(() ->
-                process(data)
-        );
+        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {
-        try {
-            testCaseListener.addScenario(LOGGER, "Scenario: send a happy flow bypassing authentication");
-            testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 403 or 401 response code");
-            Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
-            if (!authenticationHeaders.isEmpty()) {
-                ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                        .payload(data.getPayload()).skippedHeaders(authenticationHeaders).build();
+        testCaseListener.addScenario(LOGGER, "Scenario: send a happy flow bypassing authentication");
+        testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 403 or 401 response code");
+        Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
+        if (!authenticationHeaders.isEmpty()) {
+            ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+                    .payload(data.getPayload()).skippedHeaders(authenticationHeaders).build();
 
-                CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
-                testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
-            } else {
-                testCaseListener.skipTest(LOGGER, "No authentication header provided.");
-            }
-        } catch (Exception e) {
-            testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e);
+            CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
+            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
+        } else {
+            testCaseListener.skipTest(LOGGER, "No authentication header provided.");
         }
     }
 

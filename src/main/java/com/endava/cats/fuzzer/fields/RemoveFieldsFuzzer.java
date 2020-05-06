@@ -50,9 +50,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         Set<Set<String>> sets = this.getAllFields(data);
 
         for (Set<String> subset : sets) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data, data.getAllRequiredFields(), subset)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, data.getAllRequiredFields(), subset));
         }
     }
 
@@ -71,16 +69,11 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         testCaseListener.addScenario(LOGGER, "Scenario: remove the following fields from request: {}", subset);
         JsonElement jsonObject = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
 
-        try {
-            boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
-            testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as required fields [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
+        boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
+        testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as required fields [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
 
-            CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).payload(jsonObject.toString()).build());
-            testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
-
-        } catch (Exception e) {
-            testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
-        }
+        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).payload(jsonObject.toString()).build());
+        testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
     }
 
     private boolean hasRequiredFieldsRemove(List<String> required, Set<String> subset) {

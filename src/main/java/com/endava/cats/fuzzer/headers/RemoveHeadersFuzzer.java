@@ -43,24 +43,18 @@ public class RemoveHeadersFuzzer implements Fuzzer {
         Set<CatsHeader> mandatoryHeaders = data.getHeaders().stream().filter(CatsHeader::isRequired).collect(Collectors.toSet());
 
         for (Set<CatsHeader> headersSubset : headersCombination) {
-            testCaseListener.createAndExecuteTest(() ->
-                    process(data, headersSubset, mandatoryHeaders)
-            );
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, headersSubset, mandatoryHeaders));
         }
     }
 
     private void process(FuzzingData data, Set<CatsHeader> headersSubset, Set<CatsHeader> requiredHeaders) {
-        try {
-            testCaseListener.addScenario(LOGGER, "Scenario: send only the following headers: {}", headersSubset);
-            boolean anyMandatoryHeaderRemoved = this.isAnyMandatoryHeaderRemoved(headersSubset, requiredHeaders);
+        testCaseListener.addScenario(LOGGER, "Scenario: send only the following headers: {}", headersSubset);
+        boolean anyMandatoryHeaderRemoved = this.isAnyMandatoryHeaderRemoved(headersSubset, requiredHeaders);
 
-            testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as mandatory headers [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(anyMandatoryHeaderRemoved));
+        testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as mandatory headers [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(anyMandatoryHeaderRemoved));
 
-            CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(headersSubset).payload(data.getPayload()).addUserHeaders(false).build());
-            testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved));
-        } catch (Exception e) {
-            testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
-        }
+        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(headersSubset).payload(data.getPayload()).addUserHeaders(false).build());
+        testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved));
     }
 
     private boolean isAnyMandatoryHeaderRemoved(Set<CatsHeader> headersSubset, Set<CatsHeader> requiredHeaders) {
