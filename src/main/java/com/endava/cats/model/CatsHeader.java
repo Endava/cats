@@ -1,7 +1,6 @@
 package com.endava.cats.model;
 
 import com.endava.cats.generator.simple.StringGenerator;
-import com.mifmif.common.regex.Generex;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import lombok.*;
@@ -61,22 +60,19 @@ public class CatsHeader {
         }
 
         if ("string".equalsIgnoreCase(schema.getType())) {
-            String pattern = schema.getPattern() != null ? schema.getPattern() : "[a-zA-Z0-9]*";
-            Generex generex = new Generex(StringGenerator.sanitize(pattern));
+            String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC;
             int minLength = schema.getMinLength() != null ? schema.getMinLength() : 0;
             int maxLength = schema.getMaxLength() != null ? schema.getMaxLength() : 30;
             if (minLength == 0) {
                 minLength = maxLength / 2;
             }
 
-            return generex.random(minLength, maxLength);
+            return StringGenerator.generate(pattern, minLength, maxLength);
         }
 
         if (schema.getPattern() != null) {
-            Generex generex = new Generex(StringGenerator.sanitize(schema.getPattern()));
-            return generex.random();
+            return StringGenerator.generate(schema.getPattern(), 1, 200);
         }
-
 
         return this.name;
     }
