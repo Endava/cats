@@ -1,6 +1,5 @@
 package com.endava.cats.generator.simple;
 
-import com.mifmif.common.regex.Generex;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
@@ -111,14 +110,14 @@ public class PayloadGenerator {
             if (property.getMinLength() != null || property.getMaxLength() != null) {
                 int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
                 int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
-                String pattern = property.getPattern() != null ? property.getPattern() : "[a-zA-Z0-9]*";
+                String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
                 if (maxLength < minLength) {
                     maxLength = minLength;
                 }
-                return new Generex(StringGenerator.sanitize(pattern)).random(minLength, maxLength);
+                return StringGenerator.generate(pattern, minLength, maxLength);
             }
             if (property.getPattern() != null) {
-                return new Generex(StringGenerator.sanitize(property.getPattern())).random();
+                return StringGenerator.generate(property.getPattern(), 1, 2000);
             }
             LOGGER.debug("No values found, using property name {} as example", propertyName);
             return propertyName;
