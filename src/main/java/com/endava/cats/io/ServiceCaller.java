@@ -99,7 +99,7 @@ public class ServiceCaller {
             LOGGER.info("No URL parameters supplied!");
         } else {
             try {
-                urlParamsList = Arrays.stream(urlParams.split(";")).map(String::trim).collect(Collectors.toList());
+                urlParamsList = Arrays.stream(urlParams.split(",")).map(String::trim).collect(Collectors.toList());
 
                 LOGGER.info("URL parameters: {}", urlParamsList);
             } catch (Exception e) {
@@ -337,7 +337,9 @@ public class ServiceCaller {
 
     private String getAsJson(HttpResponse response) throws IOException {
         String responseAsString = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-        if (responseAsString != null && catsUtil.isValidJson(responseAsString)) {
+        if (StringUtils.isEmpty(responseAsString) || StringUtils.isEmpty(responseAsString.trim())) {
+            return "";
+        } else if (catsUtil.isValidJson(responseAsString)) {
             return responseAsString;
         }
         return "{\"exception\":\"Received response is not a JSON\"}";
