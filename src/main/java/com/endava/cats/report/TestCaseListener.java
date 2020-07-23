@@ -201,8 +201,8 @@ public class TestCaseListener {
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(response.getBody());
         List<String> responses = data.getResponses().get(response.responseCodeAsString());
-        return (responses != null &&
-                (responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement, "ROOT")) || (responses.isEmpty() && isEmptyResponse(response.getBody()))));
+        return (responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement, "ROOT")))
+                || ((responses == null || responses.isEmpty()) && isEmptyResponse(response.getBody()));
     }
 
     private boolean isEmptyResponse(String body) {
