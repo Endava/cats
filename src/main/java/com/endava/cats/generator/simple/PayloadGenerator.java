@@ -83,62 +83,11 @@ public class PayloadGenerator {
         if (property.getExample() != null) {
             LOGGER.debug("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
-        } else if (property instanceof StringSchema || "string".equalsIgnoreCase(property.getType())) {
-            LOGGER.debug("String property");
-
-            String defaultValue = (String) property.getDefault();
-            if (defaultValue != null && !defaultValue.isEmpty()) {
-                LOGGER.debug("Default value found: '{}'", defaultValue);
-                return defaultValue;
-            }
-            List<String> enumValues = property.getEnum();
-            if (enumValues != null && !enumValues.isEmpty()) {
-                LOGGER.debug("Enum value found: '{}'", enumValues.get(0));
-                return enumValues.get(0);
-            }
-            String format = property.getFormat();
-            if (URI.equals(format) || URL.equals(format)) {
-                LOGGER.debug("URI or URL format, without default or enum, generating random one.");
-                return "http://example.com/aeiou";
-            }
-            if (isEmailAddress(propertyName)) {
-                return "cool.cats@cats.io";
-            }
-            if (isIP(propertyName)) {
-                return "10.10.10.20";
-            }
-            if (property.getMinLength() != null || property.getMaxLength() != null) {
-                int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
-                int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
-                String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
-                if (maxLength < minLength) {
-                    maxLength = minLength;
-                }
-                return StringGenerator.generate(pattern, minLength, maxLength);
-            }
-            if (property.getPattern() != null) {
-                return StringGenerator.generate(property.getPattern(), 1, 2000);
-            }
-            LOGGER.debug("No values found, using property name {} as example", propertyName);
-            return propertyName;
         } else if (property instanceof BooleanSchema || "boolean".equalsIgnoreCase(property.getType())) {
-            Object defaultValue = property.getDefault();
-            if (defaultValue != null) {
-                return defaultValue;
-            }
-            return Boolean.TRUE;
+            return this.getExampleFromBooleanSchema(property);
         } else if (property instanceof ArraySchema) {
-            Schema innerType = ((ArraySchema) property).getItems();
-            if (innerType.get$ref() != null) {
-                innerType = this.schemaMap.get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
-            }
-            if (innerType != null) {
-                int arrayLength = null == property.getMaxItems() ? 2 : property.getMaxItems();
-                Object[] objectProperties = new Object[arrayLength];
-                Object objProperty = resolveModelToExample(propertyName, mediaType, innerType);
-                for (int i = 0; i < arrayLength; i++) {
-                    objectProperties[i] = objProperty;
-                }
+            Object objectProperties = this.getExampleFromArraySchema(propertyName, mediaType, property);
+            if (objectProperties != null) {
                 return objectProperties;
             }
         } else if (property instanceof DateSchema) {
@@ -146,46 +95,134 @@ public class PayloadGenerator {
         } else if (property instanceof DateTimeSchema) {
             return ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } else if (property instanceof NumberSchema || "number".equalsIgnoreCase(property.getType())) {
-            Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
-            Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
-            if (SchemaTypeUtil.FLOAT_FORMAT.equals(property.getFormat())) {
-                return df.format(randomNumber(min, max));
-            }
-            return df.format(randomNumber(min, max));
+            return this.getExampleFromNumberSchema(property);
         } else if (property instanceof FileSchema) {
             return "";
         } else if (property instanceof IntegerSchema || "integer".equalsIgnoreCase(property.getType())) {
-            Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
-            Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
-            if (SchemaTypeUtil.INTEGER32_FORMAT.equals(property.getFormat())) {
-                return (long) randomNumber(min, max);
-            }
-            return (int) randomNumber(min, max);
+            return this.getExampleFromIntegerSchema(property);
         } else if (property.getAdditionalProperties() instanceof Schema) {
-            Map<String, Object> mp = new HashMap<>();
-            if (property.getName() != null) {
-                mp.put(property.getName(),
-                        resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
-            } else {
-                mp.put("key",
-                        resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
-            }
-            return mp;
+            return this.getExampleFromAdditionalPropertiesSchema(propertyName, mediaType, property);
         } else if (property instanceof ObjectSchema) {
             return "{\"cats\":\"cats\"}";
         } else if (property instanceof UUIDSchema) {
             return "046b6c7f-0b8a-43b9-b35d-6489e6daee91";
+        } else if (property instanceof StringSchema || "string".equalsIgnoreCase(property.getType())) {
+            return this.getExempleFromStringSchema(propertyName, property);
         }
 
         return "";
     }
 
-    private boolean isEmailAddress(String property) {
-        return property != null && (property.toLowerCase().endsWith("email") || property.toLowerCase().endsWith("emailaddress"));
+    private Object getExempleFromStringSchema(String propertyName, Schema property) {
+        LOGGER.debug("String property");
+
+        String defaultValue = (String) property.getDefault();
+        if (defaultValue != null && !defaultValue.isEmpty()) {
+            LOGGER.debug("Default value found: '{}'", defaultValue);
+            return defaultValue;
+        }
+        List<String> enumValues = property.getEnum();
+        if (enumValues != null && !enumValues.isEmpty()) {
+            LOGGER.debug("Enum value found: '{}'", enumValues.get(0));
+            return enumValues.get(0);
+        }
+        String format = property.getFormat();
+        if (URI.equals(format) || URL.equals(format)) {
+            LOGGER.debug("URI or URL format, without default or enum, generating random one.");
+            return "http://example.com/aeiou";
+        }
+        if (isEmailAddress(property, propertyName)) {
+            return "cool.cats@cats.io";
+        }
+        if (isIPV4(property, propertyName)) {
+            return "10.10.10.20";
+        }
+        if (isIPV6(property, propertyName)) {
+            return "21DA:D3:0:2F3B:2AA:FF:FE28:9C5A";
+        }
+
+        if (property.getMinLength() != null || property.getMaxLength() != null) {
+            int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
+            int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
+            String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
+            if (maxLength < minLength) {
+                maxLength = minLength;
+            }
+            return StringGenerator.generate(pattern, minLength, maxLength);
+        }
+        if (property.getPattern() != null) {
+            return StringGenerator.generate(property.getPattern(), 1, 2000);
+        }
+        LOGGER.debug("No values found, using property name {} as example", propertyName);
+        return propertyName;
     }
 
-    private boolean isIP(String property) {
-        return property != null && (property.toLowerCase().endsWith("ip") || property.toLowerCase().endsWith("ipaddress"));
+    private Object getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
+        Map<String, Object> mp = new HashMap<>();
+        if (property.getName() != null) {
+            mp.put(property.getName(),
+                    resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
+        } else {
+            mp.put("key",
+                    resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
+        }
+        return mp;
+    }
+
+    private Object getExampleFromIntegerSchema(Schema property) {
+        Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
+        Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
+        if (SchemaTypeUtil.INTEGER32_FORMAT.equals(property.getFormat())) {
+            return (long) randomNumber(min, max);
+        }
+        return (int) randomNumber(min, max);
+    }
+
+    private Object getExampleFromNumberSchema(Schema property) {
+        Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
+        Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
+        if (SchemaTypeUtil.FLOAT_FORMAT.equals(property.getFormat())) {
+            return df.format(randomNumber(min, max));
+        }
+        return df.format(randomNumber(min, max));
+    }
+
+    private Object getExampleFromBooleanSchema(Schema property) {
+        Object defaultValue = property.getDefault();
+        if (defaultValue != null) {
+            return defaultValue;
+        }
+        return Boolean.TRUE;
+    }
+
+    private Object getExampleFromArraySchema(String propertyName, String mediaType, Schema property) {
+        Schema innerType = ((ArraySchema) property).getItems();
+        if (innerType.get$ref() != null) {
+            innerType = this.schemaMap.get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
+        }
+        if (innerType != null) {
+            int arrayLength = null == property.getMaxItems() ? 2 : property.getMaxItems();
+            Object[] objectProperties = new Object[arrayLength];
+            Object objProperty = resolveModelToExample(propertyName, mediaType, innerType);
+            for (int i = 0; i < arrayLength; i++) {
+                objectProperties[i] = objProperty;
+            }
+            return objectProperties;
+        }
+        return null;
+    }
+
+    private boolean isEmailAddress(Schema property, String propertyName) {
+        return property != null && (propertyName.toLowerCase().endsWith("email") || propertyName.toLowerCase().endsWith("emailaddress") || "email".equalsIgnoreCase(property.getFormat()));
+    }
+
+    private boolean isIPV4(Schema property, String propertyName) {
+        return property != null && (propertyName.toLowerCase().endsWith("ip") || propertyName.toLowerCase().endsWith("ipaddress") ||
+                "ip".equalsIgnoreCase(property.getFormat()) || "ipv4".equalsIgnoreCase(property.getFormat()));
+    }
+
+    private boolean isIPV6(Schema property, String propertyName) {
+        return property != null && (propertyName.toLowerCase().endsWith("ipv6") || "ipv6".equalsIgnoreCase(property.getFormat()));
     }
 
     private double randomNumber(Double min, Double max) {
