@@ -22,7 +22,10 @@ public class StringGenerator {
     }
 
     public static String generate(String pattern, int min, int max) {
-        String completePattern = sanitize(pattern) + "{" + min + "," + max + "}";
+        String completePattern = sanitize(pattern);
+        if (!completePattern.endsWith("}")) {
+            completePattern = completePattern + "{" + min + "," + max + "}";
+        }
 
         return new RgxGen(completePattern).generate();
     }
@@ -52,7 +55,7 @@ public class StringGenerator {
         if (pattern.startsWith("^")) {
             pattern = pattern.substring(1);
         }
-        if (pattern.endsWith("$")) {
+        if (pattern.endsWith("$") || pattern.endsWith("+") || pattern.endsWith("*")) {
             pattern = pattern.substring(0, pattern.length() - 1);
         }
 
