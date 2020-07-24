@@ -174,6 +174,8 @@ This `Fuzzer` will create the Powerset of the headers set. It will then iterate 
 - In the case where the request didn't have any required headers removed, but the service responded with a `4XX` or `5XX` code, this is abnormal behaviour and will be reported as an `ERROR` message.
 - Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
 
+Please note: **When the RemoveHeadersFuzzer is running any security (either named `authorization` or `jwt`) header mentioned in the `headers.yml` will be added to the requests.**
+
 ## HttpMethodsFuzzer
 This `Fuzzer` will set the http request for any unspecified HTTP method in the contract. The `Fuzzer` will behave as follows:
 - Normal behaviour is for the service to respond with a `405` code if the method is not documented in the contract. This is reported as an level `INFO` message.
@@ -312,9 +314,9 @@ You can supply a `;` separated list of `name:value` pairs to replace the `name` 
 # Dealing with AnyOf, AllOf and OneOf
 CATS also supports schemas with `oneOf`, `allOf` and `anyOf` composition. CATS wil consider all possible combinations when creating the fuzzed payloads.
 
-## Limitations
+# Limitations
 
-### Inheritance and composition
+## Inheritance and composition
 
 `allOf` are supported at any object tree level. However, `anyOf` and `oneOf` are supported just at the first level within the object tree model. For example, this is a supported Object composition:
 
@@ -329,14 +331,14 @@ Request:
 ```
 However, if `Payload1` or `Payload2` will have an additional compositions, this won't be considered by CATS.
 
-### Additional Parameters
+## Additional Parameters
 
 If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `WARN` level log message as it won't be able to validate that the response matches the schema.
 
 
-### Regexes within 'pattern'
+## Regexes within 'pattern'
 
-Cats uses [Generex](https://github.com/mifmif/Generex) in order to generate Strings based on regexes.This has certain limitations mostly with complex patterns.
+Cats uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
 
 # Contributing
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
