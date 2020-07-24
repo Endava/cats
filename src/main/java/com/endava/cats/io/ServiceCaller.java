@@ -369,8 +369,17 @@ public class ServiceCaller {
                 this.replaceHeaderIfNotFuzzed(method, data, suppliedHeader);
             }
         } else {
-            LOGGER.info("Custom headers won't be added!");
+            for (Map.Entry<String, String> suppliedHeader : headers.getOrDefault(CatsMain.ALL, Collections.emptyMap()).entrySet()) {
+                if (isSecurityHeader(suppliedHeader.getKey())) {
+                    this.replaceHeaderIfNotFuzzed(method, data, suppliedHeader);
+                }
+            }
+            LOGGER.info("Only security headers will be added. All other custom headers will be ignored!");
         }
+    }
+
+    private boolean isSecurityHeader(String header) {
+        return header.toLowerCase().contains("authorization") || header.toLowerCase().contains("jwt");
     }
 
     private void replaceHeaderIfNotFuzzed(HttpRequestBase method, ServiceData data, Map.Entry<String, String> suppliedHeader) {
