@@ -24,6 +24,8 @@ jobs:
 
     # Runs a single command using the runners shell
     - name: SonarCloud Scan
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       uses: SonarSource/sonarcloud-github-action@v1.3
       with:
         # Set the sonar.projectBaseDir analysis property
