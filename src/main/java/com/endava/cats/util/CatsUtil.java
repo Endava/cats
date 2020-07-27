@@ -142,7 +142,7 @@ public class CatsUtil {
      * @return
      */
     public Set<String> eliminateStartingCharAndHacks(Set<String> set) {
-        return set.stream().map(item -> item.substring(1)).map(item -> item.replaceAll("#" + CATS_REQUIRED, "")).collect(Collectors.toSet());
+        return set.stream().map(item -> item.substring(1)).map(item -> item.replace("#" + CATS_REQUIRED, "")).collect(Collectors.toSet());
     }
 
     /**

@@ -311,7 +311,7 @@ public class ServiceCaller {
     }
 
     private String getEncodedUrl(String path) {
-        return path.replaceAll(" ", "%20");
+        return path.replace(" ", "%20");
     }
 
     private void addMandatoryHeaders(ServiceData data, HttpRequestBase method) {

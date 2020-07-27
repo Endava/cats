@@ -30,8 +30,9 @@ public class FuzzingDataTest {
         Mockito.doCallRealMethod().when(catsUtil).removeOneByOne(Mockito.anySet());
 
         Set<String> allProperties = data.getAllFieldsAsSingleSet();
-        Assertions.assertThat(allProperties).isNotEmpty();
-        Assertions.assertThat(allProperties).containsExactly("firstName", "lastName");
+        Assertions.assertThat(allProperties)
+                .isNotEmpty()
+                .containsExactly("firstName", "lastName");
     }
 
     @Test
@@ -45,8 +46,9 @@ public class FuzzingDataTest {
         Mockito.doCallRealMethod().when(catsUtil).getDefinitionNameFromRef(Mockito.anyString());
 
         Set<String> allProperties = data.getAllFieldsAsSingleSet();
-        Assertions.assertThat(allProperties).isNotEmpty();
-        Assertions.assertThat(allProperties).containsExactlyInAnyOrder("firstName", "address", "address#zipCode", "address#street");
+        Assertions.assertThat(allProperties)
+                .isNotEmpty()
+                .containsExactlyInAnyOrder("firstName", "address", "address#zipCode", "address#street");
     }
 
     @Test
@@ -73,8 +75,9 @@ public class FuzzingDataTest {
         FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getBasePropertiesRequired()).reqSchema(composedSchema).build();
 
         List<String> allProperties = data.getAllRequiredFields();
-        Assertions.assertThat(allProperties).isNotEmpty();
-        Assertions.assertThat(allProperties).containsExactly("phone");
+        Assertions.assertThat(allProperties)
+                .isNotEmpty()
+                .containsExactly("phone");
     }
 
     @Test

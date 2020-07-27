@@ -62,7 +62,7 @@ public class CustomFuzzerTest {
 
         Mockito.verify(spyCustomFuzzer, Mockito.never()).processCustomFuzzerFile(data);
         Assertions.assertThat(customFuzzer.description()).isNotNull();
-        Assertions.assertThat(customFuzzer.toString()).isEqualTo(customFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(customFuzzer).hasToString(customFuzzer.getClass().getSimpleName());
     }
 
     @Test

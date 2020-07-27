@@ -30,8 +30,9 @@ public class PayloadGeneratorTest {
         List<Map<String, String>> example = generator.generate(null, "Pet");
         String exampleJson = example.get(0).get("example");
 
-        Assertions.assertThat(exampleJson).contains("ALL_OF");
-        Assertions.assertThat(exampleJson).contains("breedONE_OF#/components/schemas/Husky");
-        Assertions.assertThat(exampleJson).contains("breedONE_OF#/components/schemas/Labrador");
+        Assertions.assertThat(exampleJson)
+                .contains("ALL_OF")
+                .contains("breedONE_OF#/components/schemas/Husky")
+                .contains("breedONE_OF#/components/schemas/Labrador");
     }
 }
