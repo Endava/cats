@@ -7,10 +7,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-public class CatsUtilTest {
+class CatsUtilTest {
 
     @Test
-    public void givenAYamlFile_whenParseYamlIsCalled_thenTheYamlFileIsProperlyParsed() throws Exception {
+    void givenAYamlFile_whenParseYamlIsCalled_thenTheYamlFileIsProperlyParsed() throws Exception {
         CatsUtil catsUtil = new CatsUtil();
         Map<String, Map<String, Object>> yaml = catsUtil.parseYaml("src/test/resources/test.yml");
 
@@ -19,7 +19,7 @@ public class CatsUtilTest {
     }
 
     @Test
-    public void givenASetAndMinSize_whenGettingAllSetsWithMinSize_thenAllSubsetsAreProperlyReturned() {
+    void givenASetAndMinSize_whenGettingAllSetsWithMinSize_thenAllSubsetsAreProperlyReturned() {
         CatsUtil catsUtil = new CatsUtil();
         Set<String> data = new HashSet<>(Arrays.asList("a", "b", "c"));
         Set<Set<String>> sets = catsUtil.getAllSetsWithMinSize(data, "2");
@@ -32,7 +32,7 @@ public class CatsUtilTest {
     }
 
     @Test
-    public void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed() {
+    void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed() {
         CatsUtil catsUtil = new CatsUtil();
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         String payload = "{'field':'value', 'anotherField':'otherValue'}";
@@ -43,7 +43,7 @@ public class CatsUtilTest {
     }
 
     @Test
-    public void givenAPayloadWithPrimitiveAndNonPrimitiveFields_whenCheckingIfPropertiesArePrimitive_thenTheCheckIsProperlyPerformed() {
+    void givenAPayloadWithPrimitiveAndNonPrimitiveFields_whenCheckingIfPropertiesArePrimitive_thenTheCheckIsProperlyPerformed() {
         CatsUtil catsUtil = new CatsUtil();
         String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
 
@@ -53,7 +53,7 @@ public class CatsUtilTest {
     }
 
     @Test
-    public void givenAnInvalidJson_whenCallingIsValidJson_thenTheMethodReturnsFalse() {
+    void givenAnInvalidJson_whenCallingIsValidJson_thenTheMethodReturnsFalse() {
         CatsUtil catsUtil = new CatsUtil();
         String payload = "'field':'a";
 
@@ -61,7 +61,7 @@ public class CatsUtilTest {
     }
 
     @Test
-    public void givenAValidJson_whenCallingIsValidJson_thenTheMethodReturnsTrue() {
+    void givenAValidJson_whenCallingIsValidJson_thenTheMethodReturnsTrue() {
         CatsUtil catsUtil = new CatsUtil();
         String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
 

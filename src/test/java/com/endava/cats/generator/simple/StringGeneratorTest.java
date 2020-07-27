@@ -3,12 +3,12 @@ package com.endava.cats.generator.simple;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class StringGeneratorTest {
+class StringGeneratorTest {
 
     @Test
-    public void shouldGenerateLargeString() {
+    void shouldGenerateLargeString() {
         String actual = StringGenerator.generateLargeString(2);
         String expected = StringGenerator.FUZZ + StringGenerator.FUZZ;
 
@@ -16,13 +16,13 @@ public class StringGeneratorTest {
     }
 
     @Test
-    public void shouldGenerateRandomString() {
+    void shouldGenerateRandomString() {
         String actual = StringGenerator.generateRandomString();
         Assertions.assertThat(actual).isEqualTo(StringGenerator.FUZZ);
     }
 
     @Test
-    public void givenASchemaWithMaxLength_whenGeneratingARightBoundaryString_thenTheGeneratedStringHasProperLength() {
+    void givenASchemaWithMaxLength_whenGeneratingARightBoundaryString_thenTheGeneratedStringHasProperLength() {
         Schema<?> schema = new StringSchema();
         int maxLength = 10;
         schema.setMaxLength(maxLength);
@@ -33,7 +33,7 @@ public class StringGeneratorTest {
     }
 
     @Test
-    public void givenASchemaWithoutMaxLength_whenGeneratingARightBoundaryString_thenTheGeneratedStringHasDefaultLength() {
+    void givenASchemaWithoutMaxLength_whenGeneratingARightBoundaryString_thenTheGeneratedStringHasDefaultLength() {
         Schema<?> schema = new StringSchema();
 
         String actual = StringGenerator.generateRightBoundString(schema);
@@ -41,7 +41,7 @@ public class StringGeneratorTest {
     }
 
     @Test
-    public void givenASchemaWithMinLength_whenGeneratingALeftBoundaryString_thenTheGeneratedStringHasProperLength() {
+    void givenASchemaWithMinLength_whenGeneratingALeftBoundaryString_thenTheGeneratedStringHasProperLength() {
         Schema<?> schema = new StringSchema();
         int minLength = 10;
         schema.setMinLength(minLength);
@@ -52,7 +52,7 @@ public class StringGeneratorTest {
     }
 
     @Test
-    public void givenASchemaWithoutMinLength_whenGeneratingALeftBoundaryString_thenTheGeneratedStringHasDefaultLength() {
+    void givenASchemaWithoutMinLength_whenGeneratingALeftBoundaryString_thenTheGeneratedStringHasDefaultLength() {
         Schema<?> schema = new StringSchema();
 
         String actual = StringGenerator.generateLeftBoundString(schema);

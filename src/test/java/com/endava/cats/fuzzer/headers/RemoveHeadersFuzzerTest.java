@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class RemoveHeadersFuzzerTest {
+class RemoveHeadersFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -49,12 +49,12 @@ public class RemoveHeadersFuzzerTest {
     private RemoveHeadersFuzzer removeHeadersFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         removeHeadersFuzzer = new RemoveHeadersFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenASetOfHeaders_whenApplyingTheRemoveHeadersFuzzer_thenTheHeadersAreProperlyFuzzed() {
+    void givenASetOfHeaders_whenApplyingTheRemoveHeadersFuzzer_thenTheHeadersAreProperlyFuzzed() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
@@ -72,7 +72,7 @@ public class RemoveHeadersFuzzerTest {
     }
 
     @Test
-    public void givenASetOfHeaders_whenAnErrorOccursCallingTheService_thenTheErrorIsProperlyReported() {
+    void givenASetOfHeaders_whenAnErrorOccursCallingTheService_thenTheErrorIsProperlyReported() {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenThrow(new RuntimeException());
         Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(Mockito.eq(false))).thenReturn(new Object[]{ResponseCodeFamily.TWOXX, "were not"});
@@ -86,7 +86,7 @@ public class RemoveHeadersFuzzerTest {
     }
 
     @Test
-    public void givenARemoveHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
+    void givenARemoveHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(removeHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(removeHeadersFuzzer).hasToString(removeHeadersFuzzer.getClass().getSimpleName());
         Assertions.assertThat(removeHeadersFuzzer.skipFor()).isEmpty();

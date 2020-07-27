@@ -4,10 +4,10 @@ import com.endava.cats.generator.format.impl.*;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class FormatGeneratorTest {
+class FormatGeneratorTest {
 
     @Test
-    public void givenASchemaFormat_whenRetrievingTheFormatGenerator_thenTheCorrespondingFormatGeneratorInstanceIsBeingReturned() {
+    void givenASchemaFormat_whenRetrievingTheFormatGenerator_thenTheCorrespondingFormatGeneratorInstanceIsBeingReturned() {
         Assertions.assertThat(FormatGenerator.from("email").getGeneratorStrategy()).isInstanceOf(EmailFormatGeneratorStrategy.class);
         Assertions.assertThat(FormatGenerator.from("byte").getGeneratorStrategy()).isInstanceOf(ByteFormatGeneratorStrategy.class);
         Assertions.assertThat(FormatGenerator.from("date").getGeneratorStrategy()).isInstanceOf(DateFormatGeneratorStrategy.class);

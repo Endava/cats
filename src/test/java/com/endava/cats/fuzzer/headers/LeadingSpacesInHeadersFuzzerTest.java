@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class LeadingSpacesInHeadersFuzzerTest {
+class LeadingSpacesInHeadersFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -21,12 +21,12 @@ public class LeadingSpacesInHeadersFuzzerTest {
     private LeadingSpacesInHeadersFuzzer leadingSpacesInHeadersFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         leadingSpacesInHeadersFuzzer = new LeadingSpacesInHeadersFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenANewLeadingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLeadingSpacesInHeadersFuzzer() {
+    void givenANewLeadingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLeadingSpacesInHeadersFuzzer() {
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy().name()).isEqualTo(FuzzingStrategy.prefix().name());

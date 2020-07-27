@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class NewFieldsFuzzerTest {
+class NewFieldsFuzzerTest {
 
     @MockBean
     private ServiceCaller serviceCaller;
@@ -49,12 +49,12 @@ public class NewFieldsFuzzerTest {
 
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         newFieldsFuzzer = new NewFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenARequest_whenCallingTheNewFieldsFuzzer_thenTestCasesAreCorrectlyExecuted() {
+    void givenARequest_whenCallingTheNewFieldsFuzzer_thenTestCasesAreCorrectlyExecuted() {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));

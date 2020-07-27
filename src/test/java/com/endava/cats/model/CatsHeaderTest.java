@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-public class CatsHeaderTest {
+class CatsHeaderTest {
 
     @Test
-    public void givenAUUIDParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+    void givenAUUIDParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
         Parameter parameter = new Parameter();
         StringSchema schema = new StringSchema();
         schema.setFormat("uuid");
@@ -26,7 +26,7 @@ public class CatsHeaderTest {
     }
 
     @Test
-    public void givenADateTimeParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+    void givenADateTimeParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
         Parameter parameter = new Parameter();
         StringSchema schema = new StringSchema();
         schema.setFormat("date-time");
@@ -40,7 +40,7 @@ public class CatsHeaderTest {
     }
 
     @Test
-    public void givenAStringParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+    void givenAStringParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
         Parameter parameter = new Parameter();
         StringSchema schema = new StringSchema();
         schema.setFormat("string");
@@ -54,7 +54,7 @@ public class CatsHeaderTest {
     }
 
     @Test
-    public void givenAStringParameterWithPattern_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+    void givenAStringParameterWithPattern_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
         Parameter parameter = new Parameter();
         ObjectSchema schema = new ObjectSchema();
         schema.setPattern("[A-Z]");
@@ -68,7 +68,7 @@ public class CatsHeaderTest {
     }
 
     @Test
-    public void givenAStringParameterWithExample_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+    void givenAStringParameterWithExample_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
         Parameter parameter = new Parameter();
         StringSchema schema = new StringSchema();
         schema.setExample("headerValue");
@@ -82,7 +82,7 @@ public class CatsHeaderTest {
     }
 
     @Test
-    public void givenASimpleParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
+    void givenASimpleParameter_whenCreatingANewCatsHeaderInstance_thenTheCatsHeaderInstanceIsProperlyCreatedAccordingToTheParameterData() {
         Parameter parameter = new Parameter();
         ObjectSchema schema = new ObjectSchema();
         parameter.setName("header");

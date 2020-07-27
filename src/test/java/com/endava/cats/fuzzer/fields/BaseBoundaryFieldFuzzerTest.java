@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class BaseBoundaryFieldFuzzerTest {
+class BaseBoundaryFieldFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -35,7 +35,7 @@ public class BaseBoundaryFieldFuzzerTest {
     private BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer;
 
     @Test
-    public void givenABaseBoundaryFuzzerWithDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheReplaceStrategyIsBeingReturned() {
+    void givenABaseBoundaryFuzzerWithDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheReplaceStrategyIsBeingReturned() {
         myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil);
 
         FuzzingData data = getMockFuzzingData();
@@ -46,7 +46,7 @@ public class BaseBoundaryFieldFuzzerTest {
 
 
     @Test
-    public void givenABaseBoundaryFuzzerWithNoDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
+    void givenABaseBoundaryFuzzerWithNoDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
         myBaseBoundaryFuzzer = new MyBaseBoundaryWithoutBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil);
 
         FuzzingData data = getMockFuzzingData();
@@ -57,7 +57,7 @@ public class BaseBoundaryFieldFuzzerTest {
     }
 
     @Test
-    public void givenABaseBoundaryFuzzerWithNoDefinedBoundaryAndIntegerSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
+    void givenABaseBoundaryFuzzerWithNoDefinedBoundaryAndIntegerSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
         myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil);
 
         FuzzingData data = getMockFuzzingData();
@@ -68,7 +68,7 @@ public class BaseBoundaryFieldFuzzerTest {
     }
 
     @Test
-    public void givenABaseBoundaryFuzzerAndAFieldWithNoSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
+    void givenABaseBoundaryFuzzerAndAFieldWithNoSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
         myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(new HashMap<>());

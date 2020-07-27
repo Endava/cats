@@ -13,17 +13,17 @@ import org.mockito.Mockito;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FuzzingDataTest {
+class FuzzingDataTest {
 
     private CatsUtil catsUtil;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         catsUtil = Mockito.mock(CatsUtil.class);
     }
 
     @Test
-    public void givenASchema_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
+    void givenASchema_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMap());
         FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).reqSchema(baseSchema).build();
@@ -37,7 +37,7 @@ public class FuzzingDataTest {
     }
 
     @Test
-    public void givenASchemaWithSubfields_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
+    void givenASchemaWithSubfields_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
         FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getMappedSchemaWithSubfields()).reqSchema(baseSchema).build();
@@ -53,7 +53,7 @@ public class FuzzingDataTest {
     }
 
     @Test
-    public void givenAComposedSchema_whenGettingAllFields_thenAllFieldsAreReturnedIncludingTheAllOfFields() {
+    void givenAComposedSchema_whenGettingAllFields_thenAllFieldsAreReturnedIncludingTheAllOfFields() {
         ComposedSchema composedSchema = new ComposedSchema();
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMap());
@@ -67,7 +67,7 @@ public class FuzzingDataTest {
     }
 
     @Test
-    public void givenAComposedSchema_whenGettingAllRequiredFields_thenAllFieldsAreReturnedIncludingTheAllOfFields() {
+    void givenAComposedSchema_whenGettingAllRequiredFields_thenAllFieldsAreReturnedIncludingTheAllOfFields() {
         ComposedSchema composedSchema = new ComposedSchema();
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesRequired());
@@ -82,7 +82,7 @@ public class FuzzingDataTest {
     }
 
     @Test
-    public void givenAComposedSchema_whenGettingAllRequiredFieldsWithSubfields_thenAllFieldsAreReturnedIncludingTheAllOfFields() {
+    void givenAComposedSchema_whenGettingAllRequiredFieldsWithSubfields_thenAllFieldsAreReturnedIncludingTheAllOfFields() {
         ComposedSchema composedSchema = new ComposedSchema();
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());

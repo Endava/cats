@@ -19,7 +19,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class HttpMethodsFuzzerTest {
+class HttpMethodsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -39,12 +39,12 @@ public class HttpMethodsFuzzerTest {
     private HttpMethodsFuzzer httpMethodsFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         httpMethodsFuzzer = new HttpMethodsFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenAnOperation_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
+    void givenAnOperation_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).build();
         Mockito.when(serviceCaller.post(Mockito.any())).thenReturn(catsResponse);
@@ -60,7 +60,7 @@ public class HttpMethodsFuzzerTest {
     }
 
     @Test
-    public void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWithA2xx_thenResultsAreCorrectlyReported() {
+    void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWithA2xx_thenResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.post(Mockito.any())).thenReturn(catsResponse);
@@ -76,7 +76,7 @@ public class HttpMethodsFuzzerTest {
     }
 
     @Test
-    public void givenAHttpFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
+    void givenAHttpFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(httpMethodsFuzzer.description()).isNotNull();
         Assertions.assertThat(httpMethodsFuzzer).hasToString(httpMethodsFuzzer.getClass().getSimpleName());
         Assertions.assertThat(httpMethodsFuzzer.skipFor()).isEmpty();

@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class SpacesOnlyInHeadersFuzzerTest {
+class SpacesOnlyInHeadersFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -21,12 +21,12 @@ public class SpacesOnlyInHeadersFuzzerTest {
     private SpacesOnlyInHeadersFuzzer spacesOnlyInHeadersFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         spacesOnlyInHeadersFuzzer = new SpacesOnlyInHeadersFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenANewSpacesOnlyInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInHeadersFuzzer() {
+    void givenANewSpacesOnlyInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInHeadersFuzzer() {
         Assertions.assertThat(spacesOnlyInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(spacesOnlyInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(spacesOnlyInHeadersFuzzer.fuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
