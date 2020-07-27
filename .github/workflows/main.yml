@@ -26,7 +26,5 @@ jobs:
     - name: SonarCloud Scan
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      uses: SonarSource/sonarcloud-github-action@v1.3
-      with:
-        # Set the sonar.projectBaseDir analysis property
-        projectBaseDir: .
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: mvn -B verify sonar:sonar -Dsonar.projectKey=cats -Dsonar.organization=en-milie -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
