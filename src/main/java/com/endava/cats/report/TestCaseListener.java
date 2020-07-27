@@ -37,6 +37,7 @@ public class TestCaseListener {
 
     protected static final String ID = "id";
     private static final Logger LOGGER = LoggerFactory.getLogger(TestCaseListener.class);
+    private static final String SEPARATOR = StringUtils.repeat("-", 150);
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
@@ -66,7 +67,7 @@ public class TestCaseListener {
             this.reportError(externalLogger, "Fuzzer [{}] failed due to [{}]", fuzzer.getClass().getSimpleName(), e.getMessage());
         }
         this.endTestCase();
-        LOGGER.info("{} {}", StringUtils.repeat("-", 150), "\n");
+        LOGGER.info("{} {}", SEPARATOR, "\n");
         MDC.put(ID, "");
     }
 

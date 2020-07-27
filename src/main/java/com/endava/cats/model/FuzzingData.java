@@ -124,7 +124,7 @@ public class FuzzingData {
 
     private List<String> getAllRequiredFields(Schema currentSchema, Map<String, Schema<?>> schemaMap) {
         Set<String> requiredSubfields = catsUtil.eliminateStartingCharAndHacks(this.getAllRequiredSubfields(currentSchema, "", schemaMap));
-        List<String> requiredFields = new ArrayList<String>(Optional.ofNullable(currentSchema.getRequired()).orElse(Collections.emptyList()));
+        List<String> requiredFields = new ArrayList<>(Optional.ofNullable(currentSchema.getRequired()).orElse(Collections.emptyList()));
         requiredFields.addAll(requiredSubfields);
 
         return requiredFields;

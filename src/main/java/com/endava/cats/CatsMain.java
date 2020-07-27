@@ -57,6 +57,8 @@ public class CatsMain implements CommandLineRunner {
     private static final String HELP = "help";
     private static final String VERSION = "version";
     private static final String APPLICATION_JSON = "application/json";
+    private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
+    private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
 
     @Value("${contract:empty}")
     private String contract;
@@ -106,7 +108,7 @@ public class CatsMain implements CommandLineRunner {
     public static Map<String, Schema<?>> getSchemas(OpenAPI openAPI) {
         Map<String, Schema<?>> schemas = openAPI.getComponents().getSchemas().entrySet().stream()
                 .collect(Collectors.toMap(
-                        o -> (String) o.getKey(),
+                        Map.Entry::getKey,
                         o -> (Schema<?>) o.getValue()));
 
         Map<String, ApiResponse> apiResponseMap = openAPI.getComponents().getResponses();
@@ -350,7 +352,7 @@ public class CatsMain implements CommandLineRunner {
 
 
         LOGGER.info("Example: ");
-        LOGGER.info(ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString());
+        LOGGER.info(EXAMPLE);
     }
 
     private void printCommands() {
@@ -381,6 +383,6 @@ public class CatsMain implements CommandLineRunner {
     }
 
     private void renderHelpToConsole(String command, String text) {
-        LOGGER.info(ansi().render("\t --@|cyan {}|@={}").reset().toString(), command, text);
+        LOGGER.info(COMMAND_TEMPLATE, command, text);
     }
 }
