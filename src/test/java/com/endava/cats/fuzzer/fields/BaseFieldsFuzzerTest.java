@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 @ExtendWith(SpringExtension.class)
-public class BaseFieldsFuzzerTest {
+class BaseFieldsFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -50,7 +50,7 @@ public class BaseFieldsFuzzerTest {
     private BaseFieldsFuzzer baseFieldsFuzzer;
 
     @Test
-    public void givenAFieldWithAReplaceFuzzingStrategyWithANonPrimitiveField_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
+    void givenAFieldWithAReplaceFuzzingStrategyWithANonPrimitiveField_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
@@ -61,7 +61,7 @@ public class BaseFieldsFuzzerTest {
     }
 
     @Test
-    public void givenAFieldWithASkipFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
+    void givenAFieldWithASkipFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
         baseFieldsFuzzer = new MyBaseFieldsSkipFuzzer(serviceCaller, testCaseListener, catsUtil);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
@@ -72,7 +72,7 @@ public class BaseFieldsFuzzerTest {
     }
 
     @Test
-    public void givenAJSonPrimitiveFieldWithAReplaceFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
+    void givenAJSonPrimitiveFieldWithAReplaceFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
         FuzzingResult fuzzingResult = Mockito.mock(FuzzingResult.class);
         Mockito.when(fuzzingResult.getJson()).thenReturn(Mockito.mock(JsonElement.class));
         FuzzingData data = Mockito.mock(FuzzingData.class);

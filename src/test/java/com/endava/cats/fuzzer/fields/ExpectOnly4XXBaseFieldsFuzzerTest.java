@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class ExpectOnly4XXBaseFieldsFuzzerTest {
+class ExpectOnly4XXBaseFieldsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -27,12 +27,12 @@ public class ExpectOnly4XXBaseFieldsFuzzerTest {
     private ExpectOnly4XXBaseFieldsFuzzer expectOnly4XXBaseFieldsFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         expectOnly4XXBaseFieldsFuzzer = new CustomExpect4XX(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenADummyExpectOnly4XXFieldsFuzzer_whenCreatingANewInstance_thenTheDefaultMethodsAreMatchingThe4XXFuzzer() {
+    void givenADummyExpectOnly4XXFieldsFuzzer_whenCreatingANewInstance_thenTheDefaultMethodsAreMatchingThe4XXFuzzer() {
         Assertions.assertThat(expectOnly4XXBaseFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(expectOnly4XXBaseFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(expectOnly4XXBaseFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);

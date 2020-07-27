@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-public class NumberGeneratorTest {
+class NumberGeneratorTest {
 
     @Test
-    public void givenAnIntegerSchemaWithDefinedMinimum_whenGeneratingALeftBoundaryInteger_thenTheValueIsLowerThanTheMinimum() {
+    void givenAnIntegerSchemaWithDefinedMinimum_whenGeneratingALeftBoundaryInteger_thenTheValueIsLowerThanTheMinimum() {
         Schema schema = new IntegerSchema();
         long minimum = 2000;
         schema.setMinimum(BigDecimal.valueOf(minimum));
@@ -22,7 +22,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenAnIntegerSchemaWithoutDefinedMinimum_whenGeneratingLeftBoundaryInteger_thenTheValueIsDefault() {
+    void givenAnIntegerSchemaWithoutDefinedMinimum_whenGeneratingLeftBoundaryInteger_thenTheValueIsDefault() {
         Schema schema = new IntegerSchema();
         String leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
 
@@ -30,7 +30,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenAnIntegerSchemaWithDefinedMaximum_whenGeneratingARightBoundaryInteger_thenTheValueIsHigherThanTheMaximum() {
+    void givenAnIntegerSchemaWithDefinedMaximum_whenGeneratingARightBoundaryInteger_thenTheValueIsHigherThanTheMaximum() {
         Schema schema = new IntegerSchema();
         long maximum = 2000;
         schema.setMaximum(BigDecimal.valueOf(maximum));
@@ -41,7 +41,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenAnIntegerSchemaWithoutDefinedMaximum_whenGeneratingRightBoundaryInteger_thenTheValueIsDefault() {
+    void givenAnIntegerSchemaWithoutDefinedMaximum_whenGeneratingRightBoundaryInteger_thenTheValueIsDefault() {
         Schema schema = new IntegerSchema();
         String leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
 
@@ -49,7 +49,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaWithDefinedMinimum_whenGeneratingALeftBoundaryDecimal_thenTheValueIsLowerThanTheMinimum() {
+    void givenANumberSchemaWithDefinedMinimum_whenGeneratingALeftBoundaryDecimal_thenTheValueIsLowerThanTheMinimum() {
         Schema schema = new NumberSchema();
         BigDecimal minimum = BigDecimal.valueOf(2000);
         schema.setMinimum(minimum);
@@ -60,7 +60,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenAnNumberSchemaWithoutDefinedMinimum_whenGeneratingLeftBoundaryDecimal_thenTheValueIsDefault() {
+    void givenAnNumberSchemaWithoutDefinedMinimum_whenGeneratingLeftBoundaryDecimal_thenTheValueIsDefault() {
         Schema schema = new NumberSchema();
         String leftBoundaryValue = NumberGenerator.generateLeftBoundaryDecimalValue(schema);
 
@@ -68,7 +68,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaWithDefinedMaximum_whenGeneratingARightBoundaryDecimal_thenTheValueIsHigherThanTheMaximum() {
+    void givenANumberSchemaWithDefinedMaximum_whenGeneratingARightBoundaryDecimal_thenTheValueIsHigherThanTheMaximum() {
         Schema schema = new NumberSchema();
         schema.setMaximum(BigDecimal.valueOf(2000));
         String leftBoundaryValue = NumberGenerator.generateRightBoundaryDecimalValue(schema);
@@ -78,7 +78,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaWithoutDefinedMaximum_whenGeneratingRightBoundaryDecimal_thenTheValueIsDefault() {
+    void givenANumberSchemaWithoutDefinedMaximum_whenGeneratingRightBoundaryDecimal_thenTheValueIsDefault() {
         Schema schema = new NumberSchema();
         String leftBoundaryValue = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
@@ -86,7 +86,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeInt32_whenGeneratingAnExtremeNegativeIntegerValue_thenLongMinValueIsReturned() {
+    void givenANumberSchemaOfTypeInt32_whenGeneratingAnExtremeNegativeIntegerValue_thenLongMinValueIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("int32");
         String extremeNegative = NumberGenerator.getExtremeNegativeIntegerValue(schema);
@@ -95,7 +95,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchema_whenGeneratingAnExtremeNegativeIntegerValue_thenLongMinValueIsReturned() {
+    void givenANumberSchema_whenGeneratingAnExtremeNegativeIntegerValue_thenLongMinValueIsReturned() {
         Schema schema = new NumberSchema();
         String extremeNegative = NumberGenerator.getExtremeNegativeIntegerValue(schema);
 
@@ -103,7 +103,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeInt64_whenGeneratingAnExtremeNegativeValue_thenTheMostNegativeConstantIsReturned() {
+    void givenANumberSchemaOfTypeInt64_whenGeneratingAnExtremeNegativeValue_thenTheMostNegativeConstantIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("int64");
         String extremeNegative = NumberGenerator.getExtremeNegativeIntegerValue(schema);
@@ -112,7 +112,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeInt32_whenGeneratingAnExtremePositiveIntegerValue_thenLongMaxValueIsReturned() {
+    void givenANumberSchemaOfTypeInt32_whenGeneratingAnExtremePositiveIntegerValue_thenLongMaxValueIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("int32");
         String extremePositive = NumberGenerator.getExtremePositiveIntegerValue(schema);
@@ -121,7 +121,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchema_whenGeneratingAnExtremePositiveIntegerValue_thenLongMaxValueIsReturned() {
+    void givenANumberSchema_whenGeneratingAnExtremePositiveIntegerValue_thenLongMaxValueIsReturned() {
         Schema schema = new NumberSchema();
         String extremePositive = NumberGenerator.getExtremePositiveIntegerValue(schema);
 
@@ -129,7 +129,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeInt64_whenGeneratingAnExtremePositiveValue_thenTheMostPositiveConstantIsReturned() {
+    void givenANumberSchemaOfTypeInt64_whenGeneratingAnExtremePositiveValue_thenTheMostPositiveConstantIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("int64");
         String extremePositive = NumberGenerator.getExtremePositiveIntegerValue(schema);
@@ -138,7 +138,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeFloat_whenGeneratingAnExtremePositiveDecimalValue_thenTheFloatMaxValueIsReturned() {
+    void givenANumberSchemaOfTypeFloat_whenGeneratingAnExtremePositiveDecimalValue_thenTheFloatMaxValueIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("float");
         String extremePositive = NumberGenerator.getExtremePositiveDecimalValue(schema);
@@ -147,7 +147,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaWithDefaultFormat_whenGeneratingAnExtremePositiveDecimalValue_thenTheMostPositiveDecimalConstantIsReturned() {
+    void givenANumberSchemaWithDefaultFormat_whenGeneratingAnExtremePositiveDecimalValue_thenTheMostPositiveDecimalConstantIsReturned() {
         Schema schema = new NumberSchema();
         String extremePositive = NumberGenerator.getExtremePositiveDecimalValue(schema);
 
@@ -155,7 +155,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeDouble_whenGeneratingAnExtremePositiveDecimalValue_thenDoubleMaxValueIsReturned() {
+    void givenANumberSchemaOfTypeDouble_whenGeneratingAnExtremePositiveDecimalValue_thenDoubleMaxValueIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("double");
         String extremePositive = NumberGenerator.getExtremePositiveDecimalValue(schema);
@@ -164,7 +164,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeFloat_whenGeneratingAnExtremeNegativeDecimalValue_thenTheMinusFloatMaxValueIsReturned() {
+    void givenANumberSchemaOfTypeFloat_whenGeneratingAnExtremeNegativeDecimalValue_thenTheMinusFloatMaxValueIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("float");
         String extremeNegative = NumberGenerator.getExtremeNegativeDecimalValue(schema);
@@ -173,7 +173,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaWithDefaultFormat_whenGeneratingAnExtremeNegativeDecimalValue_thenTheMostNegativeDecimalConstantIsReturned() {
+    void givenANumberSchemaWithDefaultFormat_whenGeneratingAnExtremeNegativeDecimalValue_thenTheMostNegativeDecimalConstantIsReturned() {
         Schema schema = new NumberSchema();
         String extremeNegative = NumberGenerator.getExtremeNegativeDecimalValue(schema);
 
@@ -181,7 +181,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchemaOfTypeDouble_whenGeneratingAnExtremeNegativeDecimalValue_thenMinusDoubleMaxValueIsReturned() {
+    void givenANumberSchemaOfTypeDouble_whenGeneratingAnExtremeNegativeDecimalValue_thenMinusDoubleMaxValueIsReturned() {
         Schema schema = new NumberSchema();
         schema.setFormat("double");
         String extremeNegative = NumberGenerator.getExtremeNegativeDecimalValue(schema);
@@ -190,7 +190,7 @@ public class NumberGeneratorTest {
     }
 
     @Test
-    public void givenANumberSchema_whenGeneratingARandomDecimalValue_thenAProperValueIsReturned() {
+    void givenANumberSchema_whenGeneratingARandomDecimalValue_thenAProperValueIsReturned() {
         Schema schema = new NumberSchema();
         BigDecimal minimum = new BigDecimal(10);
         schema.setMinimum(minimum);

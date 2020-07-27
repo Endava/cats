@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class DuplicateHeaderFuzzerTest {
+class DuplicateHeaderFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -44,12 +44,12 @@ public class DuplicateHeaderFuzzerTest {
     private DuplicateHeaderFuzzer duplicateHeaderFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         duplicateHeaderFuzzer = new DuplicateHeaderFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenASetOfHeaders_whenCallingTheDuplicateHeadersFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenASetOfHeaders_whenCallingTheDuplicateHeadersFuzzer_thenTheResultsAreCorrectlyReported() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
@@ -65,7 +65,7 @@ public class DuplicateHeaderFuzzerTest {
     }
 
     @Test
-    public void givenADuplicateHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
+    void givenADuplicateHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(duplicateHeaderFuzzer.description()).isNotNull();
         Assertions.assertThat(duplicateHeaderFuzzer).hasToString(duplicateHeaderFuzzer.getClass().getSimpleName());
         Assertions.assertThat(duplicateHeaderFuzzer.skipFor()).isEmpty();

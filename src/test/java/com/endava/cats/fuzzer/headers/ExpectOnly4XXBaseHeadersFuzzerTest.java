@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class ExpectOnly4XXBaseHeadersFuzzerTest {
+class ExpectOnly4XXBaseHeadersFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -22,12 +22,12 @@ public class ExpectOnly4XXBaseHeadersFuzzerTest {
     private ExpectOnly4XXBaseHeadersFuzzer expectOnly4XXBaseHeadersFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         expectOnly4XXBaseHeadersFuzzer = new My4XXFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenANewExpectOnly4XXBaseHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheExpectOnly4XXBaseHeadersFuzzer() {
+    void givenANewExpectOnly4XXBaseHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheExpectOnly4XXBaseHeadersFuzzer() {
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer).hasToString(expectOnly4XXBaseHeadersFuzzer.getClass().getSimpleName());

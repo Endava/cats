@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class FuzzingDataFactoryTest {
+class FuzzingDataFactoryTest {
 
     @MockBean
     private CatsUtil catsUtil;
@@ -31,12 +31,12 @@ public class FuzzingDataFactoryTest {
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         fuzzingDataFactory = new FuzzingDataFactory(catsUtil);
     }
 
     @Test
-    public void givenAContract_whenParsingThePathItemDetailsForPost_thenCorrectFuzzingDataAreBeingReturned() throws Exception {
+    void givenAContract_whenParsingThePathItemDetailsForPost_thenCorrectFuzzingDataAreBeingReturned() throws Exception {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
         options.setResolve(true);

@@ -3,10 +3,10 @@ package com.endava.cats.report;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ExecutionStatisticsListenerTest {
+class ExecutionStatisticsListenerTest {
 
     @Test
-    public void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfSkippedTests_thenTheSkippedTestsAreReportedCorrectly() {
+    void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfSkippedTests_thenTheSkippedTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseSkipped();// these are ignored in the total count
 
@@ -16,7 +16,7 @@ public class ExecutionStatisticsListenerTest {
     }
 
     @Test
-    public void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfErrorTests_thenTheErrorTestsAreReportedCorrectly() {
+    void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfErrorTests_thenTheErrorTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseErrors();
 
@@ -26,7 +26,7 @@ public class ExecutionStatisticsListenerTest {
     }
 
     @Test
-    public void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfSuccessTests_thenTheSuccessTestsAreReportedCorrectly() {
+    void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfSuccessTests_thenTheSuccessTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseSuccess();
 
@@ -36,7 +36,7 @@ public class ExecutionStatisticsListenerTest {
     }
 
     @Test
-    public void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfWarnTests_thenTheWarnTestsAreReportedCorrectly() {
+    void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfWarnTests_thenTheWarnTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseWarns();
 
@@ -46,7 +46,7 @@ public class ExecutionStatisticsListenerTest {
     }
 
     @Test
-    public void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfAllTypesOfTestsTests_thenTheTotalNumberOfTestsAreReportedCorrectly() {
+    void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfAllTypesOfTestsTests_thenTheTotalNumberOfTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseWarns();
         listener.increaseSuccess();

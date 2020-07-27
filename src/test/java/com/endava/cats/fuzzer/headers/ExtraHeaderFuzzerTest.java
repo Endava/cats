@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class ExtraHeaderFuzzerTest {
+class ExtraHeaderFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -45,12 +45,12 @@ public class ExtraHeaderFuzzerTest {
     private ExtraHeaderFuzzer extraHeaderFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         extraHeaderFuzzer = new ExtraHeaderFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenASetOfHeaders_whenCallingTheExtraHeadersFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenASetOfHeaders_whenCallingTheExtraHeadersFuzzer_thenTheResultsAreCorrectlyReported() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
@@ -66,7 +66,7 @@ public class ExtraHeaderFuzzerTest {
     }
 
     @Test
-    public void givenAExtraHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
+    void givenAExtraHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(extraHeaderFuzzer.description()).isNotNull();
         Assertions.assertThat(extraHeaderFuzzer).hasToString(extraHeaderFuzzer.getClass().getSimpleName());
         Assertions.assertThat(extraHeaderFuzzer.skipFor()).isEmpty();

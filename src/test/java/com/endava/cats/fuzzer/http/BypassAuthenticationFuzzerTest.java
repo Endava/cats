@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class BypassAuthenticationFuzzerTest {
+class BypassAuthenticationFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -49,12 +49,12 @@ public class BypassAuthenticationFuzzerTest {
     private BypassAuthenticationFuzzer bypassAuthenticationFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenAPayloadWithoutAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenAPayloadWithoutAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).build();
         bypassAuthenticationFuzzer.fuzz(data);
 
@@ -64,7 +64,7 @@ public class BypassAuthenticationFuzzerTest {
 
 
     @Test
-    public void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() throws Exception {
+    void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() throws Exception {
         ReflectionTestUtils.setField(bypassAuthenticationFuzzer, "headersFile", "notEmpty");
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
         bypassAuthenticationFuzzer.loadHeaders();
@@ -83,7 +83,7 @@ public class BypassAuthenticationFuzzerTest {
     }
 
     @Test
-    public void givenAPayloadWithAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenAPayloadWithAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
@@ -98,7 +98,7 @@ public class BypassAuthenticationFuzzerTest {
     }
 
     @Test
-    public void givenABypassAuthenticationHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
+    void givenABypassAuthenticationHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(bypassAuthenticationFuzzer.description()).isNotNull();
         Assertions.assertThat(bypassAuthenticationFuzzer).hasToString(bypassAuthenticationFuzzer.getClass().getSimpleName());
         Assertions.assertThat(bypassAuthenticationFuzzer.skipFor()).isEmpty();

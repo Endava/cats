@@ -25,7 +25,7 @@ import java.util.*;
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(SpringExtension.class)
-public class CustomFuzzerTest {
+class CustomFuzzerTest {
     @MockBean
     private ServiceCaller serviceCaller;
 
@@ -48,13 +48,13 @@ public class CustomFuzzerTest {
 
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         customFuzzer = new CustomFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
 
     @Test
-    public void givenAnEmptyCustomFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
+    void givenAnEmptyCustomFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
         FuzzingData data = FuzzingData.builder().build();
         ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "empty");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
@@ -66,7 +66,7 @@ public class CustomFuzzerTest {
     }
 
     @Test
-    public void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecuted() throws Exception {
+    void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecuted() throws Exception {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").payload("{'field':'oldValue'}").

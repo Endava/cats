@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class ExtremePositiveValueInIntegerFieldsFuzzerTest {
+class ExtremePositiveValueInIntegerFieldsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -27,12 +27,12 @@ public class ExtremePositiveValueInIntegerFieldsFuzzerTest {
     private ExtremePositiveValueInIntegerFieldsFuzzer extremePositiveValueInIntegerFields;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         extremePositiveValueInIntegerFields = new ExtremePositiveValueInIntegerFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewExtremePositiveValueIntegerFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheIntegerFuzzer() {
+    void givenANewExtremePositiveValueIntegerFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheIntegerFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(extremePositiveValueInIntegerFields.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(IntegerSchema.class))).isTrue();
         Assertions.assertThat(NumberUtils.isCreatable(extremePositiveValueInIntegerFields.getBoundaryValue(nrSchema))).isTrue();

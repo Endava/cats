@@ -4,10 +4,10 @@ import com.endava.cats.model.FuzzingStrategy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SkipFuzzingStrategyTest {
+class SkipFuzzingStrategyTest {
 
     @Test
-    public void givenAString_whenUsingTheSkipFuzzingStrategy_thenTheStringIsCorrectlyProcessed() {
+    void givenAString_whenUsingTheSkipFuzzingStrategy_thenTheStringIsCorrectlyProcessed() {
         FuzzingStrategy strategy = FuzzingStrategy.skip().withData("inner");
 
         Assertions.assertThat(strategy.process("string")).isEqualTo("inner");

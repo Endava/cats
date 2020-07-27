@@ -26,7 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.*;
 
 @ExtendWith(SpringExtension.class)
-public class RemoveFieldsFuzzerTest {
+class RemoveFieldsFuzzerTest {
 
 
     @MockBean
@@ -51,12 +51,12 @@ public class RemoveFieldsFuzzerTest {
 
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenARequest_whenApplyingTheRemoveFieldsFuzzer_thenTestCasesAreCorrectlyExecuted() {
+    void givenARequest_whenApplyingTheRemoveFieldsFuzzer_thenTestCasesAreCorrectlyExecuted() {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
@@ -78,7 +78,7 @@ public class RemoveFieldsFuzzerTest {
     }
 
     @Test
-    public void givenARemoveFieldsFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
+    void givenARemoveFieldsFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(removeFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(removeFieldsFuzzer).hasToString(removeFieldsFuzzer.getClass().getSimpleName());
         Assertions.assertThat(removeFieldsFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);

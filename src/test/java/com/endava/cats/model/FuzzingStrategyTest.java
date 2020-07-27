@@ -5,10 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class FuzzingStrategyTest {
+class FuzzingStrategyTest {
 
     @Test
-    public void givenTheFuzzingStrategyClass_whenCallingTheStaticCreateMethods_thenProperInstancesAreReturned() {
+    void givenTheFuzzingStrategyClass_whenCallingTheStaticCreateMethods_thenProperInstancesAreReturned() {
         Assertions.assertThat(FuzzingStrategy.trail()).isInstanceOf(TrailFuzzingStrategy.class);
         Assertions.assertThat(FuzzingStrategy.replace()).isInstanceOf(ReplaceFuzzingStrategy.class);
         Assertions.assertThat(FuzzingStrategy.prefix()).isInstanceOf(PrefixFuzzingStrategy.class);
@@ -17,35 +17,35 @@ public class FuzzingStrategyTest {
     }
 
     @Test
-    public void givenASpacedPrefixedString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenASpacedPrefixedString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
         String result = FuzzingStrategy.mergeFuzzing(" test", "air", "  ");
 
         Assertions.assertThat(result).isEqualTo("  air");
     }
 
     @Test
-    public void givenASpaceTrailingString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenASpaceTrailingString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
         String result = FuzzingStrategy.mergeFuzzing("test  ", "air", "  ");
 
         Assertions.assertThat(result).isEqualTo("air  ");
     }
 
     @Test
-    public void givenAnEmptyString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenAnEmptyString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
         String result = FuzzingStrategy.mergeFuzzing("  ", "air", "replaced");
 
         Assertions.assertThat(result).isEqualTo("replaced");
     }
 
     @Test
-    public void givenAStringWithNoSpaces_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenAStringWithNoSpaces_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
         String result = FuzzingStrategy.mergeFuzzing("test", "air", "replaced");
 
         Assertions.assertThat(result).isEqualTo("test");
     }
 
     @Test
-    public void givenAFuzzingStrategy_whenSettingAnInnerValueAboveTruncationThreshold_thenTheValueIsProperlyTruncated() {
+    void givenAFuzzingStrategy_whenSettingAnInnerValueAboveTruncationThreshold_thenTheValueIsProperlyTruncated() {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 50));
 
         Assertions.assertThat(strategy.truncatedValue()).isEqualTo(strategy.name() + " with " + StringUtils.repeat("t", 30) + "...");
@@ -53,7 +53,7 @@ public class FuzzingStrategyTest {
     }
 
     @Test
-    public void givenAFuzzingStrategy_whenSettingAnInnerValueBelowTruncationThreshold_thenTheValueIsNotTruncated() {
+    void givenAFuzzingStrategy_whenSettingAnInnerValueBelowTruncationThreshold_thenTheValueIsNotTruncated() {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 29));
 
         Assertions.assertThat(strategy).hasToString(strategy.truncatedValue());

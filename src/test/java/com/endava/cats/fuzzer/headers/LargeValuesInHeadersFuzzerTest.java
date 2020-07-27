@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class LargeValuesInHeadersFuzzerTest {
+class LargeValuesInHeadersFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -21,12 +21,12 @@ public class LargeValuesInHeadersFuzzerTest {
     private LargeValuesInHeadersFuzzer largeValuesInHeadersFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         largeValuesInHeadersFuzzer = new LargeValuesInHeadersFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenANewLargeValuesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLargeValuesInHeadersFuzzer() {
+    void givenANewLargeValuesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLargeValuesInHeadersFuzzer() {
         Assertions.assertThat(largeValuesInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(largeValuesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(largeValuesInHeadersFuzzer.fuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());

@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class VeryLargeStringsFuzzerTest {
+class VeryLargeStringsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -25,12 +25,12 @@ public class VeryLargeStringsFuzzerTest {
     private VeryLargeStringsFuzzer veryLargeStringsFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         veryLargeStringsFuzzer = new VeryLargeStringsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewVeryLargeStringsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheVeryLargeStringsFuzzer() {
+    void givenANewVeryLargeStringsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheVeryLargeStringsFuzzer() {
         StringSchema nrSchema = new StringSchema();
         Assertions.assertThat(veryLargeStringsFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsExactly(StringSchema.class);
         Assertions.assertThat(veryLargeStringsFuzzer.getBoundaryValue(nrSchema)).isNotNull();

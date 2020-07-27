@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class TrailingSpacesInHeadersFuzzerTest {
+class TrailingSpacesInHeadersFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -21,12 +21,12 @@ public class TrailingSpacesInHeadersFuzzerTest {
     private TrailingSpacesInHeadersFuzzer trailingSpacesInHeadersFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         trailingSpacesInHeadersFuzzer = new TrailingSpacesInHeadersFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenANewTrailingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingSpacesInHeadersFuzzer() {
+    void givenANewTrailingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingSpacesInHeadersFuzzer() {
         Assertions.assertThat(trailingSpacesInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(trailingSpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(trailingSpacesInHeadersFuzzer.fuzzStrategy().name()).isEqualTo(FuzzingStrategy.trail().name());

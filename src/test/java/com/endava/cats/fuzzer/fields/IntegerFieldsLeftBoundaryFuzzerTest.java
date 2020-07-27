@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class IntegerFieldsLeftBoundaryFuzzerTest {
+class IntegerFieldsLeftBoundaryFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -28,12 +28,12 @@ public class IntegerFieldsLeftBoundaryFuzzerTest {
     private IntegerFieldsLeftBoundaryFuzzer integerFieldsLeftBoundaryFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         integerFieldsLeftBoundaryFuzzer = new IntegerFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewIntegerFieldsLeftBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheIntegerFieldsLeftBoundaryFuzzer() {
+    void givenANewIntegerFieldsLeftBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheIntegerFieldsLeftBoundaryFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(IntegerSchema.class))).isTrue();
         Assertions.assertThat(NumberUtils.isCreatable(integerFieldsLeftBoundaryFuzzer.getBoundaryValue(nrSchema))).isTrue();
