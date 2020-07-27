@@ -30,7 +30,7 @@ public class ExpectOnly4XXBaseHeadersFuzzerTest {
     public void givenANewExpectOnly4XXBaseHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheExpectOnly4XXBaseHeadersFuzzer() {
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer.toString()).isEqualTo(expectOnly4XXBaseHeadersFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer).hasToString(expectOnly4XXBaseHeadersFuzzer.getClass().getSimpleName());
     }
 
     class My4XXFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {

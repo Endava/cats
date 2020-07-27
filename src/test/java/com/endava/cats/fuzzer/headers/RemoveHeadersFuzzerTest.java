@@ -88,7 +88,7 @@ public class RemoveHeadersFuzzerTest {
     @Test
     public void givenARemoveHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverriden() {
         Assertions.assertThat(removeHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(removeHeadersFuzzer.toString()).isEqualTo(removeHeadersFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(removeHeadersFuzzer).hasToString(removeHeadersFuzzer.getClass().getSimpleName());
         Assertions.assertThat(removeHeadersFuzzer.skipFor()).isEmpty();
     }
 }

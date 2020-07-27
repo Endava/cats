@@ -90,7 +90,7 @@ public class TestCaseExporter {
                 Files.copy(zipInputStream, Paths.get(path.toFile().getAbsolutePath(), entry.getName()));
             }
             try (Stream<String> index = Files.lines(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML))) {
-                List<String> updatedIndex = index.map(line -> line.replaceAll(PLACEHOLDER, builder.toString())).collect(Collectors.toList());
+                List<String> updatedIndex = index.map(line -> line.replace(PLACEHOLDER, builder.toString())).collect(Collectors.toList());
                 Files.write(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML), updatedIndex);
             }
         } catch (IOException e) {
@@ -99,7 +99,7 @@ public class TestCaseExporter {
     }
 
     public void writeToFile(CatsTestCase testCase) {
-        String testCaseName = MDC.get("id").replaceAll(" ", "");
+        String testCaseName = MDC.get("id").replace(" ", "");
         Path testPath = Paths.get(path.toFile().getAbsolutePath(), testCaseName.concat(JAVASCRIPT_EXTENSION));
 
         String toWrite = new GsonBuilder().setLenient().setPrettyPrinting().setExclusionStrategies(new ExcludeTestCaseStrategy()).serializeNulls().create().toJson(testCase);

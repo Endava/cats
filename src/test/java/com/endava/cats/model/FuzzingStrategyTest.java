@@ -49,13 +49,13 @@ public class FuzzingStrategyTest {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 50));
 
         Assertions.assertThat(strategy.truncatedValue()).isEqualTo(strategy.name() + " with " + StringUtils.repeat("t", 30) + "...");
-        Assertions.assertThat(strategy.toString()).isEqualTo(strategy.name() + " with " + StringUtils.repeat("t", 50));
+        Assertions.assertThat(strategy).hasToString(strategy.name() + " with " + StringUtils.repeat("t", 50));
     }
 
     @Test
     public void givenAFuzzingStrategy_whenSettingAnInnerValueBelowTruncationThreshold_thenTheValueIsNotTruncated() {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 29));
 
-        Assertions.assertThat(strategy.truncatedValue()).isEqualTo(strategy.toString());
+        Assertions.assertThat(strategy).hasToString(strategy.truncatedValue());
     }
 }
