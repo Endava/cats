@@ -6,8 +6,8 @@ import lombok.Getter;
 @Builder
 @Getter
 public class FuzzingConstraints {
-    private boolean hasMinlength;
-    private boolean hasRequiredFieldsFuzzed;
+    private final boolean hasMinlength;
+    private final boolean hasRequiredFieldsFuzzed;
 
 
     public boolean hasMinLengthOrMandatoryFieldsFuzzed() {

@@ -26,7 +26,10 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -100,8 +103,12 @@ public class CatsMain implements CommandLineRunner {
         return Stream.of(str.split(splitChar)).collect(Collectors.toList());
     }
 
-    public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
-        HashMap<String, Schema> schemas = (HashMap<String, Schema>) (openAPI.getComponents().getSchemas());
+    public static Map<String, Schema<?>> getSchemas(OpenAPI openAPI) {
+        Map<String, Schema<?>> schemas = openAPI.getComponents().getSchemas().entrySet().stream()
+                .collect(Collectors.toMap(
+                        o -> (String) o.getKey(),
+                        o -> (Schema<?>) o.getValue()));
+
         Map<String, ApiResponse> apiResponseMap = openAPI.getComponents().getResponses();
 
         if (apiResponseMap != null) {
@@ -163,8 +170,8 @@ public class CatsMain implements CommandLineRunner {
     /**
      * Check if there are any supplied paths and match them against the contract
      *
-     * @param openAPI
-     * @return
+     * @param openAPI the OpenAPI object parsed from the contract
+     * @return the list of paths from the contract matching the supplied list
      */
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
         List<String> suppliedPaths = stringToList(paths, ";");
@@ -195,8 +202,8 @@ public class CatsMain implements CommandLineRunner {
     /**
      * Encapsulates logic regarding commands that need to deal with the contract. Like printing the available paths for example.
      *
-     * @param openAPI
-     * @param args
+     * @param openAPI the OpenAPI object parsed from the contract
+     * @param args    program arguments
      */
     private void processContractDependentCommands(OpenAPI openAPI, String[] args) {
         if (this.isListContractPaths(args)) {
@@ -288,7 +295,7 @@ public class CatsMain implements CommandLineRunner {
 
     private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         List<String> configuredFuzzers = this.configuredFuzzers();
-        Map<String, Schema> schemas = getSchemas(openAPI);
+        Map<String, Schema<?>> schemas = getSchemas(openAPI);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info("Start fuzzing path {}", pathItemEntry.getKey());

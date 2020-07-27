@@ -47,11 +47,10 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
 
         if (headers.isEmpty()) {
             headers.add(header);
-            headers.add(header.copy());
         } else {
             header = headers.get(0);
-            headers.add(header.copy());
         }
+        headers.add(header.copy());
 
         testCaseListener.addScenario(LOGGER, "Scenario: add a duplicate header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", header.getName(), header.getTruncatedValue());
         testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 4XX response code");

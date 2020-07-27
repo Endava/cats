@@ -23,7 +23,7 @@ public class Expect4XXBaseHeadersFuzzerTest {
 
     @BeforeEach
     public void setup() {
-        expect4XXBaseHeadersFuzzer = new Expect4XXBaseHeadersFuzzerTest.My4XXFuzzer(serviceCaller, testCaseListener);
+        expect4XXBaseHeadersFuzzer = new My4XXFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
@@ -33,7 +33,7 @@ public class Expect4XXBaseHeadersFuzzerTest {
         Assertions.assertThat(expect4XXBaseHeadersFuzzer).hasToString(expect4XXBaseHeadersFuzzer.getClass().getSimpleName());
     }
 
-    class My4XXFuzzer extends Expect4XXBaseHeadersFuzzer {
+    static class My4XXFuzzer extends Expect4XXBaseHeadersFuzzer {
 
         public My4XXFuzzer(ServiceCaller sc, TestCaseListener lr) {
             super(sc, lr);

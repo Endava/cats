@@ -77,7 +77,7 @@ public class BaseFieldsFuzzerTest {
         Mockito.when(fuzzingResult.getJson()).thenReturn(Mockito.mock(JsonElement.class));
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
-        Map<String, Schema> schemaMap = new HashMap<>();
+        Map<String, Schema<?>> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
         Mockito.when(data.getAllFieldsAsSingleSet()).thenReturn(fields);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
@@ -93,7 +93,7 @@ public class BaseFieldsFuzzerTest {
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
     }
 
-    class MyBaseFieldsFuzzer extends BaseFieldsFuzzer {
+    static class MyBaseFieldsFuzzer extends BaseFieldsFuzzer {
 
         public MyBaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
             super(sc, lr, cu);
@@ -130,7 +130,7 @@ public class BaseFieldsFuzzerTest {
         }
     }
 
-    class MyBaseFieldsSkipFuzzer extends BaseFieldsFuzzer {
+    static class MyBaseFieldsSkipFuzzer extends BaseFieldsFuzzer {
 
         public MyBaseFieldsSkipFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
             super(sc, lr, cu);

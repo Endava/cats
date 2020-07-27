@@ -84,7 +84,7 @@
         <repository>
             <id>github</id>
             <name>GitHub OWNER Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/E ndava/cats</url>
+            <url>https://maven.pkg.github.com/Endava/cats</url>
         </repository>
     </distributionManagement>
 

@@ -71,21 +71,21 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
     /**
      * What is the expected HTTP Code when required headers are fuzzed with invalid values
      *
-     * @return
+     * @return expected HTTP code
      */
     protected abstract ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed();
 
     /**
      * What is the expected HTTP code when optional headers are fuzzed with invalid values
      *
-     * @return
+     * @return expected HTTP code
      */
     protected abstract ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed();
 
     /**
      * What is the Fuzzing strategy the current Fuzzer will apply
      *
-     * @return
+     * @return expected FuzzingStrategy
      */
     protected abstract FuzzingStrategy fuzzStrategy();
 }

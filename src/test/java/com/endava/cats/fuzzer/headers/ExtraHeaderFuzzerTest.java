@@ -50,7 +50,7 @@ public class ExtraHeaderFuzzerTest {
     }
 
     @Test
-    public void givenASetOfHeaders_whenCallingTheExtraHeadersFuzzer_thenTheResultsAreCorrecltyReported() {
+    public void givenASetOfHeaders_whenCallingTheExtraHeadersFuzzer_thenTheResultsAreCorrectlyReported() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
@@ -66,7 +66,7 @@ public class ExtraHeaderFuzzerTest {
     }
 
     @Test
-    public void givenAExtraHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverriden() {
+    public void givenAExtraHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(extraHeaderFuzzer.description()).isNotNull();
         Assertions.assertThat(extraHeaderFuzzer).hasToString(extraHeaderFuzzer.getClass().getSimpleName());
         Assertions.assertThat(extraHeaderFuzzer.skipFor()).isEmpty();

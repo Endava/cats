@@ -66,7 +66,7 @@ public class BaseHeadersFuzzerTest {
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
-    class MyBaseHeadersFuzzer extends BaseHeadersFuzzer {
+    static class MyBaseHeadersFuzzer extends BaseHeadersFuzzer {
 
         public MyBaseHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
             super(sc, lr);

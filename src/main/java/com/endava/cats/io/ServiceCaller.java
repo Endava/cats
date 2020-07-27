@@ -70,6 +70,10 @@ public class ServiceCaller {
         }
     }
 
+    private final CatsUtil catsUtil;
+    private final TestCaseListener testCaseListener;
+    private final Map<String, Map<String, String>> headers = new HashMap<>();
+    private final Map<String, Map<String, String>> refData = new HashMap<>();
     @Value("${server:empty}")
     private String server;
     @Value("${refData:empty}")
@@ -78,12 +82,6 @@ public class ServiceCaller {
     private String headersFile;
     @Value("${urlParams:empty}")
     private String urlParams;
-
-    private CatsUtil catsUtil;
-    private TestCaseListener testCaseListener;
-
-    private Map<String, Map<String, String>> headers = new HashMap<>();
-    private Map<String, Map<String, String>> refData = new HashMap<>();
     private List<String> urlParamsList = new ArrayList<>();
 
 
@@ -247,7 +245,7 @@ public class ServiceCaller {
 
 
     private String replaceRemovedParams(String path) {
-        return path.replaceAll("\\{(.*?)\\}", "");
+        return path.replaceAll("\\{(.*?)}", "");
     }
 
 

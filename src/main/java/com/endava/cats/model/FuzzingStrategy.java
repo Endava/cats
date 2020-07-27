@@ -80,11 +80,11 @@ public abstract class FuzzingStrategy {
 
     public String truncatedValue() {
         if (data != null) {
-            String toprint = data;
+            String toPrint = data;
             if (data.length() > 30) {
-                toprint = data.substring(0, 30) + "...";
+                toPrint = data.substring(0, 30) + "...";
             }
-            return this.name() + " with " + toprint;
+            return this.name() + " with " + toPrint;
         }
         return this.name();
     }

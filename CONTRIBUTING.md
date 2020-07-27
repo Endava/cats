@@ -19,7 +19,7 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 2. If you've added code that should be tested, add tests.
 3. If you've changed APIs, update the documentation.
 4. Ensure the test suite passes.
-5. Make sure your code doesn't introduce new code quality violations. Use [Sonarqube](https://www.sonarqube.org/) with the default profile
+5. Make sure your code doesn't introduce new code quality violations. Use [Sonarqube](https://www.sonarqube.org/) with the default profile.
 6. Issue that pull request!
 
 Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:

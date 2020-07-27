@@ -66,7 +66,7 @@ public class CatsUtil {
     }
 
     /**
-     * Returns all possible subets of size K of the given list
+     * Returns all possible subsets of size K of the given list
      *
      * @param elements
      * @param k
@@ -126,11 +126,6 @@ public class CatsUtil {
             result.put(entry.getKey(), properties);
         }
 
-        Map<String, Map<String, String>> resultAsString = new HashMap<>();
-        for (Map.Entry<String, Map<String, Object>> entry : result.entrySet()) {
-            resultAsString.put(entry.getKey(), entry.getValue().entrySet()
-                    .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
-        }
         return result;
     }
 
@@ -167,15 +162,15 @@ public class CatsUtil {
         return sets;
     }
 
-    public Set getAllFields(FuzzingData data) {
+    public Set<String> getAllFields(FuzzingData data) {
         Set<String> subfields = this.eliminateStartingCharAndHacks(this.getAllSubfieldsAsFullyQualifiedNames(data.getReqSchema(), "", data.getSchemaMap()));
-        Set allFields = new HashSet<>(data.getAllProperties().keySet());
+        Set<String> allFields = new HashSet<>(data.getAllProperties().keySet());
         allFields.addAll(subfields);
 
         return allFields;
     }
 
-    private Set<String> getAllSubfieldsAsFullyQualifiedNames(Schema currentSchema, String prefix, Map<String, Schema> schemaMap) {
+    private Set<String> getAllSubfieldsAsFullyQualifiedNames(Schema currentSchema, String prefix, Map<String, Schema<?>> schemaMap) {
         Set<String> result = new HashSet<>();
         if (currentSchema.getProperties() != null) {
             for (Map.Entry<String, Schema> prop : (Set<Map.Entry<String, Schema>>) currentSchema.getProperties().entrySet()) {

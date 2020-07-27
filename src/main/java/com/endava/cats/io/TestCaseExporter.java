@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -59,7 +60,7 @@ public class TestCaseExporter {
     private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
     private static void deleteAllFilesFirst() {
-        for (File file : path.toFile().listFiles()) {
+        for (File file : Objects.requireNonNull(path.toFile().listFiles())) {
             try {
                 Files.delete(file.toPath());
             } catch (IOException e) {
@@ -72,7 +73,7 @@ public class TestCaseExporter {
         Path testPath = Paths.get(path.toFile().getAbsolutePath(), SUMMARY.concat(JAVASCRIPT_EXTENSION));
 
         List<CatsTestCaseSummary> summaries = testCaseMap.entrySet().stream()
-                .filter(entry -> !entry.getValue().isSkipped())
+                .filter(entry -> entry.getValue().isNotSkipped())
                 .map(testCase -> CatsTestCaseSummary.fromCatsTestCase(testCase.getKey(), testCase.getValue())).sorted()
                 .collect(Collectors.toList());
 

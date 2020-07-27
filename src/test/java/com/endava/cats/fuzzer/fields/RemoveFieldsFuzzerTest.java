@@ -78,14 +78,14 @@ public class RemoveFieldsFuzzerTest {
     }
 
     @Test
-    public void givenARemoveFieldsFuzzeRInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverriden() {
+    public void givenARemoveFieldsFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(removeFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(removeFieldsFuzzer).hasToString(removeFieldsFuzzer.getClass().getSimpleName());
         Assertions.assertThat(removeFieldsFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
-    private Map<String, Schema> createPropertiesMap() {
-        Map<String, Schema> schemaMap = new HashMap<>();
+    private Map<String, Schema<?>> createPropertiesMap() {
+        Map<String, Schema<?>> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
         schemaMap.put("anotherField", new StringSchema());
 
