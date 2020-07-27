@@ -26,17 +26,17 @@ public class VeryLargeStringsFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+    protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(StringSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    protected String getBoundaryValue(Schema<?> schema) {
         return StringGenerator.generateLargeString(10000);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(Schema schema) {
+    protected boolean hasBoundaryDefined(Schema<?> schema) {
         return true;
     }
 

@@ -30,7 +30,5 @@ public class EmptyStringValuesInHeadersFuzzerTest {
         Assertions.assertThat(emptyStringValuesInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(emptyStringValuesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(emptyStringValuesInHeadersFuzzer.fuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(emptyStringValuesInHeadersFuzzer.fuzzStrategy().getData()).isEqualTo("");
-
     }
 }

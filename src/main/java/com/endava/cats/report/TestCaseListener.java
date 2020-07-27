@@ -106,7 +106,7 @@ public class TestCaseListener {
 
     private void endTestCase() {
         testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get("fuzzer"));
-        if (!testCaseMap.get(MDC.get(ID)).isSkipped()) {
+        if (testCaseMap.get(MDC.get(ID)).isNotSkipped()) {
             testCaseExporter.writeToFile(testCaseMap.get(MDC.get(ID)));
         }
     }
@@ -165,7 +165,7 @@ public class TestCaseListener {
             this.reportWarn(logger, "Call returned as expected, but with undocumented code: expected [{}], actual [{}]. Documented response codes: {}", expectedResultCode.asString(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
             this.reportError(logger, "Call returned an unexpected result, but with documented code: expected [{}], actual [{}]", expectedResultCode.asString(), response.responseCodeAsString());
-        } else if (assertions.isRespomnseCodeUnimplemented()) {
+        } else if (assertions.isResponseCodeUnimplemented()) {
             this.reportWarn(logger, "Call returned http code 501: you forgot to implement this functionality!");
         } else {
             this.reportError(logger, "Unexpected behaviour: expected {}, actual [{}]", expectedResultCode.asString(), response.responseCodeAsString());
@@ -223,10 +223,10 @@ public class TestCaseListener {
 
     @Builder
     static class ResponseAssertions {
-        private boolean matchesResponseSchema;
-        private boolean responseCodeExpected;
-        private boolean responseCodeDocumented;
-        private boolean responseCodeUnimplemented;
+        private final boolean matchesResponseSchema;
+        private final boolean responseCodeExpected;
+        private final boolean responseCodeDocumented;
+        private final boolean responseCodeUnimplemented;
 
         private boolean isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema() {
             return matchesResponseSchema && responseCodeDocumented && responseCodeExpected;
@@ -244,7 +244,7 @@ public class TestCaseListener {
             return responseCodeExpected && !responseCodeDocumented;
         }
 
-        private boolean isRespomnseCodeUnimplemented() {
+        private boolean isResponseCodeUnimplemented() {
             return responseCodeUnimplemented;
         }
     }

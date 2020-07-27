@@ -18,30 +18,30 @@ public class NumberGenerator {
         //ntd
     }
 
-    public static String generateLeftBoundaryIntegerValue(Schema schema) {
+    public static String generateLeftBoundaryIntegerValue(Schema<?> schema) {
         BigDecimal result = generateLeftBoundaryValue(schema, new BigDecimal(TEN_THOUSANDS));
 
         return String.valueOf(result.toBigInteger());
     }
 
-    public static String generateLeftBoundaryDecimalValue(Schema schema) {
+    public static String generateLeftBoundaryDecimalValue(Schema<?> schema) {
         BigDecimal result = generateLeftBoundaryValue(schema, DECIMAL_CONSTANT);
 
         return String.valueOf(result);
     }
 
-    public static String generateRightBoundaryDecimalValue(Schema schema) {
+    public static String generateRightBoundaryDecimalValue(Schema<?> schema) {
         BigDecimal result = generateRightBoundaryValue(schema, DECIMAL_CONSTANT);
         return String.valueOf(result);
     }
 
-    public static String generateRightBoundaryIntegerValue(Schema schema) {
+    public static String generateRightBoundaryIntegerValue(Schema<?> schema) {
         BigDecimal result = generateRightBoundaryValue(schema, new BigDecimal(TEN_THOUSANDS));
 
         return String.valueOf(result.toBigInteger());
     }
 
-    private static BigDecimal generateRightBoundaryValue(Schema schema, BigDecimal toAdd) {
+    private static BigDecimal generateRightBoundaryValue(Schema<?> schema, BigDecimal toAdd) {
         if (schema.getMaximum() != null) {
             return schema.getMaximum().add(toAdd);
         }
@@ -49,7 +49,7 @@ public class NumberGenerator {
         return new BigDecimal(Long.MAX_VALUE).add(BigDecimal.TEN);
     }
 
-    private static BigDecimal generateLeftBoundaryValue(Schema schema, BigDecimal toSubtract) {
+    private static BigDecimal generateLeftBoundaryValue(Schema<?> schema, BigDecimal toSubtract) {
         if (schema.getMinimum() != null) {
             return schema.getMinimum().subtract(toSubtract);
         }
@@ -57,21 +57,21 @@ public class NumberGenerator {
         return new BigDecimal(Long.MIN_VALUE).subtract(BigDecimal.TEN);
     }
 
-    public static String getExtremeNegativeIntegerValue(Schema schema) {
+    public static String getExtremeNegativeIntegerValue(Schema<?> schema) {
         if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase("int32")) {
             return String.valueOf(Long.MIN_VALUE);
         }
         return String.valueOf(MOST_NEGATIVE_INTEGER);
     }
 
-    public static String getExtremePositiveIntegerValue(Schema schema) {
+    public static String getExtremePositiveIntegerValue(Schema<?> schema) {
         if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase("int32")) {
             return String.valueOf(Long.MAX_VALUE);
         }
         return String.valueOf(MOST_POSITIVE_INTEGER);
     }
 
-    public static String getExtremePositiveDecimalValue(Schema schema) {
+    public static String getExtremePositiveDecimalValue(Schema<?> schema) {
         if (schema.getFormat() == null) {
             return String.valueOf(MOST_POSITIVE_DECIMAL);
         } else if (schema.getFormat().equalsIgnoreCase("float")) {
@@ -80,7 +80,7 @@ public class NumberGenerator {
         return String.valueOf(Double.MAX_VALUE);
     }
 
-    public static String getExtremeNegativeDecimalValue(Schema schema) {
+    public static String getExtremeNegativeDecimalValue(Schema<?> schema) {
         if (schema.getFormat() == null) {
             return String.valueOf(MOST_NEGATIVE_DECIMAL);
         } else if (schema.getFormat().equalsIgnoreCase("float")) {
@@ -89,7 +89,7 @@ public class NumberGenerator {
         return String.valueOf(-Double.MAX_VALUE);
     }
 
-    public static String generateDecimalValue(Schema schema) {
+    public static String generateDecimalValue(Schema<?> schema) {
         BigDecimal minimum = BigDecimal.ZERO;
 
         if (schema.getMinimum() != null) {

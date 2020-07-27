@@ -9,7 +9,7 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -21,17 +21,17 @@ public class StringFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-        return Arrays.asList(StringSchema.class);
+    protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+        return Collections.singletonList(StringSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    protected String getBoundaryValue(Schema<?> schema) {
         return StringGenerator.generateLeftBoundString(schema);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(Schema schema) {
+    protected boolean hasBoundaryDefined(Schema<?> schema) {
         return schema.getMinLength() != null;
     }
 

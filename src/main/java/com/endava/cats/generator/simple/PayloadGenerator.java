@@ -30,20 +30,20 @@ public class PayloadGenerator {
     /**
      * There is no need to re-compute this for each path, as the request data types are common across all requests
      */
-    private static final Map<String, Schema> requestDataTypes = new HashMap<>();
+    private static final Map<String, Schema<?>> requestDataTypes = new HashMap<>();
     private final Random random;
-    private final Map<String, Schema> schemaMap;
+    private final Map<String, Schema<?>> schemaMap;
     private final DecimalFormat df = new DecimalFormat("#.00");
     private final List<String> discriminators = new ArrayList<>();
     private String currentProperty = "";
 
-    public PayloadGenerator(Map<String, Schema> schemas) {
+    public PayloadGenerator(Map<String, Schema<?>> schemas) {
         // use a fixed seed to make the "random" numbers reproducible.
         this.random = new Random("PayloadGenerator".hashCode());
         this.schemaMap = schemas;
     }
 
-    public static Map<String, Schema> getRequestDataTypes() {
+    public static Map<String, Schema<?>> getRequestDataTypes() {
         return requestDataTypes;
     }
 
@@ -107,13 +107,13 @@ public class PayloadGenerator {
         } else if (property instanceof UUIDSchema) {
             return "046b6c7f-0b8a-43b9-b35d-6489e6daee91";
         } else if (property instanceof StringSchema || "string".equalsIgnoreCase(property.getType())) {
-            return this.getExempleFromStringSchema(propertyName, property);
+            return this.getExampleFromStringSchema(propertyName, property);
         }
 
         return "";
     }
 
-    private Object getExempleFromStringSchema(String propertyName, Schema property) {
+    private Object getExampleFromStringSchema(String propertyName, Schema property) {
         LOGGER.debug("String property");
 
         String defaultValue = (String) property.getDefault();
@@ -181,9 +181,7 @@ public class PayloadGenerator {
     private Object getExampleFromNumberSchema(Schema property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
-        if (SchemaTypeUtil.FLOAT_FORMAT.equals(property.getFormat())) {
-            return df.format(randomNumber(min, max));
-        }
+
         return df.format(randomNumber(min, max));
     }
 

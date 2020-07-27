@@ -10,9 +10,9 @@ public class ExecutionStatisticsListenerTest {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseSkipped();// these are ignored in the total count
 
-        Assertions.assertThat(listener.getSkipped()).isEqualTo(1);
-        Assertions.assertThat(listener.getErrors()).isEqualTo(0);
-        Assertions.assertThat(listener.getAll()).isEqualTo(0);
+        Assertions.assertThat(listener.getSkipped()).isOne();
+        Assertions.assertThat(listener.getErrors()).isZero();
+        Assertions.assertThat(listener.getAll()).isZero();
     }
 
     @Test
@@ -20,9 +20,9 @@ public class ExecutionStatisticsListenerTest {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseErrors();
 
-        Assertions.assertThat(listener.getErrors()).isEqualTo(1);
-        Assertions.assertThat(listener.getSkipped()).isEqualTo(0);
-        Assertions.assertThat(listener.getAll()).isEqualTo(1);
+        Assertions.assertThat(listener.getErrors()).isOne();
+        Assertions.assertThat(listener.getSkipped()).isZero();
+        Assertions.assertThat(listener.getAll()).isOne();
     }
 
     @Test
@@ -30,9 +30,9 @@ public class ExecutionStatisticsListenerTest {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseSuccess();
 
-        Assertions.assertThat(listener.getSuccess()).isEqualTo(1);
-        Assertions.assertThat(listener.getSkipped()).isEqualTo(0);
-        Assertions.assertThat(listener.getAll()).isEqualTo(1);
+        Assertions.assertThat(listener.getSuccess()).isOne();
+        Assertions.assertThat(listener.getSkipped()).isZero();
+        Assertions.assertThat(listener.getAll()).isOne();
     }
 
     @Test
@@ -40,9 +40,9 @@ public class ExecutionStatisticsListenerTest {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         listener.increaseWarns();
 
-        Assertions.assertThat(listener.getWarns()).isEqualTo(1);
-        Assertions.assertThat(listener.getSkipped()).isEqualTo(0);
-        Assertions.assertThat(listener.getAll()).isEqualTo(1);
+        Assertions.assertThat(listener.getWarns()).isOne();
+        Assertions.assertThat(listener.getSkipped()).isZero();
+        Assertions.assertThat(listener.getAll()).isOne();
     }
 
     @Test

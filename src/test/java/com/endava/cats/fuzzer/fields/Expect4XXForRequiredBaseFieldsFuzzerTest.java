@@ -38,7 +38,7 @@ public class Expect4XXForRequiredBaseFieldsFuzzerTest {
         Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer).hasToString(expect4XXForRequiredBaseFieldsFuzzer.getClass().getSimpleName());
     }
 
-    class CustomExpect4XX extends Expect4XXForRequiredBaseFieldsFuzzer {
+    static class CustomExpect4XX extends Expect4XXForRequiredBaseFieldsFuzzer {
 
         public CustomExpect4XX(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
             super(sc, lr, cu);

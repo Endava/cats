@@ -20,7 +20,7 @@ public class CatsTestCase {
     private String fuzzer;
     private String fullRequestPath;
 
-    public boolean isSkipped() {
-        return "skipped".equalsIgnoreCase(result);
+    public boolean isNotSkipped() {
+        return !"skipped".equalsIgnoreCase(result);
     }
 }

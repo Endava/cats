@@ -44,22 +44,22 @@ public class FuzzingDataFactory {
      * @param schemas
      * @return
      */
-    public List<FuzzingData> fromPathItem(String path, PathItem item, Map<String, Schema> schemas) {
+    public List<FuzzingData> fromPathItem(String path, PathItem item, Map<String, Schema<?>> schemas) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         if (item.getPost() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForPostOrPut(path, item, schemas, item.getPost(), HttpMethod.POST));
+            fuzzingDataList.addAll(this.getFuzzDataForPost(path, item, schemas, item.getPost()));
         }
 
         if (item.getPut() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForPostOrPut(path, item, schemas, item.getPut(), HttpMethod.PUT));
+            fuzzingDataList.addAll(this.getFuzzDataForPut(path, item, schemas, item.getPut()));
         }
 
         if (item.getPatch() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForPostOrPut(path, item, schemas, item.getPatch(), HttpMethod.PATCH));
+            fuzzingDataList.addAll(this.getFuzzDataForPatch(path, item, schemas, item.getPatch()));
         }
 
         if (item.getGet() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForGet(path, item, schemas, item.getGet(), HttpMethod.GET));
+            fuzzingDataList.addAll(this.getFuzzDataForGet(path, item, schemas, item.getGet()));
         }
 
         return fuzzingDataList;
@@ -73,10 +73,9 @@ public class FuzzingDataFactory {
      * @param item
      * @param schemas
      * @param operation
-     * @param method
      * @return
      */
-    private List<FuzzingData> getFuzzDataForGet(String path, PathItem item, Map<String, Schema> schemas, Operation operation, HttpMethod method) {
+    private List<FuzzingData> getFuzzDataForGet(String path, PathItem item, Map<String, Schema<?>> schemas, Operation operation) {
         Set<CatsHeader> headers = this.extractHeaders(operation);
         ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
 
@@ -85,7 +84,7 @@ public class FuzzingDataFactory {
         List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId(), schemas);
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
 
-        return payloadSamples.stream().map(payload -> FuzzingData.builder().method(method).path(path).headers(headers).payload(payload)
+        return payloadSamples.stream().map(payload -> FuzzingData.builder().method(HttpMethod.GET).path(path).headers(headers).payload(payload)
                 .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
                 .schemaMap(schemas).responses(responses)
                 .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
@@ -114,6 +113,19 @@ public class FuzzingDataFactory {
         return syntheticSchema;
     }
 
+    private List<FuzzingData> getFuzzDataForPost(String path, PathItem item, Map<String, Schema<?>> schemas, Operation operation) {
+        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.POST);
+    }
+
+    private List<FuzzingData> getFuzzDataForPut(String path, PathItem item, Map<String, Schema<?>> schemas, Operation operation) {
+        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.PUT);
+    }
+
+
+    private List<FuzzingData> getFuzzDataForPatch(String path, PathItem item, Map<String, Schema<?>> schemas, Operation operation) {
+        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.PATCH);
+    }
+
     /**
      * The reason we get more than one {@code FuzzingData} objects is related to the usage of {@code anyOf, oneOf or allOf} elements inside the contract definition.
      * The method will compute all the possible combinations so that it covers all payload definitions.
@@ -125,7 +137,7 @@ public class FuzzingDataFactory {
      * @param method
      * @return
      */
-    private List<FuzzingData> getFuzzDataForPostOrPut(String path, PathItem item, Map<String, Schema> schemas, Operation operation, HttpMethod method) {
+    private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Map<String, Schema<?>> schemas, Operation operation, HttpMethod method) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         MediaType mediaType = this.getMediaType(operation);
 
@@ -192,7 +204,7 @@ public class FuzzingDataFactory {
         return null;
     }
 
-    private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName, Map<String, Schema> schemas) {
+    private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName, Map<String, Schema<?>> schemas) {
         PayloadGenerator generator = new PayloadGenerator(schemas);
         List<String> result = this.generateSample(reqSchemaName, generator);
 
@@ -309,7 +321,7 @@ public class FuzzingDataFactory {
      * @param schemas
      * @return
      */
-    private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes, Map<String, Schema> schemas) {
+    private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes, Map<String, Schema<?>> schemas) {
         Map<String, List<String>> responses = new HashMap<>();
         PayloadGenerator generator = new PayloadGenerator(schemas);
         for (String responseCode : responseCodes) {

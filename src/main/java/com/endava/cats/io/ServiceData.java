@@ -13,19 +13,19 @@ import java.util.Set;
 @Builder(access = AccessLevel.PUBLIC)
 @Getter
 public class ServiceData {
-    private String relativePath;
-    private Collection<CatsHeader> headers;
-    private String payload;
+    private final String relativePath;
+    private final Collection<CatsHeader> headers;
+    private final String payload;
     @Builder.Default
-    private boolean replaceRefData = true;
+    private final boolean replaceRefData = true;
     @Builder.Default
-    private boolean addUserHeaders = true;
+    private final boolean addUserHeaders = true;
     @Builder.Default
-    private Set<String> skippedHeaders = new HashSet<>();
+    private final Set<String> skippedHeaders = new HashSet<>();
     @Singular
-    private Set<String> fuzzedFields;
+    private final Set<String> fuzzedFields;
     @Singular
-    private Set<String> fuzzedHeaders;
+    private final Set<String> fuzzedHeaders;
     @Builder.Default
-    private Set<String> pathParams = new HashSet<>();
+    private final Set<String> pathParams = new HashSet<>();
 }

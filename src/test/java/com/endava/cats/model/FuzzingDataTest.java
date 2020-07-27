@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FuzzingDataTest {
 
@@ -39,7 +40,7 @@ public class FuzzingDataTest {
     public void givenASchemaWithSubfields_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getBasePropertiesMapWithSubfields()).reqSchema(baseSchema).build();
+        FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getMappedSchemaWithSubfields()).reqSchema(baseSchema).build();
         Mockito.doCallRealMethod().when(catsUtil).getAllFields(data);
         Mockito.doCallRealMethod().when(catsUtil).removeOneByOne(Mockito.anySet());
         Mockito.doCallRealMethod().when(catsUtil).eliminateStartingCharAndHacks(Mockito.anySet());
@@ -56,7 +57,7 @@ public class FuzzingDataTest {
         ComposedSchema composedSchema = new ComposedSchema();
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMap());
-        composedSchema.allOf(Arrays.asList(baseSchema));
+        composedSchema.allOf(Collections.singletonList(baseSchema));
 
         FuzzingData data = FuzzingData.builder().reqSchema(composedSchema).build();
 
@@ -70,9 +71,9 @@ public class FuzzingDataTest {
         ComposedSchema composedSchema = new ComposedSchema();
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesRequired());
-        composedSchema.allOf(Arrays.asList(baseSchema));
-        baseSchema.setRequired(Arrays.asList("phone"));
-        FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getBasePropertiesRequired()).reqSchema(composedSchema).build();
+        composedSchema.allOf(Collections.singletonList(baseSchema));
+        baseSchema.setRequired(Collections.singletonList("phone"));
+        FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getMappedSchema()).reqSchema(composedSchema).build();
 
         List<String> allProperties = data.getAllRequiredFields();
         Assertions.assertThat(allProperties)
@@ -85,17 +86,18 @@ public class FuzzingDataTest {
         ComposedSchema composedSchema = new ComposedSchema();
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        composedSchema.allOf(Arrays.asList(baseSchema));
-        baseSchema.setRequired(Arrays.asList("firstName"));
-        FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getBasePropertiesMapWithSubfields()).reqSchema(composedSchema).build();
+        composedSchema.allOf(Collections.singletonList(baseSchema));
+        baseSchema.setRequired(Collections.singletonList("firstName"));
+        FuzzingData data = FuzzingData.builder().catsUtil(catsUtil).schemaMap(getMappedSchemaWithSubfields()).reqSchema(composedSchema).build();
         Mockito.doCallRealMethod().when(catsUtil).getAllFields(data);
         Mockito.doCallRealMethod().when(catsUtil).removeOneByOne(Mockito.anySet());
         Mockito.doCallRealMethod().when(catsUtil).eliminateStartingCharAndHacks(Mockito.anySet());
         Mockito.doCallRealMethod().when(catsUtil).getDefinitionNameFromRef(Mockito.anyString());
 
         List<String> allProperties = data.getAllRequiredFields();
-        Assertions.assertThat(allProperties).isNotEmpty();
-        Assertions.assertThat(allProperties).containsExactlyInAnyOrder("firstName", "address#street", "address#zipCode");
+        Assertions.assertThat(allProperties)
+                .isNotEmpty()
+                .containsExactlyInAnyOrder("firstName", "address#street", "address#zipCode");
     }
 
     public Map<String, Schema> getBasePropertiesRequired() {
@@ -120,6 +122,20 @@ public class FuzzingDataTest {
         schemaMap.put("address", objectSchema);
 
         return schemaMap;
+    }
+
+    public Map<String, Schema<?>> getMappedSchema() {
+        return this.getBasePropertiesRequired().entrySet()
+                .stream().collect(Collectors.toMap(
+                        o -> (String) o.getKey(),
+                        o -> (Schema<?>) o.getValue()));
+    }
+
+    public Map<String, Schema<?>> getMappedSchemaWithSubfields() {
+        return this.getBasePropertiesMapWithSubfields().entrySet()
+                .stream().collect(Collectors.toMap(
+                        o -> (String) o.getKey(),
+                        o -> (Schema<?>) o.getValue()));
     }
 
     public Map<String, Schema> getBasePropertiesMap() {

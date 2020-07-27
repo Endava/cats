@@ -98,7 +98,7 @@ public class BypassAuthenticationFuzzerTest {
     }
 
     @Test
-    public void givenABypassAuthenticationHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverriden() {
+    public void givenABypassAuthenticationHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(bypassAuthenticationFuzzer.description()).isNotNull();
         Assertions.assertThat(bypassAuthenticationFuzzer).hasToString(bypassAuthenticationFuzzer.getClass().getSimpleName());
         Assertions.assertThat(bypassAuthenticationFuzzer.skipFor()).isEmpty();
