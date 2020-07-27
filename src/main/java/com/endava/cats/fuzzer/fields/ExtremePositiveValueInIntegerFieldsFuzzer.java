@@ -26,17 +26,17 @@ public class ExtremePositiveValueInIntegerFieldsFuzzer extends BaseBoundaryField
     }
 
     @Override
-    protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(IntegerSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema<?> schema) {
+    protected String getBoundaryValue(Schema schema) {
         return NumberGenerator.getExtremePositiveIntegerValue(schema);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(Schema<?> schema) {
+    protected boolean hasBoundaryDefined(Schema schema) {
         return true;
     }
 

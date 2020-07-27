@@ -45,7 +45,7 @@ class SpacesOnlyInFieldsValidateTrimFuzzerTest {
         Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
-        Map<String, Schema<?>> schemaMap = new HashMap<>();
+        Map<String, Schema> schemaMap = new HashMap<>();
         StringSchema stringSchema = new StringSchema();
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);

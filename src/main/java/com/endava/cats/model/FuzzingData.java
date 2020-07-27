@@ -21,11 +21,11 @@ public class FuzzingData {
     private final Set<CatsHeader> headers;
     private final String payload;
     private final Set<String> responseCodes;
-    private final Schema<?> reqSchema;
+    private final Schema reqSchema;
     private final PathItem pathItem;
-    private final Map<String, Schema<?>> schemaMap;
+    private final Map<String, Schema> schemaMap;
     private final Map<String, List<String>> responses;
-    private final Map<String, Schema<?>> requestPropertyTypes;
+    private final Map<String, Schema> requestPropertyTypes;
     private final CatsUtil catsUtil;
     private Set<String> allFields;
     private Set<Set<String>> allFieldsSetOfSets;
@@ -46,7 +46,7 @@ public class FuzzingData {
         Map<String, Schema> properties = new HashMap<>();
         List<Schema> allOf = ((ComposedSchema) this.reqSchema).getAllOf();
         if (allOf != null) {
-            for (Schema<?> schema : allOf) {
+            for (Schema schema : allOf) {
                 if (schema.getProperties() != null) {
                     properties.putAll(schema.getProperties());
                 } else {
@@ -122,7 +122,7 @@ public class FuzzingData {
         return allFieldsSetOfSets;
     }
 
-    private List<String> getAllRequiredFields(Schema currentSchema, Map<String, Schema<?>> schemaMap) {
+    private List<String> getAllRequiredFields(Schema currentSchema, Map<String, Schema> schemaMap) {
         Set<String> requiredSubfields = catsUtil.eliminateStartingCharAndHacks(this.getAllRequiredSubfields(currentSchema, "", schemaMap));
         List<String> requiredFields = new ArrayList<>(Optional.ofNullable(currentSchema.getRequired()).orElse(Collections.emptyList()));
         requiredFields.addAll(requiredSubfields);
@@ -130,23 +130,23 @@ public class FuzzingData {
         return requiredFields;
     }
 
-    private Set<String> getAllRequiredSubfields(Schema<?> currentSchema, String prefix, Map<String, Schema<?>> schemaMap) {
+    private Set<String> getAllRequiredSubfields(Schema currentSchema, String prefix, Map<String, Schema> schemaMap) {
         Set<String> result = new HashSet<>();
         if (currentSchema.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : currentSchema.getProperties().entrySet()) {
+            for (Map.Entry<String, Schema> prop : (Set<Map.Entry<String, Schema>>) currentSchema.getProperties().entrySet()) {
                 result.addAll(this.getAllRequiredSubfieldsAsFullyQualifiedNames(prefix, schemaMap, prop));
             }
         }
         return result;
     }
 
-    private Set<String> getAllRequiredSubfieldsAsFullyQualifiedNames(String prefix, Map<String, Schema<?>> schemaMap, Map.Entry<String, Schema> currentProperty) {
+    private Set<String> getAllRequiredSubfieldsAsFullyQualifiedNames(String prefix, Map<String, Schema> schemaMap, Map.Entry<String, Schema> currentProperty) {
         Set<String> result = new HashSet<>();
-        Schema<?> newSchema = catsUtil.getDefinitionNameFromRef(currentProperty.getValue().get$ref()).map(schemaMap::get).orElse(currentProperty.getValue());
+        Schema newSchema = catsUtil.getDefinitionNameFromRef(currentProperty.getValue().get$ref()).map(schemaMap::get).orElse(currentProperty.getValue());
 
         if (newSchema.getRequired() != null) {
             String qualifiedPrefix = prefixWithQualifier(prefix, currentProperty.getKey());
-            List<String> list = newSchema.getRequired().stream().map(field -> prefixWithQualifier(qualifiedPrefix, field)).collect(Collectors.toList());
+            List<String> list = (List<String>) newSchema.getRequired().stream().map(field -> prefixWithQualifier(qualifiedPrefix, field)).collect(Collectors.toList());
             result.addAll(list);
             result.addAll(this.getAllRequiredSubfields(newSchema, prefixWithQualifier(prefix, currentProperty.getKey()), schemaMap));
         }

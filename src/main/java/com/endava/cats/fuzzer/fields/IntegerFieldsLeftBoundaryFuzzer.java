@@ -21,17 +21,17 @@ public class IntegerFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(IntegerSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema<?> schema) {
+    protected String getBoundaryValue(Schema schema) {
         return NumberGenerator.generateLeftBoundaryIntegerValue(schema);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(Schema<?> schema) {
+    protected boolean hasBoundaryDefined(Schema schema) {
         return true;
     }
 

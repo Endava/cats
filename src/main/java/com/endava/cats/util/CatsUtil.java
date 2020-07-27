@@ -170,7 +170,7 @@ public class CatsUtil {
         return allFields;
     }
 
-    private Set<String> getAllSubfieldsAsFullyQualifiedNames(Schema currentSchema, String prefix, Map<String, Schema<?>> schemaMap) {
+    private Set<String> getAllSubfieldsAsFullyQualifiedNames(Schema currentSchema, String prefix, Map<String, Schema> schemaMap) {
         Set<String> result = new HashSet<>();
         if (currentSchema.getProperties() != null) {
             for (Map.Entry<String, Schema> prop : (Set<Map.Entry<String, Schema>>) currentSchema.getProperties().entrySet()) {
