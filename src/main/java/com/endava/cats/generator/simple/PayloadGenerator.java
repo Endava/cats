@@ -3,9 +3,12 @@ package com.endava.cats.generator.simple;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -78,13 +81,13 @@ public class PayloadGenerator {
         return output;
     }
 
-    private Object resolvePropertyToExample(String propertyName, String mediaType, Schema property) {
+    private <T> Object resolvePropertyToExample(String propertyName, String mediaType, Schema<T> property) {
         LOGGER.debug("Resolving example for property {}...", property);
         if (property.getExample() != null) {
             LOGGER.debug("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
-        } else if (property instanceof BooleanSchema || "boolean".equalsIgnoreCase(property.getType())) {
-            return this.getExampleFromBooleanSchema(property);
+        } else if (property instanceof BooleanSchema) {
+            return this.getExampleFromBooleanSchema((BooleanSchema) property);
         } else if (property instanceof ArraySchema) {
             Object objectProperties = this.getExampleFromArraySchema(propertyName, mediaType, property);
             if (objectProperties != null) {
@@ -94,41 +97,39 @@ public class PayloadGenerator {
             return DATE_FORMATTER.format(LocalDateTime.now());
         } else if (property instanceof DateTimeSchema) {
             return ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        } else if (property instanceof NumberSchema || "number".equalsIgnoreCase(property.getType())) {
-            return this.getExampleFromNumberSchema(property);
+        } else if (property instanceof NumberSchema) {
+            return this.getExampleFromNumberSchema((NumberSchema) property);
         } else if (property instanceof FileSchema) {
             return "";
-        } else if (property instanceof IntegerSchema || "integer".equalsIgnoreCase(property.getType())) {
-            return this.getExampleFromIntegerSchema(property);
+        } else if (property instanceof IntegerSchema) {
+            return this.getExampleFromIntegerSchema((IntegerSchema) property);
         } else if (property.getAdditionalProperties() instanceof Schema) {
             return this.getExampleFromAdditionalPropertiesSchema(propertyName, mediaType, property);
         } else if (property instanceof ObjectSchema) {
             return "{\"cats\":\"cats\"}";
         } else if (property instanceof UUIDSchema) {
             return "046b6c7f-0b8a-43b9-b35d-6489e6daee91";
-        } else if (property instanceof StringSchema || "string".equalsIgnoreCase(property.getType())) {
-            return this.getExampleFromStringSchema(propertyName, property);
+        } else if (property instanceof StringSchema) {
+            return this.getExampleFromStringSchema(propertyName, (StringSchema) property);
         }
 
         return "";
     }
 
-    private Object getExampleFromStringSchema(String propertyName, Schema property) {
+    private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {
         LOGGER.debug("String property");
 
-        String defaultValue = (String) property.getDefault();
-        if (defaultValue != null && !defaultValue.isEmpty()) {
+        String defaultValue = property.getDefault();
+        if (StringUtils.isNotBlank(defaultValue)) {
             LOGGER.debug("Default value found: '{}'", defaultValue);
             return defaultValue;
         }
         List<String> enumValues = property.getEnum();
-        if (enumValues != null && !enumValues.isEmpty()) {
-            LOGGER.debug("Enum value found: '{}'", enumValues.get(0));
+        if (!CollectionUtils.isEmpty(enumValues)) {
             return enumValues.get(0);
         }
         String format = property.getFormat();
-        if (URI.equals(format) || URL.equals(format)) {
-            LOGGER.debug("URI or URL format, without default or enum, generating random one.");
+        if (isURI(format)) {
             return "http://example.com/aeiou";
         }
         if (isEmailAddress(property, propertyName)) {
@@ -142,19 +143,27 @@ public class PayloadGenerator {
         }
 
         if (property.getMinLength() != null || property.getMaxLength() != null) {
-            int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
-            int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
-            String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
-            if (maxLength < minLength) {
-                maxLength = minLength;
-            }
-            return StringGenerator.generate(pattern, minLength, maxLength);
+            return this.generateValueBasedOnMinMAx(property);
         }
         if (property.getPattern() != null) {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
         LOGGER.debug("No values found, using property name {} as example", propertyName);
         return propertyName;
+    }
+
+    private Object generateValueBasedOnMinMAx(Schema<String> property) {
+        int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
+        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
+        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
+        if (maxLength < minLength) {
+            maxLength = minLength;
+        }
+        return StringGenerator.generate(pattern, minLength, maxLength);
+    }
+
+    private boolean isURI(String format) {
+        return URI.equals(format) || URL.equals(format);
     }
 
     private Object getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
@@ -169,7 +178,7 @@ public class PayloadGenerator {
         return mp;
     }
 
-    private Object getExampleFromIntegerSchema(Schema property) {
+    private Object getExampleFromIntegerSchema(Schema<Number> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
         if (SchemaTypeUtil.INTEGER32_FORMAT.equals(property.getFormat())) {
@@ -178,14 +187,14 @@ public class PayloadGenerator {
         return (int) randomNumber(min, max);
     }
 
-    private Object getExampleFromNumberSchema(Schema property) {
+    private Object getExampleFromNumberSchema(Schema<BigDecimal> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
 
         return df.format(randomNumber(min, max));
     }
 
-    private Object getExampleFromBooleanSchema(Schema property) {
+    private Object getExampleFromBooleanSchema(Schema<Boolean> property) {
         Object defaultValue = property.getDefault();
         if (defaultValue != null) {
             return defaultValue;
@@ -210,16 +219,16 @@ public class PayloadGenerator {
         return null;
     }
 
-    private boolean isEmailAddress(Schema property, String propertyName) {
+    private boolean isEmailAddress(Schema<String> property, String propertyName) {
         return property != null && (propertyName.toLowerCase().endsWith("email") || propertyName.toLowerCase().endsWith("emailaddress") || "email".equalsIgnoreCase(property.getFormat()));
     }
 
-    private boolean isIPV4(Schema property, String propertyName) {
+    private boolean isIPV4(Schema<String> property, String propertyName) {
         return property != null && (propertyName.toLowerCase().endsWith("ip") || propertyName.toLowerCase().endsWith("ipaddress") ||
                 "ip".equalsIgnoreCase(property.getFormat()) || "ipv4".equalsIgnoreCase(property.getFormat()));
     }
 
-    private boolean isIPV6(Schema property, String propertyName) {
+    private boolean isIPV6(Schema<String> property, String propertyName) {
         return property != null && (propertyName.toLowerCase().endsWith("ipv6") || "ipv6".equalsIgnoreCase(property.getFormat()));
     }
 
@@ -253,20 +262,7 @@ public class PayloadGenerator {
                 currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
 
                 if (innerSchema == null) {
-                    innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
-                    if (innerSchema instanceof ObjectSchema) {
-                        values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
-                    }
-                    if (innerSchema instanceof ComposedSchema) {
-                        this.populateWithComposedSchema(mediaType, values, propertyName.toString(), (ComposedSchema) innerSchema);
-                    } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
-                        values.put(propertyName.toString(), innerSchema.getEnum().stream().filter(value -> name.contains(value.toString())).findFirst().orElse(""));
-                        requestDataTypes.put(currentProperty, innerSchema);
-                    } else {
-                        Object example = this.resolvePropertyToExample(propertyName.toString(), mediaType, innerSchema);
-                        values.put(propertyName.toString(), example);
-                        requestDataTypes.put(currentProperty, innerSchema);
-                    }
+                    this.parseFromInnerSchema(name, mediaType, schema, values, propertyName);
                 } else {
                     values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
                 }
@@ -281,6 +277,24 @@ public class PayloadGenerator {
             return this.resolvePropertyToExample(name, mediaType, schema);
         }
         return values;
+    }
+
+    private void parseFromInnerSchema(String name, String mediaType, Schema schema, Map<String, Object> values, Object propertyName) {
+        Schema innerSchema;
+        innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
+        if (innerSchema instanceof ObjectSchema) {
+            values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
+        }
+        if (innerSchema instanceof ComposedSchema) {
+            this.populateWithComposedSchema(mediaType, values, propertyName.toString(), (ComposedSchema) innerSchema);
+        } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
+            values.put(propertyName.toString(), innerSchema.getEnum().stream().filter(value -> name.contains(value.toString())).findFirst().orElse(""));
+            requestDataTypes.put(currentProperty, innerSchema);
+        } else {
+            Object example = this.resolvePropertyToExample(propertyName.toString(), mediaType, innerSchema);
+            values.put(propertyName.toString(), example);
+            requestDataTypes.put(currentProperty, innerSchema);
+        }
     }
 
     private void populateWithComposedSchema(String mediaType, Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
