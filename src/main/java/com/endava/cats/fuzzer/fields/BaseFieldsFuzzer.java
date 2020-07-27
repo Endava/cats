@@ -97,7 +97,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private boolean isFuzzedValueMatchingPattern(String fieldValue, FuzzingData data, String fuzzedField) {
-        Schema fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         if (fieldSchema.getPattern() == null) {
             return true;
         }
@@ -107,7 +107,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private boolean hasMinValue(FuzzingData data, String fuzzedField) {
-        Schema fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         return fieldSchema != null && fieldSchema.getMinLength() != null && fieldSchema.getMinLength() > 0;
     }
 
@@ -119,28 +119,28 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     /**
      * A simple description of the current data being sent to the service. This will be used as a description in the final report.
      *
-     * @return
+     * @return type of data to be sent to the service
      */
     protected abstract String typeOfDataSentToTheService();
 
     /**
      * What is the expected HTTP code when a required field is fuzzed with an invalid value
      *
-     * @return
+     * @return expected HTTP code
      */
     protected abstract ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed();
 
     /**
      * What is the expected HTTP code when an optional field is fuzzed with an invalid value
      *
-     * @return
+     * @return expected HTTP code
      */
     protected abstract ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed();
 
     /**
      * What is the expected HTTP code when the fuzzed value does not match the supplied Schema pattern (if defined)
      *
-     * @return
+     * @return expected HTTP code
      */
     protected abstract ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern();
 

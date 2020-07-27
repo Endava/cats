@@ -8,10 +8,10 @@ import java.util.List;
 @Getter
 @Builder
 public class CatsTestReport {
-    private List<CatsTestCaseSummary> summaryList;
-    private int totalTests;
-    private int success;
-    private int warnings;
-    private int errors;
+    private final List<CatsTestCaseSummary> summaryList;
+    private final int totalTests;
+    private final int success;
+    private final int warnings;
+    private final int errors;
 
 }

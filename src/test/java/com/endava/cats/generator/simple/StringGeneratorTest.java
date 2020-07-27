@@ -56,6 +56,6 @@ public class StringGeneratorTest {
         Schema<?> schema = new StringSchema();
 
         String actual = StringGenerator.generateLeftBoundString(schema);
-        Assertions.assertThat(actual.length() == 0).isTrue();
+        Assertions.assertThat(actual.length()).isZero();
     }
 }

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 public class FuzzingStrategyTest {
 
     @Test
-    public void givenTheFuzzingStrategyClass_whenCallingTheStaticCreationalMethods_thenProperInstacesAreReturned() {
+    public void givenTheFuzzingStrategyClass_whenCallingTheStaticCreateMethods_thenProperInstancesAreReturned() {
         Assertions.assertThat(FuzzingStrategy.trail()).isInstanceOf(TrailFuzzingStrategy.class);
         Assertions.assertThat(FuzzingStrategy.replace()).isInstanceOf(ReplaceFuzzingStrategy.class);
         Assertions.assertThat(FuzzingStrategy.prefix()).isInstanceOf(PrefixFuzzingStrategy.class);

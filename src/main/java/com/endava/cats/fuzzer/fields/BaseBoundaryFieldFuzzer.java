@@ -59,11 +59,11 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         return FormatGenerator.from(schema.getFormat()).compareTo(FormatGenerator.SKIP) != 0;
     }
 
-    private boolean fuzzedFieldHasAnAssociatedSchema(Schema schema) {
+    private boolean fuzzedFieldHasAnAssociatedSchema(Schema<?> schema) {
         return schema != null;
     }
 
-    private boolean isRequestSchemaMatchingFuzzerType(Schema schema) {
+    private boolean isRequestSchemaMatchingFuzzerType(Schema<?> schema) {
         return getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(currentSchema1 -> currentSchema1.isAssignableFrom(schema.getClass())) ||
                 (schema.getType() != null && getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(currentSchema2 -> currentSchema2.getSimpleName().toLowerCase().startsWith(schema.getType())));
     }
@@ -74,7 +74,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      *
      * @return schema type for which the Fuzzer will apply.
      */
-    protected abstract List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo();
+    protected abstract List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo();
 
     /**
      * The value that will be used for fuzzing
@@ -82,7 +82,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      * @param schema used to extract boundary information
      * @return a value to be used for fuzzing
      */
-    protected abstract String getBoundaryValue(Schema schema);
+    protected abstract String getBoundaryValue(Schema<?> schema);
 
     /**
      * Override this to provide information about whether the current field has boundaries defined or not. For example a String
@@ -91,5 +91,5 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      * @param schema used to extract boundary information
      * @return true if the filed has a boundary defined or false otherwise
      */
-    protected abstract boolean hasBoundaryDefined(Schema schema);
+    protected abstract boolean hasBoundaryDefined(Schema<?> schema);
 }

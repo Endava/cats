@@ -23,8 +23,8 @@ public enum FormatGenerator {
 
     SKIP("", new NoFormatGenerationStrategy());
 
-    private String format;
-    private FormatGeneratorStrategy generatorStrategy;
+    private final String format;
+    private final FormatGeneratorStrategy generatorStrategy;
 
     FormatGenerator(String format, FormatGeneratorStrategy strategy) {
         this.format = format;

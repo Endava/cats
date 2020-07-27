@@ -13,7 +13,7 @@ public interface FormatGeneratorStrategy {
     String getAlmostValidValue();
 
     /**
-     * This method will provide valeus which are obviously not valid for the given format. For example: for an email field something like 'cats'
+     * This method will provide values which are obviously not valid for the given format. For example: for an email field something like 'cats'
      *
      * @return
      */

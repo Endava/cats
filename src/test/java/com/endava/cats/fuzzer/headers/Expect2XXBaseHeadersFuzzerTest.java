@@ -33,7 +33,7 @@ public class Expect2XXBaseHeadersFuzzerTest {
         Assertions.assertThat(expect2XXBaseHeadersFuzzer).hasToString(expect2XXBaseHeadersFuzzer.getClass().getSimpleName());
     }
 
-    class My2XXFuzzer extends Expect2XXBaseHeadersFuzzer {
+    static class My2XXFuzzer extends Expect2XXBaseHeadersFuzzer {
 
         public My2XXFuzzer(ServiceCaller sc, TestCaseListener lr) {
             super(sc, lr);

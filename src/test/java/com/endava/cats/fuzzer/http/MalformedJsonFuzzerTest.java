@@ -73,7 +73,7 @@ public class MalformedJsonFuzzerTest {
     }
 
     @Test
-    public void givenAMalformedJsonFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverriden() {
+    public void givenAMalformedJsonFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(malformedJsonFuzzer.description()).isNotNull();
         Assertions.assertThat(malformedJsonFuzzer).hasToString(malformedJsonFuzzer.getClass().getSimpleName());
         Assertions.assertThat(malformedJsonFuzzer.skipFor()).isEmpty();

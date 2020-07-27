@@ -28,7 +28,7 @@ public class ExpectOnly2XXBaseFieldsFuzzerTest {
 
     @BeforeEach
     public void setup() {
-        expectOnly2XXBaseFieldsFuzzer = new ExpectOnly2XXBaseFieldsFuzzerTest.CustomExpect2XX(serviceCaller, testCaseListener, catsUtil);
+        expectOnly2XXBaseFieldsFuzzer = new CustomExpect2XX(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
@@ -38,7 +38,7 @@ public class ExpectOnly2XXBaseFieldsFuzzerTest {
         Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer).hasToString(expectOnly2XXBaseFieldsFuzzer.getClass().getSimpleName());
     }
 
-    class CustomExpect2XX extends ExpectOnly2XXBaseFieldsFuzzer {
+    static class CustomExpect2XX extends ExpectOnly2XXBaseFieldsFuzzer {
 
         public CustomExpect2XX(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
             super(sc, lr, cu);

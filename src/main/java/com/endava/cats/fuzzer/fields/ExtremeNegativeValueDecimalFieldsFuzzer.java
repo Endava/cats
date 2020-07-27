@@ -9,7 +9,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -26,17 +26,17 @@ public class ExtremeNegativeValueDecimalFieldsFuzzer extends BaseBoundaryFieldFu
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-        return Arrays.asList(NumberSchema.class);
+    protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+        return Collections.singletonList(NumberSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    protected String getBoundaryValue(Schema<?> schema) {
         return NumberGenerator.getExtremeNegativeDecimalValue(schema);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(Schema schema) {
+    protected boolean hasBoundaryDefined(Schema<?> schema) {
         return true;
     }
 

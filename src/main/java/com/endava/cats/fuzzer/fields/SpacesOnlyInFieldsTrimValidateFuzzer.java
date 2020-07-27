@@ -35,7 +35,7 @@ public class SpacesOnlyInFieldsTrimValidateFuzzer extends ExpectOnly4XXBaseField
     }
 
     static FuzzingStrategy getFuzzStrategy(FuzzingData data, String fuzzedField) {
-        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
         String spaceValue = "  ";
         if (schema != null && schema.getMinLength() != null) {
             spaceValue = StringUtils.repeat(spaceValue, schema.getMinLength() + 1);
