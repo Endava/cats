@@ -105,11 +105,11 @@ public class CatsMain implements CommandLineRunner {
         return Stream.of(str.split(splitChar)).collect(Collectors.toList());
     }
 
-    public static Map<String, Schema<?>> getSchemas(OpenAPI openAPI) {
-        Map<String, Schema<?>> schemas = openAPI.getComponents().getSchemas().entrySet().stream()
+    public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
+        Map<String, Schema> schemas = openAPI.getComponents().getSchemas().entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        o -> (Schema<?>) o.getValue()));
+                        o -> (Schema) o.getValue()));
 
         Map<String, ApiResponse> apiResponseMap = openAPI.getComponents().getResponses();
 
@@ -297,7 +297,7 @@ public class CatsMain implements CommandLineRunner {
 
     private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         List<String> configuredFuzzers = this.configuredFuzzers();
-        Map<String, Schema<?>> schemas = getSchemas(openAPI);
+        Map<String, Schema> schemas = getSchemas(openAPI);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info("Start fuzzing path {}", pathItemEntry.getKey());

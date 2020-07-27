@@ -97,7 +97,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private boolean isFuzzedValueMatchingPattern(String fieldValue, FuzzingData data, String fuzzedField) {
-        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         if (fieldSchema.getPattern() == null) {
             return true;
         }
@@ -107,7 +107,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private boolean hasMinValue(FuzzingData data, String fuzzedField) {
-        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         return fieldSchema != null && fieldSchema.getMinLength() != null && fieldSchema.getMinLength() > 0;
     }
 

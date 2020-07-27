@@ -22,17 +22,17 @@ public class StringFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(StringSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema<?> schema) {
+    protected String getBoundaryValue(Schema schema) {
         return StringGenerator.generateRightBoundString(schema);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(Schema<?> schema) {
+    protected boolean hasBoundaryDefined(Schema schema) {
         return schema.getMaxLength() != null;
     }
 

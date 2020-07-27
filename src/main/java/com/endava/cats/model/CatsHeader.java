@@ -47,7 +47,7 @@ public class CatsHeader {
                 .required(this.required).value(this.value).build();
     }
 
-    private String generateValue(Schema<?> schema) {
+    private String generateValue(Schema schema) {
         if (schema.getExample() != null) {
             return schema.getExample().toString();
         }
