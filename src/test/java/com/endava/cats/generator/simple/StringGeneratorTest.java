@@ -23,39 +23,39 @@ class StringGeneratorTest {
 
     @Test
     void givenASchemaWithMaxLength_whenGeneratingARightBoundaryString_thenTheGeneratedStringHasProperLength() {
-        Schema<?> schema = new StringSchema();
+        Schema schema = new StringSchema();
         int maxLength = 10;
         schema.setMaxLength(maxLength);
 
         String actual = StringGenerator.generateRightBoundString(schema);
 
-        Assertions.assertThat(actual.length() >= maxLength + 10).isTrue();
+        Assertions.assertThat(actual.length()).isGreaterThan(maxLength + 10);
     }
 
     @Test
     void givenASchemaWithoutMaxLength_whenGeneratingARightBoundaryString_thenTheGeneratedStringHasDefaultLength() {
-        Schema<?> schema = new StringSchema();
+        Schema schema = new StringSchema();
 
         String actual = StringGenerator.generateRightBoundString(schema);
-        Assertions.assertThat(actual.length() >= StringGenerator.DEFAULT_MAX_LENGTH).isTrue();
+        Assertions.assertThat(actual.length()).isGreaterThanOrEqualTo(StringGenerator.DEFAULT_MAX_LENGTH);
     }
 
     @Test
     void givenASchemaWithMinLength_whenGeneratingALeftBoundaryString_thenTheGeneratedStringHasProperLength() {
-        Schema<?> schema = new StringSchema();
+        Schema schema = new StringSchema();
         int minLength = 10;
         schema.setMinLength(minLength);
 
         String actual = StringGenerator.generateLeftBoundString(schema);
 
-        Assertions.assertThat(actual.length() <= minLength).isTrue();
+        Assertions.assertThat(actual.length()).isLessThan(minLength);
     }
 
     @Test
     void givenASchemaWithoutMinLength_whenGeneratingALeftBoundaryString_thenTheGeneratedStringHasDefaultLength() {
-        Schema<?> schema = new StringSchema();
+        Schema schema = new StringSchema();
 
         String actual = StringGenerator.generateLeftBoundString(schema);
-        Assertions.assertThat(actual.length()).isZero();
+        Assertions.assertThat(actual).isEmpty();
     }
 }

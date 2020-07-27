@@ -30,14 +30,14 @@ public class StringGenerator {
         return new RgxGen(completePattern).generate();
     }
 
-    public static String generateRightBoundString(Schema<?> schema) {
+    public static String generateRightBoundString(Schema schema) {
         int minLength = schema.getMaxLength() != null ? schema.getMaxLength() + 10 : DEFAULT_MAX_LENGTH;
 
         String pattern = ALPHANUMERIC + "{" + minLength + ",}";
         return new RgxGen(pattern).generate();
     }
 
-    public static String generateLeftBoundString(Schema<?> schema) {
+    public static String generateLeftBoundString(Schema schema) {
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
 
         if (minLength <= 0) {

@@ -124,18 +124,18 @@ class FuzzingDataTest {
         return schemaMap;
     }
 
-    public Map<String, Schema<?>> getMappedSchema() {
+    public Map<String, Schema> getMappedSchema() {
         return this.getBasePropertiesRequired().entrySet()
                 .stream().collect(Collectors.toMap(
                         o -> (String) o.getKey(),
-                        o -> (Schema<?>) o.getValue()));
+                        o -> (Schema) o.getValue()));
     }
 
-    public Map<String, Schema<?>> getMappedSchemaWithSubfields() {
+    public Map<String, Schema> getMappedSchemaWithSubfields() {
         return this.getBasePropertiesMapWithSubfields().entrySet()
                 .stream().collect(Collectors.toMap(
                         o -> (String) o.getKey(),
-                        o -> (Schema<?>) o.getValue()));
+                        o -> (Schema) o.getValue()));
     }
 
     public Map<String, Schema> getBasePropertiesMap() {

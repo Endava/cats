@@ -79,7 +79,7 @@ class BaseBoundaryFieldFuzzerTest {
     }
 
     private FuzzingData getMockFuzzingData() {
-        Map<String, Schema<?>> schemaMap = new HashMap<>();
+        Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
@@ -93,17 +93,17 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+        protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
             return Collections.singletonList(StringSchema.class);
         }
 
         @Override
-        protected String getBoundaryValue(Schema<?> schema) {
+        protected String getBoundaryValue(Schema schema) {
             return "test";
         }
 
         @Override
-        protected boolean hasBoundaryDefined(Schema<?> schema) {
+        protected boolean hasBoundaryDefined(Schema schema) {
             return true;
         }
 
@@ -120,17 +120,17 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+        protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
             return Collections.singletonList(StringSchema.class);
         }
 
         @Override
-        protected String getBoundaryValue(Schema<?> schema) {
+        protected String getBoundaryValue(Schema schema) {
             return "test";
         }
 
         @Override
-        protected boolean hasBoundaryDefined(Schema<?> schema) {
+        protected boolean hasBoundaryDefined(Schema schema) {
             return false;
         }
 
@@ -147,17 +147,17 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected List<Class<? extends Schema<?>>> getSchemasThatTheFuzzerWillApplyTo() {
+        protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
             return Collections.singletonList(IntegerSchema.class);
         }
 
         @Override
-        protected String getBoundaryValue(Schema<?> schema) {
+        protected String getBoundaryValue(Schema schema) {
             return "test";
         }
 
         @Override
-        protected boolean hasBoundaryDefined(Schema<?> schema) {
+        protected boolean hasBoundaryDefined(Schema schema) {
             return true;
         }
 

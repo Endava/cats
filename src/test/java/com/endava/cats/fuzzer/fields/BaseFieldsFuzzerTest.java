@@ -77,7 +77,7 @@ class BaseFieldsFuzzerTest {
         Mockito.when(fuzzingResult.getJson()).thenReturn(Mockito.mock(JsonElement.class));
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
-        Map<String, Schema<?>> schemaMap = new HashMap<>();
+        Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
         Mockito.when(data.getAllFieldsAsSingleSet()).thenReturn(fields);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);

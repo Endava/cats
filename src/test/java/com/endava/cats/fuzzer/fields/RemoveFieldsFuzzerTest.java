@@ -84,8 +84,8 @@ class RemoveFieldsFuzzerTest {
         Assertions.assertThat(removeFieldsFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
-    private Map<String, Schema<?>> createPropertiesMap() {
-        Map<String, Schema<?>> schemaMap = new HashMap<>();
+    private Map<String, Schema> createPropertiesMap() {
+        Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
         schemaMap.put("anotherField", new StringSchema());
 
