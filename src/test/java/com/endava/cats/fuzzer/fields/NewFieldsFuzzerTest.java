@@ -67,6 +67,6 @@ public class NewFieldsFuzzerTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
         Assertions.assertThat(newFieldsFuzzer.description()).isNotNull();
-        Assertions.assertThat(newFieldsFuzzer.toString()).isEqualTo(newFieldsFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(newFieldsFuzzer).hasToString(newFieldsFuzzer.getClass().getSimpleName());
     }
 }

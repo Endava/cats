@@ -80,7 +80,7 @@ public class RemoveFieldsFuzzerTest {
     @Test
     public void givenARemoveFieldsFuzzeRInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverriden() {
         Assertions.assertThat(removeFieldsFuzzer.description()).isNotNull();
-        Assertions.assertThat(removeFieldsFuzzer.toString()).isEqualTo(removeFieldsFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(removeFieldsFuzzer).hasToString(removeFieldsFuzzer.getClass().getSimpleName());
         Assertions.assertThat(removeFieldsFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
     }
 

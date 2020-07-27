@@ -30,7 +30,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
 
     @Override
     protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
 
         if (this.fuzzedFieldHasAnAssociatedSchema(schema)) {
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
@@ -51,11 +51,11 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         return FuzzingStrategy.skip().withData("Data type not matching " + getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
     }
 
-    private boolean isFieldFuzzable(Schema schema) {
+    private boolean isFieldFuzzable(Schema<?> schema) {
         return this.isRequestSchemaMatchingFuzzerType(schema) && (this.hasBoundaryDefined(schema) || this.isStringFormatRecognizable(schema));
     }
 
-    private boolean isStringFormatRecognizable(Schema schema) {
+    private boolean isStringFormatRecognizable(Schema<?> schema) {
         return FormatGenerator.from(schema.getFormat()).compareTo(FormatGenerator.SKIP) != 0;
     }
 

@@ -35,7 +35,7 @@ public class Expect4XXForRequiredBaseFieldsFuzzerTest {
     public void givenADummyExpect4XXForRequiredFieldsFuzzer_whenCreatingANewInstance_thenTheDefaultMethodsAreMatchingThe4XXFuzzer() {
         Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer.getClass().getSimpleName()).isEqualTo(expect4XXForRequiredBaseFieldsFuzzer.toString());
+        Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer).hasToString(expect4XXForRequiredBaseFieldsFuzzer.getClass().getSimpleName());
     }
 
     class CustomExpect4XX extends Expect4XXForRequiredBaseFieldsFuzzer {

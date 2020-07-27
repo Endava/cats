@@ -78,7 +78,7 @@ public class HttpMethodsFuzzerTest {
     @Test
     public void givenAHttpFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverriden() {
         Assertions.assertThat(httpMethodsFuzzer.description()).isNotNull();
-        Assertions.assertThat(httpMethodsFuzzer.toString()).isEqualTo(httpMethodsFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(httpMethodsFuzzer).hasToString(httpMethodsFuzzer.getClass().getSimpleName());
         Assertions.assertThat(httpMethodsFuzzer.skipFor()).isEmpty();
     }
 }

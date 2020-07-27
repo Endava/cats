@@ -24,9 +24,10 @@ public class CatsUtilTest {
         Set<String> data = new HashSet<>(Arrays.asList("a", "b", "c"));
         Set<Set<String>> sets = catsUtil.getAllSetsWithMinSize(data, "2");
 
-        Assertions.assertThat(sets).isNotEmpty();
-        Assertions.assertThat(sets).containsExactlyInAnyOrder(Collections.singleton("a"), Collections.singleton("b"), Collections.singleton("c"),
-                new HashSet<>(Arrays.asList("a", "b")), new HashSet<>(Arrays.asList("a", "c")), new HashSet<>(Arrays.asList("b", "c")));
+        Assertions.assertThat(sets)
+                .isNotEmpty()
+                .containsExactlyInAnyOrder(Collections.singleton("a"), Collections.singleton("b"), Collections.singleton("c"),
+                        new HashSet<>(Arrays.asList("a", "b")), new HashSet<>(Arrays.asList("a", "c")), new HashSet<>(Arrays.asList("b", "c")));
 
     }
 

@@ -35,7 +35,7 @@ public class ExpectOnly2XXBaseFieldsFuzzerTest {
     public void givenADummyExpectOnly2XXFieldsFuzzer_whenCreatingANewInstance_thenTheDefaultMethodsAreMatchingThe2XXFuzzer() {
         Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getClass().getSimpleName()).isEqualTo(expectOnly2XXBaseFieldsFuzzer.toString());
+        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer).hasToString(expectOnly2XXBaseFieldsFuzzer.getClass().getSimpleName());
     }
 
     class CustomExpect2XX extends ExpectOnly2XXBaseFieldsFuzzer {

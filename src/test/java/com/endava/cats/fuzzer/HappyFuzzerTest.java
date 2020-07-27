@@ -63,7 +63,7 @@ public class HappyFuzzerTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
         Assertions.assertThat(happyFuzzer.description()).isNotNull();
-        Assertions.assertThat(happyFuzzer.toString()).isEqualTo(happyFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(happyFuzzer).hasToString(happyFuzzer.getClass().getSimpleName());
     }
 
     @Test
