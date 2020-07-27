@@ -24,7 +24,7 @@ import java.time.Instant;
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
-public class TestCaseListenerTest {
+class TestCaseListenerTest {
 
     @Mock
     private ExecutionStatisticsListener executionStatisticsListener;
@@ -45,17 +45,17 @@ public class TestCaseListenerTest {
 
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties);
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         CatsMain.TEST.set(0);
     }
 
     @Test
-    public void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
+    void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> executionStatisticsListener.increaseSkipped());
 
         Assertions.assertThat(testCaseListener.testCaseMap.get("Test 1")).isNotNull();
@@ -63,7 +63,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenAFunction_whenExecutingATestCaseAndAddingDetails_thenTheDetailsAreCorrectlyAttachedToTheTestCase() {
+    void givenAFunction_whenExecutingATestCaseAndAddingDetails_thenTheDetailsAreCorrectlyAttachedToTheTestCase() {
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
 
         Assertions.assertThat(testCase).isNull();
@@ -88,7 +88,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() {
+    void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() {
         Mockito.when(buildProperties.getName()).thenReturn("CATS");
         Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
         Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
@@ -104,7 +104,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenATestCase_whenExecutingItAndAWarnHappens_thenTheWarnIsCorrectlyReportedWithinTheTestCase() {
+    void givenATestCase_whenExecutingItAndAWarnHappens_thenTheWarnIsCorrectlyReportedWithinTheTestCase() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportWarn(logger, "Warn {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
@@ -118,7 +118,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenATestCase_whenExecutingItAndAnErrorHappens_thenTheErrorIsCorrectlyReportedWithinTheTestCase() {
+    void givenATestCase_whenExecutingItAndAnErrorHappens_thenTheErrorIsCorrectlyReportedWithinTheTestCase() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportError(logger, "Error {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
@@ -132,7 +132,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenATestCase_whenExecutingItAndASuccessHappens_thenTheSuccessIsCorrectlyReportedWithinTheTestCase() {
+    void givenATestCase_whenExecutingItAndASuccessHappens_thenTheSuccessIsCorrectlyReportedWithinTheTestCase() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportInfo(logger, "Success {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
@@ -146,7 +146,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenATestCase_whenSkippingIt_thenTheTestCaseIsCorrectlySkipped() {
+    void givenATestCase_whenSkippingIt_thenTheTestCaseIsCorrectlySkipped() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.skipTest(logger, "Skipper!"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
@@ -160,7 +160,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenADocumentedResponseThatMatchesTheResponseCodeAndSchema_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
+    void givenADocumentedResponseThatMatchesTheResponseCodeAndSchema_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("{}");
@@ -173,7 +173,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenADocumentedResponseThatMatchesTheResponseCodeAndButNotSchema_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
+    void givenADocumentedResponseThatMatchesTheResponseCodeAndButNotSchema_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
@@ -189,7 +189,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenAnUndocumentedResponseThatMatchesTheResponseCode_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
+    void givenAnUndocumentedResponseThatMatchesTheResponseCode_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
@@ -205,7 +205,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenADocumentedResponseThatIsNotExpected_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
+    void givenADocumentedResponseThatIsNotExpected_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
@@ -221,7 +221,7 @@ public class TestCaseListenerTest {
     }
 
     @Test
-    public void givenAnUndocumentedResponseThatIsNotExpected_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
+    void givenAnUndocumentedResponseThatIsNotExpected_whenReportingTheResult_thenTheResultIsCorrectlyReported() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");

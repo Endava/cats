@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class BaseHeadersFuzzerTest {
+class BaseHeadersFuzzerTest {
 
 
     @Mock
@@ -47,12 +47,12 @@ public class BaseHeadersFuzzerTest {
     private BaseHeadersFuzzer baseHeadersFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         baseHeadersFuzzer = new MyBaseHeadersFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenAConcreteBaseHeadersFuzzerInstance_whenExecutingTheFuzzMethod_thenTheFuzzingLogicIsProperlyExecuted() {
+    void givenAConcreteBaseHeadersFuzzerInstance_whenExecutingTheFuzzMethod_thenTheFuzzingLogicIsProperlyExecuted() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).

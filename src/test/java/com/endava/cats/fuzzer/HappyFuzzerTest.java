@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class HappyFuzzerTest {
+class HappyFuzzerTest {
 
     @MockBean
     private ServiceCaller serviceCaller;
@@ -45,12 +45,12 @@ public class HappyFuzzerTest {
 
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         happyFuzzer = new HappyFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    public void givenARequest_whenCallingTheHappyFuzzer_thenTestCasesAreCorrectlyExecuted() {
+    void givenARequest_whenCallingTheHappyFuzzer_thenTestCasesAreCorrectlyExecuted() {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
@@ -67,7 +67,7 @@ public class HappyFuzzerTest {
     }
 
     @Test
-    public void givenARequest_whenCallingTheHappyFuzzerAndAnErrorOccurs_thenTestCasesAreCorrectlyExecuted() {
+    void givenARequest_whenCallingTheHappyFuzzerAndAnErrorOccurs_thenTestCasesAreCorrectlyExecuted() {
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").responseCodes(Collections.singleton("200")).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenThrow(new RuntimeException());
 

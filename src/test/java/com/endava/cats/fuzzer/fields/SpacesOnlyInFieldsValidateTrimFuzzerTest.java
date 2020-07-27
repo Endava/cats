@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-public class SpacesOnlyInFieldsValidateTrimFuzzerTest {
+class SpacesOnlyInFieldsValidateTrimFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -35,12 +35,12 @@ public class SpacesOnlyInFieldsValidateTrimFuzzerTest {
     private SpacesOnlyInFieldsValidateTrimFuzzer spacesOnlyInFieldsValidateTrimFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         spacesOnlyInFieldsValidateTrimFuzzer = new SpacesOnlyInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInFieldsValidateTrimFuzzer() {
+    void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInFieldsValidateTrimFuzzer() {
         Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 

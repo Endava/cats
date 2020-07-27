@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class TrailingSpacesInFieldsValidateTrimFuzzerTest {
+class TrailingSpacesInFieldsValidateTrimFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -26,12 +26,12 @@ public class TrailingSpacesInFieldsValidateTrimFuzzerTest {
     private TrailingSpacesInFieldsValidateTrimFuzzer trailingSpacesInFieldsValidateTrimFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         trailingSpacesInFieldsValidateTrimFuzzer = new TrailingSpacesInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewTrailingSpacesInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingSpacesInFieldsValidateTrimFuzzer() {
+    void givenANewTrailingSpacesInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingSpacesInFieldsValidateTrimFuzzer() {
         FuzzingStrategy fuzzingStrategy = trailingSpacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(null, null);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.trail().name());
 

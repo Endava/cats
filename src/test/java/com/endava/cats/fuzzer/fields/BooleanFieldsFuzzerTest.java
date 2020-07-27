@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class BooleanFieldsFuzzerTest {
+class BooleanFieldsFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -26,12 +26,12 @@ public class BooleanFieldsFuzzerTest {
     private BooleanFieldsFuzzer booleanFieldsFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         booleanFieldsFuzzer = new BooleanFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewBooleanFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheBooleanFuzzer() {
+    void givenANewBooleanFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheBooleanFuzzer() {
         Assertions.assertThat(booleanFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(BooleanSchema.class))).isTrue();
         Assertions.assertThat(booleanFieldsFuzzer.getBoundaryValue(null)).isNotNull();
         Assertions.assertThat(booleanFieldsFuzzer.hasBoundaryDefined(null)).isTrue();

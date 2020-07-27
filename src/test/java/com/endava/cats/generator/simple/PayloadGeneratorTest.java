@@ -13,11 +13,11 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-public class PayloadGeneratorTest {
+class PayloadGeneratorTest {
 
 
     @Test
-    public void givenASimpleOpenAPIContract_whenGeneratingAPayload_thenTheExampleIsProperlyGenerated() throws Exception {
+    void givenASimpleOpenAPIContract_whenGeneratingAPayload_thenTheExampleIsProperlyGenerated() throws Exception {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
         options.setResolve(true);

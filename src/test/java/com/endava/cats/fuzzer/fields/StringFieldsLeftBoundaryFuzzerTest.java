@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class StringFieldsLeftBoundaryFuzzerTest {
+class StringFieldsLeftBoundaryFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -27,12 +27,12 @@ public class StringFieldsLeftBoundaryFuzzerTest {
     private StringFieldsLeftBoundaryFuzzer stringFieldsLeftBoundaryFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         stringFieldsLeftBoundaryFuzzer = new StringFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewStringFieldsLeftBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFieldsLeftBoundaryFuzzer() {
+    void givenANewStringFieldsLeftBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFieldsLeftBoundaryFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(stringFieldsLeftBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
         Assertions.assertThat(stringFieldsLeftBoundaryFuzzer.getBoundaryValue(nrSchema)).isNotNull();

@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class StringFormatTotallyWrongValuesFuzzerTest {
+class StringFormatTotallyWrongValuesFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -25,12 +25,12 @@ public class StringFormatTotallyWrongValuesFuzzerTest {
     private StringFormatTotallyWrongValuesFuzzer stringFormatTotallyWrongValuesFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         stringFormatTotallyWrongValuesFuzzer = new StringFormatTotallyWrongValuesFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewStringFormatTotallyWrongValuesFuzzerTest_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFormatTotallyWrongValuesFuzzerTest() {
+    void givenANewStringFormatTotallyWrongValuesFuzzerTest_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFormatTotallyWrongValuesFuzzerTest() {
         NumberSchema nrSchema = new NumberSchema();
         nrSchema.setFormat("email");
         Assertions.assertThat(stringFormatTotallyWrongValuesFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsExactly(StringSchema.class, DateSchema.class, DateTimeSchema.class, PasswordSchema.class, UUIDSchema.class, EmailSchema.class);

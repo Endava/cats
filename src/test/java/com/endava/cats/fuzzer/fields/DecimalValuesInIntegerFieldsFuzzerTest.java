@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class DecimalValuesInIntegerFieldsFuzzerTest {
+class DecimalValuesInIntegerFieldsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -27,12 +27,12 @@ public class DecimalValuesInIntegerFieldsFuzzerTest {
     private DecimalValuesInIntegerFieldsFuzzer decimalValuesInIntegerFieldsFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         decimalValuesInIntegerFieldsFuzzer = new DecimalValuesInIntegerFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
+    void givenANewDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(decimalValuesInIntegerFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(IntegerSchema.class))).isTrue();
         Assertions.assertThat(NumberUtils.isCreatable(decimalValuesInIntegerFieldsFuzzer.getBoundaryValue(nrSchema))).isTrue();

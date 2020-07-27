@@ -20,7 +20,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class MalformedJsonFuzzerTest {
+class MalformedJsonFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -44,12 +44,12 @@ public class MalformedJsonFuzzerTest {
     private MalformedJsonFuzzer malformedJsonFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         malformedJsonFuzzer = new MalformedJsonFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenAHttpMethodWithoutPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenAHttpMethodWithoutPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
@@ -61,7 +61,7 @@ public class MalformedJsonFuzzerTest {
     }
 
     @Test
-    public void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
@@ -73,7 +73,7 @@ public class MalformedJsonFuzzerTest {
     }
 
     @Test
-    public void givenAMalformedJsonFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
+    void givenAMalformedJsonFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(malformedJsonFuzzer.description()).isNotNull();
         Assertions.assertThat(malformedJsonFuzzer).hasToString(malformedJsonFuzzer.getClass().getSimpleName());
         Assertions.assertThat(malformedJsonFuzzer.skipFor()).isEmpty();

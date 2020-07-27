@@ -13,7 +13,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-public class ExtremeNegativeValueDecimalFieldsFuzzerTest {
+class ExtremeNegativeValueDecimalFieldsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -26,12 +26,12 @@ public class ExtremeNegativeValueDecimalFieldsFuzzerTest {
     private ExtremeNegativeValueDecimalFieldsFuzzer extremeNegativeValueDecimalFieldsFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         extremeNegativeValueDecimalFieldsFuzzer = new ExtremeNegativeValueDecimalFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenANewExtremeNegativeValueDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
+    void givenANewExtremeNegativeValueDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(extremeNegativeValueDecimalFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(NumberSchema.class))).isTrue();
         Assertions.assertThat(NumberUtils.isCreatable(extremeNegativeValueDecimalFieldsFuzzer.getBoundaryValue(nrSchema))).isTrue();

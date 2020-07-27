@@ -21,7 +21,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
-public class ServiceCallerTest {
+class ServiceCallerTest {
 
     private static final int PORT = 10000;
     public static WireMockServer wireMockServer;
@@ -45,12 +45,12 @@ public class ServiceCallerTest {
     }
 
     @BeforeEach
-    public void setupServiceCaller() {
+    void setupServiceCaller() {
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil);
     }
 
     @Test
-    public void givenAServer_whenDoingAPostCall_thenProperDetailsAreBeingReturned() throws Exception {
+    void givenAServer_whenDoingAPostCall_thenProperDetailsAreBeingReturned() throws Exception {
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + PORT);
         ReflectionTestUtils.setField(serviceCaller, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(serviceCaller, "headersFile", "src/test/resources/headers.yml");
@@ -70,7 +70,7 @@ public class ServiceCallerTest {
     }
 
     @Test
-    public void givenAServer_whenDoingAGetCall_thenProperDetailsAreBeingReturned() throws Exception {
+    void givenAServer_whenDoingAGetCall_thenProperDetailsAreBeingReturned() throws Exception {
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + PORT);
         ReflectionTestUtils.setField(serviceCaller, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(serviceCaller, "headersFile", "src/test/resources/headers.yml");
