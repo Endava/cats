@@ -251,24 +251,7 @@ public class PayloadGenerator {
         LOGGER.debug("Resolving model '{}' to example", name);
 
         if (schema.getProperties() != null) {
-            LOGGER.debug("Creating example from model values");
-            if (schema.getDiscriminator() != null) {
-                discriminators.add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
-            }
-            String previousPropertyValue = currentProperty;
-            for (Object propertyName : schema.getProperties().keySet()) {
-                String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
-                Schema innerSchema = schemaMap.get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
-                currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
-
-                if (innerSchema == null) {
-                    this.parseFromInnerSchema(name, mediaType, schema, values, propertyName);
-                } else {
-                    values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
-                }
-            }
-            currentProperty = previousPropertyValue;
-            schema.setExample(values);
+            this.processSchemaProperties(name, mediaType, schema, values);
         }
         if (schema instanceof ComposedSchema) {
             this.populateWithComposedSchema(mediaType, values, name, (ComposedSchema) schema);
@@ -277,6 +260,27 @@ public class PayloadGenerator {
             return this.resolvePropertyToExample(name, mediaType, schema);
         }
         return values;
+    }
+
+    private void processSchemaProperties(String name, String mediaType, Schema schema, Map<String, Object> values) {
+        LOGGER.debug("Creating example from model values");
+        if (schema.getDiscriminator() != null) {
+            discriminators.add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
+        }
+        String previousPropertyValue = currentProperty;
+        for (Object propertyName : schema.getProperties().keySet()) {
+            String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
+            Schema innerSchema = schemaMap.get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
+            currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
+
+            if (innerSchema == null) {
+                this.parseFromInnerSchema(name, mediaType, schema, values, propertyName);
+            } else {
+                values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
+            }
+        }
+        currentProperty = previousPropertyValue;
+        schema.setExample(values);
     }
 
     private void parseFromInnerSchema(String name, String mediaType, Schema schema, Map<String, Object> values, Object propertyName) {
