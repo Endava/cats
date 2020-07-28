@@ -54,7 +54,7 @@ class RemoveHeadersFuzzerTest {
     }
 
     @Test
-    void givenASetOfHeaders_whenApplyingTheRemoveHeadersFuzzer_thenTheHeadersAreProperlyFuzzed() {
+    void givenASetOfHeadersWithNoRequiredHeaders_whenApplyingTheRemoveHeadersFuzzer_thenTheHeadersAreProperlyFuzzed() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
@@ -63,12 +63,34 @@ class RemoveHeadersFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
         Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(Mockito.eq(false))).thenReturn(new Object[]{ResponseCodeFamily.TWOXX, "were not"});
         Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(Mockito.eq(false))).thenReturn(ResponseCodeFamily.TWOXX);
+
         Mockito.doCallRealMethod().when(catsUtil).powerSet(Mockito.anySet());
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         removeHeadersFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
+    @Test
+    void givenASetOfHeadersWithRequiredHeaders_whenApplyingTheRemoveHeadersFuzzer_thenTheHeadersAreProperlyFuzzed() {
+        Map<String, List<String>> responses = new HashMap<>();
+        responses.put("400", Collections.singletonList("response"));
+        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").required(true).build())).
+                responses(responses).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
+        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(Mockito.eq(false))).thenReturn(new Object[]{ResponseCodeFamily.TWOXX, "were not"});
+        Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(Mockito.eq(false))).thenReturn(ResponseCodeFamily.TWOXX);
+        Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(Mockito.eq(true))).thenReturn(new Object[]{ResponseCodeFamily.FOURXX, "were"});
+        Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(Mockito.eq(true))).thenReturn(ResponseCodeFamily.FOURXX);
+        Mockito.doCallRealMethod().when(catsUtil).powerSet(Mockito.anySet());
+        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+
+        removeHeadersFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX));
     }
 
     @Test

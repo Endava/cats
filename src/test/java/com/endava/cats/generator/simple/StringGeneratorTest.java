@@ -58,4 +58,59 @@ class StringGeneratorTest {
         String actual = StringGenerator.generateLeftBoundString(schema);
         Assertions.assertThat(actual).isEmpty();
     }
+
+    @Test
+    void givenAPatternEndingWith$_whenSanitizing_thenThe$IsRemoved() {
+        String pattern = "[A-Z]$";
+        String expected = "[A-Z]";
+
+        String actual = StringGenerator.sanitize(pattern);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenAPatternEndingWithPlus_whenSanitizing_thenThePlusIsRemoved() {
+        String pattern = "[A-Z]+";
+        String expected = "[A-Z]";
+
+        String actual = StringGenerator.sanitize(pattern);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenAPatternEndingWithAsterisk_whenSanitizing_thenTheAsteriskIsRemoved() {
+        String pattern = "[A-Z]*";
+        String expected = "[A-Z]";
+
+        String actual = StringGenerator.sanitize(pattern);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenAPatternWithoutAnyStartingOrEndingSigns_whenSanitizing_thenTheSamePatternIsReturned() {
+        String pattern = "[A-Z]";
+        String expected = "[A-Z]";
+
+        String actual = StringGenerator.sanitize(pattern);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenAPatternStartingWithCircumflex_whenSanitizing_thenTheCircumflexIsRemoved() {
+        String pattern = "^[A-Z]";
+        String expected = "[A-Z]";
+
+        String actual = StringGenerator.sanitize(pattern);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void givenAPredefinedPattern_whenSanitizing_thenTheAlphanumericPatternIsReturned() {
+        String pattern = "^(?!\\s*$).+";
+        String expected = "[a-zA-Z0-9]";
+
+        String actual = StringGenerator.sanitize(pattern);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
 }
