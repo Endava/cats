@@ -50,6 +50,11 @@ class CatsMainTest {
     void givenTwoParameters_whenStartingCats_thenParametersAreProcessedSuccessfully() {
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers")).isInstanceOf(StopExecutionException.class).hasMessage("list fuzzers");
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fieldsFuzzerStrategies")).isInstanceOf(StopExecutionException.class).hasMessage("list fieldsFuzzerStrategies");
+        Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers")).isInstanceOf(StopExecutionException.class).hasMessage("list fuzzers");
+
+        ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
+        Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "paths", "contract=src/test/resources/petstore.yml")).isInstanceOf(StopExecutionException.class).hasMessage("list available paths");
+        ReflectionTestUtils.setField(catsMain, "contract", "empty");
     }
 
     @Test
@@ -62,5 +67,16 @@ class CatsMainTest {
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
         ReflectionTestUtils.setField(catsMain, "server", "empty");
 
+    }
+
+
+    @Test
+    void givenAnInvalidContractPathAndServerParameter_whenStartingCats_thenAnExceptionIsThrown() {
+        ReflectionTestUtils.setField(catsMain, "contract", "pet.yml");
+        ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
+
+        Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers", "contract=pet.yml")).isInstanceOf(StopExecutionException.class).hasMessage(null);
+        ReflectionTestUtils.setField(catsMain, "contract", "empty");
+        ReflectionTestUtils.setField(catsMain, "server", "empty");
     }
 }
