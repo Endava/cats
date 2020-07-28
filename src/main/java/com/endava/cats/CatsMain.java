@@ -208,7 +208,7 @@ public class CatsMain implements CommandLineRunner {
         if (this.isListContractPaths(args)) {
             LOGGER.info("Available paths:");
             openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(LOGGER::info);
-            throw new StopExecutionException("listed available paths");
+            throw new StopExecutionException("list available paths");
         }
     }
 
