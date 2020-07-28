@@ -106,10 +106,7 @@ public class CatsMain implements CommandLineRunner {
     }
 
     public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
-        Map<String, Schema> schemas = openAPI.getComponents().getSchemas().entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        o -> (Schema) o.getValue()));
+        Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
 
         Map<String, ApiResponse> apiResponseMap = openAPI.getComponents().getResponses();
 
