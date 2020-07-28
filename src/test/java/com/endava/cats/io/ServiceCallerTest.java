@@ -40,7 +40,8 @@ class ServiceCallerTest {
         wireMockServer.stubFor(WireMock.get("/pets/1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.delete("/pets/1").willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.head(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
-
+        wireMockServer.stubFor(WireMock.trace(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
+        wireMockServer.stubFor(WireMock.patch(WireMock.urlEqualTo("/pets")).willReturn(WireMock.aResponse()));
     }
 
     @AfterAll
@@ -55,10 +56,13 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + PORT);
         ReflectionTestUtils.setField(serviceCaller, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(serviceCaller, "headersFile", "src/test/resources/headers.yml");
+        ReflectionTestUtils.setField(serviceCaller, "urlParams", "id=1,test=2");
+
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.any());
 
         serviceCaller.loadHeaders();
         serviceCaller.loadRefData();
+        serviceCaller.loadURLParams();
 
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).isValidJson(Mockito.anyString());
@@ -67,6 +71,35 @@ class ServiceCallerTest {
     @Test
     void givenAServer_whenDoingADeleteCall_thenProperDetailsAreBeingReturned() {
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.DELETE, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        Assertions.assertThat(catsResponse.getBody()).isEmpty();
+
+    }
+
+    @Test
+    void givenAServer_whenDoingAHeadCall_thenProperDetailsAreBeingReturned() {
+        CatsResponse catsResponse = serviceCaller.call(HttpMethod.HEAD, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        Assertions.assertThat(catsResponse.getBody()).isEmpty();
+
+    }
+
+    @Test
+    void givenAServer_whenDoingAPatchCall_thenProperDetailsAreBeingReturned() {
+        CatsResponse catsResponse = serviceCaller.call(HttpMethod.PATCH, ServiceData.builder().relativePath("/pets").payload("{'id':'1'}")
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        Assertions.assertThat(catsResponse.getBody()).isEmpty();
+    }
+
+    @Test
+    void givenAServer_whenDoingATraceCall_thenProperDetailsAreBeingReturned() {
+        CatsResponse catsResponse = serviceCaller.call(HttpMethod.TRACE, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
