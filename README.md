@@ -1,4 +1,12 @@
-![Java CI with Maven](https://github.com/Endava/cats/workflows/Java%20CI%20with%20Maven/badge.svg?branch=master)
+![CI](https://github.com/Endava/cats/workflows/CI/badge.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=sqale_index)](https://sonarcloud.io/dashboard?id=cats)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=coverage)](https://sonarcloud.io/dashboard?id=cats)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=cats)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=cats)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=bugs)](https://sonarcloud.io/dashboard?id=cats)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
+
 
 
 ![CATS](images/cats.png)
