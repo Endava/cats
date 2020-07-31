@@ -22,6 +22,19 @@ class StringGeneratorTest {
     }
 
     @Test
+    void givenAPatternThatDoesNotHaveLength_whenGeneratingARandomString_thenTheLenghtIsProperlyAdded() {
+        String actual = StringGenerator.generate("[A-Z]", 3, 3);
+        Assertions.assertThat(actual).hasSize(3);
+    }
+
+
+    @Test
+    void givenAPatternThatDoesHaveLength_whenGeneratingARandomString_thenTheLenghtIsProperlyAdded() {
+        String actual = StringGenerator.generate("[A-Z]{3}", 4, 4);
+        Assertions.assertThat(actual).hasSize(3);
+    }
+
+    @Test
     void givenASchemaWithMaxLength_whenGeneratingARightBoundaryString_thenTheGeneratedStringHasProperLength() {
         Schema schema = new StringSchema();
         int maxLength = 10;
