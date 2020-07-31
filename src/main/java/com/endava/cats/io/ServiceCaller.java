@@ -322,7 +322,7 @@ public class ServiceCaller {
         List<NameValuePair> queryParams = new ArrayList<>();
         JsonElement jsonElement = catsUtil.parseAsJsonElement(payload);
         for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
-            if (!data.getPathParams().contains(child.getKey())) {
+            if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
                     queryParams.add(new BasicNameValuePair(child.getKey(), null));
                 } else {

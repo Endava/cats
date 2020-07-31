@@ -80,6 +80,7 @@ public class FuzzingDataFactory {
         ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
 
         schemas.put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
+        Set<String> queryParams = this.extractQueryParams(syntheticSchema);
 
         List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId(), schemas);
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
@@ -89,7 +90,21 @@ public class FuzzingDataFactory {
                 .schemaMap(schemas).responses(responses)
                 .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
                 .catsUtil(catsUtil)
+                .queryParams(queryParams)
                 .build()).collect(Collectors.toList());
+    }
+
+    /**
+     * We filter the query parameters out of the synthetic schema created for the GET requests
+     *
+     * @param schema
+     * @return
+     */
+    private Set<String> extractQueryParams(ObjectSchema schema) {
+        return schema.getProperties().entrySet().stream()
+                .filter(entry -> entry.getValue().getName().endsWith("query"))
+                .map(entry -> entry.getKey())
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -104,6 +119,7 @@ public class FuzzingDataFactory {
         ObjectSchema syntheticSchema = new ObjectSchema();
         for (Parameter parameter : operationParameters) {
             if ("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn())) {
+                parameter.getSchema().setName(parameter.getSchema().getName() + "|" + parameter.getIn());
                 syntheticSchema.addProperties(parameter.getName(), parameter.getSchema());
                 if (parameter.getRequired() != null && parameter.getRequired()) {
                     parameter.getSchema().setRequired(Collections.singletonList(CatsUtil.CATS_REQUIRED));

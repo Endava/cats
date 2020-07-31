@@ -53,7 +53,8 @@ public class RemoveHeadersFuzzer implements Fuzzer {
 
         testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as mandatory headers [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(anyMandatoryHeaderRemoved));
 
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(headersSubset).payload(data.getPayload()).addUserHeaders(false).build());
+        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(headersSubset)
+                .payload(data.getPayload()).addUserHeaders(false).queryParams(data.getQueryParams()).build());
         testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved));
     }
 
