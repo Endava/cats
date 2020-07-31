@@ -7,6 +7,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -23,7 +24,6 @@ import java.util.Collections;
 @ExtendWith(SpringExtension.class)
 class ServiceCallerTest {
 
-    private static final int PORT = 10000;
     public static WireMockServer wireMockServer;
     @MockBean
     private TestCaseListener testCaseListener;
@@ -33,7 +33,7 @@ class ServiceCallerTest {
 
     @BeforeAll
     public static void setup() {
-        wireMockServer = new WireMockServer(PORT);
+        wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort());
         wireMockServer.start();
         wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.put("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
@@ -53,7 +53,7 @@ class ServiceCallerTest {
     public void setupEach() throws Exception {
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil);
 
-        ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + PORT);
+        ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(serviceCaller, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(serviceCaller, "headersFile", "src/test/resources/headers.yml");
         ReflectionTestUtils.setField(serviceCaller, "urlParams", "id=1,test=2");
