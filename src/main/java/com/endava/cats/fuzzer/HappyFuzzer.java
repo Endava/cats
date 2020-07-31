@@ -34,7 +34,8 @@ public class HappyFuzzer implements Fuzzer {
     private void process(FuzzingData data) {
         testCaseListener.addScenario(LOGGER, "Scenario: send a 'happy' flow request will all fields and all headers in");
         testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 2XX response code");
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).payload(data.getPayload()).build());
+        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+                .payload(data.getPayload()).queryParams(data.getQueryParams()).build());
 
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);
     }

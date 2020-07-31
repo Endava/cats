@@ -30,6 +30,7 @@ public class FuzzingData {
     private Set<String> allFields;
     private Set<Set<String>> allFieldsSetOfSets;
     private List<String> allRequiredFields;
+    private final Set<String> queryParams;
 
     public Map<String, Schema> getAllProperties() {
         if (this.reqSchema.getProperties() != null) {
