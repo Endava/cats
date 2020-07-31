@@ -28,4 +28,6 @@ public class ServiceData {
     private final Set<String> fuzzedHeaders;
     @Builder.Default
     private final Set<String> pathParams = new HashSet<>();
+    @Builder.Default
+    private final Set<String> queryParams = new HashSet<>();
 }

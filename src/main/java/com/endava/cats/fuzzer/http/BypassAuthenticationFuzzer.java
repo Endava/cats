@@ -69,7 +69,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
         Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
         if (!authenticationHeaders.isEmpty()) {
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                    .payload(data.getPayload()).skippedHeaders(authenticationHeaders).build();
+                    .payload(data.getPayload()).skippedHeaders(authenticationHeaders).queryParams(data.getQueryParams()).build();
 
             CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
             testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);

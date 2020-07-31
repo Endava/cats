@@ -79,7 +79,8 @@ public class CustomFuzzer implements Fuzzer {
 
         String payloadWithCustomValuesReplaced = this.getStringWithCustomValuesFromFile(data, currentPathValues);
         CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).replaceRefData(false)
-                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).build());
+                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).build());
+
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.from(expectedResponseCode));
     }
 

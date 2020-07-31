@@ -59,7 +59,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
                     .headers(data.getHeaders()).payload(fuzzingResult.getJson().toString())
-                    .fuzzedField(fuzzedField).build();
+                    .fuzzedField(fuzzedField).queryParams(data.getQueryParams()).build();
+
             CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
 
             ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
