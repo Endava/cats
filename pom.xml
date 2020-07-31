@@ -63,6 +63,26 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.5.2</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>0.12</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <targetClasses>
+                        <param>com.endava.cats.*</param>
+                    </targetClasses>
+                    <targetTests>
+                        <param>com.endava.cats.*</param>
+                    </targetTests>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
