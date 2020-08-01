@@ -17,6 +17,11 @@ class ResponseCodeFamilyTest {
     }
 
     @Test
+    void givenANullCode_whenCallingIsValidCode_thenTheCodeIsNotValid() {
+        Assertions.assertThat(ResponseCodeFamily.isValidCode(null)).isFalse();
+    }
+
+    @Test
     void givenA3CharactersCodeThatDoesNotStartWithADigit_whenCallingIsValidCode_thenTheCodeIsNotValid() {
         Assertions.assertThat(ResponseCodeFamily.isValidCode("A00")).isFalse();
     }
@@ -35,7 +40,7 @@ class ResponseCodeFamilyTest {
 
     @Test
     void givenA3600Code_whenParsingIt_thenTheDefaultZeroFamilyIsReturned() {
-        Assertions.assertThat(ResponseCodeFamily.from("600")).isEqualTo(ResponseCodeFamily.ZEROXX);
+        Assertions.assertThat(ResponseCodeFamily.from("600")).isEqualTo(ResponseCodeFamily.ZEROXX).hasToString("ZEROXX");
     }
 
     @Test
