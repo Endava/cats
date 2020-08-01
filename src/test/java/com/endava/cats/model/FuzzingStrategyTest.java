@@ -58,4 +58,11 @@ class FuzzingStrategyTest {
 
         Assertions.assertThat(strategy).hasToString(strategy.truncatedValue());
     }
+
+    @Test
+    void givenAFuzzingStrategy_whenSettingAnInnerValueWithNull_thenToStringMatchesName() {
+        FuzzingStrategy strategy = FuzzingStrategy.replace().withData(null);
+
+        Assertions.assertThat(strategy).hasToString(strategy.name());
+    }
 }
