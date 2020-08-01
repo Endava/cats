@@ -62,4 +62,17 @@ class SpacesOnlyInFieldsTrimValidateFuzzerTest {
         Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
+
+    @Test
+    void givenANewSpacesOnlyInFieldsTrimValidateFuzzer_whenGettingTheFieldsFuzzingStrategyAndTheSchemaDoesNotExist_thenTheDefaultNumberOfSpacesAreReturned() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Map<String, Schema> schemaMap = new HashMap<>();
+        StringSchema stringSchema = new StringSchema();
+        schemaMap.put("schema", stringSchema);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
+
+        FuzzingStrategy fuzzingStrategy = spacesOnlyInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "another_schema");
+
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("  ");
+    }
 }

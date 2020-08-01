@@ -40,7 +40,10 @@ class ResponseCodeFamilyTest {
 
     @Test
     void givenA3600Code_whenParsingIt_thenTheDefaultZeroFamilyIsReturned() {
-        Assertions.assertThat(ResponseCodeFamily.from("600")).isEqualTo(ResponseCodeFamily.ZEROXX).hasToString("ZEROXX");
+        ResponseCodeFamily actual = ResponseCodeFamily.from("600");
+        Assertions.assertThat(actual).isEqualTo(ResponseCodeFamily.ZEROXX);
+        Assertions.assertThat(actual.asString()).isEqualTo("0XX");
+
     }
 
     @Test
