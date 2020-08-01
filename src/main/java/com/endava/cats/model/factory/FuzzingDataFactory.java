@@ -103,7 +103,7 @@ public class FuzzingDataFactory {
     private Set<String> extractQueryParams(ObjectSchema schema) {
         return schema.getProperties().entrySet().stream()
                 .filter(entry -> entry.getValue().getName().endsWith("query"))
-                .map(entry -> entry.getKey())
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
 
