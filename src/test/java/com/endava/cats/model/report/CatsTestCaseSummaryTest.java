@@ -22,4 +22,12 @@ class CatsTestCaseSummaryTest {
 
         Assertions.assertThat(summary1).isNotEqualByComparingTo(summary2);
     }
+
+    @Test
+    void givenATestCase_whenGettingToString_thenTheScenarioDetailsAreReturned() {
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setScenario("Scenario");
+
+        Assertions.assertThat(testCase).hasToString("CatsTestCase(scenario=Scenario)");
+    }
 }
