@@ -8,6 +8,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.report.CatsTestCase;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.Builder;
@@ -211,10 +212,29 @@ public class TestCaseListener {
     }
 
     private boolean matchesElement(String responseSchema, JsonElement element, String name) {
+        if (element.isJsonArray()) {
+            return matchesArrayElement(responseSchema, element, name);
+        }
+
+        return matchesSingleElement(responseSchema, element, name);
+    }
+
+    private boolean matchesArrayElement(String responseSchema, JsonElement element, String name) {
+        JsonArray jsonArray = ((JsonArray) element);
+
+        if (jsonArray.size() == 0) {
+            return false;
+        }
+
+        JsonElement firstElement = jsonArray.get(0);
+        return matchesSingleElement(responseSchema, firstElement, name);
+    }
+
+    private boolean matchesSingleElement(String responseSchema, JsonElement element, String name) {
         boolean result = true;
         if (element.isJsonObject()) {
             for (Map.Entry<String, JsonElement> inner : element.getAsJsonObject().entrySet()) {
-                result = result && matchesElement(responseSchema, inner.getValue(), inner.getKey());
+                result = result && matchesSingleElement(responseSchema, inner.getValue(), inner.getKey());
             }
         } else {
             return responseSchema != null && responseSchema.contains(name);
