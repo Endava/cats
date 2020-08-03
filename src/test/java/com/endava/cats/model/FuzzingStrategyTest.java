@@ -17,28 +17,35 @@ class FuzzingStrategyTest {
     }
 
     @Test
-    void givenASpacedPrefixedString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenANullString_whenMergingTheFuzzingWithAnotherString_thenTheReplaceFuzzingStrategyIsApplied() {
+        String result = FuzzingStrategy.mergeFuzzing(null, "air", "  ");
+
+        Assertions.assertThat(result).isEqualTo("  ");
+    }
+
+    @Test
+    void givenASpacedPrefixedString_whenMergingTheFuzzingWithAnotherString_thenThePrefixFuzzingStrategyIsApplied() {
         String result = FuzzingStrategy.mergeFuzzing(" test", "air", "  ");
 
         Assertions.assertThat(result).isEqualTo("  air");
     }
 
     @Test
-    void givenASpaceTrailingString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenASpaceTrailingString_whenMergingTheFuzzingWithAnotherString_thenTheTrailFuzzingStrategyIsApplied() {
         String result = FuzzingStrategy.mergeFuzzing("test  ", "air", "  ");
 
         Assertions.assertThat(result).isEqualTo("air  ");
     }
 
     @Test
-    void givenAnEmptyString_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenAnEmptyString_whenMergingTheFuzzingWithAnotherString_thenTheReplaceFuzzingStrategyIsApplied() {
         String result = FuzzingStrategy.mergeFuzzing("  ", "air", "replaced");
 
         Assertions.assertThat(result).isEqualTo("replaced");
     }
 
     @Test
-    void givenAStringWithNoSpaces_whenMergingTheFuzzingWithAnotherString_thenTheProperFuzzedStringIsReturned() {
+    void givenAStringWithNoSpaces_whenMergingTheFuzzingWithAnotherString_thenTheSuppliedValueIsUnchanged() {
         String result = FuzzingStrategy.mergeFuzzing("test", "air", "replaced");
 
         Assertions.assertThat(result).isEqualTo("test");
