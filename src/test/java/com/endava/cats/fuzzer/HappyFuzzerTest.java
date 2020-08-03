@@ -67,7 +67,7 @@ class HappyFuzzerTest {
     }
 
     @Test
-    void givenARequest_whenCallingTheHappyFuzzerAndAnErrorOccurs_thenTestCasesAreCorrectlyExecuted() {
+    void givenARequest_whenCallingTheHappyFuzzerAndAnErrorOccurs_thenTestCasesAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").responseCodes(Collections.singleton("200")).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenThrow(new RuntimeException());
 
