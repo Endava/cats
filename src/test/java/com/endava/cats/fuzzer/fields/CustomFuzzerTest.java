@@ -81,11 +81,31 @@ class CustomFuzzerTest {
         Mockito.when(catsUtil.getJsonElementBasedOnFullyQualifiedName(Mockito.eq(jsonObject), Mockito.eq("field"))).thenReturn(jsonObject);
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
 
         Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
         Assertions.assertThat(jsonObject.toString()).contains("newValue");
+    }
+
+    @Test
+    void givenACompleteCustomFuzzerFileWithDescriptionAndOutputVariables_whenTheFuzzerRuns_thenTheTestCasesAreCorrectlyExecuted() throws Exception {
+        ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "src/test/resources/customFuzzer.yml");
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml("src/test/resources/customFuzzer.yml");
+        Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
+        Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
+        Map<String, List<String>> responses = new HashMap<>();
+        responses.put("200", Collections.singletonList("response"));
+        CatsResponse catsResponse = CatsResponse.from(200, "{'code': '200'}", "POST");
+
+        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'pet':'oldValue'}").
+                responses(responses).responseCodes(Collections.singleton("200")).build();
+        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     private Map<String, Map<String, Object>> createCustomFuzzerFile() {
