@@ -1,0 +1,14 @@
+/pets/{id}/move:
+  test_1:
+    description: Simple Test Case
+    pet:
+      - stay
+      - at
+      - home
+    expectedResponseCode: 200
+    output:
+      resp: code
+  test_2:
+    description: Second Test Case
+    pet: ${resp}
+    expectedResponseCode: 200

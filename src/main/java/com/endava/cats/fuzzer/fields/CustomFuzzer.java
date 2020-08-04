@@ -10,12 +10,14 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,12 +25,19 @@ import java.util.stream.Collectors;
 public class CustomFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomFuzzer.class);
     private static final String EXPECTED_RESPONSE_CODE = "expectedResponseCode";
+    private static final String OUTPUT = "output";
+    private static final String DESCRIPTION = "description";
+    private static final String NOT_SET = "NOT_SET";
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
+    private final Map<String, String> variables = new HashMap<>();
+
     @Value("${customFuzzerFile:empty}")
     private String customFuzzerFile;
+
+    private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
 
     @Autowired
     public CustomFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
@@ -37,17 +46,27 @@ public class CustomFuzzer implements Fuzzer {
         this.catsUtil = cu;
     }
 
+    @PostConstruct
+    public void loadCustomFuzzerFile() {
+        try {
+            if (CatsMain.EMPTY.equalsIgnoreCase(customFuzzerFile)) {
+                LOGGER.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
+            } else {
+                customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error processing customFuzzerFile!", e);
+        }
+    }
+
     public void fuzz(FuzzingData data) {
-        if (CatsMain.EMPTY.equalsIgnoreCase(customFuzzerFile)) {
-            LOGGER.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
-        } else {
+        if (!customFuzzerDetails.isEmpty()) {
             this.processCustomFuzzerFile(data);
         }
     }
 
     protected void processCustomFuzzerFile(FuzzingData data) {
         try {
-            Map<String, Map<String, Object>> customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
             Map<String, Object> currentPathValues = customFuzzerDetails.get(data.getPath());
             if (currentPathValues != null) {
                 currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
@@ -73,7 +92,8 @@ public class CustomFuzzer implements Fuzzer {
     }
 
     private void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
-        testCaseListener.addScenario(LOGGER, "Scenario: send request with custom values supplied. Test key [{}]", testName);
+        String testScenario = this.getTestScenario(testName, currentPathValues);
+        testCaseListener.addScenario(LOGGER, "Scenario: {}", testScenario);
         String expectedResponseCode = String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE));
         testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}]", expectedResponseCode);
 
@@ -81,7 +101,60 @@ public class CustomFuzzer implements Fuzzer {
         CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).replaceRefData(false)
                 .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).build());
 
+        this.setOutputVariables(currentPathValues, response);
+
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.from(expectedResponseCode));
+    }
+
+    private String getTestScenario(String testName, Map<String, String> currentPathValues) {
+        String description = currentPathValues.get(DESCRIPTION);
+        if (StringUtils.isNotBlank(description)) {
+            return description;
+        }
+
+        return "send request with custom values supplied. Test key [" + testName + "]";
+    }
+
+    private void setOutputVariables(Map<String, String> currentPathValues, CatsResponse response) {
+        String output = currentPathValues.get(OUTPUT);
+
+        if (output != null) {
+            if (StringUtils.isNotBlank(output)) {
+                output = output.replace("{", "").replace("}", "");
+                variables.putAll(Arrays.stream(output.split(","))
+                        .map(variable -> variable.trim().split("=")).collect(Collectors.toMap(
+                                variableArray -> variableArray[0],
+                                variableArray -> variableArray[1]
+                        )));
+            }
+
+            JsonElement body = response.getJsonBody();
+            if (body.isJsonArray()) {
+                LOGGER.error("Arrays are not supported for Output variables!");
+            } else {
+                variables.putAll(variables.entrySet().stream().collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> this.getOutputVariable(body, entry.getValue()))
+                ));
+            }
+            LOGGER.info("The following OUTPUT variables were identified {}", variables);
+        }
+    }
+
+    private String getOutputVariable(JsonElement body, String value) {
+        JsonElement outputVariable = catsUtil.getJsonElementBasedOnFullyQualifiedName(body, value);
+
+        if (outputVariable == null || outputVariable.isJsonNull()) {
+            LOGGER.error("Expected variable {} was not found on response. Setting to NOT_SET", value);
+            return NOT_SET;
+        }
+        if (outputVariable.isJsonArray()) {
+            LOGGER.error("Arrays are not supported. Variable {} will be set to NOT_SET", value);
+            return NOT_SET;
+        }
+        String[] depth = value.split("#");
+        return outputVariable.getAsJsonObject().get(depth[depth.length - 1]).getAsString();
     }
 
     private String getStringWithCustomValuesFromFile(FuzzingData data, Map<String, String> currentPathValues) {
@@ -101,9 +174,14 @@ public class CustomFuzzer implements Fuzzer {
 
     private void replaceFieldsWithCustomValue(Map<String, String> currentPathValues, JsonElement jsonElement) {
         for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
-            /*If we didn't fuzz a Ref Data field, we replace the value with the ref data*/
-            this.replaceElementWithCustomValue(entry, jsonElement);
+            if (this.isNotAReservedWord(entry.getKey())) {
+                this.replaceElementWithCustomValue(entry, jsonElement);
+            }
         }
+    }
+
+    private boolean isNotAReservedWord(String key) {
+        return !key.equalsIgnoreCase(OUTPUT) && !key.equalsIgnoreCase(DESCRIPTION) && !key.equalsIgnoreCase(EXPECTED_RESPONSE_CODE);
     }
 
 
@@ -113,20 +191,38 @@ public class CustomFuzzer implements Fuzzer {
 
         if (element != null) {
             String key = depth[depth.length - 1];
-            String fuzzedValue = String.valueOf(entry.getValue());
+            String propertyValue = this.getPropertyValueToReplaceInBody(entry);
 
-            if (fuzzedValue != null && element.getAsJsonObject().remove(key) != null) {
-                element.getAsJsonObject().addProperty(key, fuzzedValue);
-                LOGGER.info("Replacing property [{}] with value [{}]", entry.getKey(), fuzzedValue);
+            if (element.getAsJsonObject().remove(key) != null) {
+                element.getAsJsonObject().addProperty(key, propertyValue);
+                LOGGER.info("Replacing property [{}] with value [{}]", entry.getKey(), propertyValue);
+            } else {
+                LOGGER.error("Property [{}] does not exist", entry.getKey());
             }
         }
+    }
+
+    private String getPropertyValueToReplaceInBody(Map.Entry<String, String> entry) {
+        String propertyValue = String.valueOf(entry.getValue());
+
+        if (propertyValue.startsWith("${") && propertyValue.endsWith("}")) {
+            String variableValue = variables.get(propertyValue.replace("${", "").replace("}", ""));
+
+            if (variableValue == null) {
+                LOGGER.error("Supplied variable was not found [{}]", propertyValue);
+            } else {
+                LOGGER.info("Variable [{}] found. Will be replaced with [{}]", propertyValue, variableValue);
+                propertyValue = variableValue;
+            }
+        }
+        return propertyValue;
     }
 
     /**
      * Custom tests can contain multiple values for a specific field. We iterate through those values and create a list of individual requests
      *
-     * @param testCase
-     * @return
+     * @param testCase object from the custom fuzzer file
+     * @return individual requests
      */
     private List<Map<String, String>> createIndividualRequest(Map<String, Object> testCase) {
         Optional<Map.Entry<String, Object>> listOfValuesOptional = testCase.entrySet().stream().filter(entry -> entry.getValue() instanceof List).findFirst();
