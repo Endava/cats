@@ -95,8 +95,8 @@
 
     <scm>
         <url>https://en-milie@github.com/Endava/cats.git</url>
-        <connection>scm:git:https://en-milie@github.com/Endava/cats.git</connection>
-        <developerConnection>scm:git:https://en-milie@github.com/Endava/cats.git</developerConnection>
+        <connection>scm:git:git@github.com:Endava/cats.git</connection>
+        <developerConnection>scm:git:git@github.com:Endava/cats.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
