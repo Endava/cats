@@ -273,7 +273,7 @@ When executing `test_2` the `id` parameter will be replaced with the `petId` var
 
 **Some notes:**
 - variables are visible across all custom tests; please be careful with the naming as they will get overridden
-- variables do not support arrays of elements; this applies for both getting the variable value and the way the `outcome` variables are set
+- variables do not support arrays of elements; this applies for both getting the variable value and the way the `output` variables are set
 
 
 # Reference Data File
