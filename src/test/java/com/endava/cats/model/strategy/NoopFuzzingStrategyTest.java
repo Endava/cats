@@ -11,5 +11,6 @@ class NoopFuzzingStrategyTest {
         FuzzingStrategy strategy = FuzzingStrategy.noop().withData("inner");
 
         Assertions.assertThat(strategy.process("string")).isEqualTo("string");
+        Assertions.assertThat(strategy.name()).isEqualTo("NOOP");
     }
 }
