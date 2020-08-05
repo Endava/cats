@@ -15,20 +15,22 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
+@SpringJUnitConfig({CatsUtil.class})
 class ServiceCallerTest {
 
     public static WireMockServer wireMockServer;
     @MockBean
     private TestCaseListener testCaseListener;
-    @MockBean
+    @Autowired
     private CatsUtil catsUtil;
     private UrlParams urlParams;
     private ServiceCaller serviceCaller;
@@ -61,14 +63,9 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(serviceCaller, "headersFile", "src/test/resources/headers.yml");
         ReflectionTestUtils.setField(urlParams, "params", "id=1,test=2");
 
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.any());
-
         serviceCaller.loadHeaders();
         serviceCaller.loadRefData();
         urlParams.loadURLParams();
-
-        Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).isValidJson(Mockito.anyString());
     }
 
     @Test
