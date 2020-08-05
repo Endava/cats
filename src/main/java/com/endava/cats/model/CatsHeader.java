@@ -3,14 +3,16 @@ package com.endava.cats.model;
 import com.endava.cats.generator.simple.StringGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.joda.time.DateTime;
 
 import java.util.UUID;
 
 @Builder
 @AllArgsConstructor
-@ToString
 @Getter
 @EqualsAndHashCode(of = "name")
 public class CatsHeader {
@@ -77,4 +79,11 @@ public class CatsHeader {
         return this.name;
     }
 
+    @Override
+    public String toString() {
+        return "{" +
+                "required=" + required +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }

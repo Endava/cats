@@ -4,6 +4,7 @@ import com.endava.cats.CatsMain;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.UrlParams;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -27,12 +28,14 @@ class FuzzingDataFactoryTest {
 
     @MockBean
     private CatsUtil catsUtil;
+    @MockBean
+    private UrlParams urlParams;
 
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
     void setup() {
-        fuzzingDataFactory = new FuzzingDataFactory(catsUtil);
+        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, urlParams);
     }
 
     @Test

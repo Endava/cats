@@ -6,6 +6,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,21 @@ class HttpMethodsFuzzerTest {
     @BeforeEach
     void setup() {
         httpMethodsFuzzer = new HttpMethodsFuzzer(serviceCaller, testCaseListener);
+    }
+
+    @Test
+    void givenAGetOperationImplemented_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
+        PathItem item = new PathItem();
+        item.setGet(new Operation());
+        item.setPost(new Operation());
+        item.setTrace(new Operation());
+        item.setPatch(new Operation());
+        item.setDelete(new Operation());
+        item.setHead(new Operation());
+        item.setPut(new Operation());
+        FuzzingData data = FuzzingData.builder().pathItem(item).build();
+        httpMethodsFuzzer.fuzz(data);
+        Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test

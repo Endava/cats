@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.UrlParams;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -29,6 +30,7 @@ class ServiceCallerTest {
     private TestCaseListener testCaseListener;
     @MockBean
     private CatsUtil catsUtil;
+    private UrlParams urlParams;
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -51,18 +53,19 @@ class ServiceCallerTest {
 
     @BeforeEach
     public void setupEach() throws Exception {
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil);
+        urlParams = new UrlParams();
+        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, urlParams);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(serviceCaller, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(serviceCaller, "headersFile", "src/test/resources/headers.yml");
-        ReflectionTestUtils.setField(serviceCaller, "urlParams", "id=1,test=2");
+        ReflectionTestUtils.setField(urlParams, "params", "id=1,test=2");
 
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.any());
 
         serviceCaller.loadHeaders();
         serviceCaller.loadRefData();
-        serviceCaller.loadURLParams();
+        urlParams.loadURLParams();
 
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).isValidJson(Mockito.anyString());

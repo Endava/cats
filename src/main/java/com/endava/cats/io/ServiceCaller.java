@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.UrlParams;
 import com.google.common.html.HtmlEscapers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -70,6 +71,7 @@ public class ServiceCaller {
         }
     }
 
+    private final UrlParams urlParams;
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final Map<String, Map<String, String>> headers = new HashMap<>();
@@ -80,30 +82,13 @@ public class ServiceCaller {
     private String refDataFile;
     @Value("${headers:empty}")
     private String headersFile;
-    @Value("${urlParams:empty}")
-    private String urlParams;
-    private List<String> urlParamsList = new ArrayList<>();
 
 
     @Autowired
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu) {
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, UrlParams urlParams) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
-    }
-
-    @PostConstruct
-    public void loadURLParams() {
-        if (CatsMain.EMPTY.equalsIgnoreCase(urlParams)) {
-            LOGGER.info("No URL parameters supplied!");
-        } else {
-            try {
-                urlParamsList = Arrays.stream(urlParams.split(",")).map(String::trim).collect(Collectors.toList());
-
-                LOGGER.info("URL parameters: {}", urlParamsList);
-            } catch (Exception e) {
-                LOGGER.error("Processing of URL parameters failed! Exception: {}", e.getMessage());
-            }
-        }
+        this.urlParams = urlParams;
     }
 
 
@@ -233,7 +218,7 @@ public class ServiceCaller {
      * @return
      */
     private String getPathWithSuppliedURLParamsReplaced(String startingUrl) {
-        for (String line : urlParamsList) {
+        for (String line : urlParams.getUrlParamsList()) {
             String[] split = line.split(":");
             String pathVar = "{" + split[0] + "}";
             if (startingUrl.contains(pathVar)) {
@@ -354,26 +339,24 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(HttpRequestBase method, String relativePath, ServiceData data) {
-        if (data.isAddUserHeaders()) {
-            LOGGER.info("Path {} has the following headers: {}", relativePath, headers.get(relativePath));
-            LOGGER.info("Headers that should be added to all paths: {}", headers.get(CatsMain.ALL));
+        LOGGER.info("Path {} has the following headers: {}", relativePath, headers.get(relativePath));
+        LOGGER.info("Headers that should be added to all paths: {}", headers.get(CatsMain.ALL));
 
-            /* We will only replace headers that were not fuzzed */
-            for (Map.Entry<String, String> suppliedHeader : headers.getOrDefault(CatsMain.ALL, Collections.emptyMap()).entrySet()) {
-                this.replaceHeaderIfNotFuzzed(method, data, suppliedHeader);
-            }
+        Map<String, String> suppliedHeaders = headers.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsMain.ALL))
+                .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
 
-            for (Map.Entry<String, String> suppliedHeader : headers.getOrDefault(relativePath, Collections.emptyMap()).entrySet()) {
+        for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
+            if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(method, data, suppliedHeader);
+            } else if (!data.isAddUserHeaders() && (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isSecurityHeader(suppliedHeader.getKey()))) {
+                method.setHeader(suppliedHeader.getKey(), suppliedHeader.getValue());
             }
-        } else {
-            for (Map.Entry<String, String> suppliedHeader : headers.getOrDefault(CatsMain.ALL, Collections.emptyMap()).entrySet()) {
-                if (isSecurityHeader(suppliedHeader.getKey())) {
-                    this.replaceHeaderIfNotFuzzed(method, data, suppliedHeader);
-                }
-            }
-            LOGGER.info("Only security headers will be added. All other custom headers will be ignored!");
         }
+    }
+
+    private boolean isSuppliedHeaderInFuzzData(ServiceData data, Map.Entry<String, String> suppliedHeader) {
+        return data.getHeaders().stream().anyMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(suppliedHeader.getKey()));
     }
 
     private boolean isSecurityHeader(String header) {
