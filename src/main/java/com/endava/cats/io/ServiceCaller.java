@@ -93,31 +93,22 @@ public class ServiceCaller {
 
 
     @PostConstruct
-    public void loadRefData() {
+    public void loadRefData() throws IOException {
         if (CatsMain.EMPTY.equalsIgnoreCase(refDataFile)) {
             LOGGER.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
-            try {
-                this.mapObjsToString(refDataFile, refData);
-
-                LOGGER.info("Reference data file loaded successfully: {}", refData);
-            } catch (Exception e) {
-                LOGGER.error("Processing of reference data file failed! Exception: {}", e.getMessage());
-            }
+            this.mapObjsToString(refDataFile, refData);
+            LOGGER.info("Reference data file loaded successfully: {}", refData);
         }
     }
 
     @PostConstruct
-    public void loadHeaders() {
+    public void loadHeaders() throws IOException {
         if (CatsMain.EMPTY.equalsIgnoreCase(headersFile)) {
             LOGGER.info("No headers file was supplied! No additional header will be added!");
         } else {
-            try {
-                this.mapObjsToString(headersFile, headers);
-                LOGGER.info("Headers file loaded: {}", headers);
-            } catch (Exception e) {
-                LOGGER.error("Processing of headers file failed! Exception: {}", e.getMessage());
-            }
+            this.mapObjsToString(headersFile, headers);
+            LOGGER.info("Headers file loaded: {}", headers);
         }
     }
 
