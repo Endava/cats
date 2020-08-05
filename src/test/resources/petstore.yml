@@ -104,8 +104,8 @@ components:
       allOf:
         - $ref: '#/components/schemas/NewPet'
         - required:
-          - id
-          - breedType
+            - id
+            - breedType
           properties:
             id:
               type: integer
@@ -113,10 +113,10 @@ components:
             breed:
               description: Sensitive data that will be kept encrypted in the vault, associated with the Token
               oneOf:
-                  - $ref: '#/components/schemas/Husky'
-                  - $ref: '#/components/schemas/Labrador'
+                - $ref: '#/components/schemas/Husky'
+                - $ref: '#/components/schemas/Labrador'
               discriminator:
-                  propertyName: breedType
+                propertyName: breedType
     Husky:
       required:
         - breedType
@@ -131,7 +131,7 @@ components:
           type: string
     NewPet:
       required:
-        - name  
+        - name
       properties:
         name:
           type: string
@@ -141,6 +141,9 @@ components:
           type: string
         ip:
           type: string
+        ipv6:
+          type: string
+          format: ipv6
         email:
           type: string
         petUrl:
@@ -151,11 +154,21 @@ components:
           format: uri
         isAlive:
           type: boolean
+        size:
+          type: number
+        length:
+          type: numnber
+          format: float
         age:
           type: integer
           minimum: 0
           maximum: 100
-
+        birth:
+          type: string
+          format: date-time
+        identifier:
+          type: string
+          format: uuid
     Error:
       required:
         - code
