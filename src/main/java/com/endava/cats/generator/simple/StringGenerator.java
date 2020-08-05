@@ -59,6 +59,6 @@ public class StringGenerator {
             pattern = pattern.substring(0, pattern.length() - 1);
         }
 
-        return pattern;
+        return pattern.replace("_", "");
     }
 }

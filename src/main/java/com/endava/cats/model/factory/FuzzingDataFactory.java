@@ -5,6 +5,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.UrlParams;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.swagger.v3.oas.models.Operation;
@@ -29,10 +30,12 @@ public class FuzzingDataFactory {
     private static final String SYNTH_SCHEMA_NAME = "catsGetSchema";
 
     private final CatsUtil catsUtil;
+    private final UrlParams urlParams;
 
     @Autowired
-    public FuzzingDataFactory(CatsUtil catsUtil) {
+    public FuzzingDataFactory(CatsUtil catsUtil, UrlParams urlParams) {
         this.catsUtil = catsUtil;
+        this.urlParams = urlParams;
     }
 
     /**
@@ -111,14 +114,18 @@ public class FuzzingDataFactory {
      * In order to increase reusability we will create a synthetic Schema object that will resemble the Schemas used by POST requests.
      * This will allow us to use the same code to fuzz the requests.
      * We will also do another "hack" so that required Parameters are also marked as required in their corresponding schema
+     * <p>
+     * Parameters supplied via the `urlParams` argument are not fuzzed.
      *
      * @param operationParameters
      * @return
      */
     private ObjectSchema createSyntheticSchemaForGet(List<Parameter> operationParameters) {
         ObjectSchema syntheticSchema = new ObjectSchema();
+        syntheticSchema.setProperties(new LinkedHashMap<>());
         for (Parameter parameter : operationParameters) {
-            if ("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn())) {
+            if (("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn()))
+                    && urlParams.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
                 parameter.getSchema().setName(parameter.getSchema().getName() + "|" + parameter.getIn());
                 syntheticSchema.addProperties(parameter.getName(), parameter.getSchema());
                 if (parameter.getRequired() != null && parameter.getRequired()) {
