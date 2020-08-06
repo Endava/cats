@@ -41,7 +41,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
             } else if (!this.hasBoundaryDefined(schema)) {
                 logger.info("Boundaries not defined. Will skip fuzzing...");
                 return FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!");
-            } else if (!this.isStringFormatRecognizable(schema)) {
+            } else if (!this.isStringFormatRecognizable(schema) && isRequestSchemaMatchingFuzzerType(schema)) {
                 logger.info("String format not supplied or not recognized [{}]", schema.getFormat());
                 return FuzzingStrategy.skip().withData("String format not supplied or not recognized!");
             } else {
