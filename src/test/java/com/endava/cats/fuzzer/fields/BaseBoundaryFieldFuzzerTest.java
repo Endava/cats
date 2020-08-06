@@ -64,7 +64,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field");
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
-        Assertions.assertThat(strategy.getData()).startsWith("String format not supplied");
+        Assertions.assertThat(strategy.getData()).startsWith("Data type not matching [IntegerSchema]");
     }
 
     @Test
