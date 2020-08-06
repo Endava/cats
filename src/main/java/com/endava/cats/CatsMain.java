@@ -257,7 +257,7 @@ public class CatsMain implements CommandLineRunner {
 
     private void processTwoArguments(String[] args) {
         if (this.isListFuzzers(args)) {
-            LOGGER.info("Registered fuzzers:");
+            LOGGER.info("CATs has {} registered fuzzers:", fuzzers.size());
             fuzzers.stream().map(fuzzer -> "\t" + ansi().fg(Ansi.Color.GREEN).a(fuzzer.toString()).reset().a(" - " + fuzzer.description()).reset()).forEach(LOGGER::info);
             throw new StopExecutionException("list fuzzers");
         }
