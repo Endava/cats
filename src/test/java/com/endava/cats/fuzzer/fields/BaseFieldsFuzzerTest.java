@@ -54,7 +54,7 @@ class BaseFieldsFuzzerTest {
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
-        Mockito.when(data.getAllFieldsAsSingleSet()).thenReturn(fields);
+        Mockito.when(data.getAllFields()).thenReturn(fields);
 
         baseFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field is not a primitive"));
@@ -65,7 +65,7 @@ class BaseFieldsFuzzerTest {
         baseFieldsFuzzer = new MyBaseFieldsSkipFuzzer(serviceCaller, testCaseListener, catsUtil);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
-        Mockito.when(data.getAllFieldsAsSingleSet()).thenReturn(fields);
+        Mockito.when(data.getAllFields()).thenReturn(fields);
 
         baseFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq(null));
@@ -79,7 +79,7 @@ class BaseFieldsFuzzerTest {
         Set<String> fields = Collections.singleton("field");
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
-        Mockito.when(data.getAllFieldsAsSingleSet()).thenReturn(fields);
+        Mockito.when(data.getAllFields()).thenReturn(fields);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
         Mockito.when(catsUtil.isPrimitive(Mockito.eq(null), Mockito.anyString())).thenReturn(true);

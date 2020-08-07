@@ -4,7 +4,7 @@ import com.endava.cats.CatsMain;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.UrlParams;
+import com.endava.cats.util.CatsParams;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -14,7 +14,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -29,13 +28,13 @@ class FuzzingDataFactoryTest {
     @MockBean
     private CatsUtil catsUtil;
     @MockBean
-    private UrlParams urlParams;
+    private CatsParams catsParams;
 
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
     void setup() {
-        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, urlParams);
+        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, catsParams);
     }
 
     @Test
@@ -48,7 +47,6 @@ class FuzzingDataFactoryTest {
         Map<String, Schema> schemas = CatsMain.getSchemas(openAPI);
         PathItem pathItem = openAPI.getPaths().get("/pets");
         List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/pets", pathItem, schemas);
-        Mockito.doCallRealMethod().when(catsUtil).getDefinitionNameFromRef(Mockito.anyString());
 
         Assertions.assertThat(data).hasSize(3);
         Assertions.assertThat(data.get(0).getMethod()).isEqualByComparingTo(HttpMethod.POST);

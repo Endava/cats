@@ -18,7 +18,7 @@ public class CatsResponse {
 
     public static CatsResponse from(int code, String body, String methodType) {
         return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)
-                .jsonBody((new JsonParser()).parse(body)).build();
+                .jsonBody(JsonParser.parseString(body)).build();
     }
 
     public static CatsResponse empty() {

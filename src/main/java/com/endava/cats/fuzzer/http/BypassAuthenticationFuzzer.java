@@ -8,17 +8,13 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,31 +28,15 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    private final CatsUtil catsUtil;
-
-    @Value("${headers:empty}")
-    private String headersFile;
-
-    private Map<String, Map<String, Object>> headers = new HashMap<>();
+    private final CatsParams catsParams;
 
     @Autowired
-    public BypassAuthenticationFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    public BypassAuthenticationFuzzer(ServiceCaller sc, TestCaseListener lr, CatsParams catsParams) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
-        this.catsUtil = cu;
-
+        this.catsParams = catsParams;
     }
 
-    @PostConstruct
-    public void loadHeaders() {
-        if (!CatsMain.EMPTY.equalsIgnoreCase(headersFile)) {
-            try {
-                headers = catsUtil.parseYaml(headersFile);
-            } catch (IOException e) {
-                LOGGER.error("Exception while parsing headers file!", e);
-            }
-        }
-    }
 
     @Override
     public void fuzz(FuzzingData data) {
@@ -81,7 +61,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     private Set<String> getAuthenticationHeaderProvided(FuzzingData data) {
         Set<String> authenticationHeadersInContract = data.getHeaders().stream().filter(header -> header.getName().toLowerCase().contains(AUTHENTICATION_HEADER) || header.getName().toLowerCase().contains(JWT))
                 .map(CatsHeader::getName).collect(Collectors.toSet());
-        Set<String> authenticationHeadersInFile = headers.entrySet().stream().filter(path -> CatsMain.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
+        Set<String> authenticationHeadersInFile = catsParams.getHeaders().entrySet().stream().filter(path -> CatsMain.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
                 .map(Map.Entry::getValue).collect(Collectors.toList())
                 .stream().flatMap(entry -> entry.keySet().stream())
                 .collect(Collectors.toSet())

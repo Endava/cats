@@ -2,7 +2,6 @@ package com.endava.cats.util;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,7 +10,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
-import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -26,7 +24,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class CatsUtil {
-    public static final String CATS_REQUIRED = "CATS_REQUIRED";
     private static final Logger LOGGER = LoggerFactory.getLogger(CatsUtil.class);
 
     public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, Logger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
@@ -130,17 +127,6 @@ public class CatsUtil {
     }
 
     /**
-     * When dealing with GET or other similar request that accepts only query params we do a hack by marking the required params as CATS_REQUIRED in their corresponding schema.
-     * We make sure we eliminate this hack using this method.
-     *
-     * @param set
-     * @return
-     */
-    public Set<String> eliminateStartingCharAndHacks(Set<String> set) {
-        return set.stream().map(item -> item.substring(1)).map(item -> item.replace("#" + CATS_REQUIRED, "")).collect(Collectors.toSet());
-    }
-
-    /**
      * Returns all the sets obtained by removing at max {@code maxFieldsToRemove}
      *
      * @param allFields
@@ -162,33 +148,9 @@ public class CatsUtil {
         return sets;
     }
 
-    public Set<String> getAllFields(FuzzingData data) {
-        Set<String> subfields = this.eliminateStartingCharAndHacks(this.getAllSubfieldsAsFullyQualifiedNames(data.getReqSchema(), "", data.getSchemaMap()));
-        Set<String> allFields = new HashSet<>(data.getAllProperties().keySet());
-        allFields.addAll(subfields);
-
-        return allFields;
-    }
-
-    private Set<String> getAllSubfieldsAsFullyQualifiedNames(Schema currentSchema, String prefix, Map<String, Schema> schemaMap) {
-        Set<String> result = new HashSet<>();
-        if (currentSchema.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : (Set<Map.Entry<String, Schema>>) currentSchema.getProperties().entrySet()) {
-                Optional<String> propSchemaFromRef = this.getDefinitionNameFromRef(prop.getValue().get$ref());
-                if (propSchemaFromRef.isPresent()) {
-                    Schema newSchema = schemaMap.get(propSchemaFromRef.get());
-                    result.addAll(this.getAllSubfieldsAsFullyQualifiedNames(newSchema, prefix + "#" + prop.getKey(), schemaMap));
-                } else {
-                    result.add(prefix + "#" + prop.getKey());
-                }
-            }
-        }
-        return result;
-    }
 
     public boolean isPrimitive(String payload, String property) {
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(payload);
+        JsonElement jsonElement = JsonParser.parseString(payload);
 
         if (jsonElement.isJsonObject()) {
             return isPrimitive(property, jsonElement);
@@ -215,14 +177,13 @@ public class CatsUtil {
             String lastPropertyInArray = propertyAsArray[propertyAsArray.length - 1];
             JsonElement lastPropertyAsJsonElement = element.getAsJsonObject().get(lastPropertyInArray);
 
-            return lastPropertyAsJsonElement.isJsonPrimitive();
+            return lastPropertyAsJsonElement != null && lastPropertyAsJsonElement.isJsonPrimitive();
         }
         return false;
     }
 
     public FuzzingResult replaceFieldWithFuzzedValue(String payload, String jsonProperty, FuzzingStrategy valueToSet) {
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(payload);
+        JsonElement jsonElement = JsonParser.parseString(payload);
         String fuzzedValue = "";
 
         if (jsonElement.isJsonObject()) {
@@ -266,17 +227,9 @@ public class CatsUtil {
         return result;
     }
 
-    public Optional<String> getDefinitionNameFromRef(String ref) {
-        if (ref == null) {
-            return Optional.empty();
-        }
-
-        return Optional.of(ref.substring(ref.lastIndexOf('/') + 1));
-    }
-
     public boolean isValidJson(String text) {
         try {
-            new JsonParser().parse(text);
+            JsonParser.parseString(text);
         } catch (Exception e) {
             return false;
         }
@@ -312,7 +265,14 @@ public class CatsUtil {
     public JsonElement parseAsJsonElement(String payload) {
         JsonReader reader = new JsonReader(new StringReader(payload));
         reader.setLenient(true);
-        JsonParser parser = new JsonParser();
-        return parser.parse(reader);
+        return JsonParser.parseReader(reader);
+    }
+
+    public void mapObjsToString(String headersFile, Map<String, Map<String, String>> headers) throws IOException {
+        Map<String, Map<String, Object>> headersAsObject = this.parseYaml(headersFile);
+        for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
+            headers.put(entry.getKey(), entry.getValue().entrySet()
+                    .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
+        }
     }
 }
