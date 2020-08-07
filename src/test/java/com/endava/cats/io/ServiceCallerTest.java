@@ -32,7 +32,6 @@ class ServiceCallerTest {
     private TestCaseListener testCaseListener;
     @Autowired
     private CatsUtil catsUtil;
-    private CatsParams catsParams;
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -55,7 +54,7 @@ class ServiceCallerTest {
 
     @BeforeEach
     public void setupEach() throws Exception {
-        catsParams = new CatsParams(catsUtil);
+        CatsParams catsParams = new CatsParams(catsUtil);
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil, catsParams);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());

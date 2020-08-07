@@ -15,16 +15,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CatsParams {
 
+    private final Map<String, Map<String, String>> headers = new HashMap<>();
+    private final CatsUtil catsUtil;
     @Value("${urlParams:empty}")
     private String params;
     private List<String> urlParamsList = new ArrayList<>();
-
-
     @Value("${headers:empty}")
     private String headersFile;
-    private Map<String, Map<String, String>> headers = new HashMap<>();
-
-    private CatsUtil catsUtil;
 
     @Autowired
     public CatsParams(CatsUtil cu) {
