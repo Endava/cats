@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-
+<configuration debug="false">
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
@@ -16,7 +16,7 @@
             additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
-    <root level="info">
+    <root level="warn">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
