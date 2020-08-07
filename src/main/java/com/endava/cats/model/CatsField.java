@@ -13,5 +13,5 @@ import lombok.ToString;
 public class CatsField {
     private final String name;
     private final boolean required;
-    private Schema schema;
+    private final Schema schema;
 }
