@@ -4,8 +4,8 @@ import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CatsParams;
+import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.swagger.v3.oas.models.Operation;
@@ -286,10 +286,15 @@ public class FuzzingDataFactory {
                     }
             );
 
-            jsonElement.getAsJsonObject().add(newKey, value);
-
-            result.add(jsonElement.toString());
+            //when a request has only oneOf or anyOf fields, there is no additional key to create this
+            if (newKey.equalsIgnoreCase("body")) {
+                result.add(value.toString());
+            } else {
+                jsonElement.getAsJsonObject().add(newKey, value);
+                result.add(jsonElement.toString());
+            }
             jsonElement.getAsJsonObject().remove(key);
+
         });
     }
 
