@@ -59,22 +59,27 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         Set<Set<String>> sets = data.getAllFields(strategy, maxFieldsToRemove);
 
         LOGGER.info("Fuzzer will run with [{}] fields configuration possibilities out of [{}] maximum possible",
-                sets.size(), (int) Math.pow(2, data.getAllProperties().size()));
+                sets.size(), (int) Math.pow(2, data.getAllFields().size()));
 
         return sets;
     }
 
 
     private void process(FuzzingData data, List<String> required, Set<String> subset) {
-        testCaseListener.addScenario(LOGGER, "Scenario: remove the following fields from request: {}", subset);
         JsonElement jsonObject = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
 
-        boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
-        testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as required fields [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
+        if (!jsonObject.toString().equalsIgnoreCase(data.getPayload())) {
+            testCaseListener.addScenario(LOGGER, "Scenario: remove the following fields from request: {}", subset);
 
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(jsonObject.toString()).queryParams(data.getQueryParams()).build());
-        testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
+            boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
+            testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as required fields [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
+
+            CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+                    .payload(jsonObject.toString()).queryParams(data.getQueryParams()).build());
+            testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
+        } else {
+            testCaseListener.skipTest(LOGGER, "Field is from a different ANY_OF or ONE_OF payload");
+        }
     }
 
     private boolean hasRequiredFieldsRemove(List<String> required, Set<String> subset) {
@@ -85,8 +90,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
 
     private JsonElement getFuzzedJsonWithFieldsRemove(String payload, Set<String> fieldsToRemove) {
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(payload);
+        JsonElement jsonElement = JsonParser.parseString(payload);
 
         if (jsonElement.isJsonObject()) {
             this.removeCurrentSet(fieldsToRemove, jsonElement);

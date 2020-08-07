@@ -54,8 +54,7 @@ public class NewFieldsFuzzer implements Fuzzer {
     }
 
     private JsonElement getFuzzedJson(FuzzingData data) {
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(data.getPayload());
+        JsonElement jsonElement = JsonParser.parseString(data.getPayload());
 
         if (jsonElement instanceof JsonObject) {
             ((JsonObject) jsonElement).addProperty(NEW_FIELD, NEW_FIELD);

@@ -4,8 +4,8 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.UrlParams;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -32,7 +32,7 @@ class ServiceCallerTest {
     private TestCaseListener testCaseListener;
     @Autowired
     private CatsUtil catsUtil;
-    private UrlParams urlParams;
+    private CatsParams catsParams;
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -55,17 +55,17 @@ class ServiceCallerTest {
 
     @BeforeEach
     public void setupEach() throws Exception {
-        urlParams = new UrlParams();
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, urlParams);
+        catsParams = new CatsParams(catsUtil);
+        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, catsParams);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(serviceCaller, "refDataFile", "src/test/resources/refFields.yml");
-        ReflectionTestUtils.setField(serviceCaller, "headersFile", "src/test/resources/headers.yml");
-        ReflectionTestUtils.setField(urlParams, "params", "id=1,test=2");
+        ReflectionTestUtils.setField(catsParams, "headersFile", "src/test/resources/headers.yml");
+        ReflectionTestUtils.setField(catsParams, "params", "id=1,test=2");
 
-        serviceCaller.loadHeaders();
+        catsParams.loadHeaders();
         serviceCaller.loadRefData();
-        urlParams.loadURLParams();
+        catsParams.loadURLParams();
     }
 
     @Test

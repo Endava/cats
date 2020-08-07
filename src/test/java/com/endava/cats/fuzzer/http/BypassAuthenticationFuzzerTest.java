@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,12 +46,15 @@ class BypassAuthenticationFuzzerTest {
     @MockBean
     private BuildProperties buildProperties;
 
+    private CatsParams catsParams;
+
 
     private BypassAuthenticationFuzzer bypassAuthenticationFuzzer;
 
     @BeforeEach
     void setup() {
-        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(serviceCaller, testCaseListener, catsUtil);
+        catsParams = new CatsParams(catsUtil);
+        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(serviceCaller, testCaseListener, catsParams);
     }
 
     @Test
@@ -59,15 +63,14 @@ class BypassAuthenticationFuzzerTest {
         bypassAuthenticationFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.anyString());
-
     }
 
 
     @Test
     void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() throws Exception {
-        ReflectionTestUtils.setField(bypassAuthenticationFuzzer, "headersFile", "notEmpty");
+        ReflectionTestUtils.setField(catsParams, "headersFile", "notEmpty");
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
-        bypassAuthenticationFuzzer.loadHeaders();
+        catsParams.loadHeaders();
 
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));

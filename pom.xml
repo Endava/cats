@@ -30,6 +30,7 @@
         <pitest-maven.version>1.5.2</pitest-maven.version>
         <pitest-junit5-plugin.version>0.12</pitest-junit5-plugin.version>
         <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+        <guava.version>29.0-jre</guava.version>
     </properties>
 
     <build>
@@ -200,6 +201,11 @@
             <groupId>com.github.curious-odd-man</groupId>
             <artifactId>rgxgen</artifactId>
             <version>${rgxgen.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
     </dependencies>
 </project>

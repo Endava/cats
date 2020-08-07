@@ -39,7 +39,6 @@ public class TestCaseListener {
     protected static final String ID = "id";
     private static final Logger LOGGER = LoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 150);
-    private static final JsonParser PARSER = new JsonParser();
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
@@ -202,7 +201,7 @@ public class TestCaseListener {
     }
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
-        JsonElement jsonElement = PARSER.parse(response.getBody());
+        JsonElement jsonElement = JsonParser.parseString(response.getBody());
         List<String> responses = data.getResponses().get(response.responseCodeAsString());
         return (responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement, "ROOT")))
                 || ((responses == null || responses.isEmpty()) && isEmptyResponse(response.getBody()));
@@ -223,7 +222,7 @@ public class TestCaseListener {
     private boolean matchesArrayElement(String responseSchema, JsonElement element, String name) {
         JsonArray jsonArray = ((JsonArray) element);
 
-        if (jsonArray.size() == 0 && PARSER.parse(responseSchema).isJsonArray()) {
+        if (jsonArray.size() == 0 && JsonParser.parseString(responseSchema).isJsonArray()) {
             return true;
         } else if (jsonArray.size() == 0) {
             return false;

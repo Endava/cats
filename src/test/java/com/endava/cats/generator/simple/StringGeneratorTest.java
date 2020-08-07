@@ -42,7 +42,7 @@ class StringGeneratorTest {
 
         String actual = StringGenerator.generateRightBoundString(schema);
 
-        Assertions.assertThat(actual.length()).isGreaterThan(maxLength + 10);
+        Assertions.assertThat(actual.length()).isGreaterThan(maxLength + 10 - 1);
     }
 
     @Test

@@ -6,8 +6,8 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.UrlParams;
 import com.google.common.html.HtmlEscapers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
@@ -71,24 +70,21 @@ public class ServiceCaller {
         }
     }
 
-    private final UrlParams urlParams;
+    private final CatsParams catsParams;
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
-    private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final Map<String, Map<String, String>> refData = new HashMap<>();
     @Value("${server:empty}")
     private String server;
     @Value("${refData:empty}")
     private String refDataFile;
-    @Value("${headers:empty}")
-    private String headersFile;
 
 
     @Autowired
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, UrlParams urlParams) {
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
-        this.urlParams = urlParams;
+        this.catsParams = catsParams;
     }
 
 
@@ -97,26 +93,8 @@ public class ServiceCaller {
         if (CatsMain.EMPTY.equalsIgnoreCase(refDataFile)) {
             LOGGER.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
-            this.mapObjsToString(refDataFile, refData);
+            catsUtil.mapObjsToString(refDataFile, refData);
             LOGGER.info("Reference data file loaded successfully: {}", refData);
-        }
-    }
-
-    @PostConstruct
-    public void loadHeaders() throws IOException {
-        if (CatsMain.EMPTY.equalsIgnoreCase(headersFile)) {
-            LOGGER.info("No headers file was supplied! No additional header will be added!");
-        } else {
-            this.mapObjsToString(headersFile, headers);
-            LOGGER.info("Headers file loaded: {}", headers);
-        }
-    }
-
-    private void mapObjsToString(String headersFile, Map<String, Map<String, String>> headers) throws IOException {
-        Map<String, Map<String, Object>> headersAsObject = catsUtil.parseYaml(headersFile);
-        for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
-            headers.put(entry.getKey(), entry.getValue().entrySet()
-                    .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
         }
     }
 
@@ -209,7 +187,7 @@ public class ServiceCaller {
      * @return
      */
     private String getPathWithSuppliedURLParamsReplaced(String startingUrl) {
-        for (String line : urlParams.getUrlParamsList()) {
+        for (String line : catsParams.getUrlParamsList()) {
             String[] split = line.split(":");
             String pathVar = "{" + split[0] + "}";
             if (startingUrl.contains(pathVar)) {
@@ -330,10 +308,10 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(HttpRequestBase method, String relativePath, ServiceData data) {
-        LOGGER.info("Path {} has the following headers: {}", relativePath, headers.get(relativePath));
-        LOGGER.info("Headers that should be added to all paths: {}", headers.get(CatsMain.ALL));
+        LOGGER.info("Path {} has the following headers: {}", relativePath, catsParams.getHeaders().get(relativePath));
+        LOGGER.info("Headers that should be added to all paths: {}", catsParams.getHeaders().get(CatsMain.ALL));
 
-        Map<String, String> suppliedHeaders = headers.entrySet().stream()
+        Map<String, String> suppliedHeaders = catsParams.getHeaders().entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsMain.ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
 

@@ -37,9 +37,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         logger.info("All required fields, including subfields: {}", data.getAllRequiredFields());
-        logger.info("All fields {}", data.getAllFieldsAsSingleSet());
+        logger.info("All fields {}", data.getAllFields());
 
-        for (String fuzzedField : data.getAllFieldsAsSingleSet()) {
+        for (String fuzzedField : data.getAllFields()) {
             testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField));
         }
     }

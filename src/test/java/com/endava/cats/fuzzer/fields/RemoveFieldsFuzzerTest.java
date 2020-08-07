@@ -69,7 +69,6 @@ class RemoveFieldsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
         Mockito.doCallRealMethod().when(catsUtil).getExpectedWordingBasedOnRequiredFields(Mockito.eq(true));
         Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(Mockito.eq(true))).thenReturn(ResponseCodeFamily.FOURXX);
-        Mockito.doCallRealMethod().when(catsUtil).getAllFields(Mockito.eq(data));
         Mockito.doCallRealMethod().when(catsUtil).removeOneByOne(Mockito.anySet());
 
         removeFieldsFuzzer.fuzz(data);

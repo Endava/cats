@@ -5,7 +5,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.UrlParams;
+import com.endava.cats.util.CatsParams;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.swagger.v3.oas.models.Operation;
@@ -30,12 +30,12 @@ public class FuzzingDataFactory {
     private static final String SYNTH_SCHEMA_NAME = "catsGetSchema";
 
     private final CatsUtil catsUtil;
-    private final UrlParams urlParams;
+    private final CatsParams catsParams;
 
     @Autowired
-    public FuzzingDataFactory(CatsUtil catsUtil, UrlParams urlParams) {
+    public FuzzingDataFactory(CatsUtil catsUtil, CatsParams catsParams) {
         this.catsUtil = catsUtil;
-        this.urlParams = urlParams;
+        this.catsParams = catsParams;
     }
 
     /**
@@ -123,16 +123,18 @@ public class FuzzingDataFactory {
     private ObjectSchema createSyntheticSchemaForGet(List<Parameter> operationParameters) {
         ObjectSchema syntheticSchema = new ObjectSchema();
         syntheticSchema.setProperties(new LinkedHashMap<>());
+        List<String> required = new ArrayList<>();
         for (Parameter parameter : operationParameters) {
             if (("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn()))
-                    && urlParams.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
+                    && catsParams.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
                 parameter.getSchema().setName(parameter.getSchema().getName() + "|" + parameter.getIn());
                 syntheticSchema.addProperties(parameter.getName(), parameter.getSchema());
                 if (parameter.getRequired() != null && parameter.getRequired()) {
-                    parameter.getSchema().setRequired(Collections.singletonList(CatsUtil.CATS_REQUIRED));
+                    required.add(parameter.getName());
                 }
             }
         }
+        syntheticSchema.setRequired(required);
         return syntheticSchema;
     }
 
@@ -256,8 +258,7 @@ public class FuzzingDataFactory {
      */
     private List<String> getPayloadCombinationsBasedOnOneOfAndAnyOf(String initialPayload, List<String> discriminators) {
         List<String> result = new ArrayList<>();
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(initialPayload);
+        JsonElement jsonElement = JsonParser.parseString(initialPayload);
 
         if (jsonElement.isJsonObject()) {
             this.addNewCombination(result, jsonElement, discriminators);
@@ -304,8 +305,7 @@ public class FuzzingDataFactory {
     }
 
     private String squashAllOfElements(String payloadSample) {
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(payloadSample);
+        JsonElement jsonElement = JsonParser.parseString(payloadSample);
         this.squashAllOf(jsonElement);
 
         payloadSample = jsonElement.toString();
