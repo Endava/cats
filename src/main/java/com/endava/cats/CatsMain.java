@@ -153,16 +153,16 @@ public class CatsMain implements CommandLineRunner {
                 .map(skipFor -> skipFor.replace("--skip", "")
                         .replace("ForPath", "").split("="))
                 .map(skipForArr -> CatsSkipped.builder()
-                        .fuzzer(skipForArr[0])
-                        .forPaths(Arrays.asList(skipForArr[1].split(",")))
+                        .fuzzer(skipForArr[0].trim())
+                        .forPaths(Arrays.asList(skipForArr[1].trim().split(",")))
                         .build())
                 .collect(Collectors.toList());
         LOGGER.info("Skipped for supplied arguments: {}. Matching with registered fuzzers...", catsSkipped);
 
-       this.skipFuzzersForPaths = catsSkipped.stream()
-               .filter(skipped -> fuzzers.contains(skipped.getFuzzer()))
-               .collect(Collectors.toList());
-       LOGGER.info("Skipped for list after matching with registered fuzzers: {}", this.skipFuzzersForPaths);
+        this.skipFuzzersForPaths = catsSkipped.stream()
+                .filter(skipped -> fuzzers.stream().map(Object::toString).anyMatch(fuzzerName -> fuzzerName.equalsIgnoreCase(skipped.getFuzzer())))
+                .collect(Collectors.toList());
+        LOGGER.info("Skipped for list after matching with registered fuzzers: {}", this.skipFuzzersForPaths);
     }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
@@ -307,7 +307,7 @@ public class CatsMain implements CommandLineRunner {
     }
 
     private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
-        List<String> configuredFuzzers = this.configuredFuzzers();
+        List<String> configuredFuzzers = this.configuredFuzzers(pathItemEntry.getKey());
         Map<String, Schema> schemas = getSchemas(openAPI);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
@@ -330,12 +330,12 @@ public class CatsMain implements CommandLineRunner {
                             fuzzer.fuzz(data);
                         });
             } else {
-                LOGGER.warn("Skipping fuzzer {} as it was not supplied!", fuzzer);
+                LOGGER.warn("Skipping fuzzer {} for path {} as configured!", fuzzer, pathItemEntry.getKey());
             }
         }
     }
 
-    private List<String> configuredFuzzers() {
+    private List<String> configuredFuzzers(String pathKey) {
         List<String> allFuzzersName = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
         List<String> allowedFuzzers = allFuzzersName;
 
@@ -343,7 +343,15 @@ public class CatsMain implements CommandLineRunner {
             allowedFuzzers = stringToList(suppliedFuzzers, ",");
         }
 
+        allowedFuzzers = this.removeSkippedFuzzers(pathKey, allowedFuzzers);
+
         return CatsUtil.filterAndPrintNotMatching(allowedFuzzers, allFuzzersName::contains, LOGGER, "Supplied Fuzzer does not exist {}", Object::toString);
+    }
+
+    private List<String> removeSkippedFuzzers(String pathKey, List<String> allowedFuzzers) {
+        return allowedFuzzers.stream().filter(fuzzer -> skipFuzzersForPaths.stream()
+                .noneMatch(catsSkipped -> catsSkipped.getFuzzer().equalsIgnoreCase(fuzzer) && catsSkipped.getForPaths().contains(pathKey)))
+                .collect(Collectors.toList());
     }
 
     private void printUsage() {
