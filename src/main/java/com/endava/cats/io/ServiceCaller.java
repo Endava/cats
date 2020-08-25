@@ -413,7 +413,7 @@ public class ServiceCaller {
             }
             if (fuzzedValue != null && element.getAsJsonObject().remove(key) != null) {
                 element.getAsJsonObject().addProperty(key, fuzzedValue);
-                LOGGER.info("Replacing property {} with value {}", entry.getKey(), fuzzedValue);
+                LOGGER.debug("Replacing property {} with ref data value {}", entry.getKey(), fuzzedValue);
             }
         }
     }

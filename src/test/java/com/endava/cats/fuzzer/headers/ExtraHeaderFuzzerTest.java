@@ -9,6 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,10 +40,17 @@ class ExtraHeaderFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @MockBean
+    @SpyBean
     private BuildProperties buildProperties;
 
     private ExtraHeaderFuzzer extraHeaderFuzzer;
+
+    @BeforeAll
+    static void init() {
+        System.setProperty("name", "cats");
+        System.setProperty("version", "4.3.2");
+        System.setProperty("time", "100011111");
+    }
 
     @BeforeEach
     void setup() {

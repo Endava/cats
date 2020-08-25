@@ -1,7 +1,5 @@
 package com.endava.cats;
 
-import com.endava.cats.io.TestCaseExporter;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -25,18 +23,12 @@ class CatsMainTest {
     @SpyBean
     private CatsMain catsMain;
 
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
     @Autowired
     private BuildProperties buildProperties;
 
     @Test
     void givenNoArguments_whenStartingCats_thenHelpIsPrinted() {
-        Assertions.assertThatThrownBy(() -> catsMain.doLogic()).isInstanceOf(StopExecutionException.class).hasMessage("minimum parameters not supplied");
+        Assertions.assertThatThrownBy(() -> catsMain.doLogic()).isInstanceOf(StopExecutionException.class).hasMessage("minimum arguments not supplied");
     }
 
     @Test

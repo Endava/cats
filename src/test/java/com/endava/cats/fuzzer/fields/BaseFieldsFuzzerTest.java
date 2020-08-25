@@ -12,6 +12,7 @@ import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -44,10 +45,17 @@ class BaseFieldsFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @MockBean
+    @SpyBean
     private BuildProperties buildProperties;
 
     private BaseFieldsFuzzer baseFieldsFuzzer;
+
+    @BeforeAll
+    static void init() {
+        System.setProperty("name", "cats");
+        System.setProperty("version", "4.3.2");
+        System.setProperty("time", "100011111");
+    }
 
     @Test
     void givenAFieldWithAReplaceFuzzingStrategyWithANonPrimitiveField_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {

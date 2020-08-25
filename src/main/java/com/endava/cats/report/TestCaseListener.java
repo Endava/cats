@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ public class TestCaseListener {
     protected static final String ID = "id";
     private static final Logger LOGGER = LoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 150);
+    private static long t0;
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
@@ -114,15 +117,20 @@ public class TestCaseListener {
         }
     }
 
+    @PostConstruct
     public void startSession() {
+        t0 = System.currentTimeMillis();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("UTC"));
         LOGGER.info("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(buildProperties.getName().toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(buildProperties.getVersion()), ansi().fg(Ansi.Color.GREEN).a(formatter.format(buildProperties.getTime())));
         ansi().reset();
     }
 
+    @PreDestroy
     public void endSession() {
         testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
         testCaseExporter.writeReportFiles();
+        LOGGER.info("CATS finished in {} ms. Total (excluding skipped) requests {}. Passed: {}, warnings: {}, errors: {}, skipped {}. You can check the test_cases folder for more details about the payloads.",
+                (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
     }
 
     public void reportWarn(Logger logger, String message, Object... params) {

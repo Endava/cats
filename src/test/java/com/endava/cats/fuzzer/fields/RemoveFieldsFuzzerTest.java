@@ -13,6 +13,7 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +42,7 @@ class RemoveFieldsFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @MockBean
+    @SpyBean
     private BuildProperties buildProperties;
 
     @MockBean
@@ -49,6 +50,12 @@ class RemoveFieldsFuzzerTest {
 
     private RemoveFieldsFuzzer removeFieldsFuzzer;
 
+    @BeforeAll
+    static void init() {
+        System.setProperty("name", "cats");
+        System.setProperty("version", "4.3.2");
+        System.setProperty("time", "100011111");
+    }
 
     @BeforeEach
     void setup() {

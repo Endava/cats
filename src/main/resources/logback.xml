@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="false">
-    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>[%highlight(%-5level)] [%cyan(%mdc{id})] [%cyan(%mdc{fuzzer})] - %msg%n</pattern>
+            <pattern>[%highlight(%-5level)] [%cyan(%mdc{id})] [%cyan(%mdc{fuzzer})] %msg%n</pattern>
         </encoder>
 
     </appender>
