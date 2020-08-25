@@ -10,6 +10,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonObject;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -38,7 +40,7 @@ class CustomFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @MockBean
+    @SpyBean
     private BuildProperties buildProperties;
 
     @MockBean
@@ -46,10 +48,20 @@ class CustomFuzzerTest {
 
     private CustomFuzzer customFuzzer;
 
+    @BeforeAll
+    static void init() {
+        System.setProperty("name", "cats");
+        System.setProperty("version", "4.3.2");
+        System.setProperty("time", "100011111");
+    }
 
     @BeforeEach
     void setup() {
         customFuzzer = new CustomFuzzer(serviceCaller, testCaseListener, catsUtil);
+        Mockito.when(buildProperties.getName()).thenReturn("CATS");
+        Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
+        Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
+        ReflectionTestUtils.setField(testCaseListener, "buildProperties", buildProperties);
     }
 
 

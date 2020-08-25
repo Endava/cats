@@ -2,10 +2,9 @@ package com.endava.cats;
 
 import ch.qos.logback.classic.Level;
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
-import com.endava.cats.report.ExecutionStatisticsListener;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -59,6 +58,7 @@ public class CatsMain implements CommandLineRunner {
     private static final String APPLICATION_JSON = "application/json";
     private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
     private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
+    private static final String HIGHLIGHT_TEMPLATE = ansi().render("--@|green {}|@").reset().toString();
 
     @Value("${contract:empty}")
     private String contract;
@@ -86,15 +86,13 @@ public class CatsMain implements CommandLineRunner {
     private String urlParams;
     @Value("${customFuzzerFile:empty}")
     private String customFuzzerFile;
+    private List<CatsSkipped> skipFuzzersForPaths;
 
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
     private FuzzingDataFactory fuzzingDataFactory;
-    @Autowired
-    private ExecutionStatisticsListener executionStatisticsListener;
-    @Autowired
-    private TestCaseListener testCaseListener;
+
 
     public static void main(String... args) {
         new SpringApplicationBuilder(CatsMain.class).bannerMode(Banner.Mode.CONSOLE).logStartupInfo(false).build().run(args);
@@ -126,23 +124,18 @@ public class CatsMain implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        long t0 = System.currentTimeMillis();
         try {
             this.doLogic(args);
         } catch (StopExecutionException e) {
             LOGGER.info(" ");
-        } finally {
-            LOGGER.info("CATS finished in {} ms. Total (excluding skipped) requests {}. Passed: {}, warnings: {}, errors: {}, skipped {}. You can check the test_cases folder for more details about the payloads.",
-                    (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
-            testCaseListener.endSession();
         }
     }
 
     public void doLogic(String... args) {
-        testCaseListener.startSession();
+        this.printArgs();
         this.sortFuzzersByName();
         this.processArgs(args);
-        this.printParams();
+        this.processSkipFuzzerFor(args);
 
         OpenAPI openAPI = this.createOpenAPI();
         this.processContractDependentCommands(openAPI, args);
@@ -150,6 +143,26 @@ public class CatsMain implements CommandLineRunner {
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
 
         this.startFuzzing(openAPI, suppliedPaths);
+    }
+
+    public void processSkipFuzzerFor(String... args) {
+        List<String> skipForArgs = Arrays.stream(args)
+                .filter(arg -> arg.startsWith("--skip") && arg.contains("ForPath")).collect(Collectors.toList());
+
+        List<CatsSkipped> catsSkipped = skipForArgs.stream()
+                .map(skipFor -> skipFor.replace("--skip", "")
+                        .replace("ForPath", "").split("="))
+                .map(skipForArr -> CatsSkipped.builder()
+                        .fuzzer(skipForArr[0])
+                        .forPaths(Arrays.asList(skipForArr[1].split(",")))
+                        .build())
+                .collect(Collectors.toList());
+        LOGGER.info("Skipped for supplied arguments: {}. Matching with registered fuzzers...", catsSkipped);
+
+       this.skipFuzzersForPaths = catsSkipped.stream()
+               .filter(skipped -> fuzzers.contains(skipped.getFuzzer()))
+               .collect(Collectors.toList());
+       LOGGER.info("Skipped for list after matching with registered fuzzers: {}", this.skipFuzzersForPaths);
     }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
@@ -175,6 +188,7 @@ public class CatsMain implements CommandLineRunner {
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
         List<String> suppliedPaths = stringToList(paths, ";");
         if (suppliedPaths.isEmpty() || paths.equalsIgnoreCase(ALL)) {
+            suppliedPaths.remove(ALL);
             suppliedPaths.addAll(openAPI.getPaths().keySet());
         }
         suppliedPaths = CatsUtil.filterAndPrintNotMatching(suppliedPaths, path -> openAPI.getPaths().containsKey(path), LOGGER, "Supplied path is not matching the contract {}", Object::toString);
@@ -190,7 +204,7 @@ public class CatsMain implements CommandLineRunner {
             options.setResolve(true);
             options.setFlatten(true);
             OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
-            LOGGER.info("Finished parsing the contract in {} ms", (System.currentTimeMillis() - t0));
+            LOGGER.info(ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString(), (System.currentTimeMillis() - t0));
             return openAPI;
         } catch (Exception e) {
             LOGGER.error("Error parsing OPEN API contract {}", contract);
@@ -227,19 +241,19 @@ public class CatsMain implements CommandLineRunner {
 
         this.processRemainingArguments(args);
 
-        this.processLogLevelParameter();
+        this.processLogLevelArgument();
 
         this.setReportingLevel();
     }
 
     private void processRemainingArguments(String[] args) {
-        if (this.isMinimumParametersNotSupplied(args)) {
-            LOGGER.error("Missing or invalid required parameters 'contract' or 'server'. Usage: ./cats.jar --server=URL --contract=location. You can run './cats.jar ?' for more options.");
-            throw new StopExecutionException("minimum parameters not supplied");
+        if (this.isMinimumArgumentsNotSupplied(args)) {
+            LOGGER.error("Missing or invalid required arguments 'contract' or 'server'. Usage: ./cats.jar --server=URL --contract=location. You can run './cats.jar ?' for more options.");
+            throw new StopExecutionException("minimum arguments not supplied");
         }
     }
 
-    private boolean isMinimumParametersNotSupplied(String[] args) {
+    private boolean isMinimumArgumentsNotSupplied(String[] args) {
         return EMPTY.equalsIgnoreCase(contract) && (args.length != 3 || EMPTY.equalsIgnoreCase(server));
     }
 
@@ -247,7 +261,7 @@ public class CatsMain implements CommandLineRunner {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.endava.cats")).setLevel(Level.toLevel(reportingLevel));
     }
 
-    private void processLogLevelParameter() {
+    private void processLogLevelArgument() {
         if (!EMPTY.equalsIgnoreCase(logData)) {
             String[] log = logData.split(":");
             ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(log[0])).setLevel(Level.toLevel(log[1]));
@@ -297,6 +311,7 @@ public class CatsMain implements CommandLineRunner {
         Map<String, Schema> schemas = getSchemas(openAPI);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
+        LOGGER.info(" ");
         LOGGER.info("Start fuzzing path {}", pathItemEntry.getKey());
         List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), schemas);
 
@@ -311,7 +326,7 @@ public class CatsMain implements CommandLineRunner {
                 CatsUtil.filterAndPrintNotMatching(fuzzingDataList, data -> !fuzzer.skipFor().contains(data.getMethod()),
                         LOGGER, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
                         .forEach(data -> {
-                            LOGGER.info("Fuzzer {} and payload: {}", fuzzer, data.getPayload());
+                            LOGGER.info("Fuzzer {} and payload: {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getPayload());
                             fuzzer.fuzz(data);
                         });
             } else {
@@ -332,7 +347,7 @@ public class CatsMain implements CommandLineRunner {
     }
 
     private void printUsage() {
-        LOGGER.info("The following parameters are supported: ");
+        LOGGER.info("The following arguments are supported: ");
         this.renderHelpToConsole("contract", "LOCATION_OF_THE_CONTRACT");
         this.renderHelpToConsole("server", "BASE_URL_OF_THE_SERVICE");
         this.renderHelpToConsole(FUZZERS_STRING, "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to run. You can use 'all' to include all fuzzers. To list all available fuzzers run: './cats.jar list fuzzers'");
@@ -361,11 +376,12 @@ public class CatsMain implements CommandLineRunner {
         LOGGER.info("\t./cats.jar list paths --contract=CONTRACT");
     }
 
-    private void printParams() {
-        LOGGER.info("The following configuration will be used:");
+    private void printArgs() {
+        LOGGER.info(" ");
+        LOGGER.info("{}", ansi().fgGreen().a("Processing configuration...").reset());
         LOGGER.info("Server: {}", server);
         LOGGER.info("Contract: {}", contract);
-        LOGGER.info("Registered fuzzers: {}", fuzzers);
+        LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
         LOGGER.info("Supplied fuzzers: {}", suppliedFuzzers);
         LOGGER.info("Fields fuzzing strategy: {}", fieldsFuzzingStrategy);
         LOGGER.info("Max fields to remove: {}", maxFieldsToRemove);
