@@ -29,21 +29,29 @@ public class CatsParams {
     }
 
     @PostConstruct
-    public void loadURLParams() {
-        if (CatsMain.EMPTY.equalsIgnoreCase(params)) {
-            log.info("No URL parameters supplied!");
-        } else {
-            urlParamsList = Arrays.stream(params.split(",")).map(String::trim).collect(Collectors.toList());
-            log.info("URL parameters: {}", urlParamsList);
+    public void loadURLParams() throws IOException {
+        try {
+            if (CatsMain.EMPTY.equalsIgnoreCase(params)) {
+                log.info("No URL parameters supplied!");
+            } else {
+                urlParamsList = Arrays.stream(params.split(",")).map(String::trim).collect(Collectors.toList());
+                log.info("URL parameters: {}", urlParamsList);
+            }
+        } catch (Exception e) {
+            throw new IOException("There was a problem parsing the urlParams argument: " + e.getMessage());
         }
     }
 
     @PostConstruct
     public void loadHeaders() throws IOException {
-        if (CatsMain.EMPTY.equalsIgnoreCase(headersFile)) {
-            log.info("No headers file was supplied! No additional header will be added!");
-        } else {
-            catsUtil.mapObjsToString(headersFile, headers);
+        try {
+            if (CatsMain.EMPTY.equalsIgnoreCase(headersFile)) {
+                log.info("No headers file was supplied! No additional header will be added!");
+            } else {
+                catsUtil.mapObjsToString(headersFile, headers);
+            }
+        } catch (Exception e) {
+            throw new IOException("There was a problem parsing the headers file: " + e.getMessage());
         }
     }
 
