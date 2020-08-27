@@ -95,6 +95,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 components:
+  responses:
+    BadRequest:
+      description: Request rejected due to a structural or business validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
     Pets:
       type: array
