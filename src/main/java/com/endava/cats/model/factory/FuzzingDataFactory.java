@@ -325,13 +325,14 @@ public class FuzzingDataFactory {
      */
     private void squashAllOf(JsonElement element) {
         if (element.isJsonObject()) {
-            for (Map.Entry<String, JsonElement> entry : (element.getAsJsonObject().entrySet())) {
+            for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
                 squashAllOf(entry.getValue());
                 if (entry.getKey().equalsIgnoreCase("ALL_OF")) {
                     element.getAsJsonObject().remove(entry.getKey());
                     for (Map.Entry<String, JsonElement> allOfEntry : entry.getValue().getAsJsonObject().entrySet()) {
                         element.getAsJsonObject().add(allOfEntry.getKey(), allOfEntry.getValue());
                     }
+                    break;
                 }
             }
         } else if (element.isJsonArray()) {
