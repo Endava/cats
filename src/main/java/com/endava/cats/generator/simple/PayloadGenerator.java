@@ -68,7 +68,7 @@ public class PayloadGenerator {
             if (modelName != null && mediaType.startsWith(MIME_TYPE_JSON)) {
                 final Schema schema = this.schemaMap.get(modelName);
                 if (schema != null) {
-                    String example = Json.pretty(resolveModelToExample(modelName, mediaType, schema));
+                    String example = Json.pretty(this.resolveModelToExample(modelName, mediaType, schema));
 
                     if (example != null) {
                         kv.put(EXAMPLE, example);
@@ -276,7 +276,7 @@ public class PayloadGenerator {
             if (innerSchema == null) {
                 this.parseFromInnerSchema(name, mediaType, schema, values, propertyName);
             } else {
-                values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
+                values.put(propertyName.toString(), this.resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
             }
         }
         currentProperty = previousPropertyValue;
@@ -284,8 +284,7 @@ public class PayloadGenerator {
     }
 
     private void parseFromInnerSchema(String name, String mediaType, Schema schema, Map<String, Object> values, Object propertyName) {
-        Schema innerSchema;
-        innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
+        Schema innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
         if (innerSchema instanceof ObjectSchema) {
             values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
         }
