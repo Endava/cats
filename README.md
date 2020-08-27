@@ -10,8 +10,51 @@
 
 
 ![CATS](images/cats.png)
-# Contract driven Auto-generated Tests for Swagger
 
+Table of Contents
+=================
+
+   * [Contract driven Auto-generated Tests for Swagger](#contract-driven-auto-generated-tests-for-swagger)
+   * [How the Fuzzing works](#how-the-fuzzing-works)
+   * [Build](#build)
+   * [Available commands](#available-commands)
+   * [Running CATS](#running-cats)
+      * [Notes on Unit Tests](#notes-on-unit-tests)
+   * [Available arguments](#available-arguments)
+   * [Available Fuzzers](#available-fuzzers)
+      * [BooleanFieldsFuzzer](#booleanfieldsfuzzer)
+      * [DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer](#decimalfieldsleftboundaryfuzzer-and-decimalfieldsrightboundaryfuzzer)
+      * [IntegerFieldsLeftBoundaryFuzzer and IntegerFieldsRightBoundaryFuzzer](#integerfieldsleftboundaryfuzzer-and-integerfieldsrightboundaryfuzzer)
+      * [ExtremeNegativeValueXXXFieldsFuzzer and ExtremePositiveValueXXXFuzzer](#extremenegativevaluexxxfieldsfuzzer-and-extremepositivevaluexxxfuzzer)
+      * [LargeValuesInHeadersFuzzer](#largevaluesinheadersfuzzer)
+      * [RemoveFieldsFuzzer](#removefieldsfuzzer)
+         * [POWERSET](#powerset)
+         * [ONEBYONE](#onebyone)
+         * [SIZE](#size)
+      * [HappyFuzzer](#happyfuzzer)
+      * [RemoveHeadersFuzzer](#removeheadersfuzzer)
+      * [HttpMethodsFuzzer](#httpmethodsfuzzer)
+      * [BypassAuthenticationFuzzer](#bypassauthenticationfuzzer)
+      * [StringFormatAlmostValidValuesFuzzer](#stringformatalmostvalidvaluesfuzzer)
+      * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
+      * [NewFieldsFuzzer](#newfieldsfuzzer)
+      * [StringsInNumericFieldsFuzzer](#stringsinnumericfieldsfuzzer)
+      * [CustomFuzzer](#customfuzzer)
+         * [Correlating Tests](#correlating-tests)
+   * [Skipping Fuzzers for specific paths](#skipping-fuzzers-for-specific-paths)
+   * [Reference Data File](#reference-data-file)
+   * [Headers File](#headers-file)
+   * [URL Params](#url-params)
+   * [Edge Spaces Strategy](#edge-spaces-strategy)
+   * [URL Parameters](#url-parameters)
+   * [Dealing with AnyOf, AllOf and OneOf](#dealing-with-anyof-allof-and-oneof)
+   * [Limitations](#limitations)
+      * [Inheritance and composition](#inheritance-and-composition)
+      * [Additional Parameters](#additional-parameters)
+      * [Regexes within 'pattern'](#regexes-within-pattern)
+   * [Contributing](#contributing)
+
+# Contract driven Auto-generated Tests for Swagger
 Automation testing is cool, but what if you could automate testers? More specifically, what if you could automate **all** of the process of writing test cases, getting test data, writing the automation tests and then running them?  This is what CATS does.
 
 CATS is a tool that **generates tests at runtime** based on a given OpenAPI contract. It will also automatically run those tests against a given service instance to check if the API has been implemented in accordance with its contract.   Think of it as a tool that **eliminates the boring testing** activities from contract and API testing, allowing you to **focus on creative activities**.
@@ -41,7 +84,7 @@ You can use the following Maven command to build the project:
 
 `mvn clean package`
 
-This will output a `cats.jar` file in the current directory. The file is an executable JAR that will run in Linux environments. Just run `chmod 755 cats.jar` to make the file executable.
+This will output a `cats.jar` file in the current directory. The file is an executable JAR that will run in Linux environments. Just run `chmod +x cats.jar` to make the file executable.
 
 # Available commands
 To list all available commands, run:
@@ -60,21 +103,21 @@ Other ways to get help from the CATS command are as follows:
 - `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
 
 # Running CATS
-A minimal run must provide the Swagger (or OpenApi) contract and the URL address of the service:
+A minimal run must provide the Swagger/OpenApi contract and the URL address of the service:
 
 `./cats.jar --contract=mycontract.yml --server=https://localhost:8080`
 
-But there are multiple other options you can supply. More details in the next section.
+But there are multiple other arguments you can supply. More details in the next section.
 
 ## Notes on Unit Tests
 
 You may see some `ERROR` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the `Fuzzers`.
 
-# Available options
+# Available arguments
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
 - `--server=URL` supplies the URL of the service implementing the contract.
 - `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth (more auth schemes will follow in future releases).
-- `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. If the parameter is not supplied all fuzzers will be run.
+- `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. If the argument is not supplied all fuzzers will be run.
 - `--log=PACKAGE:LEVEL` can configure custom log level for a given package. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug`
 - `--paths=PATH_LIST` supplies a `;` list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
 - `--fieldsFuzzingStrategy=STRATEGY` specifies which strategy will be used for field fuzzing. Available strategies are `ONEBYONE`, `SIZE` and `POWERSET`. More information on field fuzzing can be found in the sections below.
@@ -85,6 +128,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 - `--edgeSpacesStrategy=STRATEGY` specifies how to expect the server to behave when sending trailing and prefix spaces within fields. Possible values are `trimAndValidate` and `validateAndTrim`.
 - `--urlParams` A ';' separated list of 'name:value' pairs of parameters to be replaced inside the URLs. This is useful when you have static parameters in URLs (like 'version' for example).
 - `--customFuzzerFile` a file used by the `CustomFuzzer` that will be used to create user-supplied payloads.
+- `--skipXXXForPath=path1,path2` can configure a fuzzer to be skipped for the specified paths. You must provide a full `Fuzzer` name instead of `XXX`. For example: `--skipVeryLargeStringsFuzzerForPath=/path1,/path2`
 
 Using some of these options a typical invocation of CATS might look like this:
 
@@ -206,12 +250,14 @@ The `Fuzzer` expects a `4XX` response code.
 ## StringFormatTotallyWrongValuesFuzzer
 This behaves in the same way as the previous `Fuzzer`, but the values sent for each format are totally invalid (like `aaa` for `email` for example).
 
-
 ## NewFieldsFuzzer
 This `Fuzzer` will inject new fields inside the body of the requests. The new field is called `fuzzyField`. The `Fuzzers` will behave as follows:
 - Normal behaviour is for the service to return a `4XX` code for `POST`, `PUT` and `PATCH` and a `2XX` code for `GET`. If the code is documented, this will be reported as an `INFO` message, otherwise as a `WARN` message.
 - If the code responds with a `2XX` or `4XX` code, depending on the previous point, this is considered abnormal behaviour and will reported as an `ERROR` message.
 - Any other case is reported as an `ERROR` message.
+
+## StringsInNumericFieldsFuzzer
+This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
 
 ## CustomFuzzer
 In some cases, the tests generated by CATS will not be sufficient for your situation. Using the `CustomFuzzer` you can supply custom values for specific fields. The cool thing is that you can target a single field, and the rest of the information will be sent just like a 'happy' flow request.
@@ -275,9 +321,19 @@ When executing `test_2` the `id` parameter will be replaced with the `petId` var
 - variables are visible across all custom tests; please be careful with the naming as they will get overridden
 - variables do not support arrays of elements; this applies for both getting the variable value and the way the `output` variables are set
 
+# Skipping Fuzzers for specific paths
+There might be situations when you would want to skip some fuzzers for specific paths. This can be done using the `--skipXXXForPath=path1,path2` argument.
+Some examples:
+```bash
+./cats.jar --contract=api.yml --server=http://localhost:8080 --skipVeryLargeStringsFuzzerForPath=/pet/{id},/pets
+```
+
+Running the above command will run all the fuzzers for all the paths, except for the `VeryLargeStringsFuzzer` which won't be run for the `/pet/{id}` and `/pets` paths.
+
+You can supply multiple `--skipXXXForPath` arguments.
 
 # Reference Data File
-There are often cases where some fields need to contain relevant business values in order for a request to succeed. You can provide such values using a reference data file specified by the `--refData` parameter. The reference data file is a YAML-format file that contains specific fixed values for different paths in the request document. The file structure is as follows:
+There are often cases where some fields need to contain relevant business values in order for a request to succeed. You can provide such values using a reference data file specified by the `--refData` argument. The reference data file is a YAML-format file that contains specific fixed values for different paths in the request document. The file structure is as follows:
 
 ```yaml
 /path/0.1/auth:
@@ -351,7 +407,7 @@ so that each fuzzed path will replace `version` with `v1.0`.
 
 # Edge Spaces Strategy
 There isn't a general consensus on how you should handle situations when you send leading and trailing spaces or leading and trailing valid values within fields. One strategy for the service will be to trim these values and consider them valid, while some other services will just consider them to be invalid. 
-You can control how CATS should expect such cases to be handled by the service using the `--edgeSpacesStrategy` parameter. You can set this to `error` or `success` depending on how you expect the service to behave:
+You can control how CATS should expect such cases to be handled by the service using the `--edgeSpacesStrategy` argument. You can set this to `error` or `success` depending on how you expect the service to behave:
 - `error` means than the service will consider the values to be invalid, even if the value itself is valid, but has leading or trailing spaces.
 - `success` means that the service will trim the value and validate it afterwards.
 
