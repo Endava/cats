@@ -58,8 +58,7 @@ public class CatsMain implements CommandLineRunner {
     private static final String APPLICATION_JSON = "application/json";
     private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
     private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
-    private static final String HIGHLIGHT_TEMPLATE = ansi().render("--@|green {}|@").reset().toString();
-
+    protected List<CatsSkipped> skipFuzzersForPaths;
     @Value("${contract:empty}")
     private String contract;
     @Value("${server:empty}")
@@ -86,8 +85,6 @@ public class CatsMain implements CommandLineRunner {
     private String urlParams;
     @Value("${customFuzzerFile:empty}")
     private String customFuzzerFile;
-    private List<CatsSkipped> skipFuzzersForPaths;
-
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -204,7 +201,9 @@ public class CatsMain implements CommandLineRunner {
             options.setResolve(true);
             options.setFlatten(true);
             OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
-            LOGGER.info(ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString(), (System.currentTimeMillis() - t0));
+
+            String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
+            LOGGER.info(finishMessage, (System.currentTimeMillis() - t0));
             return openAPI;
         } catch (Exception e) {
             LOGGER.error("Error parsing OPEN API contract {}", contract);

@@ -1,5 +1,6 @@
 package com.endava.cats;
 
+import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
 @SpringJUnitConfig({CatsMain.class})
@@ -59,6 +62,15 @@ class CatsMainTest {
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
         ReflectionTestUtils.setField(catsMain, "server", "empty");
 
+    }
+
+    @Test
+    void givenAContractAndAServerAndASkipFuzzerArgument_whenStartingCats_thenTheSkipForIsCorrectlyProcessed() {
+        ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
+        ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
+        catsMain.doLogic("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeStringsFuzzerForPath=/pets");
+        Assertions.assertThat(catsMain.skipFuzzersForPaths)
+                .containsOnly(CatsSkipped.builder().fuzzer("VeryLargeStringsFuzzer").forPaths(Collections.singletonList("/pets")).build());
     }
 
 
