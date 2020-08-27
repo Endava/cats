@@ -132,9 +132,9 @@ public class CatsMain implements CommandLineRunner {
     }
 
     public void doLogic(String... args) {
-        this.printArgs();
         this.sortFuzzersByName();
         this.processArgs(args);
+        this.printArgs();
         this.processSkipFuzzerFor(args);
 
         OpenAPI openAPI = this.createOpenAPI();
@@ -369,6 +369,7 @@ public class CatsMain implements CommandLineRunner {
         this.renderHelpToConsole("edgeSpacesStrategy", "STRATEGY this can be either validateAndTrim or trimAndValidate. It can be used to specify what CATS should expect when sending trailing and leading spaces valid values within fields");
         this.renderHelpToConsole("urlParams", "A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs");
         this.renderHelpToConsole("customFuzzerFile", "A file used by the `CustomFuzzer` that will be used to create user-supplied payloads");
+        this.renderHelpToConsole("skipXXXForPath", "/path1,/path2 can configure fuzzers to be excluded for the specified paths");
 
 
         LOGGER.info("Example: ");
