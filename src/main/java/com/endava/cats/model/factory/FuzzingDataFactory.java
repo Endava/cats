@@ -124,7 +124,7 @@ public class FuzzingDataFactory {
         ObjectSchema syntheticSchema = new ObjectSchema();
         syntheticSchema.setProperties(new LinkedHashMap<>());
         List<String> required = new ArrayList<>();
-        for (Parameter parameter : operationParameters) {
+        for (Parameter parameter : Optional.ofNullable(operationParameters).orElseGet(Collections::emptyList)) {
             if (("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn()))
                     && catsParams.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
                 parameter.getSchema().setName(parameter.getSchema().getName() + "|" + parameter.getIn());
