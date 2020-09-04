@@ -259,7 +259,7 @@ public class CatsUtil {
                 resultElement = resultElement.getAsJsonObject().get(depth[i]);
             }
         }
-        if (depth.length == 1 && resultElement.getAsJsonObject().get(fullyQualifiedName) == null) {
+        if (depth.length == 1 && resultElement != null && resultElement.getAsJsonObject().get(fullyQualifiedName) == null) {
             resultElement = null;
         }
 
