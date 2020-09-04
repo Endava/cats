@@ -11,9 +11,14 @@
       - 134
     home#country: "mumu"
     expectedResponseCode: 200
+    output:
+      - homeId: home#id
+    verify:
+      pet#name: "Baby"
+      pet#id: "[0-9]+"
   test2:
     homeId:
       - 123
       - 124
-    home#country: "bubu"
+    home#country: ${homeId}
     expectedResponseCode: 200

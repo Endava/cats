@@ -103,21 +103,56 @@ class CustomFuzzerTest {
 
     @Test
     void givenACompleteCustomFuzzerFileWithDescriptionAndOutputVariables_whenTheFuzzerRuns_thenTheTestCasesAreCorrectlyExecuted() throws Exception {
-        ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "src/test/resources/customFuzzer.yml");
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml("src/test/resources/customFuzzer.yml");
+        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{'code': '200'}");
+
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
+    @Test
+    void givenACustomFuzzerFileWithVerifyParameters_whenTheFuzzerRuns_thenVerifyParameterAreProperlyChecked() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"));
+    }
+
+    @Test
+    void givenACustomFuzzerFileWithVerifyParametersThatDoNotMatchTheResponseValues_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{'name': {'first': 'Cats'}, 'id': '45'}");
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportError(Mockito.any(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "));
+    }
+
+    @Test
+    void givenACustomFuzzerFileWithVerifyParametersThatAreNotInResponse_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer-verify-not-set.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following Verify parameters were not present in the response: {}"),
+                Mockito.eq(Collections.singletonList("address")));
+    }
+
+    private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
+        ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", fuzzerFile);
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
-        CatsResponse catsResponse = CatsResponse.from(200, "{'code': '200'}", "POST");
+        CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST");
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'pet':'oldValue'}").
                 responses(responses).responseCodes(Collections.singleton("200")).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        spyCustomFuzzer.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+
+        return data;
     }
 
     private Map<String, Map<String, Object>> createCustomFuzzerFile() {

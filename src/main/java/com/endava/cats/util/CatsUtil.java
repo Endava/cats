@@ -252,14 +252,18 @@ public class CatsUtil {
     }
 
     public JsonElement getJsonElementBasedOnFullyQualifiedName(JsonElement rootElement, String fullyQualifiedName) {
-        JsonElement element = rootElement;
+        JsonElement resultElement = rootElement;
         String[] depth = fullyQualifiedName.split("#");
         for (int i = 0; i < depth.length - 1; i++) {
-            if (element != null) {
-                element = element.getAsJsonObject().get(depth[i]);
+            if (resultElement != null) {
+                resultElement = resultElement.getAsJsonObject().get(depth[i]);
             }
         }
-        return element;
+        if (depth.length == 1 && resultElement.getAsJsonObject().get(fullyQualifiedName) == null) {
+            resultElement = null;
+        }
+
+        return resultElement;
     }
 
     public JsonElement parseAsJsonElement(String payload) {
