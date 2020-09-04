@@ -1,0 +1,18 @@
+/pets/{id}/move:
+  test_1:
+    description: Simple Test Case
+    pet:
+      - stay
+    expectedResponseCode: 200
+    output:
+      resp: code
+    verify:
+      name#first: "Cats"
+      address: "25 street"
+  test_2:
+    description: Second Test Case
+    pet: ${resp}
+    expectedResponseCode: 200
+/other-pet:
+  test_2:
+    description: Another Pet Endpoint not matching syntax

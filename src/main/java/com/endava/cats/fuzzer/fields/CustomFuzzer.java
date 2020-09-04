@@ -19,6 +19,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,13 +29,16 @@ public class CustomFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomFuzzer.class);
     private static final String EXPECTED_RESPONSE_CODE = "expectedResponseCode";
     private static final String OUTPUT = "output";
+    private static final String VERIFY = "verify";
     private static final String DESCRIPTION = "description";
     private static final String NOT_SET = "NOT_SET";
+    private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
     private final Map<String, String> variables = new HashMap<>();
+    private final Map<String, String> verifies = new HashMap<>();
 
     @Value("${customFuzzerFile:empty}")
     private String customFuzzerFile;
@@ -46,6 +52,7 @@ public class CustomFuzzer implements Fuzzer {
         this.catsUtil = cu;
     }
 
+
     @PostConstruct
     public void loadCustomFuzzerFile() {
         try {
@@ -58,6 +65,53 @@ public class CustomFuzzer implements Fuzzer {
             LOGGER.error("Error processing customFuzzerFile!", e);
         }
     }
+
+    private Map<String, String> parseYmlEntryIntoMap(String output) {
+        Map<String, String> result = new HashMap<>();
+        if (StringUtils.isNotBlank(output)) {
+            output = output.replace("{", "").replace("}", "");
+            result.putAll(Arrays.stream(output.split(","))
+                    .map(variable -> variable.trim().split("=")).collect(Collectors.toMap(
+                            variableArray -> variableArray[0],
+                            variableArray -> variableArray[1]
+                    )));
+        }
+
+        return result;
+    }
+
+    private Map<String, String> matchVariablesWithTheResponse(CatsResponse response, Map<String, String> variablesMap, Function<Map.Entry<String, String>, String> mappingFunction) {
+        Map<String, String> result = new HashMap<>();
+
+        JsonElement body = response.getJsonBody();
+        if (body.isJsonArray()) {
+            LOGGER.error("Arrays are not supported for Output variables!");
+        } else {
+            result.putAll(variablesMap.entrySet().stream().collect(
+                    Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> this.getOutputVariable(body, mappingFunction.apply(entry)))
+            ));
+        }
+
+        return result;
+    }
+
+    private String getOutputVariable(JsonElement body, String value) {
+        JsonElement outputVariable = catsUtil.getJsonElementBasedOnFullyQualifiedName(body, value);
+
+        if (outputVariable == null || outputVariable.isJsonNull()) {
+            LOGGER.error("Expected variable {} was not found on response. Setting to NOT_SET", value);
+            return NOT_SET;
+        }
+        if (outputVariable.isJsonArray()) {
+            LOGGER.error("Arrays are not supported. Variable {} will be set to NOT_SET", value);
+            return NOT_SET;
+        }
+        String[] depth = value.split("#");
+        return outputVariable.getAsJsonObject().get(depth[depth.length - 1]).getAsString();
+    }
+
 
     public void fuzz(FuzzingData data) {
         if (!customFuzzerDetails.isEmpty()) {
@@ -103,7 +157,46 @@ public class CustomFuzzer implements Fuzzer {
 
         this.setOutputVariables(currentPathValues, response);
 
-        testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.from(expectedResponseCode));
+        String verify = currentPathValues.get(VERIFY);
+        if (verify != null) {
+            this.checkVerifies(response, verify, expectedResponseCode);
+        } else {
+            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.from(expectedResponseCode));
+        }
+    }
+
+    private void checkVerifies(CatsResponse response, String verify, String expectedResponseCode) {
+        verifies.putAll(parseYmlEntryIntoMap(verify));
+        Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
+        LOGGER.info("Parameters to verify: {}", verifies);
+        LOGGER.info("Parameters matched to response: {}. All NOT_SET parameters will be ignored while checking", responseValues);
+        if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
+            LOGGER.warn("There are Verify parameters which were not present in the response!");
+
+            testCaseListener.reportError(LOGGER, "The following Verify parameters were not present in the response: {}",
+                    responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))
+                            .map(Map.Entry::getKey).collect(Collectors.toList()));
+        } else {
+            StringBuilder errorMessages = new StringBuilder();
+
+            verifies.forEach((key, value) -> {
+                String valueToCheck = responseValues.get(key);
+                Matcher verifyMatcher = Pattern.compile(value).matcher(valueToCheck);
+                if (!verifyMatcher.matches()) {
+                    errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, value));
+                }
+
+            });
+
+            if (errorMessages.length() == 0 && expectedResponseCode.equalsIgnoreCase(response.responseCodeAsString())) {
+                testCaseListener.reportInfo(LOGGER, "Response matches all 'verify' parameters");
+            } else if (errorMessages.length() == 0) {
+                testCaseListener.reportWarn(LOGGER,
+                        "Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]", expectedResponseCode, response.responseCodeAsString());
+            } else {
+                testCaseListener.reportError(LOGGER, errorMessages.toString());
+            }
+        }
     }
 
     private String getTestScenario(String testName, Map<String, String> currentPathValues) {
@@ -119,42 +212,10 @@ public class CustomFuzzer implements Fuzzer {
         String output = currentPathValues.get(OUTPUT);
 
         if (output != null) {
-            if (StringUtils.isNotBlank(output)) {
-                output = output.replace("{", "").replace("}", "");
-                variables.putAll(Arrays.stream(output.split(","))
-                        .map(variable -> variable.trim().split("=")).collect(Collectors.toMap(
-                                variableArray -> variableArray[0],
-                                variableArray -> variableArray[1]
-                        )));
-            }
-
-            JsonElement body = response.getJsonBody();
-            if (body.isJsonArray()) {
-                LOGGER.error("Arrays are not supported for Output variables!");
-            } else {
-                variables.putAll(variables.entrySet().stream().collect(
-                        Collectors.toMap(
-                                Map.Entry::getKey,
-                                entry -> this.getOutputVariable(body, entry.getValue()))
-                ));
-            }
+            this.variables.putAll(parseYmlEntryIntoMap(output));
+            this.variables.putAll(matchVariablesWithTheResponse(response, variables, Map.Entry::getValue));
             LOGGER.info("The following OUTPUT variables were identified {}", variables);
         }
-    }
-
-    private String getOutputVariable(JsonElement body, String value) {
-        JsonElement outputVariable = catsUtil.getJsonElementBasedOnFullyQualifiedName(body, value);
-
-        if (outputVariable == null || outputVariable.isJsonNull()) {
-            LOGGER.error("Expected variable {} was not found on response. Setting to NOT_SET", value);
-            return NOT_SET;
-        }
-        if (outputVariable.isJsonArray()) {
-            LOGGER.error("Arrays are not supported. Variable {} will be set to NOT_SET", value);
-            return NOT_SET;
-        }
-        String[] depth = value.split("#");
-        return outputVariable.getAsJsonObject().get(depth[depth.length - 1]).getAsString();
     }
 
     private String getStringWithCustomValuesFromFile(FuzzingData data, Map<String, String> currentPathValues) {
