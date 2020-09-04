@@ -113,7 +113,7 @@ public class CatsUtil {
      * @throws IOException
      */
     public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
-        Map<String, Map<String, Object>> result = new HashMap<>();
+        Map<String, Map<String, Object>> result = new LinkedHashMap<>();
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         JsonNode node = mapper.reader().readTree(new FileReader(yaml));
         Map<String, Object> paths = mapper.convertValue(node, Map.class);

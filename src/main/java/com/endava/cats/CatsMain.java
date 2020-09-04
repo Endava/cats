@@ -25,10 +25,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -163,7 +160,10 @@ public class CatsMain implements CommandLineRunner {
     }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
-        for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()) {
+        for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()
+                .stream().sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toCollection(LinkedHashSet::new))) {
+
             if (suppliedPaths.contains(entry.getKey())) {
                 this.fuzzPath(entry, openAPI);
             } else {

@@ -152,7 +152,8 @@ public class CustomFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}]", expectedResponseCode);
 
         String payloadWithCustomValuesReplaced = this.getStringWithCustomValuesFromFile(data, currentPathValues);
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).replaceRefData(false)
+        String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
+        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(servicePath).replaceRefData(false)
                 .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).build());
 
         this.setOutputVariables(currentPathValues, response);
@@ -163,6 +164,18 @@ public class CustomFuzzer implements Fuzzer {
         } else {
             testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.from(expectedResponseCode));
         }
+    }
+
+    private String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, String> currentPathValues) {
+        String newPath = data.getPath();
+        for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
+            String valueToReplaceWith = entry.getValue();
+            if (entry.getValue().startsWith("${") && entry.getValue().endsWith("}")) {
+                valueToReplaceWith = variables.get(entry.getValue().replace("${", "").replace("}", ""));
+            }
+            newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
+        }
+        return newPath;
     }
 
     private void checkVerifies(CatsResponse response, String verify, String expectedResponseCode) {
@@ -242,7 +255,8 @@ public class CustomFuzzer implements Fuzzer {
     }
 
     private boolean isNotAReservedWord(String key) {
-        return !key.equalsIgnoreCase(OUTPUT) && !key.equalsIgnoreCase(DESCRIPTION) && !key.equalsIgnoreCase(EXPECTED_RESPONSE_CODE);
+        return !key.equalsIgnoreCase(OUTPUT) && !key.equalsIgnoreCase(DESCRIPTION) &&
+                !key.equalsIgnoreCase(EXPECTED_RESPONSE_CODE) && !key.equalsIgnoreCase(VERIFY);
     }
 
 
