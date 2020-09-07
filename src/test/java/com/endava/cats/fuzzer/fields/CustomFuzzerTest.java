@@ -71,6 +71,7 @@ class CustomFuzzerTest {
         ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "empty");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
 
         Mockito.verify(spyCustomFuzzer, Mockito.never()).processCustomFuzzerFile(data);
         Assertions.assertThat(customFuzzer.description()).isNotNull();
@@ -95,6 +96,7 @@ class CustomFuzzerTest {
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
 
         Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
@@ -108,6 +110,7 @@ class CustomFuzzerTest {
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
@@ -117,6 +120,7 @@ class CustomFuzzerTest {
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(3)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"));
     }
 
@@ -126,6 +130,7 @@ class CustomFuzzerTest {
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(3)).reportError(Mockito.any(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "));
     }
 
@@ -135,6 +140,7 @@ class CustomFuzzerTest {
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following Verify parameters were not present in the response: {}"),
                 Mockito.eq(Collections.singletonList("address")));
     }

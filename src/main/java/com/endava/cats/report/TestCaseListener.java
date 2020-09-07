@@ -70,6 +70,7 @@ public class TestCaseListener {
             s.run();
         } catch (Exception e) {
             this.reportError(externalLogger, "Fuzzer [{}] failed due to [{}]", fuzzer.getClass().getSimpleName(), e.getMessage());
+            externalLogger.debug("Exception while processing!", e);
         }
         this.endTestCase();
         LOGGER.info("{} {}", SEPARATOR, "\n");

@@ -2,6 +2,7 @@ package com.endava.cats;
 
 import ch.qos.logback.classic.Level;
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
@@ -86,6 +87,8 @@ public class CatsMain implements CommandLineRunner {
     private List<Fuzzer> fuzzers;
     @Autowired
     private FuzzingDataFactory fuzzingDataFactory;
+    @Autowired
+    private CustomFuzzer customFuzzer;
 
 
     public static void main(String... args) {
@@ -137,6 +140,7 @@ public class CatsMain implements CommandLineRunner {
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
 
         this.startFuzzing(openAPI, suppliedPaths);
+        this.executeCustomFuzzer();
     }
 
     public void processSkipFuzzerFor(String... args) {
@@ -170,6 +174,10 @@ public class CatsMain implements CommandLineRunner {
                 LOGGER.info("Skipping path {}", entry.getKey());
             }
         }
+    }
+
+    private void executeCustomFuzzer() {
+        customFuzzer.executeCustomFuzzerTests();
     }
 
     private void sortFuzzersByName() {
@@ -315,7 +323,7 @@ public class CatsMain implements CommandLineRunner {
         List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), schemas);
 
         if (fuzzingDataList.isEmpty()) {
-            LOGGER.info("Skipping path {}. HTTP method not supported yet!", pathItemEntry.getKey());
+            LOGGER.warn("Skipping path {}. HTTP method not supported yet!", pathItemEntry.getKey());
             return;
         }
 
@@ -329,7 +337,7 @@ public class CatsMain implements CommandLineRunner {
                             fuzzer.fuzz(data);
                         });
             } else {
-                LOGGER.warn("Skipping fuzzer {} for path {} as configured!", fuzzer, pathItemEntry.getKey());
+                LOGGER.debug("Skipping fuzzer {} for path {} as configured!", fuzzer, pathItemEntry.getKey());
             }
         }
     }
