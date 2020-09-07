@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -13,6 +14,7 @@ import com.google.gson.JsonElement;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -38,12 +40,12 @@ public class CustomFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
     private final Map<String, String> variables = new HashMap<>();
-    private final Map<String, String> verifies = new HashMap<>();
 
     @Value("${customFuzzerFile:empty}")
     private String customFuzzerFile;
 
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
+    private List<CustomFuzzerExecution> executions = new ArrayList<>();
 
     @Autowired
     public CustomFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
@@ -123,13 +125,24 @@ public class CustomFuzzer implements Fuzzer {
         try {
             Map<String, Object> currentPathValues = customFuzzerDetails.get(data.getPath());
             if (currentPathValues != null) {
-                currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
+                currentPathValues.forEach((key, value) -> executions.add(CustomFuzzerExecution.builder()
+                        .fuzzingData(data).testId(key).testEntry(value).build()));
             } else {
                 LOGGER.info("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
             }
         } catch (Exception e) {
             LOGGER.error("Error processing customFuzzerFile!", e);
         }
+    }
+
+    public void executeCustomFuzzerTests() {
+        MDC.put("fuzzer", this.getClass().getSimpleName());
+        for (Map.Entry<String, Map<String, Object>> entry : customFuzzerDetails.entrySet()) {
+            executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))
+                    .forEach(customFuzzerExecution -> this.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
+                            customFuzzerExecution.getTestEntry()));
+        }
+        MDC.put("fuzzer", "");
     }
 
     private void executeTestCases(FuzzingData data, String key, Object value) {
@@ -179,12 +192,12 @@ public class CustomFuzzer implements Fuzzer {
     }
 
     private void checkVerifies(CatsResponse response, String verify, String expectedResponseCode) {
-        verifies.putAll(parseYmlEntryIntoMap(verify));
+        Map<String, String> verifies = this.parseYmlEntryIntoMap(verify);
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         LOGGER.info("Parameters to verify: {}", verifies);
-        LOGGER.info("Parameters matched to response: {}. All NOT_SET parameters will be ignored while checking", responseValues);
+        LOGGER.info("Parameters matched to response: {}", responseValues);
         if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
-            LOGGER.warn("There are Verify parameters which were not present in the response!");
+            LOGGER.error("There are Verify parameters which were not present in the response!");
 
             testCaseListener.reportError(LOGGER, "The following Verify parameters were not present in the response: {}",
                     responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))
@@ -225,8 +238,9 @@ public class CustomFuzzer implements Fuzzer {
         String output = currentPathValues.get(OUTPUT);
 
         if (output != null) {
-            this.variables.putAll(parseYmlEntryIntoMap(output));
-            this.variables.putAll(matchVariablesWithTheResponse(response, variables, Map.Entry::getValue));
+            Map<String, String> variablesFromYaml = this.parseYmlEntryIntoMap(output);
+            this.variables.putAll(variablesFromYaml);
+            this.variables.putAll(matchVariablesWithTheResponse(response, variablesFromYaml, Map.Entry::getValue));
             LOGGER.info("The following OUTPUT variables were identified {}", variables);
         }
     }
@@ -241,7 +255,7 @@ public class CustomFuzzer implements Fuzzer {
                 replaceFieldsWithCustomValue(currentPathValues, element);
             }
         }
-        LOGGER.info("Final payload after reference data replacement [{}]", jsonElement);
+        LOGGER.info("Final payload after custom values replaced: [{}]", jsonElement);
 
         return jsonElement.toString();
     }
@@ -272,7 +286,7 @@ public class CustomFuzzer implements Fuzzer {
                 element.getAsJsonObject().addProperty(key, propertyValue);
                 LOGGER.info("Replacing property [{}] with value [{}]", entry.getKey(), propertyValue);
             } else {
-                LOGGER.error("Property [{}] does not exist", entry.getKey());
+                LOGGER.warn("Property [{}] does not exist", entry.getKey());
             }
         }
     }
