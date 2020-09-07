@@ -221,7 +221,11 @@ public class FuzzingDataFactory {
 
 
     private MediaType getMediaType(Operation operation) {
-        if (operation.getRequestBody() != null && operation.getRequestBody().getContent().get(APPLICATION_JSON) != null) {
+        if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
+            MediaType mediaType = new MediaType();
+            mediaType.setSchema(new Schema().$ref(operation.getRequestBody().get$ref()));
+            return mediaType;
+        } else if (operation.getRequestBody() != null && operation.getRequestBody().getContent().get(APPLICATION_JSON) != null) {
             return operation.getRequestBody().getContent().get(APPLICATION_JSON);
         } else if (operation.getRequestBody() != null) {
             return operation.getRequestBody().getContent().get("*/*");
