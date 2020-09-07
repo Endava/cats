@@ -82,9 +82,9 @@ public class PayloadGenerator {
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, String mediaType, Schema<T> property) {
-        LOGGER.debug("Resolving example for property {}...", property);
+        LOGGER.trace("Resolving example for property {}...", property);
         if (property.getExample() != null) {
-            LOGGER.debug("Example set in swagger spec, returning example: '{}'", property.getExample());
+            LOGGER.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
         } else if (property instanceof BooleanSchema) {
             return this.getExampleFromBooleanSchema((BooleanSchema) property);
@@ -117,11 +117,11 @@ public class PayloadGenerator {
     }
 
     private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {
-        LOGGER.debug("String property");
+        LOGGER.trace("String property");
 
         String defaultValue = property.getDefault();
         if (StringUtils.isNotBlank(defaultValue)) {
-            LOGGER.debug("Default value found: '{}'", defaultValue);
+            LOGGER.trace("Default value found: '{}'", defaultValue);
             return defaultValue;
         }
         List<String> enumValues = property.getEnum();
@@ -148,7 +148,7 @@ public class PayloadGenerator {
         if (property.getPattern() != null) {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
-        LOGGER.debug("No values found, using property name {} as example", propertyName);
+        LOGGER.trace("No values found, using property name {} as example", propertyName);
         return propertyName;
     }
 
@@ -248,7 +248,7 @@ public class PayloadGenerator {
     private Object resolveModelToExample(String name, String mediaType, Schema schema) {
         Map<String, Object> values = new HashMap<>();
 
-        LOGGER.debug("Resolving model '{}' to example", name);
+        LOGGER.trace("Resolving model '{}' to example", name);
 
         if (schema.getProperties() != null) {
             this.processSchemaProperties(name, mediaType, schema, values);
@@ -263,7 +263,7 @@ public class PayloadGenerator {
     }
 
     private void processSchemaProperties(String name, String mediaType, Schema schema, Map<String, Object> values) {
-        LOGGER.debug("Creating example from model values");
+        LOGGER.trace("Creating example from model values");
         if (schema.getDiscriminator() != null) {
             discriminators.add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
         }
