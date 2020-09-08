@@ -10,6 +10,8 @@ import com.endava.cats.util.CatsUtil;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.parser.core.models.ParseOptions;
@@ -102,21 +104,33 @@ public class CatsMain implements CommandLineRunner {
 
     public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
         Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
+        if (openAPI.getComponents().getRequestBodies() != null) {
+            openAPI.getComponents().getRequestBodies().forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
+        }
 
         Map<String, ApiResponse> apiResponseMap = openAPI.getComponents().getResponses();
 
         if (apiResponseMap != null) {
-            apiResponseMap.forEach((key, value) -> {
-                String ref = value.get$ref();
-                if (ref == null) {
-                    ref = value.getContent().get(APPLICATION_JSON).getSchema().get$ref();
-                }
-                String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
-                schemas.put(key, schemas.get(schemaKey));
-
-            });
+            apiResponseMap.forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
         }
         return schemas;
+    }
+
+    private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content) {
+        Schema schemaToAdd;
+        if (ref == null) {
+            Schema refSchema = content.get(APPLICATION_JSON).getSchema();
+            if (refSchema instanceof ArraySchema) {
+                ref = ((ArraySchema) refSchema).getItems().get$ref();
+                refSchema.set$ref(ref);
+                schemaToAdd = refSchema;
+            } else {
+                ref = refSchema.get$ref();
+                String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
+                schemaToAdd = schemas.get(schemaKey);
+            }
+            schemas.put(schemaName, schemaToAdd);
+        }
     }
 
     @Override
@@ -313,7 +327,7 @@ public class CatsMain implements CommandLineRunner {
         }
     }
 
-    private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
+    protected void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         List<String> configuredFuzzers = this.configuredFuzzers(pathItemEntry.getKey());
         Map<String, Schema> schemas = getSchemas(openAPI);
 
