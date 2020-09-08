@@ -1,6 +1,7 @@
 package com.endava.cats;
 
 import com.endava.cats.model.CatsSkipped;
+import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsMain.class})
+@SpringJUnitConfig({CatsMain.class, FuzzingDataFactory.class})
 class CatsMainTest {
 
     @MockBean
@@ -28,6 +29,9 @@ class CatsMainTest {
 
     @Autowired
     private BuildProperties buildProperties;
+
+    @SpyBean
+    private FuzzingDataFactory fuzzingDataFactory;
 
     @Test
     void givenNoArguments_whenStartingCats_thenHelpIsPrinted() {
@@ -61,7 +65,6 @@ class CatsMainTest {
         Mockito.verify(catsMain).startFuzzing(Mockito.any(), Mockito.anyList());
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
         ReflectionTestUtils.setField(catsMain, "server", "empty");
-
     }
 
     @Test
@@ -80,6 +83,19 @@ class CatsMainTest {
         ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
 
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers", "contract=pet.yml")).isInstanceOf(StopExecutionException.class).hasMessage(null);
+        ReflectionTestUtils.setField(catsMain, "contract", "empty");
+        ReflectionTestUtils.setField(catsMain, "server", "empty");
+    }
+
+    @Test
+    void givenAnOpenApiContract_whenStartingCats_thenTheContractIsCorrectlyParsed() {
+        ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/openapi.yml");
+        ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
+        catsMain.run();
+        Mockito.verify(catsMain).createOpenAPI();
+        Mockito.verify(catsMain).startFuzzing(Mockito.any(), Mockito.anyList());
+        Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.anyMap());
+        Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.anyMap());
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
         ReflectionTestUtils.setField(catsMain, "server", "empty");
     }
