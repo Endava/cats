@@ -254,15 +254,16 @@ public class ServiceCaller {
         JsonElement jsonElement = catsUtil.parseAsJsonElement(processedPayload);
 
         String processedPath = path;
-        for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
-            if (child.getValue().isJsonNull()) {
-                processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", "");
-            } else {
-                processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", getEncodedUrl(child.getValue().getAsString()));
+        if (processedPath.contains("{")) {
+            for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
+                if (child.getValue().isJsonNull()) {
+                    processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", "");
+                } else {
+                    processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", getEncodedUrl(child.getValue().getAsString()));
+                }
+                data.getPathParams().add(child.getKey());
             }
-            data.getPathParams().add(child.getKey());
         }
-
         return processedPath;
     }
 
@@ -283,6 +284,9 @@ public class ServiceCaller {
             if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
                     queryParams.add(new BasicNameValuePair(child.getKey(), null));
+                } else if (child.getValue().isJsonArray()) {
+                    queryParams.add(new BasicNameValuePair(child.getKey(), child.getValue().toString().replace("[", "")
+                            .replace("]", "").replace("\"", "")));
                 } else {
                     queryParams.add(new BasicNameValuePair(child.getKey(), child.getValue().getAsString()));
                 }
