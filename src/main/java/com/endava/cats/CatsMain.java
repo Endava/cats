@@ -208,7 +208,7 @@ public class CatsMain implements CommandLineRunner {
      * @return the list of paths from the contract matching the supplied list
      */
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
-        List<String> suppliedPaths = stringToList(paths, ";");
+        List<String> suppliedPaths = stringToList(paths, ",");
         if (suppliedPaths.isEmpty() || paths.equalsIgnoreCase(ALL)) {
             suppliedPaths.remove(ALL);
             suppliedPaths.addAll(openAPI.getPaths().keySet());
@@ -384,7 +384,7 @@ public class CatsMain implements CommandLineRunner {
         this.renderHelpToConsole("server", "BASE_URL_OF_THE_SERVICE");
         this.renderHelpToConsole(FUZZERS_STRING, "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to run. You can use 'all' to include all fuzzers. To list all available fuzzers run: './cats.jar list fuzzers'");
         this.renderHelpToConsole("log", "PACKAGE:LEVEL set custom log level of a given package");
-        this.renderHelpToConsole(PATHS_STRING, "PATH_LIST a separated list of paths to test. If no path is supplied, all paths will be considered");
+        this.renderHelpToConsole(PATHS_STRING, "PATH_LIST a comma separated list of paths to test. If no path is supplied, all paths will be considered");
         this.renderHelpToConsole("fieldsFuzzingStrategy", "STRATEGY set the strategy for tge fields fuzzers. Supported strategies ONEBYONE, SIZE, POWERSET");
         this.renderHelpToConsole("maxFieldsToRemove", "NUMBER set the maximum number of fields that will be removed from a request when using the SIZE fieldsFuzzingStrategy");
         this.renderHelpToConsole("refData", "FILE specifies the file with fields that must have a fixed value in order for requests to succeed ");
