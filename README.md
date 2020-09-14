@@ -482,6 +482,11 @@ CATS also supports schemas with `oneOf`, `allOf` and `anyOf` composition. CATS w
 
 # Limitations
 
+## Media types and HTTP methods
+The `Fuzzers` has the following support for media types and HTTP methods:
+- `application/json` media type only
+- HTTP methods: `POST`, `PUT`, `PATCH` and `GET`
+
 ## Inheritance and composition
 
 `allOf` are supported at any object tree level. However, `anyOf` and `oneOf` are supported just at the first level within the object tree model. For example, this is a supported Object composition:
