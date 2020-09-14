@@ -169,18 +169,16 @@ public class CatsMain implements CommandLineRunner {
                         .forPaths(Arrays.asList(skipForArr[1].trim().split(",")))
                         .build())
                 .collect(Collectors.toList());
-        LOGGER.info("Skipped for supplied arguments: {}. Matching with registered fuzzers...", catsSkipped);
+        LOGGER.info("skipXXXForPath supplied arguments: {}. Matching with registered fuzzers...", catsSkipped);
 
         this.skipFuzzersForPaths = catsSkipped.stream()
                 .filter(skipped -> fuzzers.stream().map(Object::toString).anyMatch(fuzzerName -> fuzzerName.equalsIgnoreCase(skipped.getFuzzer())))
                 .collect(Collectors.toList());
-        LOGGER.info("Skipped for list after matching with registered fuzzers: {}", this.skipFuzzersForPaths);
+        LOGGER.info("skipXXXForPath list after matching with registered fuzzers: {}", this.skipFuzzersForPaths);
     }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
-        for (Map.Entry<String, PathItem> entry : openAPI.getPaths().entrySet()
-                .stream().sorted(Map.Entry.comparingByKey())
-                .collect(Collectors.toCollection(LinkedHashSet::new))) {
+        for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
 
             if (suppliedPaths.contains(entry.getKey())) {
                 this.fuzzPath(entry, openAPI);
@@ -188,6 +186,12 @@ public class CatsMain implements CommandLineRunner {
                 LOGGER.info("Skipping path {}", entry.getKey());
             }
         }
+    }
+
+    private LinkedHashSet<Map.Entry<String, PathItem>> sortPathsAlphabetically(OpenAPI openAPI) {
+        return openAPI.getPaths().entrySet()
+                .stream().sorted(Map.Entry.comparingByKey())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private void executeCustomFuzzer() {
@@ -269,7 +273,7 @@ public class CatsMain implements CommandLineRunner {
 
     private void processRemainingArguments(String[] args) {
         if (this.isMinimumArgumentsNotSupplied(args)) {
-            LOGGER.error("Missing or invalid required arguments 'contract' or 'server'. Usage: ./cats.jar --server=URL --contract=location. You can run './cats.jar ?' for more options.");
+            LOGGER.error("Missing or invalid required arguments 'contract' or 'server'. Usage: ./cats.jar --server=URL --contract=location. You can run './cats.jar commands' for more options.");
             throw new StopExecutionException("minimum arguments not supplied");
         }
     }
