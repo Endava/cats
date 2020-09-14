@@ -13,7 +13,6 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
@@ -104,15 +103,15 @@ public class CatsMain implements CommandLineRunner {
 
     public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
         Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
-        if (openAPI.getComponents().getRequestBodies() != null) {
-            openAPI.getComponents().getRequestBodies().forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
-        }
 
-        Map<String, ApiResponse> apiResponseMap = openAPI.getComponents().getResponses();
+        Optional.ofNullable(openAPI.getComponents().getRequestBodies())
+                .orElseGet(Collections::emptyMap)
+                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
 
-        if (apiResponseMap != null) {
-            apiResponseMap.forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
-        }
+        Optional.ofNullable(openAPI.getComponents().getResponses())
+                .orElseGet(Collections::emptyMap)
+                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
+
         return schemas;
     }
 
