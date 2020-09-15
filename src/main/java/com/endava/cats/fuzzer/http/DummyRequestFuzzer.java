@@ -8,25 +8,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MalformedJsonFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
+public class DummyRequestFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
+    protected static final String DUMMY_JSON = "{\"cats\":\"cats\"}";
+
 
     @Autowired
-    public MalformedJsonFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
+    public DummyRequestFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
         super(sc, lr, catsUtil);
     }
 
     @Override
     protected String getScenario() {
-        return "Scenario: Send a malformed JSON";
+        return "Scenario: Send a dummy JSON";
     }
 
     @Override
     protected String getPayload(FuzzingData data) {
-        return data.getPayload() + "bla";
+        return DUMMY_JSON;
     }
+
 
     @Override
     public String description() {
-        return "send a malformed json request which has the String 'bla' at the end";
+        return "send a dummy json request {'cats': 'cats'}";
     }
 }
