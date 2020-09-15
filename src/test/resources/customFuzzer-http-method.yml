@@ -1,0 +1,12 @@
+/pets/{id}/move:
+  test_1:
+    description: Simple Test Case
+    httpMethod: HEAD
+    pet:
+      - stay
+    expectedResponseCode: 200
+    output:
+      resp: code
+    verify:
+      name#first: "Cats"
+      address: "25 street"
