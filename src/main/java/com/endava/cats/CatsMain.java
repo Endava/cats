@@ -84,6 +84,8 @@ public class CatsMain implements CommandLineRunner {
     private String urlParams;
     @Value("${customFuzzerFile:empty}")
     private String customFuzzerFile;
+    @Value("${excludedFuzzers:empty}")
+    private String excludedFuzzers;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -165,7 +167,7 @@ public class CatsMain implements CommandLineRunner {
                         .replace("ForPath", "").split("="))
                 .map(skipForArr -> CatsSkipped.builder()
                         .fuzzer(skipForArr[0].trim())
-                        .forPaths(Arrays.asList(skipForArr[1].trim().split(",")))
+                        .forPaths(stringToList(skipForArr[1].trim(), ","))
                         .build())
                 .collect(Collectors.toList());
         LOGGER.info("skipXXXForPath supplied arguments: {}. Matching with registered fuzzers...", catsSkipped);
@@ -344,6 +346,8 @@ public class CatsMain implements CommandLineRunner {
             return;
         }
 
+        LOGGER.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), fuzzers.size(), configuredFuzzers);
+
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
         for (Fuzzer fuzzer : fuzzers) {
             if (configuredFuzzers.contains(fuzzer.toString())) {
@@ -368,6 +372,7 @@ public class CatsMain implements CommandLineRunner {
         }
 
         allowedFuzzers = this.removeSkippedFuzzers(pathKey, allowedFuzzers);
+        allowedFuzzers = this.removeExcludedFuzzers(allowedFuzzers);
 
         return CatsUtil.filterAndPrintNotMatching(allowedFuzzers, allFuzzersName::contains, LOGGER, "Supplied Fuzzer does not exist {}", Object::toString);
     }
@@ -376,6 +381,11 @@ public class CatsMain implements CommandLineRunner {
         return allowedFuzzers.stream().filter(fuzzer -> skipFuzzersForPaths.stream()
                 .noneMatch(catsSkipped -> catsSkipped.getFuzzer().equalsIgnoreCase(fuzzer) && catsSkipped.getForPaths().contains(pathKey)))
                 .collect(Collectors.toList());
+    }
+
+    private List<String> removeExcludedFuzzers(List<String> allowedFuzzers) {
+        List<String> fuzzersToExclude = stringToList(this.excludedFuzzers, ",");
+        return allowedFuzzers.stream().filter(fuzzer -> !fuzzersToExclude.contains(fuzzer)).collect(Collectors.toList());
     }
 
     private void printUsage() {
@@ -394,7 +404,7 @@ public class CatsMain implements CommandLineRunner {
         this.renderHelpToConsole("urlParams", "A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs");
         this.renderHelpToConsole("customFuzzerFile", "A file used by the `CustomFuzzer` that will be used to create user-supplied payloads");
         this.renderHelpToConsole("skipXXXForPath", "/path1,/path2 can configure fuzzers to be excluded for the specified paths");
-
+        this.renderHelpToConsole("excludeFuzzers", "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude");
 
         LOGGER.info("Example: ");
         LOGGER.info(EXAMPLE);
@@ -411,7 +421,6 @@ public class CatsMain implements CommandLineRunner {
 
     private void printArgs() {
         LOGGER.info(" ");
-        LOGGER.info("{}", ansi().fgGreen().a("Processing configuration...").reset());
         LOGGER.info("Server: {}", server);
         LOGGER.info("Contract: {}", contract);
         LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
@@ -425,7 +434,7 @@ public class CatsMain implements CommandLineRunner {
         LOGGER.info("Edge spaces strategy: {}", edgeSpacesStrategy);
         LOGGER.info("URL parameters: {}", urlParams);
         LOGGER.info("Custom fuzzer file: {}", customFuzzerFile);
-
+        LOGGER.info("Excluded fuzzers: {}", excludedFuzzers);
     }
 
     private void renderHelpToConsole(String command, String text) {
