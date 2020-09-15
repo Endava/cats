@@ -122,16 +122,17 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 - `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth (more auth schemes will follow in future releases).
 - `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. If the argument is not supplied all fuzzers will be run.
 - `--log=PACKAGE:LEVEL` can configure custom log level for a given package. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug`
-- `--paths=PATH_LIST` supplies a `;` list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
+- `--paths=PATH_LIST` supplies a comma separated list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
 - `--fieldsFuzzingStrategy=STRATEGY` specifies which strategy will be used for field fuzzing. Available strategies are `ONEBYONE`, `SIZE` and `POWERSET`. More information on field fuzzing can be found in the sections below.
 - `--maxFieldsToRemove=NUMBER` specifies the maximum number of fields to be removed when using the `SIZE` fields fuzzing strategy.
 - `--refData=FILE` specifies the file containing static reference data which must be fixed in order to have valid business requests. This is a YAML file. It is explained further in the sections below.
 - `--headers=FILE` specifies a file containing headers that will be added when sending payloads to the endpoints. You can use this option to add oauth/JWT tokens for example.
 - `--reportingLevel=LEVEL` specifies which reporting level you want to use. It can be `INFO`, `WARN` or `ERROR`. You can use `WARN` or `ERROR` to filter the tests that are passing and focus only on the ones that fail
 - `--edgeSpacesStrategy=STRATEGY` specifies how to expect the server to behave when sending trailing and prefix spaces within fields. Possible values are `trimAndValidate` and `validateAndTrim`.
-- `--urlParams` A ';' separated list of 'name:value' pairs of parameters to be replaced inside the URLs. This is useful when you have static parameters in URLs (like 'version' for example).
+- `--urlParams` A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs. This is useful when you have static parameters in URLs (like 'version' for example).
 - `--customFuzzerFile` a file used by the `CustomFuzzer` that will be used to create user-supplied payloads.
 - `--skipXXXForPath=path1,path2` can configure a fuzzer to be skipped for the specified paths. You must provide a full `Fuzzer` name instead of `XXX`. For example: `--skipVeryLargeStringsFuzzerForPath=/path1,/path2`
+- `--excludedFuzzers=LIST_OF_FIZZERs` a comma separated list of fuzzers that will be excluded for **all** paths. You must provide full `Fuzzer`. For example: `--excludedFuzzers=VeryLargeStringsFuzzer`
 
 Using some of these options a typical invocation of CATS might look like this:
 

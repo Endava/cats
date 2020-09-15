@@ -123,7 +123,7 @@ public class TestCaseListener {
         t0 = System.currentTimeMillis();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("UTC"));
         LOGGER.info("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(buildProperties.getName().toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(buildProperties.getVersion()), ansi().fg(Ansi.Color.GREEN).a(formatter.format(buildProperties.getTime())));
-        ansi().reset();
+        LOGGER.info("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }
 
     @PreDestroy
