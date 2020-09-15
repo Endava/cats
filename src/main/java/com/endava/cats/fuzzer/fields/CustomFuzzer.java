@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.CatsMain;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 @Component
 public class CustomFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomFuzzer.class);
+    private static final String HTTP_METHOD = "httpMethod";
     private static final String EXPECTED_RESPONSE_CODE = "expectedResponseCode";
     private static final String OUTPUT = "output";
     private static final String VERIFY = "verify";
@@ -148,14 +150,22 @@ public class CustomFuzzer implements Fuzzer {
     private void executeTestCases(FuzzingData data, String key, Object value) {
         LOGGER.info("Path [{}] has the following custom data [{}]", data.getPath(), value);
 
-        if (this.entryIsValid((Map<String, Object>) value)) {
+        if (this.entryIsValid((Map<String, Object>) value) && isHttpMethodMatchingCustomTest((Map<String, Object>) value, data.getMethod())) {
             List<Map<String, String>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
             for (Map<String, String> individualTestCase : individualTestCases) {
                 testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, key, individualTestCase));
             }
+        } else if (!isHttpMethodMatchingCustomTest((Map<String, Object>) value, data.getMethod())) {
+            LOGGER.warn("Skipping path [{}] as HTTP method [{}] does not match custom test", data.getPath(), data.getMethod());
         } else {
             LOGGER.warn("Skipping path [{}] as not valid. It either doesn't contain a valid expectedResponseCode or there is more than one list of values for a specific field", data.getPath());
         }
+    }
+
+    private boolean isHttpMethodMatchingCustomTest(Map<String, Object> currentPathValues, HttpMethod httpMethod) {
+        Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(HTTP_METHOD)));
+
+        return !httpMethodFromYaml.isPresent() || httpMethodFromYaml.get().equals(httpMethod);
     }
 
     private void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
@@ -270,7 +280,8 @@ public class CustomFuzzer implements Fuzzer {
 
     private boolean isNotAReservedWord(String key) {
         return !key.equalsIgnoreCase(OUTPUT) && !key.equalsIgnoreCase(DESCRIPTION) &&
-                !key.equalsIgnoreCase(EXPECTED_RESPONSE_CODE) && !key.equalsIgnoreCase(VERIFY);
+                !key.equalsIgnoreCase(EXPECTED_RESPONSE_CODE) && !key.equalsIgnoreCase(VERIFY)
+                && !key.equalsIgnoreCase(HTTP_METHOD);
     }
 
 

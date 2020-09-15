@@ -280,6 +280,7 @@ The `CustomFuzzer` will only trigger if a valid `customFuzzer.yml` file is suppl
           - value2
           - value3
         expectedResponseCode: HTTP_CODE
+        httpMethod: HTTP_NETHOD
 ```
 
 Some things to note about the `customFuzzer.yml` file:
@@ -289,6 +290,9 @@ Some things to note about the `customFuzzer.yml` file:
 - *at most* one of the properties can have multiple values. When this situation happens, that test will actually become a list of tests one for each of the values supplied. For example in the above example `prop7` has 3 values. This will actually result in 3 tests, one for each value.
 - `CustomFuzzer` only triggers when you supply a `customFuzzer.yml`-like file using the `--customFuzzerFile=XXX` argument.
 - test within the file are executed **in the declared order**. This is why you can have outputs from one test act as inputs for the next one(s) (see the next section for details).
+- if no `httpMethod` parameter is supplied, then the `CustomFuzzer` will run for all http method defined in the OpenAPI contract under the given path
+- if a `httpMethod` parameter is supplied, but it doesn't exist in the OpenAPI given path, a `warning` will be issued and no test will be executed
+- if a `httpMethod` parameter is supplied, but is not a valid HTTP method, a `warning` will be issued and no test will be executed
 
 ### Correlating Tests
 As CATs mostly relies on generated data with small help from some reference data, testing complex business scenarios with the pre-defined `Fuzzers` is not possible. Suppose we have an endpoint that creates data (doing a `POST`), and we want to check its existence (via `GET`).
@@ -300,6 +304,7 @@ Here is an example:
 /pet:
     test_1:
       description: Create a Pet
+      httpMethod: POST
       name: "My Pet"
       expectedResponseCode: 200
       output:
@@ -334,6 +339,7 @@ The `CustomFuzzer` can verify more than just the `expectedResponseCode`. This is
 /pet:
     test_1:
       description: Create a Pet
+      httpMethod: POST
       name: "My Pet"
       expectedResponseCode: 200
       output:
@@ -378,11 +384,11 @@ Some notes:
 - you can supply more than one parameter to check (as seen above)
 - if at least one of the parameters is not present in the response, `CATs` will report an error
 - if all parameters are found and have valid values, but the response code is not matched, `CATs` will report a warning
-- if both the parameters are found and match their values and the response code is as expected, `CATs` will report a success
+- if all the parameters are found and match their values and the response code is as expected, `CATs` will report a success
 
 
 ### Reserved keywords
-The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode` and `verify`.
+The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description` and `verify`.
 
 # Skipping Fuzzers for specific paths
 There might be situations when you would want to skip some fuzzers for specific paths. This can be done using the `--skipXXXForPath=path1,path2` argument.

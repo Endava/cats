@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
@@ -145,6 +146,16 @@ class CustomFuzzerTest {
                 Mockito.eq(Collections.singletonList("address")));
     }
 
+    @Test
+    void givenACustomFuzzerFileWithHttpMethodThatIsNotInContract_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer-http-method.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
         ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
@@ -155,7 +166,7 @@ class CustomFuzzerTest {
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST");
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'pet':'oldValue'}").
-                responses(responses).responseCodes(Collections.singleton("200")).build();
+                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
 
         return data;
