@@ -1,0 +1,8 @@
+/pet:
+  test1:
+    description: XSS strings
+    targetFields:
+      - id
+      - name
+    stringsFile: xss.txt
+    expectedResponseCode: 200
