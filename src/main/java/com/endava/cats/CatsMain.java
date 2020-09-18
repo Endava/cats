@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -21,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.ExitCodeGenerator;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -41,7 +44,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         resources = {"${spring.info.build.location:classpath:META-INF/build-info.properties}"}
 )
 @SpringBootApplication
-public class CatsMain implements CommandLineRunner {
+public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     public static final AtomicInteger TEST = new AtomicInteger(0);
     public static final String EMPTY = "empty";
@@ -92,11 +95,12 @@ public class CatsMain implements CommandLineRunner {
     private FuzzingDataFactory fuzzingDataFactory;
     @Autowired
     private CustomFuzzer customFuzzer;
+    @Autowired
+    private ExecutionStatisticsListener executionStatisticsListener;
 
 
     public static void main(String... args) {
-        new SpringApplicationBuilder(CatsMain.class).bannerMode(Banner.Mode.CONSOLE).logStartupInfo(false).build().run(args);
-
+        System.exit(SpringApplication.exit(new SpringApplicationBuilder(CatsMain.class).bannerMode(Banner.Mode.CONSOLE).logStartupInfo(false).build().run(args)));
     }
 
     private static List<String> stringToList(String str, String splitChar) {
@@ -420,7 +424,6 @@ public class CatsMain implements CommandLineRunner {
     }
 
     private void printArgs() {
-        LOGGER.info(" ");
         LOGGER.info("Server: {}", server);
         LOGGER.info("Contract: {}", contract);
         LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
@@ -439,5 +442,10 @@ public class CatsMain implements CommandLineRunner {
 
     private void renderHelpToConsole(String command, String text) {
         LOGGER.info(COMMAND_TEMPLATE, command, text);
+    }
+
+    @Override
+    public int getExitCode() {
+        return executionStatisticsListener.getErrors();
     }
 }
