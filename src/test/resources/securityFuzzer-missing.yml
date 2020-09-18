@@ -1,0 +1,8 @@
+/pets/{id}/move:
+  test1:
+    description: XSS strings
+    targetF:
+      - id
+      - name
+    stringsFile: xss.txt
+    expectedResponseCode: 200

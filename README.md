@@ -43,7 +43,9 @@ Table of Contents
          * [Writing Custom Tests](#writing-custom-tests)
          * [Correlating Tests](#correlating-tests)
          * [Verifying responses](#verifying-responses)
-         * [Reserved keywords](#reserved-keywords)
+         * [Reserved keywords](#customfuzzer-reserved-keywords)
+      * [Security Fuzzer](#security-fuzzer)
+         * [Reserved keywords](#securityfuzzer-reserved-keywords)
    * [Skipping Fuzzers for specific paths](#skipping-fuzzers-for-specific-paths)
    * [Reference Data File](#reference-data-file)
    * [Headers File](#headers-file)
@@ -387,8 +389,43 @@ Some notes:
 - if all the parameters are found and match their values and the response code is as expected, `CATs` will report a success
 
 
-### Reserved keywords
+### CustomFuzzer Reserved keywords
 The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description` and `verify`.
+
+## Security Fuzzer
+Although `CATs` is not a security testing tool, you can use it to test basic security scenarios by fuzzing specific fields with different sets of [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings).
+The behaviour is similar to the `CustomFuzzer`. You can use the exact same elements for output variables, test correlation, verify responses and so forth, with the addition that you must also specify a `targetFields` and a `stringsList` element.
+A typical `securityFuzzerFile` will look like this:
+
+```yaml
+/pet:
+    test_1:
+      description: Run XSS scenarios
+      name: "My Pet"
+      expectedResponseCode: 200
+      targetFields:
+        - pet#id
+        - pet#description
+      stringsFile: xss.txt
+```
+
+You can also supply `output`, `httpMethod` and/or `verify` if they are relevant to your case.
+
+This is what the `SecurityFuzzer` will do after parsing the above `securityFuzzerFile`:
+- it will add the fixed value "My Pet" to all the request for the field `name`
+- for each field specified in the `targetFields` i.e. `pet#id` and `pet#description` will create requests for each line from the `xss.txt` file and supply those values in each field
+- if you consider the `xss.txt` sample file included in the `CATs` repo, this means that it will send 21 requests targeting `pet#id` and 21 requests targeting `pet#description` i.e. a total of 42 tests
+- for each of these 42 tests, the `SecurityFuzzer` will expect a `200` response code. If another response code is returned, then `CATs` will report the test as `error`.
+
+As an idea on how to create security tests, you can split the [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings) into multiple files of interest for your particular context.
+You can have a `sql_injection.txt`, a `xss.txt`, a `command_injection.txt` and so on. For each of these files, you can create a test entry in the `securityFuzzerFile` where you include the fields you think are meaningful for these types of tests.
+(It was a deliberate choice (for now) to not include all fields by default.) The `expectedResponseCode` should be tweaked according to your particular context. 
+Your service might sanitize data before validation, so might be perfectly valid to expect a `200` or might validate the fields directly, so might be perfectly valid to expect a `400`.
+A `500` will usually mean something was not handled properly and might signal a possible bug.
+
+### SecurityFuzzer Reserved keywords
+The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `targetFields` and `stringsFile`.
+
 
 # Skipping Fuzzers for specific paths
 There might be situations when you would want to skip some fuzzers for specific paths. This can be done using the `--skipXXXForPath=path1,path2` argument.

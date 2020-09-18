@@ -1,8 +1,9 @@
 /pets/{id}/move:
-  pet#id:
-    - stay
-    - at
-    - home
+  test1:
+    pet#id:
+      - stay
+      - at
+      - home
 /go:
   test1:
     homeId:

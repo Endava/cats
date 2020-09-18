@@ -9,6 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CustomFuzzerUtil;
 import com.google.gson.JsonObject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,6 +48,9 @@ class CustomFuzzerTest {
     @MockBean
     private CatsUtil catsUtil;
 
+    @SpyBean
+    private CustomFuzzerUtil customFuzzerUtil;
+
     private CustomFuzzer customFuzzer;
 
     @BeforeAll
@@ -58,7 +62,7 @@ class CustomFuzzerTest {
 
     @BeforeEach
     void setup() {
-        customFuzzer = new CustomFuzzer(serviceCaller, testCaseListener, catsUtil);
+        customFuzzer = new CustomFuzzer(catsUtil, customFuzzerUtil);
         Mockito.when(buildProperties.getName()).thenReturn("CATS");
         Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
         Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
@@ -77,6 +81,7 @@ class CustomFuzzerTest {
         Mockito.verify(spyCustomFuzzer, Mockito.never()).processCustomFuzzerFile(data);
         Assertions.assertThat(customFuzzer.description()).isNotNull();
         Assertions.assertThat(customFuzzer).hasToString(customFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(customFuzzer.reservedWords()).containsOnly(CustomFuzzerUtil.EXPECTED_RESPONSE_CODE, CustomFuzzerUtil.DESCRIPTION, CustomFuzzerUtil.OUTPUT, CustomFuzzerUtil.VERIFY);
     }
 
     @Test
