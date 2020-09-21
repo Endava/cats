@@ -146,9 +146,9 @@ public class TestCaseListener {
         String errors = ansi().fgRed().bold().a("errors: {}, ").toString();
         String skipped = ansi().fgCyan().bold().a("skipped: {}. ").toString();
         String check = ansi().reset().fgBlue().a("You can check the test_cases folder for more details about the payloads.").reset().toString();
-
-        LOGGER.info(catsFinished + passed + warnings + errors + skipped + check,
-                (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+        String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
+        
+        LOGGER.info(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
     }
 
     public void reportWarn(Logger logger, String message, Object... params) {
