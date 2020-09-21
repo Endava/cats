@@ -1,10 +1,12 @@
 package com.endava.cats.io;
 
+import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
 import com.google.gson.GsonBuilder;
+import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -17,6 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,6 +28,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * This class is responsible for writing the final report file(s)
@@ -67,6 +73,36 @@ public class TestCaseExporter {
                 LOGGER.error("Failed to delete test-report folder contents!");
             }
         }
+    }
+
+    public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
+        Map<String, CatsTestCase> allRun = testCaseMap.entrySet().stream().filter(entry -> entry.getValue().isNotSkipped())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<String, List<CatsTestCase>> collect = allRun.values().stream().collect(Collectors.groupingBy(testCase -> testCase.getResponse().getHttpMethod() + " " + testCase.getPath()));
+        LOGGER.info(" ");
+        LOGGER.info(" ---------------------------- Execution time details ---------------------------- ");
+        LOGGER.info(" ");
+        collect.forEach((key, value) -> {
+            double average = value.stream().mapToLong(testCase -> testCase.getResponse().getResponseTimeInMs()).average().orElse(0);
+            List<CatsTestCase> sortedRuns = value.stream().sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs())).collect(Collectors.toList());
+            CatsTestCase bestCase = sortedRuns.get(0);
+            CatsTestCase worstCase = sortedRuns.get(sortedRuns.size() - 1);
+            List<String> executions = sortedRuns.stream().map(CatsTestCase::executionTimeString).collect(Collectors.toList());
+            TimeExecutionDetails timeExecutionDetails = TimeExecutionDetails.builder().average(average).
+                    path(key).bestCase(bestCase.executionTimeString()).worstCase(worstCase.executionTimeString()).
+                    executions(executions).build();
+
+
+            LOGGER.info("Details for path {} ", ansi().fg(Ansi.Color.GREEN).a(timeExecutionDetails.getPath()).reset());
+            LOGGER.info(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
+            LOGGER.info(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
+            LOGGER.info(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
+            LOGGER.info("Execution details by test case (sorted by response time): {}", timeExecutionDetails.getExecutions());
+            LOGGER.info(" ");
+
+        });
+        LOGGER.info(" ");
     }
 
     public void writeSummary(Map<String, CatsTestCase> testCaseMap, int all, int success, int warnings, int errors) {

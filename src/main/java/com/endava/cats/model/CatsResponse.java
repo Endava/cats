@@ -12,17 +12,17 @@ public class CatsResponse {
     private final int responseCode;
     private final JsonElement jsonBody;
     private final String httpMethod;
-
     @Exclude
     private final String body;
+    private long responseTimeInMs;
 
-    public static CatsResponse from(int code, String body, String methodType) {
+    public static CatsResponse from(int code, String body, String methodType, long ms) {
         return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)
-                .jsonBody(JsonParser.parseString(body)).build();
+                .jsonBody(JsonParser.parseString(body)).responseTimeInMs(ms).build();
     }
 
     public static CatsResponse empty() {
-        return CatsResponse.from(100, "{}", "SKIPPED");
+        return CatsResponse.from(100, "{}", "SKIPPED", 0);
     }
 
     public String responseCodeAsString() {

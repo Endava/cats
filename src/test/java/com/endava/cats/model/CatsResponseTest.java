@@ -8,7 +8,7 @@ class CatsResponseTest {
     @Test
     void givenAStringJson_whenCreatingACatsResponseObject_thenTheStringIsParsedAsAJsonElement() {
         String body = "{'test': 'value'}";
-        CatsResponse catsResponse = CatsResponse.from(200, body, "DELETE");
+        CatsResponse catsResponse = CatsResponse.from(200, body, "DELETE", 2);
 
         Assertions.assertThat(catsResponse.getJsonBody()).isNotNull();
     }
