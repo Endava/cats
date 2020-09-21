@@ -168,7 +168,7 @@ class CustomFuzzerTest {
         Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
-        CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST");
+        CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'pet':'oldValue'}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();

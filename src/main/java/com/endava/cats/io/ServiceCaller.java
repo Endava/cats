@@ -217,14 +217,16 @@ public class ServiceCaller {
             this.removeSkippedHeaders(data, method);
 
             LOGGER.info("Final list with request headers {}", Arrays.asList(method.getAllHeaders()));
-
+            long startTime = System.currentTimeMillis();
             HttpResponse response = httpClient.execute(method);
-            LOGGER.info("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}", response.getStatusLine().getProtocolVersion(),
-                    method.getMethod(), response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode());
+            long endTime = System.currentTimeMillis();
+
+            LOGGER.info("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.getStatusLine().getProtocolVersion(),
+                    method.getMethod(), response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode(), endTime - startTime);
 
             String responseBody = this.getAsJson(response);
 
-            CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod());
+            CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod(), endTime - startTime);
             this.recordRequestAndResponse(Arrays.asList(method.getAllHeaders()), processedPayload, catsResponse, data.getRelativePath(), HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
 
             return catsResponse;

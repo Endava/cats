@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 
@@ -47,6 +48,8 @@ public class TestCaseListener {
     private final BuildProperties buildProperties;
     private long t0;
 
+    @Value("${printExecutionStatistics:empty}")
+    private String printExecutionStatistics;
 
     @Autowired
     public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties) {
@@ -79,6 +82,7 @@ public class TestCaseListener {
 
     private void startTestCase() {
         testCaseMap.put(MDC.get(ID), new CatsTestCase());
+        testCaseMap.get(MDC.get(ID)).setTestId(MDC.get(ID));
     }
 
     public void addScenario(Logger logger, String scenario, Object... params) {
@@ -129,8 +133,21 @@ public class TestCaseListener {
     @PreDestroy
     public void endSession() {
         testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
+
+        if (!"empty".equalsIgnoreCase(printExecutionStatistics)) {
+            testCaseExporter.writePerformanceReport(testCaseMap);
+        } else {
+            LOGGER.info("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
+        }
         testCaseExporter.writeReportFiles();
-        LOGGER.info("CATS finished in {} ms. Total (excluding skipped) requests {}. Passed: {}, warnings: {}, errors: {}, skipped {}. You can check the test_cases folder for more details about the payloads.",
+        String catsFinished = ansi().fgBlue().a("CATS finished in {} ms. Total (excluding skipped) requests {}. ").toString();
+        String passed = ansi().fgGreen().bold().a("Passed {}, ").toString();
+        String warnings = ansi().fgYellow().bold().a("warnings: {}, ").toString();
+        String errors = ansi().fgRed().bold().a("errors: {}, ").toString();
+        String skipped = ansi().fgCyan().bold().a("skipped: {}. ").toString();
+        String check = ansi().reset().fgBlue().a("You can check the test_cases folder for more details about the payloads.").reset().toString();
+
+        LOGGER.info(catsFinished + passed + warnings + errors + skipped + check,
                 (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
     }
 

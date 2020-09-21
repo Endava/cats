@@ -10,6 +10,7 @@ import lombok.ToString;
 @Setter
 @ToString(of = "scenario")
 public class CatsTestCase {
+    private String testId;
     private String scenario;
     private String expectedResult;
     private String result;
@@ -19,6 +20,10 @@ public class CatsTestCase {
     private String path;
     private String fuzzer;
     private String fullRequestPath;
+
+    public String executionTimeString() {
+        return testId + " - " + response.getResponseTimeInMs() + "ms";
+    }
 
     public boolean isNotSkipped() {
         return !"skipped".equalsIgnoreCase(result);
