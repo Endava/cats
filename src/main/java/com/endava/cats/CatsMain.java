@@ -409,6 +409,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.renderHelpToConsole("customFuzzerFile", "A file used by the `CustomFuzzer` that will be used to create user-supplied payloads");
         this.renderHelpToConsole("skipXXXForPath", "/path1,/path2 can configure fuzzers to be excluded for the specified paths");
         this.renderHelpToConsole("excludeFuzzers", "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude");
+        this.renderHelpToConsole("securityFuzzerFile", "A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities");
 
         LOGGER.info("Example: ");
         LOGGER.info(EXAMPLE);
