@@ -30,6 +30,9 @@
         <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
         <guava.version>29.0-jre</guava.version>
         <openapi-generator.version>4.3.1</openapi-generator.version>
+        <sonar.coverage.exclusions>
+            **/*TestCaseExporter.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*
+        </sonar.coverage.exclusions>
     </properties>
 
     <build>
@@ -72,6 +75,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*TestCaseExporter.*</exclude>
+                        <exclude>**/*CatsTestCase*.*</exclude>
+                        <exclude>**/*CatsTestReport*.*</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.pitest</groupId>
