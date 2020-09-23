@@ -101,7 +101,7 @@ public class TestCaseExporter {
             LOGGER.info(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
             LOGGER.info(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
             LOGGER.info(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
-            LOGGER.info("Execution details by test case (sorted by response time): {}", timeExecutionDetails.getExecutions());
+            LOGGER.info("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
             LOGGER.info(" ");
 
         });
