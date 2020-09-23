@@ -147,7 +147,7 @@ public class TestCaseListener {
         String skipped = ansi().fgCyan().bold().a("skipped: {}. ").toString();
         String check = ansi().reset().fgBlue().a("You can check the test_cases folder for more details about the payloads.").reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
-        
+
         LOGGER.info(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
     }
 

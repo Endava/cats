@@ -79,7 +79,10 @@ public class TestCaseExporter {
         Map<String, CatsTestCase> allRun = testCaseMap.entrySet().stream().filter(entry -> entry.getValue().isNotSkipped())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        Map<String, List<CatsTestCase>> collect = allRun.values().stream().collect(Collectors.groupingBy(testCase -> testCase.getResponse().getHttpMethod() + " " + testCase.getPath()));
+        Map<String, List<CatsTestCase>> collect = allRun.values().stream()
+                .collect(Collectors.groupingBy(testCase -> testCase.getResponse().getHttpMethod() + " " + testCase.getPath()))
+                .entrySet().stream().filter(entry -> entry.getValue().size() > 1).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         LOGGER.info(" ");
         LOGGER.info(" ---------------------------- Execution time details ---------------------------- ");
         LOGGER.info(" ");

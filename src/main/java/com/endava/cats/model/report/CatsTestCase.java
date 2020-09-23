@@ -26,6 +26,10 @@ public class CatsTestCase {
     }
 
     public boolean isNotSkipped() {
-        return !"skipped".equalsIgnoreCase(result);
+        return !("skipped".equalsIgnoreCase(result) || isSkippedResponse());
+    }
+
+    private boolean isSkippedResponse() {
+        return response != null && "skipped".equalsIgnoreCase(response.getHttpMethod());
     }
 }
