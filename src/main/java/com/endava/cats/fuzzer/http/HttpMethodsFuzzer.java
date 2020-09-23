@@ -14,13 +14,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
 @Component
 public class HttpMethodsFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpMethodsFuzzer.class);
-
+    private final List<String> fuzzedPaths = new ArrayList<>();
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
@@ -31,40 +33,45 @@ public class HttpMethodsFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData data) {
-        Operation post = data.getPathItem().getPost();
+        if (!fuzzedPaths.contains(data.getPath())) {
 
-        if (post == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::post));
-        }
+            Operation post = data.getPathItem().getPost();
 
-        Operation get = data.getPathItem().getGet();
-        if (get == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::get));
-        }
+            if (post == null) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::post));
+            }
 
-        Operation put = data.getPathItem().getPut();
-        if (put == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::put));
-        }
+            Operation get = data.getPathItem().getGet();
+            if (get == null) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::get));
+            }
 
-        Operation delete = data.getPathItem().getDelete();
-        if (delete == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::delete));
-        }
+            Operation put = data.getPathItem().getPut();
+            if (put == null) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::put));
+            }
 
-        Operation patch = data.getPathItem().getPatch();
-        if (patch == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::patch));
-        }
+            Operation delete = data.getPathItem().getDelete();
+            if (delete == null) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::delete));
+            }
 
-        Operation head = data.getPathItem().getHead();
-        if (head == null && data.getPathItem().getGet() == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::head));
-        }
+            Operation patch = data.getPathItem().getPatch();
+            if (patch == null) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::patch));
+            }
 
-        Operation trace = data.getPathItem().getTrace();
-        if (trace == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::trace));
+            Operation head = data.getPathItem().getHead();
+            if (head == null && data.getPathItem().getGet() == null) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::head));
+            }
+
+            Operation trace = data.getPathItem().getTrace();
+            if (trace == null) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::trace));
+            }
+        } else {
+            LOGGER.info("Skip path {} as already fuzzed!", data.getPath());
         }
     }
 
@@ -74,6 +81,7 @@ public class HttpMethodsFuzzer implements Fuzzer {
         try {
             CatsResponse response = f.apply(ServiceData.builder().relativePath(path).headers(headers).payload("").build());
             this.checkResponse(response);
+            fuzzedPaths.add(path);
         } catch (Exception e) {
             testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
         }
