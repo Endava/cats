@@ -37,22 +37,23 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
         if (data.getHeaders().isEmpty()) {
             LOGGER.info("No headers to fuzz");
         }
-
-        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
-    }
-
-    private void process(FuzzingData data) {
         List<CatsHeader> headers = new ArrayList<>(data.getHeaders());
         CatsHeader header = CatsHeader.builder().name(CATS_FUZZY_HEADER).required(false).value(CATS_FUZZY_HEADER).build();
 
         if (headers.isEmpty()) {
             headers.add(header);
-        } else {
-            header = headers.get(0);
         }
-        headers.add(header.copy());
 
-        testCaseListener.addScenario(LOGGER, "Scenario: add a duplicate header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", header.getName(), header.getTruncatedValue());
+        for (CatsHeader catsHeader : headers) {
+            List<CatsHeader> finalHeadersList = new ArrayList<>(headers);
+            finalHeadersList.add(catsHeader.copy());
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, finalHeadersList, catsHeader));
+        }
+
+    }
+
+    private void process(FuzzingData data, List<CatsHeader> headers, CatsHeader targetHeader) {
+        testCaseListener.addScenario(LOGGER, "Scenario: add a duplicate header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", targetHeader.getName(), targetHeader.getTruncatedValue());
         testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 4XX response code");
 
         CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(headers)
