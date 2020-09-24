@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -31,6 +32,9 @@ public class FuzzingDataFactory {
 
     private final CatsUtil catsUtil;
     private final CatsParams catsParams;
+
+    @Value("${useExamples:true}")
+    private String useExamples;
 
     @Autowired
     public FuzzingDataFactory(CatsUtil catsUtil, CatsParams catsParams) {
@@ -234,7 +238,7 @@ public class FuzzingDataFactory {
     }
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName, Map<String, Schema> schemas) {
-        PayloadGenerator generator = new PayloadGenerator(schemas);
+        PayloadGenerator generator = new PayloadGenerator(schemas, this.getUseExamplesArgument());
         List<String> result = this.generateSample(reqSchemaName, generator);
 
         if (mediaType != null && mediaType.getSchema() instanceof ArraySchema) {
@@ -356,7 +360,7 @@ public class FuzzingDataFactory {
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes, Map<String, Schema> schemas) {
         Map<String, List<String>> responses = new HashMap<>();
-        PayloadGenerator generator = new PayloadGenerator(schemas);
+        PayloadGenerator generator = new PayloadGenerator(schemas, this.getUseExamplesArgument());
         for (String responseCode : responseCodes) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
@@ -369,6 +373,10 @@ public class FuzzingDataFactory {
             }
         }
         return responses;
+    }
+
+    private boolean getUseExamplesArgument() {
+        return StringUtils.isBlank(useExamples) || "true".equalsIgnoreCase(useExamples);
     }
 
     private String extractResponseSchemaRef(Operation operation, String responseCode) {

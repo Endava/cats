@@ -39,6 +39,12 @@ public class PayloadGenerator {
     private final DecimalFormat df = new DecimalFormat("#.00");
     private final List<String> discriminators = new ArrayList<>();
     private String currentProperty = "";
+    private boolean useExamples = true;
+
+    public PayloadGenerator(Map<String, Schema> schemas, boolean useExamplesArgument) {
+        this(schemas);
+        useExamples = useExamplesArgument;
+    }
 
     public PayloadGenerator(Map<String, Schema> schemas) {
         // use a fixed seed to make the "random" numbers reproducible.
@@ -83,9 +89,11 @@ public class PayloadGenerator {
 
     private <T> Object resolvePropertyToExample(String propertyName, String mediaType, Schema<T> property) {
         LOGGER.trace("Resolving example for property {}...", property);
-        if (property.getExample() != null) {
+        if (property.getExample() != null && useExamples) {
             LOGGER.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
+        } else if (property instanceof StringSchema) {
+            return this.getExampleFromStringSchema(propertyName, (StringSchema) property);
         } else if (property instanceof BooleanSchema) {
             return this.getExampleFromBooleanSchema((BooleanSchema) property);
         } else if (property instanceof ArraySchema) {
@@ -99,21 +107,21 @@ public class PayloadGenerator {
             return ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } else if (property instanceof NumberSchema) {
             return this.getExampleFromNumberSchema((NumberSchema) property);
-        } else if (property instanceof FileSchema) {
-            return "";
         } else if (property instanceof IntegerSchema) {
             return this.getExampleFromIntegerSchema((IntegerSchema) property);
         } else if (property.getAdditionalProperties() instanceof Schema) {
             return this.getExampleFromAdditionalPropertiesSchema(propertyName, mediaType, property);
         } else if (property instanceof ObjectSchema) {
-            return "{\"cats\":\"cats\"}";
+            return this.getExampleForObjectSchema(property);
         } else if (property instanceof UUIDSchema) {
             return "046b6c7f-0b8a-43b9-b35d-6489e6daee91";
-        } else if (property instanceof StringSchema) {
-            return this.getExampleFromStringSchema(propertyName, (StringSchema) property);
         }
 
-        return "";
+        return property.getExample();
+    }
+
+    private <T> Object getExampleForObjectSchema(Schema<T> property) {
+        return property.getExample() != null ? property.getExample() : "{\"cats\":\"cats\"}";
     }
 
     private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {

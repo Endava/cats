@@ -32,7 +32,7 @@ class StringFieldsRightBoundaryFuzzerTest {
 
     @Test
     void givenANewStringFieldsRightBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFieldsRightBoundaryFuzzer() {
-        NumberSchema nrSchema = new NumberSchema();
+        StringSchema nrSchema = new StringSchema();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.getBoundaryValue(nrSchema)).isNotNull();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.hasBoundaryDefined(nrSchema)).isFalse();
