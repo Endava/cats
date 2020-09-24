@@ -8,6 +8,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,44 +35,21 @@ public class HttpMethodsFuzzer implements Fuzzer {
 
     public void fuzz(FuzzingData data) {
         if (!fuzzedPaths.contains(data.getPath())) {
-
-            Operation post = data.getPathItem().getPost();
-
-            if (post == null) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::post));
-            }
-
-            Operation get = data.getPathItem().getGet();
-            if (get == null) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::get));
-            }
-
-            Operation put = data.getPathItem().getPut();
-            if (put == null) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::put));
-            }
-
-            Operation delete = data.getPathItem().getDelete();
-            if (delete == null) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::delete));
-            }
-
-            Operation patch = data.getPathItem().getPatch();
-            if (patch == null) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::patch));
-            }
-
-            Operation head = data.getPathItem().getHead();
-            if (head == null && data.getPathItem().getGet() == null) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::head));
-            }
-
-            Operation trace = data.getPathItem().getTrace();
-            if (trace == null) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCaller::trace));
-            }
+            executeForOperation(data, PathItem::getPost, serviceCaller::post);
+            executeForOperation(data, PathItem::getPut, serviceCaller::put);
+            executeForOperation(data, PathItem::getGet, serviceCaller::get);
+            executeForOperation(data, PathItem::getPatch, serviceCaller::patch);
+            executeForOperation(data, PathItem::getHead, serviceCaller::head);
+            executeForOperation(data, PathItem::getDelete, serviceCaller::delete);
+            executeForOperation(data, PathItem::getTrace, serviceCaller::trace);
         } else {
             LOGGER.info("Skip path {} as already fuzzed!", data.getPath());
+        }
+    }
+
+    private void executeForOperation(FuzzingData data, Function<PathItem, Operation> operation, Function<ServiceData, CatsResponse> serviceCall) {
+        if (operation.apply(data.getPathItem()) == null) {
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCall));
         }
     }
 
