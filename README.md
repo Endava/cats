@@ -137,6 +137,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 - `--excludedFuzzers=LIST_OF_FIZZERs` a comma separated list of fuzzers that will be excluded for **all** paths. You must provide full `Fuzzer`. For example: `--excludedFuzzers=VeryLargeStringsFuzzer`
 - `--securityFuzzerFile` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method
+- `--useExamples` If `true` (default value when not supplied) then CATS will use examples supplied in the OpenAPI contact. If `false` CATS will rely only on generated values
 
 Using some of these options a typical invocation of CATS might look like this:
 

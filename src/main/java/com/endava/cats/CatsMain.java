@@ -89,6 +89,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String customFuzzerFile;
     @Value("${excludedFuzzers:empty}")
     private String excludedFuzzers;
+    @Value("${useExamples:true}")
+    private String useExamples;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -411,6 +413,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.renderHelpToConsole("excludeFuzzers", "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude");
         this.renderHelpToConsole("securityFuzzerFile", "A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities");
         this.renderHelpToConsole("printExecutionStatistics", "If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method");
+        this.renderHelpToConsole("useExamples", "true/false (default true), instruct CATS on whether to use examples from the OpenAPI contract or not");
 
         LOGGER.info("Example: ");
         LOGGER.info(EXAMPLE);
@@ -440,6 +443,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("URL parameters: {}", urlParams);
         LOGGER.info("Custom fuzzer file: {}", customFuzzerFile);
         LOGGER.info("Excluded fuzzers: {}", excludedFuzzers);
+        LOGGER.info("Use Examples: {}", useExamples);
+
     }
 
     private void renderHelpToConsole(String command, String text) {
