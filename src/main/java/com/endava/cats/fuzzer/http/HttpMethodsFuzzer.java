@@ -39,9 +39,13 @@ public class HttpMethodsFuzzer implements Fuzzer {
             executeForOperation(data, PathItem::getPut, serviceCaller::put);
             executeForOperation(data, PathItem::getGet, serviceCaller::get);
             executeForOperation(data, PathItem::getPatch, serviceCaller::patch);
-            executeForOperation(data, PathItem::getHead, serviceCaller::head);
             executeForOperation(data, PathItem::getDelete, serviceCaller::delete);
             executeForOperation(data, PathItem::getTrace, serviceCaller::trace);
+
+            if (data.getPathItem().getGet() == null) {
+                executeForOperation(data, PathItem::getHead, serviceCaller::head);
+            }
+
         } else {
             LOGGER.info("Skip path {} as already fuzzed!", data.getPath());
         }
