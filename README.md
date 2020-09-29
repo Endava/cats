@@ -180,7 +180,7 @@ This `Fuzzer` will remove fields from the requests based on a supplied strategy.
 These subsets can be generated using the following strategies (supplied through the `--fieldsFuzzingStrategy` option):
 
 ### POWERSET
-This is the most time consuming strategy. This will create all possible subsets of the request fields (including subfields). If the request contains a lot of fields, this strategy might not be the right choice as the toal number of possibilities is `2^n`, where `n` is the number of fields.
+This is the most time consuming strategy. This will create all possible subsets of the request fields (including subfields). If the request contains a lot of fields, this strategy might not be the right choice as the total number of possibilities is `2^n`, where `n` is the number of fields.
 
 For example given the request:
 

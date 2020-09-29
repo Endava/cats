@@ -14,7 +14,7 @@ public class CatsResponse {
     private final String httpMethod;
     @Exclude
     private final String body;
-    private long responseTimeInMs;
+    private final long responseTimeInMs;
 
     public static CatsResponse from(int code, String body, String methodType, long ms) {
         return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)

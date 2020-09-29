@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.function.Function;
 
 @Component
-public class MinLengthExactValuesInStringFieldsFuzzer extends ExactValuesInStringFieldsFuzzer {
+public class MinLengthExactValuesInStringFieldsFuzzer extends ExactValuesInFieldsFuzzer {
 
 
     public MinLengthExactValuesInStringFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {

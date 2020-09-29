@@ -13,6 +13,6 @@ import java.util.List;
 @EqualsAndHashCode(of = {"fuzzer", "forPaths"})
 public class CatsSkipped {
 
-    private String fuzzer;
-    private List<String> forPaths;
+    private final String fuzzer;
+    private final List<String> forPaths;
 }

@@ -10,9 +10,9 @@ import java.util.List;
 @Getter
 @ToString
 public class TimeExecutionDetails {
-    private String path;
-    private List<String> executions;
-    private String bestCase;
-    private String worstCase;
-    private double average;
+    private final String path;
+    private final List<String> executions;
+    private final String bestCase;
+    private final String worstCase;
+    private final double average;
 }

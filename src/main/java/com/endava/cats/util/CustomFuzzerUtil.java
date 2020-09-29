@@ -35,9 +35,9 @@ public class CustomFuzzerUtil {
     private static final String NOT_SET = "NOT_SET";
     private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
     private final Map<String, String> variables = new HashMap<>();
-    private CatsUtil catsUtil;
-    private TestCaseListener testCaseListener;
-    private ServiceCaller serviceCaller;
+    private final CatsUtil catsUtil;
+    private final TestCaseListener testCaseListener;
+    private final ServiceCaller serviceCaller;
 
     @Autowired
     public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl) {
@@ -298,9 +298,5 @@ public class CustomFuzzerUtil {
             }
         }
         return propertyValue;
-    }
-
-    public Map<String, String> getVariables() {
-        return variables;
     }
 }
