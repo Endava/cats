@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public abstract class ExactValuesInStringFieldsFuzzer extends BaseBoundaryFieldFuzzer {
+public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
-    private CatsParams catsParams;
+    private final CatsParams catsParams;
 
     @Autowired
-    public ExactValuesInStringFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
+    public ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
         super(sc, lr, cu);
         this.catsParams = catsParams;
     }

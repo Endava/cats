@@ -6,7 +6,7 @@ import lombok.Getter;
 @Builder
 @Getter
 public class CustomFuzzerExecution {
-    private FuzzingData fuzzingData;
-    private String testId;
-    private Object testEntry;
+    private final FuzzingData fuzzingData;
+    private final String testId;
+    private final Object testEntry;
 }

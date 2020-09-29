@@ -28,7 +28,7 @@ public class CustomFuzzer implements CustomFuzzerBase {
     private String customFuzzerFile;
 
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
-    private List<CustomFuzzerExecution> executions = new ArrayList<>();
+    private final List<CustomFuzzerExecution> executions = new ArrayList<>();
 
     @Autowired
     public CustomFuzzer(CatsUtil cu, CustomFuzzerUtil cfu) {
