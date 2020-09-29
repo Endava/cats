@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.NumberSchema;
@@ -35,7 +36,7 @@ class ExtremePositiveValueDecimalFieldsFuzzerTest {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(NumberSchema.class))).isTrue();
         Assertions.assertThat(NumberUtils.isCreatable(extremePositiveValueDecimalFieldsFuzzer.getBoundaryValue(nrSchema))).isTrue();
-        Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.hasBoundaryDefined(nrSchema)).isTrue();
+        Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
     }

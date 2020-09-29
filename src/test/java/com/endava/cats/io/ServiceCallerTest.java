@@ -58,12 +58,12 @@ class ServiceCallerTest {
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil, catsParams);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
-        ReflectionTestUtils.setField(serviceCaller, "refDataFile", "src/test/resources/refFields.yml");
+        ReflectionTestUtils.setField(catsParams, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(catsParams, "headersFile", "src/test/resources/headers.yml");
         ReflectionTestUtils.setField(catsParams, "params", "id=1,test=2");
 
         catsParams.loadHeaders();
-        serviceCaller.loadRefData();
+        catsParams.loadRefData();
         catsParams.loadURLParams();
     }
 

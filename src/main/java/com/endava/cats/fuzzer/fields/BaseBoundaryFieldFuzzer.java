@@ -35,10 +35,10 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         if (this.fuzzedFieldHasAnAssociatedSchema(schema)) {
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
 
-            if (this.isFieldFuzzable(schema) && this.getBoundaryValue(schema) != null) {
+            if (this.isFieldFuzzable(fuzzedField, data) && this.getBoundaryValue(schema) != null) {
                 logger.info("[{}]. Start fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
                 return FuzzingStrategy.replace().withData(this.getBoundaryValue(schema));
-            } else if (!this.hasBoundaryDefined(schema)) {
+            } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
                 logger.info("Boundaries not defined. Will skip fuzzing...");
                 return FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!");
             } else if (!this.isStringFormatRecognizable(schema) && isRequestSchemaMatchingFuzzerType(schema)) {
@@ -51,8 +51,9 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         return FuzzingStrategy.skip().withData("Data type not matching " + getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
     }
 
-    private boolean isFieldFuzzable(Schema schema) {
-        return this.isRequestSchemaMatchingFuzzerType(schema) && (this.hasBoundaryDefined(schema) || this.isStringFormatRecognizable(schema));
+    private boolean isFieldFuzzable(String fuzzedField, FuzzingData data) {
+        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        return this.isRequestSchemaMatchingFuzzerType(schema) && (this.hasBoundaryDefined(fuzzedField, data) || this.isStringFormatRecognizable(schema));
     }
 
     private boolean isStringFormatRecognizable(Schema schema) {
@@ -88,8 +89,9 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      * Override this to provide information about whether the current field has boundaries defined or not. For example a String
      * field without minLength defined is not considered to have a left boundary
      *
-     * @param schema used to extract boundary information
+     * @param fuzzedField used to extract boundary information
+     * @param data FuzzingData constructed by CATS
      * @return true if the filed has a boundary defined or false otherwise
      */
-    protected abstract boolean hasBoundaryDefined(Schema schema);
+    protected abstract boolean hasBoundaryDefined(String fuzzedField, FuzzingData data);
 }
