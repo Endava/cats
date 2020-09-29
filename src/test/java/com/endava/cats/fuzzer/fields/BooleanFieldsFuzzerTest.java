@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.BooleanSchema;
@@ -34,7 +35,7 @@ class BooleanFieldsFuzzerTest {
     void givenANewBooleanFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheBooleanFuzzer() {
         Assertions.assertThat(booleanFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(BooleanSchema.class))).isTrue();
         Assertions.assertThat(booleanFieldsFuzzer.getBoundaryValue(null)).isNotNull();
-        Assertions.assertThat(booleanFieldsFuzzer.hasBoundaryDefined(null)).isTrue();
+        Assertions.assertThat(booleanFieldsFuzzer.hasBoundaryDefined(null, FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(booleanFieldsFuzzer.description()).isNotNull();
     }
 }

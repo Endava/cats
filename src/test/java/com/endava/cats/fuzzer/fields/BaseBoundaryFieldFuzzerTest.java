@@ -103,7 +103,7 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected boolean hasBoundaryDefined(Schema schema) {
+        protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
             return true;
         }
 
@@ -130,7 +130,7 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected boolean hasBoundaryDefined(Schema schema) {
+        protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
             return false;
         }
 
@@ -157,7 +157,7 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected boolean hasBoundaryDefined(Schema schema) {
+        protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
             return true;
         }
 

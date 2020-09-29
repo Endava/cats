@@ -4,7 +4,9 @@ import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -13,14 +15,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public abstract class ExactValuesInStringFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
+    private CatsParams catsParams;
 
     @Autowired
-    public ExactValuesInStringFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    public ExactValuesInStringFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
         super(sc, lr, cu);
+        this.catsParams = catsParams;
     }
 
     @Override
@@ -36,12 +41,14 @@ public abstract class ExactValuesInStringFieldsFuzzer extends BaseBoundaryFieldF
     @Override
     protected String getBoundaryValue(Schema schema) {
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC;
-        return StringGenerator.generate(pattern, getExactMethod().apply(schema), getExactMethod().apply(schema));
+        return StringGenerator.generate(pattern, getExactMethod().apply(schema).intValue(), getExactMethod().apply(schema).intValue());
     }
 
     @Override
-    protected boolean hasBoundaryDefined(Schema schema) {
-        return getExactMethod().apply(schema) != null;
+    protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        Map<String, String> currentPath = catsParams.getRefData().get(data.getPath());
+        return (currentPath == null || currentPath.get(fuzzedField) == null) && getExactMethod().apply(schema) != null;
     }
 
     @Override
@@ -61,10 +68,10 @@ public abstract class ExactValuesInStringFieldsFuzzer extends BaseBoundaryFieldF
 
     @Override
     public String description() {
-        return String.format("iterate through each String field that have %s declared and send requests with values matching the %s size in the targeted field", exactValueTypeString(), exactValueTypeString());
+        return String.format("iterate through each %s fields that have %s declared and send requests with values matching the %s size/value in the targeted field", getSchemasThatTheFuzzerWillApplyTo(), exactValueTypeString(), exactValueTypeString());
     }
 
     protected abstract String exactValueTypeString();
 
-    protected abstract Function<Schema, Integer> getExactMethod();
+    protected abstract Function<Schema, Number> getExactMethod();
 }

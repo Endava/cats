@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.*;
@@ -35,7 +36,7 @@ class StringFormatAlmostValidValuesFuzzerTest {
         nrSchema.setFormat("email");
         Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsExactly(StringSchema.class, DateSchema.class, DateTimeSchema.class, PasswordSchema.class, UUIDSchema.class, EmailSchema.class);
         Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.getBoundaryValue(nrSchema)).isNotNull();
-        Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.hasBoundaryDefined(nrSchema)).isTrue();
+        Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.description()).isNotNull();
         Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.typeOfDataSentToTheService()).isNotNull();
 

@@ -10,20 +10,20 @@ import org.springframework.stereotype.Component;
 import java.util.function.Function;
 
 @Component
-public class MinLengthExactValuesInStringFieldsFuzzer extends ExactValuesInStringFieldsFuzzer {
+public class MaximumExactValuesInNumericFieldsFuzzer extends IntegerExactValuesInNumericFieldsFuzzer {
 
 
-    public MinLengthExactValuesInStringFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+    public MaximumExactValuesInNumericFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
         super(sc, lr, cu, cp);
     }
 
     @Override
     protected String exactValueTypeString() {
-        return "minLength";
+        return "maximum";
     }
 
     @Override
     protected Function<Schema, Number> getExactMethod() {
-        return Schema::getMinLength;
+        return Schema::getMaximum;
     }
 }

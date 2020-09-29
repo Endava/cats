@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -32,9 +33,10 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
     @Test
     void shouldNotHaveBoundaryDefined() {
         StringSchema stringSchema = new StringSchema();
+        FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getBoundaryValue(stringSchema)).isEmpty();
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.hasBoundaryDefined(stringSchema)).isFalse();
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
@@ -43,9 +45,10 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
     void shouldHaveBoundaryDefined() {
         StringSchema stringSchema = new StringSchema();
         stringSchema.setEnum(Collections.singletonList("TEST"));
+        FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getBoundaryValue(stringSchema)).hasSizeLessThanOrEqualTo(4);
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.hasBoundaryDefined(stringSchema)).isTrue();
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.hasBoundaryDefined("test", data)).isTrue();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
     }

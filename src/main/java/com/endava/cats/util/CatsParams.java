@@ -17,15 +17,34 @@ public class CatsParams {
 
     private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final CatsUtil catsUtil;
+    private final Map<String, Map<String, String>> refData = new HashMap<>();
     @Value("${urlParams:empty}")
     private String params;
     private List<String> urlParamsList = new ArrayList<>();
     @Value("${headers:empty}")
     private String headersFile;
 
+    @Value("${refData:empty}")
+    private String refDataFile;
+
     @Autowired
     public CatsParams(CatsUtil cu) {
         this.catsUtil = cu;
+    }
+
+
+    @PostConstruct
+    public void loadRefData() throws IOException {
+        try {
+            if (CatsMain.EMPTY.equalsIgnoreCase(refDataFile)) {
+                log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
+            } else {
+                catsUtil.mapObjsToString(refDataFile, refData);
+                log.info("Reference data file loaded successfully: {}", refData);
+            }
+        } catch (Exception e) {
+            throw new IOException("There was a problem parsing the refData file: " + e.getMessage());
+        }
     }
 
     @PostConstruct
@@ -61,5 +80,9 @@ public class CatsParams {
 
     public Map<String, Map<String, String>> getHeaders() {
         return this.headers;
+    }
+
+    public Map<String, Map<String, String>> getRefData() {
+        return this.refData;
     }
 }

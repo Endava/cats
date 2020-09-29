@@ -36,7 +36,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -73,33 +72,14 @@ public class ServiceCaller {
     private final CatsParams catsParams;
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
-    private final Map<String, Map<String, String>> refData = new HashMap<>();
     @Value("${server:empty}")
     private String server;
-    @Value("${refData:empty}")
-    private String refDataFile;
-
 
     @Autowired
     public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.catsParams = catsParams;
-    }
-
-
-    @PostConstruct
-    public void loadRefData() throws IOException {
-        try {
-            if (CatsMain.EMPTY.equalsIgnoreCase(refDataFile)) {
-                LOGGER.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
-            } else {
-                catsUtil.mapObjsToString(refDataFile, refData);
-                LOGGER.info("Reference data file loaded successfully: {}", refData);
-            }
-        } catch (Exception e) {
-            throw new IOException("There was a problem parsing the refData file: " + e.getMessage());
-        }
     }
 
     public CatsResponse call(HttpMethod method, ServiceData data) {
@@ -158,7 +138,7 @@ public class ServiceCaller {
     }
 
     /**
-     * Parameters in the URL will be replaced with actual values supplied in the path.properties and refData.yml files
+     * Parameters in the URL will be replaced with actual values supplied in the path.properties and catsParams.getRefData().yml files
      *
      * @param data
      * @param startingUrl
@@ -361,10 +341,10 @@ public class ServiceCaller {
      * @return
      */
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
-        LOGGER.info("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refData.get(data.getRelativePath()));
+        LOGGER.info("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), catsParams.getRefData().get(data.getRelativePath()));
 
-        if (refData.get(data.getRelativePath()) != null) {
-            for (Map.Entry<String, String> entry : refData.get(data.getRelativePath()).entrySet()) {
+        if (catsParams.getRefData().get(data.getRelativePath()) != null) {
+            for (Map.Entry<String, String> entry : catsParams.getRefData().get(data.getRelativePath()).entrySet()) {
                 currentUrl = currentUrl.replaceAll("\\{" + entry.getKey() + "}", entry.getValue());
                 data.getPathParams().add(entry.getKey());
             }
@@ -377,14 +357,14 @@ public class ServiceCaller {
         if (!data.isReplaceRefData()) {
             LOGGER.info("Bypassing ref data replacement for path {}!", data.getRelativePath());
         } else {
-            LOGGER.info("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refData.get(data.getRelativePath()));
+            LOGGER.info("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), catsParams.getRefData().get(data.getRelativePath()));
             JsonElement jsonElement = catsUtil.parseAsJsonElement(data.getPayload());
 
             if (jsonElement.isJsonObject()) {
-                replaceFieldsWithFuzzedValueIfNotRefData(refData.get(data.getRelativePath()), jsonElement, data.getFuzzedFields());
+                replaceFieldsWithFuzzedValueIfNotRefData(catsParams.getRefData().get(data.getRelativePath()), jsonElement, data.getFuzzedFields());
             } else if (jsonElement.isJsonArray()) {
                 for (JsonElement element : jsonElement.getAsJsonArray()) {
-                    replaceFieldsWithFuzzedValueIfNotRefData(refData.get(data.getRelativePath()), element, data.getFuzzedFields());
+                    replaceFieldsWithFuzzedValueIfNotRefData(catsParams.getRefData().get(data.getRelativePath()), element, data.getFuzzedFields());
                 }
             }
             LOGGER.info("Final payload after reference data replacement {}", jsonElement);

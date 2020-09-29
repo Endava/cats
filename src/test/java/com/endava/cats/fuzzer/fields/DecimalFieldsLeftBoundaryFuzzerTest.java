@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.NumberSchema;
@@ -36,7 +37,7 @@ class DecimalFieldsLeftBoundaryFuzzerTest {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(NumberSchema.class))).isTrue();
         Assertions.assertThat(NumberUtils.isCreatable(decimalFieldsLeftBoundaryFuzzer.getBoundaryValue(nrSchema))).isTrue();
-        Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.hasBoundaryDefined(nrSchema)).isTrue();
+        Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.description()).isNotNull();
     }
 }
