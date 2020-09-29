@@ -27,7 +27,7 @@ public class StringFormatAlmostValidValuesFuzzer extends BaseBoundaryFieldFuzzer
 
     @Override
     protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-        return Arrays.asList(StringSchema.class, DateSchema.class, DateTimeSchema.class, PasswordSchema.class, UUIDSchema.class, EmailSchema.class);
+        return Arrays.asList(StringSchema.class, DateSchema.class, DateTimeSchema.class, PasswordSchema.class, UUIDSchema.class, EmailSchema.class, ByteArraySchema.class);
     }
 
     @Override

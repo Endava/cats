@@ -23,7 +23,6 @@ public class CatsParams {
     private List<String> urlParamsList = new ArrayList<>();
     @Value("${headers:empty}")
     private String headersFile;
-
     @Value("${refData:empty}")
     private String refDataFile;
 

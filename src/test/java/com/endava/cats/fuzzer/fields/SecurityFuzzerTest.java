@@ -69,6 +69,17 @@ class SecurityFuzzerTest {
         ReflectionTestUtils.setField(testCaseListener, "buildProperties", buildProperties);
     }
 
+    @Test
+    void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
+        ReflectionTestUtils.setField(securityFuzzer, "securityFuzzerFile", "mumu");
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml("mumu");
+
+        securityFuzzer.loadSecurityFuzzerFile();
+        SecurityFuzzer spyCustomFuzzer = Mockito.spy(securityFuzzer);
+        spyCustomFuzzer.fuzz(FuzzingData.builder().build());
+
+        Mockito.verify(spyCustomFuzzer, Mockito.never()).processSecurityFuzzerFile(Mockito.any());
+    }
 
     @Test
     void givenAnEmptySecurityFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
@@ -103,13 +114,22 @@ class SecurityFuzzerTest {
     }
 
     @Test
-    void givenASecurityFuzzerFileAllDetailsIn_whenTheFuzzerRuns_thenAnInfoIsReported() throws Exception {
+    void givenASecurityFuzzerFileAllDetailsIn_whenTheFuzzerRuns_thenOnlyInfoIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/securityFuzzer-all.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         spySecurityFuzzer.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(21)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
 
+
+    @Test
+    void givenAnInvalidSecurityFuzzerFile_whenTheFuzzerRuns_thenNoResultIsReport() throws Exception {
+        FuzzingData data = setContext("src/test/resources/securityFuzzer-invalidStrings.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
+        spySecurityFuzzer.loadSecurityFuzzerFile();
+        spySecurityFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.never()).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {

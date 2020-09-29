@@ -34,7 +34,7 @@ class StringFormatAlmostValidValuesFuzzerTest {
     void givenANewStringFormatAlmostValidValuesFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFormatAlmostValidValuesFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
         nrSchema.setFormat("email");
-        Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsExactly(StringSchema.class, DateSchema.class, DateTimeSchema.class, PasswordSchema.class, UUIDSchema.class, EmailSchema.class);
+        Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsExactly(StringSchema.class, DateSchema.class, DateTimeSchema.class, PasswordSchema.class, UUIDSchema.class, EmailSchema.class, ByteArraySchema.class);
         Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.getBoundaryValue(nrSchema)).isNotNull();
         Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(stringFormatAlmostValidValuesFuzzer.description()).isNotNull();

@@ -1,0 +1,7 @@
+/pets/{id}/move:
+  test1:
+    description: XSS strings
+    targetFields:
+      - name
+    stringsFile: xss_invalid.txt
+    expectedResponseCode: 200
