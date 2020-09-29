@@ -69,6 +69,17 @@ class CustomFuzzerTest {
         ReflectionTestUtils.setField(testCaseListener, "buildProperties", buildProperties);
     }
 
+    @Test
+    void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
+        ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "mumu");
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml("mumu");
+
+        customFuzzer.loadCustomFuzzerFile();
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.fuzz(FuzzingData.builder().build());
+
+        Mockito.verify(spyCustomFuzzer, Mockito.never()).processCustomFuzzerFile(Mockito.any());
+    }
 
     @Test
     void givenAnEmptyCustomFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
@@ -141,6 +152,17 @@ class CustomFuzzerTest {
     }
 
     @Test
+    void givenACustomFuzzerFile_whenCurrentPathDoesNotExistInFile_thenNoTestIsExecuted() throws Exception {
+        setContext("src/test/resources/customFuzzer-verify.yml", "{'name': {'first': 'Cats'}, 'id': '45'}");
+
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(FuzzingData.builder().path("path1").build());
+        spyCustomFuzzer.executeCustomFuzzerTests();
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
     void givenACustomFuzzerFileWithVerifyParametersThatAreNotInResponse_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-verify-not-set.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
@@ -189,6 +211,8 @@ class CustomFuzzerTest {
         path.put("test2", tests);
 
         result.put("path1", path);
+        result.put("path2", Collections.singletonMap("test", "second"));
+
         return result;
     }
 }

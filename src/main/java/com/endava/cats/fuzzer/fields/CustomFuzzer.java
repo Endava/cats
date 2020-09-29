@@ -22,13 +22,10 @@ public class CustomFuzzer implements CustomFuzzerBase {
 
     private final CatsUtil catsUtil;
     private final CustomFuzzerUtil customFuzzerUtil;
-
-
+    private final List<CustomFuzzerExecution> executions = new ArrayList<>();
     @Value("${customFuzzerFile:empty}")
     private String customFuzzerFile;
-
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
-    private final List<CustomFuzzerExecution> executions = new ArrayList<>();
 
     @Autowired
     public CustomFuzzer(CatsUtil cu, CustomFuzzerUtil cfu) {
@@ -59,16 +56,12 @@ public class CustomFuzzer implements CustomFuzzerBase {
     }
 
     protected void processCustomFuzzerFile(FuzzingData data) {
-        try {
-            Map<String, Object> currentPathValues = customFuzzerDetails.get(data.getPath());
-            if (currentPathValues != null) {
-                currentPathValues.forEach((key, value) -> executions.add(CustomFuzzerExecution.builder()
-                        .fuzzingData(data).testId(key).testEntry(value).build()));
-            } else {
-                LOGGER.info("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error processing customFuzzerFile!", e);
+        Map<String, Object> currentPathValues = customFuzzerDetails.get(data.getPath());
+        if (currentPathValues != null) {
+            currentPathValues.forEach((key, value) -> executions.add(CustomFuzzerExecution.builder()
+                    .fuzzingData(data).testId(key).testEntry(value).build()));
+        } else {
+            LOGGER.info("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
         }
     }
 

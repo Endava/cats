@@ -1,8 +1,10 @@
 package com.endava.cats.model;
 
+import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
@@ -93,4 +95,22 @@ class CatsHeaderTest {
         Assertions.assertThat(header.getName()).isEqualTo("header");
         Assertions.assertThat(header.getValue()).isEqualTo("header");
     }
+
+    @Test
+    void shouldMakeCatsHeaderRequired() {
+        Parameter parameter = new Parameter();
+        parameter.setRequired(true);
+        parameter.setSchema(new NumberSchema());
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.isRequired()).isTrue();
+    }
+
+    @Test
+    void shouldTruncateValue() {
+        CatsHeader header = CatsHeader.builder().value(StringUtils.repeat("a", 100)).build();
+
+        Assertions.assertThat(header.getTruncatedValue()).isEqualTo("aaaaaaaaaaaaaaaaaaaa...[Total length:100]");
+    }
+
 }

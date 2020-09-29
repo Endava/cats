@@ -50,6 +50,9 @@ class RemoveFieldsFuzzerTest {
 
     private RemoveFieldsFuzzer removeFieldsFuzzer;
 
+    private FuzzingData data;
+    private CatsResponse catsResponse;
+
     @BeforeAll
     static void init() {
         System.setProperty("name", "cats");
@@ -64,23 +67,20 @@ class RemoveFieldsFuzzerTest {
 
     @Test
     void givenARequest_whenApplyingTheRemoveFieldsFuzzer_thenTestCasesAreCorrectlyExecuted() {
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Map<String, List<String>> responses = new HashMap<>();
-        responses.put("200", Collections.singletonList("response"));
-        Schema schema = new ObjectSchema();
-        schema.setProperties(this.createPropertiesMap());
-        schema.setRequired(Arrays.asList("field", "anotherField"));
-        ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
-        FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").
-                responses(responses).reqSchema(schema).catsUtil(catsUtil).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200")).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
-        Mockito.doCallRealMethod().when(catsUtil).getExpectedWordingBasedOnRequiredFields(Mockito.eq(true));
-        Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(Mockito.eq(true))).thenReturn(ResponseCodeFamily.FOURXX);
-        Mockito.doCallRealMethod().when(catsUtil).removeOneByOne(Mockito.anySet());
-
+        setup("{'field':'oldValue'}");
         removeFieldsFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
+    @Test
+    void shouldRunFuzzerWhenPayloadIsArray() {
+        setup("[{'field':'oldValue'}, {'field':'newValue'}]");
+        removeFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     @Test
@@ -88,6 +88,24 @@ class RemoveFieldsFuzzerTest {
         Assertions.assertThat(removeFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(removeFieldsFuzzer).hasToString(removeFieldsFuzzer.getClass().getSimpleName());
         Assertions.assertThat(removeFieldsFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+    }
+
+    private void setup(String payload) {
+        catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
+        Map<String, List<String>> responses = new HashMap<>();
+        responses.put("200", Collections.singletonList("response"));
+        Schema schema = new ObjectSchema();
+        schema.setProperties(this.createPropertiesMap());
+        schema.setRequired(Arrays.asList("field"));
+        ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
+        data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload(payload).
+                responses(responses).reqSchema(schema).catsUtil(catsUtil).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200")).build();
+        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.doCallRealMethod().when(catsUtil).getExpectedWordingBasedOnRequiredFields(Mockito.anyBoolean());
+        Mockito.doCallRealMethod().when(catsUtil).getResultCodeBasedOnRequiredFieldsRemoved(Mockito.anyBoolean());
+        Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
+        Mockito.doCallRealMethod().when(catsUtil).removeOneByOne(Mockito.anySet());
+
     }
 
     private Map<String, Schema> createPropertiesMap() {

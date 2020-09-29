@@ -59,15 +59,11 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     protected void processSecurityFuzzerFile(FuzzingData data) {
-        try {
-            Map<String, Object> currentPathValues = securityFuzzerDetails.get(data.getPath());
-            if (currentPathValues != null) {
-                currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
-            } else {
-                log.info("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
-            }
-        } catch (Exception e) {
-            log.error("Error processing securityFuzzerFile!", e);
+        Map<String, Object> currentPathValues = securityFuzzerDetails.get(data.getPath());
+        if (currentPathValues != null) {
+            currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
+        } else {
+            log.info("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
         }
     }
 

@@ -19,9 +19,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class NewFieldsFuzzer implements Fuzzer {
+    protected static final String NEW_FIELD = "catsFuzzyField";
     private static final Logger LOGGER = LoggerFactory.getLogger(NewFieldsFuzzer.class);
-    private static final String NEW_FIELD = "catsFuzzyField";
-
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
@@ -53,12 +52,12 @@ public class NewFieldsFuzzer implements Fuzzer {
         testCaseListener.reportResult(LOGGER, data, response, expectedResultCode);
     }
 
-    private JsonElement getFuzzedJson(FuzzingData data) {
+    protected JsonElement getFuzzedJson(FuzzingData data) {
         JsonElement jsonElement = JsonParser.parseString(data.getPayload());
 
         if (jsonElement instanceof JsonObject) {
             ((JsonObject) jsonElement).addProperty(NEW_FIELD, NEW_FIELD);
-        } else if (jsonElement instanceof JsonArray) {
+        } else {
             for (JsonElement element : (JsonArray) jsonElement) {
                 ((JsonObject) element).addProperty(NEW_FIELD, NEW_FIELD);
             }

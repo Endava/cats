@@ -22,17 +22,14 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @ExtendWith(SpringExtension.class)
 class BypassAuthenticationFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
-    @Mock
+    @MockBean
     private CatsUtil catsUtil;
 
     @SpyBean
@@ -47,6 +44,7 @@ class BypassAuthenticationFuzzerTest {
     @SpyBean
     private BuildProperties buildProperties;
 
+    @SpyBean
     private CatsParams catsParams;
 
 
@@ -66,7 +64,7 @@ class BypassAuthenticationFuzzerTest {
     }
 
     @Test
-    void givenAPayloadWithoutAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenAPayloadWithoutAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerIsSkipped() {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).build();
         bypassAuthenticationFuzzer.fuzz(data);
 
@@ -75,7 +73,7 @@ class BypassAuthenticationFuzzerTest {
 
 
     @Test
-    void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() throws Exception {
+    void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerRuns() throws Exception {
         ReflectionTestUtils.setField(catsParams, "headersFile", "notEmpty");
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
         catsParams.loadHeaders();
@@ -94,7 +92,7 @@ class BypassAuthenticationFuzzerTest {
     }
 
     @Test
-    void givenAPayloadWithAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheResultsAreCorrectlyReported() {
+    void givenAPayloadWithAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerRuns() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
@@ -115,16 +113,39 @@ class BypassAuthenticationFuzzerTest {
         Assertions.assertThat(bypassAuthenticationFuzzer.skipFor()).isEmpty();
     }
 
+    @Test
+    void shouldProperlyIdentifyAuthHeadersFromContract() {
+        List<CatsHeader> headers = Arrays.asList(CatsHeader.builder().name("jwt").build(), CatsHeader.builder().name("authorization").build(),
+                CatsHeader.builder().name("api-key").build(), CatsHeader.builder().name("api_key").build(), CatsHeader.builder().name("cats").build());
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>(headers)).build();
+
+        Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
+        Assertions.assertThat(authHeaders).containsExactlyInAnyOrder("jwt", "api-key", "authorization", "api_key");
+    }
+
+    @Test
+    void shouldProperlyIdentifyAuthHeadersFromHeadersFile() throws Exception {
+        ReflectionTestUtils.setField(catsParams, "headersFile", "notEmpty");
+        Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
+        Mockito.doCallRealMethod().when(catsUtil).mapObjsToString(Mockito.anyString(), Mockito.anyMap());
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").build();
+
+        catsParams.loadHeaders();
+        Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
+        Assertions.assertThat(authHeaders).containsExactlyInAnyOrder("api-key", "authorization", "jwt");
+    }
+
     private Map<String, Map<String, Object>> createCustomFuzzerFile() {
         Map<String, Map<String, Object>> result = new HashMap<>();
-        Map<String, Object> path = new HashMap<>();
         Map<String, Object> tests = new HashMap<>();
         tests.put("jwt", "v1");
-        tests.put("authorisation", "200");
+        tests.put("authorization", "200");
+        tests.put("cats", "mumu");
 
-        path.put("test1", tests);
+        result.put("all", tests);
+        result.put("path1", Collections.singletonMap("api-key", "secret"));
+        result.put("path2", Collections.singletonMap("api_key", "secret"));
 
-        result.put("path1", path);
         return result;
     }
 }

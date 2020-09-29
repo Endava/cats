@@ -94,7 +94,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
         if (jsonElement.isJsonObject()) {
             this.removeCurrentSet(fieldsToRemove, jsonElement);
-        } else if (jsonElement.isJsonArray()) {
+        } else {
             for (JsonElement element : jsonElement.getAsJsonArray()) {
                 this.removeCurrentSet(fieldsToRemove, element);
             }
