@@ -39,6 +39,8 @@ Table of Contents
       * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
       * [NewFieldsFuzzer](#newfieldsfuzzer)
       * [StringsInNumericFieldsFuzzer](#stringsinnumericfieldsfuzzer)
+      * [DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer](#dummycontenttypeheadersfuzzer--dummyacceptheadersfuzzer-unsupportedtypeheadersfuzzer-unsupportedacceptheadersfuzzer)
+      * [CheckSecurityHeadersFuzzer](#checksecurityheadersfuzzer)
       * [CustomFuzzer](#customfuzzer)
          * [Writing Custom Tests](#writing-custom-tests)
          * [Correlating Tests](#correlating-tests)
@@ -267,6 +269,24 @@ This `Fuzzer` will inject new fields inside the body of the requests. The new fi
 
 ## StringsInNumericFieldsFuzzer
 This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
+
+## DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer
+These `Fuzzers` are implementing the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html).
+They check that the API has correctly set the `Content-Type` and `Accept` headers and no invalid values can be supplied.
+
+The `Fuzzers` expect:
+- `406` for unsupported or invalid `Accept` headers
+- `415` for unsupported or invalid `Content-Type` headers
+
+## CheckSecurityHeadersFuzzer
+This `Fuzzer` will continues the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html) by checking
+a list of required Security headers that must be supplied in each response. 
+
+The `Fuzzer` expects a `2XX` response with the following headers set:
+- `Cache-Control: no-store`
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
 
 ## CustomFuzzer
 ### Writing Custom Tests

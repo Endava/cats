@@ -91,11 +91,15 @@ public class FuzzingDataFactory {
 
         List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId(), schemas);
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
+        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
+        List<String> requestContentTypes = this.getRequestContentTypes(operation);
 
         return payloadSamples.stream().map(payload -> FuzzingData.builder().method(HttpMethod.GET).path(path).headers(headers).payload(payload)
                 .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
                 .schemaMap(schemas).responses(responses)
+                .responseContentTypes(responsesContentTypes)
                 .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
+                .requestContentTypes(requestContentTypes)
                 .catsUtil(catsUtil)
                 .queryParams(queryParams)
                 .build()).collect(Collectors.toList());
@@ -176,12 +180,16 @@ public class FuzzingDataFactory {
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
 
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
+        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
+        List<String> requestContentTypes = this.getRequestContentTypes(operation);
 
         for (String reqSchemaName : reqSchemaNames) {
             List<String> payloadSamples = this.getRequestPayloadsSamples(mediaType, reqSchemaName, schemas);
             fuzzingDataList.addAll(payloadSamples.stream().map(payload ->
                     FuzzingData.builder().method(method).path(path).headers(this.extractHeaders(operation)).payload(payload)
                             .responseCodes(operation.getResponses().keySet()).reqSchema(schemas.get(reqSchemaName)).pathItem(item)
+                            .responseContentTypes(responsesContentTypes)
+                            .requestContentTypes(requestContentTypes)
                             .schemaMap(schemas).responses(responses)
                             .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
                             .catsUtil(catsUtil)
@@ -348,6 +356,30 @@ public class FuzzingDataFactory {
                 squashAllOf(element.getAsJsonArray().get(i));
             }
         }
+    }
+
+    private List<String> getRequestContentTypes(Operation operation) {
+        List<String> requests = new ArrayList<>();
+        if (operation.getRequestBody() != null) {
+            Content defaultContent = new Content();
+            defaultContent.addMediaType(APPLICATION_JSON, new MediaType());
+            requests.addAll(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent)
+                    .entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+        }
+        return requests;
+    }
+
+    private Map<String, List<String>> getResponseContentTypes(Operation operation, Set<String> responseCodes) {
+        Map<String, List<String>> responses = new HashMap<>();
+        for (String responseCode : responseCodes) {
+            ApiResponse apiResponse = operation.getResponses().get(responseCode);
+            Content defaultContent = new Content();
+            defaultContent.addMediaType(APPLICATION_JSON, new MediaType());
+            responses.put(responseCode, Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent)
+                    .entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+        }
+
+        return responses;
     }
 
     /**

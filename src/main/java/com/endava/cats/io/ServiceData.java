@@ -1,7 +1,6 @@
 package com.endava.cats.io;
 
 import com.endava.cats.model.CatsHeader;
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Singular;
@@ -10,7 +9,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-@Builder(access = AccessLevel.PUBLIC)
+@Builder
 @Getter
 public class ServiceData {
     private final String relativePath;
@@ -30,4 +29,5 @@ public class ServiceData {
     private final Set<String> pathParams = new HashSet<>();
     @Builder.Default
     private final Set<String> queryParams = new HashSet<>();
+
 }
