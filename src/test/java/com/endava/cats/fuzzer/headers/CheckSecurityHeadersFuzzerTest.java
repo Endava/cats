@@ -20,10 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -98,8 +95,11 @@ class CheckSecurityHeadersFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.any());
-        SOME_SECURITY_HEADERS.add(CatsHeader.builder().name("dummy").value("dummy").build());
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Stream.concat(SOME_SECURITY_HEADERS.stream(), MISSING_HEADERS.stream())
+        List<CatsHeader> allHeaders = new ArrayList<>();
+        allHeaders.addAll(SOME_SECURITY_HEADERS);
+        allHeaders.add(CatsHeader.builder().name("dummy").value("dummy").build());
+
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Stream.concat(allHeaders.stream(), MISSING_HEADERS.stream())
                 .collect(Collectors.toList())).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
 
