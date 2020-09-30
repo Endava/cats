@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
+import java.util.Set;
 
 @Component
 public class ExtraHeaderFuzzer implements Fuzzer {
@@ -38,7 +39,7 @@ public class ExtraHeaderFuzzer implements Fuzzer {
     }
 
     private void process(FuzzingData data) {
-        HashSet<CatsHeader> headerSet = new HashSet<>(data.getHeaders());
+        Set<CatsHeader> headerSet = new HashSet<>(data.getHeaders());
         headerSet.add(CatsHeader.builder().name(CATS_FUZZY_HEADER).required(false).value(CATS_FUZZY_HEADER).build());
 
         testCaseListener.addScenario(LOGGER, "Scenario: add extra header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", CATS_FUZZY_HEADER, CATS_FUZZY_HEADER);

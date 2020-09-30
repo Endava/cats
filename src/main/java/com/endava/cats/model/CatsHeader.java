@@ -79,6 +79,10 @@ public class CatsHeader {
         return this.name;
     }
 
+    public String nameAndValue() {
+        return "{" + "name=" + name + ", value=" + value + "}";
+    }
+
     @Override
     public String toString() {
         return "{" +

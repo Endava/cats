@@ -2,6 +2,7 @@ package com.endava.cats.io;
 
 import com.endava.cats.CatsMain;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
@@ -205,8 +207,9 @@ public class ServiceCaller {
                     method.getMethod(), response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode(), endTime - startTime);
 
             String responseBody = this.getAsJson(response);
+            List<CatsHeader> responseHeaders = Arrays.stream(response.getAllHeaders()).map(header -> CatsHeader.builder().name(header.getName()).value(header.getValue()).build()).collect(Collectors.toList());
 
-            CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod(), endTime - startTime);
+            CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod(), endTime - startTime, responseHeaders);
             this.recordRequestAndResponse(Arrays.asList(method.getAllHeaders()), processedPayload, catsResponse, data.getRelativePath(), HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
 
             return catsResponse;
@@ -255,8 +258,15 @@ public class ServiceCaller {
 
     private void addMandatoryHeaders(ServiceData data, HttpRequestBase method) {
         data.getHeaders().forEach(header -> method.addHeader(header.getName(), header.getValue()));
-        method.setHeader("Accept", "application/json");
-        method.setHeader("Content-type", "application/json");
+        addIfNotPresent("Accept", data, method);
+        addIfNotPresent("Content-Type", data, method);
+    }
+
+    private void addIfNotPresent(String accept, ServiceData data, HttpRequestBase method) {
+        boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(accept));
+        if (notAccept) {
+            method.addHeader(accept, "application/json");
+        }
     }
 
     private List<NameValuePair> buildQueryParameters(String payload, ServiceData data) {

@@ -27,6 +27,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,12 +43,12 @@ public class TestCaseListener {
     protected static final String ID = "id";
     private static final Logger LOGGER = LoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 150);
+    private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415");
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
     private final BuildProperties buildProperties;
     private long t0;
-
     @Value("${printExecutionStatistics:empty}")
     private String printExecutionStatistics;
 
@@ -180,7 +181,7 @@ public class TestCaseListener {
     public void reportResult(Logger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
         boolean matchesResponseSchema = this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
-        boolean responseCodeDocumented = data.getResponseCodes().contains(response.responseCodeAsString());
+        boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
 
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
@@ -199,6 +200,10 @@ public class TestCaseListener {
         } else {
             this.reportError(logger, "Unexpected behaviour: expected {}, actual [{}]", expectedResultCode.asString(), response.responseCodeAsString());
         }
+    }
+
+    private boolean isResponseCodeDocumented(FuzzingData data, CatsResponse response) {
+        return data.getResponseCodes().contains(response.responseCodeAsString()) || NOT_NECESSARILY_DOCUMENTED.contains(response.responseCodeAsString());
     }
 
     public void skipTest(Logger logger, String skipReason) {
@@ -230,7 +235,8 @@ public class TestCaseListener {
         JsonElement jsonElement = JsonParser.parseString(response.getBody());
         List<String> responses = data.getResponses().get(response.responseCodeAsString());
         return (responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement, "ROOT")))
-                || ((responses == null || responses.isEmpty()) && isEmptyResponse(response.getBody()));
+                || ((responses == null || responses.isEmpty()) && isEmptyResponse(response.getBody()))
+                || NOT_NECESSARILY_DOCUMENTED.contains(response.responseCodeAsString());
     }
 
     private boolean isEmptyResponse(String body) {
