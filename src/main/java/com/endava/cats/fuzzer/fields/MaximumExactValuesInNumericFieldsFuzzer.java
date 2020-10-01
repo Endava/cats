@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsParams;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.function.Function;
 
 @Component
+@FieldFuzzer
 public class MaximumExactValuesInNumericFieldsFuzzer extends ExactValuesInFieldsFuzzer {
 
 

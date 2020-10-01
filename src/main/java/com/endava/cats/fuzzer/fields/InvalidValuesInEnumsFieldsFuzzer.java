@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -13,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Component
+@FieldFuzzer
 public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
     public InvalidValuesInEnumsFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {

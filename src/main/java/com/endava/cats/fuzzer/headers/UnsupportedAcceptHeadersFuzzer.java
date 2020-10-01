@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
+@HeaderFuzzer
 public class UnsupportedAcceptHeadersFuzzer extends DummyAcceptHeadersFuzzer {
 
     @Autowired

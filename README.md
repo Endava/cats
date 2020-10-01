@@ -24,7 +24,7 @@ By using a simple and minimal syntax, with a flat learning curve, CATS enables y
 set of **48 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even functional testing.
 
 <div align="center">
-  <img alt="CATS" width="60%" src="images/run_result.png"/>
+  <img alt="CATS" width="100%" src="images/run_result.png"/>
 </div>
 
 Table of Contents

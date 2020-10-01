@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.generator.format.FormatGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
+@FieldFuzzer
 public class StringFormatAlmostValidValuesFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Autowired

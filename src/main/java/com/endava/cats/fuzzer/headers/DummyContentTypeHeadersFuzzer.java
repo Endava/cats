@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -19,6 +20,7 @@ import java.util.Set;
  * dummy content type
  */
 @Component
+@HeaderFuzzer
 public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
 
     @Autowired

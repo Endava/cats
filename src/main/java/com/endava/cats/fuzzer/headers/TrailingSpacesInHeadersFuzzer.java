@@ -1,12 +1,14 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+@HeaderFuzzer
 public class TrailingSpacesInHeadersFuzzer extends Expect2XXBaseHeadersFuzzer {
 
     @Autowired

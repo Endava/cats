@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Component
 @Slf4j
+@HeaderFuzzer
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     private static final List<CatsHeader> SECURITY_HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 @Component
+@HttpFuzzer
 public class HttpMethodsFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();

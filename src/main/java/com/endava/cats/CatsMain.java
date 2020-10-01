@@ -1,7 +1,10 @@
 package com.endava.cats;
 
 import ch.qos.logback.classic.Level;
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
@@ -27,7 +30,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.core.annotation.AnnotationUtils;
 
+import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -303,8 +308,12 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private void processTwoArguments(String[] args) {
         if (this.isListFuzzers(args)) {
-            LOGGER.info("CATs has {} registered fuzzers:", fuzzers.size());
-            fuzzers.stream().map(fuzzer -> "\t" + ansi().fg(Ansi.Color.GREEN).a(fuzzer.toString()).reset().a(" - " + fuzzer.description()).reset()).forEach(LOGGER::info);
+            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATs has {} registered fuzzers:").reset().toString();
+            LOGGER.info(message, fuzzers.size());
+            filterAndDisplay(FieldFuzzer.class);
+            filterAndDisplay(HeaderFuzzer.class);
+            filterAndDisplay(HttpFuzzer.class);
+
             throw new StopExecutionException("list fuzzers");
         }
 
@@ -312,6 +321,15 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             LOGGER.info("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
             throw new StopExecutionException("list fieldsFuzzerStrategies");
         }
+    }
+
+    private void filterAndDisplay(Class<? extends Annotation> annotation) {
+        List<Fuzzer> fieldFuzzers = fuzzers.stream().filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null).collect(Collectors.toList());
+        String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {} Fuzzers:").reset().toString();
+        String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
+        LOGGER.info(" ");
+        LOGGER.info(message, fieldFuzzers.size(), typeOfFuzzers);
+        fieldFuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(fuzzer.toString()).reset().a(" - " + fuzzer.description()).reset()).forEach(LOGGER::info);
     }
 
     private boolean isListFieldsFuzzingStrategies(String[] args) {

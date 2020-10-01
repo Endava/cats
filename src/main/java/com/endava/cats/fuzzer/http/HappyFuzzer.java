@@ -1,6 +1,7 @@
-package com.endava.cats.fuzzer;
+package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;

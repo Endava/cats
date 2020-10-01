@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.generator.simple.NumberGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -14,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Component
+@FieldFuzzer
 public class IntegerFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Autowired
