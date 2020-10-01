@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Component
 @Slf4j
+@HeaderFuzzer
 public class DuplicateHeaderFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(DuplicateHeaderFuzzer.class);
     private static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";

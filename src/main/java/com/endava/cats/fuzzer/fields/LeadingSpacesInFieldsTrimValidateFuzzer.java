@@ -1,10 +1,11 @@
 package com.endava.cats.fuzzer.fields;
 
 
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
-import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@FieldFuzzer
 @ConditionalOnProperty(value = "edgeSpacesStrategy", havingValue = "trimAndValidate", matchIfMissing = true)
 public class LeadingSpacesInFieldsTrimValidateFuzzer extends ExpectOnly2XXBaseFieldsFuzzer {
     @Autowired

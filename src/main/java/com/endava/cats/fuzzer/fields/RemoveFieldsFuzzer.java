@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -25,6 +26,7 @@ import java.util.Set;
  * Fuzzer at fields level. It will remove different fields from the payload based on multiple strategies.
  */
 @Component
+@FieldFuzzer
 public class RemoveFieldsFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveFieldsFuzzer.class);
 

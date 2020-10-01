@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+@FieldFuzzer
 public class NewFieldsFuzzer implements Fuzzer {
     protected static final String NEW_FIELD = "catsFuzzyField";
     private static final Logger LOGGER = LoggerFactory.getLogger(NewFieldsFuzzer.class);

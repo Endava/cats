@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
@@ -18,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
+@HeaderFuzzer
 public class RemoveHeadersFuzzer implements Fuzzer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RemoveHeadersFuzzer.class);

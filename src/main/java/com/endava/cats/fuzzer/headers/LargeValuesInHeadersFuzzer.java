@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
+@HeaderFuzzer
 public class LargeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Autowired

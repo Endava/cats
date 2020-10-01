@@ -141,11 +141,15 @@ public class TestCaseListener {
             LOGGER.info("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
         }
         testCaseExporter.writeReportFiles();
+        this.printExecutionDetails();
+    }
+
+    private void printExecutionDetails() {
         String catsFinished = ansi().fgBlue().a("CATS finished in {} ms. Total (excluding skipped) requests {}. ").toString();
-        String passed = ansi().fgGreen().bold().a("Passed {}, ").toString();
-        String warnings = ansi().fgYellow().bold().a("warnings: {}, ").toString();
-        String errors = ansi().fgRed().bold().a("errors: {}, ").toString();
-        String skipped = ansi().fgCyan().bold().a("skipped: {}. ").toString();
+        String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
+        String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
+        String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
+        String skipped = ansi().fgCyan().bold().a("❯ skipped: {}. ").toString();
         String check = ansi().reset().fgBlue().a("You can check the test_cases folder for more details about the payloads.").reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
 

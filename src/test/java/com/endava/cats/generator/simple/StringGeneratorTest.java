@@ -4,6 +4,8 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class StringGeneratorTest {
 
@@ -72,56 +74,9 @@ class StringGeneratorTest {
         Assertions.assertThat(actual).isEmpty();
     }
 
-    @Test
-    void givenAPatternEndingWith$_whenSanitizing_thenThe$IsRemoved() {
-        String pattern = "[A-Z]$";
-        String expected = "[A-Z]";
-
-        String actual = StringGenerator.sanitize(pattern);
-        Assertions.assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    void givenAPatternEndingWithPlus_whenSanitizing_thenThePlusIsRemoved() {
-        String pattern = "[A-Z]+";
-        String expected = "[A-Z]";
-
-        String actual = StringGenerator.sanitize(pattern);
-        Assertions.assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    void givenAPatternEndingWithAsterisk_whenSanitizing_thenTheAsteriskIsRemoved() {
-        String pattern = "[A-Z]*";
-        String expected = "[A-Z]";
-
-        String actual = StringGenerator.sanitize(pattern);
-        Assertions.assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    void givenAPatternWithoutAnyStartingOrEndingSigns_whenSanitizing_thenTheSamePatternIsReturned() {
-        String pattern = "[A-Z]";
-        String expected = "[A-Z]";
-
-        String actual = StringGenerator.sanitize(pattern);
-        Assertions.assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    void givenAPatternStartingWithCircumflex_whenSanitizing_thenTheCircumflexIsRemoved() {
-        String pattern = "^[A-Z]";
-        String expected = "[A-Z]";
-
-        String actual = StringGenerator.sanitize(pattern);
-        Assertions.assertThat(actual).isEqualTo(expected);
-    }
-
-    @Test
-    void givenAPredefinedPattern_whenSanitizing_thenTheAlphanumericPatternIsReturned() {
-        String pattern = "^(?!\\s*$).+";
-        String expected = "[a-zA-Z0-9]";
-
+    @ParameterizedTest
+    @CsvSource({"[A-Z]$,[A-Z]", "[A-Z]+,[A-Z]", "[A-Z]*,[A-Z]", "[A-Z],[A-Z]", "^[A-Z],[A-Z]", "^(?!\\s*$).+,[a-zA-Z0-9]"})
+    void givenAPattern_whenSanitizing_thenTheRightCharactersAreRemoved(String pattern, String expected) {
         String actual = StringGenerator.sanitize(pattern);
         Assertions.assertThat(actual).isEqualTo(expected);
     }

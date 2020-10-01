@@ -1,9 +1,10 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Component
+@FieldFuzzer
 @ConditionalOnProperty(value = "edgeSpacesStrategy", havingValue = "validateAndTrim")
 public class SpacesOnlyInFieldsValidateTrimFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
 
