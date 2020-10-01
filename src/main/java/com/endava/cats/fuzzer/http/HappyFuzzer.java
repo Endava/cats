@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
  * Fuzzer that sends a "happy" flow request with no fuzzing applied
  */
 @Component
+@HttpFuzzer
 public class HappyFuzzer implements Fuzzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(HappyFuzzer.class);
 

@@ -1,3 +1,15 @@
+<h1 align="center">
+  CATS
+</h1>
+
+<h4 align="center">
+  Generate and run hundreds of API tests within seconds!
+</h4>
+
+<div align="center">
+  <img alt="CATS" width="60%" src="images/cats.png"/>
+</div>
+
 ![CI](https://github.com/Endava/cats/workflows/CI/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=sqale_index)](https://sonarcloud.io/dashboard?id=cats)
@@ -7,19 +19,24 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=bugs)](https://sonarcloud.io/dashboard?id=cats)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
+# Overview
+By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds. All tests cases are **generated at runtime** based on a pre-defined 
+set of **48 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even functional testing.
 
-
-![CATS](images/cats.png)
+<div align="center">
+  <img alt="CATS" width="60%" src="images/run_result.png"/>
+</div>
 
 Table of Contents
 =================
 
-   * [Contract driven Auto-generated Tests for Swagger](#contract-driven-auto-generated-tests-for-swagger)
+   * [What is CATS](#contract-driven-auto-generated-tests-for-swagger)
    * [How the Fuzzing works](#how-the-fuzzing-works)
    * [Build](#build)
    * [Available commands](#available-commands)
    * [Running CATS](#running-cats)
       * [Notes on Unit Tests](#notes-on-unit-tests)
+      * [Notes on the Skipped Tests](#notes-on-skipped-tests)
    * [Available arguments](#available-arguments)
    * [Available Fuzzers](#available-fuzzers)
       * [BooleanFieldsFuzzer](#booleanfieldsfuzzer)
@@ -119,6 +136,11 @@ But there are multiple other arguments you can supply. More details in the next 
 ## Notes on Unit Tests
 
 You may see some `ERROR` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the `Fuzzers`.
+
+## Notes on skipped Tests
+You may notice a significant number of tests marked as `skipped`. CATS will try to apply all `Fuzzers` to all fields, but this is not always possible.
+For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will me marked as skipped.
+It was an intentional decision to report also the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
 
 # Available arguments
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
