@@ -30,20 +30,23 @@ public class CustomFuzzerUtil {
     public static final String VERIFY = "verify";
     public static final String STRINGS_FILE = "stringsFile";
     public static final String TARGET_FIELDS = "targetFields";
+    public static final String ONE_OF_SELECTION = "oneOfSelection";
 
-    private static final List<String> RESERVED_WORDS = Arrays.asList(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS);
+    private static final List<String> RESERVED_WORDS = Arrays.asList(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION);
     private static final String NOT_SET = "NOT_SET";
     private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
     private final Map<String, String> variables = new HashMap<>();
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
+    private final CatsDSLParser catsDSLParser;
 
     @Autowired
-    public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl) {
+    public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl, CatsDSLParser cdsl) {
         this.serviceCaller = sc;
         catsUtil = cu;
         testCaseListener = tcl;
+        this.catsDSLParser = cdsl;
     }
 
     public void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
@@ -93,6 +96,7 @@ public class CustomFuzzerUtil {
 
             verifies.forEach((key, value) -> {
                 String valueToCheck = responseValues.get(key);
+                valueToCheck = catsDSLParser.parseAndGetResult(valueToCheck);
                 Matcher verifyMatcher = Pattern.compile(value).matcher(valueToCheck);
                 if (!verifyMatcher.matches()) {
                     errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, value));
@@ -179,7 +183,7 @@ public class CustomFuzzerUtil {
 
         if (jsonElement.isJsonObject()) {
             this.replaceFieldsWithCustomValue(currentPathValues, jsonElement);
-        } else if (jsonElement.isJsonArray()) {
+        } else {
             for (JsonElement element : jsonElement.getAsJsonArray()) {
                 replaceFieldsWithCustomValue(currentPathValues, element);
             }
@@ -191,18 +195,43 @@ public class CustomFuzzerUtil {
 
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
         log.info("Path [{}] has the following custom data [{}]", data.getPath(), value);
+        boolean isHttpMethodMatchingCustomTest = this.isHttpMethodMatchingCustomTest((Map<String, Object>) value, data.getMethod());
+        boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
 
-        if (this.entryIsValid((Map<String, Object>) value) && isHttpMethodMatchingCustomTest((Map<String, Object>) value, data.getMethod())) {
+        if (this.entryIsValid((Map<String, Object>) value) && isHttpMethodMatchingCustomTest && isValidOneOf) {
             List<Map<String, String>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
             for (Map<String, String> testCase : individualTestCases) {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
             }
-        } else if (!isHttpMethodMatchingCustomTest((Map<String, Object>) value, data.getMethod())) {
+        } else if (!isHttpMethodMatchingCustomTest) {
             log.warn("Skipping path [{}] as HTTP method [{}] does not match custom test", data.getPath(), data.getMethod());
+        } else if (!isValidOneOf) {
+            log.info("Skipping path [{}] with payload [{}] as it does not match oneOfSelection", data.getPath(), data.getPayload());
         } else {
             log.warn("Skipping path [{}] as missing [{}] specific fields. List of reserved words: [{}]",
                     data.getPath(), fuzzer.getClass().getSimpleName(), fuzzer.reservedWords());
         }
+    }
+
+    private boolean isValidOneOf(FuzzingData data, Map<String, Object> currentPathValues) {
+        String oneOfSelection = String.valueOf(currentPathValues.get(ONE_OF_SELECTION));
+
+        if (!"null".equalsIgnoreCase(oneOfSelection)) {
+            return wasOneOfSelectionReplaced(oneOfSelection, data);
+        }
+        return true;
+    }
+
+    public boolean wasOneOfSelectionReplaced(String oneOfSelection, FuzzingData data) {
+        String[] oneOfArray = oneOfSelection.replace("{", "").replace("}", "").split("=");
+        JsonElement jsonElement = catsUtil.parseAsJsonElement(data.getPayload());
+
+        if (jsonElement.isJsonArray()) {
+            jsonElement = jsonElement.getAsJsonArray().get(0);
+        }
+        this.replaceFieldsWithCustomValue(Collections.singletonMap(oneOfArray[0], oneOfArray[1]), jsonElement);
+
+        return jsonElement.equals(catsUtil.parseAsJsonElement(data.getPayload()));
     }
 
     private boolean isHttpMethodMatchingCustomTest(Map<String, Object> currentPathValues, HttpMethod httpMethod) {
@@ -276,8 +305,9 @@ public class CustomFuzzerUtil {
             String propertyValue = this.getPropertyValueToReplaceInBody(entry);
 
             if (element.getAsJsonObject().remove(key) != null) {
-                element.getAsJsonObject().addProperty(key, propertyValue);
-                log.info("Replacing property [{}] with value [{}]", entry.getKey(), propertyValue);
+                String toReplace = catsDSLParser.parseAndGetResult(propertyValue);
+                element.getAsJsonObject().addProperty(key, toReplace);
+                log.info("Replacing property [{}] with value [{}]", entry.getKey(), toReplace);
             } else {
                 log.warn("Property [{}] does not exist", entry.getKey());
             }

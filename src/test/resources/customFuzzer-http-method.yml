@@ -5,6 +5,8 @@
     pet:
       - stay
     expectedResponseCode: 200
+    oneOfSelection:
+      test#test: "mumu"
     output:
       resp: code
     verify:

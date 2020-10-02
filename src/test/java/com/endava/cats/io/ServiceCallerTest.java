@@ -4,6 +4,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -30,6 +31,8 @@ class ServiceCallerTest {
     public static WireMockServer wireMockServer;
     @MockBean
     private TestCaseListener testCaseListener;
+    @MockBean
+    private CatsDSLParser catsDSLParser;
     @Autowired
     private CatsUtil catsUtil;
     private ServiceCaller serviceCaller;
@@ -55,7 +58,7 @@ class ServiceCallerTest {
     @BeforeEach
     public void setupEach() throws Exception {
         CatsParams catsParams = new CatsParams(catsUtil);
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, catsParams);
+        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, catsParams, catsDSLParser);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(catsParams, "refDataFile", "src/test/resources/refFields.yml");

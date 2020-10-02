@@ -8,6 +8,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import com.google.gson.JsonObject;
@@ -23,7 +24,9 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -41,6 +44,9 @@ class CustomFuzzerTest {
 
     @MockBean
     private TestCaseExporter testCaseExporter;
+
+    @SpyBean
+    private CatsDSLParser catsDSLParser;
 
     @SpyBean
     private BuildProperties buildProperties;
@@ -97,19 +103,11 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecuted() throws Exception {
-        Map<String, List<String>> responses = new HashMap<>();
-        responses.put("200", Collections.singletonList("response"));
-        FuzzingData data = FuzzingData.builder().path("path1").payload("{'field':'oldValue'}").
-                responses(responses).responseCodes(Collections.singleton("200")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("field", "oldValue");
 
-        ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "custom");
-        Mockito.when(catsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile());
-        Mockito.when(catsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
-        Mockito.when(catsUtil.getJsonElementBasedOnFullyQualifiedName(Mockito.eq(jsonObject), Mockito.eq("field"))).thenReturn(jsonObject);
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "newValue", "newValue2");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -118,6 +116,39 @@ class CustomFuzzerTest {
         Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
         Assertions.assertThat(jsonObject.toString()).contains("newValue");
+    }
+
+    @Test
+    void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecutedAndDatesAreProperlyParsed() throws Exception {
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("field", "oldValue");
+
+        FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "T(java.time.OffsetDateTime).now().plusDays(20)");
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
+
+        Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+        OffsetDateTime dateTime = OffsetDateTime.parse(jsonObject.get("field").getAsString());
+        Assertions.assertThat(dateTime).isAfter(OffsetDateTime.now().plusDays(19));
+    }
+
+    private FuzzingData setupFuzzingData(CatsResponse catsResponse, JsonObject jsonObject, String... customFieldValues) throws IOException {
+        Map<String, List<String>> responses = new HashMap<>();
+        responses.put("200", Collections.singletonList("response"));
+        FuzzingData data = FuzzingData.builder().path("path1").payload("{'field':'oldValue'}").
+                responses(responses).responseCodes(Collections.singleton("200")).build();
+
+
+        ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "custom");
+        Mockito.when(catsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
+        Mockito.when(catsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
+        Mockito.when(catsUtil.getJsonElementBasedOnFullyQualifiedName(Mockito.eq(jsonObject), Mockito.eq("field"))).thenReturn(jsonObject);
+        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        return data;
     }
 
     @Test
@@ -199,12 +230,12 @@ class CustomFuzzerTest {
         return data;
     }
 
-    private Map<String, Map<String, Object>> createCustomFuzzerFile() {
+    private Map<String, Map<String, Object>> createCustomFuzzerFile(String... customFieldValues) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         Map<String, Object> path = new HashMap<>();
         Map<String, Object> tests = new HashMap<>();
         tests.put("k1", "v1");
-        tests.put("field", Arrays.asList("newValue", "newValue2"));
+        tests.put("field", Arrays.asList(customFieldValues));
         tests.put("expectedResponseCode", "200");
 
         path.put("test1", tests);

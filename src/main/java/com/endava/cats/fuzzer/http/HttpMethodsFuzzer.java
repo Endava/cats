@@ -62,13 +62,9 @@ public class HttpMethodsFuzzer implements Fuzzer {
     private void process(String path, Set<CatsHeader> headers, Function<ServiceData, CatsResponse> f) {
         testCaseListener.addScenario(LOGGER, "Scenario: send a happy flow request with undocumented HTTP methods");
         testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 405 response code");
-        try {
-            CatsResponse response = f.apply(ServiceData.builder().relativePath(path).headers(headers).payload("").build());
-            this.checkResponse(response);
-            fuzzedPaths.add(path);
-        } catch (Exception e) {
-            testCaseListener.reportError(LOGGER, "Fuzzer [{}] failed due to [{}]", this.getClass().getSimpleName(), e.getMessage());
-        }
+        CatsResponse response = f.apply(ServiceData.builder().relativePath(path).headers(headers).payload("").build());
+        this.checkResponse(response);
+        fuzzedPaths.add(path);
     }
 
     private void checkResponse(CatsResponse response) {

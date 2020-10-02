@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.html.HtmlEscapers;
@@ -74,14 +75,16 @@ public class ServiceCaller {
     private final CatsParams catsParams;
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
+    private final CatsDSLParser catsDSLParser;
     @Value("${server:empty}")
     private String server;
 
     @Autowired
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams, CatsDSLParser cdsl) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.catsParams = catsParams;
+        this.catsDSLParser = cdsl;
     }
 
     public CatsResponse call(HttpMethod method, ServiceData data) {
@@ -412,8 +415,9 @@ public class ServiceCaller {
                 fuzzedValue = FuzzingStrategy.mergeFuzzing(element.getAsJsonObject().get(key).getAsString(), entry.getValue(), "   ");
             }
             if (fuzzedValue != null && element.getAsJsonObject().remove(key) != null) {
-                element.getAsJsonObject().addProperty(key, fuzzedValue);
-                LOGGER.debug("Replacing property {} with ref data value {}", entry.getKey(), fuzzedValue);
+                String toReplace = catsDSLParser.parseAndGetResult(fuzzedValue);
+                element.getAsJsonObject().addProperty(key, toReplace);
+                LOGGER.debug("Replacing property {} with ref data value {}", entry.getKey(), toReplace);
             }
         }
     }
