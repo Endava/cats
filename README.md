@@ -20,7 +20,7 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
 # Overview
-By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with coding effort. All tests cases are **generated at runtime** based on a pre-defined 
+By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with **no coding effort**. All tests cases are **generated and run automatically** based on a pre-defined 
 set of **48 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even functional testing.
 
 <div align="center">
