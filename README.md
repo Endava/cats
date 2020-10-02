@@ -20,7 +20,7 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
 # Overview
-By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds. All tests cases are **generated at runtime** based on a pre-defined 
+By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with coding effort. All tests cases are **generated at runtime** based on a pre-defined 
 set of **48 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even functional testing.
 
 <div align="center">
@@ -72,6 +72,7 @@ Table of Contents
    * [Edge Spaces Strategy](#edge-spaces-strategy)
    * [URL Parameters](#url-parameters)
    * [Dealing with AnyOf, AllOf and OneOf](#dealing-with-anyof-allof-and-oneof)
+   * [Dynamic values in configuration files](#dynamic-values-in-configuration-files)
    * [Limitations](#limitations)
       * [Inheritance and composition](#inheritance-and-composition)
       * [Additional Parameters](#additional-parameters)
@@ -326,6 +327,8 @@ The `CustomFuzzer` will only trigger if a valid `customFuzzer.yml` file is suppl
           - value1
           - value2
           - value3
+        oneOfSelection:
+          element#type: "Value"
         expectedResponseCode: HTTP_CODE
         httpMethod: HTTP_NETHOD
 ```
@@ -340,6 +343,12 @@ Some things to note about the `customFuzzer.yml` file:
 - if no `httpMethod` parameter is supplied, then the `CustomFuzzer` will run for all http method defined in the OpenAPI contract under the given path
 - if a `httpMethod` parameter is supplied, but it doesn't exist in the OpenAPI given path, a `warning` will be issued and no test will be executed
 - if a `httpMethod` parameter is supplied, but is not a valid HTTP method, a `warning` will be issued and no test will be executed
+- if the request payload uses a `oneOf` element to allow multiple request types, you can control which of the possible types the `CustomFuzzer` will apply to using the `oneOfSelection` keyword. The value of the `oneOfSelection` keyword must match the fully qualified name of the `discriminator`.
+- if no `oneOfSelection` is supplied and the request payload accepts multiple `oneOf` elements, than a custom test will be created for each type of payload
+
+### Dealing with oneOf, anyOf
+When you have request payloads which can take multiple object types, you can use the `oneOfSelection` keyword to specify which of the possible object types is required by the `CustomFuzzer`.
+If you don't provide this element, all combinations will be considered. If you supply a value, **this must be exactly the one used in the `discriminator`.**
 
 ### Correlating Tests
 As CATs mostly relies on generated data with small help from some reference data, testing complex business scenarios with the pre-defined `Fuzzers` is not possible. Suppose we have an endpoint that creates data (doing a `POST`), and we want to check its existence (via `GET`).
@@ -435,7 +444,7 @@ Some notes:
 
 
 ### CustomFuzzer Reserved keywords
-The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description` and `verify`.
+The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `oneOfSelection` and `verify`.
 
 ## Security Fuzzer
 Although `CATs` is not a security testing tool, you can use it to test basic security scenarios by fuzzing specific fields with different sets of [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings).
@@ -454,7 +463,7 @@ A typical `securityFuzzerFile` will look like this:
       stringsFile: xss.txt
 ```
 
-You can also supply `output`, `httpMethod` and/or `verify` if they are relevant to your case.
+You can also supply `output`, `httpMethod`, `oneOfSelection` and/or `verify` (with the same behaviour as within the `CustomFuzzer`) if they are relevant to your case.
 
 This is what the `SecurityFuzzer` will do after parsing the above `securityFuzzerFile`:
 - it will add the fixed value "My Pet" to all the request for the field `name`
@@ -469,7 +478,7 @@ Your service might sanitize data before validation, so might be perfectly valid 
 A `500` will usually mean something was not handled properly and might signal a possible bug.
 
 ### SecurityFuzzer Reserved keywords
-The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `targetFields` and `stringsFile`.
+The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields` and `stringsFile`.
 
 
 # Skipping Fuzzers for specific paths
@@ -568,6 +577,32 @@ You can supply a `;` separated list of `name:value` pairs to replace the `name` 
 
 # Dealing with AnyOf, AllOf and OneOf
 CATS also supports schemas with `oneOf`, `allOf` and `anyOf` composition. CATS wil consider all possible combinations when creating the fuzzed payloads.
+
+# Dynamic values in configuration files
+The following configuration files: `securityFuzzerFile, customFuzzerFile, refData` support setting dynamic values for the inner fields.
+For now **the support only exists** for `java.time.OffsetDateTime`, but more types of elements might come in the near future.
+
+Let's suppose you have a date/date-time field and you want to set it to 10 days from now. You can do this by setting this as a value `T(java.time.OffsetDateTime).now().plusDays(10)`.
+This will return an ISO compliant time in UTC format. 
+
+A `customFuzzerFile` using this can look like:
+```yaml
+/path:
+    testNumber:
+        description: Short description of the test case
+        prop: value
+        prop#subprop: "T(java.time.OffsetDateTime).now().plusDays(10)"
+        prop7:
+          - value1
+          - value2
+          - value3
+        oneOfSelection:
+          element#type: "Value"
+        expectedResponseCode: HTTP_CODE
+        httpMethod: HTTP_NETHOD
+```
+
+The syntax of dynamically setting dates is compliant with the [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs.
 
 # Limitations
 

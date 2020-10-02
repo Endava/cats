@@ -76,7 +76,7 @@ public class TestCaseExporter {
     }
 
     public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
-        Map<String, CatsTestCase> allRun = testCaseMap.entrySet().stream().filter(entry -> entry.getValue().isNotSkipped())
+        Map<String, CatsTestCase> allRun = testCaseMap.entrySet().stream().filter(entry -> entry.getValue().isNotSkipped() && entry.getValue().notIgnoredForExecutionStatistics())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         Map<String, List<CatsTestCase>> collect = allRun.values().stream()
