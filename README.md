@@ -62,11 +62,15 @@ Table of Contents
          * [Writing Custom Tests](#writing-custom-tests)
          * [Correlating Tests](#correlating-tests)
          * [Verifying responses](#verifying-responses)
+         * [Working with additionalProperties in CustomFuzzer](#working-with-additionalproperties-in-customfuzzer)
          * [Reserved keywords](#customfuzzer-reserved-keywords)
       * [Security Fuzzer](#security-fuzzer)
+         * [Working with additionalProperties in SecurityFuzzer](#working-with-additionalproperties-in-securityfuzzer)
          * [Reserved keywords](#securityfuzzer-reserved-keywords)
    * [Skipping Fuzzers for specific paths](#skipping-fuzzers-for-specific-paths)
    * [Reference Data File](#reference-data-file)
+         * [Setting additionalProperties](#setting-additionalproperties)
+         * [Reserved Keywords](#refdata-reserved-keywords)
    * [Headers File](#headers-file)
    * [URL Params](#url-params)
    * [Edge Spaces Strategy](#edge-spaces-strategy)
@@ -442,9 +446,11 @@ Some notes:
 - if all parameters are found and have valid values, but the response code is not matched, `CATs` will report a warning
 - if all the parameters are found and match their values and the response code is as expected, `CATs` will report a success
 
+### Working with additionalProperties in CustomFuzzer
+You can also set `additionalProperties` fields through the `customFuzzerFile` using the same syntax as for [Setting additionalProperties in Reference Data](#setting-additionalproperties).
 
 ### CustomFuzzer Reserved keywords
-The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `oneOfSelection` and `verify`.
+The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `oneOfSelection`, `verify`, `additionalProperties`, `topElement` and `mapValues`.
 
 ## Security Fuzzer
 Although `CATs` is not a security testing tool, you can use it to test basic security scenarios by fuzzing specific fields with different sets of [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings).
@@ -477,8 +483,11 @@ You can have a `sql_injection.txt`, a `xss.txt`, a `command_injection.txt` and s
 Your service might sanitize data before validation, so might be perfectly valid to expect a `200` or might validate the fields directly, so might be perfectly valid to expect a `400`.
 A `500` will usually mean something was not handled properly and might signal a possible bug.
 
+### Working with additionalProperties in SecurityFuzzer
+You can also set `additionalProperties` fields through the `customFuzzerFile` using the same syntax as for [Setting additionalProperties in Reference Data](#setting-additionalproperties).
+
 ### SecurityFuzzer Reserved keywords
-The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields` and `stringsFile`.
+The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields`, `stringsFile`, `additionalProperties`, `topElement` and `mapValues`.
 
 
 # Skipping Fuzzers for specific paths
@@ -541,8 +550,41 @@ This will result in any fuzzed request to the `/path/0.1/auth` endpoint being up
     },
     "name": "John"
 }
-
 ```
+## Setting additionalProperties
+As additional properties are maps i.e. they don't actually have a structure, CATS cannot currently generate valid values. If the elements within such a data structure are essential for a request,
+you can supply them via the `refData` file using the following syntax:
+
+```yaml
+/path/0.1/auth:
+    address#street: "My Street"
+    name: "John"
+    additionalProperties:
+      topElement: metadata
+      mapValues:
+        test: "value1"
+        anotherTest: "value2"
+```
+
+The `additionalProperties` element must contain the actual key-value pairs to be send within the requests and also a top element if needed. `topElement` is not mandatory.
+The above example will output the following json (considering also the above examples):
+```json
+
+{
+    "address": {
+        "phone": "123",
+        "postCode": "408",
+        "street": "My Street"    
+    },
+    "name": "John",
+    "metadata": {
+        "test": "value1",
+        "anotherTest": "value2"
+    }   
+}
+```
+## RefData reserved keywords
+The following keywords are reserved in a reference data file: `additionalProperties`, `topElement` and `mapValues`.
 
 # Headers File
 This can be used to send custom fixed headers with each payload. It is useful when you have authentication tokens you want to use to authenticate the API calls. You can use path specific headers or common headers that will be added to each call using an `all` element. Specific paths will take precedence over the `all` element.
@@ -627,12 +669,10 @@ Request:
 However, if `Payload1` or `Payload2` will have an additional compositions, this won't be considered by CATS.
 
 ## Additional Parameters
-
 If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `WARN` level log message as it won't be able to validate that the response matches the schema.
 
 
 ## Regexes within 'pattern'
-
 Cats uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
 
 # Contributing

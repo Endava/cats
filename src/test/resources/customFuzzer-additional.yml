@@ -1,0 +1,15 @@
+/pets/{id}/move:
+  test_1:
+    description: Simple Test Case
+    pet:
+      - stay
+    expectedResponseCode: 200
+    oneOfSelection:
+      test#test: "mumu"
+    additionalProperties:
+      topElement: "metadata"
+      mapValues:
+        "test": "value1"
+        "anotherTest": "value2"
+    output:
+      resp: code

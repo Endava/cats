@@ -394,6 +394,7 @@ public class ServiceCaller {
             for (Map.Entry<String, String> entry : refDataForCurrentPath.entrySet()) {
                 /*If we didn't fuzz a Ref Data field, we replace the value with the ref data*/
                 this.replaceElementWithRefDataValue(entry, jsonElement, fuzzedFields);
+                catsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, jsonElement);
             }
         }
     }
