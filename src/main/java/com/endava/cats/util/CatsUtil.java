@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import org.slf4j.Logger;
@@ -21,6 +22,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static com.endava.cats.util.CustomFuzzerUtil.*;
 
 @Component
 public class CatsUtil {
@@ -277,6 +280,31 @@ public class CatsUtil {
         for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
             headers.put(entry.getKey(), entry.getValue().entrySet()
                     .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
+        }
+    }
+
+    public void setAdditionalPropertiesToPayload(Map<String, String> currentPathValues, JsonElement payload) {
+        String additionalProperties = currentPathValues.get(ADDITIONAL_PROPERTIES);
+        if (!"null".equalsIgnoreCase(additionalProperties) && additionalProperties != null) {
+
+            if (additionalProperties.contains(ELEMENT)) {
+                String[] elements = additionalProperties.split(",", 2);
+                String topElement = elements[0].replace(ELEMENT + "=", "").replace("{", "");
+                String mapValues = elements[1];
+                JsonObject toBeAdded = new JsonObject();
+                setMapValues(toBeAdded, mapValues);
+                payload.getAsJsonObject().add(topElement, toBeAdded);
+            } else {
+                this.setMapValues(payload, additionalProperties);
+            }
+        }
+    }
+
+    private void setMapValues(JsonElement payload, String additionalProperties) {
+        String mapValues = additionalProperties.replace(MAP_VALUES + "=", "").replace("{", "").replace("}", "");
+        for (String values : mapValues.split(",")) {
+            String[] entry = values.split("=");
+            payload.getAsJsonObject().addProperty(entry[0].trim(), entry[1].trim());
         }
     }
 }

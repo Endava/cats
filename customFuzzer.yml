@@ -11,7 +11,14 @@
       - 124
       - 134
     home#country: "mumu"
+    additionalProperties:
+      element: "metadata"
+      mapValues:
+        test: "bubu"
+        anotherTest: "juju"
     expectedResponseCode: 200
+    oneOfSelection:
+      pet#type: "Dog"
     output:
       - homeId: home#id
     verify:

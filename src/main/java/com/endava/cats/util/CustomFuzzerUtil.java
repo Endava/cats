@@ -31,8 +31,12 @@ public class CustomFuzzerUtil {
     public static final String STRINGS_FILE = "stringsFile";
     public static final String TARGET_FIELDS = "targetFields";
     public static final String ONE_OF_SELECTION = "oneOfSelection";
+    public static final String ADDITIONAL_PROPERTIES = "additionalProperties";
+    public static final String ELEMENT = "topElement";
+    public static final String MAP_VALUES = "mapValues";
 
-    private static final List<String> RESERVED_WORDS = Arrays.asList(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION);
+    private static final List<String> RESERVED_WORDS = Arrays.asList(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION,
+            ADDITIONAL_PROPERTIES, ELEMENT, MAP_VALUES);
     private static final String NOT_SET = "NOT_SET";
     private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
     private final Map<String, String> variables = new HashMap<>();
@@ -49,14 +53,17 @@ public class CustomFuzzerUtil {
         this.catsDSLParser = cdsl;
     }
 
+
     public void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
-        String expectedResponseCode = String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE));
+        String expectedResponseCode = currentPathValues.get(EXPECTED_RESPONSE_CODE);
         this.startCustomTest(testName, currentPathValues, expectedResponseCode);
 
-        String payloadWithCustomValuesReplaced = this.getStringWithCustomValuesFromFile(data, currentPathValues);
+        JsonElement payloadWithCustomValuesReplaced = this.getJsonElementWithCustomValuesFromFile(data, currentPathValues);
+        catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
+
         String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
         CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(servicePath).replaceRefData(false)
-                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).build());
+                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced.toString()).queryParams(data.getQueryParams()).build());
 
         this.setOutputVariables(currentPathValues, response);
 
@@ -67,7 +74,6 @@ public class CustomFuzzerUtil {
             testCaseListener.reportResult(log, data, response, ResponseCodeFamily.from(expectedResponseCode));
         }
     }
-
 
     private void setOutputVariables(Map<String, String> currentPathValues, CatsResponse response) {
         String output = currentPathValues.get(CustomFuzzerUtil.OUTPUT);
@@ -178,7 +184,7 @@ public class CustomFuzzerUtil {
         testCaseListener.addExpectedResult(log, "Expected result: should return [{}]", expectedResponseCode);
     }
 
-    public String getStringWithCustomValuesFromFile(FuzzingData data, Map<String, String> currentPathValues) {
+    public JsonElement getJsonElementWithCustomValuesFromFile(FuzzingData data, Map<String, String> currentPathValues) {
         JsonElement jsonElement = catsUtil.parseAsJsonElement(data.getPayload());
 
         if (jsonElement.isJsonObject()) {
@@ -190,7 +196,7 @@ public class CustomFuzzerUtil {
         }
         log.info("Final payload after custom values replaced: [{}]", jsonElement);
 
-        return jsonElement.toString();
+        return jsonElement;
     }
 
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {

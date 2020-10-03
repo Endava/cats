@@ -98,7 +98,8 @@ class CustomFuzzerTest {
         Mockito.verify(spyCustomFuzzer, Mockito.never()).processCustomFuzzerFile(data);
         Assertions.assertThat(customFuzzer.description()).isNotNull();
         Assertions.assertThat(customFuzzer).hasToString(customFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(customFuzzer.reservedWords()).containsOnly(CustomFuzzerUtil.EXPECTED_RESPONSE_CODE, CustomFuzzerUtil.DESCRIPTION, CustomFuzzerUtil.OUTPUT, CustomFuzzerUtil.VERIFY);
+        Assertions.assertThat(customFuzzer.reservedWords()).containsOnly(CustomFuzzerUtil.EXPECTED_RESPONSE_CODE, CustomFuzzerUtil.DESCRIPTION, CustomFuzzerUtil.OUTPUT, CustomFuzzerUtil.VERIFY, CustomFuzzerUtil.MAP_VALUES,
+                CustomFuzzerUtil.ONE_OF_SELECTION, CustomFuzzerUtil.ADDITIONAL_PROPERTIES, CustomFuzzerUtil.ELEMENT, CustomFuzzerUtil.HTTP_METHOD);
     }
 
     @Test
@@ -163,6 +164,16 @@ class CustomFuzzerTest {
     }
 
     @Test
+    void givenACustomFuzzerFileWithAdditionalProperties_whenTheFuzzerRuns_thenPropertiesAreProperlyAddedToThePayload() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer-additional.yml", "{'code': '200'}");
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        spyCustomFuzzer.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
+    @Test
     void givenACustomFuzzerFileWithVerifyParameters_whenTheFuzzerRuns_thenVerifyParameterAreProperlyChecked() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
@@ -219,6 +230,7 @@ class CustomFuzzerTest {
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
+        Mockito.doCallRealMethod().when(catsUtil).setAdditionalPropertiesToPayload(Mockito.any(), Mockito.any());
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);

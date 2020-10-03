@@ -2,6 +2,7 @@ package com.endava.cats.util;
 
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
+import com.google.gson.JsonElement;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -66,5 +67,29 @@ class CatsUtilTest {
         String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
 
         Assertions.assertThat(catsUtil.isValidJson(payload)).isTrue();
+    }
+
+    @Test
+    void shouldAddTopElement() {
+        CatsUtil catsUtil = new CatsUtil();
+        String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
+
+        JsonElement jsonElement = catsUtil.parseAsJsonElement(payload);
+        Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
+        catsUtil.setAdditionalPropertiesToPayload(currentPathValues, jsonElement);
+        Assertions.assertThat(jsonElement.getAsJsonObject().get("metadata")).isNotNull();
+        Assertions.assertThat(jsonElement.getAsJsonObject().get("metadata").getAsJsonObject().get("test1")).isNotNull();
+    }
+
+    @Test
+    void shouldNotAddTopElement() {
+        CatsUtil catsUtil = new CatsUtil();
+        String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
+
+        JsonElement jsonElement = catsUtil.parseAsJsonElement(payload);
+        Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
+        catsUtil.setAdditionalPropertiesToPayload(currentPathValues, jsonElement);
+        Assertions.assertThat(jsonElement.getAsJsonObject().get("metadata")).isNull();
+        Assertions.assertThat(jsonElement.getAsJsonObject().get("test1")).isNotNull();
     }
 }
