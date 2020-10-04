@@ -8,6 +8,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private String result;
     private String id;
     private String fuzzer;
+    private String path;
 
     public static CatsTestCaseSummary fromCatsTestCase(String id, CatsTestCase testCase) {
         CatsTestCaseSummary summary = new CatsTestCaseSummary();
@@ -15,6 +16,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.scenario = testCase.getScenario();
         summary.result = testCase.getResult();
         summary.fuzzer = testCase.getFuzzer();
+        summary.path = testCase.getPath();
 
         return summary;
     }
