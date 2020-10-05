@@ -416,7 +416,7 @@ public class ServiceCaller {
                 fuzzedValue = FuzzingStrategy.mergeFuzzing(element.getAsJsonObject().get(key).getAsString(), entry.getValue(), "   ");
             }
             if (fuzzedValue != null && element.getAsJsonObject().remove(key) != null) {
-                String toReplace = catsDSLParser.parseAndGetResult(fuzzedValue);
+                String toReplace = catsDSLParser.parseAndGetResult(fuzzedValue, jsonElement.toString());
                 element.getAsJsonObject().addProperty(key, toReplace);
                 LOGGER.debug("Replacing property {} with ref data value {}", entry.getKey(), toReplace);
             }
