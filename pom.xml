@@ -5,7 +5,7 @@
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
     <description>Contract Auto-Generated Tests for Swagger</description>
-    <version>5.1.1-SNAPSHOT</version>
+    <version>5.1.1</version>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -125,7 +125,7 @@
         <url>https://en-milie@github.com/Endava/cats.git</url>
         <connection>scm:git:git@github.com:Endava/cats.git</connection>
         <developerConnection>scm:git:git@github.com:Endava/cats.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>cats-5.1.1</tag>
     </scm>
 
     <distributionManagement>
