@@ -102,7 +102,7 @@ public class CustomFuzzerUtil {
 
             verifies.forEach((key, value) -> {
                 String valueToCheck = responseValues.get(key);
-                valueToCheck = catsDSLParser.parseAndGetResult(valueToCheck);
+                valueToCheck = catsDSLParser.parseAndGetResult(valueToCheck, response.getBody());
                 Matcher verifyMatcher = Pattern.compile(value).matcher(valueToCheck);
                 if (!verifyMatcher.matches()) {
                     errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, value));
@@ -311,7 +311,7 @@ public class CustomFuzzerUtil {
             String propertyValue = this.getPropertyValueToReplaceInBody(entry);
 
             if (element.getAsJsonObject().remove(key) != null) {
-                String toReplace = catsDSLParser.parseAndGetResult(propertyValue);
+                String toReplace = catsDSLParser.parseAndGetResult(propertyValue, jsonElement.toString());
                 element.getAsJsonObject().addProperty(key, toReplace);
                 log.info("Replacing property [{}] with value [{}]", entry.getKey(), toReplace);
             } else {
