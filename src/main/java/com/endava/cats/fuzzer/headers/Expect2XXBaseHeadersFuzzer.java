@@ -7,7 +7,7 @@ import com.endava.cats.report.TestCaseListener;
 
 public abstract class Expect2XXBaseHeadersFuzzer extends BaseHeadersFuzzer {
 
-    public Expect2XXBaseHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    protected Expect2XXBaseHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }
 

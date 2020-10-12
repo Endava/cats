@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 @Slf4j
 public abstract class BaseContractInfoFuzzer implements Fuzzer {
-    protected final static String DESCRIPTION = "description";
+    protected static final String DESCRIPTION = "description";
     protected static final String COMMA = ", ";
     protected static final String IS_EMPTY = " is empty";
     protected static final String IS_TOO_SHORT = " is too short";
@@ -24,7 +24,7 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     private int runTimes;
 
     @Autowired
-    public BaseContractInfoFuzzer(TestCaseListener tcl) {
+    protected BaseContractInfoFuzzer(TestCaseListener tcl) {
         this.testCaseListener = tcl;
     }
 

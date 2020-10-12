@@ -7,7 +7,7 @@ import com.endava.cats.util.CatsUtil;
 
 public abstract class ExpectOnly4XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
 
-    public ExpectOnly4XXBaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    protected ExpectOnly4XXBaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
         super(sc, lr, cu);
     }
 
