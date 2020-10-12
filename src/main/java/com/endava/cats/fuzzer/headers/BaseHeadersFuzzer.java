@@ -24,7 +24,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
 
     @Autowired
-    public BaseHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    protected BaseHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
     }

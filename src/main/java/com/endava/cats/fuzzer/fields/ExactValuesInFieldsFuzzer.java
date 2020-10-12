@@ -23,7 +23,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     private final CatsParams catsParams;
 
     @Autowired
-    public ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
+    protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
         super(sc, lr, cu);
         this.catsParams = catsParams;
     }

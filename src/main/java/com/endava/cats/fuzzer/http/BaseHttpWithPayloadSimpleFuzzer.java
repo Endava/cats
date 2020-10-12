@@ -19,7 +19,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
     private final CatsUtil catsUtil;
 
     @Autowired
-    public BaseHttpWithPayloadSimpleFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
+    protected BaseHttpWithPayloadSimpleFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = catsUtil;

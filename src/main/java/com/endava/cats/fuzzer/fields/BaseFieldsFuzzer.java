@@ -27,7 +27,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     private final CatsUtil catsUtil;
 
     @Autowired
-    public BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = cu;

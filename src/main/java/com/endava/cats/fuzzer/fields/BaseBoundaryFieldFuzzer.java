@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
 
     @Autowired
-    public BaseBoundaryFieldFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    protected BaseBoundaryFieldFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
         super(sc, lr, cu);
     }
 

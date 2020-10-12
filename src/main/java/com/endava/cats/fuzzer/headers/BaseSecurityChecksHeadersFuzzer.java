@@ -54,7 +54,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
 
     @Autowired
-    public BaseSecurityChecksHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    protected BaseSecurityChecksHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
     }

@@ -10,6 +10,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -48,42 +50,18 @@ class TopLevelElementsContractInfoFuzzerTest {
         topLevelElementsContractInfoFuzzer = new TopLevelElementsContractInfoFuzzer(testCaseListener);
     }
 
-    @Test
-    void shouldReportMissingInfo() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-missing-info.yml"))), null, null).getOpenAPI();
+    @ParameterizedTest
+    @CsvSource({"src/test/resources/contract-missing-info.yml,info.version, info.contact.url, info.description, info.contact.name, info.title, info.contact.email",
+            "src/test/resources/contract-missing-servers.yml,servers",
+            "src/test/resources/contract-missing-tags.yml,tags",
+            "src/test/resources/contract-incomplete-contact.yml,info.contact.url, info.contact.email"})
+    void shouldReportError(String contractPath, String expectedError) throws Exception {
+        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get(contractPath))), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         topLevelElementsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains("info.version, info.contact.url, info.description, info.contact.name, info.title, info.contact.email"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains(expectedError));
     }
-
-    @Test
-    void shouldReportMissingServers() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-missing-servers.yml"))), null, null).getOpenAPI();
-        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
-        topLevelElementsContractInfoFuzzer.fuzz(data);
-
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains("servers"));
-    }
-
-    @Test
-    void shouldReportMissingTags() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-missing-tags.yml"))), null, null).getOpenAPI();
-        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
-        topLevelElementsContractInfoFuzzer.fuzz(data);
-
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains("tags"));
-    }
-
-    @Test
-    void shouldReportIncompleteContact() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-incomplete-contact.yml"))), null, null).getOpenAPI();
-        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
-        topLevelElementsContractInfoFuzzer.fuzz(data);
-
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains("info.contact.url, info.contact.email"));
-    }
-
 
     @Test
     void shouldNotReportAnyError() throws Exception {
