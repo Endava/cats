@@ -8,6 +8,7 @@ import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.*;
@@ -51,22 +52,22 @@ public class FuzzingDataFactory {
      * @param schemas
      * @return
      */
-    public List<FuzzingData> fromPathItem(String path, PathItem item, Map<String, Schema> schemas) {
+    public List<FuzzingData> fromPathItem(String path, PathItem item, Map<String, Schema> schemas, OpenAPI openAPI) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         if (item.getPost() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForPost(path, item, schemas, item.getPost()));
+            fuzzingDataList.addAll(this.getFuzzDataForPost(path, item, schemas, item.getPost(), openAPI));
         }
 
         if (item.getPut() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForPut(path, item, schemas, item.getPut()));
+            fuzzingDataList.addAll(this.getFuzzDataForPut(path, item, schemas, item.getPut(), openAPI));
         }
 
         if (item.getPatch() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForPatch(path, item, schemas, item.getPatch()));
+            fuzzingDataList.addAll(this.getFuzzDataForPatch(path, item, schemas, item.getPatch(), openAPI));
         }
 
         if (item.getGet() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForGet(path, item, schemas, item.getGet()));
+            fuzzingDataList.addAll(this.getFuzzDataForGet(path, item, schemas, item.getGet(), openAPI));
         }
 
         return fuzzingDataList;
@@ -82,7 +83,7 @@ public class FuzzingDataFactory {
      * @param operation
      * @return
      */
-    private List<FuzzingData> getFuzzDataForGet(String path, PathItem item, Map<String, Schema> schemas, Operation operation) {
+    private List<FuzzingData> getFuzzDataForGet(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
         Set<CatsHeader> headers = this.extractHeaders(operation);
         ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
 
@@ -102,6 +103,7 @@ public class FuzzingDataFactory {
                 .requestContentTypes(requestContentTypes)
                 .catsUtil(catsUtil)
                 .queryParams(queryParams)
+                .openApi(openAPI)
                 .build()).collect(Collectors.toList());
     }
 
@@ -146,17 +148,17 @@ public class FuzzingDataFactory {
         return syntheticSchema;
     }
 
-    private List<FuzzingData> getFuzzDataForPost(String path, PathItem item, Map<String, Schema> schemas, Operation operation) {
-        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.POST);
+    private List<FuzzingData> getFuzzDataForPost(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
+        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.POST, openAPI);
     }
 
-    private List<FuzzingData> getFuzzDataForPut(String path, PathItem item, Map<String, Schema> schemas, Operation operation) {
-        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.PUT);
+    private List<FuzzingData> getFuzzDataForPut(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
+        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.PUT, openAPI);
     }
 
 
-    private List<FuzzingData> getFuzzDataForPatch(String path, PathItem item, Map<String, Schema> schemas, Operation operation) {
-        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.PATCH);
+    private List<FuzzingData> getFuzzDataForPatch(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
+        return this.getFuzzDataForHttpMethod(path, item, schemas, operation, HttpMethod.PATCH, openAPI);
     }
 
     /**
@@ -170,7 +172,7 @@ public class FuzzingDataFactory {
      * @param method
      * @return
      */
-    private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Map<String, Schema> schemas, Operation operation, HttpMethod method) {
+    private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Map<String, Schema> schemas, Operation operation, HttpMethod method, OpenAPI openAPI) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         MediaType mediaType = this.getMediaType(operation);
 
@@ -193,6 +195,7 @@ public class FuzzingDataFactory {
                             .schemaMap(schemas).responses(responses)
                             .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
                             .catsUtil(catsUtil)
+                            .openApi(openAPI)
                             .build()).collect(Collectors.toList()));
         }
 
