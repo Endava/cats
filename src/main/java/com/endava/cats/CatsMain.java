@@ -363,7 +363,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info(" ");
         LOGGER.info("Start fuzzing path {}", pathItemEntry.getKey());
-        List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), schemas);
+        List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), schemas, openAPI);
 
         if (fuzzingDataList.isEmpty()) {
             LOGGER.warn("Skipping path {}. HTTP method not supported yet!", pathItemEntry.getKey());

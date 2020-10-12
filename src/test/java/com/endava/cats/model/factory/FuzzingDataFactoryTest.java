@@ -46,7 +46,7 @@ class FuzzingDataFactoryTest {
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
         Map<String, Schema> schemas = CatsMain.getSchemas(openAPI);
         PathItem pathItem = openAPI.getPaths().get("/pets");
-        List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/pets", pathItem, schemas);
+        List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/pets", pathItem, schemas, openAPI);
 
         Assertions.assertThat(data).hasSize(3);
         Assertions.assertThat(data.get(0).getMethod()).isEqualByComparingTo(HttpMethod.POST);

@@ -38,6 +38,7 @@ Table of Contents
       * [Notes on Unit Tests](#notes-on-unit-tests)
       * [Notes on the Skipped Tests](#notes-on-skipped-tests)
    * [Available arguments](#available-arguments)
+   * [Checking the Contract](#checking-the-contract)
    * [Available Fuzzers](#available-fuzzers)
       * [BooleanFieldsFuzzer](#booleanfieldsfuzzer)
       * [DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer](#decimalfieldsleftboundaryfuzzer-and-decimalfieldsrightboundaryfuzzer)
@@ -171,6 +172,23 @@ It was an intentional decision to report also the `skipped` tests in order to sh
 Using some of these options a typical invocation of CATS might look like this:
 
 `./cats.jar --contract=my.yml --server=https://locathost:8080 --log=org.apache.http.wire:debug`
+
+# Checking the Contract
+Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
+- follow good practices around naming the contract elements like paths, requests, responses
+- always use plural for the path names, separate paths words through dashes, use camelCase or snake_case for any `json` types and properties
+- provide tags for all operations in order to avoid breaking code generation on some languages
+- provide good description for all paths, methods and request/response elements
+- provide meaningful responses for `POST`, `PATCH` and `PUT` requests
+- provide examples for all requests/response elements
+- provide structural constraints for (ideally) all request/response properties (min, max, regex)
+- heaver some sort of `CorrelationIds/TraceIds` within headers
+- have at least a security schema in place
+- avoid having the API version part of the paths
+- document response codes for both "happy" and "unhappy" flows
+- avoid using `xml` payload unless there is a really good reason (like documenting an old API for example)
+- json types and properties do not use the same naming (like having a `Pet` with a property named `pet`)
+
 
 # Available Fuzzers
 To get a list of fuzzers just run `./cats.jar list fuzzers`. A list of all of the available fuzzers will be returned, along with a short description for each.
@@ -622,7 +640,7 @@ CATS also supports schemas with `oneOf`, `allOf` and `anyOf` composition. CATS w
 
 # Dynamic values in configuration files
 The following configuration files: `securityFuzzerFile, customFuzzerFile, refData` support setting dynamic values for the inner fields.
-For now **the support only exists** for `java.time.OffsetDateTime`, but more types of elements might come in the near future.
+For now **the support only exists** for `java.time.*`, but more types of elements might come in the near future.
 
 Let's suppose you have a date/date-time field and you want to set it to 10 days from now. You can do this by setting this as a value `T(java.time.OffsetDateTime).now().plusDays(10)`.
 This will return an ISO compliant time in UTC format. 
@@ -643,6 +661,9 @@ A `customFuzzerFile` using this can look like:
         expectedResponseCode: HTTP_CODE
         httpMethod: HTTP_NETHOD
 ```
+
+You can also check the responses using a similar syntax and also accounting for the actual values returned in the response. This is a syntax than can test if a returned date is after the current date:
+`T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))`. It will check if the `expiry` field returned in the json response, parsed as date, is after the current date.
 
 The syntax of dynamically setting dates is compliant with the [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs.
 

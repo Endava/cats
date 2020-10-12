@@ -2,6 +2,7 @@ package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.CatsUtil;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -34,6 +35,7 @@ public class FuzzingData {
     private Set<Set<String>> allFieldsSetOfSets;
     private List<String> allRequiredFields;
     private Set<CatsField> allFieldsAsCatsFields;
+    private OpenAPI openApi;
 
     private Set<CatsField> getFields(Schema schema, String prefix) {
         Set<CatsField> catsFields = new HashSet<>();

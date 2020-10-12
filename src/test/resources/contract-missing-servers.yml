@@ -6,23 +6,16 @@ info:
     name: Apache-2.0
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
   version: 1.0.0
-  contact:
-    name: CATS team
-    url: https://github.com/Endava/cats
-    email: opensource@endava.com
 externalDocs:
   description: Find out more about OpenAPI generator
   url: 'https://openapi-generator.tech'
-servers:
-  - url: /v3
-    description: This is the production server
 tags:
   - name: pet
     description: Everything about your Pets
   - name: store
     description: Access to Petstore orders
   - name: user
-    description: Operations about the user
+    description: Operations about user
 paths:
   /pet:
     put:
@@ -185,7 +178,7 @@ paths:
         '404':
           description: Pet not found
       security:
-        - api_key: [ ]
+        - api_key: []
       x-accepts: application/json
       x-tags:
         - tag: pet
@@ -306,7 +299,7 @@ paths:
                   type: integer
                   format: int32
       security:
-        - api_key: [ ]
+        - api_key: []
       x-accepts: application/json
       x-tags:
         - tag: store
