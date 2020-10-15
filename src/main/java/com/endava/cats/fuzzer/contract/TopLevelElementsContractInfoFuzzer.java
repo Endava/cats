@@ -38,6 +38,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
         testCaseListener.addScenario(log, "Scenario: Check if the OpenAPI contract defines elements such as tags, info, external docs and servers");
         testCaseListener.addExpectedResult(log, "Elements should be present and provide meaningful information");
         testCaseListener.addPath("NA");
+        testCaseListener.addFullRequestPath("NA");
         StringBuilder errorString = new StringBuilder();
 
         Set<String> missingFieldsSet = this.checkInfo(data.getOpenApi().getInfo());
@@ -142,12 +143,6 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         return missingFields.stream().filter(field -> !field.isEmpty())
                 .map(field -> "contact." + field).collect(Collectors.toSet());
-    }
-
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
     }
 
     @Override

@@ -9,6 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 @Slf4j
@@ -18,9 +20,8 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String IS_EMPTY = " is empty";
     protected static final String IS_TOO_SHORT = " is too short";
     protected static final String EMPTY = "";
-
-
     protected final TestCaseListener testCaseListener;
+    protected List<String> fuzzedPaths = new ArrayList<>();
     private int runTimes;
 
     @Autowired

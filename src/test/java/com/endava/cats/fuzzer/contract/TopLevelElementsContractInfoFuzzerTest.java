@@ -6,6 +6,7 @@ import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,5 +71,15 @@ class TopLevelElementsContractInfoFuzzerTest {
         topLevelElementsContractInfoFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.contains("OpenAPI contract contains all top level relevant information!"));
+    }
+
+    @Test
+    void shouldReturnSimpleClassNameForToString() {
+        Assertions.assertThat(topLevelElementsContractInfoFuzzer).hasToString(topLevelElementsContractInfoFuzzer.getClass().getSimpleName());
+    }
+
+    @Test
+    void shouldReturnMeaningfulDescription() {
+        Assertions.assertThat(topLevelElementsContractInfoFuzzer.description()).isEqualTo("verifies that all OpenAPI contract level elements are present and provide meaningful information: API description, documentation, title, version, etc. ");
     }
 }
