@@ -1,0 +1,49 @@
+openapi: 3.0.0
+info:
+  title: OpenAPI Petstore
+  description: 'This is a sample server Petstore server. For this sample, you can use the api key `special-key` to test the authorization filters. For OAuth2 flow, you may use `user` as both username and password when asked to login.'
+  license:
+    name: Apache-2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 1.0.0
+  contact:
+    name: CATS team
+    url: https://github.com/Endava/cats
+    email: opensource@endava.com
+externalDocs:
+  description: Find out more about OpenAPI generator
+  url: 'https://openapi-generator.tech'
+servers:
+  - url: /v3
+    description: This is the production server
+tags:
+  - name: pet
+    description: Everything about your Pets
+  - name: store
+    description: Access to Petstore orders
+  - name: user
+    description: Operations about the user
+paths:
+  /pet:
+    put:
+      tags:
+        - petCATS
+      summary: Update an existing pet
+      operationId: updatePet
+      requestBody:
+        $ref: '#/components/requestBodies/Pet'
+      responses:
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Pet not found
+        '405':
+          description: Validation exception
+      security:
+        - petstore_auth:
+            - 'write:pets'
+            - 'read:pets'
+      x-accepts: application/json
+      x-tags:
+        - tag: pet
+      x-contentType: application/json
