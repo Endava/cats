@@ -41,6 +41,11 @@ public class RecommendedHeadersContractInfoFuzzer extends BaseContractInfoFuzzer
         }
     }
 
+    @Override
+    protected String runKey(FuzzingData data) {
+        return data.getPath() + data.getMethod();
+    }
+
     private String replaceSpecialChars(String header) {
         return header.replaceAll("[\\s-_]+", "");
     }

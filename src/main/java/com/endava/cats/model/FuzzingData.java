@@ -36,6 +36,7 @@ public class FuzzingData {
     private List<String> allRequiredFields;
     private Set<CatsField> allFieldsAsCatsFields;
     private OpenAPI openApi;
+    private List<String> tags;
 
     private Set<CatsField> getFields(Schema schema, String prefix) {
         Set<CatsField> catsFields = new HashSet<>();
