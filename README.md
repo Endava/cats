@@ -69,8 +69,8 @@ Table of Contents
          * [Working with additionalProperties in SecurityFuzzer](#working-with-additionalproperties-in-securityfuzzer)
          * [Reserved keywords](#securityfuzzer-reserved-keywords)
    * [Skipping Fuzzers for specific paths](#skipping-fuzzers-for-specific-paths)
-   * [Reference Data File](#reference-data-file)
-         * [Setting additionalProperties](#setting-additionalproperties)
+   * [Reference Data File](#reference-data-file)  
+         * [Setting additionalProperties](#setting-additionalproperties)  
          * [Reserved Keywords](#refdata-reserved-keywords)
    * [Headers File](#headers-file)
    * [URL Params](#url-params)
@@ -176,8 +176,8 @@ Using some of these options a typical invocation of CATS might look like this:
 # Checking the Contract
 Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
 - follow good practices around naming the contract elements like paths, requests, responses
-- always use plural for the path names, separate paths words through dashes, use camelCase or snake_case for any `json` types and properties
-- provide tags for all operations in order to avoid breaking code generation on some languages
+- always use plural for the path names, separate paths words through hyphens/underscores, use camelCase or snake_case for any `json` types and properties
+- provide tags for all operations in order to avoid breaking code generation on some languages and have a logical grouping of the API operations
 - provide good description for all paths, methods and request/response elements
 - provide meaningful responses for `POST`, `PATCH` and `PUT` requests
 - provide examples for all requests/response elements
