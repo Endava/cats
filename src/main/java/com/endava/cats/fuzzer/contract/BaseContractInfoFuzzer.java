@@ -1,13 +1,11 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.RunOnce;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.annotation.AnnotationUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +20,6 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String EMPTY = "";
     protected final TestCaseListener testCaseListener;
     protected List<String> fuzzedPaths = new ArrayList<>();
-    private int runTimes;
 
     @Autowired
     protected BaseContractInfoFuzzer(TestCaseListener tcl) {
@@ -49,19 +46,13 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        if ((isRunOnce() && notRun()) || !isRunOnce()) {
+        if (!fuzzedPaths.contains(this.runKey(data))) {
             testCaseListener.createAndExecuteTest(log, this, () -> process(data));
-            runTimes++;
+            fuzzedPaths.add(this.runKey(data));
         }
     }
 
-    private boolean notRun() {
-        return runTimes == 0;
-    }
-
-    private boolean isRunOnce() {
-        return AnnotationUtils.findAnnotation(this.getClass(), RunOnce.class) != null;
-    }
+    protected abstract String runKey(FuzzingData data);
 
     @Override
     public String toString() {

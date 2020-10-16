@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
-import com.endava.cats.fuzzer.RunOnce;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.google.common.collect.Sets;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
 @ContractInfoFuzzer
 @Component
 @Slf4j
-@RunOnce
 public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Autowired
@@ -143,6 +141,11 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         return missingFields.stream().filter(field -> !field.isEmpty())
                 .map(field -> "contact." + field).collect(Collectors.toSet());
+    }
+
+    @Override
+    protected String runKey(FuzzingData data) {
+        return "1";
     }
 
     @Override

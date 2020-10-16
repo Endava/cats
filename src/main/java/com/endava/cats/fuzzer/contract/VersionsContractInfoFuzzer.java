@@ -24,28 +24,30 @@ public class VersionsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        if (!fuzzedPaths.contains(data.getPath())) {
-            testCaseListener.addScenario(log, "Scenario: Check if the current path contains versioning information");
-            testCaseListener.addExpectedResult(log, "Paths should not contain versioning information. This should be handled in the [servers] definition");
-            testCaseListener.addPath(data.getPath());
-            testCaseListener.addFullRequestPath("NA");
-            fuzzedPaths.add(data.getPath());
+        testCaseListener.addScenario(log, "Scenario: Check if the current path contains versioning information");
+        testCaseListener.addExpectedResult(log, "Paths should not contain versioning information. This should be handled in the [servers] definition");
+        testCaseListener.addPath(data.getPath());
+        testCaseListener.addFullRequestPath("NA");
 
-            boolean found = false;
-            for (String version : VERSIONS) {
-                Pattern p = Pattern.compile(version);
-                Matcher m = p.matcher(data.getPath());
-                if (m.find()) {
-                    found = true;
-                }
-            }
-
-            if (found) {
-                testCaseListener.reportError(log, "Path contains versioning information");
-            } else {
-                testCaseListener.reportInfo(log, "Path does not contain versioning information");
+        boolean found = false;
+        for (String version : VERSIONS) {
+            Pattern p = Pattern.compile(version);
+            Matcher m = p.matcher(data.getPath());
+            if (m.find()) {
+                found = true;
             }
         }
+
+        if (found) {
+            testCaseListener.reportError(log, "Path contains versioning information");
+        } else {
+            testCaseListener.reportInfo(log, "Path does not contain versioning information");
+        }
+    }
+
+    @Override
+    protected String runKey(FuzzingData data) {
+        return data.getPath();
     }
 
     @Override

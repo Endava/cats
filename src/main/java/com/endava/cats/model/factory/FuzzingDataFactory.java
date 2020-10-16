@@ -104,6 +104,7 @@ public class FuzzingDataFactory {
                 .catsUtil(catsUtil)
                 .queryParams(queryParams)
                 .openApi(openAPI)
+                .tags(operation.getTags())
                 .build()).collect(Collectors.toList());
     }
 
@@ -196,6 +197,7 @@ public class FuzzingDataFactory {
                             .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
                             .catsUtil(catsUtil)
                             .openApi(openAPI)
+                            .tags(operation.getTags())
                             .build()).collect(Collectors.toList()));
         }
 
