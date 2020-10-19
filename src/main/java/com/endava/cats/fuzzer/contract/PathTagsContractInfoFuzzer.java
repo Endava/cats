@@ -29,8 +29,6 @@ public class PathTagsContractInfoFuzzer extends BaseContractInfoFuzzer {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(log, "Scenario: Check if the current path contains the tags element");
         testCaseListener.addExpectedResult(log, "[tags] element must be present and match the ones defined at the top level");
-        testCaseListener.addPath(data.getPath());
-        testCaseListener.addFullRequestPath("NA");
 
         List<String> topLevelTagNames = Optional.ofNullable(data.getOpenApi().getTags()).orElse(Collections.emptyList()).stream()
                 .map(Tag::getName).collect(Collectors.toList());

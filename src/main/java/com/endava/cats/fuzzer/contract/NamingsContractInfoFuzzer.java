@@ -30,8 +30,6 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(log, "Scenario: Check if the current path REST naming good practices");
         testCaseListener.addExpectedResult(log, "Path should match the REST naming good practices. Must use: nouns, plurals, lowercase hyphen-case/snake_case for endpoints, camelCase/snake_case for JSON properties");
-        testCaseListener.addPath(data.getPath());
-        testCaseListener.addFullRequestPath("NA");
 
         StringBuilder errorString = new StringBuilder();
         String[] pathElements = data.getPath().substring(1).split("/");
@@ -41,7 +39,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         errorString.append(this.checkVariables(pathElements));
 
         if (!errorString.toString().isEmpty()) {
-            testCaseListener.reportError(log, "Path does not follow REST naming good practices: {}.", errorString.toString());
+            testCaseListener.reportError(log, "Path does not follow REST naming good practices: {}", errorString.toString());
         } else {
             testCaseListener.reportInfo(log, "Path follows the REST naming good practices.");
         }
@@ -76,7 +74,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         }
 
         if (!result.toString().isEmpty()) {
-            return String.format(errorMessage + newLine(2), StringUtils.stripStart(result.toString().trim(), ", "));
+            return String.format(this.trailNewLines(errorMessage, 2), StringUtils.stripStart(result.toString().trim(), ", "));
         }
 
         return EMPTY;

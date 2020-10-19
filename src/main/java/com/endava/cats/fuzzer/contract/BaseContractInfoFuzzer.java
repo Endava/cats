@@ -1,6 +1,8 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.model.CatsRequest;
+import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +46,26 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
         return StringUtils.repeat("<br />", times);
     }
 
+    protected String trailNewLines(String text, int newLines) {
+        return text + newLine(newLines);
+    }
+
     @Override
     public void fuzz(FuzzingData data) {
         if (!fuzzedPaths.contains(this.runKey(data))) {
-            testCaseListener.createAndExecuteTest(log, this, () -> process(data));
+            testCaseListener.createAndExecuteTest(log, this, () -> addDefaultsAndProcess(data));
+
             fuzzedPaths.add(this.runKey(data));
         }
+    }
+
+    private void addDefaultsAndProcess(FuzzingData data) {
+        testCaseListener.addPath(data.getPath());
+        testCaseListener.addFullRequestPath("NA");
+        testCaseListener.addRequest(CatsRequest.empty());
+        testCaseListener.addResponse(CatsResponse.empty());
+
+        this.process(data);
     }
 
     protected abstract String runKey(FuzzingData data);
