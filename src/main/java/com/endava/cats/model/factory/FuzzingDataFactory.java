@@ -93,7 +93,7 @@ public class FuzzingDataFactory {
         List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId(), schemas);
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
-        List<String> requestContentTypes = this.getRequestContentTypes(operation);
+        List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
 
         return payloadSamples.stream().map(payload -> FuzzingData.builder().method(HttpMethod.GET).path(path).headers(headers).payload(payload)
                 .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
@@ -175,7 +175,7 @@ public class FuzzingDataFactory {
      */
     private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Map<String, Schema> schemas, Operation operation, HttpMethod method, OpenAPI openAPI) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
-        MediaType mediaType = this.getMediaType(operation);
+        MediaType mediaType = this.getMediaType(operation, openAPI);
 
         if (mediaType == null) {
             return Collections.emptyList();
@@ -184,7 +184,7 @@ public class FuzzingDataFactory {
 
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
-        List<String> requestContentTypes = this.getRequestContentTypes(operation);
+        List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
 
         for (String reqSchemaName : reqSchemaNames) {
             List<String> payloadSamples = this.getRequestPayloadsSamples(mediaType, reqSchemaName, schemas);
@@ -237,11 +237,10 @@ public class FuzzingDataFactory {
     }
 
 
-    private MediaType getMediaType(Operation operation) {
+    private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
         if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
-            MediaType mediaType = new MediaType();
-            mediaType.setSchema(new Schema().$ref(operation.getRequestBody().get$ref()));
-            return mediaType;
+            String reqBodyRef = operation.getRequestBody().get$ref();
+            return openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent().get(APPLICATION_JSON);
         } else if (operation.getRequestBody() != null && operation.getRequestBody().getContent().get(APPLICATION_JSON) != null) {
             return operation.getRequestBody().getContent().get(APPLICATION_JSON);
         } else if (operation.getRequestBody() != null) {
@@ -363,11 +362,15 @@ public class FuzzingDataFactory {
         }
     }
 
-    private List<String> getRequestContentTypes(Operation operation) {
+    private List<String> getRequestContentTypes(Operation operation, OpenAPI openAPI) {
         List<String> requests = new ArrayList<>();
         if (operation.getRequestBody() != null) {
             Content defaultContent = new Content();
             defaultContent.addMediaType(APPLICATION_JSON, new MediaType());
+            String reqBodyRef = operation.getRequestBody().get$ref();
+            if (reqBodyRef != null) {
+                operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent());
+            }
             requests.addAll(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent)
                     .entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
         }
