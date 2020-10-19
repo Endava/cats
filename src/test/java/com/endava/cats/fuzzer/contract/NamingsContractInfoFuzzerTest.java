@@ -52,7 +52,7 @@ class NamingsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path(path).build();
 
         namingsContractInfoFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}."), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
     }
 
     @ParameterizedTest

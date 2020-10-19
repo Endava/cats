@@ -26,8 +26,6 @@ public class VersionsContractInfoFuzzer extends BaseContractInfoFuzzer {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(log, "Scenario: Check if the current path contains versioning information");
         testCaseListener.addExpectedResult(log, "Paths should not contain versioning information. This should be handled in the [servers] definition");
-        testCaseListener.addPath(data.getPath());
-        testCaseListener.addFullRequestPath("NA");
 
         boolean found = false;
         for (String version : VERSIONS) {
