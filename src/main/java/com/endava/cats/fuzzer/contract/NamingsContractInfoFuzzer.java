@@ -1,13 +1,19 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeTypeUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -37,12 +43,32 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         errorString.append(this.checkPlurals(pathElements));
         errorString.append(this.checkFormat(pathElements));
         errorString.append(this.checkVariables(pathElements));
+        errorString.append(this.checkJsonObjects(data));
 
         if (!errorString.toString().isEmpty()) {
             testCaseListener.reportError(log, "Path does not follow REST naming good practices: {}", errorString.toString());
         } else {
             testCaseListener.reportInfo(log, "Path follows the REST naming good practices.");
         }
+    }
+
+    private String checkJsonObjects(FuzzingData data) {
+        List<String> stringToCheck = new ArrayList<>();
+        stringToCheck.add(data.getReqSchemaName());
+        Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
+        for (ApiResponse apiResponse : operation.getResponses().values()) {
+            String ref = apiResponse.get$ref();
+            if (ref == null && apiResponse.getContent() != null) {
+                ref = apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema().get$ref();
+            }
+
+            if (ref != null) {
+                stringToCheck.add(ref.substring(ref.lastIndexOf("/") + 1));
+            }
+
+        }
+        return this.check(stringToCheck.toArray(new String[0]), jsonObject -> !CAMEL_CASE_CAPITAL_START.matcher(jsonObject).matches(),
+                "The following request/response objects are not matching CamelCase: %s");
     }
 
     private String checkVariables(String[] pathElements) {
