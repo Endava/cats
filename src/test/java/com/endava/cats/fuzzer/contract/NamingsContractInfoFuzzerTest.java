@@ -1,9 +1,17 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +57,11 @@ class NamingsContractInfoFuzzerTest {
     @ParameterizedTest
     @CsvSource({"/petsPath", "/pets_path", "/pets-path-link", "/pets/Paths", "/pets/complex-Paths", "/pets/{petid10}", "/pets/{pet-id}"})
     void shouldReportError(String path) {
-        FuzzingData data = FuzzingData.builder().path(path).build();
+        PathItem pathItem = new PathItem();
+        Operation operation = new Operation();
+        operation.setResponses(new ApiResponses());
+        pathItem.setPost(operation);
+        FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
 
         namingsContractInfoFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
@@ -58,10 +70,43 @@ class NamingsContractInfoFuzzerTest {
     @ParameterizedTest
     @CsvSource({"/pets-paths", "/pets_paths", "/pets-path-links", "/pets/paths", "/pets/complex-paths", "/pets/{petId}", "/pets/{pet_id}"})
     void shouldReportInfo(String path) {
-        FuzzingData data = FuzzingData.builder().path(path).build();
+        PathItem pathItem = new PathItem();
+        Operation operation = new Operation();
+        operation.setResponses(new ApiResponses());
+        pathItem.setPost(operation);
+        FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
 
         namingsContractInfoFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path follows the REST naming good practices."));
+    }
+
+    @Test
+    void shouldReportErrorWhenJsonObjectsNotMatchingCamelCase() {
+        PathItem pathItem = new PathItem();
+        Operation operation = new Operation();
+        ApiResponses apiResponses = new ApiResponses();
+
+        ApiResponse firstApiResponse = new ApiResponse();
+        firstApiResponse.set$ref("#components/firstPayload");
+        apiResponses.addApiResponse("200", firstApiResponse);
+
+        ApiResponse secondApiResponse = new ApiResponse();
+        Content content = new Content();
+        MediaType mediaType = new MediaType();
+        Schema schema = new Schema();
+        schema.set$ref("#components/secondpayload");
+        mediaType.setSchema(schema);
+        content.put("application/json", mediaType);
+        secondApiResponse.setContent(content);
+        apiResponses.addApiResponse("300", secondApiResponse);
+
+        operation.setResponses(apiResponses);
+        pathItem.setPost(operation);
+        FuzzingData data = FuzzingData.builder().path("/pets").method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
+
+        namingsContractInfoFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}"), Mockito.contains("The following request/response objects are not matching CamelCase: <strong>firstPayload</strong>, <strong>secondpayload</strong><br /><br />"));
     }
 
     @Test

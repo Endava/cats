@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class FuzzingDataFactory {
 
     private static final String APPLICATION_JSON = "application/json";
-    private static final String SYNTH_SCHEMA_NAME = "catsGetSchema";
+    private static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
 
     private final CatsUtil catsUtil;
     private final CatsParams catsParams;
@@ -105,6 +105,7 @@ public class FuzzingDataFactory {
                 .queryParams(queryParams)
                 .openApi(openAPI)
                 .tags(operation.getTags())
+                .reqSchemaName(SYNTH_SCHEMA_NAME)
                 .build()).collect(Collectors.toList());
     }
 
@@ -198,6 +199,7 @@ public class FuzzingDataFactory {
                             .catsUtil(catsUtil)
                             .openApi(openAPI)
                             .tags(operation.getTags())
+                            .reqSchemaName(reqSchemaName)
                             .build()).collect(Collectors.toList()));
         }
 
