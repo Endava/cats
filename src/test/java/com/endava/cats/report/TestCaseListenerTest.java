@@ -8,11 +8,15 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.report.CatsTestCase;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
@@ -217,8 +221,8 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
-//        Assertions.assertThat(testCase).isNotNull();
-//        Assertions.assertThat(testCase.getResultDetails()).startsWith("Call returned an unexpected result, but with documented code");
+        Assertions.assertThat(testCase).isNotNull();
+        Assertions.assertThat(testCase.getResultDetails()).startsWith("Call returned an unexpected result, but with documented code");
     }
 
     @Test
@@ -236,4 +240,133 @@ class TestCaseListenerTest {
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Unexpected behaviour");
     }
+
+    @ParameterizedTest
+    @CsvSource({",", "test"})
+    void shouldReportInfoWhenResponseCode400IsExpectedAndResponseBodyMatchesAndFuzzedFieldNullOrPresent(String fuzzedField) {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("400");
+        Mockito.when(response.getFuzzedField()).thenReturn(fuzzedField);
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"{}", "[]", "''", "' '"})
+    void shouldReportInfoWhenResponseCode200IsExpectedAndResponseBodyIsEmpty(String body) {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn(body);
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Collections.emptyMap());
+        Mockito.when(response.responseCodeAsString()).thenReturn("400");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+    }
+
+    @Test
+    void shouldReportInfoWhenResponseCode200IsExpectedAndResponseBodyIsArray() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn("[{'test':1},{'test':2}]");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("400");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"[]|[{'test':'4'},{'test':'4'}]", "[{'test':1},{'test':2}]|{'test':'4'}"}, delimiter = '|')
+    void shouldReportInfoWhenResponseCodeIsExpectedAndResponseBodyAndDocumentedResponsesAreArrays(String returnedBody, String documentedResponses) {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn(returnedBody);
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList(documentedResponses), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("400");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+    }
+
+    @Test
+    void shouldReportInfoWhenResponseCode200IsExpectedAndResponseBodyIsEmptyArrayButResponseIsNotArray() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn("[]");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("400");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Call returned as expected. Response code {} matches the contract. Response body does NOT match the contract!", response.responseCodeAsString());
+    }
+
+    @Test
+    void shouldReportWarnWhenResponseCode400IsExpectedAndResponseBodyMatchesButFuzzedFieldNotPresent() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("400");
+        Mockito.when(response.getFuzzedField()).thenReturn("someField");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Call returned as expected. Response code {} matches the contract. Response body does NOT match the contract!", response.responseCodeAsString());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"406", "415"})
+    void shouldReportWarnWhenResponseCodeNotNecessarilyDocumentedIsExpectedAndResponseBodyMatchesButFuzzedFieldNotPresent(String responseCode) {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn(responseCode);
+        Mockito.when(response.getFuzzedField()).thenReturn("someField");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX_MT));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+    }
+
+    @Test
+    void shouldReportWarnWhenResponseCode400IsUndocumentedAndResponseBodyMatches() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "401"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("401", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("400");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Call returned as expected, but with undocumented code: expected {}, actual [{}]. Documented response codes: {}", ResponseCodeFamily.FOURXX.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
+    }
+
+
 }

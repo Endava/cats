@@ -196,18 +196,18 @@ public class TestCaseListener {
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.reportWarn(logger, "Call returned as expected. Response code {} matches the contract. Response body does NOT match the contract!", response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
-            this.reportWarn(logger, "Call returned as expected, but with undocumented code: expected [{}], actual [{}]. Documented response codes: {}", expectedResultCode.asString(), response.responseCodeAsString(), data.getResponseCodes());
+            this.reportWarn(logger, "Call returned as expected, but with undocumented code: expected {}, actual [{}]. Documented response codes: {}", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            this.reportError(logger, "Call returned an unexpected result, but with documented code: expected [{}], actual [{}]", expectedResultCode.asString(), response.responseCodeAsString());
+            this.reportError(logger, "Call returned an unexpected result, but with documented code: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeUnimplemented()) {
             this.reportWarn(logger, "Call returned http code 501: you forgot to implement this functionality!");
         } else {
-            this.reportError(logger, "Unexpected behaviour: expected {}, actual [{}]", expectedResultCode.asString(), response.responseCodeAsString());
+            this.reportError(logger, "Unexpected behaviour: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         }
     }
 
     private boolean isResponseCodeDocumented(FuzzingData data, CatsResponse response) {
-        return data.getResponseCodes().contains(response.responseCodeAsString()) || NOT_NECESSARILY_DOCUMENTED.contains(response.responseCodeAsString());
+        return data.getResponseCodes().contains(response.responseCodeAsString()) || isNotTypicalDocumentedResponseCode(response);
     }
 
     public void skipTest(Logger logger, String skipReason) {
@@ -232,19 +232,44 @@ public class TestCaseListener {
      * @return
      */
     private boolean isResponseCodeExpected(CatsResponse response, ResponseCodeFamily expectedResultCode) {
-        return String.valueOf(response.responseCodeAsString()).startsWith(expectedResultCode.getStartingDigit()) || response.getResponseCode() == 501;
+        return expectedResultCode.allowedResponseCodes().contains(String.valueOf(response.responseCodeAsString())) || response.getResponseCode() == 501;
     }
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
         JsonElement jsonElement = JsonParser.parseString(response.getBody());
         List<String> responses = data.getResponses().get(response.responseCodeAsString());
-        return (responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement, "ROOT")))
-                || ((responses == null || responses.isEmpty()) && isEmptyResponse(response.getBody()))
-                || NOT_NECESSARILY_DOCUMENTED.contains(response.responseCodeAsString());
+        return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
+                || isResponseEmpty(response, responses)
+                || isNotTypicalDocumentedResponseCode(response);
     }
 
-    private boolean isEmptyResponse(String body) {
-        return body.trim().isEmpty() || body.trim().equalsIgnoreCase("[]");
+    private boolean isActualResponseMatchingDocumentedResponses(CatsResponse response, JsonElement jsonElement, List<String> responses) {
+        return responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement, "ROOT"))
+                && ((isErrorResponse(response) && isFuzzedFieldPresentInResponse(response)) || isNotErrorResponse(response));
+    }
+
+    private boolean isErrorResponse(CatsResponse response) {
+        return ResponseCodeFamily.FOURXX.allowedResponseCodes().contains(response.responseCodeAsString());
+    }
+
+    private boolean isNotErrorResponse(CatsResponse response) {
+        return !isErrorResponse(response);
+    }
+
+    private boolean isFuzzedFieldPresentInResponse(CatsResponse response) {
+        return response.getFuzzedField() == null || response.getBody().contains(response.getFuzzedField());
+    }
+
+    private boolean isNotTypicalDocumentedResponseCode(CatsResponse response) {
+        return NOT_NECESSARILY_DOCUMENTED.contains(response.responseCodeAsString());
+    }
+
+    private boolean isResponseEmpty(CatsResponse response, List<String> responses) {
+        return (responses == null || responses.isEmpty()) && isEmptyBody(response.getBody());
+    }
+
+    private boolean isEmptyBody(String body) {
+        return body.trim().isEmpty() || body.trim().equalsIgnoreCase("[]") || body.trim().equalsIgnoreCase("{}");
     }
 
     private boolean matchesElement(String responseSchema, JsonElement element, String name) {
