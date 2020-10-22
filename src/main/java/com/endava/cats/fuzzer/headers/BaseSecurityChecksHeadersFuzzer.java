@@ -86,7 +86,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
         CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(new ArrayList<>(headers))
                 .payload(data.getPayload()).queryParams(data.getQueryParams()).build());
 
-        testCaseListener.reportResult(log, data, response, ResponseCodeFamily.FOURXX);
+        testCaseListener.reportResult(log, data, response, ResponseCodeFamily.FOURXX_MT);
     }
 
     public abstract String getExpectedResponseCode();
