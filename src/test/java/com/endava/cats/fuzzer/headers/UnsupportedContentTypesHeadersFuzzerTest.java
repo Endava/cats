@@ -81,10 +81,10 @@ class UnsupportedContentTypesHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .requestContentTypes(Collections.singletonList("application/json")).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT));
         unsupportedContentTypeHeadersFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(BaseSecurityChecksHeadersFuzzer.UNSUPPORTED_MEDIA_TYPES.size() - 1)).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT));
     }
 }
