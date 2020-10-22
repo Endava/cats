@@ -30,6 +30,8 @@ public class FuzzingDataFactory {
 
     private static final String APPLICATION_JSON = "application/json";
     private static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
+    private static final String ANY_OF = "ANY_OF";
+    private static final String ONE_OF = "ONE_OF";
 
     private final CatsUtil catsUtil;
     private final CatsParams catsParams;
@@ -298,7 +300,7 @@ public class FuzzingDataFactory {
 
         anyOfOrOneOf.forEach((key, value) ->
         {
-            String newKey = key.substring(0, key.indexOf('#')).replace("ANY_OF", "").replace("ONE_OF", "");
+            String newKey = key.substring(0, key.indexOf('#')).replace(ANY_OF, "").replace(ONE_OF, "");
             value.getAsJsonObject().entrySet().forEach(jsonElementEntry ->
                     {
                         String dataTypeKey = newKey + "#" + jsonElementEntry.getKey();
@@ -322,13 +324,25 @@ public class FuzzingDataFactory {
 
     private Map<String, JsonElement> getAnyOrOneOffElements(JsonElement jsonElement) {
         Map<String, JsonElement> anyOrOneOfs = new HashMap<>();
-
+        List<String> toRemove = new ArrayList<>();
         for (Map.Entry<String, JsonElement> elementEntry : jsonElement.getAsJsonObject().entrySet()) {
-            if (elementEntry.getKey().contains("ONE_OF") || elementEntry.getKey().contains("ANY_OF")) {
+            if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
                 anyOrOneOfs.put(elementEntry.getKey(), elementEntry.getValue());
+            } else if (isJsonValueOf(elementEntry.getValue(), ONE_OF) || isJsonValueOf(elementEntry.getValue(), ANY_OF)) {
+                elementEntry.getValue().getAsJsonObject().entrySet().forEach(innerValueEntry -> anyOrOneOfs.put(innerValueEntry.getKey(), innerValueEntry.getValue()));
+                toRemove.add(elementEntry.getKey());
             }
         }
+
+        toRemove.forEach(entry -> jsonElement.getAsJsonObject().remove(entry));
         return anyOrOneOfs;
+    }
+
+    private boolean isJsonValueOf(JsonElement element, String startKey) {
+        if (element.isJsonObject()) {
+            return element.getAsJsonObject().keySet().stream().anyMatch(key -> key.contains(startKey));
+        }
+        return false;
     }
 
     private String squashAllOfElements(String payloadSample) {

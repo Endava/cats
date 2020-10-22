@@ -3,8 +3,8 @@ package com.endava.cats.model.factory;
 import com.endava.cats.CatsMain;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CatsParams;
+import com.endava.cats.util.CatsUtil;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -39,18 +40,30 @@ class FuzzingDataFactoryTest {
 
     @Test
     void givenAContract_whenParsingThePathItemDetailsForPost_thenCorrectFuzzingDataAreBeingReturned() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets");
+
+        Assertions.assertThat(data).hasSize(3);
+        Assertions.assertThat(data.get(0).getMethod()).isEqualByComparingTo(HttpMethod.POST);
+        Assertions.assertThat(data.get(1).getMethod()).isEqualByComparingTo(HttpMethod.POST);
+        Assertions.assertThat(data.get(2).getMethod()).isEqualByComparingTo(HttpMethod.GET);
+    }
+
+    private List<FuzzingData> setupFuzzingData(String path) throws IOException {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
         Map<String, Schema> schemas = CatsMain.getSchemas(openAPI);
-        PathItem pathItem = openAPI.getPaths().get("/pets");
-        List<FuzzingData> data = fuzzingDataFactory.fromPathItem("/pets", pathItem, schemas, openAPI);
+        PathItem pathItem = openAPI.getPaths().get(path);
+        return fuzzingDataFactory.fromPathItem(path, pathItem, schemas, openAPI);
+    }
 
-        Assertions.assertThat(data).hasSize(3);
-        Assertions.assertThat(data.get(0).getMethod()).isEqualByComparingTo(HttpMethod.POST);
-        Assertions.assertThat(data.get(1).getMethod()).isEqualByComparingTo(HttpMethod.POST);
-        Assertions.assertThat(data.get(2).getMethod()).isEqualByComparingTo(HttpMethod.GET);
+    @Test
+    void shouldCorrectlyParseRefOneOf() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pet-types");
+        Assertions.assertThat(dataList).hasSize(2);
+        Assertions.assertThat(dataList.get(0).getPayload()).contains("\"petType\":{\"breedType\"");
+        Assertions.assertThat(dataList.get(1).getPayload()).contains("\"petType\":{\"breedType\"");
     }
 }
