@@ -94,10 +94,10 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
             tagString += this.emptyOrShort(tag::getDescription, DESCRIPTION);
 
             if (!tagString.isEmpty()) {
-                builder.append("tag[").append(i).append("] = ").append(StringUtils.stripStart(tagString.trim(), ","));
+                builder.append("tag[").append(i).append("] = ").append(tagString.trim());
             }
         }
-        return builder.toString();
+        return StringUtils.stripStart(builder.toString().trim(), ",");
     }
 
     private String emptyOrShort(Supplier<String> supplier, String field) {
