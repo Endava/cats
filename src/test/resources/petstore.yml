@@ -94,6 +94,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /pet-types:
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MegaPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   responses:
     BadRequest:
@@ -124,6 +148,34 @@ components:
                 - $ref: '#/components/schemas/Labrador'
               discriminator:
                 propertyName: breedType
+    MegaPet:
+      properties:
+        id:
+          type: integer
+          format: int64
+        petType:
+          $ref: '#/components/schemas/PetType'
+    MiniPet:
+      properties:
+        id:
+          type: integer
+        color:
+          type: object
+          allOf:
+            - "$ref": "#/components/schemas/Color"
+    Color:
+      properties:
+        red:
+          type: string
+        green:
+          type: string
+        blue:
+          type: string
+    PetType:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/Husky'
+        - $ref: '#/components/schemas/Labrador'
     Husky:
       required:
         - breedType
