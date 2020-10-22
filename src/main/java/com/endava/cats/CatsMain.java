@@ -130,8 +130,9 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content) {
         Schema schemaToAdd;
-        if (ref == null) {
-            Schema refSchema = content.get(APPLICATION_JSON).getSchema();
+        if (ref == null && content != null) {
+                Schema refSchema = content.get(APPLICATION_JSON).getSchema();
+
             if (refSchema instanceof ArraySchema) {
                 ref = ((ArraySchema) refSchema).getItems().get$ref();
                 refSchema.set$ref(ref);
@@ -142,6 +143,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
                 schemaToAdd = schemas.get(schemaKey);
             }
             schemas.put(schemaName, schemaToAdd);
+        } else if (ref == null) {
+            schemas.put(schemaName, new Schema());
         }
     }
 
