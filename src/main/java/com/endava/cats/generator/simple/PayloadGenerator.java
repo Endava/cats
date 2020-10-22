@@ -157,7 +157,7 @@ public class PayloadGenerator {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
         LOGGER.trace("No values found, using property name {} as example", propertyName);
-        return propertyName;
+        return StringGenerator.generate(StringGenerator.ALPHANUMERIC, propertyName.length(), propertyName.length() + 4);
     }
 
     private Object generateValueBasedOnMinMAx(Schema<String> property) {
@@ -313,10 +313,25 @@ public class PayloadGenerator {
             addXXXOfExamples(mediaType, values, propertyName, composedSchema.getAllOf(), "ALL_OF");
             String newKey = "ALL_OF";
             Map<String, Object> finalMap = new HashMap<>();
+            boolean innerAllOff = false;
 
-            values.forEach((key, value) -> finalMap.putAll((Map) value));
-            values.clear();
-            values.put(newKey, finalMap);
+            for (Map.Entry<String, Object> entry : values.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value instanceof Map) {
+                    finalMap.putAll((Map) value);
+                } else {
+                    values.put(key, value);
+                    innerAllOff = true;
+                }
+            }
+
+            if (!innerAllOff) {
+                values.clear();
+                values.put(newKey, finalMap);
+            } else {
+                values.put(propertyName, finalMap);
+            }
         }
 
         if (composedSchema.getAnyOf() != null) {
