@@ -51,7 +51,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
                     .payload(data.getPayload()).skippedHeaders(authenticationHeaders).queryParams(data.getQueryParams()).build();
 
             CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
-            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
+            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX_AA);
         } else {
             testCaseListener.skipTest(LOGGER, "No authentication header provided.");
         }
