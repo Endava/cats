@@ -212,7 +212,7 @@ public class ServiceCaller {
             String responseBody = this.getAsJson(response);
             List<CatsHeader> responseHeaders = Arrays.stream(response.getAllHeaders()).map(header -> CatsHeader.builder().name(header.getName()).value(header.getValue()).build()).collect(Collectors.toList());
 
-            CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod(), endTime - startTime, responseHeaders);
+            CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod(), endTime - startTime, responseHeaders, data.getFuzzedFields());
             this.recordRequestAndResponse(Arrays.asList(method.getAllHeaders()), processedPayload, catsResponse, data.getRelativePath(), HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
 
             return catsResponse;

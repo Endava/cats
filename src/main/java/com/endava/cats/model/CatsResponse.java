@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Set;
 
 @Builder
 @Getter
@@ -16,13 +17,16 @@ public class CatsResponse {
     private final String httpMethod;
     @Exclude
     private final String body;
+    @Exclude
+    private final String fuzzedField;
     private final long responseTimeInMs;
     @Exclude
     private List<CatsHeader> headers;
 
-    public static CatsResponse from(int code, String body, String methodType, long ms, List<CatsHeader> responseHeaders) {
+    public static CatsResponse from(int code, String body, String methodType, long ms, List<CatsHeader> responseHeaders, Set<String> fuzzedFields) {
         return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)
-                .jsonBody(JsonParser.parseString(body)).responseTimeInMs(ms).headers(responseHeaders).build();
+                .jsonBody(JsonParser.parseString(body)).responseTimeInMs(ms).headers(responseHeaders)
+                .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null)).build();
     }
 
     public static CatsResponse from(int code, String body, String methodType, long ms) {
