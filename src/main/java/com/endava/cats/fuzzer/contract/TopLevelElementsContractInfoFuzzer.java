@@ -71,30 +71,28 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
     public String inspectServers(List<Server> servers) {
         StringBuilder builder = new StringBuilder();
 
-        for (int i = 0; i < servers.size(); i++) {
-            Server server = servers.get(i);
+        for (Server server : servers) {
             String serverString = this.emptyOrShort(server::getDescription, DESCRIPTION);
 
             if (!serverString.isEmpty()) {
-                builder.append(" server[").append(i).append("]= ").append(StringUtils.stripStart(serverString, ","));
+                builder.append(" , server[").append(server.getUrl()).append("]= ").append(StringUtils.stripStart(serverString,","));
             }
         }
-        return builder.toString();
+        return StringUtils.stripStart(builder.toString().trim(), ",");
     }
 
     public String inspectTags(List<Tag> tags) {
         StringBuilder builder = new StringBuilder();
 
-        for (int i = 0; i < tags.size(); i++) {
+        for (Tag tag : tags) {
             String tagString = "";
-            Tag tag = tags.get(i);
             if (StringUtils.isBlank(tag.getName())) {
                 tagString += "name" + IS_EMPTY;
             }
             tagString += this.emptyOrShort(tag::getDescription, DESCRIPTION);
 
             if (!tagString.isEmpty()) {
-                builder.append("tag[").append(i).append("] = ").append(tagString.trim());
+                builder.append(" , tag[").append(tag.getName()).append("] = ").append(StringUtils.stripStart(tagString.trim(), ","));
             }
         }
         return StringUtils.stripStart(builder.toString().trim(), ",");
@@ -104,7 +102,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
         String result = EMPTY;
         if (StringUtils.isBlank(supplier.get())) {
             result += COMMA + field + IS_EMPTY;
-        } else if (supplier.get().split(" ").length <= 3) {
+        } else if (supplier.get().split(" ").length < 3) {
             result += COMMA + field + IS_TOO_SHORT;
         }
 
