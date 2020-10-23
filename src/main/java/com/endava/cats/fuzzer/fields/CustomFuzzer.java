@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.CatsMain;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
@@ -17,7 +18,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 
 @Component
-@FieldFuzzer
+@SpecialFuzzer
 public class CustomFuzzer implements CustomFuzzerBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomFuzzer.class);
 
