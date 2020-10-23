@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.CatsMain;
-import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
@@ -23,7 +23,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 
 @Component
 @Slf4j
-@FieldFuzzer
+@SpecialFuzzer
 public class SecurityFuzzer implements CustomFuzzerBase {
 
     private final CatsUtil catsUtil;
