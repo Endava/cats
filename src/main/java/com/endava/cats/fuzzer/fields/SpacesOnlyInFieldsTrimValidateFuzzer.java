@@ -18,7 +18,7 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnProperty(value = "edgeSpacesStrategy", havingValue = "validateAndTrim")
+@ConditionalOnProperty(value = "edgeSpacesStrategy", havingValue = "trimAndValidate", matchIfMissing = true)
 public class SpacesOnlyInFieldsTrimValidateFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
 
     @Autowired
