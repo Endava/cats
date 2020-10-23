@@ -21,7 +21,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with **no coding effort**. All tests cases are **generated and run automatically** based on a pre-defined 
-set of **48 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even functional testing.
+set of **55 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even end-to-end functional flows.
 
 <div align="center">
   <img alt="CATS" width="100%" src="images/run_result.png"/>
@@ -30,48 +30,54 @@ set of **48 Fuzzers**. The Fuzzers cover different types of testing like: negati
 Table of Contents
 =================
 
-   * [What is CATS](#contract-driven-auto-generated-tests-for-swagger)
+   * [Overview](#overview)
+   * [Contract driven Auto-generated Tests for Swagger](#contract-driven-auto-generated-tests-for-swagger)
    * [How the Fuzzing works](#how-the-fuzzing-works)
    * [Build](#build)
    * [Available commands](#available-commands)
    * [Running CATS](#running-cats)
       * [Notes on Unit Tests](#notes-on-unit-tests)
-      * [Notes on the Skipped Tests](#notes-on-skipped-tests)
+      * [Notes on skipped Tests](#notes-on-skipped-tests)
    * [Available arguments](#available-arguments)
-   * [Checking the Contract](#checking-the-contract)
    * [Available Fuzzers](#available-fuzzers)
-      * [BooleanFieldsFuzzer](#booleanfieldsfuzzer)
-      * [DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer](#decimalfieldsleftboundaryfuzzer-and-decimalfieldsrightboundaryfuzzer)
-      * [IntegerFieldsLeftBoundaryFuzzer and IntegerFieldsRightBoundaryFuzzer](#integerfieldsleftboundaryfuzzer-and-integerfieldsrightboundaryfuzzer)
-      * [ExtremeNegativeValueXXXFieldsFuzzer and ExtremePositiveValueXXXFuzzer](#extremenegativevaluexxxfieldsfuzzer-and-extremepositivevaluexxxfuzzer)
-      * [LargeValuesInHeadersFuzzer](#largevaluesinheadersfuzzer)
-      * [RemoveFieldsFuzzer](#removefieldsfuzzer)
-         * [POWERSET](#powerset)
-         * [ONEBYONE](#onebyone)
-         * [SIZE](#size)
-      * [HappyFuzzer](#happyfuzzer)
-      * [RemoveHeadersFuzzer](#removeheadersfuzzer)
-      * [HttpMethodsFuzzer](#httpmethodsfuzzer)
-      * [BypassAuthenticationFuzzer](#bypassauthenticationfuzzer)
-      * [StringFormatAlmostValidValuesFuzzer](#stringformatalmostvalidvaluesfuzzer)
-      * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
-      * [NewFieldsFuzzer](#newfieldsfuzzer)
-      * [StringsInNumericFieldsFuzzer](#stringsinnumericfieldsfuzzer)
-      * [DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer](#dummycontenttypeheadersfuzzer--dummyacceptheadersfuzzer-unsupportedtypeheadersfuzzer-unsupportedacceptheadersfuzzer)
-      * [CheckSecurityHeadersFuzzer](#checksecurityheadersfuzzer)
-      * [CustomFuzzer](#customfuzzer)
-         * [Writing Custom Tests](#writing-custom-tests)
-         * [Correlating Tests](#correlating-tests)
-         * [Verifying responses](#verifying-responses)
-         * [Working with additionalProperties in CustomFuzzer](#working-with-additionalproperties-in-customfuzzer)
-         * [Reserved keywords](#customfuzzer-reserved-keywords)
-      * [Security Fuzzer](#security-fuzzer)
-         * [Working with additionalProperties in SecurityFuzzer](#working-with-additionalproperties-in-securityfuzzer)
-         * [Reserved keywords](#securityfuzzer-reserved-keywords)
+      * [Field Fuzzers](#field-fuzzers)
+         * [BooleanFieldsFuzzer](#booleanfieldsfuzzer)
+         * [DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer](#decimalfieldsleftboundaryfuzzer-and-decimalfieldsrightboundaryfuzzer)
+         * [IntegerFieldsLeftBoundaryFuzzer and IntegerFieldsRightBoundaryFuzzer](#integerfieldsleftboundaryfuzzer-and-integerfieldsrightboundaryfuzzer)
+         * [ExtremeNegativeValueXXXFieldsFuzzer and ExtremePositiveValueXXXFuzzer](#extremenegativevaluexxxfieldsfuzzer-and-extremepositivevaluexxxfuzzer)
+         * [RemoveFieldsFuzzer](#removefieldsfuzzer)
+            * [POWERSET](#powerset)
+            * [ONEBYONE](#onebyone)
+            * [SIZE](#size)
+         * [StringFormatAlmostValidValuesFuzzer](#stringformatalmostvalidvaluesfuzzer)
+         * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
+         * [NewFieldsFuzzer](#newfieldsfuzzer)
+         * [StringsInNumericFieldsFuzzer](#stringsinnumericfieldsfuzzer)
+      * [Header Fuzzers](#header-fuzzers)
+         * [LargeValuesInHeadersFuzzer](#largevaluesinheadersfuzzer)
+         * [RemoveHeadersFuzzer](#removeheadersfuzzer)
+         * [DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer](#dummycontenttypeheadersfuzzer--dummyacceptheadersfuzzer-unsupportedtypeheadersfuzzer-unsupportedacceptheadersfuzzer)
+         * [CheckSecurityHeadersFuzzer](#checksecurityheadersfuzzer)
+      * [HTTP Fuzzers](#http-fuzzers)
+         * [HappyFuzzer](#happyfuzzer)
+         * [HttpMethodsFuzzer](#httpmethodsfuzzer)
+         * [BypassAuthenticationFuzzer](#bypassauthenticationfuzzer)
+      * [ContractInfo Fuzzers](#contractinfo-fuzzers)
+      * [Special Fuzzers](#special-fuzzers)
+         * [CustomFuzzer](#customfuzzer)
+            * [Writing Custom Tests](#writing-custom-tests)
+            * [Dealing with oneOf, anyOf](#dealing-with-oneof-anyof)
+            * [Correlating Tests](#correlating-tests)
+            * [Verifying responses](#verifying-responses)
+            * [Working with additionalProperties in CustomFuzzer](#working-with-additionalproperties-in-customfuzzer)
+            * [CustomFuzzer Reserved keywords](#customfuzzer-reserved-keywords)
+         * [Security Fuzzer](#security-fuzzer)
+            * [Working with additionalProperties in SecurityFuzzer](#working-with-additionalproperties-in-securityfuzzer)
+            * [SecurityFuzzer Reserved keywords](#securityfuzzer-reserved-keywords)
    * [Skipping Fuzzers for specific paths](#skipping-fuzzers-for-specific-paths)
-   * [Reference Data File](#reference-data-file)  
-         * [Setting additionalProperties](#setting-additionalproperties)  
-         * [Reserved Keywords](#refdata-reserved-keywords)
+   * [Reference Data File](#reference-data-file)
+      * [Setting additionalProperties](#setting-additionalproperties)
+      * [RefData reserved keywords](#refdata-reserved-keywords)
    * [Headers File](#headers-file)
    * [URL Params](#url-params)
    * [Edge Spaces Strategy](#edge-spaces-strategy)
@@ -79,6 +85,7 @@ Table of Contents
    * [Dealing with AnyOf, AllOf and OneOf](#dealing-with-anyof-allof-and-oneof)
    * [Dynamic values in configuration files](#dynamic-values-in-configuration-files)
    * [Limitations](#limitations)
+      * [Media types and HTTP methods](#media-types-and-http-methods)
       * [Inheritance and composition](#inheritance-and-composition)
       * [Additional Parameters](#additional-parameters)
       * [Regexes within 'pattern'](#regexes-within-pattern)
@@ -99,14 +106,13 @@ The following logging levels are used (in both the console and the test report) 
 
 
 # How the Fuzzing works
-CATS will iterate through all endpoints, all HTTP methods and all the associated requests bodies and parameters and `fuzz` their data models fields values according to their defined data type and constraints. The actual fuzzing depends on the specific `Fuzzer` executed. Please see the list of fuzzers and their behaviour.
+CATS will iterate through all endpoints, **all HTTP methods** and **all the associated requests bodies and parameters** (including multiple combinations when dealing with `oneOf`/`anyOf` elements) and `fuzz` their data models fields values according to their defined data type and constraints. The actual fuzzing depends on the specific `Fuzzer` executed. Please see the list of fuzzers and their behaviour.
 There are also differences on how the fuzzing works depending on the HTTP method:
 
-- for methods with request bodies like POST, PUT the fuzzing will be applied at the request body data models level
-- for methods without request bodies like GET, DELETE the fuzzing will be applied at the URL parameters level
+- for methods with request bodies like **POST, PUT** the fuzzing will be applied at the **request body data models level**
+- for methods without request bodies like **GET, DELETE** the fuzzing will be applied at the **URL parameters level**
 
-This means that for methods with request bodies you need to supply the `path` parameters via `urlParams` or the `referenceData` file as failure to do so will result in `Illegal character in path at index ...` errors. 
-
+This means that for methods with request bodies (`POST,PUT`) that have also URL/path parameters, you need to supply the `path` parameters via `urlParams` or the `referenceData` file as failure to do so will result in `Illegal character in path at index ...` errors. 
 
 # Build
 
@@ -126,18 +132,18 @@ Other ways to get help from the CATS command are as follows:
 
 - `./cats.jar version` will display the current CATS version
 
-- `./cats.jar list fuzzers` will list all the existing fuzzers
+- `./cats.jar list fuzzers` will list all the existing fuzzers, grouped on categories
 
 - `./cats.jar list fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
 
 - `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
 
 # Running CATS
-A minimal run must provide the Swagger/OpenApi contract and the URL address of the service:
+A minimal run must provide the Swagger/OpenAPI contract, and the URL address of the service:
 
 `./cats.jar --contract=mycontract.yml --server=https://localhost:8080`
 
-But there are multiple other arguments you can supply. More details in the next section.
+But there are multiple other arguments you can supply. More details in the [available arguments](#available-arguments) section.
 
 ## Notes on Unit Tests
 
@@ -168,57 +174,78 @@ It was an intentional decision to report also the `skipped` tests in order to sh
 - `--securityFuzzerFile` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method
 - `--useExamples` If `true` (default value when not supplied) then CATS will use examples supplied in the OpenAPI contact. If `false` CATS will rely only on generated values
+- `--checkFields` If supplied (no value needed), it will only run the Field Fuzzers
+- `--checkHeaders` If supplied (no value needed), it will only run the Header Fuzzers
+- `--checkHttp` If supplied (no value needed), it will only run the HTTP Fuzzers
+- `--checkContract` If supplied (no value needed), it will only run the ContractInfo Fuzzers
 
 Using some of these options a typical invocation of CATS might look like this:
 
-`./cats.jar --contract=my.yml --server=https://locathost:8080 --log=org.apache.http.wire:debug`
-
-# Checking the Contract
-Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
-- follow good practices around naming the contract elements like paths, requests, responses
-- always use plural for the path names, separate paths words through hyphens/underscores, use camelCase or snake_case for any `json` types and properties
-- provide tags for all operations in order to avoid breaking code generation on some languages and have a logical grouping of the API operations
-- provide good description for all paths, methods and request/response elements
-- provide meaningful responses for `POST`, `PATCH` and `PUT` requests
-- provide examples for all requests/response elements
-- provide structural constraints for (ideally) all request/response properties (min, max, regex)
-- heaver some sort of `CorrelationIds/TraceIds` within headers
-- have at least a security schema in place
-- avoid having the API version part of the paths
-- document response codes for both "happy" and "unhappy" flows
-- avoid using `xml` payload unless there is a really good reason (like documenting an old API for example)
-- json types and properties do not use the same naming (like having a `Pet` with a property named `pet`)
-
+`./cats.jar --contract=my.yml --server=https://locathost:8080 --log=org.apache.http.wire:debug --checkHeaders`
 
 # Available Fuzzers
 To get a list of fuzzers just run `./cats.jar list fuzzers`. A list of all of the available fuzzers will be returned, along with a short description for each.
-Some of the `Fuzzers` are also detailed below. 
 
-## BooleanFieldsFuzzer
+There are multiple categories of `Fuzzers` available:
+- Field `Fuzzers`: which target request body fields or path parameters
+- Header `Fuzzers`: which target HTTP headers
+- HTTP `Fuzzers`: which target just the interaction with the service (without fuzzing fields or headers)
+- ContractInfo `Fuzzers`: which checks the contract for API good practices
+- Special `Fuzzers`: a special category which need further configuration and are focused on more complex activities like functional flow or security testing
+
+## Field Fuzzers
+`CATS` has currently 28 registered Field `Fuzzers`:
+- `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
+- `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
+- `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
+- `DecimalValuesInIntegerFieldsFuzzer` - iterate through each Integer field and send requests with decimal values in the targeted field
+- `EmptyStringValuesInFieldsFuzzer` - iterate through each field and send requests with empty String values in the targeted field
+- `ExtremeNegativeValueDecimalFieldsFuzzer` - iterate through each Number field and send requests with the lowest value possible (-999999999999999999999999999999999999999999.99999999999 for no format, -3.4028235E38 for float and -1.7976931348623157E308 for double) in the targeted field
+- `ExtremeNegativeValueIntegerFieldsFuzzer` - iterate through each Integer field and send requests with the lowest value possible (-9223372036854775808 for int32 and -18446744073709551616 for int64) in the targeted field
+- `ExtremePositiveValueDecimalFieldsFuzzer` - iterate through each Number field and send requests with the highest value possible (999999999999999999999999999999999999999999.99999999999 for no format, 3.4028235E38 for float and 1.7976931348623157E308 for double) in the targeted field
+- `ExtremePositiveValueInIntegerFieldsFuzzer` - iterate through each Integer field and send requests with the highest value possible (9223372036854775807 for int32 and 18446744073709551614 for int64) in the targeted field
+- `IntegerFieldsLeftBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the left side in the targeted field
+- `IntegerFieldsRightBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the right side in the targeted field
+- `InvalidValuesInEnumsFieldsFuzzer` - iterate through each ENUM field and send invalid values
+- `LeadingSpacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with spaces prefixing the current value in the targeted field
+- `MaxLengthExactValuesInStringFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.StringSchema] fields that have maxLength declared and send requests with values matching the maxLength size/value in the targeted field
+- `MaximumExactValuesInNumericFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.NumberSchema, class io.swagger.v3.oas.models.media.IntegerSchema] fields that have maximum declared and send requests with values matching the maximum size/value in the targeted field
+- `MinLengthExactValuesInStringFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.StringSchema] fields that have minLength declared and send requests with values matching the minLength size/value in the targeted field
+- `MinimumExactValuesInNumericFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.NumberSchema, class io.swagger.v3.oas.models.media.IntegerSchema] fields that have minimum declared and send requests with values matching the minimum size/value in the targeted field
+- `NewFieldsFuzzer` - send a 'happy' flow request and add a new field inside the request called 'catsFuzzyField'
+- `NullValuesInFieldsFuzzer` - iterate through each field and send requests with null values in the targeted field
+- `RemoveFieldsFuzzer` - iterate through each request fields and remove certain fields according to the supplied 'fieldsFuzzingStrategy'
+- `SpacesOnlyInFieldsTrimValidateFuzzer` - iterate through each field and send requests with spaces in the targeted field
+- `StringFieldsLeftBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the left side in the targeted field
+- `StringFieldsRightBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the right side in the targeted field
+- `StringFormatAlmostValidValuesFuzzer` - iterate through each String field and get its 'format' value (i.e. email, ip, uuid, date, datetime, etc); send requests with values which are almost valid (i.e. email@yhoo. for email, 888.1.1. for ip, etc)  in the targeted field
+- `StringFormatTotallyWrongValuesFuzzer` - iterate through each String field and get its 'format' value (i.e. email, ip, uuid, date, datetime, etc); send requests with values which are totally wrong (i.e. abcd for email, 1244. for ip, etc)  in the targeted field
+- `StringsInNumericFieldsFuzzer` - iterate through each Integer (int, long) and Number field (float, double) and send requests having the `fuzz` string value in the targeted field
+- `TrailingSpacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with trailing spaces in the targeted field
+- `VeryLargeStringsFuzzer` - iterate through each String field and send requests with very large values (40000 characters) in the targeted field
+
+You can run only these `Fuzzers` by supplying the `--checkFields` argument.
+
+Some of the `Fuzzers` are detailed into the next sessions.
+
+### BooleanFieldsFuzzer
 This `Fuzzer` applies only to Boolean fields. It will try to send invalid boolean values and expects a `4XX` response code.
 
-## DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer
+### DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer
 This `Fuzzer` will run boundary tests for fields marked as `Number`, including `float` and `double` formats.  It will use the `minimum` property to generate a left boundary value or `maximum` for the right boundary one.
 If any of these values are not set, it will use `Long.MIN_VALUE` and `Long.MAX_VALUE`. It expects a `4XX` response code.
 
-## IntegerFieldsLeftBoundaryFuzzer and IntegerFieldsRightBoundaryFuzzer
+### IntegerFieldsLeftBoundaryFuzzer and IntegerFieldsRightBoundaryFuzzer
 This `Fuzzer` is similar to the `Decimal Fuzzers`, but for `Integer` fields, both `int32` and `int64` formats.
 
-## ExtremeNegativeValueXXXFieldsFuzzer and ExtremePositiveValueXXXFuzzer
+### ExtremeNegativeValueXXXFieldsFuzzer and ExtremePositiveValueXXXFuzzer
 These `Fuzzers` apply for `Decimal` and `Integer` fields. They will send either an extremely low negative value or an extremely high positive value as follows:
 - for `Decimal` fields: `-999999999999999999999999999999999999999999.99999999999`when no format is specified, and `-Float.MAX_VALUE` for `float` and `-Double.MAX_VALUE` for `double`
 - for `Integer` fields: `Long.MIN_VALUE` when no format is specified or `int32`and `2 * Long.MIN_VALE` for `int64`
 
 These `Fuzzers` expect a `4XX` response code.
 
-## LargeValuesInHeadersFuzzer
-This `Fuzzer` will send large values in the request headers. It will iterate through each header and fuzz it with a large value. All the other headers and the request body and query string will be similar to a 'normal' request. This `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to respond with a `4XX` code. In case the response code is a documented one, this will be reported with an `INFO` level log message, otherwise with a `WARN` level message.
-- If the service responds with a `2XX` code, the `Fuzzer` will report it as an `ERROR` level message.
-- Any other case will be reported using an `ERROR` level message.
-
-
-## RemoveFieldsFuzzer
+### RemoveFieldsFuzzer
 This `Fuzzer` will remove fields from the requests based on a supplied strategy. It will create subsets of all the fields and subfields within the request schema. Based on these subsets, it will:
 - iterate through them one by one 
 - remove the fields present in the current subset from a full service payload
@@ -226,7 +253,7 @@ This `Fuzzer` will remove fields from the requests based on a supplied strategy.
 
 These subsets can be generated using the following strategies (supplied through the `--fieldsFuzzingStrategy` option):
 
-### POWERSET
+#### POWERSET
 This is the most time consuming strategy. This will create all possible subsets of the request fields (including subfields). If the request contains a lot of fields, this strategy might not be the right choice as the total number of possibilities is `2^n`, where `n` is the number of fields.
 
 For example given the request:
@@ -246,14 +273,14 @@ For example given the request:
 
 All the fields, including subfields will look like this: `{name, address#phone, address#postcode, address#street}`. Using the `POWERSET` strategy there are 16 possible subsets. The `FieldsFuzzer` will iterate through each set and remove those fields (and subfields) from the request. All the other headers and request fields will remain unchanged.
 
-### ONEBYONE
+#### ONEBYONE
 This is the faster strategy and also the **default** one. This will iterate though each request field (including subfields) and create a single element set from it. The `FieldFuzzer` will iterate though the resulting sets and remove those fields (and subfields) from the request i.e. one field at a time. All the other headers and fields will remain unchanged.
 
 If we take the example above again, the resulting sets produced by this strategy will be as follows:
 
 `{address#phone}, {address#postcode}, {address#street}, {name}`
 
-### SIZE
+#### SIZE
 This is a mixed strategy. It applies principles from the `POWERSET` strategy, but will remove a maximum number of fields (and subfields) supplied though the `--maxFieldsToRemove` option. This means that will generate subsets of fields (and subfields) having size `n - maxFieldsToRemove` or greater, where `n` is the total number of fields and subfields.
 
 If `--maxFieldsToRemove` for the example above is `2`, the resulting sets produced by this strategy will be as follows:
@@ -269,12 +296,56 @@ Independent of the strategy used to generate the subsets of the fields that will
 - In the case when the request didn't have any required field removed, but the service responds with a `4XX` or `5XX` code, this is abnormal behaviour and will be reported as an `ERROR` message.
 - Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
 
-## HappyFuzzer
-This `Fuzzer` will send a full request to the service, including all fields and headers. The `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to return a `2XX` code. This will be reported as an `INFO` message if it's a documented code or as a `WARN` message otherwise.
-- Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
+### StringFormatAlmostValidValuesFuzzer
+OpenAPI offers the option to specify `formats` for each `string` field. This gives hints to the client on what type of data is expected by the API.
+This `Fuzzer` has a predefined list of `formats`. For all `strings` matching any of the predefined `formats` it will send values which are 'almost valid' for that particular format. For example:
+- if the `format` is `password` it will send the `string` `bgZD89DEkl` which is an almost valid strong password (except that it doesn't contain special characters).
+- if the `format` is `email` it will send the `string` `email@bubu.` which is an almost valid email (except it doesn't contain the domain extension).
+- and so on.
+The following formats are supported: `byte, date, date-time, hostname, ipv4, ipv6, ip, password, uri, url, uuid`
+The `Fuzzer` expects a `4XX` response code.
 
-## RemoveHeadersFuzzer
+### StringFormatTotallyWrongValuesFuzzer
+This behaves in the same way as the previous `Fuzzer`, but the values sent for each format are totally invalid (like `aaa` for `email` for example).
+
+### NewFieldsFuzzer
+This `Fuzzer` will inject new fields inside the body of the requests. The new field is called `fuzzyField`. The `Fuzzers` will behave as follows:
+- Normal behaviour is for the service to return a `4XX` code for `POST`, `PUT` and `PATCH` and a `2XX` code for `GET`. If the code is documented, this will be reported as an `INFO` message, otherwise as a `WARN` message.
+- If the code responds with a `2XX` or `4XX` code, depending on the previous point, this is considered abnormal behaviour and will reported as an `ERROR` message.
+- Any other case is reported as an `ERROR` message.
+
+### StringsInNumericFieldsFuzzer
+This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
+
+
+## Header Fuzzers
+`CATS` has currently 14 registered Header `Fuzzers`: 
+- `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
+- `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
+- `DummyContentTypeHeadersFuzzer` - send a request with a dummy Content-Type header and expect to get 415 code
+- `DuplicateHeaderFuzzer` - send a 'happy' flow request and duplicate an existing header
+- `EmptyStringValuesInHeadersFuzzer` - iterate through each header and send requests with empty String values in the targeted header
+- `ExtraHeaderFuzzer` - send a 'happy' flow request and add an extra field inside the request called 'Cats-Fuzzy-Header'
+- `LargeValuesInHeadersFuzzer` - iterate through each header and send requests with large values in the targeted header
+- `LeadingSpacesInHeadersFuzzer` - iterate through each header and send requests with spaces prefixing the value in the targeted header
+- `NullValuesInHeadersFuzzer` - iterate through each header and send requests with null values in the targeted header
+- `RemoveHeadersFuzzer` - iterate through each header and remove different combinations of them
+- `SpacesOnlyInHeadersFuzzer` - iterate through each header and send requests with empty spaces in the targeted header
+- `TrailingSpacesInHeadersFuzzer` - iterate through each header and send requests with trailing spaces in the targeted header
+- `UnsupportedAcceptHeadersFuzzer` - send a request with a unsupported Accept header and expect to get 406 code
+- `UnsupportedContentTypesHeadersFuzzer` - send a request with a unsupported Content-Type header and expect to get 415 code
+
+You can run only these `Fuzzers` by supplying the `--checkHeaders` argument.
+
+Some of the `Fuzzers` are detailed into the next sessions.
+
+### LargeValuesInHeadersFuzzer
+This `Fuzzer` will send large values in the request headers. It will iterate through each header and fuzz it with a large value. All the other headers and the request body and query string will be similar to a 'normal' request. This `Fuzzer` will behave as follows:
+- Normal behaviour is for the service to respond with a `4XX` code. In case the response code is a documented one, this will be reported with an `INFO` level log message, otherwise with a `WARN` level message.
+- If the service responds with a `2XX` code, the `Fuzzer` will report it as an `ERROR` level message.
+- Any other case will be reported using an `ERROR` level message.
+
+### RemoveHeadersFuzzer
 This `Fuzzer` will create the Powerset of the headers set. It will then iterate through all those sets and remove them from the payload. The `Fuzzer` will behave as follows:
 - Normal behaviour is for the service to respond with a `4XX` code in the case when required headers were removed and with a `2XX` code in the case of optional headers being removed. If the response code is a documented one, this will be reported as an `INFO` level message, otherwise as a `WARN` message.
 - In the case that the request has at least one required header removed and the service responds with a `2XX` code, this will be reported as an `ERROR` message.
@@ -284,38 +355,7 @@ This `Fuzzer` will create the Powerset of the headers set. It will then iterate 
 
 Please note: **When the RemoveHeadersFuzzer is running any security (either named `authorization` or `jwt`) header mentioned in the `headers.yml` will be added to the requests.**
 
-## HttpMethodsFuzzer
-This `Fuzzer` will set the http request for any unspecified HTTP method in the contract. The `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to respond with a `405` code if the method is not documented in the contract. This is reported as an level `INFO` message.
-- If the service responds with a `2XX` code this is considered abnormal behaviour and will be reported as an `ERROR` message.
-- Any other case is reported as a `WARN` level message.
-
-## BypassAuthenticationFuzzer
-This `Fuzzer` will try to send 'happy' flow requests, but will omit any supplied header which might be used for authentication like: `Authorization` or headers containing `JWT`.
-The expected result is a `401` or `403` response code.
-
-## StringFormatAlmostValidValuesFuzzer
-OpenAPI offers the option to specify `formats` for each `string` field. This gives hints to the client on what type of data is expected by the API.
-This `Fuzzer` has a predefined list of `formats`. For all `strings` matching any of the predefined `formats` it will send values which are 'almost valid' for that particular format. For example:
-- if the `format` is `password` it will send the `string` `bgZD89DEkl` which is an almost valid strong password (except that it doesn't contain special characters).
-- if the `format` is `email` it will send the `string` `email@bubu.` which is an almost valid email (except it doesn't contain the domain extension).
-- and so on.
-The following formats are supported: `byte, date, date-time, hostname, ipv4, ipv6, ip, password, uri, url, uuid`
-The `Fuzzer` expects a `4XX` response code.
-
-## StringFormatTotallyWrongValuesFuzzer
-This behaves in the same way as the previous `Fuzzer`, but the values sent for each format are totally invalid (like `aaa` for `email` for example).
-
-## NewFieldsFuzzer
-This `Fuzzer` will inject new fields inside the body of the requests. The new field is called `fuzzyField`. The `Fuzzers` will behave as follows:
-- Normal behaviour is for the service to return a `4XX` code for `POST`, `PUT` and `PATCH` and a `2XX` code for `GET`. If the code is documented, this will be reported as an `INFO` message, otherwise as a `WARN` message.
-- If the code responds with a `2XX` or `4XX` code, depending on the previous point, this is considered abnormal behaviour and will reported as an `ERROR` message.
-- Any other case is reported as an `ERROR` message.
-
-## StringsInNumericFieldsFuzzer
-This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
-
-## DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer
+### DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer
 These `Fuzzers` are implementing the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html).
 They check that the API has correctly set the `Content-Type` and `Accept` headers and no invalid values can be supplied.
 
@@ -323,7 +363,7 @@ The `Fuzzers` expect:
 - `406` for unsupported or invalid `Accept` headers
 - `415` for unsupported or invalid `Content-Type` headers
 
-## CheckSecurityHeadersFuzzer
+### CheckSecurityHeadersFuzzer
 This `Fuzzer` will continues the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html) by checking
 a list of required Security headers that must be supplied in each response. 
 
@@ -333,8 +373,64 @@ The `Fuzzer` expects a `2XX` response with the following headers set:
 - `X-Frame-Options: DENY`
 - `X-XSS-Protection: 1; mode=block`
 
-## CustomFuzzer
-### Writing Custom Tests
+## HTTP Fuzzers
+`CATS` has currently 5 registered HTTP `Fuzzers`:
+- `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
+- `DummyRequestFuzzer` - send a dummy json request {'cats': 'cats'}
+- `HappyFuzzer` - send a request with all fields and headers populated
+- `HttpMethodsFuzzer` - iterate through each undocumented HTTP method and send an empty request
+- `MalformedJsonFuzzer` - send a malformed json request which has the String 'bla' at the end
+
+You can run only these `Fuzzers` by supplying the `--checkHttp` argument.
+
+Some of the `Fuzzers` are detailed into the next sessions.
+
+### HappyFuzzer
+This `Fuzzer` will send a full request to the service, including all fields and headers. The `Fuzzer` will behave as follows:
+- Normal behaviour is for the service to return a `2XX` code. This will be reported as an `INFO` message if it's a documented code or as a `WARN` message otherwise.
+- Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
+
+### HttpMethodsFuzzer
+This `Fuzzer` will set the http request for any unspecified HTTP method in the contract. The `Fuzzer` will behave as follows:
+- Normal behaviour is for the service to respond with a `405` code if the method is not documented in the contract. This is reported as an level `INFO` message.
+- If the service responds with a `2XX` code this is considered abnormal behaviour and will be reported as an `ERROR` message.
+- Any other case is reported as a `WARN` level message.
+
+### BypassAuthenticationFuzzer
+This `Fuzzer` will try to send 'happy' flow requests, but will omit any supplied header which might be used for authentication like: `Authorization` or headers containing `JWT`.
+The expected result is a `401` or `403` response code.
+
+
+## ContractInfo Fuzzers
+Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
+- follow good practices around naming the contract elements like paths, requests, responses
+- always use plural for the path names, separate paths words through hyphens/underscores, use camelCase or snake_case for any `json` types and properties
+- provide tags for all operations in order to avoid breaking code generation on some languages and have a logical grouping of the API operations
+- provide good description for all paths, methods and request/response elements
+- provide meaningful responses for `POST`, `PATCH` and `PUT` requests
+- provide examples for all requests/response elements
+- provide structural constraints for (ideally) all request/response properties (min, max, regex)
+- heaver some sort of `CorrelationIds/TraceIds` within headers
+- have at least a security schema in place
+- avoid having the API version part of the paths
+- document response codes for both "happy" and "unhappy" flows
+- avoid using `xml` payload unless there is a really good reason (like documenting an old API for example)
+- json types and properties do not use the same naming (like having a `Pet` with a property named `pet`)
+
+`CATS` has currently 6 registered ContractInfo `Fuzzers`:
+- `NamingsContractInfoFuzzer` - verifies that all OpenAPI contract elements follow REST API naming good practices
+- `PathTagsContractInfoFuzzer` - verifies that all OpenAPI paths contain tags elements and checks if the tags elements match the ones declared at the top level
+- `RecommendedHeadersContractInfoFuzzer` - verifies that all OpenAPI contract paths contain recommended headers like: CorrelationId/TraceId, etc.
+- `TopLevelElementsContractInfoFuzzer` - verifies that all OpenAPI contract level elements are present and provide meaningful information: API description, documentation, title, version, etc.
+- `VersionsContractInfoFuzzer` - verifies that a given path doesn't contain versioning information
+- `XmlContentTypeContractInfoFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
+
+You can run only these `Fuzzers` by supplying the `--checkContract` argument.
+
+
+## Special Fuzzers
+### CustomFuzzer
+#### Writing Custom Tests
 In some cases, the tests generated by CATS will not be sufficient for your situation. Using the `CustomFuzzer` you can supply custom values for specific fields. The cool thing is that you can target a single field, and the rest of the information will be populated by `CATs` using valid data, just like a 'happy' flow request.
 It's important to note that `reference data` won't get replaced when using the `CustomFuzzer`. So if there are reference data fields, you must also supply those in the `CustomFuzzer`.
 The `CustomFuzzer` will only trigger if a valid `customFuzzer.yml` file is supplied. The file has the following syntax:
@@ -368,11 +464,11 @@ Some things to note about the `customFuzzer.yml` file:
 - if the request payload uses a `oneOf` element to allow multiple request types, you can control which of the possible types the `CustomFuzzer` will apply to using the `oneOfSelection` keyword. The value of the `oneOfSelection` keyword must match the fully qualified name of the `discriminator`.
 - if no `oneOfSelection` is supplied and the request payload accepts multiple `oneOf` elements, than a custom test will be created for each type of payload
 
-### Dealing with oneOf, anyOf
+#### Dealing with oneOf, anyOf
 When you have request payloads which can take multiple object types, you can use the `oneOfSelection` keyword to specify which of the possible object types is required by the `CustomFuzzer`.
 If you don't provide this element, all combinations will be considered. If you supply a value, **this must be exactly the one used in the `discriminator`.**
 
-### Correlating Tests
+#### Correlating Tests
 As CATs mostly relies on generated data with small help from some reference data, testing complex business scenarios with the pre-defined `Fuzzers` is not possible. Suppose we have an endpoint that creates data (doing a `POST`), and we want to check its existence (via `GET`).
 We need a way to get some identifier from the POST call and send it to the GET call. This is now possible using the `CustomFuzzer`.
 The `customFuzzerFile` can have an `output` entry where you can state a variable name, and its fully qualified name from the response in order to set its value. 
@@ -411,7 +507,7 @@ When executing `test_2` the `id` parameter will be replaced with the `petId` var
 - variables are visible across all custom tests; please be careful with the naming as they will get overridden
 - variables do not support arrays of elements; this applies for both getting the variable value and the way the `output` variables are set
 
-### Verifying responses
+#### Verifying responses
 The `CustomFuzzer` can verify more than just the `expectedResponseCode`. This is achieved using the `verify` element. This is an extended version of the above `customFuzzer.yml` file.
 ```yaml
 /pet:
@@ -464,13 +560,13 @@ Some notes:
 - if all parameters are found and have valid values, but the response code is not matched, `CATs` will report a warning
 - if all the parameters are found and match their values and the response code is as expected, `CATs` will report a success
 
-### Working with additionalProperties in CustomFuzzer
+#### Working with additionalProperties in CustomFuzzer
 You can also set `additionalProperties` fields through the `customFuzzerFile` using the same syntax as for [Setting additionalProperties in Reference Data](#setting-additionalproperties).
 
-### CustomFuzzer Reserved keywords
+#### CustomFuzzer Reserved keywords
 The following keywords are reserved in `CustomFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `oneOfSelection`, `verify`, `additionalProperties`, `topElement` and `mapValues`.
 
-## Security Fuzzer
+### Security Fuzzer
 Although `CATs` is not a security testing tool, you can use it to test basic security scenarios by fuzzing specific fields with different sets of [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings).
 The behaviour is similar to the `CustomFuzzer`. You can use the exact same elements for output variables, test correlation, verify responses and so forth, with the addition that you must also specify a `targetFields` and a `stringsList` element.
 A typical `securityFuzzerFile` will look like this:
@@ -501,10 +597,10 @@ You can have a `sql_injection.txt`, a `xss.txt`, a `command_injection.txt` and s
 Your service might sanitize data before validation, so might be perfectly valid to expect a `200` or might validate the fields directly, so might be perfectly valid to expect a `400`.
 A `500` will usually mean something was not handled properly and might signal a possible bug.
 
-### Working with additionalProperties in SecurityFuzzer
+#### Working with additionalProperties in SecurityFuzzer
 You can also set `additionalProperties` fields through the `customFuzzerFile` using the same syntax as for [Setting additionalProperties in Reference Data](#setting-additionalproperties).
 
-### SecurityFuzzer Reserved keywords
+#### SecurityFuzzer Reserved keywords
 The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields`, `stringsFile`, `additionalProperties`, `topElement` and `mapValues`.
 
 
