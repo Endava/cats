@@ -86,7 +86,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         for (Tag tag : tags) {
             String tagString = "";
-            if (StringUtils.isBlank(tag.getName())) {
+            if (StringUtils.isBlank(tag.getName()) || "null".equalsIgnoreCase(tag.getName())) {
                 tagString += "name" + IS_EMPTY;
             }
             tagString += this.emptyOrShort(tag::getDescription, DESCRIPTION);

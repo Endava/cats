@@ -55,7 +55,8 @@ class TopLevelElementsContractInfoFuzzerTest {
     @CsvSource({"src/test/resources/contract-missing-info.yml,info.version, info.contact.url, info.description, info.contact.name, info.title, info.contact.email",
             "src/test/resources/contract-missing-servers.yml,servers",
             "src/test/resources/contract-missing-tags.yml,tags",
-            "src/test/resources/contract-incomplete-contact.yml,info.contact.url, info.contact.email"})
+            "src/test/resources/contract-incomplete-contact.yml,info.contact.url, info.contact.email",
+            "src/test/resources/contract-incomplete-tags.yml,tags,description"})
     void shouldReportError(String contractPath, String expectedError) throws Exception {
         OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get(contractPath))), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
