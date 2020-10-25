@@ -4,8 +4,11 @@ import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
@@ -16,6 +19,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
+import java.util.List;
 
 @ExtendWith(SpringExtension.class)
 @SpringJUnitConfig({CatsMain.class, FuzzingDataFactory.class})
@@ -32,6 +36,11 @@ class CatsMainTest {
 
     @SpyBean
     private FuzzingDataFactory fuzzingDataFactory;
+
+    @BeforeEach
+    void setup() {
+        Mockito.reset(catsMain);
+    }
 
     @Test
     void givenNoArguments_whenStartingCats_thenHelpIsPrinted() {
@@ -98,5 +107,38 @@ class CatsMainTest {
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.anyMap(), Mockito.any());
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
         ReflectionTestUtils.setField(catsMain, "server", "empty");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"checkHeaders,CheckSecurityHeadersFuzzer,RemoveFieldsFuzzer",
+            "checkFields,RemoveFieldsFuzzer,CheckSecurityHeadersFuzzer",
+            "checkHttp,HappyFuzzer,CheckSecurityHeadersFuzzer",
+            "checkContract,TopLevelElementsContractInfoFuzzer,CheckSecurityHeadersFuzzer"})
+    void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
+        ReflectionTestUtils.setField(catsMain, "checkFields", "empty");
+        ReflectionTestUtils.setField(catsMain, "checkHeaders", "empty");
+        ReflectionTestUtils.setField(catsMain, "checkContract", "empty");
+        ReflectionTestUtils.setField(catsMain, "checkHttp", "empty");
+
+        ReflectionTestUtils.setField(catsMain, argument, "true");
+        ReflectionTestUtils.setField(catsMain, "skipFuzzersForPaths", Collections.emptyList());
+
+        List<String> fuzzers = catsMain.configuredFuzzers("myPath");
+
+        Assertions.assertThat(fuzzers).contains(matching).doesNotContain(notMatching);
+    }
+
+    @Test
+    void shouldReturnAllFuzzersWhenNoCheckSupplied() {
+        ReflectionTestUtils.setField(catsMain, "checkFields", "empty");
+        ReflectionTestUtils.setField(catsMain, "checkHeaders", "empty");
+        ReflectionTestUtils.setField(catsMain, "checkContract", "empty");
+        ReflectionTestUtils.setField(catsMain, "checkHttp", "empty");
+
+        ReflectionTestUtils.setField(catsMain, "skipFuzzersForPaths", Collections.emptyList());
+
+        List<String> fuzzers = catsMain.configuredFuzzers("myPath");
+
+        Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
     }
 }

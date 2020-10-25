@@ -1,10 +1,7 @@
 package com.endava.cats;
 
 import ch.qos.logback.classic.Level;
-import com.endava.cats.fuzzer.FieldFuzzer;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.HeaderFuzzer;
-import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.fuzzer.*;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
@@ -96,6 +93,18 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String excludedFuzzers;
     @Value("${useExamples:true}")
     private String useExamples;
+    @Value("${checkHeaders:empty}")
+    private String checkHeaders;
+    @Value("${checkFields:empty}")
+    private String checkFields;
+    @Value("${checkHttp:empty}")
+    private String checkHttp;
+    @Value("${checkContract:empty}")
+    private String checkContract;
+    @Value("${securityFuzzerFile:empty}")
+    private String securityFuzzerFile;
+    @Value("${printExecutionStatistics:empty}")
+    private String printExecutionStatistics;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -131,7 +140,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content) {
         Schema schemaToAdd;
         if (ref == null && content != null) {
-                Schema refSchema = content.get(APPLICATION_JSON).getSchema();
+            Schema refSchema = content.get(APPLICATION_JSON).getSchema();
 
             if (refSchema instanceof ArraySchema) {
                 ref = ((ArraySchema) refSchema).getItems().get$ref();
@@ -311,11 +320,13 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private void processTwoArguments(String[] args) {
         if (this.isListFuzzers(args)) {
-            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATs has {} registered fuzzers:").reset().toString();
+            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
             LOGGER.info(message, fuzzers.size());
             filterAndDisplay(FieldFuzzer.class);
             filterAndDisplay(HeaderFuzzer.class);
             filterAndDisplay(HttpFuzzer.class);
+            filterAndDisplay(ContractInfoFuzzer.class);
+            filterAndDisplay(SpecialFuzzer.class);
 
             throw new StopExecutionException("list fuzzers");
         }
@@ -390,8 +401,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         }
     }
 
-    private List<String> configuredFuzzers(String pathKey) {
-        List<String> allFuzzersName = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
+    protected List<String> configuredFuzzers(String pathKey) {
+        List<String> allFuzzersName = this.constructFuzzersList();
         List<String> allowedFuzzers = allFuzzersName;
 
         if (!ALL.equalsIgnoreCase(suppliedFuzzers)) {
@@ -402,6 +413,27 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         allowedFuzzers = this.removeExcludedFuzzers(allowedFuzzers);
 
         return CatsUtil.filterAndPrintNotMatching(allowedFuzzers, allFuzzersName::contains, LOGGER, "Supplied Fuzzer does not exist {}", Object::toString);
+    }
+
+    private List<String> constructFuzzersList() {
+        List<String> finalList = new ArrayList<>();
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkFields, FieldFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkContract, ContractInfoFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkHeaders, HeaderFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkHttp, HttpFuzzer.class));
+
+        if (finalList.isEmpty()) {
+            return fuzzers.stream().map(Object::toString).collect(Collectors.toList());
+        }
+        return finalList;
+    }
+
+    private List<String> getFuzzersFromCheckArgument(String checkArgument, Class<? extends Annotation> annotation) {
+        if (!EMPTY.equalsIgnoreCase(checkArgument)) {
+            return fuzzers.stream().filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
+                    .map(Object::toString).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
     private List<String> removeSkippedFuzzers(String pathKey, List<String> allowedFuzzers) {
@@ -426,7 +458,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.renderHelpToConsole("maxFieldsToRemove", "NUMBER set the maximum number of fields that will be removed from a request when using the SIZE fieldsFuzzingStrategy");
         this.renderHelpToConsole("refData", "FILE specifies the file with fields that must have a fixed value in order for requests to succeed ");
         this.renderHelpToConsole("headers", "FILE specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example");
-        this.renderHelpToConsole("reportingLevel", "LEVEL this can be either INFO, WARN or ERROR. It can be used to suppress INFO logging and focus only on the reporting WARNs and/or ERRORs");
+        this.renderHelpToConsole("reportingLevel", "LEVEL this can be either INFO, WARN or ERROR. It can be used to suppress INFO logging and focus only on the reporting WARNS and/or ERRORS");
         this.renderHelpToConsole("edgeSpacesStrategy", "STRATEGY this can be either validateAndTrim or trimAndValidate. It can be used to specify what CATS should expect when sending trailing and leading spaces valid values within fields");
         this.renderHelpToConsole("urlParams", "A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs");
         this.renderHelpToConsole("customFuzzerFile", "A file used by the `CustomFuzzer` that will be used to create user-supplied payloads");
@@ -435,6 +467,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.renderHelpToConsole("securityFuzzerFile", "A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities");
         this.renderHelpToConsole("printExecutionStatistics", "If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method");
         this.renderHelpToConsole("useExamples", "true/false (default true), instruct CATS on whether to use examples from the OpenAPI contract or not");
+        this.renderHelpToConsole("checkFields", "If supplied (no value needed), it will only run the Field Fuzzers");
+        this.renderHelpToConsole("checkHeaders", "If supplied (no value needed), it will only run the Header Fuzzers");
+        this.renderHelpToConsole("checkHttp", "If supplied (no value needed), it will only run the HTTP Fuzzers");
+        this.renderHelpToConsole("checkContract", "If supplied (no value needed), it will only run the ContractInfo Fuzzers");
 
         LOGGER.info("Example: ");
         LOGGER.info(EXAMPLE);
@@ -450,22 +486,28 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void printArgs() {
-        LOGGER.info("Server: {}", server);
-        LOGGER.info("Contract: {}", contract);
+        LOGGER.info("server: {}", server);
+        LOGGER.info("contract: {}", contract);
         LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
-        LOGGER.info("Supplied fuzzers: {}", suppliedFuzzers);
-        LOGGER.info("Fields fuzzing strategy: {}", fieldsFuzzingStrategy);
-        LOGGER.info("Max fields to remove: {}", maxFieldsToRemove);
-        LOGGER.info("Paths: {}", paths);
-        LOGGER.info("Ref data file: {}", refDataFile);
-        LOGGER.info("Headers file: {}", headersFile);
-        LOGGER.info("Reporting level: {}", reportingLevel);
-        LOGGER.info("Edge spaces strategy: {}", edgeSpacesStrategy);
-        LOGGER.info("URL parameters: {}", urlParams);
-        LOGGER.info("Custom fuzzer file: {}", customFuzzerFile);
-        LOGGER.info("Excluded fuzzers: {}", excludedFuzzers);
-        LOGGER.info("Use Examples: {}", useExamples);
-
+        LOGGER.info("supplied fuzzers: {}", suppliedFuzzers);
+        LOGGER.info("fields fuzzing strategy: {}", fieldsFuzzingStrategy);
+        LOGGER.info("max fields to remove: {}", maxFieldsToRemove);
+        LOGGER.info("paths: {}", paths);
+        LOGGER.info("refData: {}", refDataFile);
+        LOGGER.info("headers: {}", headersFile);
+        LOGGER.info("reportingLevel: {}", reportingLevel);
+        LOGGER.info("edgeSpacesStrategy: {}", edgeSpacesStrategy);
+        LOGGER.info("urlParams: {}", urlParams);
+        LOGGER.info("customFuzzerFile: {}", customFuzzerFile);
+        LOGGER.info("securityFuzzerFile: {}", securityFuzzerFile);
+        LOGGER.info("printExecutionStatistic: {}", !EMPTY.equalsIgnoreCase(printExecutionStatistics));
+        LOGGER.info("excludeFuzzers: {}", excludedFuzzers);
+        LOGGER.info("useExamples: {}", useExamples);
+        LOGGER.info("log: {}", logData);
+        LOGGER.info("checkFields: {}", !EMPTY.equalsIgnoreCase(checkFields));
+        LOGGER.info("checkHeaders: {}", !EMPTY.equalsIgnoreCase(checkHeaders));
+        LOGGER.info("checkHttp: {}", !EMPTY.equalsIgnoreCase(checkHttp));
+        LOGGER.info("checkContract: {}", !EMPTY.equalsIgnoreCase(checkContract));
     }
 
     private void renderHelpToConsole(String command, String text) {
