@@ -11,6 +11,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.ParseContext;
+import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.internal.ParseContextImpl;
+import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -27,6 +33,13 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 
 @Component
 public class CatsUtil {
+    private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration
+            .builder()
+            .mappingProvider(new JacksonMappingProvider())
+            .jsonProvider(new JacksonJsonNodeJsonProvider())
+            .build();
+    private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CatsUtil.class);
 
     public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, Logger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
@@ -136,7 +149,7 @@ public class CatsUtil {
      * @param maxFieldsToRemove
      * @return
      */
-    public Set<Set<String>> getAllSetsWithMinSize(Set allFields, String maxFieldsToRemove) {
+    public Set<Set<String>> getAllSetsWithMinSize(Set<String> allFields, String maxFieldsToRemove) {
         Set<Set<String>> sets = new HashSet<>();
         int maxFieldsToRemoveAsInt = Integer.parseInt(maxFieldsToRemove);
         if (maxFieldsToRemoveAsInt == 0) {
@@ -151,38 +164,13 @@ public class CatsUtil {
         return sets;
     }
 
-
     public boolean isPrimitive(String payload, String property) {
-        JsonElement jsonElement = JsonParser.parseString(payload);
-
-        if (jsonElement.isJsonObject()) {
-            return isPrimitive(property, jsonElement);
-        } else {
+        try {
+            JsonNode jsonNode = PARSE_CONTEXT.parse(payload).read(property.replace("#", "."));
+            return jsonNode.isValueNode();
+        } catch (PathNotFoundException e) {
             return false;
         }
-    }
-
-    /**
-     * Check if the fully qualified supplied property is a primitive
-     *
-     * @param property a fully qualified property in format foo#cats#op
-     * @param element
-     * @return
-     */
-    private boolean isPrimitive(String property, JsonElement element) {
-        String[] propertyAsArray = property.split("#");
-        for (int i = 0; i < propertyAsArray.length - 1; i++) {
-            if (element != null) {
-                element = element.getAsJsonObject().get(propertyAsArray[i]);
-            }
-        }
-        if (element != null) {
-            String lastPropertyInArray = propertyAsArray[propertyAsArray.length - 1];
-            JsonElement lastPropertyAsJsonElement = element.getAsJsonObject().get(lastPropertyInArray);
-
-            return lastPropertyAsJsonElement != null && lastPropertyAsJsonElement.isJsonPrimitive();
-        }
-        return false;
     }
 
     public FuzzingResult replaceFieldWithFuzzedValue(String payload, String jsonProperty, FuzzingStrategy valueToSet) {
