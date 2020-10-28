@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -19,7 +20,7 @@ import java.util.List;
 @Component
 @FieldFuzzer
 @ConditionalOnProperty(value = "edgeSpacesStrategy", havingValue = "trimAndValidate", matchIfMissing = true)
-public class SpacesOnlyInFieldsTrimValidateFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
+public class SpacesOnlyInFieldsTrimValidateFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
 
     @Autowired
     public SpacesOnlyInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
@@ -43,6 +44,11 @@ public class SpacesOnlyInFieldsTrimValidateFuzzer extends ExpectOnly4XXBaseField
     @Override
     protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         return getFuzzStrategy(data, fuzzedField);
+    }
+
+    @Override
+    protected ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+        return ResponseCodeFamily.FOURXX;
     }
 
     @Override
