@@ -36,7 +36,7 @@ class CatsUtilTest {
     void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed() {
         CatsUtil catsUtil = new CatsUtil();
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
-        String payload = "{'field':'value', 'anotherField':'otherValue'}";
+        String payload = "{\"field\":\"value\", \"anotherField\":\"otherValue\"}";
         FuzzingResult result = catsUtil.replaceFieldWithFuzzedValue(payload, "field", strategy);
 
         Assertions.assertThat(result.getFuzzedValue()).isEqualTo("fuzzed");
@@ -46,7 +46,7 @@ class CatsUtilTest {
     @Test
     void givenAPayloadWithPrimitiveAndNonPrimitiveFields_whenCheckingIfPropertiesArePrimitive_thenTheCheckIsProperlyPerformed() {
         CatsUtil catsUtil = new CatsUtil();
-        String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
+        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Assertions.assertThat(catsUtil.isPrimitive(payload, "field")).isTrue();
         Assertions.assertThat(catsUtil.isPrimitive(payload, "anotherField")).isFalse();
@@ -56,7 +56,7 @@ class CatsUtilTest {
     @Test
     void givenAnInvalidJson_whenCallingIsValidJson_thenTheMethodReturnsFalse() {
         CatsUtil catsUtil = new CatsUtil();
-        String payload = "'field':'a";
+        String payload = "\"field\":\"a";
 
         Assertions.assertThat(catsUtil.isValidJson(payload)).isFalse();
     }
@@ -64,7 +64,7 @@ class CatsUtilTest {
     @Test
     void givenAValidJson_whenCallingIsValidJson_thenTheMethodReturnsTrue() {
         CatsUtil catsUtil = new CatsUtil();
-        String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
+        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Assertions.assertThat(catsUtil.isValidJson(payload)).isTrue();
     }
@@ -72,7 +72,7 @@ class CatsUtilTest {
     @Test
     void shouldAddTopElement() {
         CatsUtil catsUtil = new CatsUtil();
-        String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
+        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         JsonElement jsonElement = catsUtil.parseAsJsonElement(payload);
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
@@ -84,7 +84,7 @@ class CatsUtilTest {
     @Test
     void shouldNotAddTopElement() {
         CatsUtil catsUtil = new CatsUtil();
-        String payload = "{'field':'value', 'anotherField':{'subfield': 'otherValue'}}";
+        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         JsonElement jsonElement = catsUtil.parseAsJsonElement(payload);
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
