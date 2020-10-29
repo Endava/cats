@@ -82,7 +82,7 @@ class BaseFieldsFuzzerTest {
     @Test
     void givenAJSonPrimitiveFieldWithAReplaceFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
         FuzzingResult fuzzingResult = Mockito.mock(FuzzingResult.class);
-        Mockito.when(fuzzingResult.getJson()).thenReturn(Mockito.mock(JsonElement.class));
+        Mockito.when(fuzzingResult.getJson()).thenReturn("{}");
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
         Map<String, Schema> schemaMap = new HashMap<>();

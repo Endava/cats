@@ -1,17 +1,15 @@
 package com.endava.cats.model;
 
-import com.google.gson.JsonElement;
-
 public class FuzzingResult {
-    private final JsonElement json;
+    private final String json;
     private final String fuzzedValue;
 
-    public FuzzingResult(JsonElement json, String fuzzedValue) {
+    public FuzzingResult(String json, String fuzzedValue) {
         this.json = json;
         this.fuzzedValue = fuzzedValue;
     }
 
-    public JsonElement getJson() {
+    public String getJson() {
         return json;
     }
 
