@@ -11,12 +11,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.ParseContext;
-import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import net.minidev.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -33,8 +32,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 
 @Component
 public class CatsUtil {
-    private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration
-            .builder()
+    private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())
             .jsonProvider(new JacksonJsonNodeJsonProvider())
             .build();
@@ -122,10 +120,10 @@ public class CatsUtil {
     }
 
     /**
-     * Parses the Ref data yaml
+     * Parses a Yaml file
      *
      * @param yaml
-     * @return
+     * @return the parse Yaml as a map of maps
      * @throws IOException
      */
     public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
@@ -165,6 +163,9 @@ public class CatsUtil {
     }
 
     public boolean isPrimitive(String payload, String property) {
+        if (isJsonArray(payload)) {
+            property = "$[0]#" + property;
+        }
         try {
             JsonNode jsonNode = PARSE_CONTEXT.parse(payload).read(property.replace("#", "."));
             return jsonNode.isValueNode();
@@ -173,49 +174,21 @@ public class CatsUtil {
         }
     }
 
-    public FuzzingResult replaceFieldWithFuzzedValue(String payload, String jsonProperty, FuzzingStrategy valueToSet) {
-        JsonElement jsonElement = JsonParser.parseString(payload);
-        String fuzzedValue = "";
-
-        if (jsonElement.isJsonObject()) {
-            fuzzedValue = replaceValue(jsonProperty, jsonElement, valueToSet);
-        } else if (jsonElement.isJsonArray()) {
-            for (JsonElement element : jsonElement.getAsJsonArray()) {
-                fuzzedValue = replaceValue(jsonProperty, element, valueToSet);
-            }
-        }
-
-        return new FuzzingResult(jsonElement, fuzzedValue);
+    public boolean isJsonArray(String payload) {
+        return JsonPath.parse(payload).read("$") instanceof JSONArray;
     }
 
-    /**
-     * Returns the value replaced processed by the FuzzStrategy
-     *
-     * @param field
-     * @param jsonElement
-     * @param valueToSet
-     * @return
-     */
-    private String replaceValue(String field, JsonElement jsonElement, FuzzingStrategy valueToSet) {
-        String result = "";
-        String[] depth = field.split("#");
-        JsonElement element = this.getJsonElementBasedOnFullyQualifiedName(jsonElement, field);
-
-        if (element != null) {
-            String propertyToReplace = depth[depth.length - 1];
-            JsonElement elementToReplace = element.getAsJsonObject().get(propertyToReplace);
-            String oldValue = "{}";
-            if (elementToReplace.isJsonPrimitive()) {
-                oldValue = elementToReplace.getAsString();
-            }
-
-            element.getAsJsonObject().remove(propertyToReplace);
-            if (elementToReplace.isJsonPrimitive()) {
-                result = valueToSet.process(oldValue);
-                element.getAsJsonObject().addProperty(propertyToReplace, result);
-            }
+    public FuzzingResult replaceFieldWithFuzzedValue(String payload, String jsonPropertyForReplacement, FuzzingStrategy valueToSet) {
+        String jsonPropToGetValue = jsonPropertyForReplacement;
+        if (isJsonArray(payload)) {
+            jsonPropToGetValue = "$[0]#" + jsonPropertyForReplacement;
+            jsonPropertyForReplacement = "$[*]#" + jsonPropertyForReplacement;
         }
-        return result;
+        DocumentContext context = JsonPath.parse(payload);
+        Object oldValue = context.read(jsonPropToGetValue.replace("#", "."));
+        context.set(jsonPropertyForReplacement.replace("#", "."), valueToSet.process(oldValue));
+
+        return new FuzzingResult(context.jsonString(), valueToSet.process(oldValue));
     }
 
     public boolean isValidJson(String text) {

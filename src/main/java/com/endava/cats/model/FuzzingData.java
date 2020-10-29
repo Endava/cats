@@ -31,13 +31,13 @@ public class FuzzingData {
     private final List<String> requestContentTypes;
     private final CatsUtil catsUtil;
     private final Set<String> queryParams;
+    private final OpenAPI openApi;
+    private final List<String> tags;
+    private final String reqSchemaName;
     private Set<String> allFields;
     private Set<Set<String>> allFieldsSetOfSets;
     private List<String> allRequiredFields;
     private Set<CatsField> allFieldsAsCatsFields;
-    private OpenAPI openApi;
-    private List<String> tags;
-    private String reqSchemaName;
 
     private Set<CatsField> getFields(Schema schema, String prefix) {
         Set<CatsField> catsFields = new HashSet<>();
@@ -45,7 +45,6 @@ public class FuzzingData {
             schema = schemaMap.get(this.getDefinitionNameFromRef(schema.get$ref()));
         }
         List<String> required = Optional.ofNullable(schema.getRequired()).orElseGet(Collections::emptyList);
-
 
         if (schema.getProperties() != null) {
             for (Map.Entry<String, Schema> prop : (Set<Map.Entry<String, Schema>>) schema.getProperties().entrySet()) {

@@ -89,6 +89,9 @@ public abstract class FuzzingStrategy {
         return this.name();
     }
 
+    public String process(Object value) {
+        return this.process(String.valueOf(value));
+    }
 
     public abstract String process(String value);
 

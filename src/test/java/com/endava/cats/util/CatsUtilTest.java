@@ -5,6 +5,8 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.google.gson.JsonElement;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.*;
 
@@ -32,15 +34,19 @@ class CatsUtilTest {
 
     }
 
-    @Test
-    void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed() {
+    @ParameterizedTest
+    @CsvSource(value = {"{\"field\":\"value\", \"anotherField\":\"otherValue\"}|field",
+            "{\"field\": 2, \"anotherField\":\"otherValue\"}|field",
+            "[{\"field\": 2, \"anotherField\":\"otherValue\"},{\"field\": 2, \"anotherField\":\"otherValue\"}]|field",
+            "{\"field\": {\"subField\":\"value\"}, \"anotherField\":\"otherValue\"}|field#subField",
+            "{\"field\": [{\"subField\":\"value\"},{\"subField\":\"value\"}], \"anotherField\":\"otherValue\"}|field[*]#subField"}, delimiter = '|')
+    void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed(String json, String path) {
         CatsUtil catsUtil = new CatsUtil();
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
-        String payload = "{\"field\":\"value\", \"anotherField\":\"otherValue\"}";
-        FuzzingResult result = catsUtil.replaceFieldWithFuzzedValue(payload, "field", strategy);
+        FuzzingResult result = catsUtil.replaceFieldWithFuzzedValue(json, path, strategy);
 
         Assertions.assertThat(result.getFuzzedValue()).isEqualTo("fuzzed");
-        Assertions.assertThat(result.getJson().toString()).contains("fuzzed");
+        Assertions.assertThat(result.getJson()).contains("fuzzed");
     }
 
     @Test
