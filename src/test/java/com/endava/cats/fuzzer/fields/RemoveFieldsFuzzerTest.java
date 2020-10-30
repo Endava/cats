@@ -24,7 +24,10 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 class RemoveFieldsFuzzerTest {
@@ -45,7 +48,7 @@ class RemoveFieldsFuzzerTest {
     @SpyBean
     private BuildProperties buildProperties;
 
-    @MockBean
+    @SpyBean
     private CatsUtil catsUtil;
 
     private RemoveFieldsFuzzer removeFieldsFuzzer;
@@ -67,20 +70,20 @@ class RemoveFieldsFuzzerTest {
 
     @Test
     void givenARequest_whenApplyingTheRemoveFieldsFuzzer_thenTestCasesAreCorrectlyExecuted() {
-        setup("{'field':'oldValue'}");
+        setup("{\"field\":\"oldValue\"}");
         removeFieldsFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX));
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(2)).skipTest(Mockito.any(), Mockito.eq("Field is from a different ANY_OF or ONE_OF payload"));
     }
 
     @Test
     void shouldRunFuzzerWhenPayloadIsArray() {
-        setup("[{'field':'oldValue'}, {'field':'newValue'}]");
+        setup("[{\"field\":\"oldValue\"}, {\"field\":\"newValue\"}]");
         removeFieldsFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX));
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(2)).skipTest(Mockito.any(), Mockito.eq("Field is from a different ANY_OF or ONE_OF payload"));
     }
 
     @Test
@@ -96,21 +99,17 @@ class RemoveFieldsFuzzerTest {
         responses.put("200", Collections.singletonList("response"));
         Schema schema = new ObjectSchema();
         schema.setProperties(this.createPropertiesMap());
-        schema.setRequired(Arrays.asList("field"));
+        schema.setRequired(Collections.singletonList("field"));
         ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
         data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload(payload).
                 responses(responses).reqSchema(schema).catsUtil(catsUtil).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200")).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
-        Mockito.doCallRealMethod().when(catsUtil).getExpectedWordingBasedOnRequiredFields(Mockito.anyBoolean());
-        Mockito.doCallRealMethod().when(catsUtil).getResultCodeBasedOnRequiredFieldsRemoved(Mockito.anyBoolean());
-        Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).removeOneByOne(Mockito.anySet());
-
     }
 
     private Map<String, Schema> createPropertiesMap() {
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
+        schemaMap.put("anotherField#test", new StringSchema());
         schemaMap.put("anotherField", new StringSchema());
 
         return schemaMap;
