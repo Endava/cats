@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.MimeTypeUtils;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -24,7 +25,7 @@ public class PayloadGenerator {
     private static final Logger LOGGER = LoggerFactory.getLogger(PayloadGenerator.class);
 
 
-    private static final String MIME_TYPE_JSON = "application/json";
+    private static final String MIME_TYPE_JSON = MimeTypeUtils.APPLICATION_JSON_VALUE;
     private static final String EXAMPLE = "example";
     private static final String CONTENT_TYPE = "contentType";
     private static final String URL = "url";
