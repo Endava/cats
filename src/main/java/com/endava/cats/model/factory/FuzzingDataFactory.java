@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeTypeUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +29,6 @@ import java.util.stream.Collectors;
 @Component
 public class FuzzingDataFactory {
 
-    private static final String APPLICATION_JSON = "application/json";
     private static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
     private static final String ANY_OF = "ANY_OF";
     private static final String ONE_OF = "ONE_OF";
@@ -244,9 +244,9 @@ public class FuzzingDataFactory {
     private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
         if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
             String reqBodyRef = operation.getRequestBody().get$ref();
-            return openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent().get(APPLICATION_JSON);
-        } else if (operation.getRequestBody() != null && operation.getRequestBody().getContent().get(APPLICATION_JSON) != null) {
-            return operation.getRequestBody().getContent().get(APPLICATION_JSON);
+            return openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE);
+        } else if (operation.getRequestBody() != null && operation.getRequestBody().getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE) != null) {
+            return operation.getRequestBody().getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE);
         } else if (operation.getRequestBody() != null) {
             return operation.getRequestBody().getContent().get("*/*");
         }
@@ -382,7 +382,7 @@ public class FuzzingDataFactory {
         List<String> requests = new ArrayList<>();
         if (operation.getRequestBody() != null) {
             Content defaultContent = new Content();
-            defaultContent.addMediaType(APPLICATION_JSON, new MediaType());
+            defaultContent.addMediaType(MimeTypeUtils.APPLICATION_JSON_VALUE, new MediaType());
             String reqBodyRef = operation.getRequestBody().get$ref();
             if (reqBodyRef != null) {
                 operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent());
@@ -398,7 +398,7 @@ public class FuzzingDataFactory {
         for (String responseCode : responseCodes) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             Content defaultContent = new Content();
-            defaultContent.addMediaType(APPLICATION_JSON, new MediaType());
+            defaultContent.addMediaType(MimeTypeUtils.APPLICATION_JSON_VALUE, new MediaType());
             responses.put(responseCode, Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent)
                     .entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
         }
@@ -440,8 +440,8 @@ public class FuzzingDataFactory {
         if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
             return apiResponse.get$ref();
         }
-        if (apiResponse.getContent() != null && apiResponse.getContent().get(APPLICATION_JSON) != null) {
-            return apiResponse.getContent().get(APPLICATION_JSON).getSchema().get$ref();
+        if (apiResponse.getContent() != null && apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE) != null) {
+            return apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema().get$ref();
         }
         return null;
     }

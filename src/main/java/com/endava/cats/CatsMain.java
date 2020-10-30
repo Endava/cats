@@ -28,6 +28,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.util.MimeTypeUtils;
 
 import java.lang.annotation.Annotation;
 import java.nio.file.Files;
@@ -59,7 +60,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static final String LIST_ALL_COMMANDS = "commands";
     private static final String HELP = "help";
     private static final String VERSION = "version";
-    private static final String APPLICATION_JSON = "application/json";
     private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
     private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
     protected List<CatsSkipped> skipFuzzersForPaths;
@@ -140,7 +140,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content) {
         Schema schemaToAdd;
         if (ref == null && content != null) {
-            Schema refSchema = content.get(APPLICATION_JSON).getSchema();
+            Schema refSchema = content.get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema();
 
             if (refSchema instanceof ArraySchema) {
                 ref = ((ArraySchema) refSchema).getItems().get$ref();
