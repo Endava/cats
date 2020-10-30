@@ -9,8 +9,8 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,16 +68,16 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
 
     private void process(FuzzingData data, List<String> required, Set<String> subset) {
-        JsonElement jsonObject = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
+        String finalJsonPayload = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
 
-        if (!jsonObject.toString().equalsIgnoreCase(data.getPayload())) {
+        if (!catsUtil.equalAsJson(finalJsonPayload, data.getPayload())) {
             testCaseListener.addScenario(LOGGER, "Scenario: remove the following fields from request: {}", subset);
 
             boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
             testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as required fields [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
 
             CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                    .payload(jsonObject.toString()).queryParams(data.getQueryParams()).build());
+                    .payload(finalJsonPayload).queryParams(data.getQueryParams()).build());
             testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
         } else {
             testCaseListener.skipTest(LOGGER, "Field is from a different ANY_OF or ONE_OF payload");
@@ -91,28 +91,24 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     }
 
 
-    private JsonElement getFuzzedJsonWithFieldsRemove(String payload, Set<String> fieldsToRemove) {
-        JsonElement jsonElement = JsonParser.parseString(payload);
+    private String getFuzzedJsonWithFieldsRemove(String payload, Set<String> fieldsToRemove) {
+        String prefix = "";
 
-        if (jsonElement.isJsonObject()) {
-            this.removeCurrentSet(fieldsToRemove, jsonElement);
-        } else {
-            for (JsonElement element : jsonElement.getAsJsonArray()) {
-                this.removeCurrentSet(fieldsToRemove, element);
-            }
+        if (catsUtil.isJsonArray(payload)) {
+            prefix = CatsUtil.ALL_ELEMENTS_ROOT_ARRAY;
+        }
+        for (String field : fieldsToRemove) {
+            payload = this.deleteNode(payload, prefix + field);
         }
 
-        return jsonElement;
+        return payload;
     }
 
-    private void removeCurrentSet(Set<String> currentSet, JsonElement jsonElement) {
-        for (String field : currentSet) {
-            String[] depth = field.split("#");
-            JsonElement element = catsUtil.getJsonElementBasedOnFullyQualifiedName(jsonElement, field);
-
-            if (element != null) {
-                element.getAsJsonObject().remove(depth[depth.length - 1]);
-            }
+    public String deleteNode(String payload, String node) {
+        try {
+            return JsonPath.parse(payload).delete(catsUtil.sanitizeToJsonPath(node)).jsonString();
+        } catch (PathNotFoundException e) {
+            return payload;
         }
     }
 

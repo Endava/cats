@@ -32,12 +32,15 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 
 @Component
 public class CatsUtil {
+    public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
+    public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
+
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())
             .jsonProvider(new JacksonJsonNodeJsonProvider())
             .build();
-    private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
 
+    private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
     private static final Logger LOGGER = LoggerFactory.getLogger(CatsUtil.class);
 
     public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, Logger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
@@ -164,10 +167,10 @@ public class CatsUtil {
 
     public boolean isPrimitive(String payload, String property) {
         if (isJsonArray(payload)) {
-            property = "$[0]#" + property;
+            property = FIRST_ELEMENT_FROM_ROOT_ARRAY + property;
         }
         try {
-            JsonNode jsonNode = PARSE_CONTEXT.parse(payload).read(property.replace("#", "."));
+            JsonNode jsonNode = PARSE_CONTEXT.parse(payload).read(sanitizeToJsonPath(property));
             return jsonNode.isValueNode();
         } catch (PathNotFoundException e) {
             return false;
@@ -181,12 +184,12 @@ public class CatsUtil {
     public FuzzingResult replaceFieldWithFuzzedValue(String payload, String jsonPropertyForReplacement, FuzzingStrategy valueToSet) {
         String jsonPropToGetValue = jsonPropertyForReplacement;
         if (isJsonArray(payload)) {
-            jsonPropToGetValue = "$[0]#" + jsonPropertyForReplacement;
-            jsonPropertyForReplacement = "$[*]#" + jsonPropertyForReplacement;
+            jsonPropToGetValue = FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
+            jsonPropertyForReplacement = ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
         }
         DocumentContext context = JsonPath.parse(payload);
-        Object oldValue = context.read(jsonPropToGetValue.replace("#", "."));
-        context.set(jsonPropertyForReplacement.replace("#", "."), valueToSet.process(oldValue));
+        Object oldValue = context.read(sanitizeToJsonPath(jsonPropToGetValue));
+        context.set(sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet.process(oldValue));
 
         return new FuzzingResult(context.jsonString(), valueToSet.process(oldValue));
     }
@@ -267,5 +270,13 @@ public class CatsUtil {
             String[] entry = values.split("=");
             payload.getAsJsonObject().addProperty(entry[0].trim(), entry[1].trim());
         }
+    }
+
+    public String sanitizeToJsonPath(String input) {
+        return input.replace("#", ".");
+    }
+
+    public boolean equalAsJson(String json1, String json2) {
+        return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
     }
 }
