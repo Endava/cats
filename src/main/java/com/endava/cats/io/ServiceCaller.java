@@ -1,6 +1,7 @@
 package com.endava.cats.io;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MimeTypeUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -265,10 +267,10 @@ public class ServiceCaller {
         addIfNotPresent("Content-Type", data, method);
     }
 
-    private void addIfNotPresent(String accept, ServiceData data, HttpRequestBase method) {
-        boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(accept));
+    private void addIfNotPresent(String header, ServiceData data, HttpRequestBase method) {
+        boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(header));
         if (notAccept) {
-            method.addHeader(accept, "application/json");
+            method.addHeader(header, MimeTypeUtils.APPLICATION_JSON_VALUE);
         }
     }
 
@@ -292,7 +294,8 @@ public class ServiceCaller {
 
     private String getAsJson(HttpResponse response) throws IOException {
         String responseAsString = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
-        if (StringUtils.isEmpty(responseAsString) || StringUtils.isEmpty(responseAsString.trim())) {
+
+        if (StringUtils.isBlank(responseAsString)) {
             return "";
         } else if (catsUtil.isValidJson(responseAsString)) {
             return responseAsString;
@@ -321,7 +324,7 @@ public class ServiceCaller {
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(method, data, suppliedHeader);
-            } else if (!data.isAddUserHeaders() && (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isSecurityHeader(suppliedHeader.getKey()))) {
+            } else if (!data.isAddUserHeaders() && (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey()))) {
                 method.setHeader(suppliedHeader.getKey(), suppliedHeader.getValue());
             }
         }
@@ -331,8 +334,8 @@ public class ServiceCaller {
         return data.getHeaders().stream().anyMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(suppliedHeader.getKey()));
     }
 
-    private boolean isSecurityHeader(String header) {
-        return header.toLowerCase().contains("authorization") || header.toLowerCase().contains("jwt");
+    private boolean isAuthenticationHeader(String header) {
+        return BypassAuthenticationFuzzer.AUTH_HEADERS.stream().anyMatch(authHeader -> authHeader.equalsIgnoreCase(header));
     }
 
     private void replaceHeaderIfNotFuzzed(HttpRequestBase method, ServiceData data, Map.Entry<String, String> suppliedHeader) {
@@ -370,7 +373,10 @@ public class ServiceCaller {
         if (!data.isReplaceRefData()) {
             LOGGER.info("Bypassing ref data replacement for path {}!", data.getRelativePath());
         } else {
-            LOGGER.info("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), catsParams.getRefData().get(data.getRelativePath()));
+            Map<String, String> refDataForCurrentPath = catsParams.getRefData().get(data.getRelativePath());
+            LOGGER.info("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+
+
             JsonElement jsonElement = catsUtil.parseAsJsonElement(data.getPayload());
 
             if (jsonElement.isJsonObject()) {
@@ -400,6 +406,7 @@ public class ServiceCaller {
     }
 
     private void replaceElementWithRefDataValue(Map.Entry<String, String> entry, JsonElement jsonElement, Set<String> fuzzedFields) {
+
         JsonElement element = catsUtil.getJsonElementBasedOnFullyQualifiedName(jsonElement, entry.getKey());
         String[] depth = entry.getKey().split("#");
 
