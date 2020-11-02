@@ -19,7 +19,8 @@ import java.util.Set;
 
 @Slf4j
 public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
-    protected static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
+    protected static final String CATS_ACCEPT = "application/cats";
+    static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
             "application/javascript",
             "application/octet-stream",
             "application/ogg",
@@ -49,7 +50,6 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
             "text/javascript",
             "text/plain",
             "text/xml");
-    protected static final String CATS_ACCEPT = "application/cats";
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
