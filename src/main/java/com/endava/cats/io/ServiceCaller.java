@@ -1,7 +1,6 @@
 package com.endava.cats.io;
 
 import com.endava.cats.CatsMain;
-import com.endava.cats.fuzzer.http.BypassAuthenticationFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
@@ -14,6 +13,7 @@ import com.endava.cats.util.CatsUtil;
 import com.google.common.html.HtmlEscapers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -48,12 +48,16 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
+
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
  */
 @Component
 public class ServiceCaller {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceCaller.class);
+    private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
+            "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
     private static HttpClient httpClient;
 
     static {
@@ -179,10 +183,10 @@ public class ServiceCaller {
      */
     private String getPathWithSuppliedURLParamsReplaced(String startingUrl) {
         for (String line : catsParams.getUrlParamsList()) {
-            String[] split = line.split(":");
-            String pathVar = "{" + split[0] + "}";
+            String[] urlParam = line.split(":");
+            String pathVar = "{" + urlParam[0] + "}";
             if (startingUrl.contains(pathVar)) {
-                startingUrl = startingUrl.replaceAll("\\{" + split[0] + "}", split[1]);
+                startingUrl = startingUrl.replace("{" + urlParam[0] + "}", urlParam[1]);
             }
         }
         return startingUrl;
@@ -335,7 +339,7 @@ public class ServiceCaller {
     }
 
     private boolean isAuthenticationHeader(String header) {
-        return BypassAuthenticationFuzzer.AUTH_HEADERS.stream().anyMatch(authHeader -> authHeader.equalsIgnoreCase(header));
+        return AUTH_HEADERS.stream().anyMatch(authHeader -> authHeader.equalsIgnoreCase(header));
     }
 
     private void replaceHeaderIfNotFuzzed(HttpRequestBase method, ServiceData data, Map.Entry<String, String> suppliedHeader) {
@@ -354,16 +358,15 @@ public class ServiceCaller {
      *
      * @param data
      * @param currentUrl
-     * @return
+     * @return the path with reference data replacing path parameters
      */
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
-        LOGGER.info("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), catsParams.getRefData().get(data.getRelativePath()));
+        Map<String, String> currentPathRefData = Optional.ofNullable(catsParams.getRefData().get(data.getRelativePath())).orElse(Collections.emptyMap());
+        LOGGER.info("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
-        if (catsParams.getRefData().get(data.getRelativePath()) != null) {
-            for (Map.Entry<String, String> entry : catsParams.getRefData().get(data.getRelativePath()).entrySet()) {
-                currentUrl = currentUrl.replaceAll("\\{" + entry.getKey() + "}", entry.getValue());
-                data.getPathParams().add(entry.getKey());
-            }
+        for (Map.Entry<String, String> entry : currentPathRefData.entrySet()) {
+            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", entry.getValue());
+            data.getPathParams().add(entry.getKey());
         }
 
         return currentUrl;
@@ -371,62 +374,33 @@ public class ServiceCaller {
 
     private String replacePayloadWithRefData(ServiceData data) {
         if (!data.isReplaceRefData()) {
-            LOGGER.info("Bypassing ref data replacement for path {}!", data.getRelativePath());
+            LOGGER.info("Bypassing reference data replacement for path {}!", data.getRelativePath());
+            return data.getPayload();
         } else {
-            Map<String, String> refDataForCurrentPath = catsParams.getRefData().get(data.getRelativePath());
+            Map<String, String> refDataForCurrentPath = Optional.ofNullable(catsParams.getRefData().get(data.getRelativePath())).orElse(Collections.emptyMap());
             LOGGER.info("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+            Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
+                    .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            String payload = data.getPayload();
 
+            for (Map.Entry<String, String> entry : refDataWithoutAdditionalProperties.entrySet()) {
+                String refDataValue = catsDSLParser.parseAndGetResult(entry.getValue(), data.getPayload());
+                FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
+                boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
 
-            JsonElement jsonElement = catsUtil.parseAsJsonElement(data.getPayload());
-
-            if (jsonElement.isJsonObject()) {
-                replaceFieldsWithFuzzedValueIfNotRefData(catsParams.getRefData().get(data.getRelativePath()), jsonElement, data.getFuzzedFields());
-            } else if (jsonElement.isJsonArray()) {
-                for (JsonElement element : jsonElement.getAsJsonArray()) {
-                    replaceFieldsWithFuzzedValueIfNotRefData(catsParams.getRefData().get(data.getRelativePath()), element, data.getFuzzedFields());
+                try {
+                    payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();
+                } catch (PathNotFoundException e) {
+                    LOGGER.warn("Ref data key {} was not found within the payload!", entry.getKey());
                 }
             }
-            LOGGER.info("Final payload after reference data replacement {}", jsonElement);
 
-            return jsonElement.toString();
+            payload = catsUtil.setAdditionalPropertiesToPayloadS(refDataForCurrentPath, payload);
 
-        }
-        return data.getPayload();
-    }
+            LOGGER.info("Final payload after reference data replacement: {}", payload);
 
-
-    private void replaceFieldsWithFuzzedValueIfNotRefData(Map<String, String> refDataForCurrentPath, JsonElement jsonElement, Set<String> fuzzedFields) {
-        if (refDataForCurrentPath != null) {
-            for (Map.Entry<String, String> entry : refDataForCurrentPath.entrySet()) {
-                /*If we didn't fuzz a Ref Data field, we replace the value with the ref data*/
-                this.replaceElementWithRefDataValue(entry, jsonElement, fuzzedFields);
-                catsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, jsonElement);
-            }
-        }
-    }
-
-    private void replaceElementWithRefDataValue(Map.Entry<String, String> entry, JsonElement jsonElement, Set<String> fuzzedFields) {
-
-        JsonElement element = catsUtil.getJsonElementBasedOnFullyQualifiedName(jsonElement, entry.getKey());
-        String[] depth = entry.getKey().split("#");
-
-        if (element != null) {
-            String key = depth[depth.length - 1];
-            String fuzzedValue = null;
-
-            if (!fuzzedFields.contains(entry.getKey())) {
-                fuzzedValue = entry.getValue();
-            }
-
-            /* If we fuzzed a Ref Data field, we need to try and merge the fuzzing */
-            if (fuzzedFields.contains(entry.getKey()) && !element.getAsJsonObject().get(key).isJsonNull()) {
-                fuzzedValue = FuzzingStrategy.mergeFuzzing(element.getAsJsonObject().get(key).getAsString(), entry.getValue(), "   ");
-            }
-            if (fuzzedValue != null && element.getAsJsonObject().remove(key) != null) {
-                String toReplace = catsDSLParser.parseAndGetResult(fuzzedValue, jsonElement.toString());
-                element.getAsJsonObject().addProperty(key, toReplace);
-                LOGGER.debug("Replacing property {} with ref data value {}", entry.getKey(), toReplace);
-            }
+            return payload;
         }
     }
 }
