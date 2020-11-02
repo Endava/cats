@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
+import org.apache.commons.io.Charsets;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -250,7 +251,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             ParseOptions options = new ParseOptions();
             options.setResolve(true);
             options.setFlatten(true);
-            OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
+            OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract)), Charsets.UTF_8), null, options).getOpenAPI();
 
             String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
             LOGGER.info(finishMessage, (System.currentTimeMillis() - t0));
