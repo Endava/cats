@@ -15,15 +15,14 @@ import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import net.minidev.json.JSONArray;
+import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -140,14 +139,15 @@ public class CatsUtil {
     public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
         Map<String, Map<String, Object>> result = new LinkedHashMap<>();
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        JsonNode node = mapper.reader().readTree(new FileReader(yaml));
-        Map<String, Object> paths = mapper.convertValue(node, Map.class);
+        try (Reader reader = new InputStreamReader(new FileInputStream(yaml), Charsets.UTF_8)) {
+            JsonNode node = mapper.reader().readTree(reader);
+            Map<String, Object> paths = mapper.convertValue(node, Map.class);
 
-        for (Map.Entry<String, Object> entry : paths.entrySet()) {
-            Map<String, Object> properties = mapper.convertValue(entry.getValue(), Map.class);
-            result.put(entry.getKey(), properties);
+            for (Map.Entry<String, Object> entry : paths.entrySet()) {
+                Map<String, Object> properties = mapper.convertValue(entry.getValue(), Map.class);
+                result.put(entry.getKey(), properties);
+            }
         }
-
         return result;
     }
 
