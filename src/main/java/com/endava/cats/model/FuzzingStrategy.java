@@ -1,6 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.model.strategy.*;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Encapsulates various fuzzing strategies:
@@ -42,8 +43,8 @@ public abstract class FuzzingStrategy {
         return currentStrategy.process(suppliedValue);
     }
 
-    private static FuzzingStrategy fromValue(String value, String innerValue) {
-        if (value == null || value.trim().isEmpty()) {
+    public static FuzzingStrategy fromValue(String value, String innerValue) {
+        if (StringUtils.isBlank(value)) {
             return new ReplaceFuzzingStrategy().withData(innerValue);
         }
         if (value.startsWith(" ")) {
@@ -61,11 +62,10 @@ public abstract class FuzzingStrategy {
         return this;
     }
 
-
     public String getData() {
         return this.data;
     }
-
+    
     public boolean isSkip() {
         return this.getClass().isAssignableFrom(SkipFuzzingStrategy.class);
     }
