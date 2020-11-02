@@ -89,6 +89,7 @@ Table of Contents
       * [Inheritance and composition](#inheritance-and-composition)
       * [Additional Parameters](#additional-parameters)
       * [Regexes within 'pattern'](#regexes-within-pattern)
+   * [Custom Files General Info](#custom-files-general-info)
    * [Contributing](#contributing)
 
 # Contract driven Auto-generated Tests for Swagger
@@ -463,6 +464,7 @@ Some things to note about the `customFuzzer.yml` file:
 - if a `httpMethod` parameter is supplied, but is not a valid HTTP method, a `warning` will be issued and no test will be executed
 - if the request payload uses a `oneOf` element to allow multiple request types, you can control which of the possible types the `CustomFuzzer` will apply to using the `oneOfSelection` keyword. The value of the `oneOfSelection` keyword must match the fully qualified name of the `discriminator`.
 - if no `oneOfSelection` is supplied and the request payload accepts multiple `oneOf` elements, than a custom test will be created for each type of payload
+- the file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above or `.`
 
 #### Dealing with oneOf, anyOf
 When you have request payloads which can take multiple object types, you can use the `oneOfSelection` keyword to specify which of the possible object types is required by the `CustomFuzzer`.
@@ -503,9 +505,8 @@ Suppose the `test_1` execution outputs:
 When executing `test_1` the value of the pet id will be stored in the `petId` variable (value `2`).
 When executing `test_2` the `id` parameter will be replaced with the `petId` variable (value `2`) from the previous case.
 
-**Some notes:**
+**Please note:**
 - variables are visible across all custom tests; please be careful with the naming as they will get overridden
-- variables do not support arrays of elements; this applies for both getting the variable value and the way the `output` variables are set
 
 #### Verifying responses
 The `CustomFuzzer` can verify more than just the `expectedResponseCode`. This is achieved using the `verify` element. This is an extended version of the above `customFuzzer.yml` file.
@@ -584,6 +585,8 @@ A typical `securityFuzzerFile` will look like this:
 ```
 
 You can also supply `output`, `httpMethod`, `oneOfSelection` and/or `verify` (with the same behaviour as within the `CustomFuzzer`) if they are relevant to your case.
+
+The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above or `.`.
 
 This is what the `SecurityFuzzer` will do after parsing the above `securityFuzzerFile`:
 - it will add the fixed value "My Pet" to all the request for the field `name`
@@ -665,6 +668,9 @@ This will result in any fuzzed request to the `/path/0.1/auth` endpoint being up
     "name": "John"
 }
 ```
+
+The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above or `.`.
+
 ## Setting additionalProperties
 As additional properties are maps i.e. they don't actually have a structure, CATS cannot currently generate valid values. If the elements within such a data structure are essential for a request,
 you can supply them via the `refData` file using the following syntax:
@@ -788,9 +794,12 @@ However, if `Payload1` or `Payload2` will have an additional compositions, this 
 ## Additional Parameters
 If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `WARN` level log message as it won't be able to validate that the response matches the schema.
 
-
 ## Regexes within 'pattern'
 Cats uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
+
+# Custom Files General Info
+All custom files that can be used by CATS (`customFuzzerFile`, `headers`, `refData`, etc) are in a YAML format. When setting or getting values to/from JSON for input and/or output variables, you must use a [JsonPath](https://goessner.net/articles/JsonPath/) syntax using either `#` or `.` as separators.
+You can find some selector examples here: [JsonPath](https://github.com/json-path/JsonPath).
 
 # Contributing
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md)
