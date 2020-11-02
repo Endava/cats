@@ -396,7 +396,7 @@ public class ServiceCaller {
                 }
             }
 
-            payload = catsUtil.setAdditionalPropertiesToPayloadS(refDataForCurrentPath, payload);
+            payload = catsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
 
             LOGGER.info("Final payload after reference data replacement: {}", payload);
 

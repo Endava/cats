@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.jayway.jsonpath.*;
@@ -16,8 +15,10 @@ import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import net.minidev.json.JSONArray;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.FileReader;
@@ -42,6 +43,13 @@ public class CatsUtil {
 
     private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
     private static final Logger LOGGER = LoggerFactory.getLogger(CatsUtil.class);
+
+    private CatsDSLParser catsDSLParser;
+
+    @Autowired
+    public CatsUtil(CatsDSLParser parser) {
+        this.catsDSLParser = parser;
+    }
 
     public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, Logger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
         Map<Boolean, List<T>> results = collection.stream().collect(Collectors.partitioningBy(predicateToFilter));
@@ -181,17 +189,28 @@ public class CatsUtil {
         return JsonPath.parse(payload).read("$") instanceof JSONArray;
     }
 
-    public FuzzingResult replaceFieldWithFuzzedValue(String payload, String jsonPropertyForReplacement, FuzzingStrategy valueToSet) {
-        String jsonPropToGetValue = jsonPropertyForReplacement;
-        if (isJsonArray(payload)) {
-            jsonPropToGetValue = FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
-            jsonPropertyForReplacement = ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
-        }
-        DocumentContext context = JsonPath.parse(payload);
-        Object oldValue = context.read(sanitizeToJsonPath(jsonPropToGetValue));
-        context.set(sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet.process(oldValue));
+    public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply) {
+        return this.replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
+    }
 
-        return new FuzzingResult(context.jsonString(), valueToSet.process(oldValue));
+    public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
+        if (StringUtils.isNotBlank(payload)) {
+            String jsonPropToGetValue = jsonPropertyForReplacement;
+            if (isJsonArray(payload)) {
+                jsonPropToGetValue = FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
+                jsonPropertyForReplacement = ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
+            }
+            DocumentContext context = JsonPath.parse(payload);
+            Object oldValue = context.read(sanitizeToJsonPath(jsonPropToGetValue));
+            String valueToSet = fuzzingStrategyToApply.process(oldValue);
+            if (mergeFuzzing) {
+                valueToSet = FuzzingStrategy.mergeFuzzing(String.valueOf(oldValue), fuzzingStrategyToApply.getData(), "   ");
+            }
+            context.set(sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
+
+            return new FuzzingResult(context.jsonString(), fuzzingStrategyToApply.process(oldValue));
+        }
+        return FuzzingResult.empty();
     }
 
     public boolean isValidJson(String text) {
@@ -218,21 +237,6 @@ public class CatsUtil {
         return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
     }
 
-    public JsonElement getJsonElementBasedOnFullyQualifiedName(JsonElement rootElement, String fullyQualifiedName) {
-        JsonElement resultElement = rootElement;
-        String[] depth = fullyQualifiedName.split("#");
-        for (int i = 0; i < depth.length - 1; i++) {
-            if (resultElement != null) {
-                resultElement = resultElement.getAsJsonObject().get(depth[i]);
-            }
-        }
-        if (depth.length == 1 && resultElement != null && resultElement.getAsJsonObject().get(fullyQualifiedName) == null) {
-            resultElement = null;
-        }
-
-        return resultElement;
-    }
-
     public JsonElement parseAsJsonElement(String payload) {
         JsonReader reader = new JsonReader(new StringReader(payload));
         reader.setLenient(true);
@@ -247,28 +251,31 @@ public class CatsUtil {
         }
     }
 
-    public void setAdditionalPropertiesToPayload(Map<String, String> currentPathValues, JsonElement payload) {
+    public String setAdditionalPropertiesToPayload(Map<String, String> currentPathValues, String payload) {
         String additionalProperties = currentPathValues.get(ADDITIONAL_PROPERTIES);
-        if (!"null".equalsIgnoreCase(additionalProperties) && additionalProperties != null) {
-
+        if (!"null".equalsIgnoreCase(additionalProperties) && additionalProperties != null && StringUtils.isNotBlank(payload)) {
+            DocumentContext jsonDoc = JsonPath.parse(payload);
+            String mapValues = additionalProperties;
+            String prefix = "$";
             if (additionalProperties.contains(ELEMENT)) {
                 String[] elements = additionalProperties.split(",", 2);
                 String topElement = elements[0].replace(ELEMENT + "=", "").replace("{", "");
-                String mapValues = elements[1];
-                JsonObject toBeAdded = new JsonObject();
-                setMapValues(toBeAdded, mapValues);
-                payload.getAsJsonObject().add(topElement, toBeAdded);
-            } else {
-                this.setMapValues(payload, additionalProperties);
+                mapValues = elements[1];
+                jsonDoc.put(JsonPath.compile(prefix), topElement, new LinkedHashMap<>());
+                prefix = prefix + "." + topElement;
             }
+            setMapValues(jsonDoc, mapValues, prefix);
+
+            return jsonDoc.jsonString();
         }
+        return payload;
     }
 
-    private void setMapValues(JsonElement payload, String additionalProperties) {
+    private void setMapValues(DocumentContext jsonDoc, String additionalProperties, String prefix) {
         String mapValues = additionalProperties.replace(MAP_VALUES + "=", "").replace("{", "").replace("}", "");
         for (String values : mapValues.split(",")) {
             String[] entry = values.split("=");
-            payload.getAsJsonObject().addProperty(entry[0].trim(), entry[1].trim());
+            jsonDoc.put(JsonPath.compile(prefix), entry[0].trim(), catsDSLParser.parseAndGetResult(entry[1].trim(), jsonDoc.jsonString()));
         }
     }
 
