@@ -8,6 +8,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import org.assertj.core.api.Assertions;
@@ -46,6 +47,9 @@ class NewFieldsFuzzerTest {
 
     @SpyBean
     private CatsUtil catsUtil;
+
+    @SpyBean
+    private CatsDSLParser catsDSLParser;
 
     private NewFieldsFuzzer newFieldsFuzzer;
 

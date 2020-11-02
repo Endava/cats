@@ -9,7 +9,6 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import com.google.gson.JsonElement;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.junit.jupiter.api.BeforeAll;
@@ -91,7 +90,7 @@ class BaseFieldsFuzzerTest {
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
         Mockito.when(catsUtil.isPrimitive(Mockito.eq(null), Mockito.anyString())).thenReturn(true);
-        Mockito.when(catsUtil.replaceFieldWithFuzzedValue(Mockito.eq(null), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
+        Mockito.when(catsUtil.replaceField(Mockito.eq(null), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
