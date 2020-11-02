@@ -45,6 +45,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,7 +74,7 @@ public class ServiceCaller {
             connectionManager.setDefaultMaxPerRoute(100);
 
             httpClient = HttpClients.custom().setConnectionManager(connectionManager).setSSLContext(sslContext).build();
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             LOGGER.warn("Failed to configure HTTP CLIENT socket factory");
         }
     }
