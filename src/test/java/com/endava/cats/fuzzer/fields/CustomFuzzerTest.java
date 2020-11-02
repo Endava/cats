@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -109,6 +110,8 @@ class CustomFuzzerTest {
         jsonObject.addProperty("field", "oldValue");
 
         FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "newValue", "newValue2");
+        Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        Mockito.doCallRealMethod().when(catsUtil).sanitizeToJsonPath(Mockito.anyString());
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -116,7 +119,6 @@ class CustomFuzzerTest {
 
         Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
-        Assertions.assertThat(jsonObject.toString()).contains("newValue");
     }
 
     @Test
@@ -133,28 +135,25 @@ class CustomFuzzerTest {
 
         Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
-        OffsetDateTime dateTime = OffsetDateTime.parse(jsonObject.get("field").getAsString());
-        Assertions.assertThat(dateTime).isAfter(OffsetDateTime.now().plusDays(19));
     }
 
     private FuzzingData setupFuzzingData(CatsResponse catsResponse, JsonObject jsonObject, String... customFieldValues) throws IOException {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
-        FuzzingData data = FuzzingData.builder().path("path1").payload("{'field':'oldValue'}").
+        FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).build();
 
 
         ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", "custom");
         Mockito.when(catsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
         Mockito.when(catsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
-        Mockito.when(catsUtil.getJsonElementBasedOnFullyQualifiedName(Mockito.eq(jsonObject), Mockito.eq("field"))).thenReturn(jsonObject);
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
         return data;
     }
 
     @Test
     void givenACompleteCustomFuzzerFileWithDescriptionAndOutputVariables_whenTheFuzzerRuns_thenTheTestCasesAreCorrectlyExecuted() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{'code': '200'}");
+        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
 
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
@@ -165,7 +164,7 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithAdditionalProperties_whenTheFuzzerRuns_thenPropertiesAreProperlyAddedToThePayload() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-additional.yml", "{'code': '200'}");
+        FuzzingData data = setContext("src/test/resources/customFuzzer-additional.yml", "{\"code\": \"200\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -175,7 +174,7 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithVerifyParameters_whenTheFuzzerRuns_thenVerifyParameterAreProperlyChecked() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -185,7 +184,7 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithVerifyParametersThatDoNotMatchTheResponseValues_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{'name': {'first': 'Cats'}, 'id': '45'}");
+        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -195,7 +194,7 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFile_whenCurrentPathDoesNotExistInFile_thenNoTestIsExecuted() throws Exception {
-        setContext("src/test/resources/customFuzzer-verify.yml", "{'name': {'first': 'Cats'}, 'id': '45'}");
+        setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
 
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
@@ -206,7 +205,7 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithVerifyParametersThatAreNotInResponse_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-verify-not-set.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        FuzzingData data = setContext("src/test/resources/customFuzzer-verify-not-set.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -217,7 +216,7 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithHttpMethodThatIsNotInContract_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-http-method.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        FuzzingData data = setContext("src/test/resources/customFuzzer-http-method.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -228,14 +227,15 @@ class CustomFuzzerTest {
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
         ReflectionTestUtils.setField(customFuzzer, "customFuzzerFile", fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
+        Mockito.doCallRealMethod().when(catsUtil).sanitizeToJsonPath(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).setAdditionalPropertiesToPayload(Mockito.any(), Mockito.any());
+        Mockito.doCallRealMethod().when(catsUtil).equalAsJson(Mockito.anyString(), Mockito.anyString());
+        Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
 
-        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'pet':'oldValue'}").
+        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
 

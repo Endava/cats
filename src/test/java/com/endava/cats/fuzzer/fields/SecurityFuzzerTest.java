@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -141,7 +140,7 @@ class SecurityFuzzerTest {
         ReflectionTestUtils.setField(securityFuzzer, "securityFuzzerFile", fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).getJsonElementBasedOnFullyQualifiedName(Mockito.any(), Mockito.anyString());
+        Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
