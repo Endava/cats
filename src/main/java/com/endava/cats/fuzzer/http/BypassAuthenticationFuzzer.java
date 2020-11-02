@@ -22,10 +22,10 @@ import java.util.stream.Stream;
 @Component
 @HttpFuzzer
 public class BypassAuthenticationFuzzer implements Fuzzer {
-    public static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
-            "secret", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
-
+    private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
+            "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
     private static final Logger LOGGER = LoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
+
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsParams catsParams;
