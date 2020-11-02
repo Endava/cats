@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 public class RecommendedHeadersContractInfoFuzzer extends BaseContractInfoFuzzer {
-    protected static final List<String> HEADERS = Arrays.asList("correlationid", "traceid");
+    static final List<String> HEADERS = Arrays.asList("correlationid", "traceid");
 
     @Autowired
     public RecommendedHeadersContractInfoFuzzer(TestCaseListener tcl) {
