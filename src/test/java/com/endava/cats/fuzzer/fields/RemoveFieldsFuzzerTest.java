@@ -8,6 +8,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -50,6 +51,9 @@ class RemoveFieldsFuzzerTest {
 
     @SpyBean
     private CatsUtil catsUtil;
+
+    @SpyBean
+    private CatsDSLParser catsDSLParser;
 
     private RemoveFieldsFuzzer removeFieldsFuzzer;
 
