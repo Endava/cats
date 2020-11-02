@@ -53,7 +53,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
                 this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
 
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
-            FuzzingResult fuzzingResult = catsUtil.replaceFieldWithFuzzedValue(data.getPayload(), fuzzedField, fuzzingStrategy);
+            FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
 
 
