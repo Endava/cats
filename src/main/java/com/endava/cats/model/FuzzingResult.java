@@ -9,6 +9,10 @@ public class FuzzingResult {
         this.fuzzedValue = fuzzedValue;
     }
 
+    public static FuzzingResult empty() {
+        return new FuzzingResult("", "");
+    }
+
     public String getJson() {
         return json;
     }
