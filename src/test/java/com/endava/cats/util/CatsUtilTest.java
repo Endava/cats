@@ -93,4 +93,14 @@ class CatsUtilTest {
         String updatedPayload = catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payload);
         Assertions.assertThat(updatedPayload).doesNotContain("metadata").contains("test1");
     }
+
+    @Test
+    void shouldReturnEmptyFuzzingResultWhenEmptyJson() {
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
+        FuzzingResult result = catsUtil.replaceField("", "test", strategy);
+
+        Assertions.assertThat(result.getFuzzedValue()).isEmpty();
+        Assertions.assertThat(result.getJson()).isEmpty();
+    }
 }

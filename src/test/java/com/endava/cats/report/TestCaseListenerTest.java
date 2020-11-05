@@ -220,9 +220,6 @@ class TestCaseListenerTest {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
-        Assertions.assertThat(testCase).isNotNull();
-        Assertions.assertThat(testCase.getResultDetails()).startsWith("Call returned an unexpected result, but with documented code");
     }
 
     @Test

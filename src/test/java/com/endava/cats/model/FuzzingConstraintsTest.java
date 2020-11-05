@@ -30,4 +30,10 @@ class FuzzingConstraintsTest {
         Assertions.assertThat(fuzzingConstraints.hasMinLengthOrMandatoryFieldsFuzzed()).isTrue();
         Assertions.assertThat(fuzzingConstraints.getRequiredString()).isEqualTo("TRUE");
     }
+
+    @Test
+    void shouldReturnHasMinLengthFalse() {
+        fuzzingConstraints = FuzzingConstraints.builder().hasMinlength(false).hasRequiredFieldsFuzzed(false).build();
+        Assertions.assertThat(fuzzingConstraints.hasMinLengthOrMandatoryFieldsFuzzed()).isFalse();
+    }
 }
