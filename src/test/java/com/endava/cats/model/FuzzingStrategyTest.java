@@ -61,7 +61,7 @@ class FuzzingStrategyTest {
 
     @Test
     void givenAFuzzingStrategy_whenSettingAnInnerValueBelowTruncationThreshold_thenTheValueIsNotTruncated() {
-        FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 29));
+        FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 30));
 
         Assertions.assertThat(strategy).hasToString(strategy.truncatedValue());
     }
@@ -71,5 +71,19 @@ class FuzzingStrategyTest {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(null);
 
         Assertions.assertThat(strategy).hasToString(strategy.name());
+    }
+
+    @Test
+    void shouldTruncateValue() {
+        FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("a", 31));
+
+        Assertions.assertThat(strategy.truncatedValue()).contains("REPLACE", "with", StringUtils.repeat("a", 30), "...");
+    }
+
+    @Test
+    void shouldReturnNameOnlyWhenDataIsNull() {
+        FuzzingStrategy strategy = FuzzingStrategy.replace().withData(null);
+
+        Assertions.assertThat(strategy.truncatedValue()).isEqualTo(strategy.name());
     }
 }

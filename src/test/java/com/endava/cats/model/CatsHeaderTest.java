@@ -2,6 +2,7 @@ package com.endava.cats.model;
 
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import org.apache.commons.lang3.StringUtils;
@@ -108,9 +109,57 @@ class CatsHeaderTest {
 
     @Test
     void shouldTruncateValue() {
-        CatsHeader header = CatsHeader.builder().value(StringUtils.repeat("a", 100)).build();
-
-        Assertions.assertThat(header.getTruncatedValue()).isEqualTo("aaaaaaaaaaaaaaaaaaaa...[Total length:100]");
+        CatsHeader header = CatsHeader.builder().value(StringUtils.repeat("a", 51)).build();
+        Assertions.assertThat(header.getTruncatedValue()).isEqualTo("aaaaaaaaaaaaaaaaaaaa...[Total length:51]");
     }
 
+    @Test
+    void shouldNotTruncateValue() {
+        CatsHeader header = CatsHeader.builder().value(StringUtils.repeat("a", 50)).build();
+        Assertions.assertThat(header.getTruncatedValue()).isEqualTo(StringUtils.repeat("a", 50));
+    }
+
+    @Test
+    void shouldReturnTruncatedValueAsNull() {
+        CatsHeader header = CatsHeader.builder().value(null).build();
+        Assertions.assertThat(header.getTruncatedValue()).isNull();
+    }
+
+    @Test
+    void shouldGetValueMinLengthAsHalfOfMaxLengthWhenMinLengthZero() {
+        Parameter parameter = new Parameter();
+        StringSchema schema = new StringSchema();
+        schema.setMinLength(0);
+        schema.setMaxLength(10);
+        parameter.setName("header");
+        parameter.setSchema(schema);
+
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+        Assertions.assertThat(header.getValue()).hasSizeLessThanOrEqualTo(10).hasSizeGreaterThanOrEqualTo(10 / 2);
+    }
+
+    @Test
+    void shouldGenerateValueBasedOnPattern() {
+        Parameter parameter = new Parameter();
+        Schema schema = new Schema();
+        schema.setPattern("[A-Z]+");
+        parameter.setName("header");
+        parameter.setSchema(schema);
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.getValue()).matches("[A-Z]+").hasSizeGreaterThan(1);
+    }
+
+    @Test
+    void shouldGetNameAndValue() {
+        Parameter parameter = new Parameter();
+        StringSchema schema = new StringSchema();
+        schema.setMaxLength(20);
+        parameter.setName("header");
+        parameter.setSchema(schema);
+        CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
+
+        Assertions.assertThat(header.nameAndValue()).contains("header", "{", "}", "=");
+        Assertions.assertThat(header.toString()).contains("header", "required", "{", "}", "=");
+    }
 }
