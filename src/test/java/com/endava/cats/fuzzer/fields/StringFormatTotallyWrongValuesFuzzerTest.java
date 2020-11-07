@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.*;
 import org.assertj.core.api.Assertions;
@@ -23,11 +24,14 @@ class StringFormatTotallyWrongValuesFuzzerTest {
     @Mock
     private CatsUtil catsUtil;
 
+    @Mock
+    private CatsParams catsParams;
+
     private StringFormatTotallyWrongValuesFuzzer stringFormatTotallyWrongValuesFuzzer;
 
     @BeforeEach
     void setup() {
-        stringFormatTotallyWrongValuesFuzzer = new StringFormatTotallyWrongValuesFuzzer(serviceCaller, testCaseListener, catsUtil);
+        stringFormatTotallyWrongValuesFuzzer = new StringFormatTotallyWrongValuesFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
     }
 
     @Test

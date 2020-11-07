@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
@@ -25,11 +26,14 @@ class ExtremeNegativeValueIntegerFieldsFuzzerTest {
     @Mock
     private CatsUtil catsUtil;
 
+    @Mock
+    private CatsParams catsParams;
+
     private ExtremeNegativeValueIntegerFieldsFuzzer extremeNegativeValueIntegerFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        extremeNegativeValueIntegerFieldsFuzzer = new ExtremeNegativeValueIntegerFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
+        extremeNegativeValueIntegerFieldsFuzzer = new ExtremeNegativeValueIntegerFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
     }
 
     @Test

@@ -56,6 +56,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
  */
 @Component
 public class ServiceCaller {
+    public static final String CATS_REMOVE_FIELD = "cats_remove_field";
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
@@ -362,7 +363,7 @@ public class ServiceCaller {
      * @return the path with reference data replacing path parameters
      */
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
-        Map<String, String> currentPathRefData = Optional.ofNullable(catsParams.getRefData().get(data.getRelativePath())).orElse(Collections.emptyMap());
+        Map<String, String> currentPathRefData = catsParams.getRefData(data.getRelativePath());
         LOGGER.info("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, String> entry : currentPathRefData.entrySet()) {
@@ -373,12 +374,12 @@ public class ServiceCaller {
         return currentUrl;
     }
 
-    private String replacePayloadWithRefData(ServiceData data) {
+    String replacePayloadWithRefData(ServiceData data) {
         if (!data.isReplaceRefData()) {
             LOGGER.info("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return data.getPayload();
         } else {
-            Map<String, String> refDataForCurrentPath = Optional.ofNullable(catsParams.getRefData().get(data.getRelativePath())).orElse(Collections.emptyMap());
+            Map<String, String> refDataForCurrentPath = catsParams.getRefData(data.getRelativePath());
             LOGGER.info("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
             Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
@@ -389,9 +390,12 @@ public class ServiceCaller {
                 String refDataValue = catsDSLParser.parseAndGetResult(entry.getValue(), data.getPayload());
                 FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
                 boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
-
                 try {
-                    payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();
+                    if (CATS_REMOVE_FIELD.equalsIgnoreCase(refDataValue)) {
+                        payload = catsUtil.deleteNode(payload, entry.getKey());
+                    } else {
+                        payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();
+                    }
                 } catch (PathNotFoundException e) {
                     LOGGER.warn("Ref data key {} was not found within the payload!", entry.getKey());
                 }

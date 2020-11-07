@@ -5,6 +5,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -16,8 +17,8 @@ import org.springframework.stereotype.Component;
 public class TrailingSpacesInFieldsValidateTrimFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
 
     @Autowired
-    public TrailingSpacesInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
-        super(sc, lr, cu);
+    public TrailingSpacesInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        super(sc, lr, cu, cp);
     }
 
     @Override

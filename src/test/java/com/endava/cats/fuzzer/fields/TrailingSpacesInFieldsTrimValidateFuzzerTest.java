@@ -4,6 +4,7 @@ import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +24,14 @@ class TrailingSpacesInFieldsTrimValidateFuzzerTest {
     @Mock
     private CatsUtil catsUtil;
 
+    @Mock
+    private CatsParams catsParams;
+
     private TrailingSpacesInFieldsTrimValidateFuzzer trailingSpacesInFieldsTrimValidateFuzzer;
 
     @BeforeEach
     void setup() {
-        trailingSpacesInFieldsTrimValidateFuzzer = new TrailingSpacesInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil);
+        trailingSpacesInFieldsTrimValidateFuzzer = new TrailingSpacesInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
     }
 
     @Test

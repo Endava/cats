@@ -58,8 +58,8 @@ class ExactValuesInFieldsFuzzerTest {
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {
 
-        public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
-            super(sc, lr, cu, catsParams);
+        public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+            super(sc, lr, cu, cp);
         }
 
         @Override

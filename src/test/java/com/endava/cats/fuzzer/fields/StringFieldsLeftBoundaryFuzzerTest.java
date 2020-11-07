@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -27,11 +28,14 @@ class StringFieldsLeftBoundaryFuzzerTest {
     @Mock
     private CatsUtil catsUtil;
 
+    @Mock
+    private CatsParams catsParams;
+
     private StringFieldsLeftBoundaryFuzzer stringFieldsLeftBoundaryFuzzer;
 
     @BeforeEach
     void setup() {
-        stringFieldsLeftBoundaryFuzzer = new StringFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, catsUtil);
+        stringFieldsLeftBoundaryFuzzer = new StringFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
     }
 
     @Test
