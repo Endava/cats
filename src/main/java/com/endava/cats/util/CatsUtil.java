@@ -193,6 +193,14 @@ public class CatsUtil {
         return this.replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
     }
 
+    public String deleteNode(String payload, String node) {
+        try {
+            return JsonPath.parse(payload).delete(this.sanitizeToJsonPath(node)).jsonString();
+        } catch (PathNotFoundException e) {
+            return payload;
+        }
+    }
+
     public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
         if (StringUtils.isNotBlank(payload)) {
             String jsonPropToGetValue = jsonPropertyForReplacement;
@@ -204,13 +212,17 @@ public class CatsUtil {
             Object oldValue = context.read(sanitizeToJsonPath(jsonPropToGetValue));
             String valueToSet = fuzzingStrategyToApply.process(oldValue);
             if (mergeFuzzing) {
-                valueToSet = FuzzingStrategy.mergeFuzzing(String.valueOf(oldValue), fuzzingStrategyToApply.getData(), "   ");
+                valueToSet = FuzzingStrategy.mergeFuzzing(this.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData(), "   ");
             }
             context.set(sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
 
             return new FuzzingResult(context.jsonString(), fuzzingStrategyToApply.process(oldValue));
         }
         return FuzzingResult.empty();
+    }
+
+    private String nullOrValueOf(Object object) {
+        return object == null ? null : String.valueOf(object);
     }
 
     public boolean isValidJson(String text) {
