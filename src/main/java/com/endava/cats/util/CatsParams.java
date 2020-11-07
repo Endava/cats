@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @Component
 @Slf4j
 public class CatsParams {
-
+    private static final String ALL = "all";
     private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final CatsUtil catsUtil;
     private final Map<String, Map<String, String>> refData = new HashMap<>();
@@ -81,7 +81,11 @@ public class CatsParams {
         return this.headers;
     }
 
-    public Map<String, Map<String, String>> getRefData() {
-        return this.refData;
+    public Map<String, String> getRefData(String currentPath) {
+        Map<String, String> currentPathRefData = Optional.ofNullable(this.refData.get(currentPath)).orElse(Collections.emptyMap());
+        Map<String, String> allValues = Optional.ofNullable(this.refData.get(ALL)).orElse(Collections.emptyMap());
+
+        currentPathRefData.putAll(allValues);
+        return currentPathRefData;
     }
 }
