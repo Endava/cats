@@ -87,14 +87,14 @@ class NamingsContractInfoFuzzerTest {
         ApiResponses apiResponses = new ApiResponses();
 
         ApiResponse firstApiResponse = new ApiResponse();
-        firstApiResponse.set$ref("#components/firstPayload");
+        firstApiResponse.set$ref("#components/first_Payload-test");
         apiResponses.addApiResponse("200", firstApiResponse);
 
         ApiResponse secondApiResponse = new ApiResponse();
         Content content = new Content();
         MediaType mediaType = new MediaType();
         Schema schema = new Schema();
-        schema.set$ref("#components/secondpayload");
+        schema.set$ref("#components/secondpayload_tesAaa");
         mediaType.setSchema(schema);
         content.put("application/json", mediaType);
         secondApiResponse.setContent(content);
@@ -106,7 +106,7 @@ class NamingsContractInfoFuzzerTest {
 
         namingsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}"), Mockito.contains("The following request/response objects are not matching CamelCase: <strong>firstPayload</strong>, <strong>secondpayload</strong><br /><br />"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}"), Mockito.contains("The following request/response objects are not matching CamelCase, snake_case or hyphen-case: <strong>first_Payload-test</strong>, <strong>secondpayload_tesAaa</strong><br /><br />"));
     }
 
     @Test

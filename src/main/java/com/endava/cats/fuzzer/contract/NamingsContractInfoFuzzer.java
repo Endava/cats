@@ -68,8 +68,8 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         }
         return this.check(stringToCheck.toArray(new String[0]), jsonObject -> !CAMEL_CASE_CAPITAL_START.matcher(jsonObject).matches()
-                        && !HYPHEN_CASE.matcher(jsonObject).matches() && SNAKE_CASE.matcher(jsonObject).matches(),
-                "The following request/response objects are not matching CamelCase: %s");
+                        && !HYPHEN_CASE.matcher(jsonObject).matches() && !SNAKE_CASE.matcher(jsonObject).matches(),
+                "The following request/response objects are not matching CamelCase, snake_case or hyphen-case: %s");
     }
 
     private String checkVariables(String[] pathElements) {
