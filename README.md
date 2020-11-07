@@ -78,6 +78,8 @@ Table of Contents
    * [Reference Data File](#reference-data-file)
       * [Setting additionalProperties](#setting-additionalproperties)
       * [RefData reserved keywords](#refdata-reserved-keywords)
+      * [Sending Ref Data for all paths](#sending-ref-data-for-all-paths)
+      * [Removing fields](#removing-fields)
    * [Headers File](#headers-file)
    * [URL Params](#url-params)
    * [Edge Spaces Strategy](#edge-spaces-strategy)
@@ -705,6 +707,25 @@ The above example will output the following json (considering also the above exa
 ```
 ## RefData reserved keywords
 The following keywords are reserved in a reference data file: `additionalProperties`, `topElement` and `mapValues`.
+
+## Sending ref data for ALL paths
+You can also have the ability to send the same reference data for ALL paths (just like you do with the headers). You can achieve this by using `all` as a key in the `refData` file:
+
+```yaml
+all:
+  address#zip: 123
+```
+This will try to replace `address#zip` in **all** requests (if the field present).
+
+## Removing fields
+There are (rare) cases when some fields my not make sense together. Something like: if you send `firstName` and `lastName`, you are not allowed to also send `name`. 
+As OpenAPI does not have the capability to send request fields which are dependent on each other, you can use the `refData` file to instruct CATS to remove fields before sending a request to the service.
+You can achieve this by using the `cats_remove_field` as a value for the fields you want to remove. For the above case the `refData` field will look as follows:
+
+```yaml
+all:
+  name: "cats_remove_field"
+```
 
 # Headers File
 This can be used to send custom fixed headers with each payload. It is useful when you have authentication tokens you want to use to authenticate the API calls. You can use path specific headers or common headers that will be added to each call using an `all` element. Specific paths will take precedence over the `all` element.
