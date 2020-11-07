@@ -464,7 +464,7 @@ Some things to note about the `customFuzzer.yml` file:
 - if a `httpMethod` parameter is supplied, but is not a valid HTTP method, a `warning` will be issued and no test will be executed
 - if the request payload uses a `oneOf` element to allow multiple request types, you can control which of the possible types the `CustomFuzzer` will apply to using the `oneOfSelection` keyword. The value of the `oneOfSelection` keyword must match the fully qualified name of the `discriminator`.
 - if no `oneOfSelection` is supplied and the request payload accepts multiple `oneOf` elements, than a custom test will be created for each type of payload
-- the file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above or `.`
+- the file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above instead of `.`
 
 #### Dealing with oneOf, anyOf
 When you have request payloads which can take multiple object types, you can use the `oneOfSelection` keyword to specify which of the possible object types is required by the `CustomFuzzer`.
@@ -586,7 +586,7 @@ A typical `securityFuzzerFile` will look like this:
 
 You can also supply `output`, `httpMethod`, `oneOfSelection` and/or `verify` (with the same behaviour as within the `CustomFuzzer`) if they are relevant to your case.
 
-The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above or `.`.
+The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example instead of `.`.
 
 This is what the `SecurityFuzzer` will do after parsing the above `securityFuzzerFile`:
 - it will add the fixed value "My Pet" to all the request for the field `name`
@@ -669,7 +669,7 @@ This will result in any fuzzed request to the `/path/0.1/auth` endpoint being up
 }
 ```
 
-The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above or `.`.
+The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above instead of `.`.
 
 ## Setting additionalProperties
 As additional properties are maps i.e. they don't actually have a structure, CATS cannot currently generate valid values. If the elements within such a data structure are essential for a request,
@@ -798,7 +798,7 @@ If a response contains a free Map specified using the `additionalParameters` tag
 Cats uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
 
 # Custom Files General Info
-All custom files that can be used by CATS (`customFuzzerFile`, `headers`, `refData`, etc) are in a YAML format. When setting or getting values to/from JSON for input and/or output variables, you must use a [JsonPath](https://goessner.net/articles/JsonPath/) syntax using either `#` or `.` as separators.
+All custom files that can be used by CATS (`customFuzzerFile`, `headers`, `refData`, etc) are in a YAML format. When setting or getting values to/from JSON for input and/or output variables, you must use a [JsonPath](https://goessner.net/articles/JsonPath/) syntax using either `#`  (not `.`) as separators.
 You can find some selector examples here: [JsonPath](https://github.com/json-path/JsonPath).
 
 # Contributing
