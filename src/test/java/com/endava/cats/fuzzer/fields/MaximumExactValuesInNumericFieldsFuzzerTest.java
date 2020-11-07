@@ -46,7 +46,7 @@ class MaximumExactValuesInNumericFieldsFuzzerTest {
     void givenANewStringFieldsRightBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFieldsRightBoundaryFuzzer() {
         StringSchema stringSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
-        Mockito.when(catsParams.getRefData()).thenReturn(Collections.emptyMap());
+        Mockito.when(catsParams.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
         Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsOnly(IntegerSchema.class, NumberSchema.class);
         Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.description()).isNotNull();

@@ -5,6 +5,7 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
@@ -20,8 +21,8 @@ import java.util.List;
 public class StringsInNumericFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Autowired
-    public StringsInNumericFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
-        super(sc, lr, cu);
+    public StringsInNumericFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        super(sc, lr, cu, cp);
     }
 
     @Override

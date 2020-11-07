@@ -5,6 +5,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,11 +25,14 @@ class Expect4XXForRequiredBaseFieldsFuzzerTest {
     @Mock
     private CatsUtil catsUtil;
 
+    @Mock
+    private CatsParams catsParams;
+
     private Expect4XXForRequiredBaseFieldsFuzzer expect4XXForRequiredBaseFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        expect4XXForRequiredBaseFieldsFuzzer = new CustomExpect4XX(serviceCaller, testCaseListener, catsUtil);
+        expect4XXForRequiredBaseFieldsFuzzer = new CustomExpect4XX(serviceCaller, testCaseListener, catsUtil, catsParams);
     }
 
     @Test
@@ -40,8 +44,8 @@ class Expect4XXForRequiredBaseFieldsFuzzerTest {
 
     static class CustomExpect4XX extends Expect4XXForRequiredBaseFieldsFuzzer {
 
-        public CustomExpect4XX(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
-            super(sc, lr, cu);
+        public CustomExpect4XX(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+            super(sc, lr, cu, cp);
         }
 
         @Override

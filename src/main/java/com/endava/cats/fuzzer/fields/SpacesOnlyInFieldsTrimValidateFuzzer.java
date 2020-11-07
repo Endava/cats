@@ -7,6 +7,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
@@ -23,8 +24,8 @@ import java.util.List;
 public class SpacesOnlyInFieldsTrimValidateFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
 
     @Autowired
-    public SpacesOnlyInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
-        super(sc, lr, cu);
+    public SpacesOnlyInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        super(sc, lr, cu, cp);
     }
 
     static FuzzingStrategy getFuzzStrategy(FuzzingData data, String fuzzedField) {

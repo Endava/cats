@@ -7,30 +7,36 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.*;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * This class performs the actual fuzzing. It can be extended to provide expected result codes based on different fuzzing scenarios.
  */
 public abstract class BaseFieldsFuzzer implements Fuzzer {
+    public static final String CATS_REMOVE_FIELD = "cats_remove_field";
+    final CatsParams catsParams;
     final Logger logger = LoggerFactory.getLogger(getClass());
-
-
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
 
+
     @Autowired
-    protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = cu;
+        this.catsParams = cp;
     }
 
 
@@ -38,6 +44,12 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         logger.info("All required fields, including subfields: {}", data.getAllRequiredFields());
         logger.info("All fields {}", data.getAllFields());
+
+        List<String> fieldsToBeRemoved = catsParams.getRefData(data.getPath()).keySet()
+                .stream().filter(CATS_REMOVE_FIELD::equalsIgnoreCase).collect(Collectors.toList());
+        logger.info("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
+        Set<String> allFields = data.getAllFields();
+        allFields.removeAll(fieldsToBeRemoved);
 
         for (String fuzzedField : data.getAllFields()) {
             testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField));

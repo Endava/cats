@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -25,11 +26,14 @@ class DecimalFieldsLeftBoundaryFuzzerTest {
     @Mock
     private CatsUtil catsUtil;
 
+    @Mock
+    private CatsParams catsParams;
+
     private DecimalFieldsLeftBoundaryFuzzer decimalFieldsLeftBoundaryFuzzer;
 
     @BeforeEach
     void setup() {
-        decimalFieldsLeftBoundaryFuzzer = new DecimalFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, catsUtil);
+        decimalFieldsLeftBoundaryFuzzer = new DecimalFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
     }
 
     @Test

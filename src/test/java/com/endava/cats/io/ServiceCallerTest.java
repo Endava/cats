@@ -25,13 +25,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsUtil.class})
+@SpringJUnitConfig({CatsUtil.class, CatsDSLParser.class})
 class ServiceCallerTest {
 
     public static WireMockServer wireMockServer;
     @MockBean
     private TestCaseListener testCaseListener;
-    @MockBean
+    @Autowired
     private CatsDSLParser catsDSLParser;
     @Autowired
     private CatsUtil catsUtil;
@@ -134,5 +134,13 @@ class ServiceCallerTest {
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEqualTo("{'pet':'pet'}");
+    }
+
+    @Test
+    void shouldRemoveRefDataFieldsWhichAreMarkedForRemoval() {
+        ServiceData data = ServiceData.builder().relativePath("/pets").payload("{\"id\":\"1\", \"field\":\"old_value\",\"name\":\"cats\"}")
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
+        String newPayload = serviceCaller.replacePayloadWithRefData(data);
+        Assertions.assertThat(newPayload).contains("newValue", "id", "field").doesNotContain("cats", "name");
     }
 }

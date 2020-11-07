@@ -9,8 +9,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.PathNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,18 +96,10 @@ public class RemoveFieldsFuzzer implements Fuzzer {
             prefix = CatsUtil.ALL_ELEMENTS_ROOT_ARRAY;
         }
         for (String field : fieldsToRemove) {
-            payload = this.deleteNode(payload, prefix + field);
+            payload = catsUtil.deleteNode(payload, prefix + field);
         }
 
         return payload;
-    }
-
-    public String deleteNode(String payload, String node) {
-        try {
-            return JsonPath.parse(payload).delete(catsUtil.sanitizeToJsonPath(node)).jsonString();
-        } catch (PathNotFoundException e) {
-            return payload;
-        }
     }
 
     public String toString() {

@@ -1,2 +1,3 @@
 /pets:
-  field: newValue
+  field: "newValue"
+  name: "cats_remove_field"

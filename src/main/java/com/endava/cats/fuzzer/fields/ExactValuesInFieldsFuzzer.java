@@ -20,12 +20,9 @@ import java.util.function.Function;
 
 public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
-    private final CatsParams catsParams;
-
     @Autowired
-    protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams catsParams) {
-        super(sc, lr, cu);
-        this.catsParams = catsParams;
+    protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        super(sc, lr, cu, cp);
     }
 
     @Override
@@ -47,8 +44,8 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     @Override
     protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
-        Map<String, String> currentPath = catsParams.getRefData().get(data.getPath());
-        return (currentPath == null || currentPath.get(fuzzedField) == null) && getExactMethod().apply(schema) != null;
+        Map<String, String> currentPath = catsParams.getRefData(data.getPath());
+        return currentPath.isEmpty() && getExactMethod().apply(schema) != null;
     }
 
     @Override
