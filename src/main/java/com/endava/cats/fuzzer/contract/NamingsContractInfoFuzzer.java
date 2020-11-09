@@ -25,6 +25,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final Pattern SNAKE_CASE = Pattern.compile("(^[a-z]+((_)?[a-z])+$)+");
     private static final Pattern CAMEL_CASE = Pattern.compile("(^[a-z]+[A-Za-z]+$)+");
     private static final Pattern CAMEL_CASE_CAPITAL_START = Pattern.compile("(^[A-Z][A-Za-z]+$)+");
+    private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_[0-9]*");
     private static final String PLURAL_END = "s";
 
     @Autowired
@@ -68,7 +69,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         }
         return this.check(stringToCheck.toArray(new String[0]), jsonObject -> !CAMEL_CASE_CAPITAL_START.matcher(jsonObject).matches()
-                        && !HYPHEN_CASE.matcher(jsonObject).matches() && !SNAKE_CASE.matcher(jsonObject).matches(),
+                        && !HYPHEN_CASE.matcher(jsonObject).matches() && !SNAKE_CASE.matcher(jsonObject).matches() && !GENERATED_BODY_OBJECTS.matcher(jsonObject).matches(),
                 "The following request/response objects are not matching CamelCase, snake_case or hyphen-case: %s");
     }
 

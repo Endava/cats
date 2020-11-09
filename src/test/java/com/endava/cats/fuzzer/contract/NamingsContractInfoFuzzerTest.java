@@ -80,25 +80,17 @@ class NamingsContractInfoFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path follows the REST naming good practices."));
     }
 
-    @Test
-    void shouldReportErrorWhenJsonObjectsNotMatchingCamelCase() {
+    @ParameterizedTest
+    @CsvSource({"first_Payload-test", "secondpayload_tesAaa"})
+    void shouldReportErrorWhenJsonObjectsNotMatchingCamelCase(String schemaName) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
         ApiResponses apiResponses = new ApiResponses();
 
         ApiResponse firstApiResponse = new ApiResponse();
-        firstApiResponse.set$ref("#components/first_Payload-test");
+        firstApiResponse.set$ref(schemaName);
         apiResponses.addApiResponse("200", firstApiResponse);
 
-        ApiResponse secondApiResponse = new ApiResponse();
-        Content content = new Content();
-        MediaType mediaType = new MediaType();
-        Schema schema = new Schema();
-        schema.set$ref("#components/secondpayload_tesAaa");
-        mediaType.setSchema(schema);
-        content.put("application/json", mediaType);
-        secondApiResponse.setContent(content);
-        apiResponses.addApiResponse("300", secondApiResponse);
 
         operation.setResponses(apiResponses);
         pathItem.setPost(operation);
@@ -106,7 +98,29 @@ class NamingsContractInfoFuzzerTest {
 
         namingsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}"), Mockito.contains("The following request/response objects are not matching CamelCase, snake_case or hyphen-case: <strong>first_Payload-test</strong>, <strong>secondpayload_tesAaa</strong><br /><br />"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow REST naming good practices: {}"),
+                Mockito.contains(String.format("The following request/response objects are not matching CamelCase, snake_case or hyphen-case: <strong>%s</strong><br /><br />", schemaName)));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"first_payload", "SecondPayload", "third-payload", "body_120"})
+    void shouldMatchRestNamingStandards(String schemaName) {
+        PathItem pathItem = new PathItem();
+        Operation operation = new Operation();
+        ApiResponses apiResponses = new ApiResponses();
+
+        ApiResponse firstApiResponse = new ApiResponse();
+        firstApiResponse.set$ref(schemaName);
+        apiResponses.addApiResponse("200", firstApiResponse);
+
+
+        operation.setResponses(apiResponses);
+        pathItem.setPost(operation);
+        FuzzingData data = FuzzingData.builder().path("/pets").method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
+
+        namingsContractInfoFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path follows the REST naming good practices."));
     }
 
     @Test
