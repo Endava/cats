@@ -194,11 +194,14 @@ public class CatsUtil {
     }
 
     public String deleteNode(String payload, String node) {
-        try {
-            return JsonPath.parse(payload).delete(this.sanitizeToJsonPath(node)).jsonString();
-        } catch (PathNotFoundException e) {
-            return payload;
+        if (StringUtils.isNotBlank(payload)) {
+            try {
+                return JsonPath.parse(payload).delete(this.sanitizeToJsonPath(node)).jsonString();
+            } catch (PathNotFoundException e) {
+                return payload;
+            }
         }
+        return payload;
     }
 
     public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
