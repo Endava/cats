@@ -441,7 +441,12 @@ public class FuzzingDataFactory {
             return apiResponse.get$ref();
         }
         if (apiResponse.getContent() != null && apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE) != null) {
-            return apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema().get$ref();
+            Schema respSchema = apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema();
+            if (respSchema instanceof ArraySchema) {
+                return ((ArraySchema) respSchema).getItems().get$ref();
+            } else {
+                return respSchema.get$ref();
+            }
         }
         return null;
     }
