@@ -18,6 +18,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -77,7 +78,7 @@ class CatsMainTest {
     }
 
     @Test
-    void givenAContractAndAServerAndASkipFuzzerArgument_whenStartingCats_thenTheSkipForIsCorrectlyProcessed() {
+    void givenAContractAndAServerAndASkipFuzzerArgument_whenStartingCats_thenTheSkipForIsCorrectlyProcessed() throws IOException {
         ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
         catsMain.doLogic("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeStringsFuzzerForPath=/pets");

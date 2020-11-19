@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -31,6 +32,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.MimeTypeUtils;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -114,6 +116,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private CustomFuzzer customFuzzer;
     @Autowired
     private ExecutionStatisticsListener executionStatisticsListener;
+    @Autowired
+    private CatsParams catsParams;
 
 
     public static void main(String... args) {
@@ -164,10 +168,12 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             this.doLogic(args);
         } catch (StopExecutionException e) {
             LOGGER.info(" ");
+        } catch (Exception e) {
+            LOGGER.error("Something went wrong while running CATS!", e);
         }
     }
 
-    public void doLogic(String... args) {
+    public void doLogic(String... args) throws IOException {
         this.sortFuzzersByName();
         this.processArgs(args);
         this.printArgs();
@@ -177,7 +183,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.processContractDependentCommands(openAPI, args);
 
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
-
+        catsParams.loadConfig();
         this.startFuzzing(openAPI, suppliedPaths);
         this.executeCustomFuzzer();
     }

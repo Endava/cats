@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -18,6 +17,9 @@ public class CatsParams {
     private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final CatsUtil catsUtil;
     private final Map<String, Map<String, String>> refData = new HashMap<>();
+    private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
+    private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
+
     @Value("${urlParams:empty}")
     private String params;
     private List<String> urlParamsList = new ArrayList<>();
@@ -25,14 +27,48 @@ public class CatsParams {
     private String headersFile;
     @Value("${refData:empty}")
     private String refDataFile;
+    @Value("${customFuzzerFile:empty}")
+    private String customFuzzerFile;
+    @Value("${securityFuzzerFile:empty}")
+    private String securityFuzzerFile;
 
     @Autowired
     public CatsParams(CatsUtil cu) {
         this.catsUtil = cu;
     }
 
+    public void loadConfig() throws IOException {
+        loadSecurityFuzzerFile();
+        loadCustomFuzzerFile();
+        loadRefData();
+        loadURLParams();
+        loadHeaders();
+    }
 
-    @PostConstruct
+    public void loadSecurityFuzzerFile() {
+        try {
+            if (CatsMain.EMPTY.equalsIgnoreCase(securityFuzzerFile)) {
+                log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
+            } else {
+                securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile);
+            }
+        } catch (Exception e) {
+            log.error("Error processing securityFuzzerFile!", e);
+        }
+    }
+
+    public void loadCustomFuzzerFile() {
+        try {
+            if (CatsMain.EMPTY.equalsIgnoreCase(customFuzzerFile)) {
+                log.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
+            } else {
+                customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
+            }
+        } catch (Exception e) {
+            log.error("Error processing customFuzzerFile!", e);
+        }
+    }
+
     public void loadRefData() throws IOException {
         try {
             if (CatsMain.EMPTY.equalsIgnoreCase(refDataFile)) {
@@ -46,7 +82,6 @@ public class CatsParams {
         }
     }
 
-    @PostConstruct
     public void loadURLParams() throws IOException {
         try {
             if (CatsMain.EMPTY.equalsIgnoreCase(params)) {
@@ -60,7 +95,6 @@ public class CatsParams {
         }
     }
 
-    @PostConstruct
     public void loadHeaders() throws IOException {
         try {
             if (CatsMain.EMPTY.equalsIgnoreCase(headersFile)) {
@@ -88,4 +122,13 @@ public class CatsParams {
         currentPathRefData.putAll(allValues);
         return currentPathRefData;
     }
+
+    public Map<String, Map<String, Object>> getCustomFuzzerDetails() {
+        return this.customFuzzerDetails;
+    }
+
+    public Map<String, Map<String, Object>> getSecurityFuzzerDetails() {
+        return this.securityFuzzerDetails;
+    }
+
 }
