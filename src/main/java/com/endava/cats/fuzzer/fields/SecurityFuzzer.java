@@ -1,20 +1,16 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.CatsMain;
 import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CustomFuzzerUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,42 +22,24 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 @SpecialFuzzer
 public class SecurityFuzzer implements CustomFuzzerBase {
 
-    private final CatsUtil catsUtil;
+    private final CatsParams catsParams;
     private final CustomFuzzerUtil customFuzzerUtil;
 
-    @Value("${securityFuzzerFile:empty}")
-    private String securityFuzzerFile;
-
-    private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
-
     @Autowired
-    public SecurityFuzzer(CatsUtil cu, CustomFuzzerUtil cfu) {
-        this.catsUtil = cu;
+    public SecurityFuzzer(CatsParams cp, CustomFuzzerUtil cfu) {
+        this.catsParams = cp;
         this.customFuzzerUtil = cfu;
-    }
-
-    @PostConstruct
-    public void loadSecurityFuzzerFile() {
-        try {
-            if (CatsMain.EMPTY.equalsIgnoreCase(securityFuzzerFile)) {
-                log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
-            } else {
-                securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile);
-            }
-        } catch (Exception e) {
-            log.error("Error processing securityFuzzerFile!", e);
-        }
     }
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (!securityFuzzerDetails.isEmpty()) {
+        if (!catsParams.getSecurityFuzzerDetails().isEmpty()) {
             this.processSecurityFuzzerFile(data);
         }
     }
 
     protected void processSecurityFuzzerFile(FuzzingData data) {
-        Map<String, Object> currentPathValues = securityFuzzerDetails.get(data.getPath());
+        Map<String, Object> currentPathValues = catsParams.getSecurityFuzzerDetails().get(data.getPath());
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
         } else {
