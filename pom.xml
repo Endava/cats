@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.endava</groupId>
@@ -26,7 +27,7 @@
         <wiremock-jre8.version>2.27.1</wiremock-jre8.version>
         <pitest-maven.version>1.5.2</pitest-maven.version>
         <pitest-junit5-plugin.version>0.12</pitest-junit5-plugin.version>
-        <jacoco-maven-plugin.version>0.8.5</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
         <guava.version>29.0-jre</guava.version>
         <openapi-generator.version>4.3.1</openapi-generator.version>
         <sonar.coverage.exclusions>
