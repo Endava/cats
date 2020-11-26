@@ -23,8 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -123,7 +121,6 @@ public class TestCaseListener {
         }
     }
 
-    @PostConstruct
     public void startSession() {
         t0 = System.currentTimeMillis();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("UTC"));
@@ -131,7 +128,6 @@ public class TestCaseListener {
         LOGGER.info("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }
 
-    @PreDestroy
     public void endSession() {
         testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
 
