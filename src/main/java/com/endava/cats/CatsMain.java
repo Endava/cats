@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.parser.OpenAPIParser;
@@ -118,6 +119,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private ExecutionStatisticsListener executionStatisticsListener;
     @Autowired
     private CatsParams catsParams;
+    @Autowired
+    private TestCaseListener testCaseListener;
 
 
     public static void main(String... args) {
@@ -165,7 +168,9 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     @Override
     public void run(String... args) {
         try {
+            testCaseListener.startSession();
             this.doLogic(args);
+            testCaseListener.endSession();
         } catch (StopExecutionException e) {
             LOGGER.info(" ");
         } catch (Exception e) {
