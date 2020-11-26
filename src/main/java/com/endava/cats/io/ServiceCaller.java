@@ -209,7 +209,8 @@ public class ServiceCaller {
             this.setHttpMethodPayload(method, processedPayload, data);
             this.removeSkippedHeaders(data, method);
 
-            LOGGER.info("Final list with request headers {}", Arrays.asList(method.getAllHeaders()));
+            LOGGER.info("Final list of request headers: {}", Arrays.asList(method.getAllHeaders()));
+            LOGGER.info("Final payload: {}", processedPayload);
             long startTime = System.currentTimeMillis();
             HttpResponse response = httpClient.execute(method);
             long endTime = System.currentTimeMillis();

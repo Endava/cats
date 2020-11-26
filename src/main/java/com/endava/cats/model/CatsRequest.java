@@ -9,8 +9,8 @@ import java.io.StringReader;
 import java.util.List;
 
 public class CatsRequest {
-    private List<Header> headers;
-    private JsonElement payload;
+    List<Header> headers;
+    JsonElement payload;
 
     public static CatsRequest empty() {
         CatsRequest request = new CatsRequest();
@@ -18,18 +18,10 @@ public class CatsRequest {
         return request;
     }
 
-    public JsonElement getPayload() {
-        return payload;
-    }
-
     public void setPayload(String payload) {
         JsonReader reader = new JsonReader(new StringReader(payload));
         reader.setLenient(true);
         this.payload = JsonParser.parseReader(reader);
-    }
-
-    public List<Header> getHeaders() {
-        return headers;
     }
 
     public void setHeaders(List<Header> headers) {
