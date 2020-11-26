@@ -40,10 +40,10 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
             "image/x-icon",
             "image/vnd.djvu",
             "image/svg+xml",
-            "multipart/mixed",
-            "multipart/alternative",
-            "multipart/related",
-            "multipart/form-data",
+            "multipart/mixed; boundary=cats",
+            "multipart/alternative; boundary=cats",
+            "multipart/related; boundary=cats",
+            "multipart/form-data; boundary=cats",
             "text/css",
             "text/csv",
             "text/html",
@@ -63,7 +63,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
         List<Set<CatsHeader>> setOfSets = new ArrayList<>();
 
         for (String currentHeader : UNSUPPORTED_MEDIA_TYPES) {
-            if (!contentTypes.contains(currentHeader)) {
+            if (contentTypes.stream().noneMatch(currentHeader::startsWith)) {
                 Set<CatsHeader> clonedHeaders = Cloner.cloneMe(data.getHeaders());
                 clonedHeaders.add(CatsHeader.builder().name(headerName).value(currentHeader).build());
                 setOfSets.add(clonedHeaders);
