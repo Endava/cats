@@ -35,7 +35,7 @@ Table of Contents
    * [How the Fuzzing works](#how-the-fuzzing-works)
    * [Build](#build)
    * [Available commands](#available-commands)
-   * [Running CATS](#running-cats)
+   * [Running CATS](#running-cats-with-fuzzers)
       * [Notes on Unit Tests](#notes-on-unit-tests)
       * [Notes on skipped Tests](#notes-on-skipped-tests)
    * [Available arguments](#available-arguments)
@@ -126,8 +126,8 @@ You can use the following Maven command to build the project:
 This will output a `cats.jar` file in the current directory. The file is an executable JAR that will run in Linux environments. Just run `chmod +x cats.jar` to make the file executable.
 
 # Available commands
-To list all available commands, run:
-`./cats.jar commands`
+To list all available commands, run CATS with no arguments:
+`./cats.jar` 
 
 Other ways to get help from the CATS command are as follows:
 
@@ -141,7 +141,7 @@ Other ways to get help from the CATS command are as follows:
 
 - `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
 
-# Running CATS
+# Running CATS with Fuzzers
 A minimal run must provide the Swagger/OpenAPI contract, and the URL address of the service:
 
 `./cats.jar --contract=mycontract.yml --server=https://localhost:8080`

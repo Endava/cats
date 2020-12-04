@@ -61,7 +61,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static final String PATHS_STRING = "paths";
     private static final String FUZZERS_STRING = "fuzzers";
     private static final String FIELDS_FUZZER_STRATEGIES = "fieldsFuzzerStrategies";
-    private static final String LIST_ALL_COMMANDS = "commands";
     private static final String HELP = "help";
     private static final String VERSION = "version";
     private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
@@ -172,7 +171,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             this.doLogic(args);
             testCaseListener.endSession();
         } catch (StopExecutionException e) {
-            LOGGER.info(" ");
+            LOGGER.debug("StopExecution: {}", e.getMessage());
         } catch (Exception e) {
             LOGGER.error("Something went wrong while running CATS!", e);
         }
@@ -292,6 +291,9 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void processArgs(String[] args) {
+        if (args.length == 0) {
+            this.processNoArgument();
+        }
         if (args.length == 1) {
             this.processSingleArgument(args);
         }
@@ -309,7 +311,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private void processRemainingArguments(String[] args) {
         if (this.isMinimumArgumentsNotSupplied(args)) {
-            LOGGER.error("Missing or invalid required arguments 'contract' or 'server'. Usage: ./cats.jar --server=URL --contract=location. You can run './cats.jar commands' for more options.");
+            LOGGER.error("Missing or invalid required arguments 'contract' or 'server'. Usage: ./cats.jar --server=URL --contract=location. You can run './cats.jar' with no arguments for more options.");
             throw new StopExecutionException("minimum arguments not supplied");
         }
     }
@@ -366,12 +368,13 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         return args[0].equalsIgnoreCase(LIST) && args[1].equalsIgnoreCase(FUZZERS_STRING);
     }
 
-    private void processSingleArgument(String[] args) {
-        if (args[0].equalsIgnoreCase(LIST_ALL_COMMANDS)) {
-            this.printCommands();
-            throw new StopExecutionException("list all commands");
-        }
+    private void processNoArgument() {
+        this.printCommands();
+        this.printUsage();
+        throw new StopExecutionException("list all commands");
+    }
 
+    private void processSingleArgument(String[] args) {
         if (args[0].equalsIgnoreCase(HELP)) {
             this.printUsage();
             throw new StopExecutionException(HELP);
