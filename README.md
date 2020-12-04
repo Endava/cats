@@ -86,6 +86,7 @@ Table of Contents
    * [URL Parameters](#url-parameters)
    * [Dealing with AnyOf, AllOf and OneOf](#dealing-with-anyof-allof-and-oneof)
    * [Dynamic values in configuration files](#dynamic-values-in-configuration-files)
+   * [Running behind proxy](#running-behind-proxy)
    * [Limitations](#limitations)
       * [Media types and HTTP methods](#media-types-and-http-methods)
       * [Inheritance and composition](#inheritance-and-composition)
@@ -795,6 +796,14 @@ You can also check the responses using a similar syntax and also accounting for 
 `T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))`. It will check if the `expiry` field returned in the json response, parsed as date, is after the current date.
 
 The syntax of dynamically setting dates is compliant with the [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs.
+
+# Running behind proxy
+If you need to run CATS behind a proxy, you can supply the following arguments: `proxyHost` and `proxyPort`.
+A typical run with proxy settings on `localhost:8080` will look as follows:
+
+```bash
+./cats.jar --contract=YAML_FILE --server=SERVER_URL --proxyHost=localhost --proxyPort=8080
+```
 
 # Limitations
 

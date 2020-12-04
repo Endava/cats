@@ -16,6 +16,7 @@ import com.google.gson.JsonObject;
 import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
@@ -40,6 +41,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
+import javax.annotation.PostConstruct;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -60,9 +62,28 @@ public class ServiceCaller {
     private static final Logger LOGGER = LoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
-    private static HttpClient httpClient;
+    private final CatsParams catsParams;
+    private final CatsUtil catsUtil;
+    private final TestCaseListener testCaseListener;
+    private final CatsDSLParser catsDSLParser;
+    private HttpClient httpClient;
+    @Value("${proxyHost:empty}")
+    private String proxyHost;
+    @Value("${proxyPort:0}")
+    private int proxyPort;
+    @Value("${server:empty}")
+    private String server;
 
-    static {
+    @Autowired
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams, CatsDSLParser cdsl) {
+        this.testCaseListener = lr;
+        this.catsUtil = cu;
+        this.catsParams = catsParams;
+        this.catsDSLParser = cdsl;
+    }
+
+    @PostConstruct
+    public void initHttpClient() {
         try {
             SSLContext sslContext = new SSLContextBuilder()
                     .loadTrustMaterial(null, (certificate, authType) -> true).build();
@@ -73,26 +94,15 @@ public class ServiceCaller {
             PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
             connectionManager.setMaxTotal(100);
             connectionManager.setDefaultMaxPerRoute(100);
-
-            httpClient = HttpClients.custom().setConnectionManager(connectionManager).setSSLContext(sslContext).build();
+            HttpHost httpHost = null;
+            if (!"empty".equalsIgnoreCase(proxyHost)) {
+                LOGGER.info("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
+                httpHost = new HttpHost(proxyHost, proxyPort);
+            }
+            httpClient = HttpClients.custom().setConnectionManager(connectionManager).setSSLContext(sslContext).setProxy(httpHost).build();
         } catch (GeneralSecurityException e) {
             LOGGER.warn("Failed to configure HTTP CLIENT socket factory");
         }
-    }
-
-    private final CatsParams catsParams;
-    private final CatsUtil catsUtil;
-    private final TestCaseListener testCaseListener;
-    private final CatsDSLParser catsDSLParser;
-    @Value("${server:empty}")
-    private String server;
-
-    @Autowired
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams, CatsDSLParser cdsl) {
-        this.testCaseListener = lr;
-        this.catsUtil = cu;
-        this.catsParams = catsParams;
-        this.catsDSLParser = cdsl;
     }
 
     public CatsResponse call(HttpMethod method, ServiceData data) {
