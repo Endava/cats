@@ -4,7 +4,6 @@ import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,13 +22,13 @@ import java.util.Collections;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsMain.class, FuzzingDataFactory.class})
+@SpringJUnitConfig({CatsMain.class})
 class CatsMainTest {
 
     @MockBean
     private TestCaseListener testCaseListener;
 
-    @SpyBean
+    @Autowired
     private CatsMain catsMain;
 
     @Autowired
@@ -38,19 +37,13 @@ class CatsMainTest {
     @SpyBean
     private FuzzingDataFactory fuzzingDataFactory;
 
-    @BeforeEach
-    void setup() {
-        Mockito.reset(catsMain);
-    }
-
     @Test
     void givenNoArguments_whenStartingCats_thenHelpIsPrinted() {
-        Assertions.assertThatThrownBy(() -> catsMain.doLogic()).isInstanceOf(StopExecutionException.class).hasMessage("minimum arguments not supplied");
+        Assertions.assertThatThrownBy(() -> catsMain.doLogic()).isInstanceOf(StopExecutionException.class).hasMessage("list all commands");
     }
 
     @Test
     void givenAParameter_whenStartingCats_thenParameterIsProcessedSuccessfully() {
-        Assertions.assertThatThrownBy(() -> catsMain.doLogic("commands")).isInstanceOf(StopExecutionException.class).hasMessage("list all commands");
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("help")).isInstanceOf(StopExecutionException.class).hasMessage("help");
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("version")).isInstanceOf(StopExecutionException.class).hasMessage("version");
     }
@@ -70,9 +63,12 @@ class CatsMainTest {
     void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() {
         ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
-        catsMain.run();
-        Mockito.verify(catsMain).createOpenAPI();
-        Mockito.verify(catsMain).startFuzzing(Mockito.any(), Mockito.anyList());
+        ReflectionTestUtils.setField(catsMain, "logData", "org.apache.wire:debug");
+
+        CatsMain spyMain = Mockito.spy(catsMain);
+        spyMain.run("test");
+        Mockito.verify(spyMain).createOpenAPI();
+        Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
         ReflectionTestUtils.setField(catsMain, "server", "empty");
     }
@@ -101,9 +97,10 @@ class CatsMainTest {
     void givenAnOpenApiContract_whenStartingCats_thenTheContractIsCorrectlyParsed() {
         ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/openapi.yml");
         ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
-        catsMain.run();
-        Mockito.verify(catsMain).createOpenAPI();
-        Mockito.verify(catsMain).startFuzzing(Mockito.any(), Mockito.anyList());
+        CatsMain spyMain = Mockito.spy(catsMain);
+        spyMain.run("test");
+        Mockito.verify(spyMain).createOpenAPI();
+        Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
         Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.anyMap(), Mockito.any());
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.anyMap(), Mockito.any());
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
