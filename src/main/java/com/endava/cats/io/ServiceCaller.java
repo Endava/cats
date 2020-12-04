@@ -352,7 +352,7 @@ public class ServiceCaller {
     }
 
     private boolean isAuthenticationHeader(String header) {
-        return AUTH_HEADERS.stream().anyMatch(authHeader -> authHeader.equalsIgnoreCase(header));
+        return AUTH_HEADERS.stream().anyMatch(header::contains);
     }
 
     private void replaceHeaderIfNotFuzzed(HttpRequestBase method, ServiceData data, Map.Entry<String, String> suppliedHeader) {

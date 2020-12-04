@@ -59,16 +59,20 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     }
 
     protected Set<String> getAuthenticationHeaderProvided(FuzzingData data) {
-        Set<String> authenticationHeadersInContract = data.getHeaders().stream().filter(header -> AUTH_HEADERS.contains(header.getName().toLowerCase()))
-                .map(CatsHeader::getName).collect(Collectors.toSet());
+        Set<String> authenticationHeadersInContract = data.getHeaders().stream().map(CatsHeader::getName)
+                .filter(this::isAuthenticationHeader).collect(Collectors.toSet());
         Set<String> authenticationHeadersInFile = catsParams.getHeaders().entrySet().stream().filter(path -> CatsMain.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
                 .map(Map.Entry::getValue).collect(Collectors.toList())
                 .stream().flatMap(entry -> entry.keySet().stream())
                 .collect(Collectors.toSet())
-                .stream().filter(headerName -> AUTH_HEADERS.contains(headerName.toLowerCase()))
+                .stream().filter(this::isAuthenticationHeader)
                 .collect(Collectors.toSet());
 
         return Stream.of(authenticationHeadersInContract, authenticationHeadersInFile).flatMap(Collection::stream).collect(Collectors.toSet());
+    }
+
+    private boolean isAuthenticationHeader(String header) {
+        return AUTH_HEADERS.stream().anyMatch(header::contains);
     }
 
     public String toString() {
