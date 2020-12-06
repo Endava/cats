@@ -17,8 +17,10 @@ public class FuzzerLogAspect {
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
         String clazz = joinPoint.getTarget().getClass().getSimpleName().replaceAll("[a-z]", "");
         MDC.put("fuzzer", clazz);
+        MDC.put("fuzzerKey", joinPoint.getTarget().getClass().getSimpleName());
         Object ret = joinPoint.proceed();
         MDC.put("fuzzer", null);
+        MDC.put("fuzzerKey", null);
         return ret;
     }
 }
