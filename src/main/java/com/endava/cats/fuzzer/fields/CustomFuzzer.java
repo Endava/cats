@@ -53,12 +53,15 @@ public class CustomFuzzer implements CustomFuzzerBase {
 
     public void executeCustomFuzzerTests() {
         MDC.put("fuzzer", "CF");
+        MDC.put("fuzzerKey", "CustomFuzzer");
+
         for (Map.Entry<String, Map<String, Object>> entry : catsParams.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))
                     .forEach(customFuzzerExecution -> customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
                             customFuzzerExecution.getTestEntry(), this));
         }
         MDC.put("fuzzer", null);
+        MDC.put("fuzzerKey", null);
     }
 
 
