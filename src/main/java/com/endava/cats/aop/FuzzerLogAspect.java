@@ -15,9 +15,10 @@ public class FuzzerLogAspect {
 
     @Around("execution(* com.endava.cats.fuzzer.Fuzzer.fuzz(..))")
     public Object logExecutionTime(ProceedingJoinPoint joinPoint) throws Throwable {
-        MDC.put("fuzzer", joinPoint.getTarget().getClass().getSimpleName());
+        String clazz = joinPoint.getTarget().getClass().getSimpleName().replaceAll("[a-z]", "");
+        MDC.put("fuzzer", clazz);
         Object ret = joinPoint.proceed();
-        MDC.put("fuzzer", "");
+        MDC.put("fuzzer", null);
         return ret;
     }
 }
