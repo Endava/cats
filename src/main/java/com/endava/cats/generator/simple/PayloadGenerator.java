@@ -180,6 +180,10 @@ public class PayloadGenerator {
         if (property.getName() != null) {
             mp.put(property.getName(),
                     resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
+        } else if (((Schema) property.getAdditionalProperties()).get$ref() != null) {
+            Schema innerSchema = (Schema) property.getAdditionalProperties();
+            Schema addPropSchema = this.schemaMap.get(innerSchema.get$ref().substring(innerSchema.get$ref().lastIndexOf('/') + 1));
+            mp.put("key", resolvePropertyToExample(propertyName, mediaType, addPropSchema));
         } else {
             mp.put("key",
                     resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
