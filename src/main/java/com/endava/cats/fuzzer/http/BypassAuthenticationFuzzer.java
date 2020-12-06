@@ -72,7 +72,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     }
 
     private boolean isAuthenticationHeader(String header) {
-        return AUTH_HEADERS.stream().anyMatch(header::contains);
+        return AUTH_HEADERS.stream().map(String::toLowerCase).anyMatch(header::contains);
     }
 
     public String toString() {
