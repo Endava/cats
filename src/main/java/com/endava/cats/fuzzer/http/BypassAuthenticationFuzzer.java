@@ -10,8 +10,8 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 public class BypassAuthenticationFuzzer implements Fuzzer {
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
-    private static final Logger LOGGER = LoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;

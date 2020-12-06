@@ -4,7 +4,8 @@ import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -14,9 +15,9 @@ import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Component
-@Slf4j
 public class RecommendedHeadersContractInfoFuzzer extends BaseContractInfoFuzzer {
     static final List<String> HEADERS = Arrays.asList("correlationid", "traceid");
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     @Autowired
     public RecommendedHeadersContractInfoFuzzer(TestCaseListener tcl) {

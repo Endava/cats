@@ -1,7 +1,8 @@
 package com.endava.cats.util;
 
 import com.endava.cats.CatsMain;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -11,15 +12,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-@Slf4j
 public class CatsParams {
     private static final String ALL = "all";
     private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final CatsUtil catsUtil;
     private final Map<String, Map<String, String>> refData = new HashMap<>();
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
-
     @Value("${urlParams:empty}")
     private String params;
     private List<String> urlParamsList = new ArrayList<>();

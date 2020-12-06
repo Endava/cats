@@ -14,6 +14,8 @@ import com.google.common.html.HtmlEscapers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jayway.jsonpath.PathNotFoundException;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -34,8 +36,6 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -59,7 +59,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
 @Component
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServiceCaller.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
     private final CatsParams catsParams;
@@ -96,12 +96,12 @@ public class ServiceCaller {
             connectionManager.setDefaultMaxPerRoute(100);
             HttpHost httpHost = null;
             if (!"empty".equalsIgnoreCase(proxyHost)) {
-                LOGGER.info("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
+                LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
                 httpHost = new HttpHost(proxyHost, proxyPort);
             }
             httpClient = HttpClients.custom().setConnectionManager(connectionManager).setSSLContext(sslContext).setProxy(httpHost).build();
         } catch (GeneralSecurityException e) {
-            LOGGER.warn("Failed to configure HTTP CLIENT socket factory");
+            LOGGER.warning("Failed to configure HTTP CLIENT socket factory");
         }
     }
 
@@ -219,13 +219,13 @@ public class ServiceCaller {
             this.setHttpMethodPayload(method, processedPayload, data);
             this.removeSkippedHeaders(data, method);
 
-            LOGGER.info("Final list of request headers: {}", Arrays.asList(method.getAllHeaders()));
-            LOGGER.info("Final payload: {}", processedPayload);
+            LOGGER.note("Final list of request headers: {}", Arrays.asList(method.getAllHeaders()));
+            LOGGER.note("Final payload: {}", processedPayload);
             long startTime = System.currentTimeMillis();
             HttpResponse response = httpClient.execute(method);
             long endTime = System.currentTimeMillis();
 
-            LOGGER.info("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.getStatusLine().getProtocolVersion(),
+            LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.getStatusLine().getProtocolVersion(),
                     method.getMethod(), response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode(), endTime - startTime);
 
             String responseBody = this.getAsJson(response);
@@ -331,8 +331,8 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(HttpRequestBase method, String relativePath, ServiceData data) {
-        LOGGER.info("Path {} has the following headers: {}", relativePath, catsParams.getHeaders().get(relativePath));
-        LOGGER.info("Headers that should be added to all paths: {}", catsParams.getHeaders().get(CatsMain.ALL));
+        LOGGER.note("Path {} has the following headers: {}", relativePath, catsParams.getHeaders().get(relativePath));
+        LOGGER.note("Headers that should be added to all paths: {}", catsParams.getHeaders().get(CatsMain.ALL));
 
         Map<String, String> suppliedHeaders = catsParams.getHeaders().entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsMain.ALL))
@@ -362,7 +362,7 @@ public class ServiceCaller {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try these behaviour on a valid header value */
             String finalHeaderValue = FuzzingStrategy.mergeFuzzing(method.getFirstHeader(suppliedHeader.getKey()).getValue(), suppliedHeader.getValue(), "    ");
             method.setHeader(suppliedHeader.getKey(), finalHeaderValue);
-            LOGGER.info("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
+            LOGGER.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }
     }
 
@@ -375,7 +375,7 @@ public class ServiceCaller {
      */
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
         Map<String, String> currentPathRefData = catsParams.getRefData(data.getRelativePath());
-        LOGGER.info("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
+        LOGGER.note("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, String> entry : currentPathRefData.entrySet()) {
             currentUrl = currentUrl.replace("{" + entry.getKey() + "}", entry.getValue());
@@ -387,11 +387,11 @@ public class ServiceCaller {
 
     String replacePayloadWithRefData(ServiceData data) {
         if (!data.isReplaceRefData()) {
-            LOGGER.info("Bypassing reference data replacement for path {}!", data.getRelativePath());
+            LOGGER.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return data.getPayload();
         } else {
             Map<String, String> refDataForCurrentPath = catsParams.getRefData(data.getRelativePath());
-            LOGGER.info("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+            LOGGER.note("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
             Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -408,13 +408,13 @@ public class ServiceCaller {
                         payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();
                     }
                 } catch (PathNotFoundException e) {
-                    LOGGER.warn("Ref data key {} was not found within the payload!", entry.getKey());
+                    LOGGER.warning("Ref data key {} was not found within the payload!", entry.getKey());
                 }
             }
 
             payload = catsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
 
-            LOGGER.info("Final payload after reference data replacement: {}", payload);
+            LOGGER.note("Final payload after reference data replacement: {}", payload);
 
             return payload;
         }

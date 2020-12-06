@@ -4,7 +4,8 @@ import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsParams;
 import com.endava.cats.util.CustomFuzzerUtil;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,9 +19,9 @@ import java.util.stream.Collectors;
 import static com.endava.cats.util.CustomFuzzerUtil.*;
 
 @Component
-@Slf4j
 @SpecialFuzzer
 public class SecurityFuzzer implements CustomFuzzerBase {
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     private final CatsParams catsParams;
     private final CustomFuzzerUtil customFuzzerUtil;
@@ -43,7 +44,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
         } else {
-            log.info("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
+            log.skip("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
         }
     }
 
@@ -54,8 +55,8 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
         try {
             List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile));
-            log.info("Parsing stringsFile...");
-            log.info("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
+            log.start("Parsing stringsFile...");
+            log.complete("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
             String[] targetFields = String.valueOf(individualTestConfig.get(TARGET_FIELDS)).replace("[", "")
                     .replace(" ", "").replace("]", "").split(",");
 

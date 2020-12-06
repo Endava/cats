@@ -4,9 +4,10 @@ import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.responses.ApiResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,6 @@ import java.util.regex.Pattern;
 
 @ContractInfoFuzzer
 @Component
-@Slf4j
 public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final Pattern HYPHEN_CASE = Pattern.compile("(^[a-z]+((-)?[a-z])+$)+");
     private static final Pattern SNAKE_CASE = Pattern.compile("(^[a-z]+((_)?[a-z])+$)+");
@@ -27,6 +27,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final Pattern CAMEL_CASE_CAPITAL_START = Pattern.compile("(^[A-Z][A-Za-z]+$)+");
     private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_[0-9]*");
     private static final String PLURAL_END = "s";
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     @Autowired
     public NamingsContractInfoFuzzer(TestCaseListener tcl) {

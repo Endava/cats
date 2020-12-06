@@ -14,11 +14,11 @@ import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONArray;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +41,7 @@ public class CatsUtil {
             .build();
 
     private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
-    private static final Logger LOGGER = LoggerFactory.getLogger(CatsUtil.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsUtil.class);
 
     private CatsDSLParser catsDSLParser;
 
@@ -50,12 +50,12 @@ public class CatsUtil {
         this.catsDSLParser = parser;
     }
 
-    public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, Logger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
+    public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, PrettyLogger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
         Map<Boolean, List<T>> results = collection.stream().collect(Collectors.partitioningBy(predicateToFilter));
 
         List<T> notMatching = results.get(false);
 
-        notMatching.forEach(element -> logger.info(messageWhenNotMatching, functionToApplyToLoggedItems.apply(element), params));
+        notMatching.forEach(element -> logger.skip(messageWhenNotMatching, functionToApplyToLoggedItems.apply(element), params));
 
         return results.get(true);
     }

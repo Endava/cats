@@ -36,6 +36,7 @@
         <maven-project-info-reports-plugin.version>3.1.1</maven-project-info-reports-plugin.version>
         <spotbugs-maven-plugin.version>4.1.4</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.7.0.1746</sonar-maven-plugin.version>
+        <pretty-logger.version>1.3</pretty-logger.version>
     </properties>
 
     <build>
@@ -241,6 +242,11 @@
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ludovicianul</groupId>
+            <artifactId>pretty-logger</artifactId>
+            <version>${pretty-logger.version}</version>
         </dependency>
     </dependencies>
 </project>

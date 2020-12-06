@@ -37,16 +37,16 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
 
             if (this.isFieldFuzzable(fuzzedField, data) && this.getBoundaryValue(schema) != null) {
-                logger.info("[{}]. Start fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+                logger.start("[{}]. Start fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
                 return FuzzingStrategy.replace().withData(this.getBoundaryValue(schema));
             } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
-                logger.info("Boundaries not defined. Will skip fuzzing...");
+                logger.skip("Boundaries not defined. Will skip fuzzing...");
                 return FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!");
             } else if (!this.isStringFormatRecognizable(schema) && isRequestSchemaMatchingFuzzerType(schema)) {
-                logger.info("String format not supplied or not recognized [{}]", schema.getFormat());
+                logger.skip("String format not supplied or not recognized [{}]", schema.getFormat());
                 return FuzzingStrategy.skip().withData("String format not supplied or not recognized!");
             } else {
-                logger.info("Not [{}]. Will skip fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+                logger.skip("Not [{}]. Will skip fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
             }
         }
         return FuzzingStrategy.skip().withData("Data type not matching " + getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));

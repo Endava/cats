@@ -10,6 +10,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.report.CatsTestCase;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +20,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.slf4j.Logger;
 import org.slf4j.event.Level;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -40,7 +40,7 @@ class TestCaseListenerTest {
     private BuildProperties buildProperties;
 
     @Mock
-    private Logger logger;
+    private PrettyLogger logger;
 
     @Mock
     private Fuzzer fuzzer;

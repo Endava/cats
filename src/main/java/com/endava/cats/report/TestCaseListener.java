@@ -11,11 +11,11 @@ import com.endava.cats.model.report.CatsTestCase;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,8 +39,8 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class TestCaseListener {
 
     protected static final String ID = "id";
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestCaseListener.class);
-    private static final String SEPARATOR = StringUtils.repeat("-", 150);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseListener.class);
+    private static final String SEPARATOR = StringUtils.repeat("-", 100);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414");
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
@@ -65,7 +65,7 @@ public class TestCaseListener {
         return message;
     }
 
-    public void createAndExecuteTest(Logger externalLogger, Fuzzer fuzzer, Runnable s) {
+    public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
         MDC.put(ID, "Test " + CatsMain.TEST.incrementAndGet());
         this.startTestCase();
         try {
@@ -76,7 +76,7 @@ public class TestCaseListener {
         }
         this.endTestCase();
         LOGGER.info("{} {}", SEPARATOR, "\n");
-        MDC.put(ID, "");
+        MDC.put(ID, null);
     }
 
     private void startTestCase() {
@@ -84,12 +84,12 @@ public class TestCaseListener {
         testCaseMap.get(MDC.get(ID)).setTestId(MDC.get(ID));
     }
 
-    public void addScenario(Logger logger, String scenario, Object... params) {
+    public void addScenario(PrettyLogger logger, String scenario, Object... params) {
         logger.info(scenario, params);
         testCaseMap.get(MDC.get(ID)).setScenario(replaceBrackets(scenario, params));
     }
 
-    public void addExpectedResult(Logger logger, String expectedResult, Object... params) {
+    public void addExpectedResult(PrettyLogger logger, String expectedResult, Object... params) {
         logger.info(expectedResult, params);
         testCaseMap.get(MDC.get(ID)).setExpectedResult(replaceBrackets(expectedResult, params));
     }
@@ -124,8 +124,8 @@ public class TestCaseListener {
     public void startSession() {
         t0 = System.currentTimeMillis();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("UTC"));
-        LOGGER.info("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(buildProperties.getName().toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(buildProperties.getVersion()), ansi().fg(Ansi.Color.GREEN).a(formatter.format(buildProperties.getTime())).reset());
-        LOGGER.info("{}", ansi().fgGreen().a("Processing configuration...").reset());
+        LOGGER.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(buildProperties.getName().toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(buildProperties.getVersion()), ansi().fg(Ansi.Color.GREEN).a(formatter.format(buildProperties.getTime())).reset());
+        LOGGER.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }
 
     public void endSession() {
@@ -134,7 +134,7 @@ public class TestCaseListener {
         if (!"empty".equalsIgnoreCase(printExecutionStatistics)) {
             testCaseExporter.writePerformanceReport(testCaseMap);
         } else {
-            LOGGER.info("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
+            LOGGER.skip("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
         }
         testCaseExporter.writeReportFiles();
         this.printExecutionDetails();
@@ -149,16 +149,16 @@ public class TestCaseListener {
         String check = ansi().reset().fgBlue().a("You can check the test_cases folder for more details about the payloads.").reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
 
-        LOGGER.info(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+        LOGGER.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
     }
 
-    public void reportWarn(Logger logger, String message, Object... params) {
+    public void reportWarn(PrettyLogger logger, String message, Object... params) {
         executionStatisticsListener.increaseWarns();
-        logger.warn(message, params);
+        logger.warning(message, params);
         recordResult(message, params, Level.WARN.toString().toLowerCase());
     }
 
-    public void reportError(Logger logger, String message, Object... params) {
+    public void reportError(PrettyLogger logger, String message, Object... params) {
         executionStatisticsListener.increaseErrors();
         logger.error(message, params);
         this.addRequest(CatsRequest.empty());
@@ -166,19 +166,19 @@ public class TestCaseListener {
         this.recordResult(message, params, Level.ERROR.toString().toLowerCase());
     }
 
-    private void reportSkipped(Logger logger, Object... params) {
+    private void reportSkipped(PrettyLogger logger, Object... params) {
         executionStatisticsListener.increaseSkipped();
-        logger.info("Skipped due to: {}", params);
+        logger.skip("Skipped due to: {}", params);
         recordResult("Skipped due to: {}", params, "skipped");
     }
 
-    public void reportInfo(Logger logger, String message, Object... params) {
+    public void reportInfo(PrettyLogger logger, String message, Object... params) {
         executionStatisticsListener.increaseSuccess();
-        logger.info(message, params);
+        logger.success(message, params);
         recordResult(message, params, "success");
     }
 
-    public void reportResult(Logger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
+    public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
         boolean matchesResponseSchema = this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
@@ -206,7 +206,7 @@ public class TestCaseListener {
         return data.getResponseCodes().contains(response.responseCodeAsString()) || isNotTypicalDocumentedResponseCode(response);
     }
 
-    public void skipTest(Logger logger, String skipReason) {
+    public void skipTest(PrettyLogger logger, String skipReason) {
         this.addExpectedResult(logger, "Expected result: test will be skipped!");
         this.reportSkipped(logger, skipReason);
         this.addRequest(CatsRequest.empty());

@@ -3,14 +3,15 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.stereotype.Component;
 
 @ContractInfoFuzzer
 @Component
-@Slf4j
 public class XmlContentTypeContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final String APPLICATION_XML = "application/xml";
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     protected XmlContentTypeContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);

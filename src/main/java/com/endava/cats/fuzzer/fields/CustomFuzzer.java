@@ -34,7 +34,6 @@ public class CustomFuzzer implements CustomFuzzerBase {
     }
 
 
-
     @Override
     public void fuzz(FuzzingData data) {
         if (!catsParams.getCustomFuzzerDetails().isEmpty()) {
@@ -53,13 +52,13 @@ public class CustomFuzzer implements CustomFuzzerBase {
     }
 
     public void executeCustomFuzzerTests() {
-        MDC.put("fuzzer", this.getClass().getSimpleName());
+        MDC.put("fuzzer", "CF");
         for (Map.Entry<String, Map<String, Object>> entry : catsParams.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))
                     .forEach(customFuzzerExecution -> customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
                             customFuzzerExecution.getTestEntry(), this));
         }
-        MDC.put("fuzzer", "");
+        MDC.put("fuzzer", null);
     }
 
 
