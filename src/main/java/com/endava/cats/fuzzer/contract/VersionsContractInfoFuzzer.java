@@ -3,7 +3,8 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -13,10 +14,9 @@ import java.util.regex.Pattern;
 
 @ContractInfoFuzzer
 @Component
-@Slf4j
 public class VersionsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final List<String> VERSIONS = Arrays.asList("version\\d*\\.?", "v\\d+\\.?");
-
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     public VersionsContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);

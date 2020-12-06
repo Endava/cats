@@ -3,8 +3,9 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -17,8 +18,8 @@ import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Component
-@Slf4j
 public class PathTagsContractInfoFuzzer extends BaseContractInfoFuzzer {
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     @Autowired
     public PathTagsContractInfoFuzzer(TestCaseListener tcl) {

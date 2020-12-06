@@ -5,7 +5,8 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -13,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-@Slf4j
 public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String DESCRIPTION = "description";
     protected static final String COMMA = ", ";
@@ -21,6 +21,7 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String IS_TOO_SHORT = " is too short";
     protected static final String EMPTY = "";
     protected final TestCaseListener testCaseListener;
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     protected List<String> fuzzedPaths = new ArrayList<>();
 
     @Autowired

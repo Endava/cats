@@ -9,7 +9,8 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
@@ -17,7 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-@Slf4j
 public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     protected static final String CATS_ACCEPT = "application/cats";
     static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
@@ -50,6 +50,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
             "text/javascript",
             "text/plain",
             "text/xml");
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 

@@ -9,7 +9,8 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +24,6 @@ import java.util.stream.Collectors;
  */
 
 @Component
-@Slf4j
 @HeaderFuzzer
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
@@ -34,6 +34,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     protected static final String SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet()).toString();
 
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 

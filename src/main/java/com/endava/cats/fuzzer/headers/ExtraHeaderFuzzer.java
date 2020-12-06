@@ -9,8 +9,8 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +20,7 @@ import java.util.Set;
 @Component
 @HeaderFuzzer
 public class ExtraHeaderFuzzer implements Fuzzer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExtraHeaderFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ExtraHeaderFuzzer.class);
     private static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
 
     private final ServiceCaller serviceCaller;
@@ -35,7 +35,7 @@ public class ExtraHeaderFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         if (data.getHeaders().isEmpty()) {
-            LOGGER.info("No headers to fuzz");
+            LOGGER.skip("No headers to fuzz");
         }
         testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
     }

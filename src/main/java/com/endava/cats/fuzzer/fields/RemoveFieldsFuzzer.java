@@ -9,8 +9,8 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ import java.util.Set;
 @Component
 @FieldFuzzer
 public class RemoveFieldsFuzzer implements Fuzzer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RemoveFieldsFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RemoveFieldsFuzzer.class);
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;

@@ -2,7 +2,8 @@ package com.endava.cats.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.json.JsonPropertyAccessor;
@@ -10,8 +11,8 @@ import org.springframework.integration.json.JsonPropertyAccessor;
 import java.util.Collections;
 import java.util.Optional;
 
-@Slf4j
 public class SimpleParser implements Parser {
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private SpelExpressionParser spelExpressionParser;
     private ObjectMapper mapper;
 

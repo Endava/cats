@@ -7,8 +7,8 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 @HttpFuzzer
 public class HappyFuzzer implements Fuzzer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HappyFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;

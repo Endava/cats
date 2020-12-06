@@ -10,15 +10,15 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class BaseHeadersFuzzer implements Fuzzer {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(this.getClass());
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -31,7 +31,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
 
     public void fuzz(FuzzingData fuzzingData) {
         if (fuzzingData.getHeaders().isEmpty()) {
-            logger.info("No headers to fuzz");
+            logger.skip("No headers to fuzz");
         }
 
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(fuzzingData.getHeaders());

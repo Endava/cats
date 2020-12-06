@@ -12,7 +12,8 @@ import com.endava.cats.report.TestCaseListener;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.PathNotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
-@Slf4j
 public class CustomFuzzerUtil {
     public static final String DESCRIPTION = "description";
     public static final String HTTP_METHOD = "httpMethod";
@@ -37,11 +37,11 @@ public class CustomFuzzerUtil {
     public static final String ADDITIONAL_PROPERTIES = "additionalProperties";
     public static final String ELEMENT = "topElement";
     public static final String MAP_VALUES = "mapValues";
-
     private static final List<String> RESERVED_WORDS = Arrays.asList(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION,
             ADDITIONAL_PROPERTIES, ELEMENT, MAP_VALUES);
     private static final String NOT_SET = "NOT_SET";
     private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
     private final Map<String, String> variables = new HashMap<>();
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
@@ -200,11 +200,11 @@ public class CustomFuzzerUtil {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
             }
         } else if (!isHttpMethodMatchingCustomTest) {
-            log.warn("Skipping path [{}] as HTTP method [{}] does not match custom test", data.getPath(), data.getMethod());
+            log.warning("Skipping path [{}] as HTTP method [{}] does not match custom test", data.getPath(), data.getMethod());
         } else if (!isValidOneOf) {
-            log.info("Skipping path [{}] with payload [{}] as it does not match oneOfSelection", data.getPath(), data.getPayload());
+            log.skip("Skipping path [{}] with payload [{}] as it does not match oneOfSelection", data.getPath(), data.getPayload());
         } else {
-            log.warn("Skipping path [{}] as missing [{}] specific fields. List of reserved words: [{}]",
+            log.warning("Skipping path [{}] as missing [{}] specific fields. List of reserved words: [{}]",
                     data.getPath(), fuzzer.getClass().getSimpleName(), fuzzer.reservedWords());
         }
     }
@@ -285,7 +285,7 @@ public class CustomFuzzerUtil {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
             return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).getJson();
         } catch (Exception e) {
-            log.warn("Property [{}] does not exist", keyValue.getKey());
+            log.warning("Property [{}] does not exist", keyValue.getKey());
             return payload;
         }
     }

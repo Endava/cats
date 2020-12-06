@@ -7,12 +7,12 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;

@@ -6,9 +6,9 @@ import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
 import com.google.gson.GsonBuilder;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.fusesource.jansi.Ansi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
@@ -38,7 +38,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class TestCaseExporter {
     private static final String TEST_CASES_FOLDER = "test-report";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestCaseExporter.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
     private static final Path path;
     private static final String SOURCE = "SOURCE";
     private static final String SCRIPT = "<script type=\"text/javascript\" src=\"" + SOURCE + "\"></script>";
@@ -98,10 +98,10 @@ public class TestCaseExporter {
 
 
             LOGGER.info("Details for path {} ", ansi().fg(Ansi.Color.GREEN).a(timeExecutionDetails.getPath()).reset());
-            LOGGER.info(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
-            LOGGER.info(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
-            LOGGER.info(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
-            LOGGER.info("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
+            LOGGER.note(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
+            LOGGER.note(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
+            LOGGER.note(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
+            LOGGER.note("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
             LOGGER.info(" ");
 
         });
@@ -152,9 +152,9 @@ public class TestCaseExporter {
         try (BufferedWriter writer = Files.newBufferedWriter(testPath)) {
 
             writer.write(toWrite);
-            LOGGER.info("Finish writing test case {} to file {}", id, testPath);
+            LOGGER.complete("Finish writing test case {} to file {}", id, testPath);
         } catch (IOException e) {
-            LOGGER.warn("Something went wrong while writing test case {}: {}", id, e.getMessage(), e);
+            LOGGER.warning("Something went wrong while writing test case {}: {}", id, e.getMessage(), e);
         }
     }
 }

@@ -4,11 +4,12 @@ import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.google.common.collect.Sets;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -22,8 +23,8 @@ import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Component
-@Slf4j
 public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     @Autowired
     public TopLevelElementsContractInfoFuzzer(TestCaseListener tcl) {
@@ -32,7 +33,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        log.info("Analyzing contract top elements...");
+        log.start("Analyzing contract top elements...");
         testCaseListener.addScenario(log, "Scenario: Check if the OpenAPI contract defines elements such as tags, info, external docs and servers");
         testCaseListener.addExpectedResult(log, "Elements should be present and provide meaningful information");
         testCaseListener.addPath("NA");
@@ -75,7 +76,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
             String serverString = this.emptyOrShort(server::getDescription, DESCRIPTION);
 
             if (!serverString.isEmpty()) {
-                builder.append(" , server[").append(server.getUrl()).append("]= ").append(StringUtils.stripStart(serverString,","));
+                builder.append(" , server[").append(server.getUrl()).append("]= ").append(StringUtils.stripStart(serverString, ","));
             }
         }
         return StringUtils.stripStart(builder.toString().trim(), ",");

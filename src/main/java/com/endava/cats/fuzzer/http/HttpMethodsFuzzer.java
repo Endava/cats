@@ -8,11 +8,11 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +24,7 @@ import java.util.function.Function;
 @Component
 @HttpFuzzer
 public class HttpMethodsFuzzer implements Fuzzer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HttpMethodsFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -49,7 +49,7 @@ public class HttpMethodsFuzzer implements Fuzzer {
             }
 
         } else {
-            LOGGER.info("Skip path {} as already fuzzed!", data.getPath());
+            LOGGER.skip("Skip path {} as already fuzzed!", data.getPath());
         }
     }
 

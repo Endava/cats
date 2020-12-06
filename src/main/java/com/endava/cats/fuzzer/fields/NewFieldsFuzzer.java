@@ -13,8 +13,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 @FieldFuzzer
 public class NewFieldsFuzzer implements Fuzzer {
     protected static final String NEW_FIELD = "catsFuzzyField";
-    private static final Logger LOGGER = LoggerFactory.getLogger(NewFieldsFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(NewFieldsFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
