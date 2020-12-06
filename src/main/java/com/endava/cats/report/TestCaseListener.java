@@ -115,7 +115,7 @@ public class TestCaseListener {
     }
 
     private void endTestCase() {
-        testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get("fuzzer"));
+        testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get("fuzzerKey"));
         if (testCaseMap.get(MDC.get(ID)).isNotSkipped()) {
             testCaseExporter.writeToFile(testCaseMap.get(MDC.get(ID)));
         }
