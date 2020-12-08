@@ -30,11 +30,12 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData fuzzingData) {
-        if (fuzzingData.getHeaders().isEmpty()) {
+        Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuth(fuzzingData.getHeaders());
+        if (headersWithoutAuth.isEmpty()) {
             logger.skip("No headers to fuzz");
         }
 
-        Set<CatsHeader> clonedHeaders = Cloner.cloneMe(fuzzingData.getHeaders());
+        Set<CatsHeader> clonedHeaders = Cloner.cloneMe(headersWithoutAuth);
 
         for (CatsHeader header : clonedHeaders) {
             testCaseListener.createAndExecuteTest(logger, this, () -> process(fuzzingData, clonedHeaders, header));
@@ -88,4 +89,12 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
      * @return expected FuzzingStrategy
      */
     protected abstract FuzzingStrategy fuzzStrategy();
+
+    public Set<CatsHeader> getHeadersWithoutAuth(Set<CatsHeader> headers) {
+        Set<CatsHeader> headersWithoutAuth = headers.stream()
+                .filter(catsHeader -> !serviceCaller.isAuthenticationHeader(catsHeader.getName()))
+                .collect(Collectors.toSet());
+        logger.note("All headers excluding auth headers: {}", headersWithoutAuth);
+        return headersWithoutAuth;
+    }
 }

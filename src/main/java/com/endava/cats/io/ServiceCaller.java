@@ -351,7 +351,7 @@ public class ServiceCaller {
         return data.getHeaders().stream().anyMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(suppliedHeader.getKey()));
     }
 
-    private boolean isAuthenticationHeader(String header) {
+    public boolean isAuthenticationHeader(String header) {
         return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().contains(authHeader));
     }
 
