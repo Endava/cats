@@ -126,6 +126,8 @@ You can use the following Maven command to build the project:
 
 This will output a `cats.jar` file in the current directory. The file is an executable JAR that will run in Linux environments. Just run `chmod +x cats.jar` to make the file executable.
 
+Note: You will need to configure Maven with a [Github PAT](https://docs.github.com/en/free-pro-team@latest/packages/guides/configuring-apache-maven-for-use-with-github-packages) with `read-packages` scope to get some dependencies for the build.
+
 # Available commands
 To list all available commands, run CATS with no arguments:
 `./cats.jar` 
