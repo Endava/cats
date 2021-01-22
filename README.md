@@ -33,6 +33,7 @@ Table of Contents
    * [Overview](#overview)
    * [Contract driven Auto-generated Tests for Swagger](#contract-driven-auto-generated-tests-for-swagger)
    * [How the Fuzzing works](#how-the-fuzzing-works)
+   * [Tutorials on how to use CATS](#tutorials-on-how-to-use-cats)
    * [Build](#build)
    * [Available commands](#available-commands)
    * [Running CATS](#running-cats-with-fuzzers)
@@ -117,6 +118,11 @@ There are also differences on how the fuzzing works depending on the HTTP method
 - for methods without request bodies like **GET, DELETE** the fuzzing will be applied at the **URL parameters level**
 
 This means that for methods with request bodies (`POST,PUT`) that have also URL/path parameters, you need to supply the `path` parameters via `urlParams` or the `referenceData` file as failure to do so will result in `Illegal character in path at index ...` errors. 
+
+# Tutorials on how to use CATS
+This is a list of articles with step-by-step guides on how to use CATS:
+* [Testing the GitHub API with CATS](https://ludovicianul.github.io/2020/10/05/github-api-testing/)
+* [How to write self-healing functional tests with no coding effort](https://ludovicianul.github.io/2020/09/09/cats/)
 
 # Build
 
