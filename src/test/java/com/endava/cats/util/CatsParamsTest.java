@@ -2,15 +2,14 @@ package com.endava.cats.util;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 
 class CatsParamsTest {
 
-    @Mock
-    private CatsUtil catsUtil;
+    private final CatsUtil catsUtil = new CatsUtil(Mockito.mock(CatsDSLParser.class));
 
     @Test
     void shouldThrowExceptionOnMissingRefData() {

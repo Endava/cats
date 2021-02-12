@@ -7,7 +7,7 @@ import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,17 +17,11 @@ import java.util.Set;
 import static com.endava.cats.fuzzer.headers.UnsupportedAcceptHeadersFuzzerTest.HEADERS;
 
 class DummyAcceptHeadersFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
     private DummyAcceptHeadersFuzzer dummyAcceptHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        dummyAcceptHeadersFuzzer = new DummyAcceptHeadersFuzzer(serviceCaller, testCaseListener);
+        dummyAcceptHeadersFuzzer = new DummyAcceptHeadersFuzzer(Mockito.mock(ServiceCaller.class), Mockito.mock(TestCaseListener.class));
     }
 
     @Test

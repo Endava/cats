@@ -10,26 +10,15 @@ import io.swagger.v3.oas.models.media.NumberSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
+import org.mockito.Mockito;
 
 class StringsInNumericFieldsFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
-    @Mock
-    private CatsParams catsParams;
 
     private StringsInNumericFieldsFuzzer stringsInNumericFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        stringsInNumericFieldsFuzzer = new StringsInNumericFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        stringsInNumericFieldsFuzzer = new StringsInNumericFieldsFuzzer(Mockito.mock(ServiceCaller.class), Mockito.mock(TestCaseListener.class), Mockito.mock(CatsUtil.class), Mockito.mock(CatsParams.class));
     }
 
     @Test
