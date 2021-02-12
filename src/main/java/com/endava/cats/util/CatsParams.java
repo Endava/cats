@@ -1,6 +1,7 @@
 package com.endava.cats.util;
 
 import com.endava.cats.CatsMain;
+import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,7 +117,7 @@ public class CatsParams {
     }
 
     public Map<String, String> getRefData(String currentPath) {
-        Map<String, String> currentPathRefData = Optional.ofNullable(this.refData.get(currentPath)).orElse(Collections.emptyMap());
+        Map<String, String> currentPathRefData = Optional.ofNullable(this.refData.get(currentPath)).orElse(Maps.newHashMap());
         Map<String, String> allValues = Optional.ofNullable(this.refData.get(ALL)).orElse(Collections.emptyMap());
 
         currentPathRefData.putAll(allValues);
