@@ -188,13 +188,13 @@ public class TestCaseListener {
                         responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
 
         if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
-            this.reportInfo(logger, "Response matches expected result. Response code [{}] is documented amd response body matches the corresponding schema.", response.responseCodeAsString());
+            this.reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.reportWarn(logger, "Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected {}, actual [{}], documented response codes: {}", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            this.reportError(logger, "Response does NOT match expected result. Response code is NOT from a list of expected code for this FUZZER: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
+            this.reportError(logger, "Response does NOT match expected result. Response code is NOT from a list of expected codes for this FUZZER: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeUnimplemented()) {
             this.reportWarn(logger, "Response HTTP code 501: you forgot to implement this functionality!");
         } else {
