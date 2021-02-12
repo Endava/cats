@@ -188,15 +188,15 @@ public class TestCaseListener {
                         responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
 
         if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
-            this.reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+            this.reportInfo(logger, "Response matches expected result. Response code [{}] is documented amd response body matches the corresponding schema.", response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
-            this.reportWarn(logger, "Call returned as expected. Response code {} matches the contract. Response body does NOT match the contract!", response.responseCodeAsString());
+            this.reportWarn(logger, "Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
-            this.reportWarn(logger, "Call returned as expected, but with undocumented code: expected {}, actual [{}]. Documented response codes: {}", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
+            this.reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected {}, actual [{}], documented response codes: {}", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            this.reportError(logger, "Call returned an unexpected result, but with documented code: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
+            this.reportError(logger, "Response does NOT match expected result. Response code is NOT from a list of expected code for this FUZZER: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeUnimplemented()) {
-            this.reportWarn(logger, "Call returned http code 501: you forgot to implement this functionality!");
+            this.reportWarn(logger, "Response HTTP code 501: you forgot to implement this functionality!");
         } else {
             this.reportError(logger, "Unexpected behaviour: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         }
