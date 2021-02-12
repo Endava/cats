@@ -189,7 +189,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
-        Assertions.assertThat(testCase.getResultDetails()).startsWith("Call returned as expected. Response code");
+        Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code");
     }
 
     @Test
@@ -205,7 +205,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
-        Assertions.assertThat(testCase.getResultDetails()).startsWith("Call returned as expected, but with undocumented code");
+        Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER");
     }
 
     @Test
@@ -252,7 +252,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented amd response body matches the corresponding schema.", response.responseCodeAsString());
     }
 
     @ParameterizedTest
@@ -268,7 +268,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented amd response body matches the corresponding schema.", response.responseCodeAsString());
     }
 
     @Test
@@ -283,7 +283,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented amd response body matches the corresponding schema.", response.responseCodeAsString());
     }
 
     @ParameterizedTest
@@ -299,7 +299,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented amd response body matches the corresponding schema.", response.responseCodeAsString());
     }
 
     @Test
@@ -314,7 +314,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Call returned as expected. Response code {} matches the contract. Response body does NOT match the contract!", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", response.responseCodeAsString());
     }
 
     @Test
@@ -330,7 +330,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Call returned as expected. Response code {} matches the contract. Response body does NOT match the contract!", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", response.responseCodeAsString());
     }
 
     @ParameterizedTest
@@ -347,7 +347,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX_MT));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Call returned as expected. Response code {} matches the contract. Response body matches the contract!", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented amd response body matches the corresponding schema.", response.responseCodeAsString());
     }
 
     @Test
@@ -362,7 +362,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Call returned as expected, but with undocumented code: expected {}, actual [{}]. Documented response codes: {}", ResponseCodeFamily.FOURXX.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected {}, actual [{}], documented response codes: {}", ResponseCodeFamily.FOURXX.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
     }
 
 
