@@ -108,7 +108,7 @@ public class ServiceCaller {
 
     private HttpHost getProxyConfig() {
         HttpHost httpHost = null;
-        if (!"empty".equalsIgnoreCase(proxyHost)) {
+        if (!CatsMain.EMPTY.equalsIgnoreCase(proxyHost)) {
             LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
             httpHost = new HttpHost(proxyHost, proxyPort);
         }
@@ -118,7 +118,7 @@ public class ServiceCaller {
     private SSLConnectionSocketFactory buildSSLContextFactory() throws GeneralSecurityException, IOException {
         SSLContextBuilder sslContextBuilder = new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE);
 
-        if (!"empty".equalsIgnoreCase(sslKeystore)) {
+        if (!CatsMain.EMPTY.equalsIgnoreCase(sslKeystore)) {
             KeyStore keyStore = KeyStore.getInstance("jks");
             keyStore.load(new FileInputStream(sslKeystore), sslKeystorePwd.toCharArray());
             sslContextBuilder.loadKeyMaterial(keyStore, sslKeyPwd.toCharArray());
@@ -264,7 +264,7 @@ public class ServiceCaller {
     }
 
     private void addBasicAuth(HttpRequestBase method) {
-        if (!"empty".equalsIgnoreCase(basicAuth)) {
+        if (!CatsMain.EMPTY.equalsIgnoreCase(basicAuth)) {
             byte[] encodedAuth = Base64.getEncoder().encode(basicAuth.getBytes(StandardCharsets.ISO_8859_1));
             String authHeader = "Basic " + new String(encodedAuth);
             method.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
