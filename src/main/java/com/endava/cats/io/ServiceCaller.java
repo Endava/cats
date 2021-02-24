@@ -17,10 +17,7 @@ import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
+import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
@@ -30,6 +27,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -42,12 +40,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
 import javax.annotation.PostConstruct;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -66,13 +65,23 @@ public class ServiceCaller {
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final CatsDSLParser catsDSLParser;
-    private HttpClient httpClient;
+
+    HttpClient httpClient;
+
     @Value("${proxyHost:empty}")
     private String proxyHost;
     @Value("${proxyPort:0}")
     private int proxyPort;
     @Value("${server:empty}")
     private String server;
+    @Value("${sslKeystore:empty}")
+    private String sslKeystore;
+    @Value("${sslKeystorePwd:empty}")
+    private String sslKeystorePwd;
+    @Value("${sslKeysPwd:empty}")
+    private String sslKeyPwd;
+    @Value("${basicauth:empty}")
+    private String basicAuth;
 
     @Autowired
     public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams, CatsDSLParser cdsl) {
@@ -85,24 +94,36 @@ public class ServiceCaller {
     @PostConstruct
     public void initHttpClient() {
         try {
-            SSLContext sslContext = new SSLContextBuilder()
-                    .loadTrustMaterial(null, (certificate, authType) -> true).build();
-            HostnameVerifier hostnameVerifier = new NoopHostnameVerifier();
-
-            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
+            SSLConnectionSocketFactory sslSocketFactory = this.buildSSLContextFactory();
             Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create().register("http", PlainConnectionSocketFactory.getSocketFactory()).register("https", sslSocketFactory).build();
             PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
             connectionManager.setMaxTotal(100);
             connectionManager.setDefaultMaxPerRoute(100);
-            HttpHost httpHost = null;
-            if (!"empty".equalsIgnoreCase(proxyHost)) {
-                LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
-                httpHost = new HttpHost(proxyHost, proxyPort);
-            }
-            httpClient = HttpClients.custom().setConnectionManager(connectionManager).setSSLContext(sslContext).setProxy(httpHost).build();
-        } catch (GeneralSecurityException e) {
-            LOGGER.warning("Failed to configure HTTP CLIENT socket factory");
+            HttpHost httpHost = getProxyConfig();
+            httpClient = HttpClients.custom().setConnectionManager(connectionManager).setSSLSocketFactory(sslSocketFactory).setProxy(httpHost).build();
+        } catch (GeneralSecurityException | IOException e) {
+            LOGGER.warning("Failed to configure HTTP CLIENT", e);
         }
+    }
+
+    private HttpHost getProxyConfig() {
+        HttpHost httpHost = null;
+        if (!"empty".equalsIgnoreCase(proxyHost)) {
+            LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
+            httpHost = new HttpHost(proxyHost, proxyPort);
+        }
+        return httpHost;
+    }
+
+    private SSLConnectionSocketFactory buildSSLContextFactory() throws GeneralSecurityException, IOException {
+        SSLContextBuilder sslContextBuilder = new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE);
+
+        if (!"empty".equalsIgnoreCase(sslKeystore)) {
+            KeyStore keyStore = KeyStore.getInstance("jks");
+            keyStore.load(new FileInputStream(sslKeystore), sslKeystorePwd.toCharArray());
+            sslContextBuilder.loadKeyMaterial(keyStore, sslKeyPwd.toCharArray());
+        }
+        return new SSLConnectionSocketFactory(sslContextBuilder.build(), NoopHostnameVerifier.INSTANCE);
     }
 
     public CatsResponse call(HttpMethod method, ServiceData data) {
@@ -218,6 +239,7 @@ public class ServiceCaller {
             this.addSuppliedHeaders(method, data.getRelativePath(), data);
             this.setHttpMethodPayload(method, processedPayload, data);
             this.removeSkippedHeaders(data, method);
+            this.addBasicAuth(method);
 
             LOGGER.note("Final list of request headers: {}", Arrays.asList(method.getAllHeaders()));
             LOGGER.note("Final payload: {}", processedPayload);
@@ -238,6 +260,14 @@ public class ServiceCaller {
         } catch (IOException | URISyntaxException e) {
             this.recordRequestAndResponse(Arrays.asList(method.getAllHeaders()), processedPayload, CatsResponse.empty(), data.getRelativePath(), HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
             throw new CatsIOException(e);
+        }
+    }
+
+    private void addBasicAuth(HttpRequestBase method) {
+        if (!"empty".equalsIgnoreCase(basicAuth)) {
+            byte[] encodedAuth = Base64.getEncoder().encode(basicAuth.getBytes(StandardCharsets.ISO_8859_1));
+            String authHeader = "Basic " + new String(encodedAuth);
+            method.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
         }
     }
 

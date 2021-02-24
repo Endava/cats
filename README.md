@@ -88,6 +88,9 @@ Table of Contents
    * [Dealing with AnyOf, AllOf and OneOf](#dealing-with-anyof-allof-and-oneof)
    * [Dynamic values in configuration files](#dynamic-values-in-configuration-files)
    * [Running behind proxy](#running-behind-proxy)
+   * [Dealing with Authentication](#dealing-with-authentication)
+      * [HTTP header(s) based authentication](#http-headers-based-authentication)
+      * [One-Way or Two-Way SSL](#one-way-or-two-way-ssl)
    * [Limitations](#limitations)
       * [Media types and HTTP methods](#media-types-and-http-methods)
       * [Inheritance and composition](#inheritance-and-composition)
@@ -169,7 +172,7 @@ It was an intentional decision to report also the `skipped` tests in order to sh
 # Available arguments
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
 - `--server=URL` supplies the URL of the service implementing the contract.
-- `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth (more auth schemes will follow in future releases).
+- `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth.
 - `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. If the argument is not supplied all fuzzers will be run.
 - `--log=PACKAGE:LEVEL` can configure custom log level for a given package. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug`
 - `--paths=PATH_LIST` supplies a comma separated list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
@@ -189,7 +192,10 @@ It was an intentional decision to report also the `skipped` tests in order to sh
 - `--checkFields` If supplied (no value needed), it will only run the Field Fuzzers
 - `--checkHeaders` If supplied (no value needed), it will only run the Header Fuzzers
 - `--checkHttp` If supplied (no value needed), it will only run the HTTP Fuzzers
-- `--checkContract` If supplied (no value needed), it will only run the ContractInfo Fuzzers
+- `--checkContract` If supplied (no value needed), it will only run the ContractInfo Fuzzers 
+- `--sslKeystore` Location of the JKS keystore holding certificates used when authenticating calls using one-way or two-way SSL 
+- `--sslKeystorePwd` The password of the `sslKeystore`
+- `--sslKeyPwd` The password of the private key from the `sslKeystore`
 
 Using some of these options a typical invocation of CATS might look like this:
 
@@ -812,6 +818,22 @@ A typical run with proxy settings on `localhost:8080` will look as follows:
 ```bash
 ./cats.jar --contract=YAML_FILE --server=SERVER_URL --proxyHost=localhost --proxyPort=8080
 ```
+
+# Dealing with Authentication
+## HTTP header(s) based authentication
+CATS supports any form of HTTP header(s) based authentication (basic auth, oauth, custom JWT, apiKey, etc) using the [headers](#headers-file) mechanism. You can supply the specific HTTP header name and value 
+and apply to `all` endpoints.
+Additionally, basic auth is also supported using the `--basicauth=USR:PWD` argument.
+
+## One-Way or Two-Way SSL
+By default, CATS trusts all server certificates and doesn't perform hostname verification. 
+
+For two-way SSL you can specify a JKS file (Java Keystore) that holds the client's private key using the following arguments:  
+- `--sslKeystore` Location of the JKS keystore holding certificates used when authenticating calls using one-way or two-way SSL
+- `--sslKeystorePwd` The password of the `sslKeystore`
+- `--sslKeyPwd` The password of the private key from the `sslKeystore`
+
+You can use the following code to convert the certificate and private key to [PKCS 12](https://en.wikipedia.org/wiki/PKCS_12): [https://mrkandreev.name/blog/java-two-way-ssl/](https://mrkandreev.name/blog/java-two-way-ssl/).
 
 # Limitations
 
