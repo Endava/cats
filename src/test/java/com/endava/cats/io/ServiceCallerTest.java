@@ -62,6 +62,8 @@ class ServiceCallerTest {
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(serviceCaller, "proxyHost", "empty");
+        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "empty");
+        ReflectionTestUtils.setField(serviceCaller, "basicAuth", "user:password");
         ReflectionTestUtils.setField(catsParams, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(catsParams, "headersFile", "src/test/resources/headers.yml");
         ReflectionTestUtils.setField(catsParams, "params", "id=1,test=2");
@@ -69,11 +71,12 @@ class ServiceCallerTest {
         catsParams.loadHeaders();
         catsParams.loadRefData();
         catsParams.loadURLParams();
-        serviceCaller.initHttpClient();
     }
 
     @Test
     void givenAServer_whenDoingADeleteCall_thenProperDetailsAreBeingReturned() {
+        serviceCaller.initHttpClient();
+
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.DELETE, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
@@ -84,6 +87,8 @@ class ServiceCallerTest {
 
     @Test
     void givenAServer_whenDoingAHeadCall_thenProperDetailsAreBeingReturned() {
+        serviceCaller.initHttpClient();
+
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.HEAD, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
@@ -94,6 +99,8 @@ class ServiceCallerTest {
 
     @Test
     void givenAServer_whenDoingAPatchCall_thenProperDetailsAreBeingReturned() {
+        serviceCaller.initHttpClient();
+
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.PATCH, ServiceData.builder().relativePath("/pets").payload("{'id':'1'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
@@ -103,6 +110,8 @@ class ServiceCallerTest {
 
     @Test
     void givenAServer_whenDoingATraceCall_thenProperDetailsAreBeingReturned() {
+        serviceCaller.initHttpClient();
+
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.TRACE, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
@@ -113,6 +122,8 @@ class ServiceCallerTest {
 
     @Test
     void givenAServer_whenDoingAPostCall_thenProperDetailsAreBeingReturned() {
+        serviceCaller.initHttpClient();
+
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.POST, ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
@@ -122,6 +133,8 @@ class ServiceCallerTest {
 
     @Test
     void givenAServer_whenDoingAPutCall_thenProperDetailsAreBeingReturned() {
+        serviceCaller.initHttpClient();
+
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.PUT, ServiceData.builder().relativePath("/pets").payload("{'field':'newValue'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
@@ -131,6 +144,8 @@ class ServiceCallerTest {
 
     @Test
     void givenAServer_whenDoingAGetCall_thenProperDetailsAreBeingReturned() {
+        serviceCaller.initHttpClient();
+
         CatsResponse catsResponse = serviceCaller.call(HttpMethod.GET, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
@@ -140,9 +155,37 @@ class ServiceCallerTest {
 
     @Test
     void shouldRemoveRefDataFieldsWhichAreMarkedForRemoval() {
+        serviceCaller.initHttpClient();
+
         ServiceData data = ServiceData.builder().relativePath("/pets").payload("{\"id\":\"1\", \"field\":\"old_value\",\"name\":\"cats\"}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
         String newPayload = serviceCaller.replacePayloadWithRefData(data);
         Assertions.assertThat(newPayload).contains("newValue", "id", "field").doesNotContain("cats", "name");
+    }
+
+    @Test
+    void shouldLoadKeystoreAndCreateSSLFactory() {
+        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "src/test/resources/cats.jks");
+        ReflectionTestUtils.setField(serviceCaller, "sslKeystorePwd", "password");
+        ReflectionTestUtils.setField(serviceCaller, "sslKeyPwd", "password");
+
+        serviceCaller.initHttpClient();
+        Assertions.assertThat(serviceCaller.httpClient).isNotNull();
+    }
+
+    @Test
+    void shouldNotCreateSSLFactoryWhenKeystoreInvalid() {
+        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "src/test/resources/cats_bad.jks");
+
+        serviceCaller.initHttpClient();
+        Assertions.assertThat(serviceCaller.httpClient).isNull();
+    }
+
+    @Test
+    void shouldNotCreateSSLFactoryWhenKeystoreEmpty() {
+        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "empty");
+
+        serviceCaller.initHttpClient();
+        Assertions.assertThat(serviceCaller.httpClient).isNotNull();
     }
 }

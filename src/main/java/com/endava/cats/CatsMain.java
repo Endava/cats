@@ -109,6 +109,14 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String securityFuzzerFile;
     @Value("${printExecutionStatistics:empty}")
     private String printExecutionStatistics;
+    @Value("${sslKeystore:empty}")
+    private String sslKeystore;
+    @Value("${sslKeystorePwd:empty}")
+    private String sslKeystorePwd;
+    @Value("${sslKeysPwd:empty}")
+    private String sslKeyPwd;
+    @Value("${basicauth:empty}")
+    private String basicAuth;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -486,6 +494,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.renderHelpToConsole("checkHeaders", "If supplied (no value needed), it will only run the Header Fuzzers");
         this.renderHelpToConsole("checkHttp", "If supplied (no value needed), it will only run the HTTP Fuzzers");
         this.renderHelpToConsole("checkContract", "If supplied (no value needed), it will only run the ContractInfo Fuzzers");
+        this.renderHelpToConsole("sslKeystore", "Location of the keystore holding certificates used when authenticating calls using one-way or two-way SSL");
+        this.renderHelpToConsole("sslKeystorePwd", "The password of the sslKeystore");
+        this.renderHelpToConsole("sslKeyPwd", "The password of the private key from the sslKeystore");
+        this.renderHelpToConsole("basicauth", "Supplies a `username:password` pair, in case the service uses basic auth");
 
         LOGGER.note("Example: ");
         LOGGER.note(EXAMPLE);
@@ -523,6 +535,11 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("checkHeaders: {}", !EMPTY.equalsIgnoreCase(checkHeaders));
         LOGGER.info("checkHttp: {}", !EMPTY.equalsIgnoreCase(checkHttp));
         LOGGER.info("checkContract: {}", !EMPTY.equalsIgnoreCase(checkContract));
+        LOGGER.info("sslKeystore: {}", sslKeystore);
+        LOGGER.info("sslKeystorePwd: {}", sslKeystorePwd);
+        LOGGER.info("sslKeyPwd: {}", sslKeyPwd);
+        LOGGER.info("basicauth: {}", basicAuth);
+
     }
 
     private void renderHelpToConsole(String command, String text) {
