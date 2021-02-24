@@ -833,7 +833,7 @@ For two-way SSL you can specify a JKS file (Java Keystore) that holds the client
 - `--sslKeystorePwd` The password of the `sslKeystore`
 - `--sslKeyPwd` The password of the private key from the `sslKeystore`
 
-You can use the following code to convert the certificate and private key to [PKCS 12](https://en.wikipedia.org/wiki/PKCS_12): [https://mrkandreev.name/blog/java-two-way-ssl/](https://mrkandreev.name/blog/java-two-way-ssl/).
+For details on how to load the certificate and private key into a Java Keystore you can use this guide: [https://mrkandreev.name/blog/java-two-way-ssl/](https://mrkandreev.name/blog/java-two-way-ssl/).
 
 # Limitations
 
