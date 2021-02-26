@@ -36,8 +36,8 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Scenario: Check if the current path REST naming good practices");
-        testCaseListener.addExpectedResult(log, "Path should match the REST naming good practices. Must use: nouns, plurals, lowercase hyphen-case/snake_case for endpoints, camelCase/snake_case for JSON properties");
+        testCaseListener.addScenario(log, "Scenario: Check if the current path follows RESTful API naming good practices");
+        testCaseListener.addExpectedResult(log, "Path should follow the RESTful API naming good practices. Must use: nouns, plurals, lowercase hyphen-case/snake_case for endpoints, camelCase/snake_case for JSON properties");
 
         StringBuilder errorString = new StringBuilder();
         String[] pathElements = data.getPath().substring(1).split("/");
@@ -48,9 +48,9 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         errorString.append(this.checkJsonObjects(data));
 
         if (!errorString.toString().isEmpty()) {
-            testCaseListener.reportError(log, "Path does not follow REST naming good practices: {}", errorString.toString());
+            testCaseListener.reportError(log, "Path does not follow RESTful API naming good practices: {}", errorString.toString());
         } else {
-            testCaseListener.reportInfo(log, "Path follows the REST naming good practices.");
+            testCaseListener.reportInfo(log, "Path follows the RESTful API naming good practices.");
         }
     }
 
@@ -89,8 +89,22 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     }
 
     private String checkPlurals(String[] pathElements) {
-        return this.check(pathElements, pathElement -> this.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END),
+        String checkResult = this.check(pathElements, pathElement -> this.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END),
                 "The following path elements are not using plural: %s");
+
+        if (!EMPTY.equals(checkResult)) {
+            checkResult = this.checkIfLastElementIsAnAction(pathElements, checkResult);
+        }
+
+        return checkResult;
+    }
+
+    private String checkIfLastElementIsAnAction(String[] pathElements, String existingCheckResult) {
+        int length = pathElements.length;
+        if (length >= 2 && this.isAPathVariable(pathElements[length - 2]) && this.isNotAPathVariable(pathElements[length - 1])) {
+            return EMPTY;
+        }
+        return existingCheckResult;
     }
 
     private String check(String[] pathElements, Predicate<String> checkFunction, String errorMessage) {
@@ -124,6 +138,6 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public String description() {
-        return "verifies that all OpenAPI contract elements follow REST API naming good practices";
+        return "verifies that all OpenAPI contract elements follow RESTful API naming good practices";
     }
 }
