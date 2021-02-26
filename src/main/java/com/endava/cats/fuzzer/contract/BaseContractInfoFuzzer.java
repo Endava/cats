@@ -69,6 +69,13 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
         this.process(data);
     }
 
+    /**
+     * This will avoid running the same fuzzer more than once if not relevant. You can define the runKey based on any combination of elements
+     * that will make the run unique for the context
+     *
+     * @param data the FuzzingData
+     * @return a unique running key for the Fuzzer context
+     */
     protected abstract String runKey(FuzzingData data);
 
     @Override
