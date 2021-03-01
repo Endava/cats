@@ -50,4 +50,4 @@ components:
       scheme: bearer
       bearerFormat: JWT
 security:
-  - bearerAuth: [ ]
+  - mismatch: [ ]

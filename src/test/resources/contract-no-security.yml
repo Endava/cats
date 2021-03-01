@@ -26,8 +26,6 @@ tags:
 paths:
   /pet:
     put:
-      tags:
-        - petCATS
       summary: Update an existing pet
       operationId: updatePet
       requestBody:
@@ -43,11 +41,3 @@ paths:
       x-tags:
         - tag: pet
       x-contentType: application/json
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-security:
-  - bearerAuth: [ ]
