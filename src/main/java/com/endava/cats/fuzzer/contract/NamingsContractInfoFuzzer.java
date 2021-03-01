@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -89,22 +90,10 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     }
 
     private String checkPlurals(String[] pathElements) {
-        String checkResult = this.check(pathElements, pathElement -> this.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END),
+        String[] strippedPathElements = pathElements.length >= 2 ? Arrays.copyOfRange(pathElements, 1, pathElements.length - 1) : pathElements;
+
+        return this.check(strippedPathElements, pathElement -> this.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END),
                 "The following path elements are not using plural: %s");
-
-        if (!EMPTY.equals(checkResult)) {
-            checkResult = this.checkIfLastElementIsAnAction(pathElements, checkResult);
-        }
-
-        return checkResult;
-    }
-
-    private String checkIfLastElementIsAnAction(String[] pathElements, String existingCheckResult) {
-        int length = pathElements.length;
-        if (length >= 2 && this.isAPathVariable(pathElements[length - 2]) && this.isNotAPathVariable(pathElements[length - 1])) {
-            return EMPTY;
-        }
-        return existingCheckResult;
     }
 
     private String check(String[] pathElements, Predicate<String> checkFunction, String errorMessage) {
