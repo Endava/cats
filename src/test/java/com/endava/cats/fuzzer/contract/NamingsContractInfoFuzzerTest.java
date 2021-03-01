@@ -52,7 +52,7 @@ class NamingsContractInfoFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/petsPath", "/pets_path", "/pets-path-link", "/pets/Paths", "/pets/complex-Paths", "/pets/{petid10}", "/pets/{pet-id}", "/pets/run"})
+    @CsvSource({"/petsPath", "/pets_path", "/pets-path-link", "/pets/Paths", "/pets/complex-Paths", "/pets/{petid10}", "/pets/{pet-id}", "/admin/admin/pets/admin"})
     void shouldReportError(String path) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
@@ -65,7 +65,7 @@ class NamingsContractInfoFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/pets-paths", "/pets_paths", "/pets-path-links", "/pets/paths", "/pets/complex-paths", "/pets/{petId}", "/pets/{pet_id}", "/pets/{ped_id}/run"})
+    @CsvSource({"/pets-paths", "/pets_paths", "/pets-path-links", "/pets/paths", "/pets/complex-paths", "/pets/{petId}", "/pets/{pet_id}", "/pets/{ped_id}/run", "/pets/run", "/admin/pets"})
     void shouldReportInfo(String path) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
