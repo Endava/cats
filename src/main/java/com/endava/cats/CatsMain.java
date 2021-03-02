@@ -3,6 +3,7 @@ package com.endava.cats;
 import ch.qos.logback.classic.Level;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.fuzzer.*;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.model.CatsSkipped;
@@ -75,8 +76,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String server;
     @Value("${fuzzers:all}")
     private String suppliedFuzzers;
-    @Value("${log:empty}")
-    private String logData;
     @Value("${fieldsFuzzingStrategy:ONEBYONE}")
     private String fieldsFuzzingStrategy;
     @Value("${maxFieldsToRemove:empty}")
@@ -87,8 +86,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String refDataFile;
     @Value("${headers:empty}")
     private String headersFile;
-    @Value("${reportingLevel:info}")
-    private String reportingLevel;
     @Value("${edgeSpacesStrategy:trimAndValidate}")
     private String edgeSpacesStrategy;
     @Value("${urlParams:empty}")
@@ -102,12 +99,14 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     @Value("${securityFuzzerFile:empty}")
     private String securityFuzzerFile;
-    @Value("${printExecutionStatistics:empty}")
-    private String printExecutionStatistics;
+
+    @Autowired
+    private ReportingArguments reportingArguments;
     @Autowired
     private CheckArguments checkArgs;
     @Autowired
     private AuthArguments authArgs;
+
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -320,12 +319,12 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void setReportingLevel() {
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.endava.cats")).setLevel(Level.toLevel(reportingLevel));
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.endava.cats")).setLevel(Level.toLevel(reportingArguments.getReportingLevel()));
     }
 
     private void processLogLevelArgument() {
-        if (!EMPTY.equalsIgnoreCase(logData)) {
-            String[] log = logData.split(":");
+        if (!EMPTY.equalsIgnoreCase(reportingArguments.getLogData())) {
+            String[] log = reportingArguments.getLogData().split(":");
             ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(log[0])).setLevel(Level.toLevel(log[1]));
             LOGGER.info("Setting log level to {} for package {}", log[1], log[0]);
         }
@@ -513,15 +512,15 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("paths: {}", paths);
         LOGGER.info("refData: {}", refDataFile);
         LOGGER.info("headers: {}", headersFile);
-        LOGGER.info("reportingLevel: {}", reportingLevel);
+        LOGGER.info("reportingLevel: {}", reportingArguments.getReportingLevel());
         LOGGER.info("edgeSpacesStrategy: {}", edgeSpacesStrategy);
         LOGGER.info("urlParams: {}", urlParams);
         LOGGER.info("customFuzzerFile: {}", customFuzzerFile);
         LOGGER.info("securityFuzzerFile: {}", securityFuzzerFile);
-        LOGGER.info("printExecutionStatistic: {}", !EMPTY.equalsIgnoreCase(printExecutionStatistics));
+        LOGGER.info("printExecutionStatistic: {}", !EMPTY.equalsIgnoreCase(reportingArguments.getPrintExecutionStatistics()));
         LOGGER.info("excludeFuzzers: {}", excludedFuzzers);
         LOGGER.info("useExamples: {}", useExamples);
-        LOGGER.info("log: {}", logData);
+        LOGGER.info("log: {}", reportingArguments.getLogData());
         LOGGER.info("checkFields: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckFields()));
         LOGGER.info("checkHeaders: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckHeaders()));
         LOGGER.info("checkHttp: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckHttp()));

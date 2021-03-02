@@ -2,6 +2,7 @@ package com.endava.cats;
 
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
@@ -24,7 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class})
+@SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class, ReportingArguments.class})
 class CatsMainTest {
 
     @MockBean
@@ -35,6 +36,9 @@ class CatsMainTest {
 
     @Autowired
     private CheckArguments checkArguments;
+
+    @Autowired
+    private ReportingArguments reportingArguments;
 
     @Autowired
     private BuildProperties buildProperties;
@@ -68,7 +72,7 @@ class CatsMainTest {
     void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() {
         ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
-        ReflectionTestUtils.setField(catsMain, "logData", "org.apache.wire:debug");
+        ReflectionTestUtils.setField(reportingArguments, "logData", "org.apache.wire:debug");
 
         CatsMain spyMain = Mockito.spy(catsMain);
         spyMain.run("test");
