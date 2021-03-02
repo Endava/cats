@@ -1,5 +1,7 @@
 package com.endava.cats;
 
+import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.CheckArguments;
 import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
@@ -22,7 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsMain.class})
+@SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class})
 class CatsMainTest {
 
     @MockBean
@@ -30,6 +32,9 @@ class CatsMainTest {
 
     @Autowired
     private CatsMain catsMain;
+
+    @Autowired
+    private CheckArguments checkArguments;
 
     @Autowired
     private BuildProperties buildProperties;
@@ -113,12 +118,9 @@ class CatsMainTest {
             "checkHttp,HappyFuzzer,CheckSecurityHeadersFuzzer",
             "checkContract,TopLevelElementsContractInfoFuzzer,CheckSecurityHeadersFuzzer"})
     void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
-        ReflectionTestUtils.setField(catsMain, "checkFields", "empty");
-        ReflectionTestUtils.setField(catsMain, "checkHeaders", "empty");
-        ReflectionTestUtils.setField(catsMain, "checkContract", "empty");
-        ReflectionTestUtils.setField(catsMain, "checkHttp", "empty");
+        clearCheckArgsFields();
 
-        ReflectionTestUtils.setField(catsMain, argument, "true");
+        ReflectionTestUtils.setField(checkArguments, argument, "true");
         ReflectionTestUtils.setField(catsMain, "skipFuzzersForPaths", Collections.emptyList());
 
         List<String> fuzzers = catsMain.configuredFuzzers("myPath");
@@ -126,12 +128,16 @@ class CatsMainTest {
         Assertions.assertThat(fuzzers).contains(matching).doesNotContain(notMatching);
     }
 
+    private void clearCheckArgsFields() {
+        ReflectionTestUtils.setField(checkArguments, "checkFields", "empty");
+        ReflectionTestUtils.setField(checkArguments, "checkHeaders", "empty");
+        ReflectionTestUtils.setField(checkArguments, "checkContract", "empty");
+        ReflectionTestUtils.setField(checkArguments, "checkHttp", "empty");
+    }
+
     @Test
     void shouldReturnAllFuzzersWhenNoCheckSupplied() {
-        ReflectionTestUtils.setField(catsMain, "checkFields", "empty");
-        ReflectionTestUtils.setField(catsMain, "checkHeaders", "empty");
-        ReflectionTestUtils.setField(catsMain, "checkContract", "empty");
-        ReflectionTestUtils.setField(catsMain, "checkHttp", "empty");
+        clearCheckArgsFields();
 
         ReflectionTestUtils.setField(catsMain, "skipFuzzersForPaths", Collections.emptyList());
 

@@ -1,6 +1,8 @@
 package com.endava.cats;
 
 import ch.qos.logback.classic.Level;
+import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.CheckArguments;
 import com.endava.cats.fuzzer.*;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.model.CatsSkipped;
@@ -97,26 +99,15 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String excludedFuzzers;
     @Value("${useExamples:true}")
     private String useExamples;
-    @Value("${checkHeaders:empty}")
-    private String checkHeaders;
-    @Value("${checkFields:empty}")
-    private String checkFields;
-    @Value("${checkHttp:empty}")
-    private String checkHttp;
-    @Value("${checkContract:empty}")
-    private String checkContract;
+
     @Value("${securityFuzzerFile:empty}")
     private String securityFuzzerFile;
     @Value("${printExecutionStatistics:empty}")
     private String printExecutionStatistics;
-    @Value("${sslKeystore:empty}")
-    private String sslKeystore;
-    @Value("${sslKeystorePwd:empty}")
-    private String sslKeystorePwd;
-    @Value("${sslKeysPwd:empty}")
-    private String sslKeyPwd;
-    @Value("${basicauth:empty}")
-    private String basicAuth;
+    @Autowired
+    private CheckArguments checkArgs;
+    @Autowired
+    private AuthArguments authArgs;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -440,10 +431,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private List<String> constructFuzzersList() {
         List<String> finalList = new ArrayList<>();
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkFields, FieldFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkContract, ContractInfoFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkHeaders, HeaderFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkHttp, HttpFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckFields(), FieldFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckContract(), ContractInfoFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckHeaders(), HeaderFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckHttp(), HttpFuzzer.class));
 
         if (finalList.isEmpty()) {
             return fuzzers.stream().map(Object::toString).collect(Collectors.toList());
@@ -531,14 +522,14 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("excludeFuzzers: {}", excludedFuzzers);
         LOGGER.info("useExamples: {}", useExamples);
         LOGGER.info("log: {}", logData);
-        LOGGER.info("checkFields: {}", !EMPTY.equalsIgnoreCase(checkFields));
-        LOGGER.info("checkHeaders: {}", !EMPTY.equalsIgnoreCase(checkHeaders));
-        LOGGER.info("checkHttp: {}", !EMPTY.equalsIgnoreCase(checkHttp));
-        LOGGER.info("checkContract: {}", !EMPTY.equalsIgnoreCase(checkContract));
-        LOGGER.info("sslKeystore: {}", sslKeystore);
-        LOGGER.info("sslKeystorePwd: {}", sslKeystorePwd);
-        LOGGER.info("sslKeyPwd: {}", sslKeyPwd);
-        LOGGER.info("basicauth: {}", basicAuth);
+        LOGGER.info("checkFields: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckFields()));
+        LOGGER.info("checkHeaders: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckHeaders()));
+        LOGGER.info("checkHttp: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckHttp()));
+        LOGGER.info("checkContract: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckContract()));
+        LOGGER.info("sslKeystore: {}", authArgs.getSslKeystore());
+        LOGGER.info("sslKeystorePwd: {}", authArgs.getSslKeystorePwd());
+        LOGGER.info("sslKeyPwd: {}", authArgs.getSslKeyPwd());
+        LOGGER.info("basicauth: {}", authArgs.getBasicAuth());
 
     }
 
