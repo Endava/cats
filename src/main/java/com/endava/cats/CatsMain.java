@@ -4,7 +4,6 @@ import ch.qos.logback.classic.Level;
 import com.endava.cats.args.*;
 import com.endava.cats.fuzzer.*;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
-import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -66,8 +65,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
     private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
 
-    protected List<CatsSkipped> skipFuzzersForPaths;
-
     @Value("${contract:empty}")
     private String contract;
     @Value("${server:empty}")
@@ -99,10 +96,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     public static void main(String... args) {
         System.exit(SpringApplication.exit(new SpringApplicationBuilder(CatsMain.class).bannerMode(Banner.Mode.CONSOLE).logStartupInfo(false).build().run(args)));
-    }
-
-    private static List<String> stringToList(String str, String splitChar) {
-        return Stream.of(str.split(splitChar)).collect(Collectors.toList());
     }
 
     public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
@@ -156,36 +149,17 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.sortFuzzersByName();
         this.processArgs(args);
         this.printArgs();
-        this.processSkipFuzzerFor(args);
 
         OpenAPI openAPI = this.createOpenAPI();
         this.processContractDependentCommands(openAPI, args);
 
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
         filesArguments.loadConfig();
+        filterArguments.loadConfig(args);
         this.startFuzzing(openAPI, suppliedPaths);
         this.executeCustomFuzzer();
     }
 
-    public void processSkipFuzzerFor(String... args) {
-        List<String> skipForArgs = Arrays.stream(args)
-                .filter(arg -> arg.startsWith("--skip") && arg.contains("ForPath")).collect(Collectors.toList());
-
-        List<CatsSkipped> catsSkipped = skipForArgs.stream()
-                .map(skipFor -> skipFor.replace("--skip", "")
-                        .replace("ForPath", "").split("="))
-                .map(skipForArr -> CatsSkipped.builder()
-                        .fuzzer(skipForArr[0].trim())
-                        .forPaths(stringToList(skipForArr[1].trim(), ","))
-                        .build())
-                .collect(Collectors.toList());
-        LOGGER.start("skipXXXForPath supplied arguments: {}. Matching with registered fuzzers...", catsSkipped);
-
-        this.skipFuzzersForPaths = catsSkipped.stream()
-                .filter(skipped -> fuzzers.stream().map(Object::toString).anyMatch(fuzzerName -> fuzzerName.equalsIgnoreCase(skipped.getFuzzer())))
-                .collect(Collectors.toList());
-        LOGGER.complete("skipXXXForPath list after matching with registered fuzzers: {}", this.skipFuzzersForPaths);
-    }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
@@ -219,7 +193,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
      * @return the list of paths from the contract matching the supplied list
      */
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
-        List<String> suppliedPaths = stringToList(filterArguments.getPaths(), ",");
+        List<String> suppliedPaths = Stream.of(filterArguments.getPaths().split(",")).collect(Collectors.toList());
         if (suppliedPaths.isEmpty() || filterArguments.getPaths().equalsIgnoreCase(ALL)) {
             suppliedPaths.remove(ALL);
             suppliedPaths.addAll(openAPI.getPaths().keySet());
@@ -361,7 +335,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     protected void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
-        List<String> configuredFuzzers = this.configuredFuzzers(pathItemEntry.getKey());
+        List<String> configuredFuzzers = filterArguments.getFuzzersForPath(pathItemEntry.getKey());
         Map<String, Schema> schemas = getSchemas(openAPI);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
@@ -391,51 +365,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         }
     }
 
-    protected List<String> configuredFuzzers(String pathKey) {
-        List<String> allFuzzersName = this.constructFuzzersList();
-        List<String> allowedFuzzers = allFuzzersName;
-
-        if (!ALL.equalsIgnoreCase(filterArguments.getSuppliedFuzzers())) {
-            allowedFuzzers = stringToList(filterArguments.getSuppliedFuzzers(), ",");
-        }
-
-        allowedFuzzers = this.removeSkippedFuzzers(pathKey, allowedFuzzers);
-        allowedFuzzers = this.removeExcludedFuzzers(allowedFuzzers);
-
-        return CatsUtil.filterAndPrintNotMatching(allowedFuzzers, allFuzzersName::contains, LOGGER, "Supplied Fuzzer does not exist {}", Object::toString);
-    }
-
-    private List<String> constructFuzzersList() {
-        List<String> finalList = new ArrayList<>();
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckFields(), FieldFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckContract(), ContractInfoFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckHeaders(), HeaderFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArgs.getCheckHttp(), HttpFuzzer.class));
-
-        if (finalList.isEmpty()) {
-            return fuzzers.stream().map(Object::toString).collect(Collectors.toList());
-        }
-        return finalList;
-    }
-
-    private List<String> getFuzzersFromCheckArgument(String checkArgument, Class<? extends Annotation> annotation) {
-        if (!EMPTY.equalsIgnoreCase(checkArgument)) {
-            return fuzzers.stream().filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
-                    .map(Object::toString).collect(Collectors.toList());
-        }
-        return Collections.emptyList();
-    }
-
-    private List<String> removeSkippedFuzzers(String pathKey, List<String> allowedFuzzers) {
-        return allowedFuzzers.stream().filter(fuzzer -> skipFuzzersForPaths.stream()
-                .noneMatch(catsSkipped -> catsSkipped.getFuzzer().equalsIgnoreCase(fuzzer) && catsSkipped.getForPaths().contains(pathKey)))
-                .collect(Collectors.toList());
-    }
-
-    private List<String> removeExcludedFuzzers(List<String> allowedFuzzers) {
-        List<String> fuzzersToExclude = stringToList(this.filterArguments.getExcludedFuzzers(), ",");
-        return allowedFuzzers.stream().filter(fuzzer -> !fuzzersToExclude.contains(fuzzer)).collect(Collectors.toList());
-    }
 
     private void printUsage() {
         LOGGER.info("The following arguments are supported: ");
@@ -498,10 +427,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("excludeFuzzers: {}", filterArguments.getExcludedFuzzers());
         LOGGER.info("useExamples: {}", processingArguments.getUseExamples());
         LOGGER.info("log: {}", reportingArguments.getLogData());
-        LOGGER.info("checkFields: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckFields()));
-        LOGGER.info("checkHeaders: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckHeaders()));
-        LOGGER.info("checkHttp: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckHttp()));
-        LOGGER.info("checkContract: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckContract()));
+        LOGGER.info("checkFields: {}", checkArgs.checkFields());
+        LOGGER.info("checkHeaders: {}", checkArgs.checkHeaders());
+        LOGGER.info("checkHttp: {}", checkArgs.checkHttp());
+        LOGGER.info("checkContract: {}", checkArgs.checkContract());
         LOGGER.info("sslKeystore: {}", authArgs.getSslKeystore());
         LOGGER.info("sslKeystorePwd: {}", authArgs.getSslKeystorePwd());
         LOGGER.info("sslKeyPwd: {}", authArgs.getSslKeyPwd());

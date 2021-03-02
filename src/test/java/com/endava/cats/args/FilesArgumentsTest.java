@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import org.junit.jupiter.api.Assertions;

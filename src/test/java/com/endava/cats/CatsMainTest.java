@@ -3,14 +3,11 @@ package com.endava.cats;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
@@ -19,10 +16,6 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 
 @ExtendWith(SpringExtension.class)
 @SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class, ReportingArguments.class})
@@ -83,16 +76,6 @@ class CatsMainTest {
     }
 
     @Test
-    void givenAContractAndAServerAndASkipFuzzerArgument_whenStartingCats_thenTheSkipForIsCorrectlyProcessed() throws IOException {
-        ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
-        ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
-        catsMain.doLogic("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeStringsFuzzerForPath=/pets");
-        Assertions.assertThat(catsMain.skipFuzzersForPaths)
-                .containsOnly(CatsSkipped.builder().fuzzer("VeryLargeStringsFuzzer").forPaths(Collections.singletonList("/pets")).build());
-    }
-
-
-    @Test
     void givenAnInvalidContractPathAndServerParameter_whenStartingCats_thenAnExceptionIsThrown() {
         ReflectionTestUtils.setField(catsMain, "contract", "pet.yml");
         ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
@@ -114,39 +97,5 @@ class CatsMainTest {
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.anyMap(), Mockito.any());
         ReflectionTestUtils.setField(catsMain, "contract", "empty");
         ReflectionTestUtils.setField(catsMain, "server", "empty");
-    }
-
-    @ParameterizedTest
-    @CsvSource({"checkHeaders,CheckSecurityHeadersFuzzer,RemoveFieldsFuzzer",
-            "checkFields,RemoveFieldsFuzzer,CheckSecurityHeadersFuzzer",
-            "checkHttp,HappyFuzzer,CheckSecurityHeadersFuzzer",
-            "checkContract,TopLevelElementsContractInfoFuzzer,CheckSecurityHeadersFuzzer"})
-    void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
-        clearCheckArgsFields();
-
-        ReflectionTestUtils.setField(checkArguments, argument, "true");
-        ReflectionTestUtils.setField(catsMain, "skipFuzzersForPaths", Collections.emptyList());
-
-        List<String> fuzzers = catsMain.configuredFuzzers("myPath");
-
-        Assertions.assertThat(fuzzers).contains(matching).doesNotContain(notMatching);
-    }
-
-    private void clearCheckArgsFields() {
-        ReflectionTestUtils.setField(checkArguments, "checkFields", "empty");
-        ReflectionTestUtils.setField(checkArguments, "checkHeaders", "empty");
-        ReflectionTestUtils.setField(checkArguments, "checkContract", "empty");
-        ReflectionTestUtils.setField(checkArguments, "checkHttp", "empty");
-    }
-
-    @Test
-    void shouldReturnAllFuzzersWhenNoCheckSupplied() {
-        clearCheckArgsFields();
-
-        ReflectionTestUtils.setField(catsMain, "skipFuzzersForPaths", Collections.emptyList());
-
-        List<String> fuzzers = catsMain.configuredFuzzers("myPath");
-
-        Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
     }
 }
