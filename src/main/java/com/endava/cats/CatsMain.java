@@ -3,6 +3,7 @@ package com.endava.cats;
 import ch.qos.logback.classic.Level;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.fuzzer.*;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
@@ -11,7 +12,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -82,24 +82,15 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String maxFieldsToRemove;
     @Value("${paths:all}")
     private String paths;
-    @Value("${refData:empty}")
-    private String refDataFile;
-    @Value("${headers:empty}")
-    private String headersFile;
     @Value("${edgeSpacesStrategy:trimAndValidate}")
     private String edgeSpacesStrategy;
-    @Value("${urlParams:empty}")
-    private String urlParams;
-    @Value("${customFuzzerFile:empty}")
-    private String customFuzzerFile;
     @Value("${excludedFuzzers:empty}")
     private String excludedFuzzers;
     @Value("${useExamples:true}")
     private String useExamples;
 
-    @Value("${securityFuzzerFile:empty}")
-    private String securityFuzzerFile;
-
+    @Autowired
+    private FilesArguments filesArguments;
     @Autowired
     private ReportingArguments reportingArguments;
     @Autowired
@@ -115,8 +106,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private CustomFuzzer customFuzzer;
     @Autowired
     private ExecutionStatisticsListener executionStatisticsListener;
-    @Autowired
-    private FilesArguments filesArguments;
     @Autowired
     private TestCaseListener testCaseListener;
 
@@ -510,13 +499,13 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("fields fuzzing strategy: {}", fieldsFuzzingStrategy);
         LOGGER.info("max fields to remove: {}", maxFieldsToRemove);
         LOGGER.info("paths: {}", paths);
-        LOGGER.info("refData: {}", refDataFile);
-        LOGGER.info("headers: {}", headersFile);
+        LOGGER.info("refData: {}", filesArguments.getRefDataFile());
+        LOGGER.info("headers: {}", filesArguments.getHeadersFile());
         LOGGER.info("reportingLevel: {}", reportingArguments.getReportingLevel());
         LOGGER.info("edgeSpacesStrategy: {}", edgeSpacesStrategy);
-        LOGGER.info("urlParams: {}", urlParams);
-        LOGGER.info("customFuzzerFile: {}", customFuzzerFile);
-        LOGGER.info("securityFuzzerFile: {}", securityFuzzerFile);
+        LOGGER.info("urlParams: {}", filesArguments.getParams());
+        LOGGER.info("customFuzzerFile: {}", filesArguments.getCustomFuzzerFile());
+        LOGGER.info("securityFuzzerFile: {}", filesArguments.getSecurityFuzzerFile());
         LOGGER.info("printExecutionStatistic: {}", !EMPTY.equalsIgnoreCase(reportingArguments.getPrintExecutionStatistics()));
         LOGGER.info("excludeFuzzers: {}", excludedFuzzers);
         LOGGER.info("useExamples: {}", useExamples);

@@ -5,6 +5,7 @@ import com.endava.cats.util.CatsUtil;
 import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -22,16 +23,22 @@ public class FilesArguments {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
-    @Value("${urlParams:empty}")
-    private String params;
     private List<String> urlParamsList = new ArrayList<>();
+
+    @Value("${urlParams:empty}")
+    @Getter
+    private String params;
     @Value("${headers:empty}")
+    @Getter
     private String headersFile;
     @Value("${refData:empty}")
+    @Getter
     private String refDataFile;
     @Value("${customFuzzerFile:empty}")
+    @Getter
     private String customFuzzerFile;
     @Value("${securityFuzzerFile:empty}")
+    @Getter
     private String securityFuzzerFile;
 
     @Autowired
