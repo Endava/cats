@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CustomFuzzerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,27 +22,27 @@ public class CustomFuzzer implements CustomFuzzerBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomFuzzer.class);
 
 
-    private final CatsParams catsParams;
+    private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();
 
 
     @Autowired
-    public CustomFuzzer(CatsParams cp, CustomFuzzerUtil cfu) {
-        this.catsParams = cp;
+    public CustomFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
+        this.filesArguments = cp;
         this.customFuzzerUtil = cfu;
     }
 
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (!catsParams.getCustomFuzzerDetails().isEmpty()) {
+        if (!filesArguments.getCustomFuzzerDetails().isEmpty()) {
             this.processCustomFuzzerFile(data);
         }
     }
 
     protected void processCustomFuzzerFile(FuzzingData data) {
-        Map<String, Object> currentPathValues = catsParams.getCustomFuzzerDetails().get(data.getPath());
+        Map<String, Object> currentPathValues = filesArguments.getCustomFuzzerDetails().get(data.getPath());
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> executions.add(CustomFuzzerExecution.builder()
                     .fuzzingData(data).testId(key).testEntry(value).build()));
@@ -55,7 +55,7 @@ public class CustomFuzzer implements CustomFuzzerBase {
         MDC.put("fuzzer", "CF");
         MDC.put("fuzzerKey", "CustomFuzzer");
 
-        for (Map.Entry<String, Map<String, Object>> entry : catsParams.getCustomFuzzerDetails().entrySet()) {
+        for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))
                     .forEach(customFuzzerExecution -> customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
                             customFuzzerExecution.getTestEntry(), this));

@@ -9,7 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import com.google.gson.JsonObject;
@@ -52,7 +52,7 @@ class CustomFuzzerTest {
     private BuildProperties buildProperties;
 
     @SpyBean
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     @MockBean
     private CatsUtil catsUtil;
@@ -71,20 +71,20 @@ class CustomFuzzerTest {
 
     @BeforeEach
     void setup() {
-        customFuzzer = new CustomFuzzer(catsParams, customFuzzerUtil);
+        customFuzzer = new CustomFuzzer(filesArguments, customFuzzerUtil);
         Mockito.when(buildProperties.getName()).thenReturn("CATS");
         Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
         Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
         ReflectionTestUtils.setField(testCaseListener, "buildProperties", buildProperties);
-        catsParams.getCustomFuzzerDetails().clear();
+        filesArguments.getCustomFuzzerDetails().clear();
     }
 
     @Test
     void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
-        ReflectionTestUtils.setField(catsParams, "customFuzzerFile", "mumu");
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "mumu");
         Mockito.doCallRealMethod().when(catsUtil).parseYaml("mumu");
 
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.fuzz(FuzzingData.builder().build());
 
@@ -94,7 +94,7 @@ class CustomFuzzerTest {
     @Test
     void givenAnEmptyCustomFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
         FuzzingData data = FuzzingData.builder().build();
-        ReflectionTestUtils.setField(catsParams, "customFuzzerFile", "empty");
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "empty");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
@@ -116,7 +116,7 @@ class CustomFuzzerTest {
         Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
         Mockito.doCallRealMethod().when(catsUtil).sanitizeToJsonPath(Mockito.anyString());
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
 
@@ -132,7 +132,7 @@ class CustomFuzzerTest {
 
         FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "T(java.time.OffsetDateTime).now().plusDays(20)");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
 
@@ -147,7 +147,7 @@ class CustomFuzzerTest {
                 responses(responses).responseCodes(Collections.singleton("200")).build();
 
 
-        ReflectionTestUtils.setField(catsParams, "customFuzzerFile", "custom");
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "custom");
         Mockito.when(catsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
         Mockito.when(catsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
         Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
@@ -159,7 +159,7 @@ class CustomFuzzerTest {
         FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
 
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
@@ -169,7 +169,7 @@ class CustomFuzzerTest {
     void givenACustomFuzzerFileWithAdditionalProperties_whenTheFuzzerRuns_thenPropertiesAreProperlyAddedToThePayload() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-additional.yml", "{\"code\": \"200\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
@@ -179,7 +179,7 @@ class CustomFuzzerTest {
     void givenACustomFuzzerFileWithVerifyParameters_whenTheFuzzerRuns_thenVerifyParameterAreProperlyChecked() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(3)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"));
@@ -189,7 +189,7 @@ class CustomFuzzerTest {
     void givenACustomFuzzerFileWithVerifyParametersThatDoNotMatchTheResponseValues_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(3)).reportError(Mockito.any(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "));
@@ -200,7 +200,7 @@ class CustomFuzzerTest {
         setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
 
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(FuzzingData.builder().path("path1").build());
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verifyNoInteractions(testCaseListener);
@@ -210,7 +210,7 @@ class CustomFuzzerTest {
     void givenACustomFuzzerFileWithVerifyParametersThatAreNotInResponse_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-verify-not-set.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following Verify parameters were not present in the response: {}"),
@@ -221,14 +221,14 @@ class CustomFuzzerTest {
     void givenACustomFuzzerFileWithHttpMethodThatIsNotInContract_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-http-method.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        catsParams.loadCustomFuzzerFile();
+        filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
-        ReflectionTestUtils.setField(catsParams, "customFuzzerFile", fuzzerFile);
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).sanitizeToJsonPath(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());

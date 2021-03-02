@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
@@ -18,7 +18,7 @@ class StringsInNumericFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        stringsInNumericFieldsFuzzer = new StringsInNumericFieldsFuzzer(Mockito.mock(ServiceCaller.class), Mockito.mock(TestCaseListener.class), Mockito.mock(CatsUtil.class), Mockito.mock(CatsParams.class));
+        stringsInNumericFieldsFuzzer = new StringsInNumericFieldsFuzzer(Mockito.mock(ServiceCaller.class), Mockito.mock(TestCaseListener.class), Mockito.mock(CatsUtil.class), Mockito.mock(FilesArguments.class));
     }
 
     @Test

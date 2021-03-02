@@ -8,7 +8,7 @@ import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -40,7 +40,7 @@ class BaseFieldsFuzzerTest {
     private CatsUtil catsUtil;
 
     @Mock
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;
@@ -62,7 +62,7 @@ class BaseFieldsFuzzerTest {
 
     @Test
     void givenAFieldWithAReplaceFuzzingStrategyWithANonPrimitiveField_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
-        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
         Mockito.when(data.getAllFields()).thenReturn(fields);
@@ -73,7 +73,7 @@ class BaseFieldsFuzzerTest {
 
     @Test
     void givenAFieldWithASkipFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
-        baseFieldsFuzzer = new MyBaseFieldsSkipFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        baseFieldsFuzzer = new MyBaseFieldsSkipFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
         Mockito.when(data.getAllFields()).thenReturn(fields);
@@ -95,7 +95,7 @@ class BaseFieldsFuzzerTest {
 
         Mockito.when(catsUtil.isPrimitive(Mockito.eq(null), Mockito.anyString())).thenReturn(true);
         Mockito.when(catsUtil.replaceField(Mockito.eq(null), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
-        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
@@ -106,7 +106,7 @@ class BaseFieldsFuzzerTest {
 
     static class MyBaseFieldsFuzzer extends BaseFieldsFuzzer {
 
-        public MyBaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        public MyBaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
             super(sc, lr, cu, cp);
         }
 
@@ -143,7 +143,7 @@ class BaseFieldsFuzzerTest {
 
     static class MyBaseFieldsSkipFuzzer extends BaseFieldsFuzzer {
 
-        public MyBaseFieldsSkipFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        public MyBaseFieldsSkipFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
             super(sc, lr, cu, cp);
         }
 

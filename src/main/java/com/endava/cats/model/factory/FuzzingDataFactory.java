@@ -4,7 +4,7 @@ import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -34,15 +34,15 @@ public class FuzzingDataFactory {
     private static final String ONE_OF = "ONE_OF";
 
     private final CatsUtil catsUtil;
-    private final CatsParams catsParams;
+    private final FilesArguments filesArguments;
 
     @Value("${useExamples:true}")
     private String useExamples;
 
     @Autowired
-    public FuzzingDataFactory(CatsUtil catsUtil, CatsParams catsParams) {
+    public FuzzingDataFactory(CatsUtil catsUtil, FilesArguments filesArguments) {
         this.catsUtil = catsUtil;
-        this.catsParams = catsParams;
+        this.filesArguments = filesArguments;
     }
 
     /**
@@ -140,7 +140,7 @@ public class FuzzingDataFactory {
         List<String> required = new ArrayList<>();
         for (Parameter parameter : Optional.ofNullable(operationParameters).orElseGet(Collections::emptyList)) {
             if (("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn()))
-                    && catsParams.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
+                    && filesArguments.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
                 parameter.getSchema().setName(parameter.getSchema().getName() + "|" + parameter.getIn());
                 syntheticSchema.addProperties(parameter.getName(), parameter.getSchema());
                 if (parameter.getRequired() != null && parameter.getRequired()) {

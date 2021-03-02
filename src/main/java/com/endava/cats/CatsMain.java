@@ -11,7 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -116,7 +116,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     @Autowired
     private ExecutionStatisticsListener executionStatisticsListener;
     @Autowired
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
     @Autowired
     private TestCaseListener testCaseListener;
 
@@ -185,7 +185,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.processContractDependentCommands(openAPI, args);
 
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
-        catsParams.loadConfig();
+        filesArguments.loadConfig();
         this.startFuzzing(openAPI, suppliedPaths);
         this.executeCustomFuzzer();
     }

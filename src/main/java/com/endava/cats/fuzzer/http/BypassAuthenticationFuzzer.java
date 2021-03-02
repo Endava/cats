@@ -9,7 +9,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +28,13 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    private final CatsParams catsParams;
+    private final FilesArguments filesArguments;
 
     @Autowired
-    public BypassAuthenticationFuzzer(ServiceCaller sc, TestCaseListener lr, CatsParams catsParams) {
+    public BypassAuthenticationFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments filesArguments) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
-        this.catsParams = catsParams;
+        this.filesArguments = filesArguments;
     }
 
 
@@ -61,7 +61,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     protected Set<String> getAuthenticationHeaderProvided(FuzzingData data) {
         Set<String> authenticationHeadersInContract = data.getHeaders().stream().map(CatsHeader::getName)
                 .filter(this::isAuthenticationHeader).collect(Collectors.toSet());
-        Set<String> authenticationHeadersInFile = catsParams.getHeaders().entrySet().stream().filter(path -> CatsMain.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
+        Set<String> authenticationHeadersInFile = filesArguments.getHeaders().entrySet().stream().filter(path -> CatsMain.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
                 .map(Map.Entry::getValue).collect(Collectors.toList())
                 .stream().flatMap(entry -> entry.keySet().stream())
                 .collect(Collectors.toSet())

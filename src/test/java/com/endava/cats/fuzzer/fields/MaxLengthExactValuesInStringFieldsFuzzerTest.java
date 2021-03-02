@@ -5,7 +5,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
@@ -32,18 +32,18 @@ class MaxLengthExactValuesInStringFieldsFuzzerTest {
     private MaxLengthExactValuesInStringFieldsFuzzer maxLengthExactValuesInStringFieldsFuzzer;
 
     @Mock
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     @BeforeEach
     void setup() {
-        maxLengthExactValuesInStringFieldsFuzzer = new MaxLengthExactValuesInStringFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        maxLengthExactValuesInStringFieldsFuzzer = new MaxLengthExactValuesInStringFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
     void givenANewStringFieldsRightBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFieldsRightBoundaryFuzzer() {
         StringSchema stringSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
-        Mockito.when(catsParams.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
+        Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
         Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
         Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.description()).isNotNull();

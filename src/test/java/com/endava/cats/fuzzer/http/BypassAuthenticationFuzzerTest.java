@@ -7,7 +7,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,7 +45,7 @@ class BypassAuthenticationFuzzerTest {
     private BuildProperties buildProperties;
 
     @SpyBean
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
 
     private BypassAuthenticationFuzzer bypassAuthenticationFuzzer;
@@ -59,8 +59,8 @@ class BypassAuthenticationFuzzerTest {
 
     @BeforeEach
     void setup() {
-        catsParams = new CatsParams(catsUtil);
-        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(serviceCaller, testCaseListener, catsParams);
+        filesArguments = new FilesArguments(catsUtil);
+        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(serviceCaller, testCaseListener, filesArguments);
     }
 
     @Test
@@ -74,9 +74,9 @@ class BypassAuthenticationFuzzerTest {
 
     @Test
     void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerRuns() throws Exception {
-        ReflectionTestUtils.setField(catsParams, "headersFile", "notEmpty");
+        ReflectionTestUtils.setField(filesArguments, "headersFile", "notEmpty");
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
-        catsParams.loadHeaders();
+        filesArguments.loadHeaders();
 
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
@@ -125,12 +125,12 @@ class BypassAuthenticationFuzzerTest {
 
     @Test
     void shouldProperlyIdentifyAuthHeadersFromHeadersFile() throws Exception {
-        ReflectionTestUtils.setField(catsParams, "headersFile", "notEmpty");
+        ReflectionTestUtils.setField(filesArguments, "headersFile", "notEmpty");
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
         Mockito.doCallRealMethod().when(catsUtil).mapObjsToString(Mockito.anyString(), Mockito.anyMap());
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").build();
 
-        catsParams.loadHeaders();
+        filesArguments.loadHeaders();
         Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
         Assertions.assertThat(authHeaders).containsExactlyInAnyOrder("api-key", "authorization", "jwt");
     }

@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.BooleanSchema;
 import org.assertj.core.api.Assertions;
@@ -26,13 +26,13 @@ class BooleanFieldsFuzzerTest {
     private CatsUtil catsUtil;
 
     @Mock
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     private BooleanFieldsFuzzer booleanFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        booleanFieldsFuzzer = new BooleanFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        booleanFieldsFuzzer = new BooleanFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
