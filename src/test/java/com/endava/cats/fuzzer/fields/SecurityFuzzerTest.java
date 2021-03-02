@@ -9,7 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import org.assertj.core.api.Assertions;
@@ -54,7 +54,7 @@ class SecurityFuzzerTest {
     private CatsUtil catsUtil;
 
     @SpyBean
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     @SpyBean
     private CustomFuzzerUtil customFuzzerUtil;
@@ -70,7 +70,7 @@ class SecurityFuzzerTest {
 
     @BeforeEach
     void setup() {
-        securityFuzzer = new SecurityFuzzer(catsParams, customFuzzerUtil);
+        securityFuzzer = new SecurityFuzzer(filesArguments, customFuzzerUtil);
         Mockito.when(buildProperties.getName()).thenReturn("CATS");
         Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
         Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
@@ -79,10 +79,10 @@ class SecurityFuzzerTest {
 
     @Test
     void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
-        ReflectionTestUtils.setField(catsParams, "securityFuzzerFile", "mumu");
+        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", "mumu");
         Mockito.doCallRealMethod().when(catsUtil).parseYaml("mumu");
 
-        catsParams.loadSecurityFuzzerFile();
+        filesArguments.loadSecurityFuzzerFile();
         SecurityFuzzer spyCustomFuzzer = Mockito.spy(securityFuzzer);
         spyCustomFuzzer.fuzz(FuzzingData.builder().build());
 
@@ -92,7 +92,7 @@ class SecurityFuzzerTest {
     @Test
     void givenAnEmptySecurityFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
         FuzzingData data = FuzzingData.builder().build();
-        ReflectionTestUtils.setField(catsParams, "securityFuzzerFile", "empty");
+        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", "empty");
         SecurityFuzzer spyCustomFuzzer = Mockito.spy(securityFuzzer);
         spyCustomFuzzer.fuzz(data);
 
@@ -107,7 +107,7 @@ class SecurityFuzzerTest {
     void givenASecurityFuzzerFileWithAPathThatIsNotInContract_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/securityFuzzer.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
-        catsParams.loadSecurityFuzzerFile();
+        filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
         Mockito.verifyNoInteractions(testCaseListener);
     }
@@ -116,7 +116,7 @@ class SecurityFuzzerTest {
     void givenASecurityFuzzerFileWithMissingReservedWords_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/securityFuzzer-missing.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
-        catsParams.loadSecurityFuzzerFile();
+        filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
         Mockito.verifyNoInteractions(testCaseListener);
     }
@@ -125,7 +125,7 @@ class SecurityFuzzerTest {
     void givenASecurityFuzzerFileAllDetailsIn_whenTheFuzzerRuns_thenOnlyInfoIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/securityFuzzer-all.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
-        catsParams.loadSecurityFuzzerFile();
+        filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(21)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
@@ -135,13 +135,13 @@ class SecurityFuzzerTest {
     void givenAnInvalidSecurityFuzzerFile_whenTheFuzzerRuns_thenNoResultIsReport() throws Exception {
         FuzzingData data = setContext("src/test/resources/securityFuzzer-invalidStrings.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
-        catsParams.loadSecurityFuzzerFile();
+        filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.never()).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
-        ReflectionTestUtils.setField(catsParams, "securityFuzzerFile", fuzzerFile);
+        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());

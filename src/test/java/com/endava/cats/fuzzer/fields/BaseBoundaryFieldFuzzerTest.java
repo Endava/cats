@@ -4,7 +4,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -34,13 +34,13 @@ class BaseBoundaryFieldFuzzerTest {
     private CatsUtil catsUtil;
 
     @Mock
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     private BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer;
 
     @Test
     void givenABaseBoundaryFuzzerWithDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheReplaceStrategyIsBeingReturned() {
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
 
         FuzzingData data = getMockFuzzingData();
 
@@ -51,7 +51,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void givenABaseBoundaryFuzzerWithNoDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithoutBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        myBaseBoundaryFuzzer = new MyBaseBoundaryWithoutBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
 
         FuzzingData data = getMockFuzzingData();
 
@@ -62,7 +62,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void givenABaseBoundaryFuzzerWithNoDefinedBoundaryAndIntegerSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
 
         FuzzingData data = getMockFuzzingData();
 
@@ -73,7 +73,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void givenABaseBoundaryFuzzerAndAFieldWithNoSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(new HashMap<>());
 
@@ -92,7 +92,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     static class MyBaseBoundaryWithBoundariesFuzzer extends BaseBoundaryFieldFuzzer {
 
-        public MyBaseBoundaryWithBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        public MyBaseBoundaryWithBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
             super(sc, lr, cu, cp);
         }
 
@@ -119,7 +119,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     static class MyBaseBoundaryWithoutBoundariesFuzzer extends BaseBoundaryFieldFuzzer {
 
-        public MyBaseBoundaryWithoutBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        public MyBaseBoundaryWithoutBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
             super(sc, lr, cu, cp);
         }
 
@@ -146,7 +146,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     static class MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer extends BaseBoundaryFieldFuzzer {
 
-        public MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        public MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
             super(sc, lr, cu, cp);
         }
 

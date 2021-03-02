@@ -8,7 +8,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.html.HtmlEscapers;
 import com.google.gson.JsonElement;
@@ -61,7 +61,7 @@ public class ServiceCaller {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
-    private final CatsParams catsParams;
+    private final FilesArguments filesArguments;
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final CatsDSLParser catsDSLParser;
@@ -84,10 +84,10 @@ public class ServiceCaller {
     private String basicAuth;
 
     @Autowired
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, CatsParams catsParams, CatsDSLParser cdsl) {
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
-        this.catsParams = catsParams;
+        this.filesArguments = filesArguments;
         this.catsDSLParser = cdsl;
     }
 
@@ -215,7 +215,7 @@ public class ServiceCaller {
      * @return
      */
     private String getPathWithSuppliedURLParamsReplaced(String startingUrl) {
-        for (String line : catsParams.getUrlParamsList()) {
+        for (String line : filesArguments.getUrlParamsList()) {
             String[] urlParam = line.split(":");
             String pathVar = "{" + urlParam[0] + "}";
             if (startingUrl.contains(pathVar)) {
@@ -361,10 +361,10 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(HttpRequestBase method, String relativePath, ServiceData data) {
-        LOGGER.note("Path {} has the following headers: {}", relativePath, catsParams.getHeaders().get(relativePath));
-        LOGGER.note("Headers that should be added to all paths: {}", catsParams.getHeaders().get(CatsMain.ALL));
+        LOGGER.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
+        LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsMain.ALL));
 
-        Map<String, String> suppliedHeaders = catsParams.getHeaders().entrySet().stream()
+        Map<String, String> suppliedHeaders = filesArguments.getHeaders().entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsMain.ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
 
@@ -404,7 +404,7 @@ public class ServiceCaller {
      * @return the path with reference data replacing path parameters
      */
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
-        Map<String, String> currentPathRefData = catsParams.getRefData(data.getRelativePath());
+        Map<String, String> currentPathRefData = filesArguments.getRefData(data.getRelativePath());
         LOGGER.note("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, String> entry : currentPathRefData.entrySet()) {
@@ -420,7 +420,7 @@ public class ServiceCaller {
             LOGGER.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return data.getPayload();
         } else {
-            Map<String, String> refDataForCurrentPath = catsParams.getRefData(data.getRelativePath());
+            Map<String, String> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             LOGGER.note("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
             Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))

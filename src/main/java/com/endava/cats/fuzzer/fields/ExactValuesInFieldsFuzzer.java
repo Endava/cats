@@ -6,7 +6,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -21,7 +21,7 @@ import java.util.function.Function;
 public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Autowired
-    protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+    protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
@@ -44,7 +44,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     @Override
     protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
-        Map<String, String> currentPath = catsParams.getRefData(data.getPath());
+        Map<String, String> currentPath = filesArguments.getRefData(data.getPath());
         return currentPath.isEmpty() && getExactMethod().apply(schema) != null;
     }
 

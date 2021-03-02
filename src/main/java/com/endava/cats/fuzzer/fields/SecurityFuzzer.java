@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CustomFuzzerUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -23,24 +23,24 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 public class SecurityFuzzer implements CustomFuzzerBase {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    private final CatsParams catsParams;
+    private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
 
     @Autowired
-    public SecurityFuzzer(CatsParams cp, CustomFuzzerUtil cfu) {
-        this.catsParams = cp;
+    public SecurityFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
+        this.filesArguments = cp;
         this.customFuzzerUtil = cfu;
     }
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (!catsParams.getSecurityFuzzerDetails().isEmpty()) {
+        if (!filesArguments.getSecurityFuzzerDetails().isEmpty()) {
             this.processSecurityFuzzerFile(data);
         }
     }
 
     protected void processSecurityFuzzerFile(FuzzingData data) {
-        Map<String, Object> currentPathValues = catsParams.getSecurityFuzzerDetails().get(data.getPath());
+        Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getPath());
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
         } else {

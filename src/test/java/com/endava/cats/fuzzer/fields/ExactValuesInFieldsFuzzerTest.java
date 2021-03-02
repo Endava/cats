@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -28,13 +28,13 @@ class ExactValuesInFieldsFuzzerTest {
     private CatsUtil catsUtil;
 
     @Mock
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     private ExactValuesInFieldsFuzzer myBaseBoundaryFuzzer;
 
     @BeforeEach
     public void setup() {
-        myBaseBoundaryFuzzer = new MyExactValueFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        myBaseBoundaryFuzzer = new MyExactValueFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
@@ -58,7 +58,7 @@ class ExactValuesInFieldsFuzzerTest {
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {
 
-        public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, CatsParams cp) {
+        public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
             super(sc, lr, cu, cp);
         }
 

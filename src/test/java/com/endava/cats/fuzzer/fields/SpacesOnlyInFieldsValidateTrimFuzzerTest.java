@@ -6,7 +6,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -34,13 +34,13 @@ class SpacesOnlyInFieldsValidateTrimFuzzerTest {
     private CatsUtil catsUtil;
 
     @Mock
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     private SpacesOnlyInFieldsValidateTrimFuzzer spacesOnlyInFieldsValidateTrimFuzzer;
 
     @BeforeEach
     void setup() {
-        spacesOnlyInFieldsValidateTrimFuzzer = new SpacesOnlyInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, catsParams);
+        spacesOnlyInFieldsValidateTrimFuzzer = new SpacesOnlyInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test

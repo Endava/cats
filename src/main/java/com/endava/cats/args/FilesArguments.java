@@ -1,6 +1,7 @@
-package com.endava.cats.util;
+package com.endava.cats.args;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.util.CatsUtil;
 import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -13,7 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-public class CatsParams {
+public class FilesArguments {
     private static final String ALL = "all";
     private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final CatsUtil catsUtil;
@@ -34,7 +35,7 @@ public class CatsParams {
     private String securityFuzzerFile;
 
     @Autowired
-    public CatsParams(CatsUtil cu) {
+    public FilesArguments(CatsUtil cu) {
         this.catsUtil = cu;
     }
 

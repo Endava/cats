@@ -5,7 +5,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -57,20 +57,20 @@ class ServiceCallerTest {
 
     @BeforeEach
     public void setupEach() throws Exception {
-        CatsParams catsParams = new CatsParams(catsUtil);
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, catsParams, catsDSLParser);
+        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(serviceCaller, "proxyHost", "empty");
         ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "empty");
         ReflectionTestUtils.setField(serviceCaller, "basicAuth", "user:password");
-        ReflectionTestUtils.setField(catsParams, "refDataFile", "src/test/resources/refFields.yml");
-        ReflectionTestUtils.setField(catsParams, "headersFile", "src/test/resources/headers.yml");
-        ReflectionTestUtils.setField(catsParams, "params", "id=1,test=2");
+        ReflectionTestUtils.setField(filesArguments, "refDataFile", "src/test/resources/refFields.yml");
+        ReflectionTestUtils.setField(filesArguments, "headersFile", "src/test/resources/headers.yml");
+        ReflectionTestUtils.setField(filesArguments, "params", "id=1,test=2");
 
-        catsParams.loadHeaders();
-        catsParams.loadRefData();
-        catsParams.loadURLParams();
+        filesArguments.loadHeaders();
+        filesArguments.loadRefData();
+        filesArguments.loadURLParams();
     }
 
     @Test

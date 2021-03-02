@@ -3,7 +3,7 @@ package com.endava.cats.model.factory;
 import com.endava.cats.CatsMain;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsParams;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -29,13 +29,13 @@ class FuzzingDataFactoryTest {
     @MockBean
     private CatsUtil catsUtil;
     @MockBean
-    private CatsParams catsParams;
+    private FilesArguments filesArguments;
 
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
     void setup() {
-        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, catsParams);
+        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, filesArguments);
     }
 
     @Test
