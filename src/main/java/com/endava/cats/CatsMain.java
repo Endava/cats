@@ -1,10 +1,7 @@
 package com.endava.cats;
 
 import ch.qos.logback.classic.Level;
-import com.endava.cats.args.AuthArguments;
-import com.endava.cats.args.CheckArguments;
-import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.*;
 import com.endava.cats.fuzzer.*;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.model.CatsSkipped;
@@ -74,21 +71,18 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private String contract;
     @Value("${server:empty}")
     private String server;
-    @Value("${fuzzers:all}")
-    private String suppliedFuzzers;
+    
     @Value("${fieldsFuzzingStrategy:ONEBYONE}")
     private String fieldsFuzzingStrategy;
     @Value("${maxFieldsToRemove:empty}")
     private String maxFieldsToRemove;
-    @Value("${paths:all}")
-    private String paths;
     @Value("${edgeSpacesStrategy:trimAndValidate}")
     private String edgeSpacesStrategy;
-    @Value("${excludedFuzzers:empty}")
-    private String excludedFuzzers;
     @Value("${useExamples:true}")
     private String useExamples;
 
+    @Autowired
+    private FilterArguments filterArguments;
     @Autowired
     private FilesArguments filesArguments;
     @Autowired
@@ -231,8 +225,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
      * @return the list of paths from the contract matching the supplied list
      */
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
-        List<String> suppliedPaths = stringToList(paths, ",");
-        if (suppliedPaths.isEmpty() || paths.equalsIgnoreCase(ALL)) {
+        List<String> suppliedPaths = stringToList(filterArguments.getPaths(), ",");
+        if (suppliedPaths.isEmpty() || filterArguments.getPaths().equalsIgnoreCase(ALL)) {
             suppliedPaths.remove(ALL);
             suppliedPaths.addAll(openAPI.getPaths().keySet());
         }
@@ -407,8 +401,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         List<String> allFuzzersName = this.constructFuzzersList();
         List<String> allowedFuzzers = allFuzzersName;
 
-        if (!ALL.equalsIgnoreCase(suppliedFuzzers)) {
-            allowedFuzzers = stringToList(suppliedFuzzers, ",");
+        if (!ALL.equalsIgnoreCase(filterArguments.getSuppliedFuzzers())) {
+            allowedFuzzers = stringToList(filterArguments.getSuppliedFuzzers(), ",");
         }
 
         allowedFuzzers = this.removeSkippedFuzzers(pathKey, allowedFuzzers);
@@ -445,7 +439,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private List<String> removeExcludedFuzzers(List<String> allowedFuzzers) {
-        List<String> fuzzersToExclude = stringToList(this.excludedFuzzers, ",");
+        List<String> fuzzersToExclude = stringToList(this.filterArguments.getExcludedFuzzers(), ",");
         return allowedFuzzers.stream().filter(fuzzer -> !fuzzersToExclude.contains(fuzzer)).collect(Collectors.toList());
     }
 
@@ -495,10 +489,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("server: {}", server);
         LOGGER.info("contract: {}", contract);
         LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
-        LOGGER.info("supplied fuzzers: {}", suppliedFuzzers);
+        LOGGER.info("supplied fuzzers: {}", filterArguments.getSuppliedFuzzers());
         LOGGER.info("fields fuzzing strategy: {}", fieldsFuzzingStrategy);
         LOGGER.info("max fields to remove: {}", maxFieldsToRemove);
-        LOGGER.info("paths: {}", paths);
+        LOGGER.info("paths: {}", filterArguments.getPaths());
         LOGGER.info("refData: {}", filesArguments.getRefDataFile());
         LOGGER.info("headers: {}", filesArguments.getHeadersFile());
         LOGGER.info("reportingLevel: {}", reportingArguments.getReportingLevel());
@@ -507,7 +501,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("customFuzzerFile: {}", filesArguments.getCustomFuzzerFile());
         LOGGER.info("securityFuzzerFile: {}", filesArguments.getSecurityFuzzerFile());
         LOGGER.info("printExecutionStatistic: {}", !EMPTY.equalsIgnoreCase(reportingArguments.getPrintExecutionStatistics()));
-        LOGGER.info("excludeFuzzers: {}", excludedFuzzers);
+        LOGGER.info("excludeFuzzers: {}", filterArguments.getExcludedFuzzers());
         LOGGER.info("useExamples: {}", useExamples);
         LOGGER.info("log: {}", reportingArguments.getLogData());
         LOGGER.info("checkFields: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckFields()));
