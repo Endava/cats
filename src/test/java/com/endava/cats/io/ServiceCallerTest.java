@@ -1,5 +1,6 @@
 package com.endava.cats.io;
 
+import com.endava.cats.args.AuthArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
@@ -25,7 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsUtil.class, CatsDSLParser.class})
+@SpringJUnitConfig({CatsUtil.class, CatsDSLParser.class, AuthArguments.class})
 class ServiceCallerTest {
 
     public static WireMockServer wireMockServer;
@@ -33,6 +34,8 @@ class ServiceCallerTest {
     private TestCaseListener testCaseListener;
     @Autowired
     private CatsDSLParser catsDSLParser;
+    @Autowired
+    private AuthArguments authArguments;
     @Autowired
     private CatsUtil catsUtil;
     private ServiceCaller serviceCaller;
@@ -58,12 +61,12 @@ class ServiceCallerTest {
     @BeforeEach
     public void setupEach() throws Exception {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser);
+        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(serviceCaller, "proxyHost", "empty");
-        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "empty");
-        ReflectionTestUtils.setField(serviceCaller, "basicAuth", "user:password");
+        ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
+        ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(filesArguments, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(filesArguments, "headersFile", "src/test/resources/headers.yml");
         ReflectionTestUtils.setField(filesArguments, "params", "id=1,test=2");
@@ -165,9 +168,9 @@ class ServiceCallerTest {
 
     @Test
     void shouldLoadKeystoreAndCreateSSLFactory() {
-        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "src/test/resources/cats.jks");
-        ReflectionTestUtils.setField(serviceCaller, "sslKeystorePwd", "password");
-        ReflectionTestUtils.setField(serviceCaller, "sslKeyPwd", "password");
+        ReflectionTestUtils.setField(authArguments, "sslKeystore", "src/test/resources/cats.jks");
+        ReflectionTestUtils.setField(authArguments, "sslKeystorePwd", "password");
+        ReflectionTestUtils.setField(authArguments, "sslKeyPwd", "password");
 
         serviceCaller.initHttpClient();
         Assertions.assertThat(serviceCaller.httpClient).isNotNull();
@@ -175,7 +178,7 @@ class ServiceCallerTest {
 
     @Test
     void shouldNotCreateSSLFactoryWhenKeystoreInvalid() {
-        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "src/test/resources/cats_bad.jks");
+        ReflectionTestUtils.setField(authArguments, "sslKeystore", "src/test/resources/cats_bad.jks");
 
         serviceCaller.initHttpClient();
         Assertions.assertThat(serviceCaller.httpClient).isNull();
@@ -183,7 +186,7 @@ class ServiceCallerTest {
 
     @Test
     void shouldNotCreateSSLFactoryWhenKeystoreEmpty() {
-        ReflectionTestUtils.setField(serviceCaller, "sslKeystore", "empty");
+        ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
 
         serviceCaller.initHttpClient();
         Assertions.assertThat(serviceCaller.httpClient).isNotNull();

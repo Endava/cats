@@ -1,6 +1,8 @@
 package com.endava.cats.io;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
@@ -8,7 +10,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.html.HtmlEscapers;
 import com.google.gson.JsonElement;
@@ -65,6 +66,7 @@ public class ServiceCaller {
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final CatsDSLParser catsDSLParser;
+    private final AuthArguments authArguments;
 
     HttpClient httpClient;
 
@@ -74,21 +76,14 @@ public class ServiceCaller {
     private int proxyPort;
     @Value("${server:empty}")
     private String server;
-    @Value("${sslKeystore:empty}")
-    private String sslKeystore;
-    @Value("${sslKeystorePwd:empty}")
-    private String sslKeystorePwd;
-    @Value("${sslKeysPwd:empty}")
-    private String sslKeyPwd;
-    @Value("${basicauth:empty}")
-    private String basicAuth;
 
     @Autowired
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl) {
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.filesArguments = filesArguments;
         this.catsDSLParser = cdsl;
+        this.authArguments = authArguments;
     }
 
     @PostConstruct
@@ -118,10 +113,10 @@ public class ServiceCaller {
     private SSLConnectionSocketFactory buildSSLContextFactory() throws GeneralSecurityException, IOException {
         SSLContextBuilder sslContextBuilder = new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE);
 
-        if (!CatsMain.EMPTY.equalsIgnoreCase(sslKeystore)) {
+        if (!CatsMain.EMPTY.equalsIgnoreCase(authArguments.getSslKeystore())) {
             KeyStore keyStore = KeyStore.getInstance("jks");
-            keyStore.load(new FileInputStream(sslKeystore), sslKeystorePwd.toCharArray());
-            sslContextBuilder.loadKeyMaterial(keyStore, sslKeyPwd.toCharArray());
+            keyStore.load(new FileInputStream(authArguments.getSslKeystore()), authArguments.getSslKeystorePwd().toCharArray());
+            sslContextBuilder.loadKeyMaterial(keyStore, authArguments.getSslKeyPwd().toCharArray());
         }
         return new SSLConnectionSocketFactory(sslContextBuilder.build(), NoopHostnameVerifier.INSTANCE);
     }
@@ -264,8 +259,8 @@ public class ServiceCaller {
     }
 
     private void addBasicAuth(HttpRequestBase method) {
-        if (!CatsMain.EMPTY.equalsIgnoreCase(basicAuth)) {
-            byte[] encodedAuth = Base64.getEncoder().encode(basicAuth.getBytes(StandardCharsets.ISO_8859_1));
+        if (!CatsMain.EMPTY.equalsIgnoreCase(authArguments.getBasicAuth())) {
+            byte[] encodedAuth = Base64.getEncoder().encode(authArguments.getBasicAuth().getBytes(StandardCharsets.ISO_8859_1));
             String authHeader = "Basic " + new String(encodedAuth);
             method.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
         }
