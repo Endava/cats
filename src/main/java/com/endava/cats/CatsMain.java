@@ -67,20 +67,14 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
 
     protected List<CatsSkipped> skipFuzzersForPaths;
+
     @Value("${contract:empty}")
     private String contract;
     @Value("${server:empty}")
     private String server;
-    
-    @Value("${fieldsFuzzingStrategy:ONEBYONE}")
-    private String fieldsFuzzingStrategy;
-    @Value("${maxFieldsToRemove:empty}")
-    private String maxFieldsToRemove;
-    @Value("${edgeSpacesStrategy:trimAndValidate}")
-    private String edgeSpacesStrategy;
-    @Value("${useExamples:true}")
-    private String useExamples;
 
+    @Autowired
+    private ProcessingArguments processingArguments;
     @Autowired
     private FilterArguments filterArguments;
     @Autowired
@@ -490,19 +484,19 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("contract: {}", contract);
         LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
         LOGGER.info("supplied fuzzers: {}", filterArguments.getSuppliedFuzzers());
-        LOGGER.info("fields fuzzing strategy: {}", fieldsFuzzingStrategy);
-        LOGGER.info("max fields to remove: {}", maxFieldsToRemove);
+        LOGGER.info("fields fuzzing strategy: {}", processingArguments.getFieldsFuzzingStrategy());
+        LOGGER.info("max fields to remove: {}", processingArguments.getMaxFieldsToRemove());
         LOGGER.info("paths: {}", filterArguments.getPaths());
         LOGGER.info("refData: {}", filesArguments.getRefDataFile());
         LOGGER.info("headers: {}", filesArguments.getHeadersFile());
         LOGGER.info("reportingLevel: {}", reportingArguments.getReportingLevel());
-        LOGGER.info("edgeSpacesStrategy: {}", edgeSpacesStrategy);
+        LOGGER.info("edgeSpacesStrategy: {}", processingArguments.getEdgeSpacesStrategy());
         LOGGER.info("urlParams: {}", filesArguments.getParams());
         LOGGER.info("customFuzzerFile: {}", filesArguments.getCustomFuzzerFile());
         LOGGER.info("securityFuzzerFile: {}", filesArguments.getSecurityFuzzerFile());
         LOGGER.info("printExecutionStatistic: {}", !EMPTY.equalsIgnoreCase(reportingArguments.getPrintExecutionStatistics()));
         LOGGER.info("excludeFuzzers: {}", filterArguments.getExcludedFuzzers());
-        LOGGER.info("useExamples: {}", useExamples);
+        LOGGER.info("useExamples: {}", processingArguments.getUseExamples());
         LOGGER.info("log: {}", reportingArguments.getLogData());
         LOGGER.info("checkFields: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckFields()));
         LOGGER.info("checkHeaders: {}", !EMPTY.equalsIgnoreCase(checkArgs.getCheckHeaders()));
