@@ -1,8 +1,6 @@
 package com.endava.cats;
 
-import com.endava.cats.args.AuthArguments;
-import com.endava.cats.args.CheckArguments;
-import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.*;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
@@ -18,7 +16,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class, ReportingArguments.class})
+@SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class, ReportingArguments.class, ApiArguments.class, FilterArguments.class, FilesArguments.class, ProcessingArguments.class})
 class CatsMainTest {
 
     @MockBean
@@ -32,6 +30,9 @@ class CatsMainTest {
 
     @Autowired
     private ReportingArguments reportingArguments;
+
+    @Autowired
+    private ApiArguments apiArguments;
 
     @Autowired
     private BuildProperties buildProperties;
@@ -56,46 +57,46 @@ class CatsMainTest {
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fieldsFuzzerStrategies")).isInstanceOf(StopExecutionException.class).hasMessage("list fieldsFuzzerStrategies");
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers")).isInstanceOf(StopExecutionException.class).hasMessage("list fuzzers");
 
-        ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
+        ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "paths", "contract=src/test/resources/petstore.yml")).isInstanceOf(StopExecutionException.class).hasMessage("list available paths");
-        ReflectionTestUtils.setField(catsMain, "contract", "empty");
+        ReflectionTestUtils.setField(apiArguments, "contract", "empty");
     }
 
     @Test
     void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() {
-        ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/petstore.yml");
-        ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
+        ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
+        ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         ReflectionTestUtils.setField(reportingArguments, "logData", "org.apache.wire:debug");
 
         CatsMain spyMain = Mockito.spy(catsMain);
         spyMain.run("test");
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
-        ReflectionTestUtils.setField(catsMain, "contract", "empty");
-        ReflectionTestUtils.setField(catsMain, "server", "empty");
+        ReflectionTestUtils.setField(apiArguments, "contract", "empty");
+        ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
 
     @Test
     void givenAnInvalidContractPathAndServerParameter_whenStartingCats_thenAnExceptionIsThrown() {
-        ReflectionTestUtils.setField(catsMain, "contract", "pet.yml");
-        ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
+        ReflectionTestUtils.setField(apiArguments, "contract", "pet.yml");
+        ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
 
         Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers", "contract=pet.yml")).isInstanceOf(StopExecutionException.class).hasMessage(null);
-        ReflectionTestUtils.setField(catsMain, "contract", "empty");
-        ReflectionTestUtils.setField(catsMain, "server", "empty");
+        ReflectionTestUtils.setField(apiArguments, "contract", "empty");
+        ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
 
     @Test
     void givenAnOpenApiContract_whenStartingCats_thenTheContractIsCorrectlyParsed() {
-        ReflectionTestUtils.setField(catsMain, "contract", "src/test/resources/openapi.yml");
-        ReflectionTestUtils.setField(catsMain, "server", "http://localhost:8080");
+        ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/openapi.yml");
+        ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         CatsMain spyMain = Mockito.spy(catsMain);
         spyMain.run("test");
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
         Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.anyMap(), Mockito.any());
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.anyMap(), Mockito.any());
-        ReflectionTestUtils.setField(catsMain, "contract", "empty");
-        ReflectionTestUtils.setField(catsMain, "server", "empty");
+        ReflectionTestUtils.setField(apiArguments, "contract", "empty");
+        ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
 }

@@ -24,8 +24,8 @@ import java.util.stream.Stream;
 public class FilterArguments {
     private static final String ALL = "all";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FilterArguments.class);
+    private final List<CatsArg> args = new ArrayList<>();
     protected List<CatsSkipped> skipFuzzersForPaths;
-
     @Value("${fuzzers:all}")
     private String suppliedFuzzers;
     @Value("${paths:all}")
@@ -37,8 +37,16 @@ public class FilterArguments {
     @Autowired
     private CheckArguments checkArguments;
 
+    public void init() {
+        args.add(CatsArg.builder().name("fuzzers").value(suppliedFuzzers).help("COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to run. You can use 'all' to include all fuzzers. To list all available fuzzers run: './cats.jar list fuzzers").build());
+        args.add(CatsArg.builder().name("paths").value(paths).help("PATH_LIST a comma separated list of paths to test. If no path is supplied, all paths will be considered").build());
+        args.add(CatsArg.builder().name("excludedFuzzers").value(excludedFuzzers).help("COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude").build());
+        args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help("/path1,/path2 can configure fuzzers to be excluded for the specified paths").build());
+    }
+
     public void loadConfig(String... args) {
         this.processSkipFuzzerFor(args);
+        init();
     }
 
     private void processSkipFuzzerFor(String... args) {
