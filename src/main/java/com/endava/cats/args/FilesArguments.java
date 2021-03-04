@@ -17,14 +17,14 @@ import java.util.stream.Collectors;
 @Component
 public class FilesArguments {
     private static final String ALL = "all";
-    private final Map<String, Map<String, String>> headers = new HashMap<>();
-    private final CatsUtil catsUtil;
-    private final Map<String, Map<String, String>> refData = new HashMap<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
+    private final Map<String, Map<String, String>> headers = new HashMap<>();
+    private final Map<String, Map<String, String>> refData = new HashMap<>();
+    private final CatsUtil catsUtil;
+
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
     private List<String> urlParamsList = new ArrayList<>();
-
     @Value("${urlParams:empty}")
     @Getter
     private String params;
