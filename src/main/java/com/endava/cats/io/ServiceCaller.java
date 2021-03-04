@@ -59,6 +59,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
 @Component
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
+    private static final String EMPTY = "empty";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
@@ -103,7 +104,7 @@ public class ServiceCaller {
 
     private HttpHost getProxyConfig() {
         HttpHost httpHost = null;
-        if (!CatsMain.EMPTY.equalsIgnoreCase(proxyHost)) {
+        if (!EMPTY.equalsIgnoreCase(proxyHost)) {
             LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
             httpHost = new HttpHost(proxyHost, proxyPort);
         }
@@ -113,7 +114,7 @@ public class ServiceCaller {
     private SSLConnectionSocketFactory buildSSLContextFactory() throws GeneralSecurityException, IOException {
         SSLContextBuilder sslContextBuilder = new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE);
 
-        if (!CatsMain.EMPTY.equalsIgnoreCase(authArguments.getSslKeystore())) {
+        if (!EMPTY.equalsIgnoreCase(authArguments.getSslKeystore())) {
             KeyStore keyStore = KeyStore.getInstance("jks");
             keyStore.load(new FileInputStream(authArguments.getSslKeystore()), authArguments.getSslKeystorePwd().toCharArray());
             sslContextBuilder.loadKeyMaterial(keyStore, authArguments.getSslKeyPwd().toCharArray());
@@ -259,7 +260,7 @@ public class ServiceCaller {
     }
 
     private void addBasicAuth(HttpRequestBase method) {
-        if (!CatsMain.EMPTY.equalsIgnoreCase(authArguments.getBasicAuth())) {
+        if (!EMPTY.equalsIgnoreCase(authArguments.getBasicAuth())) {
             byte[] encodedAuth = Base64.getEncoder().encode(authArguments.getBasicAuth().getBytes(StandardCharsets.ISO_8859_1));
             String authHeader = "Basic " + new String(encodedAuth);
             method.setHeader(HttpHeaders.AUTHORIZATION, authHeader);

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,10 +18,14 @@ import java.util.stream.Collectors;
 @Component
 public class FilesArguments {
     private static final String ALL = "all";
+    private static final String EMPTY = "empty";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final Map<String, Map<String, String>> refData = new HashMap<>();
     private final CatsUtil catsUtil;
+
+    @Getter
+    private final List<CatsArg> args = new ArrayList<>();
 
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
@@ -46,6 +51,15 @@ public class FilesArguments {
         this.catsUtil = cu;
     }
 
+    @PostConstruct
+    public void init() {
+        args.add(CatsArg.builder().name("urlParams").value(params).help("A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs").build());
+        args.add(CatsArg.builder().name("headers").value(headersFile).help("FILE specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example").build());
+        args.add(CatsArg.builder().name("refData").value(refDataFile).help("FILE specifies the file with fields that must have a fixed value in order for requests to succeed").build());
+        args.add(CatsArg.builder().name("customFuzzerFile").value(customFuzzerFile).help("A file used by the `CustomFuzzer` that will be used to create user-supplied payloads").build());
+        args.add(CatsArg.builder().name("securityFuzzerFile").value(securityFuzzerFile).help("A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities").build());
+    }
+
     public void loadConfig() throws IOException {
         loadSecurityFuzzerFile();
         loadCustomFuzzerFile();
@@ -56,7 +70,7 @@ public class FilesArguments {
 
     public void loadSecurityFuzzerFile() {
         try {
-            if (CatsMain.EMPTY.equalsIgnoreCase(securityFuzzerFile)) {
+            if (EMPTY.equalsIgnoreCase(securityFuzzerFile)) {
                 log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
             } else {
                 securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile);
@@ -68,7 +82,7 @@ public class FilesArguments {
 
     public void loadCustomFuzzerFile() {
         try {
-            if (CatsMain.EMPTY.equalsIgnoreCase(customFuzzerFile)) {
+            if (EMPTY.equalsIgnoreCase(customFuzzerFile)) {
                 log.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
             } else {
                 customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
@@ -80,7 +94,7 @@ public class FilesArguments {
 
     public void loadRefData() throws IOException {
         try {
-            if (CatsMain.EMPTY.equalsIgnoreCase(refDataFile)) {
+            if (EMPTY.equalsIgnoreCase(refDataFile)) {
                 log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
             } else {
                 catsUtil.mapObjsToString(refDataFile, refData);
@@ -93,7 +107,7 @@ public class FilesArguments {
 
     public void loadURLParams() throws IOException {
         try {
-            if (CatsMain.EMPTY.equalsIgnoreCase(params)) {
+            if (EMPTY.equalsIgnoreCase(params)) {
                 log.info("No URL parameters supplied!");
             } else {
                 urlParamsList = Arrays.stream(params.split(",")).map(String::trim).collect(Collectors.toList());
@@ -106,7 +120,7 @@ public class FilesArguments {
 
     public void loadHeaders() throws IOException {
         try {
-            if (CatsMain.EMPTY.equalsIgnoreCase(headersFile)) {
+            if (EMPTY.equalsIgnoreCase(headersFile)) {
                 log.info("No headers file was supplied! No additional header will be added!");
             } else {
                 catsUtil.mapObjsToString(headersFile, headers);

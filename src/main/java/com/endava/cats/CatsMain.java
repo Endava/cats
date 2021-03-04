@@ -22,7 +22,6 @@ import org.apache.commons.io.Charsets;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.Banner;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
@@ -53,7 +52,6 @@ import static org.fusesource.jansi.Ansi.ansi;
 @SpringBootApplication
 public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     public static final AtomicInteger TEST = new AtomicInteger(0);
-    public static final String EMPTY = "empty";
     public static final String ALL = "all";
     private static final String LIST = "list";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsMain.class);
@@ -65,11 +63,9 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
     private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
 
-    @Value("${contract:empty}")
-    private String contract;
-    @Value("${server:empty}")
-    private String server;
 
+    @Autowired
+    private ApiArguments apiArguments;
     @Autowired
     private ProcessingArguments processingArguments;
     @Autowired
@@ -210,13 +206,13 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             ParseOptions options = new ParseOptions();
             options.setResolve(true);
             options.setFlatten(true);
-            OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract)), Charsets.UTF_8), null, options).getOpenAPI();
+            OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(apiArguments.getContract())), Charsets.UTF_8), null, options).getOpenAPI();
 
             String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
             LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
             return openAPI;
         } catch (Exception e) {
-            LOGGER.fatal("Error parsing OPEN API contract {}", contract);
+            LOGGER.fatal("Error parsing OPEN API contract {}", apiArguments.getContract());
             throw new StopExecutionException();
         }
     }
@@ -264,7 +260,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private boolean isMinimumArgumentsNotSupplied(String[] args) {
-        return EMPTY.equalsIgnoreCase(contract) && (args.length != 3 || EMPTY.equalsIgnoreCase(server));
+        return apiArguments.isContractEmpty() && (args.length != 3 || apiArguments.isContractEmpty());
     }
 
     private void setReportingLevel() {
@@ -366,32 +362,14 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private void printUsage() {
         LOGGER.info("The following arguments are supported: ");
-        this.renderHelpToConsole("contract", "LOCATION_OF_THE_CONTRACT");
-        this.renderHelpToConsole("server", "BASE_URL_OF_THE_SERVICE");
-        this.renderHelpToConsole(FUZZERS_STRING, "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to run. You can use 'all' to include all fuzzers. To list all available fuzzers run: './cats.jar list fuzzers'");
-        this.renderHelpToConsole("log", "PACKAGE:LEVEL set custom log level of a given package");
-        this.renderHelpToConsole(PATHS_STRING, "PATH_LIST a comma separated list of paths to test. If no path is supplied, all paths will be considered");
-        this.renderHelpToConsole("fieldsFuzzingStrategy", "STRATEGY set the strategy for tge fields fuzzers. Supported strategies ONEBYONE, SIZE, POWERSET");
-        this.renderHelpToConsole("maxFieldsToRemove", "NUMBER set the maximum number of fields that will be removed from a request when using the SIZE fieldsFuzzingStrategy");
-        this.renderHelpToConsole("refData", "FILE specifies the file with fields that must have a fixed value in order for requests to succeed ");
-        this.renderHelpToConsole("headers", "FILE specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example");
-        this.renderHelpToConsole("reportingLevel", "LEVEL this can be either INFO, WARN or ERROR. It can be used to suppress INFO logging and focus only on the reporting WARNS and/or ERRORS");
-        this.renderHelpToConsole("edgeSpacesStrategy", "STRATEGY this can be either validateAndTrim or trimAndValidate. It can be used to specify what CATS should expect when sending trailing and leading spaces valid values within fields");
-        this.renderHelpToConsole("urlParams", "A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs");
-        this.renderHelpToConsole("customFuzzerFile", "A file used by the `CustomFuzzer` that will be used to create user-supplied payloads");
-        this.renderHelpToConsole("skipXXXForPath", "/path1,/path2 can configure fuzzers to be excluded for the specified paths");
-        this.renderHelpToConsole("excludeFuzzers", "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude");
-        this.renderHelpToConsole("securityFuzzerFile", "A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities");
-        this.renderHelpToConsole("printExecutionStatistics", "If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method");
-        this.renderHelpToConsole("useExamples", "true/false (default true), instruct CATS on whether to use examples from the OpenAPI contract or not");
-        this.renderHelpToConsole("checkFields", "If supplied (no value needed), it will only run the Field Fuzzers");
-        this.renderHelpToConsole("checkHeaders", "If supplied (no value needed), it will only run the Header Fuzzers");
-        this.renderHelpToConsole("checkHttp", "If supplied (no value needed), it will only run the HTTP Fuzzers");
-        this.renderHelpToConsole("checkContract", "If supplied (no value needed), it will only run the ContractInfo Fuzzers");
-        this.renderHelpToConsole("sslKeystore", "Location of the keystore holding certificates used when authenticating calls using one-way or two-way SSL");
-        this.renderHelpToConsole("sslKeystorePwd", "The password of the sslKeystore");
-        this.renderHelpToConsole("sslKeyPwd", "The password of the private key from the sslKeystore");
-        this.renderHelpToConsole("basicauth", "Supplies a `username:password` pair, in case the service uses basic auth");
+
+        apiArguments.getArgs().forEach(this::renderHelpToConsole);
+        filterArguments.getArgs().forEach(this::renderHelpToConsole);
+        checkArgs.getArgs().forEach(this::renderHelpToConsole);
+        processingArguments.getArgs().forEach(this::renderHelpToConsole);
+        reportingArguments.getArgs().forEach(this::renderHelpToConsole);
+        filesArguments.getArgs().forEach(this::renderHelpToConsole);
+        authArgs.getArgs().forEach(this::renderHelpToConsole);
 
         LOGGER.note("Example: ");
         LOGGER.note(EXAMPLE);
@@ -407,8 +385,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void printArgs() {
-        LOGGER.info("server: {}", server);
-        LOGGER.info("contract: {}", contract);
+        LOGGER.info("server: {}", apiArguments.getServer());
+        LOGGER.info("contract: {}", apiArguments.getContract());
         LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
         LOGGER.info("supplied fuzzers: {}", filterArguments.getSuppliedFuzzers());
         LOGGER.info("fields fuzzing strategy: {}", processingArguments.getFieldsFuzzingStrategy());
@@ -433,11 +411,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("sslKeystorePwd: {}", authArgs.getSslKeystorePwd());
         LOGGER.info("sslKeyPwd: {}", authArgs.getSslKeyPwd());
         LOGGER.info("basicauth: {}", authArgs.getBasicAuth());
-
     }
 
-    private void renderHelpToConsole(String command, String text) {
-        LOGGER.info(COMMAND_TEMPLATE, command, text);
+    private void renderHelpToConsole(CatsArg catsArg) {
+        LOGGER.info(COMMAND_TEMPLATE, catsArg.getName(), catsArg.getHelp());
     }
 
     @Override
