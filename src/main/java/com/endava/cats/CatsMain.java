@@ -252,9 +252,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         }
 
         this.processRemainingArguments(args);
-
         this.processLogLevelArgument();
-
         this.setReportingLevel();
     }
 
@@ -274,7 +272,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void processLogLevelArgument() {
-        if (!EMPTY.equalsIgnoreCase(reportingArguments.getLogData())) {
+        if (reportingArguments.hasLogData()) {
             String[] log = reportingArguments.getLogData().split(":");
             ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(log[0])).setLevel(Level.toLevel(log[1]));
             LOGGER.info("Setting log level to {} for package {}", log[1], log[0]);
@@ -423,7 +421,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("urlParams: {}", filesArguments.getParams());
         LOGGER.info("customFuzzerFile: {}", filesArguments.getCustomFuzzerFile());
         LOGGER.info("securityFuzzerFile: {}", filesArguments.getSecurityFuzzerFile());
-        LOGGER.info("printExecutionStatistic: {}", !EMPTY.equalsIgnoreCase(reportingArguments.getPrintExecutionStatistics()));
+        LOGGER.info("printExecutionStatistic: {}", reportingArguments.printExecutionStatistics());
         LOGGER.info("excludeFuzzers: {}", filterArguments.getExcludedFuzzers());
         LOGGER.info("useExamples: {}", processingArguments.getUseExamples());
         LOGGER.info("log: {}", reportingArguments.getLogData());
