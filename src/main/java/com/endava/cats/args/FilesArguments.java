@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.CatsMain;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -30,6 +29,7 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
     private List<String> urlParamsList = new ArrayList<>();
+    
     @Value("${urlParams:empty}")
     @Getter
     private String params;

@@ -25,10 +25,10 @@ public class CheckArguments {
 
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("checkHeaders").value(checkHeaders).help("If supplied (no value needed), it will only run the Header Fuzzers").build());
-        args.add(CatsArg.builder().name("checkFields").value(checkFields).help("If supplied (no value needed), it will only run the Field Fuzzers").build());
-        args.add(CatsArg.builder().name("checkHttp").value(checkHttp).help("If supplied (no value needed), it will only run the HTTP Fuzzers").build());
-        args.add(CatsArg.builder().name("checkContract").value(checkContract).help("If supplied (no value needed), it will only run the ContractInfo Fuzzers").build());
+        args.add(CatsArg.builder().name("checkHeaders").value(String.valueOf(this.checkHeaders())).help("If supplied (no value needed), it will only run the Header Fuzzers").build());
+        args.add(CatsArg.builder().name("checkFields").value(String.valueOf(this.checkFields())).help("If supplied (no value needed), it will only run the Field Fuzzers").build());
+        args.add(CatsArg.builder().name("checkHttp").value(String.valueOf(this.checkHttp())).help("If supplied (no value needed), it will only run the HTTP Fuzzers").build());
+        args.add(CatsArg.builder().name("checkContract").value(String.valueOf(this.checkContract())).help("If supplied (no value needed), it will only run the ContractInfo Fuzzers").build());
     }
 
     public boolean checkHeaders() {
