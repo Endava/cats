@@ -42,6 +42,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("paths").value(paths).help("PATH_LIST a comma separated list of paths to test. If no path is supplied, all paths will be considered").build());
         args.add(CatsArg.builder().name("excludedFuzzers").value(excludedFuzzers).help("COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude").build());
         args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help("/path1,/path2 can configure fuzzers to be excluded for the specified paths").build());
+        args.add(CatsArg.builder().name(fuzzers.size() + " registered fuzzers").value(fuzzers.toString()).help("list of fuzzers").build());
     }
 
     public void loadConfig(String... args) {

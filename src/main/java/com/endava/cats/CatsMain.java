@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -130,19 +131,22 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     @Override
     public void run(String... args) {
+        testCaseListener.startSession();
         try {
-            testCaseListener.startSession();
             this.doLogic(args);
-            testCaseListener.endSession();
         } catch (StopExecutionException e) {
             LOGGER.debug("StopExecution: {}", e.getMessage());
         } catch (Exception e) {
             LOGGER.error("Something went wrong while running CATS!", e);
+        } finally {
+            testCaseListener.endSession();
         }
     }
 
     public void doLogic(String... args) throws IOException {
         this.sortFuzzersByName();
+        filesArguments.loadConfig();
+        filterArguments.loadConfig(args);
         this.processArgs(args);
         this.printArgs();
 
@@ -150,8 +154,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.processContractDependentCommands(openAPI, args);
 
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
-        filesArguments.loadConfig();
-        filterArguments.loadConfig(args);
+
         this.startFuzzing(openAPI, suppliedPaths);
         this.executeCustomFuzzer();
     }
@@ -201,15 +204,15 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     public OpenAPI createOpenAPI() {
         try {
+            String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
             long t0 = System.currentTimeMillis();
             OpenAPIParser openAPIV3Parser = new OpenAPIParser();
             ParseOptions options = new ParseOptions();
             options.setResolve(true);
             options.setFlatten(true);
             OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(apiArguments.getContract())), Charsets.UTF_8), null, options).getOpenAPI();
-
-            String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
             LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
+
             return openAPI;
         } catch (Exception e) {
             LOGGER.fatal("Error parsing OPEN API contract {}", apiArguments.getContract());
@@ -362,14 +365,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private void printUsage() {
         LOGGER.info("The following arguments are supported: ");
-
-        apiArguments.getArgs().forEach(this::renderHelpToConsole);
-        filterArguments.getArgs().forEach(this::renderHelpToConsole);
-        checkArgs.getArgs().forEach(this::renderHelpToConsole);
-        processingArguments.getArgs().forEach(this::renderHelpToConsole);
-        reportingArguments.getArgs().forEach(this::renderHelpToConsole);
-        filesArguments.getArgs().forEach(this::renderHelpToConsole);
-        authArgs.getArgs().forEach(this::renderHelpToConsole);
+        this.handleArgs(this::renderHelpToConsole);
 
         LOGGER.note("Example: ");
         LOGGER.note(EXAMPLE);
@@ -385,32 +381,23 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void printArgs() {
-        LOGGER.info("server: {}", apiArguments.getServer());
-        LOGGER.info("contract: {}", apiArguments.getContract());
-        LOGGER.info("{} registered fuzzers: {}", fuzzers.size(), fuzzers);
-        LOGGER.info("supplied fuzzers: {}", filterArguments.getSuppliedFuzzers());
-        LOGGER.info("fields fuzzing strategy: {}", processingArguments.getFieldsFuzzingStrategy());
-        LOGGER.info("max fields to remove: {}", processingArguments.getMaxFieldsToRemove());
-        LOGGER.info("paths: {}", filterArguments.getPaths());
-        LOGGER.info("refData: {}", filesArguments.getRefDataFile());
-        LOGGER.info("headers: {}", filesArguments.getHeadersFile());
-        LOGGER.info("reportingLevel: {}", reportingArguments.getReportingLevel());
-        LOGGER.info("edgeSpacesStrategy: {}", processingArguments.getEdgeSpacesStrategy());
-        LOGGER.info("urlParams: {}", filesArguments.getParams());
-        LOGGER.info("customFuzzerFile: {}", filesArguments.getCustomFuzzerFile());
-        LOGGER.info("securityFuzzerFile: {}", filesArguments.getSecurityFuzzerFile());
-        LOGGER.info("printExecutionStatistic: {}", reportingArguments.printExecutionStatistics());
-        LOGGER.info("excludeFuzzers: {}", filterArguments.getExcludedFuzzers());
-        LOGGER.info("useExamples: {}", processingArguments.getUseExamples());
-        LOGGER.info("log: {}", reportingArguments.getLogData());
-        LOGGER.info("checkFields: {}", checkArgs.checkFields());
-        LOGGER.info("checkHeaders: {}", checkArgs.checkHeaders());
-        LOGGER.info("checkHttp: {}", checkArgs.checkHttp());
-        LOGGER.info("checkContract: {}", checkArgs.checkContract());
-        LOGGER.info("sslKeystore: {}", authArgs.getSslKeystore());
-        LOGGER.info("sslKeystorePwd: {}", authArgs.getSslKeystorePwd());
-        LOGGER.info("sslKeyPwd: {}", authArgs.getSslKeyPwd());
-        LOGGER.info("basicauth: {}", authArgs.getBasicAuth());
+        LOGGER.info(" ");
+        LOGGER.info("Supplied arguments");
+        this.handleArgs(this::printArg);
+    }
+
+    private void handleArgs(Consumer<CatsArg> consumer) {
+        apiArguments.getArgs().forEach(consumer);
+        filterArguments.getArgs().forEach(consumer);
+        checkArgs.getArgs().forEach(consumer);
+        processingArguments.getArgs().forEach(consumer);
+        reportingArguments.getArgs().forEach(consumer);
+        filesArguments.getArgs().forEach(consumer);
+        authArgs.getArgs().forEach(consumer);
+    }
+
+    private void printArg(CatsArg arg) {
+        LOGGER.info("{}: {}", arg.getName(), arg.getValue());
     }
 
     private void renderHelpToConsole(CatsArg catsArg) {
