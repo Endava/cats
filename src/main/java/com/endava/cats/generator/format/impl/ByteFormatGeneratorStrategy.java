@@ -6,11 +6,11 @@ public class ByteFormatGeneratorStrategy implements FormatGeneratorStrategy {
 
     @Override
     public String getAlmostValidValue() {
-        return "YmFzZTY0IGRlY29kZX==-";
+        return "=========================   -";
     }
 
     @Override
     public String getTotallyWrongValue() {
-        return "a2=========================   -";
+        return "$#@$#@$#@*$@#$#@";
     }
 }

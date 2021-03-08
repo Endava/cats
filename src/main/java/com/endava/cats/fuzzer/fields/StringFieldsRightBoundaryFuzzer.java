@@ -10,6 +10,7 @@ import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -17,8 +18,8 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
+@ConditionalOnProperty(value = "fuzzer.fields.StringFieldsRightBoundaryFuzzer.enabled", havingValue = "true")
 public class StringFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
-
 
     @Autowired
     public StringFieldsRightBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
