@@ -13,6 +13,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -25,6 +26,7 @@ import java.util.Set;
  */
 @Component
 @FieldFuzzer
+@ConditionalOnProperty(value = "fuzzer.fields.RemoveFieldsFuzzer.enabled", havingValue = "true")
 public class RemoveFieldsFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RemoveFieldsFuzzer.class);
 

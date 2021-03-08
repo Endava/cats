@@ -6,12 +6,14 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Function;
 
 @Component
 @FieldFuzzer
+@ConditionalOnProperty(value = "fuzzer.fields.MaxLengthExactValuesInStringFieldsFuzzer.enabled", havingValue = "true")
 public class MaxLengthExactValuesInStringFieldsFuzzer extends ExactValuesInFieldsFuzzer {
 
 
