@@ -9,15 +9,15 @@ class ByteFormatGeneratorStrategyTest {
     @Test
     void givenAByteFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
         ByteFormatGeneratorStrategy strategy = new ByteFormatGeneratorStrategy();
-        Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("YmFzZTY0IGRlY29kZX==-");
-        Assertions.assertThatThrownBy(() -> Base64.decodeBase64("YmFzZTY0IGRlY29kZX==-")).isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("=========================   -");
+        Assertions.assertThat(Base64.decodeBase64("=========================   -")).isEmpty();
     }
 
 
     @Test
     void givenAByteFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
         ByteFormatGeneratorStrategy strategy = new ByteFormatGeneratorStrategy();
-        Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("a2=========================   -");
-        Assertions.assertThatThrownBy(() -> Base64.decodeBase64("a2=========================   -")).isInstanceOf(IllegalArgumentException.class);
+        Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("$#@$#@$#@*$@#$#@");
+        Assertions.assertThat(Base64.decodeBase64("$#@$#@$#@*$@#$#@")).isEmpty();
     }
 }
