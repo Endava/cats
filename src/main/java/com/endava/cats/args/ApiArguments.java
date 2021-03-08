@@ -13,15 +13,21 @@ import java.util.List;
 public class ApiArguments {
     public static final String EMPTY = "empty";
     private final List<CatsArg> args = new ArrayList<>();
+
     @Value("${contract:empty}")
     private String contract;
     @Value("${server:empty}")
     private String server;
 
+    @Value("${arg.api.contract.help:help}")
+    private String contractHelp;
+    @Value("${arg.api.server.help:help}")
+    private String serverHelp;
+
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("contract").value(contract).help("LOCATION_OF_THE_CONTRACT").build());
-        args.add(CatsArg.builder().name("server").value(server).help("BASE_URL_OF_THE_SERVICE").build());
+        args.add(CatsArg.builder().name("contract").value(contract).help(contractHelp).build());
+        args.add(CatsArg.builder().name("server").value(server).help(serverHelp).build());
     }
 
     public boolean isContractEmpty() {

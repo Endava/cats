@@ -22,11 +22,20 @@ public class ProcessingArguments {
     @Value("${useExamples:true}")
     private String useExamples;
 
+    @Value("${arg.processing.fieldsFuzzingStrategy.help:help}")
+    private String fieldsFuzzingStrategyHelp;
+    @Value("${arg.processing.maxFieldsToRemove.help:help}")
+    private String maxFieldsToRemoveHelp;
+    @Value("${arg.processing.edgeSpacesStrategy.help:help}")
+    private String edgeSpacesStrategyHelp;
+    @Value("${arg.processing.useExamples.help:help}")
+    private String useExamplesHelp;
+
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("fieldsFuzzingStrategy").value(fieldsFuzzingStrategy).help("STRATEGY set the strategy for tge fields fuzzers. Supported strategies ONEBYONE, SIZE, POWERSET").build());
-        args.add(CatsArg.builder().name("maxFieldsToRemove").value(maxFieldsToRemove).help("NUMBER set the maximum number of fields that will be removed from a request when using the SIZE fieldsFuzzingStrategy").build());
-        args.add(CatsArg.builder().name("edgeSpacesStrategy").value(edgeSpacesStrategy).help("STRATEGY this can be either validateAndTrim or trimAndValidate. It can be used to specify what CATS should expect when sending trailing and leading spaces valid values within fields").build());
-        args.add(CatsArg.builder().name("useExamples").value(useExamples).help("true/false (default true), instruct CATS on whether to use examples from the OpenAPI contract or not").build());
+        args.add(CatsArg.builder().name("fieldsFuzzingStrategy").value(fieldsFuzzingStrategy).help(fieldsFuzzingStrategyHelp).build());
+        args.add(CatsArg.builder().name("maxFieldsToRemove").value(maxFieldsToRemove).help(maxFieldsToRemoveHelp).build());
+        args.add(CatsArg.builder().name("edgeSpacesStrategy").value(edgeSpacesStrategy).help(edgeSpacesStrategyHelp).build());
+        args.add(CatsArg.builder().name("useExamples").value(useExamples).help(useExamplesHelp).build());
     }
 }

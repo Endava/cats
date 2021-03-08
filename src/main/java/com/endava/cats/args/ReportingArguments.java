@@ -21,11 +21,19 @@ public class ReportingArguments {
     @Value("${printExecutionStatistics:empty}")
     private String printExecutionStatistics;
 
+    @Value("${arg.reporting.reportingLevel.help:help}")
+    private String reportingLevelHelp;
+    @Value("${arg.reporting.log.help:help}")
+    private String logDataHelp;
+    @Value("${arg.reporting.printExecutionStatistics.help:help}")
+    private String printExecutionStatisticsHelp;
+
+
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("reportingLevel").value(reportingLevel).help("LEVEL this can be either INFO, WARN or ERROR. It can be used to suppress INFO logging and focus only on the reporting WARNS and/or ERRORS").build());
-        args.add(CatsArg.builder().name("log").value(logData).help("PACKAGE:LEVEL set custom log level of a given package").build());
-        args.add(CatsArg.builder().name("printExecutionStatistics").value(String.valueOf(this.printExecutionStatistics())).help("If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method").build());
+        args.add(CatsArg.builder().name("reportingLevel").value(reportingLevel).help(reportingLevelHelp).build());
+        args.add(CatsArg.builder().name("log").value(logData).help(logDataHelp).build());
+        args.add(CatsArg.builder().name("printExecutionStatistics").value(String.valueOf(this.printExecutionStatistics())).help(printExecutionStatisticsHelp).build());
     }
 
     public boolean printExecutionStatistics() {

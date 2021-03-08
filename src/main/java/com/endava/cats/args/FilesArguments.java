@@ -29,7 +29,7 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
     private List<String> urlParamsList = new ArrayList<>();
-    
+
     @Value("${urlParams:empty}")
     @Getter
     private String params;
@@ -46,6 +46,17 @@ public class FilesArguments {
     @Getter
     private String securityFuzzerFile;
 
+    @Value("${arg.files.urlParams.help:help}")
+    private String paramsHelp;
+    @Value("${arg.files.headers.help:help}")
+    private String headersFileHelp;
+    @Value("${arg.files.refData.help:help}")
+    private String refDataFileHelp;
+    @Value("${arg.files.customFuzzerFile.help:help}")
+    private String customFuzzerFileHelp;
+    @Value("${arg.files.securityFuzzerFile.help:help}")
+    private String securityFuzzerFileHelp;
+
     @Autowired
     public FilesArguments(CatsUtil cu) {
         this.catsUtil = cu;
@@ -53,11 +64,11 @@ public class FilesArguments {
 
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("urlParams").value(params).help("A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs").build());
-        args.add(CatsArg.builder().name("headers").value(headersFile).help("FILE specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example").build());
-        args.add(CatsArg.builder().name("refData").value(refDataFile).help("FILE specifies the file with fields that must have a fixed value in order for requests to succeed").build());
-        args.add(CatsArg.builder().name("customFuzzerFile").value(customFuzzerFile).help("A file used by the `CustomFuzzer` that will be used to create user-supplied payloads").build());
-        args.add(CatsArg.builder().name("securityFuzzerFile").value(securityFuzzerFile).help("A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities").build());
+        args.add(CatsArg.builder().name("urlParams").value(params).help(paramsHelp).build());
+        args.add(CatsArg.builder().name("headers").value(headersFile).help(headersFileHelp).build());
+        args.add(CatsArg.builder().name("refData").value(refDataFile).help(refDataFileHelp).build());
+        args.add(CatsArg.builder().name("customFuzzerFile").value(customFuzzerFile).help(customFuzzerFileHelp).build());
+        args.add(CatsArg.builder().name("securityFuzzerFile").value(securityFuzzerFile).help(securityFuzzerFileHelp).build());
     }
 
     public void loadConfig() throws IOException {

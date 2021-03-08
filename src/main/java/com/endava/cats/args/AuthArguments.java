@@ -22,12 +22,21 @@ public class AuthArguments {
     @Value("${basicauth:empty}")
     private String basicAuth;
 
+    @Value("${arg.auth.sslKeystore.help:help}")
+    private String sslKeystoreHelp;
+    @Value("${arg.auth.sslKeystorePwd.help:help}")
+    private String sslKeystorePwdHelp;
+    @Value("${arg.auth.sslKeyPwd.help:help}")
+    private String sslKeyPwdHelp;
+    @Value("${arg.auth.basicAuth.help:help}")
+    private String basicAuthHelp;
+
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("sslKeystore").value(sslKeystore).help("Location of the keystore holding certificates used when authenticating calls using one-way or two-way SSL").build());
-        args.add(CatsArg.builder().name("sslKeystorePwd").value(sslKeystorePwd).help("The password of the sslKeystore").build());
-        args.add(CatsArg.builder().name("sslKeyPwd").value(sslKeyPwd).help("The password of the private key from the sslKeystore").build());
-        args.add(CatsArg.builder().name("basicauth").value(basicAuth).help("Supplies a `username:password` pair, in case the service uses basic auth").build());
+        args.add(CatsArg.builder().name("sslKeystore").value(sslKeystore).help(sslKeystoreHelp).build());
+        args.add(CatsArg.builder().name("sslKeystorePwd").value(sslKeystorePwd).help(sslKeystorePwdHelp).build());
+        args.add(CatsArg.builder().name("sslKeyPwd").value(sslKeyPwd).help(sslKeyPwdHelp).build());
+        args.add(CatsArg.builder().name("basicauth").value(basicAuth).help(basicAuthHelp).build());
     }
 
 }
