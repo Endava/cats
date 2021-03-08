@@ -23,12 +23,21 @@ public class CheckArguments {
     @Value("${checkContract:empty}")
     private String checkContract;
 
+    @Value("${arg.check.checkHeaders.help:help}")
+    private String checkHeadersHelp;
+    @Value("${arg.check.checkFields.help:help}")
+    private String checkFieldsHelp;
+    @Value("${arg.check.checkHttp.help:help}")
+    private String checkHttpHelp;
+    @Value("${arg.check.checkContract.help:help}")
+    private String checkContractHelp;
+
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("checkHeaders").value(String.valueOf(this.checkHeaders())).help("If supplied (no value needed), it will only run the Header Fuzzers").build());
-        args.add(CatsArg.builder().name("checkFields").value(String.valueOf(this.checkFields())).help("If supplied (no value needed), it will only run the Field Fuzzers").build());
-        args.add(CatsArg.builder().name("checkHttp").value(String.valueOf(this.checkHttp())).help("If supplied (no value needed), it will only run the HTTP Fuzzers").build());
-        args.add(CatsArg.builder().name("checkContract").value(String.valueOf(this.checkContract())).help("If supplied (no value needed), it will only run the ContractInfo Fuzzers").build());
+        args.add(CatsArg.builder().name("checkHeaders").value(String.valueOf(this.checkHeaders())).help(checkHeadersHelp).build());
+        args.add(CatsArg.builder().name("checkFields").value(String.valueOf(this.checkFields())).help(checkFieldsHelp).build());
+        args.add(CatsArg.builder().name("checkHttp").value(String.valueOf(this.checkHttp())).help(checkHttpHelp).build());
+        args.add(CatsArg.builder().name("checkContract").value(String.valueOf(this.checkContract())).help(checkContractHelp).build());
     }
 
     public boolean checkHeaders() {

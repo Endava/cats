@@ -32,16 +32,26 @@ public class FilterArguments {
     private String paths;
     @Value("${excludedFuzzers:empty}")
     private String excludedFuzzers;
+
+    @Value("${arg.filter.fuzzers.help:help}")
+    private String suppliedFuzzersHelp;
+    @Value("${arg.filter.paths.help:help}")
+    private String pathsHelp;
+    @Value("${arg.filter.excludedFuzzers.help:help}")
+    private String excludedFuzzersHelp;
+    @Value("${arg.filter.skipXXXForPath.help:help}")
+    private String skipXXXForPathHelp;
+
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
     private CheckArguments checkArguments;
 
     public void init() {
-        args.add(CatsArg.builder().name("fuzzers").value(suppliedFuzzers).help("COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to run. You can use 'all' to include all fuzzers. To list all available fuzzers run: './cats.jar list fuzzers").build());
-        args.add(CatsArg.builder().name("paths").value(paths).help("PATH_LIST a comma separated list of paths to test. If no path is supplied, all paths will be considered").build());
-        args.add(CatsArg.builder().name("excludedFuzzers").value(excludedFuzzers).help("COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude").build());
-        args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help("/path1,/path2 can configure fuzzers to be excluded for the specified paths").build());
+        args.add(CatsArg.builder().name("fuzzers").value(suppliedFuzzers).help(suppliedFuzzersHelp).build());
+        args.add(CatsArg.builder().name("paths").value(paths).help(pathsHelp).build());
+        args.add(CatsArg.builder().name("excludedFuzzers").value(excludedFuzzers).help(excludedFuzzersHelp).build());
+        args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
         args.add(CatsArg.builder().name(fuzzers.size() + " registered fuzzers").value(fuzzers.toString()).help("list of fuzzers").build());
     }
 
