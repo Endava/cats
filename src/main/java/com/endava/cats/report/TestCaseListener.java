@@ -146,7 +146,7 @@ public class TestCaseListener {
         String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
         String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
         String skipped = ansi().fgCyan().bold().a("❯ skipped: {}. ").toString();
-        String check = ansi().reset().fgBlue().a("You can check the test_cases folder for more details about the payloads.").reset().toString();
+        String check = ansi().reset().fgBlue().a("You can check the 'test-report' folder for details.").reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
 
         LOGGER.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
