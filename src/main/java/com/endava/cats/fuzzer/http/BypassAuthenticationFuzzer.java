@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.io.ServiceCaller;
@@ -9,7 +10,6 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,8 +46,8 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     }
 
     private void process(FuzzingData data) {
-        testCaseListener.addScenario(LOGGER, "Scenario: send a happy flow bypassing authentication");
-        testCaseListener.addExpectedResult(LOGGER, "Expected result: should get a 403 or 401 response code");
+        testCaseListener.addScenario(LOGGER, "Send a happy flow bypassing authentication");
+        testCaseListener.addExpectedResult(LOGGER, "Should get a 403 or 401 response code");
         Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
         if (!authenticationHeaders.isEmpty()) {
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
