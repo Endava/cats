@@ -1,13 +1,13 @@
 package com.endava.cats.fuzzer.fields;
 
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.*;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -61,7 +61,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
         FuzzingConstraints fuzzingConstraints = this.createFuzzingConstraints(data, fuzzingStrategy, fuzzedField);
 
-        testCaseListener.addScenario(logger, "Scenario: Send [{}] in request fields: field [{}], value [{}], is required [{}]",
+        testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
                 this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
 
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
@@ -77,7 +77,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
             ResponseCodeFamily expectedResponseCodeBasedOnConstraints = this.getExpectedResponseCodeBasedOnConstraints(isFuzzedValueMatchingPattern, fuzzingConstraints);
 
-            testCaseListener.addExpectedResult(logger, "Expected result: should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
+            testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
             testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints);
         } else {
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);

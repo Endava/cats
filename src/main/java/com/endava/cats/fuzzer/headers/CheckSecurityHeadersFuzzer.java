@@ -52,8 +52,8 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     }
 
     private void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Scenario: send a 'happy' flow request and check the following Security Headers: {}", SECURITY_HEADERS_AS_STRING);
-        testCaseListener.addExpectedResult(log, "Expected result: should get a 2XX response code and all the above security headers within the response");
+        testCaseListener.addScenario(log, "Send a 'happy' flow request and check the following Security Headers: {}", SECURITY_HEADERS_AS_STRING);
+        testCaseListener.addExpectedResult(log, "Should get a 2XX response code and all the above security headers within the response");
         CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(data.getPayload()).queryParams(data.getQueryParams()).build());
 

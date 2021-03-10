@@ -28,7 +28,7 @@ public class RecommendedHeadersContractInfoFuzzer extends BaseContractInfoFuzzer
 
     @Override
     public void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Scenario: Check if the current path contains recommended headers such as CorrelationId/TraceId");
+        testCaseListener.addScenario(log, "Check if the current path contains recommended headers such as CorrelationId/TraceId");
         testCaseListener.addExpectedResult(log, "Recommended headers [TraceId/CorrelationId] must be present");
 
         List<CatsHeader> recommendedHeaders = data.getHeaders().stream()

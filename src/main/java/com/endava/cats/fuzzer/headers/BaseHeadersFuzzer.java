@@ -48,8 +48,8 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
         try {
             boolean isRequiredHeaderFuzzed = clonedHeaders.stream().filter(CatsHeader::isRequired).collect(Collectors.toList()).contains(header);
 
-            testCaseListener.addScenario(logger, "Scenario: Send [{}] in headers: header [{}] with value [{}]", this.typeOfDataSentToTheService(), header.getName(), header.getTruncatedValue());
-            testCaseListener.addExpectedResult(logger, "Expected result: should get a [{}] response code", this.getExpectedResultCode(isRequiredHeaderFuzzed).asString());
+            testCaseListener.addScenario(logger, "Send [{}] in headers: header [{}] with value [{}]", this.typeOfDataSentToTheService(), header.getName(), header.getTruncatedValue());
+            testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", this.getExpectedResultCode(isRequiredHeaderFuzzed).asString());
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(clonedHeaders)
                     .payload(data.getPayload()).fuzzedHeader(header.getName()).queryParams(data.getQueryParams()).build();

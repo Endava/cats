@@ -23,7 +23,7 @@ public class DummyRequestFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
     @Override
     protected String getScenario() {
-        return "Scenario: Send a dummy JSON";
+        return "Send a dummy JSON";
     }
 
     @Override

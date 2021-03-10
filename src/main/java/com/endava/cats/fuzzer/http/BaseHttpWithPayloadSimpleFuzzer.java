@@ -32,7 +32,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
 
     private void process(FuzzingData data) {
         testCaseListener.addScenario(logger, this.getScenario());
-        testCaseListener.addExpectedResult(logger, "Expected result: should get a 4XX response code");
+        testCaseListener.addExpectedResult(logger, "Should get a 4XX response code");
 
         ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(this.getPayload(data)).replaceRefData(false).build();

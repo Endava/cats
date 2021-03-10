@@ -51,10 +51,10 @@ public class RemoveHeadersFuzzer implements Fuzzer {
     }
 
     private void process(FuzzingData data, Set<CatsHeader> headersSubset, Set<CatsHeader> requiredHeaders) {
-        testCaseListener.addScenario(LOGGER, "Scenario: send only the following headers: {} plus any authentication headers.", headersSubset);
+        testCaseListener.addScenario(LOGGER, "Send only the following headers: {} plus any authentication headers.", headersSubset);
         boolean anyMandatoryHeaderRemoved = this.isAnyMandatoryHeaderRemoved(headersSubset, requiredHeaders);
 
-        testCaseListener.addExpectedResult(LOGGER, "Expected result: should return [{}] response code as mandatory headers [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(anyMandatoryHeaderRemoved));
+        testCaseListener.addExpectedResult(LOGGER, "Should return [{}] response code as mandatory headers [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(anyMandatoryHeaderRemoved));
 
         CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(headersSubset)
                 .payload(data.getPayload()).addUserHeaders(false).queryParams(data.getQueryParams()).build());
