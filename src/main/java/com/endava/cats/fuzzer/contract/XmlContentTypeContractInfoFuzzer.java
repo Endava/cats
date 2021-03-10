@@ -5,10 +5,12 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @ContractInfoFuzzer
 @Component
+@ConditionalOnProperty(value = "fuzzer.contract.XmlContentTypeContractInfoFuzzer.enabled", havingValue = "true")
 public class XmlContentTypeContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final String APPLICATION_XML = "application/xml";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());

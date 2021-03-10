@@ -5,10 +5,12 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
 @HeaderFuzzer
+@ConditionalOnProperty(value = "fuzzer.headers.EmptyStringValuesInHeadersFuzzer.enabled", havingValue = "true")
 public class EmptyStringValuesInHeadersFuzzer extends Expect4XXBaseHeadersFuzzer {
 
     @Autowired

@@ -6,6 +6,7 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @HeaderFuzzer
+@ConditionalOnProperty(value = "fuzzer.headers.LargeValuesInHeadersFuzzer.enabled", havingValue = "true")
 public class LargeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Autowired
