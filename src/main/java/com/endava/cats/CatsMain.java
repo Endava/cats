@@ -134,12 +134,12 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         testCaseListener.startSession();
         try {
             this.doLogic(args);
+            testCaseListener.endSession();
+
         } catch (StopExecutionException e) {
             LOGGER.debug("StopExecution: {}", e.getMessage());
         } catch (Exception e) {
             LOGGER.error("Something went wrong while running CATS!", e);
-        } finally {
-            testCaseListener.endSession();
         }
     }
 
