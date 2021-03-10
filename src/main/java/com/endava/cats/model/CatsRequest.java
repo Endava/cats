@@ -11,10 +11,13 @@ import java.util.List;
 public class CatsRequest {
     List<Header> headers;
     JsonElement payload;
+    String httpMethod;
+
 
     public static CatsRequest empty() {
         CatsRequest request = new CatsRequest();
         request.payload = JsonParser.parseReader(new StringReader("{}"));
+        request.httpMethod = "";
         return request;
     }
 
@@ -26,5 +29,9 @@ public class CatsRequest {
 
     public void setHeaders(List<Header> headers) {
         this.headers = headers;
+    }
+
+    public void setHttpMethod(String method) {
+        this.httpMethod = method;
     }
 }

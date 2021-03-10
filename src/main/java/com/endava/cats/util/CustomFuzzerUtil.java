@@ -172,7 +172,7 @@ public class CustomFuzzerUtil {
     public void startCustomTest(String testName, Map<String, String> currentPathValues, String expectedResponseCode) {
         String testScenario = this.getTestScenario(testName, currentPathValues);
         testCaseListener.addScenario(log, "Scenario: {}", testScenario);
-        testCaseListener.addExpectedResult(log, "Expected result: should return [{}]", expectedResponseCode);
+        testCaseListener.addExpectedResult(log, "Should return [{}]", expectedResponseCode);
     }
 
     public String getJsonWithCustomValuesFromFile(FuzzingData data, Map<String, String> currentPathValues) {
