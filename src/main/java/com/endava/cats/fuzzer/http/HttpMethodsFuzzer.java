@@ -14,6 +14,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.function.Function;
 
 @Component
 @HttpFuzzer
+@ConditionalOnProperty(value = "fuzzer.http.HttpMethodsFuzzer.enabled", havingValue = "true")
 public class HttpMethodsFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();

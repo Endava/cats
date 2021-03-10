@@ -12,6 +12,7 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 @Component
 @HeaderFuzzer
+@ConditionalOnProperty(value = "fuzzer.headers.CheckSecurityHeadersFuzzer.enabled", havingValue = "true")
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     private static final List<CatsHeader> SECURITY_HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),

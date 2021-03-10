@@ -12,6 +12,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Component
+@ConditionalOnProperty(value = "fuzzer.contract.TopLevelElementsContractInfoFuzzer.enabled", havingValue = "true")
 public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 

@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -19,6 +20,7 @@ import java.util.Optional;
 
 @ContractInfoFuzzer
 @Component
+@ConditionalOnProperty(value = "fuzzer.contract.SecuritySchemesContractInfoFuzzer.enabled", havingValue = "true")
 public class SecuritySchemesContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
