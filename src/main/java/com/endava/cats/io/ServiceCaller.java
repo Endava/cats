@@ -18,7 +18,10 @@ import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.*;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
@@ -250,11 +253,11 @@ public class ServiceCaller {
             List<CatsHeader> responseHeaders = Arrays.stream(response.getAllHeaders()).map(header -> CatsHeader.builder().name(header.getName()).value(header.getValue()).build()).collect(Collectors.toList());
 
             CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod(), endTime - startTime, responseHeaders, data.getFuzzedFields());
-            this.recordRequestAndResponse(Arrays.asList(method.getAllHeaders()), processedPayload, catsResponse, data.getRelativePath(), HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
+            this.recordRequestAndResponse(method, processedPayload, catsResponse, data.getRelativePath());
 
             return catsResponse;
         } catch (IOException | URISyntaxException e) {
-            this.recordRequestAndResponse(Arrays.asList(method.getAllHeaders()), processedPayload, CatsResponse.empty(), data.getRelativePath(), HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
+            this.recordRequestAndResponse(method, processedPayload, CatsResponse.empty(), data.getRelativePath());
             throw new CatsIOException(e);
         }
     }
@@ -346,14 +349,15 @@ public class ServiceCaller {
         return "{\"exception\":\"Received response is not a JSON\"}";
     }
 
-    private void recordRequestAndResponse(List<Header> headers, String processedPayload, CatsResponse catsResponse, String relativePath, String fullRequestPath) {
+    private void recordRequestAndResponse(HttpRequestBase method, String processedPayload, CatsResponse catsResponse, String relativePath) {
         CatsRequest request = new CatsRequest();
-        request.setHeaders(headers);
+        request.setHeaders(Arrays.asList(method.getAllHeaders()));
         request.setPayload(processedPayload);
+        request.setHttpMethod(method.getMethod());
         testCaseListener.addPath(relativePath);
         testCaseListener.addRequest(request);
         testCaseListener.addResponse(catsResponse);
-        testCaseListener.addFullRequestPath(fullRequestPath);
+        testCaseListener.addFullRequestPath(HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
     }
 
     private void addSuppliedHeaders(HttpRequestBase method, String relativePath, ServiceData data) {

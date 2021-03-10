@@ -207,7 +207,7 @@ public class TestCaseListener {
     }
 
     public void skipTest(PrettyLogger logger, String skipReason) {
-        this.addExpectedResult(logger, "Expected result: test will be skipped!");
+        this.addExpectedResult(logger, "Test will be skipped!");
         this.reportSkipped(logger, skipReason);
         this.addRequest(CatsRequest.empty());
         this.addResponse(CatsResponse.empty());
