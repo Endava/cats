@@ -43,7 +43,7 @@ public class CatsUtil {
     private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsUtil.class);
 
-    private CatsDSLParser catsDSLParser;
+    private final CatsDSLParser catsDSLParser;
 
     @Autowired
     public CatsUtil(CatsDSLParser parser) {

@@ -39,6 +39,7 @@ Table of Contents
    * [Running CATS](#running-cats-with-fuzzers)
       * [Notes on Unit Tests](#notes-on-unit-tests)
       * [Notes on skipped Tests](#notes-on-skipped-tests)
+   * [Interpreting Results](#interpreting-results) 
    * [Available arguments](#available-arguments)
    * [Available Fuzzers](#available-fuzzers)
       * [Field Fuzzers](#field-fuzzers)
@@ -168,6 +169,22 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 You may notice a significant number of tests marked as `skipped`. CATS will try to apply all `Fuzzers` to all fields, but this is not always possible.
 For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will me marked as skipped.
 It was an intentional decision to report also the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
+
+# Interpreting Results
+After you run it, CATS will produce an execution report in a folder called `test-report/TIMESTAMP`. The folder will be created inside the current folder (if it doesn't exist) and for each run a new subfolder will be 
+created with the `TIMESTAMP` value when the run started. This allows to have a history of the runs. The report itself is in the `index.html` file, which will contain the following details:
+
+- filter test runs based on the result: `All`, `Success`, `Warn` and `Error`
+- filter based on the `Fuzzer` so that you can only see the runs only for that specific `Fuzzer`
+- a summary table with all the test cases with their corresponding path against they were run, and the result
+- ability to click on any test case and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
+
+This is the summary page:
+![run result](images/index_html.png)
+
+
+And this is what you get when you click on a specific test:
+![test details](images/test_details.png)
 
 # Available arguments
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.

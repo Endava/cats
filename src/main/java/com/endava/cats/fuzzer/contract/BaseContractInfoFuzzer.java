@@ -22,7 +22,7 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String EMPTY = "";
     protected final TestCaseListener testCaseListener;
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    protected List<String> fuzzedPaths = new ArrayList<>();
+    protected final List<String> fuzzedPaths = new ArrayList<>();
 
     @Autowired
     protected BaseContractInfoFuzzer(TestCaseListener tcl) {

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public enum ResponseCodeFamily {
@@ -92,7 +93,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("100");
+            return Collections.singletonList("100");
         }
     }, THREEXX {
         @Override
@@ -122,7 +123,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("000");
+            return Collections.singletonList("000");
         }
     };
 
