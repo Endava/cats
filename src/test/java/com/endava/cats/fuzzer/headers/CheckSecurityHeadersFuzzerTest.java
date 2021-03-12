@@ -95,8 +95,7 @@ class CheckSecurityHeadersFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.any());
-        List<CatsHeader> allHeaders = new ArrayList<>();
-        allHeaders.addAll(SOME_SECURITY_HEADERS);
+        List<CatsHeader> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
         allHeaders.add(CatsHeader.builder().name("dummy").value("dummy").build());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Stream.concat(allHeaders.stream(), MISSING_HEADERS.stream())

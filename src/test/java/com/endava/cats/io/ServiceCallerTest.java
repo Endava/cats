@@ -1,12 +1,12 @@
 package com.endava.cats.io;
 
 import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -132,6 +132,16 @@ class ServiceCallerTest {
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEqualTo("{'result':'OK'}");
+    }
+
+    @Test
+    void givenAServer_whenDoingAPostCallAndServerUnavailable_thenProperDetailsAreBeingReturned() {
+        ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:111");
+
+        serviceCaller.initHttpClient();
+        ServiceData data = ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}")
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(HttpMethod.POST, data)).isInstanceOf(CatsIOException.class);
     }
 
     @Test

@@ -59,7 +59,6 @@ class PayloadGeneratorTest {
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
         Map<String, Schema> schemas = CatsMain.getSchemas(openAPI);
 
-        PayloadGenerator generator = new PayloadGenerator(schemas);
-        return generator;
+        return new PayloadGenerator(schemas);
     }
 }

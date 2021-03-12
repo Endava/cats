@@ -1,10 +1,10 @@
 package com.endava.cats.model.factory;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -387,8 +387,8 @@ public class FuzzingDataFactory {
             if (reqBodyRef != null) {
                 operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent());
             }
-            requests.addAll(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent)
-                    .entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+            requests.addAll(new ArrayList<>(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent)
+                    .keySet()));
         }
         return requests;
     }
@@ -399,8 +399,8 @@ public class FuzzingDataFactory {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             Content defaultContent = new Content();
             defaultContent.addMediaType(MimeTypeUtils.APPLICATION_JSON_VALUE, new MediaType());
-            responses.put(responseCode, Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent)
-                    .entrySet().stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+            responses.put(responseCode, new ArrayList<>(Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent)
+                    .keySet()));
         }
 
         return responses;

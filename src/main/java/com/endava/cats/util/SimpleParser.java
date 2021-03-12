@@ -13,8 +13,8 @@ import java.util.Optional;
 
 public class SimpleParser implements Parser {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private SpelExpressionParser spelExpressionParser;
-    private ObjectMapper mapper;
+    private final SpelExpressionParser spelExpressionParser;
+    private final ObjectMapper mapper;
 
     public SimpleParser() {
         spelExpressionParser = new SpelExpressionParser();

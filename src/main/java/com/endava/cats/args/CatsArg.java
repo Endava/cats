@@ -6,7 +6,7 @@ import lombok.Getter;
 @Builder
 @Getter
 public class CatsArg {
-    private String name;
-    private String help;
-    private String value;
+    private final String name;
+    private final String help;
+    private final String value;
 }
