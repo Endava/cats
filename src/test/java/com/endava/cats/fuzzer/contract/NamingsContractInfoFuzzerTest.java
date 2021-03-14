@@ -7,7 +7,6 @@ import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -80,18 +79,7 @@ class NamingsContractInfoFuzzerTest {
     @ParameterizedTest
     @CsvSource({"first_Payload-test", "secondpayload_tesAaa"})
     void shouldReportErrorWhenJsonObjectsNotMatchingCamelCase(String schemaName) {
-        PathItem pathItem = new PathItem();
-        Operation operation = new Operation();
-        ApiResponses apiResponses = new ApiResponses();
-
-        ApiResponse firstApiResponse = new ApiResponse();
-        firstApiResponse.set$ref(schemaName);
-        apiResponses.addApiResponse("200", firstApiResponse);
-
-
-        operation.setResponses(apiResponses);
-        pathItem.setPost(operation);
-        FuzzingData data = FuzzingData.builder().path("/pets").method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
+        FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData(schemaName, "200");
 
         namingsContractInfoFuzzer.fuzz(data);
 
@@ -102,23 +90,13 @@ class NamingsContractInfoFuzzerTest {
     @ParameterizedTest
     @CsvSource({"first_payload", "SecondPayload", "third-payload", "body_120"})
     void shouldMatchRestNamingStandards(String schemaName) {
-        PathItem pathItem = new PathItem();
-        Operation operation = new Operation();
-        ApiResponses apiResponses = new ApiResponses();
-
-        ApiResponse firstApiResponse = new ApiResponse();
-        firstApiResponse.set$ref(schemaName);
-        apiResponses.addApiResponse("200", firstApiResponse);
-
-
-        operation.setResponses(apiResponses);
-        pathItem.setPost(operation);
-        FuzzingData data = FuzzingData.builder().path("/pets").method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
+        FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData(schemaName, "200");
 
         namingsContractInfoFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path follows the RESTful API naming good practices."));
     }
+
 
     @Test
     void shouldReturnSimpleClassNameForToString() {
