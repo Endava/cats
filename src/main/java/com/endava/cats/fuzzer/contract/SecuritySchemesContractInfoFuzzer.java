@@ -30,8 +30,8 @@ public class SecuritySchemesContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Check if the current path has security schemes defined either globally or at path level for HTTP method {}", data.getMethod());
-        testCaseListener.addExpectedResult(log, "[at least a security scheme] must be present either globally or at path level");
+        testCaseListener.addScenario(log, "Check if the current path has security schemes defined either globally or at HTTP method level for {}", data.getMethod());
+        testCaseListener.addExpectedResult(log, "At least one security scheme must be present either globally or at HTTP method level");
 
         Map<String, SecurityScheme> securitySchemeMap = Optional.ofNullable(data.getOpenApi().getComponents()).orElse(new Components()).getSecuritySchemes();
         List<SecurityRequirement> securityRequirementList = Optional.ofNullable(data.getOpenApi().getSecurity()).orElse(Collections.emptyList());
