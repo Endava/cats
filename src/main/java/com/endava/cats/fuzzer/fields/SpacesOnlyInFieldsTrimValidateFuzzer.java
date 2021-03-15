@@ -20,7 +20,7 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.SpacesOnlyInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.fields.SpacesOnlyInFieldsFuzzer.enabled}")
 public class SpacesOnlyInFieldsTrimValidateFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
 
     @Autowired
