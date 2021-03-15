@@ -14,6 +14,7 @@ public enum HttpMethod {
 
     private static final EnumMap<HttpMethod, Function<PathItem, Operation>> OPERATIONS = new EnumMap<>(HttpMethod.class);
     private static final EnumMap<HttpMethod, List<String>> RECOMMENDED_CODES = new EnumMap<>(HttpMethod.class);
+    private static final String TWOXX = "200|201|202|204";
 
     static {
         OPERATIONS.put(POST, PathItem::getPost);
@@ -24,12 +25,12 @@ public enum HttpMethod {
         OPERATIONS.put(PATCH, PathItem::getPatch);
         OPERATIONS.put(HEAD, PathItem::getHead);
 
-        RECOMMENDED_CODES.put(HttpMethod.POST, Arrays.asList("400", "500", "200|201|202|204"));
-        RECOMMENDED_CODES.put(HttpMethod.PUT, Arrays.asList("400", "404", "500", "200|201|202|204"));
+        RECOMMENDED_CODES.put(HttpMethod.POST, Arrays.asList("400", "500", TWOXX));
+        RECOMMENDED_CODES.put(HttpMethod.PUT, Arrays.asList("400", "404", "500", TWOXX));
         RECOMMENDED_CODES.put(HttpMethod.GET, Arrays.asList("400", "404", "500", "200|202"));
         RECOMMENDED_CODES.put(HttpMethod.HEAD, Arrays.asList("404", "200|202"));
-        RECOMMENDED_CODES.put(HttpMethod.DELETE, Arrays.asList("400", "404", "500", "200|201|202|204"));
-        RECOMMENDED_CODES.put(HttpMethod.PATCH, Arrays.asList("400", "404", "500", "200|201|202|204"));
+        RECOMMENDED_CODES.put(HttpMethod.DELETE, Arrays.asList("400", "404", "500", TWOXX));
+        RECOMMENDED_CODES.put(HttpMethod.PATCH, Arrays.asList("400", "404", "500", TWOXX));
         RECOMMENDED_CODES.put(HttpMethod.TRACE, Arrays.asList("400", "500", "200"));
     }
 
