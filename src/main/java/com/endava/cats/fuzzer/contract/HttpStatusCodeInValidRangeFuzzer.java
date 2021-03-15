@@ -25,7 +25,7 @@ public class HttpStatusCodeInValidRangeFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Check if the response codes defined for the current path are valid HTTP codes i.e. between 100 and 599");
+        testCaseListener.addScenario(log, "Check if the response codes defined for the current path and HTTP method {} are valid HTTP codes i.e. between 100 and 599", data.getMethod());
         testCaseListener.addExpectedResult(log, "All defined response codes must be between 100 and 599");
 
         Set<String> notMatchingResponseCodes = data.getResponseCodes().stream()
