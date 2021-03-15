@@ -24,6 +24,7 @@ import org.slf4j.event.Level;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 
@@ -51,6 +52,7 @@ class TestCaseListenerTest {
     @BeforeEach
     void setup() {
         testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties);
+        Mockito.when(testCaseExporter.getPath()).thenReturn(Paths.get("."));
     }
 
     @AfterEach

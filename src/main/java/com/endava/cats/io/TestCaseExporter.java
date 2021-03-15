@@ -143,4 +143,8 @@ public class TestCaseExporter {
             LOGGER.warning("Something went wrong while writing test case {}: {}", id, e.getMessage(), e);
         }
     }
+
+    public Path getPath() {
+        return path;
+    }
 }
