@@ -10,18 +10,24 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 
 class ContractFuzzerDataUtil {
 
-    public static FuzzingData prepareFuzzingData(String schemaName, String responseCode) {
+    public static FuzzingData prepareFuzzingData(String schemaName, HttpMethod method, String... responseCodes) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
         ApiResponses apiResponses = new ApiResponses();
 
         ApiResponse firstApiResponse = new ApiResponse();
         firstApiResponse.set$ref(schemaName);
-        apiResponses.addApiResponse(responseCode, firstApiResponse);
+        for (String responseCode : responseCodes) {
+            apiResponses.addApiResponse(responseCode, firstApiResponse);
+        }
 
 
         operation.setResponses(apiResponses);
         pathItem.setPost(operation);
-        return FuzzingData.builder().path("/pets").method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").responseCodes(Sets.newHashSet(responseCode)).build();
+        return FuzzingData.builder().path("/pets").method(method).pathItem(pathItem).reqSchemaName("Cats").responseCodes(Sets.newHashSet(responseCodes)).build();
+    }
+
+    public static FuzzingData prepareFuzzingData(String schemaName, String responseCode) {
+        return prepareFuzzingData(schemaName, HttpMethod.POST, responseCode);
     }
 }

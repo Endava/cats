@@ -39,7 +39,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Check if the current path follows RESTful API naming good practices");
+        testCaseListener.addScenario(log, "Check if the current path follows RESTful API naming good practices for HTTP method {}", data.getMethod());
         testCaseListener.addExpectedResult(log, "Path should follow the RESTful API naming good practices. Must use: nouns, plurals, lowercase hyphen-case/snake_case for endpoints, camelCase/snake_case for JSON properties");
 
         StringBuilder errorString = new StringBuilder();
@@ -124,7 +124,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     protected String runKey(FuzzingData data) {
-        return data.getPath();
+        return data.getPath() + data.getMethod();
     }
 
     @Override

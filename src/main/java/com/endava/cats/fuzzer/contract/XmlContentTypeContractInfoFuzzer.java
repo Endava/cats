@@ -21,7 +21,7 @@ public class XmlContentTypeContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Check if the current path accepts [application/xml] Content-Type");
+        testCaseListener.addScenario(log, "Check if the current path accepts [application/xml] Content-Type for HTTP method {}", data.getMethod());
         testCaseListener.addExpectedResult(log, "Paths should avoid accepting [application/xml] and focus only on [application/json] Content-Type");
 
 
@@ -34,7 +34,7 @@ public class XmlContentTypeContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     protected String runKey(FuzzingData data) {
-        return data.getPath();
+        return data.getPath() + data.getMethod();
     }
 
     @Override
