@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
@@ -29,6 +30,18 @@ public class LeadingSpacesInFieldsValidateTrimFuzzer extends ExpectOnly4XXBaseFi
     @Override
     protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         return FuzzingStrategy.prefix().withData(" ");
+    }
+
+    /**
+     * Fields used as discriminators will not be fuzzed with leading spaces as they are usually used by marshalling frameworks to choose sub-types.
+     *
+     * @param data
+     * @param fuzzedField
+     * @param fuzzingStrategy
+     * @return
+     */
+    protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
+        return !PayloadGenerator.GlobalData.getDiscriminators().contains(fuzzedField);
     }
 
     @Override

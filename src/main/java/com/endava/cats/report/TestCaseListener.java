@@ -3,6 +3,7 @@ package com.endava.cats.report;
 import com.endava.cats.CatsMain;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -291,7 +292,9 @@ public class TestCaseListener {
 
     private boolean matchesSingleElement(String responseSchema, JsonElement element, String name) {
         boolean result = true;
-        if (element.isJsonObject()) {
+        if (element.isJsonObject() && PayloadGenerator.GlobalData.getAdditionalProperties().contains(name)) {
+            return true;
+        } else if (element.isJsonObject()) {
             for (Map.Entry<String, JsonElement> inner : element.getAsJsonObject().entrySet()) {
                 result = result && matchesSingleElement(responseSchema, inner.getValue(), inner.getKey());
             }

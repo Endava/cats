@@ -34,11 +34,10 @@ public class PayloadGenerator {
     /**
      * There is no need to re-compute this for each path, as the request data types are common across all requests
      */
-    private static final Map<String, Schema> requestDataTypes = new HashMap<>();
+
     private final Random random;
     private final Map<String, Schema> schemaMap;
     private final DecimalFormat df = new DecimalFormat("#.00");
-    private final List<String> discriminators = new ArrayList<>();
     private String currentProperty = "";
     private boolean useExamples = true;
 
@@ -52,15 +51,6 @@ public class PayloadGenerator {
         this.random = new Random("PayloadGenerator".hashCode());
         this.schemaMap = schemas;
     }
-
-    public static Map<String, Schema> getRequestDataTypes() {
-        return requestDataTypes;
-    }
-
-    public List<String> getDiscriminators() {
-        return this.discriminators;
-    }
-
 
     public List<Map<String, String>> generate(List<String> mediaTypes, String modelName) {
         List<Map<String, String>> output = new ArrayList<>();
@@ -177,6 +167,7 @@ public class PayloadGenerator {
 
     private Object getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
         Map<String, Object> mp = new HashMap<>();
+        GlobalData.additionalProperties.add(propertyName);
         if (property.getName() != null) {
             mp.put(property.getName(),
                     resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
@@ -269,7 +260,7 @@ public class PayloadGenerator {
         if (schema instanceof ComposedSchema) {
             this.populateWithComposedSchema(mediaType, values, name, (ComposedSchema) schema);
         } else {
-            requestDataTypes.put(currentProperty, schema);
+            GlobalData.requestDataTypes.put(currentProperty, schema);
             return this.resolvePropertyToExample(name, mediaType, schema);
         }
         return values;
@@ -278,7 +269,7 @@ public class PayloadGenerator {
     private void processSchemaProperties(String name, String mediaType, Schema schema, Map<String, Object> values) {
         LOGGER.trace("Creating example from model values");
         if (schema.getDiscriminator() != null) {
-            discriminators.add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
+            GlobalData.discriminators.add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
         }
         String previousPropertyValue = currentProperty;
         for (Object propertyName : schema.getProperties().keySet()) {
@@ -305,11 +296,11 @@ public class PayloadGenerator {
             this.populateWithComposedSchema(mediaType, values, propertyName.toString(), (ComposedSchema) innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
             values.put(propertyName.toString(), innerSchema.getEnum().stream().filter(value -> name.contains(value.toString())).findFirst().orElse(""));
-            requestDataTypes.put(currentProperty, innerSchema);
+            GlobalData.requestDataTypes.put(currentProperty, innerSchema);
         } else {
             Object example = this.resolvePropertyToExample(propertyName.toString(), mediaType, innerSchema);
             values.put(propertyName.toString(), example);
-            requestDataTypes.put(currentProperty, innerSchema);
+            GlobalData.requestDataTypes.put(currentProperty, innerSchema);
         }
     }
 
@@ -358,6 +349,24 @@ public class PayloadGenerator {
             }
             String propertyKey = propertyName.toString() + (schemaRef == null ? "object" : schemaRef);
             values.put(propertyName.toString() + of + allOfSchema.get$ref(), resolveModelToExample(propertyKey, mediaType, schemaToExample));
+        }
+    }
+
+    public static class GlobalData {
+        private static final Map<String, Schema> requestDataTypes = new HashMap<>();
+        private static final List<String> additionalProperties = new ArrayList<>();
+        private static final List<String> discriminators = new ArrayList<>();
+
+        public static Map<String, Schema> getRequestDataTypes() {
+            return requestDataTypes;
+        }
+
+        public static List<String> getAdditionalProperties() {
+            return additionalProperties;
+        }
+
+        public static List<String> getDiscriminators() {
+            return discriminators;
         }
     }
 }
