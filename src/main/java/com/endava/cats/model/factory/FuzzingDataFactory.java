@@ -101,7 +101,7 @@ public class FuzzingDataFactory {
                 .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
                 .schemaMap(schemas).responses(responses)
                 .responseContentTypes(responsesContentTypes)
-                .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
+                .requestPropertyTypes(PayloadGenerator.GlobalData.getRequestDataTypes())
                 .requestContentTypes(requestContentTypes)
                 .catsUtil(catsUtil)
                 .queryParams(queryParams)
@@ -197,7 +197,7 @@ public class FuzzingDataFactory {
                             .responseContentTypes(responsesContentTypes)
                             .requestContentTypes(requestContentTypes)
                             .schemaMap(schemas).responses(responses)
-                            .requestPropertyTypes(PayloadGenerator.getRequestDataTypes())
+                            .requestPropertyTypes(PayloadGenerator.GlobalData.getRequestDataTypes())
                             .catsUtil(catsUtil)
                             .openApi(openAPI)
                             .tags(operation.getTags())
@@ -272,7 +272,7 @@ public class FuzzingDataFactory {
         String payloadSample = examples.get(0).get("example");
 
         payloadSample = this.squashAllOfElements(payloadSample);
-        return this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample, generator.getDiscriminators());
+        return this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample, PayloadGenerator.GlobalData.getDiscriminators());
     }
 
     /**

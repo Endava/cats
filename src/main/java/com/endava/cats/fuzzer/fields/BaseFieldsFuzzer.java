@@ -86,13 +86,12 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private FuzzingStrategy createSkipStrategy(FuzzingStrategy fuzzingStrategy) {
-        return fuzzingStrategy.isSkip() ? fuzzingStrategy : FuzzingStrategy.skip().withData("Field is not a primitive");
+        return fuzzingStrategy.isSkip() ? fuzzingStrategy : FuzzingStrategy.skip().withData("Field is not a primitive or is a discriminator");
     }
 
     private boolean isFuzzingPossible(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        return !fuzzingStrategy.isSkip() && catsUtil.isPrimitive(data.getPayload(), fuzzedField);
+        return !fuzzingStrategy.isSkip() && catsUtil.isPrimitive(data.getPayload(), fuzzedField) && isFuzzingPossibleSpecificToFuzzer(data, fuzzedField, fuzzingStrategy);
     }
-
 
     private ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
         if (!isFuzzedValueMatchingPattern) {
@@ -166,5 +165,15 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      */
     protected abstract FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField);
 
-
+    /**
+     * Override this in order to prevent the fuzzer from running for context particular to the given fuzzer.
+     *
+     * @param data
+     * @param fuzzedField
+     * @param fuzzingStrategy
+     * @return
+     */
+    protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
+        return true;
+    }
 }

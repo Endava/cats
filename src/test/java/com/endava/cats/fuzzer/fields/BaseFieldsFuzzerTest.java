@@ -68,7 +68,7 @@ class BaseFieldsFuzzerTest {
         Mockito.when(data.getAllFields()).thenReturn(fields);
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field is not a primitive"));
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field is not a primitive or is a discriminator"));
     }
 
     @Test
