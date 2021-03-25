@@ -1,5 +1,6 @@
 package com.endava.cats.io;
 
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.model.report.CatsTestCase;
@@ -10,18 +11,24 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -37,7 +44,6 @@ public class TestCaseExporter {
     private static final String TEST_CASES_FOLDER = "test-report";
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
-    private static final Path path;
     private static final String SOURCE = "SOURCE";
     private static final String SCRIPT = "<script type=\"text/javascript\" src=\"" + SOURCE + "\"></script>";
     private static final StringBuilder builder = new StringBuilder();
@@ -47,9 +53,18 @@ public class TestCaseExporter {
     private static final String SUMMARY = "summary";
     private static final String REPORT_HTML = "index.html";
     private static final String JAVASCRIPT_EXTENSION = ".js";
+    private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+    private Path path;
+    @Autowired
+    private ReportingArguments reportingArguments;
 
-    static {
-        path = Paths.get(TEST_CASES_FOLDER, String.valueOf(System.currentTimeMillis()));
+    @PostConstruct
+    void initPath() throws IOException {
+        String subFolder = reportingArguments.isTimestampReports() ? String.valueOf(System.currentTimeMillis()) : "";
+        path = Paths.get(TEST_CASES_FOLDER, subFolder);
+        if (!reportingArguments.isTimestampReports() && path.toFile().exists()) {
+            deleteFiles(path);
+        }
         if (!path.toFile().exists()) {
             try {
                 Files.createDirectories(path);
@@ -59,7 +74,13 @@ public class TestCaseExporter {
         }
     }
 
-    private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+    private void deleteFiles(Path path) throws IOException {
+        for (File file : Objects.requireNonNull(path.toFile().listFiles())) {
+            if (!file.isDirectory()) {
+                Files.delete(file.toPath());
+            }
+        }
+    }
 
     public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
         Map<String, CatsTestCase> allRun = testCaseMap.entrySet().stream().filter(entry -> entry.getValue().isNotSkipped() && entry.getValue().notIgnoredForExecutionStatistics())
@@ -102,7 +123,8 @@ public class TestCaseExporter {
                 .map(testCase -> CatsTestCaseSummary.fromCatsTestCase(testCase.getKey(), testCase.getValue())).sorted()
                 .collect(Collectors.toList());
 
-        CatsTestReport report = CatsTestReport.builder().summaryList(summaries).errors(errors).success(success).totalTests(all).warnings(warnings).build();
+        CatsTestReport report = CatsTestReport.builder().summaryList(summaries).errors(errors).success(success).totalTests(all)
+                .warnings(warnings).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME)).build();
 
         String toWrite = new GsonBuilder().setPrettyPrinting().setExclusionStrategies(new ExcludeTestCaseStrategy()).serializeNulls().create().toJson(report);
         toWrite = VAR + " " + SUMMARY + " = " + toWrite;
