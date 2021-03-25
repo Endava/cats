@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -9,7 +10,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import org.assertj.core.api.Assertions;
@@ -24,6 +24,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.FileNotFoundException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,11 +83,7 @@ class SecurityFuzzerTest {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", "mumu");
         Mockito.doCallRealMethod().when(catsUtil).parseYaml("mumu");
 
-        filesArguments.loadSecurityFuzzerFile();
-        SecurityFuzzer spyCustomFuzzer = Mockito.spy(securityFuzzer);
-        spyCustomFuzzer.fuzz(FuzzingData.builder().build());
-
-        Mockito.verify(spyCustomFuzzer, Mockito.never()).processSecurityFuzzerFile(Mockito.any());
+        Assertions.assertThatThrownBy(() -> filesArguments.loadSecurityFuzzerFile()).isInstanceOf(FileNotFoundException.class);
     }
 
     @Test
