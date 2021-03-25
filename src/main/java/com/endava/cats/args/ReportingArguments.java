@@ -20,6 +20,8 @@ public class ReportingArguments {
     private String logData;
     @Value("${printExecutionStatistics:empty}")
     private String printExecutionStatistics;
+    @Value("${timestampReports:empty}")
+    private String timestampReports;
 
     @Value("${arg.reporting.reportingLevel.help:help}")
     private String reportingLevelHelp;
@@ -27,6 +29,8 @@ public class ReportingArguments {
     private String logDataHelp;
     @Value("${arg.reporting.printExecutionStatistics.help:help}")
     private String printExecutionStatisticsHelp;
+    @Value("${arg.reporting.timestampReports.help:help}")
+    private String timestampReportsHelp;
 
 
     @PostConstruct
@@ -34,6 +38,7 @@ public class ReportingArguments {
         args.add(CatsArg.builder().name("reportingLevel").value(reportingLevel).help(reportingLevelHelp).build());
         args.add(CatsArg.builder().name("log").value(logData).help(logDataHelp).build());
         args.add(CatsArg.builder().name("printExecutionStatistics").value(String.valueOf(this.printExecutionStatistics())).help(printExecutionStatisticsHelp).build());
+        args.add(CatsArg.builder().name("timestampReports").value(timestampReportsHelp).build());
     }
 
     public boolean printExecutionStatistics() {
@@ -44,4 +49,7 @@ public class ReportingArguments {
         return !EMPTY.equalsIgnoreCase(logData);
     }
 
+    public boolean isTimestampReports() {
+        return !EMPTY.equalsIgnoreCase(timestampReports);
+    }
 }

@@ -138,6 +138,9 @@ components:
             - id
             - breedType
           properties:
+            birthDate:
+              type: string
+              format: date-time
             id:
               type: integer
               format: int64
@@ -148,6 +151,10 @@ components:
                 - $ref: '#/components/schemas/Labrador'
               discriminator:
                 propertyName: breedType
+          additionalProperties:
+            type: object
+            $ref: '#/components/schemas/MegaPet'
+            maxLength: 10
     MegaPet:
       properties:
         id:

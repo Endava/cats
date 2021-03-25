@@ -40,6 +40,7 @@ public class TrailingSpacesInFieldsValidateTrimFuzzer extends ExpectOnly4XXBaseF
      * @param fuzzingStrategy
      * @return
      */
+    @Override
     protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return !PayloadGenerator.GlobalData.getDiscriminators().contains(fuzzedField);
     }
