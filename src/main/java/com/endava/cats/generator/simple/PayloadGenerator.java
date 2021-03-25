@@ -368,5 +368,9 @@ public class PayloadGenerator {
         public static List<String> getDiscriminators() {
             return discriminators;
         }
+
+        private GlobalData() {
+            //ntd
+        }
     }
 }

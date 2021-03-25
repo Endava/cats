@@ -40,6 +40,7 @@ public class LeadingSpacesInFieldsValidateTrimFuzzer extends ExpectOnly4XXBaseFi
      * @param fuzzingStrategy
      * @return
      */
+    @Override
     protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return !PayloadGenerator.GlobalData.getDiscriminators().contains(fuzzedField);
     }
