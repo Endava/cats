@@ -79,40 +79,28 @@ public class FilesArguments {
         loadHeaders();
     }
 
-    public void loadSecurityFuzzerFile() {
-        try {
-            if (EMPTY.equalsIgnoreCase(securityFuzzerFile)) {
-                log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
-            } else {
-                securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile);
-            }
-        } catch (Exception e) {
-            log.error("Error processing securityFuzzerFile!", e);
+    public void loadSecurityFuzzerFile() throws IOException {
+        if (EMPTY.equalsIgnoreCase(securityFuzzerFile)) {
+            log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
+        } else {
+            securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile);
         }
     }
 
-    public void loadCustomFuzzerFile() {
-        try {
-            if (EMPTY.equalsIgnoreCase(customFuzzerFile)) {
-                log.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
-            } else {
-                customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
-            }
-        } catch (Exception e) {
-            log.error("Error processing customFuzzerFile!", e);
+    public void loadCustomFuzzerFile() throws IOException {
+        if (EMPTY.equalsIgnoreCase(customFuzzerFile)) {
+            log.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
+        } else {
+            customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
         }
     }
 
     public void loadRefData() throws IOException {
-        try {
-            if (EMPTY.equalsIgnoreCase(refDataFile)) {
-                log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
-            } else {
-                catsUtil.mapObjsToString(refDataFile, refData);
-                log.info("Reference data file loaded successfully: {}", refData);
-            }
-        } catch (Exception e) {
-            throw new IOException("There was a problem parsing the refData file: " + e.getMessage());
+        if (EMPTY.equalsIgnoreCase(refDataFile)) {
+            log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
+        } else {
+            catsUtil.mapObjsToString(refDataFile, refData);
+            log.info("Reference data file loaded successfully: {}", refData);
         }
     }
 
