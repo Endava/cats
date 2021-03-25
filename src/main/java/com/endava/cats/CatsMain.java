@@ -210,13 +210,21 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             ParseOptions options = new ParseOptions();
             options.setResolve(true);
             options.setFlatten(true);
-            OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(apiArguments.getContract())), Charsets.UTF_8), null, options).getOpenAPI();
+            OpenAPI openAPI = this.getOpenAPI(openAPIV3Parser, options);
             LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
 
             return openAPI;
         } catch (Exception e) {
             LOGGER.fatal("Error parsing OPEN API contract {}", apiArguments.getContract());
             throw new StopExecutionException();
+        }
+    }
+
+    private OpenAPI getOpenAPI(OpenAPIParser openAPIV3Parser, ParseOptions options) throws IOException {
+        if (apiArguments.isRemoteContract()) {
+            return openAPIV3Parser.readLocation(apiArguments.getContract(), null, options).getOpenAPI();
+        } else {
+            return openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(apiArguments.getContract())), Charsets.UTF_8), null, options).getOpenAPI();
         }
     }
 
