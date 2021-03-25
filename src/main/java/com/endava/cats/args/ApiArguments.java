@@ -38,4 +38,8 @@ public class ApiArguments {
         return EMPTY.equalsIgnoreCase(server);
     }
 
+    public boolean isRemoteContract() {
+        return this.contract.startsWith("http");
+    }
+
 }
