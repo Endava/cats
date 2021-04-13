@@ -30,6 +30,8 @@ public class FilterArguments {
     private String suppliedFuzzers;
     @Value("${paths:all}")
     private String paths;
+    @Value("${skipPaths:empty}")
+    private String skipPaths;
     @Value("${excludedFuzzers:empty}")
     private String excludedFuzzers;
 
@@ -37,6 +39,8 @@ public class FilterArguments {
     private String suppliedFuzzersHelp;
     @Value("${arg.filter.paths.help:help}")
     private String pathsHelp;
+    @Value("${arg.filter.skipPaths.help:help}")
+    private String skipPathsHelp;
     @Value("${arg.filter.excludedFuzzers.help:help}")
     private String excludedFuzzersHelp;
     @Value("${arg.filter.skipXXXForPath.help:help}")
@@ -50,9 +54,9 @@ public class FilterArguments {
     public void init() {
         args.add(CatsArg.builder().name("fuzzers").value(suppliedFuzzers).help(suppliedFuzzersHelp).build());
         args.add(CatsArg.builder().name("paths").value(paths).help(pathsHelp).build());
+        args.add(CatsArg.builder().name("skipPaths").value(paths).help(skipPathsHelp).build());
         args.add(CatsArg.builder().name("excludedFuzzers").value(excludedFuzzers).help(excludedFuzzersHelp).build());
         args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
-        args.add(CatsArg.builder().name(fuzzers.size() + " registered fuzzers").value(fuzzers.toString()).help("list of fuzzers").build());
     }
 
     public void loadConfig(String... args) {
