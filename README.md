@@ -193,6 +193,7 @@ And this is what you get when you click on a specific test:
 - `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. If the argument is not supplied all fuzzers will be run.
 - `--log=PACKAGE:LEVEL` can configure custom log level for a given package. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug`
 - `--paths=PATH_LIST` supplies a comma separated list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
+- `--skipPaths=PATH_LIST` a comma separated list of paths to ignore. If no path is supplied, no path will be ignored
 - `--fieldsFuzzingStrategy=STRATEGY` specifies which strategy will be used for field fuzzing. Available strategies are `ONEBYONE`, `SIZE` and `POWERSET`. More information on field fuzzing can be found in the sections below.
 - `--maxFieldsToRemove=NUMBER` specifies the maximum number of fields to be removed when using the `SIZE` fields fuzzing strategy.
 - `--refData=FILE` specifies the file containing static reference data which must be fixed in order to have valid business requests. This is a YAML file. It is explained further in the sections below.

@@ -197,6 +197,9 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             suppliedPaths.remove(ALL);
             suppliedPaths.addAll(openAPI.getPaths().keySet());
         }
+        List<String> skipPaths = Stream.of(filterArguments.getSkipPaths().split(",")).collect(Collectors.toList());
+        suppliedPaths = suppliedPaths.stream().filter(path -> !skipPaths.contains(path)).collect(Collectors.toList());
+
         suppliedPaths = CatsUtil.filterAndPrintNotMatching(suppliedPaths, path -> openAPI.getPaths().containsKey(path), LOGGER, "Supplied path is not matching the contract {}", Object::toString);
 
         return suppliedPaths;
