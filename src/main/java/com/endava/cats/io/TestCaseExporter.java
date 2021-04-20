@@ -6,6 +6,7 @@ import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -41,8 +42,14 @@ import static org.fusesource.jansi.Ansi.ansi;
  */
 @Service
 public class TestCaseExporter {
-    private static final String TEST_CASES_FOLDER = "test-report";
+    public static final Gson GSON = new GsonBuilder()
+            .setLenient()
+            .setPrettyPrinting()
+            .setExclusionStrategies(new ExcludeTestCaseStrategy())
+            .registerTypeAdapter(Long.class, new LongTypeSerializer())
+            .serializeNulls().create();
 
+    private static final String TEST_CASES_FOLDER = "test-report";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
     private static final String SOURCE = "SOURCE";
     private static final String SCRIPT = "<script type=\"text/javascript\" src=\"" + SOURCE + "\"></script>";
@@ -93,6 +100,7 @@ public class TestCaseExporter {
         LOGGER.info(" ");
         LOGGER.info(" ---------------------------- Execution time details ---------------------------- ");
         LOGGER.info(" ");
+
         collect.forEach((key, value) -> {
             double average = value.stream().mapToLong(testCase -> testCase.getResponse().getResponseTimeInMs()).average().orElse(0);
             List<CatsTestCase> sortedRuns = value.stream().sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs())).collect(Collectors.toList());
@@ -126,7 +134,8 @@ public class TestCaseExporter {
         CatsTestReport report = CatsTestReport.builder().summaryList(summaries).errors(errors).success(success).totalTests(all)
                 .warnings(warnings).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME)).build();
 
-        String toWrite = new GsonBuilder().setPrettyPrinting().setExclusionStrategies(new ExcludeTestCaseStrategy()).serializeNulls().create().toJson(report);
+        String toWrite = GSON.toJson(report);
+
         toWrite = VAR + " " + SUMMARY + " = " + toWrite;
         this.write(SUMMARY, testPath, toWrite);
     }
@@ -150,7 +159,8 @@ public class TestCaseExporter {
         String testCaseName = MDC.get("id").replace(" ", "");
         Path testPath = Paths.get(path.toFile().getAbsolutePath(), testCaseName.concat(JAVASCRIPT_EXTENSION));
 
-        String toWrite = new GsonBuilder().setLenient().setPrettyPrinting().setExclusionStrategies(new ExcludeTestCaseStrategy()).serializeNulls().create().toJson(testCase);
+        String toWrite = GSON.toJson(testCase);
+
         toWrite = VAR + " " + testCaseName + " = " + toWrite;
         builder.append(SCRIPT.replace(SOURCE, testCaseName.concat(JAVASCRIPT_EXTENSION))).append(System.lineSeparator());
         write(testCaseName, testPath, toWrite);
