@@ -54,7 +54,7 @@ public class FilterArguments {
     public void init() {
         args.add(CatsArg.builder().name("fuzzers").value(suppliedFuzzers).help(suppliedFuzzersHelp).build());
         args.add(CatsArg.builder().name("paths").value(paths).help(pathsHelp).build());
-        args.add(CatsArg.builder().name("skipPaths").value(paths).help(skipPathsHelp).build());
+        args.add(CatsArg.builder().name("skipPaths").value(skipPaths).help(skipPathsHelp).build());
         args.add(CatsArg.builder().name("excludedFuzzers").value(excludedFuzzers).help(excludedFuzzersHelp).build());
         args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
     }
