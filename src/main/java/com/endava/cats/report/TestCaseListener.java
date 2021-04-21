@@ -20,7 +20,6 @@ import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 
@@ -48,8 +47,6 @@ public class TestCaseListener {
     private final TestCaseExporter testCaseExporter;
     private final BuildProperties buildProperties;
     private long t0;
-    @Value("${printExecutionStatistics:empty}")
-    private String printExecutionStatistics;
 
     @Autowired
     public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties) {
@@ -131,13 +128,9 @@ public class TestCaseListener {
 
     public void endSession() {
         testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
-
-        if (!"empty".equalsIgnoreCase(printExecutionStatistics)) {
-            testCaseExporter.writePerformanceReport(testCaseMap);
-        } else {
-            LOGGER.skip("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
-        }
+        testCaseExporter.writePerformanceReport(testCaseMap);
         testCaseExporter.writeReportFiles();
+
         this.printExecutionDetails();
     }
 
