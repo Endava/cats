@@ -1,8 +1,10 @@
 package com.endava.cats.model.report;
 
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
 @EqualsAndHashCode
+@Getter
 public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private String scenario;
     private String result;
@@ -35,5 +37,9 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private int extractInt(String s) {
         String num = s.replaceAll("\\D", "");
         return num.isEmpty() ? 0 : Integer.parseInt(num);
+    }
+
+    public String getKey() {
+        return id.replace(" ", "");
     }
 }

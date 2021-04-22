@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.endava</groupId>
@@ -30,13 +31,14 @@
         <guava.version>30.1-jre</guava.version>
         <openapi-generator.version>5.0.1</openapi-generator.version>
         <sonar.coverage.exclusions>
-            **/*TestCaseExporter.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*
+            **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*
         </sonar.coverage.exclusions>
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.1.1</maven-project-info-reports-plugin.version>
         <spotbugs-maven-plugin.version>4.2.0</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.8.0.2131</sonar-maven-plugin.version>
         <pretty-logger.version>1.5</pretty-logger.version>
+        <compiler.version>0.9.7</compiler.version>
     </properties>
 
     <build>
@@ -165,6 +167,15 @@
     </distributionManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>com.github.spullara.mustache.java</groupId>
+            <artifactId>compiler</artifactId>
+            <version>${compiler.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mustache</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>

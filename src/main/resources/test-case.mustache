@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CATS</title>
+
+    <link rel="stylesheet" type="text/css" href="styles.css"/>
+</head>
+
+<body class="bg-1">
+
+<header class="shaddow bg-2">
+    <div class="wrapper">
+        <img class="logo lefty" src="cats.png" alt="CatsLogo">
+        <h4 class="d-inline lefty tagline">
+            <p>EXECUTION REPORT</p>
+            <p style="color:green" id="header-timestamp">{{TIMESTAMP}}</p>
+        </h4>
+    </div>
+</header>
+{{#TEST_CASE}}
+<div class="wrapper">
+    <h5 id="summary">
+        <div>
+            <span>
+                <a href="index.html" style="text-decoration: underline seagreen 3px">All Tests</a> >> {{testId}}
+            </span>
+        </div>
+    </h5>
+</div>
+<div>
+    <div class="wrapper table-container">
+        <h5>Test Id</h5>
+        <p>{{testId}}</p>  <h5>Scenario</h5>
+        <p>{{scenario}}</p>  <h5>Expected result</h5>
+        <p>{{expectedResult}}</p> <h5 class="d-inline">Result</h5> <label class="rounded d-inline {{result}}">
+        {{result}}</label> <h5>Result Details</h5>
+        <p>{{resultDetails}}</p> <h5>
+        Contract Path</h5>
+        <p>{{path}}</p> <h5>Fuzzer</h5>
+        <p>{{fuzzer}}</p> <h5>Full Request Path</h5>
+        <p>{{fullRequestPath}}</p> <h5>Http Method</h5>
+        <p>{{request.httpMethod}}</p> <h5>Request Details</h5>
+        <div class="subWrapper"><h6>headers</h6>
+            <pre><code>{{headers}}</code></pre>
+            <h6>payload</h6>
+            <pre><code>{{requestJson}}</code></pre>
+        </div>
+        <h5>Response</h5>
+        <pre><code>{{responseJson}}</code></pre>
+    </div>
+</div>
+{{/TEST_CASE}}
+</body>
+
+</html>

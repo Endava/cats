@@ -207,6 +207,7 @@ And this is what you get when you click on a specific test:
 - `--securityFuzzerFile` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method
 - `--timestampReports` If supplied (no value needed), it will output the report still inside the `cats-report` folder, but in a sub-folder with the current timestamp
+- `--reportFormat=FORMAT` Specifies the format of the CATS report. You can use `htmlOnly` if you want the report to not contain any Javascript. This is useful in CI environments due to Javascript content security policies. Default is `htmlJs` which is the original CATS single page report format.
 - `--useExamples` If `true` (default value when not supplied) then CATS will use examples supplied in the OpenAPI contact. If `false` CATS will rely only on generated values
 - `--checkFields` If supplied (no value needed), it will only run the Field Fuzzers
 - `--checkHeaders` If supplied (no value needed), it will only run the Header Fuzzers
@@ -221,7 +222,7 @@ Using some of these options a typical invocation of CATS might look like this:
 `./cats.jar --contract=my.yml --server=https://locathost:8080 --log=org.apache.http.wire:debug --checkHeaders`
 
 # Available Fuzzers
-To get a list of fuzzers just run `./cats.jar list fuzzers`. A list of all of the available fuzzers will be returned, along with a short description for each.
+To get a list of fuzzers just run `./cats.jar list fuzzers`. A list of all available fuzzers will be returned, along with a short description for each.
 
 There are multiple categories of `Fuzzers` available:
 - Field `Fuzzers`: which target request body fields or path parameters
@@ -401,7 +402,7 @@ The `Fuzzers` expect:
 - `415` for unsupported or invalid `Content-Type` headers
 
 ### CheckSecurityHeadersFuzzer
-This `Fuzzer` will continues the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html) by checking
+This `Fuzzer` will continue the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html) by checking
 a list of required Security headers that must be supplied in each response. 
 
 The `Fuzzer` expects a `2XX` response with the following headers set:
@@ -508,7 +509,7 @@ Some things to note about the `customFuzzer.yml` file:
 - if a `httpMethod` parameter is supplied, but it doesn't exist in the OpenAPI given path, a `warning` will be issued and no test will be executed
 - if a `httpMethod` parameter is supplied, but is not a valid HTTP method, a `warning` will be issued and no test will be executed
 - if the request payload uses a `oneOf` element to allow multiple request types, you can control which of the possible types the `CustomFuzzer` will apply to using the `oneOfSelection` keyword. The value of the `oneOfSelection` keyword must match the fully qualified name of the `discriminator`.
-- if no `oneOfSelection` is supplied and the request payload accepts multiple `oneOf` elements, than a custom test will be created for each type of payload
+- if no `oneOfSelection` is supplied, and the request payload accepts multiple `oneOf` elements, than a custom test will be created for each type of payload
 - the file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above instead of `.`
 
 #### Dealing with oneOf, anyOf
@@ -604,7 +605,7 @@ Some notes:
 - you can supply more than one parameter to check (as seen above)
 - if at least one of the parameters is not present in the response, `CATs` will report an error
 - if all parameters are found and have valid values, but the response code is not matched, `CATs` will report a warning
-- if all the parameters are found and match their values and the response code is as expected, `CATs` will report a success
+- if all the parameters are found and match their values, and the response code is as expected, `CATs` will report a success
 
 #### Working with additionalProperties in CustomFuzzer
 You can also set `additionalProperties` fields through the `customFuzzerFile` using the same syntax as for [Setting additionalProperties in Reference Data](#setting-additionalproperties).
@@ -731,7 +732,7 @@ you can supply them via the `refData` file using the following syntax:
         anotherTest: "value2"
 ```
 
-The `additionalProperties` element must contain the actual key-value pairs to be send within the requests and also a top element if needed. `topElement` is not mandatory.
+The `additionalProperties` element must contain the actual key-value pairs to be sent within the requests and also a top element if needed. `topElement` is not mandatory.
 The above example will output the following json (considering also the above examples):
 ```json
 
@@ -792,7 +793,7 @@ You can use `--urlParams` to send values for placeholders inside the contract pa
 so that each fuzzed path will replace `version` with `v1.0`. 
 
 # Edge Spaces Strategy
-There isn't a general consensus on how you should handle situations when you send leading and trailing spaces or leading and trailing valid values within fields. One strategy for the service will be to trim these values and consider them valid, while some other services will just consider them to be invalid. 
+There isn't a consensus on how you should handle situations when you send leading and trailing spaces or leading and trailing valid values within fields. One strategy for the service will be to trim these values and consider them valid, while some other services will just consider them to be invalid. 
 You can control how CATS should expect such cases to be handled by the service using the `--edgeSpacesStrategy` argument. You can set this to `error` or `success` depending on how you expect the service to behave:
 - `error` means than the service will consider the values to be invalid, even if the value itself is valid, but has leading or trailing spaces.
 - `success` means that the service will trim the value and validate it afterwards.
@@ -883,7 +884,7 @@ However, if `Payload1` or `Payload2` will have an additional compositions, this 
 If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `WARN` level log message as it won't be able to validate that the response matches the schema.
 
 ## Regexes within 'pattern'
-Cats uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
+CATS uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
 
 # Custom Files General Info
 All custom files that can be used by CATS (`customFuzzerFile`, `headers`, `refData`, etc) are in a YAML format. When setting or getting values to/from JSON for input and/or output variables, you must use a [JsonPath](https://goessner.net/articles/JsonPath/) syntax using either `#`  (not `.`) as separators.

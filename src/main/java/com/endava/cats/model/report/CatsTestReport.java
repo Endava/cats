@@ -13,6 +13,7 @@ public class CatsTestReport {
     private final int success;
     private final int warnings;
     private final int errors;
+    private final long executionTime;
     private final String timestamp;
 
 }

@@ -6,64 +6,56 @@ import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
+import com.endava.cats.report.ExecutionStatisticsListener;
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.fusesource.jansi.Ansi;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * This class is responsible for writing the final report file(s).
  */
-@Service
-public class TestCaseExporter {
+
+public abstract class TestCaseExporter {
     public static final Gson GSON = new GsonBuilder()
             .setLenient()
             .setPrettyPrinting()
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
             .serializeNulls().create();
-
-    private static final String TEST_CASES_FOLDER = "cats-report";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
-    private static final String SOURCE = "SOURCE";
-    private static final String SCRIPT = "<script type=\"text/javascript\" src=\"" + SOURCE + "\"></script>";
-    private static final StringBuilder builder = new StringBuilder();
-    private static final String VAR = "var";
-    private static final String PLACEHOLDER = "PLACEHOLDER";
-    private static final String REPORT_ZIP = "report.zip";
-    private static final String SUMMARY = "summary";
     private static final String REPORT_HTML = "index.html";
-    private static final String JAVASCRIPT_EXTENSION = ".js";
+    private static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
+    private static final String HTML = ".html";
+    private static final String TEST_CASES_FOLDER = "cats-report";
+    private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
+    private static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
+
     private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-    private Path path;
     @Autowired
     private ReportingArguments reportingArguments;
+    private Path path;
+    private long t0;
 
     @PostConstruct
     void initPath() throws IOException {
@@ -79,6 +71,7 @@ public class TestCaseExporter {
                 LOGGER.error("Exception while creating root test cases folder: {}", e.getMessage());
             }
         }
+        t0 = System.currentTimeMillis();
     }
 
     private void deleteFiles(Path path) throws IOException {
@@ -131,60 +124,81 @@ public class TestCaseExporter {
         LOGGER.info(" ");
     }
 
-    public void writeSummary(Map<String, CatsTestCase> testCaseMap, int all, int success, int warnings, int errors) {
-        Path testPath = Paths.get(path.toFile().getAbsolutePath(), SUMMARY.concat(JAVASCRIPT_EXTENSION));
+    public void printExecutionDetails(ExecutionStatisticsListener executionStatisticsListener) {
+        String catsFinished = ansi().fgBlue().a("CATS finished in {} ms. Total (excluding skipped) requests {}. ").toString();
+        String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
+        String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
+        String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
+        String skipped = ansi().fgCyan().bold().a("❯ skipped: {}. ").toString();
+        String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", path.toUri() + REPORT_HTML)).reset().toString();
+        String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
 
+        LOGGER.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+    }
+
+
+    public void writeSummary(Map<String, CatsTestCase> testCaseMap, ExecutionStatisticsListener executionStatisticsListener) {
+        CatsTestReport report = this.createTestReport(testCaseMap, executionStatisticsListener);
+
+        Map<String, Object> context = new HashMap<>();
+        context.put("WARNINGS", report.getWarnings());
+        context.put("SUCCESS", report.getSuccess());
+        context.put("ERRORS", report.getErrors());
+        context.put("TOTAL", report.getTotalTests());
+        context.put("TIMESTAMP", report.getTimestamp());
+        context.put("TEST_CASES", report.getSummaryList());
+        context.put("EXECUTION", report.getExecutionTime());
+        context.putAll(this.getSpecificContext(report));
+
+        Writer writer = SUMMARY_MUSTACHE.execute(new StringWriter(), context);
+
+        try {
+            writer.flush();
+            Files.write(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML), writer.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            LOGGER.error("There was an error writing the report summary: {}", e.getMessage(), e);
+        }
+    }
+
+    private CatsTestReport createTestReport(Map<String, CatsTestCase> testCaseMap, ExecutionStatisticsListener executionStatisticsListener) {
         List<CatsTestCaseSummary> summaries = testCaseMap.entrySet().stream()
                 .filter(entry -> entry.getValue().isNotSkipped())
                 .map(testCase -> CatsTestCaseSummary.fromCatsTestCase(testCase.getKey(), testCase.getValue())).sorted()
                 .collect(Collectors.toList());
 
-        CatsTestReport report = CatsTestReport.builder().summaryList(summaries).errors(errors).success(success).totalTests(all)
-                .warnings(warnings).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME)).build();
-
-        String toWrite = GSON.toJson(report);
-
-        toWrite = VAR + " " + SUMMARY + " = " + toWrite;
-        this.write(SUMMARY, testPath, toWrite);
+        return CatsTestReport.builder().summaryList(summaries).errors(executionStatisticsListener.getErrors())
+                .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
+                .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME))
+                .executionTime(((System.currentTimeMillis() - t0) / 1000)).build();
     }
 
-    public void writeReportFiles() {
-        try (ZipInputStream zipInputStream = new ZipInputStream(resolver.getResourceLoader().getResource(REPORT_ZIP).getInputStream())) {
-            ZipEntry entry;
-            while ((entry = zipInputStream.getNextEntry()) != null) {
-                Files.copy(zipInputStream, Paths.get(path.toFile().getAbsolutePath(), entry.getName()));
+    public void writeHelperFiles() {
+        for (String file : this.getSpecificHelperFiles()) {
+            try (InputStream stream = resolver.getResourceLoader().getResource(file).getInputStream()) {
+                Files.copy(stream, Paths.get(path.toFile().getAbsolutePath(), file));
+            } catch (IOException e) {
+                LOGGER.error("Unable to write reporting files!", e);
             }
-            try (Stream<String> index = Files.lines(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML))) {
-                List<String> updatedIndex = index.map(line -> line.replace(PLACEHOLDER, builder.toString())).collect(Collectors.toList());
-                Files.write(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML), updatedIndex);
-            }
-        } catch (IOException e) {
-            LOGGER.error("Unable to write reporting files!", e);
         }
     }
 
-    public void writeToFile(CatsTestCase testCase) {
-        String testCaseName = MDC.get("id").replace(" ", "");
-        Path testPath = Paths.get(path.toFile().getAbsolutePath(), testCaseName.concat(JAVASCRIPT_EXTENSION));
-
-        String toWrite = GSON.toJson(testCase);
-
-        toWrite = VAR + " " + testCaseName + " = " + toWrite;
-        builder.append(SCRIPT.replace(SOURCE, testCaseName.concat(JAVASCRIPT_EXTENSION))).append(System.lineSeparator());
-        write(testCaseName, testPath, toWrite);
-    }
-
-    private void write(String id, Path testPath, String toWrite) {
-        try (BufferedWriter writer = Files.newBufferedWriter(testPath)) {
-
-            writer.write(toWrite);
-            LOGGER.complete("Finish writing test case {} to file {}", id, testPath);
+    public void writeTestCase(CatsTestCase testCase) {
+        StringWriter stringWriter = new StringWriter();
+        Map<String, Object> context = new HashMap<>();
+        context.put("TEST_CASE", testCase);
+        context.put("TIMESTAMP", OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
+        Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
+        String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);
+        try {
+            Files.write(Paths.get(path.toFile().getAbsolutePath(), testFileName), writer.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            LOGGER.warning("Something went wrong while writing test case {}: {}", id, e.getMessage(), e);
+            LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
         }
     }
 
-    public Path getPath() {
-        return path;
-    }
+
+    public abstract String[] getSpecificHelperFiles();
+
+    public abstract Map<String, Object> getSpecificContext(CatsTestReport report);
+
 }

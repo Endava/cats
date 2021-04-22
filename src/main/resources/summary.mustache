@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CATS</title>
+    <link rel="stylesheet" type="text/css" href="styles.css"/>
+    {{#JS}}
+    <script src="jquery.min.js"></script>
+    <script src="script.js"></script>
+    {{/JS}}
+</head>
+
+<body class="bg-1">
+
+<header class="shaddow bg-2">
+    <div class="wrapper">
+        <img class="logo lefty" src="cats.png" alt="CatsLogo" />
+        <h4 class="d-inline lefty tagline">
+            <p>EXECUTION REPORT</p>
+            <p style="color:green" id="header-timestamp">{{TIMESTAMP}}</p>
+        </h4>
+    </div>
+</header>
+
+<div class="wrapper">
+    <h5 id="summary">
+        <div>
+            TESTS
+            <span class="menu-total rounded menu active" data-filtered="All">Total: <b data-filtered="All">{{TOTAL}}</b></span>
+            <span class="menu-success rounded menu {{^JS}}active{{/JS}}" data-filtered="success">Success: <b
+                    data-filtered="success">{{SUCCESS}}</b></span>
+            <span class="menu-warning rounded menu {{^JS}}active{{/JS}}" data-filtered="warn">Warnings: <b data-filtered="warn">{{WARNINGS}}</b></span>
+            <span class="menu-error rounded menu {{^JS}}active{{/JS}}" data-filtered="error">Errors: <b data-filtered="error">{{ERRORS}}</b></span>
+            <span class="execution rounded">Execution Time: <b>{{EXECUTION}}</b> seconds</span>
+        </div>
+        {{#JS}}
+        <select id="fuzzerSelect" class="menu-filter">
+            <option value="All">All</option>
+            {{#FUZZERS}}
+                <option value="{{.}}">{{.}}</option>
+            {{/FUZZERS}}
+        </select>
+        {{/JS}}
+    </h5>
+    <div class="table-container">
+        <table id="summaryTable">
+            <tr class="header">
+                <th>ID</th>
+                <th>Fuzzer</th>
+                <th>Scenario</th>
+                <th>Result</th>
+            </tr>
+            {{#TEST_CASES}}
+            <tr data-id="{{key}}" class="{{key}}">
+                <td><a href="{{key}}.html">{{id}}</a></td>
+                <td><a href="{{key}}.html">{{fuzzer}}</a></td>
+                <td><a href="{{key}}.html"><span class="item-path active rounded">path={{path}}</span>&nbsp;&nbsp;<span
+                        class="scenario">{{scenario}}</span></a></td>
+                <td><a href="{{key}}.html"><label class="rounded result {{result}}">{{result}}</label></a></td>
+            </tr>
+            {{/TEST_CASES}}
+        </table>
+    </div>
+
+</div>
+</body>
+
+</html>
