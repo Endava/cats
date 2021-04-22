@@ -22,6 +22,8 @@ public class ReportingArguments {
     private String printExecutionStatistics;
     @Value("${timestampReports:empty}")
     private String timestampReports;
+    @Value("${reportFormat:htmlJs}")
+    private String reportFormat;
 
     @Value("${arg.reporting.timestampReports.help:help}")
     private String timestampReportsHelp;
@@ -31,6 +33,8 @@ public class ReportingArguments {
     private String logDataHelp;
     @Value("${arg.reporting.printExecutionStatistics.help:help}")
     private String printExecutionStatisticsHelp;
+    @Value("${arg.reporting.reportFormat.help:help}")
+    private String reportFormatHelp;
 
 
     @PostConstruct
@@ -39,7 +43,7 @@ public class ReportingArguments {
         args.add(CatsArg.builder().name("log").value(logData).help(logDataHelp).build());
         args.add(CatsArg.builder().name("printExecutionStatistics").value(String.valueOf(this.printExecutionStatistics())).help(printExecutionStatisticsHelp).build());
         args.add(CatsArg.builder().name("timestampReports").value(timestampReports).help(timestampReportsHelp).build());
-
+        args.add(CatsArg.builder().name("reportFormat").value(reportFormat).help(reportFormatHelp).build());
     }
 
     public boolean printExecutionStatistics() {
@@ -52,5 +56,16 @@ public class ReportingArguments {
 
     public boolean isTimestampReports() {
         return !EMPTY.equalsIgnoreCase(timestampReports);
+    }
+
+    public ReportFormat getReportFormat() {
+        if (reportFormat.equalsIgnoreCase("htmlOnly")) {
+            return ReportFormat.HTML_ONLY;
+        }
+        return ReportFormat.HTML_JS;
+    }
+
+    public enum ReportFormat {
+        HTML_ONLY, HTML_JS;
     }
 }

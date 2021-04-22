@@ -24,7 +24,6 @@ import org.slf4j.event.Level;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 
@@ -52,7 +51,6 @@ class TestCaseListenerTest {
     @BeforeEach
     void setup() {
         testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties);
-        Mockito.when(testCaseExporter.getPath()).thenReturn(Paths.get("."));
     }
 
     @AfterEach
@@ -65,7 +63,7 @@ class TestCaseListenerTest {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> executionStatisticsListener.increaseSkipped());
 
         Assertions.assertThat(testCaseListener.testCaseMap.get("Test 1")).isNotNull();
-        Mockito.verify(testCaseExporter).writeToFile(Mockito.any());
+        Mockito.verify(testCaseExporter).writeTestCase(Mockito.any());
     }
 
     @Test
@@ -105,8 +103,8 @@ class TestCaseListenerTest {
         Mockito.verify(buildProperties, Mockito.times(1)).getName();
         Mockito.verify(buildProperties, Mockito.times(1)).getVersion();
         Mockito.verify(buildProperties, Mockito.times(1)).getTime();
-        Mockito.verify(testCaseExporter, Mockito.times(1)).writeReportFiles();
-        Mockito.verify(testCaseExporter, Mockito.times(1)).writeSummary(Mockito.anyMap(), Mockito.eq(0), Mockito.eq(0), Mockito.eq(0), Mockito.eq(0));
+        Mockito.verify(testCaseExporter, Mockito.times(1)).writeHelperFiles();
+        Mockito.verify(testCaseExporter, Mockito.times(1)).writeSummary(Mockito.anyMap(), Mockito.any());
     }
 
     @Test

@@ -6,6 +6,23 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 class ReportingArgumentsTest {
 
+    @Test
+    void shouldHaveHtmlJsReportFormat() {
+        ReportingArguments reportingArguments = new ReportingArguments();
+
+        ReflectionTestUtils.setField(reportingArguments, "reportFormat", "htmlJs");
+
+        Assertions.assertThat(reportingArguments.getReportFormat()).isEqualTo(ReportingArguments.ReportFormat.HTML_JS);
+    }
+
+    @Test
+    void shouldHaveHtmlOnlyReportFormat() {
+        ReportingArguments reportingArguments = new ReportingArguments();
+
+        ReflectionTestUtils.setField(reportingArguments, "reportFormat", "htmlOnly");
+
+        Assertions.assertThat(reportingArguments.getReportFormat()).isEqualTo(ReportingArguments.ReportFormat.HTML_ONLY);
+    }
 
     @Test
     void shouldPrintExecutionStatistics() {

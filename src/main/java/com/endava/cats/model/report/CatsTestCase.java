@@ -1,5 +1,6 @@
 package com.endava.cats.model.report;
 
+import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import lombok.Getter;
@@ -33,4 +34,15 @@ public class CatsTestCase {
         return !"SKIPPED".equalsIgnoreCase(response.getHttpMethod());
     }
 
+    public String getHeaders() {
+        return TestCaseExporter.GSON.toJson(request.getHeaders());
+    }
+
+    public String getRequestJson() {
+        return TestCaseExporter.GSON.toJson(request.getPayload());
+    }
+
+    public String getResponseJson() {
+        return TestCaseExporter.GSON.toJson(response);
+    }
 }

@@ -46,7 +46,7 @@ public class TestCaseListener {
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
     private final BuildProperties buildProperties;
-    private long t0;
+
 
     @Autowired
     public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties) {
@@ -115,36 +115,23 @@ public class TestCaseListener {
     private void endTestCase() {
         testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get("fuzzerKey"));
         if (testCaseMap.get(MDC.get(ID)).isNotSkipped()) {
-            testCaseExporter.writeToFile(testCaseMap.get(MDC.get(ID)));
+            testCaseExporter.writeTestCase(testCaseMap.get(MDC.get(ID)));
         }
     }
 
     public void startSession() {
-        t0 = System.currentTimeMillis();
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("UTC"));
         LOGGER.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(buildProperties.getName().toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(buildProperties.getVersion()), ansi().fg(Ansi.Color.GREEN).a(formatter.format(buildProperties.getTime())).reset());
         LOGGER.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }
 
     public void endSession() {
-        testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors());
+        testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener);
+        testCaseExporter.writeHelperFiles();
         testCaseExporter.writePerformanceReport(testCaseMap);
-        testCaseExporter.writeReportFiles();
-
-        this.printExecutionDetails();
+        testCaseExporter.printExecutionDetails(executionStatisticsListener);
     }
 
-    private void printExecutionDetails() {
-        String catsFinished = ansi().fgBlue().a("CATS finished in {} ms. Total (excluding skipped) requests {}. ").toString();
-        String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
-        String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
-        String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
-        String skipped = ansi().fgCyan().bold().a("❯ skipped: {}. ").toString();
-        String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", testCaseExporter.getPath().toUri() + "index.html")).reset().toString();
-        String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
-
-        LOGGER.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
-    }
 
     public void reportWarn(PrettyLogger logger, String message, Object... params) {
         executionStatisticsListener.increaseWarns();
