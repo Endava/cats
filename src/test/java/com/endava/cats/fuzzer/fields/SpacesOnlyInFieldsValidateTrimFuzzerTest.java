@@ -56,13 +56,13 @@ class SpacesOnlyInFieldsValidateTrimFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = spacesOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema");
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("  ");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");
 
         stringSchema.setMinLength(5);
 
         fuzzingStrategy = spacesOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema");
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("  ", stringSchema.getMinLength() + 1));
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat(" ", stringSchema.getMinLength() + 1));
         Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
