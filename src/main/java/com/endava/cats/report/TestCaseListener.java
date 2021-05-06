@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -57,7 +59,7 @@ public class TestCaseListener {
 
     private static String replaceBrackets(String message, Object... params) {
         for (Object obj : params) {
-            message = message.replaceFirst("\\{}", String.valueOf(obj));
+            message = message.replaceFirst(Pattern.quote("{}"), Matcher.quoteReplacement(String.valueOf(obj)));
         }
 
         return message;
@@ -70,7 +72,7 @@ public class TestCaseListener {
             s.run();
         } catch (Exception e) {
             this.reportError(externalLogger, "Fuzzer [{}] failed due to [{}]", fuzzer.getClass().getSimpleName(), e.getMessage());
-            externalLogger.debug("Exception while processing!", e);
+            externalLogger.error("Exception while processing!", e);
         }
         this.endTestCase();
         LOGGER.info("{} {}", SEPARATOR, "\n");

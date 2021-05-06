@@ -1,5 +1,7 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.FuzzingStrategy;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
@@ -50,6 +52,25 @@ public class PayloadGenerator {
         // use a fixed seed to make the "random" numbers reproducible.
         this.random = new Random("PayloadGenerator".hashCode());
         this.schemaMap = schemas;
+    }
+
+    public static String generateValueBasedOnMinMAx(Schema<String> property) {
+        int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
+        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
+        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
+        if (maxLength < minLength) {
+            maxLength = minLength;
+        }
+        return StringGenerator.generate(pattern, minLength, maxLength);
+    }
+
+    public static FuzzingStrategy getFuzzStrategyWithRepeatedCharacterReplacingValidValue(FuzzingData data, String fuzzedField, String characterToRepeat) {
+        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        String spaceValue = characterToRepeat;
+        if (schema != null && schema.getMinLength() != null) {
+            spaceValue = StringUtils.repeat(spaceValue, schema.getMinLength() + 1);
+        }
+        return FuzzingStrategy.replace().withData(spaceValue);
     }
 
     public List<Map<String, String>> generate(List<String> mediaTypes, String modelName) {
@@ -142,23 +163,13 @@ public class PayloadGenerator {
         }
 
         if (property.getMinLength() != null || property.getMaxLength() != null) {
-            return this.generateValueBasedOnMinMAx(property);
+            return generateValueBasedOnMinMAx(property);
         }
         if (property.getPattern() != null) {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
         LOGGER.trace("No values found, using property name {} as example", propertyName);
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC, propertyName.length(), propertyName.length() + 4);
-    }
-
-    private Object generateValueBasedOnMinMAx(Schema<String> property) {
-        int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
-        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
-        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
-        if (maxLength < minLength) {
-            maxLength = minLength;
-        }
-        return StringGenerator.generate(pattern, minLength, maxLength);
     }
 
     private boolean isURI(String format) {
@@ -357,6 +368,10 @@ public class PayloadGenerator {
         private static final List<String> additionalProperties = new ArrayList<>();
         private static final List<String> discriminators = new ArrayList<>();
 
+        private GlobalData() {
+            //ntd
+        }
+
         public static Map<String, Schema> getRequestDataTypes() {
             return requestDataTypes;
         }
@@ -367,10 +382,6 @@ public class PayloadGenerator {
 
         public static List<String> getDiscriminators() {
             return discriminators;
-        }
-
-        private GlobalData() {
-            //ntd
         }
     }
 }

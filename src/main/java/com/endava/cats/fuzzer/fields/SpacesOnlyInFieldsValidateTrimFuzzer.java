@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -32,7 +33,7 @@ public class SpacesOnlyInFieldsValidateTrimFuzzer extends ExpectOnly4XXBaseField
 
     @Override
     protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return SpacesOnlyInFieldsTrimValidateFuzzer.getFuzzStrategy(data, fuzzedField);
+        return PayloadGenerator.getFuzzStrategyWithRepeatedCharacterReplacingValidValue(data, fuzzedField, " ");
     }
 
     @Override
