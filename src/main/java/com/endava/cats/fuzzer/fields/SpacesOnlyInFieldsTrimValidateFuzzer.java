@@ -3,14 +3,13 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import io.swagger.v3.oas.models.media.Schema;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
@@ -28,15 +27,6 @@ public class SpacesOnlyInFieldsTrimValidateFuzzer extends Expect4XXForRequiredBa
         super(sc, lr, cu, cp);
     }
 
-    static FuzzingStrategy getFuzzStrategy(FuzzingData data, String fuzzedField) {
-        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
-        String spaceValue = "  ";
-        if (schema != null && schema.getMinLength() != null) {
-            spaceValue = StringUtils.repeat(spaceValue, schema.getMinLength() + 1);
-        }
-        return FuzzingStrategy.replace().withData(spaceValue);
-    }
-
     @Override
     protected String typeOfDataSentToTheService() {
         return "spaces only";
@@ -44,7 +34,7 @@ public class SpacesOnlyInFieldsTrimValidateFuzzer extends Expect4XXForRequiredBa
 
     @Override
     protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return getFuzzStrategy(data, fuzzedField);
+        return PayloadGenerator.getFuzzStrategyWithRepeatedCharacterReplacingValidValue(data, fuzzedField, " ");
     }
 
     @Override
