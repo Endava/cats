@@ -56,13 +56,13 @@ class SpacesOnlyInFieldsTrimValidateFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = spacesOnlyInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "schema");
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("  ");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");
 
         stringSchema.setMinLength(5);
 
         fuzzingStrategy = spacesOnlyInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "schema");
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("  ", stringSchema.getMinLength() + 1));
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat(" ", stringSchema.getMinLength() + 1));
         Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
@@ -77,6 +77,6 @@ class SpacesOnlyInFieldsTrimValidateFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = spacesOnlyInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "another_schema");
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("  ");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");
     }
 }
