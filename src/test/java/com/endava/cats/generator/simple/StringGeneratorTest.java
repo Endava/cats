@@ -4,8 +4,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 class StringGeneratorTest {
 
@@ -72,13 +70,6 @@ class StringGeneratorTest {
 
         String actual = StringGenerator.generateLeftBoundString(schema);
         Assertions.assertThat(actual).isEmpty();
-    }
-
-    @ParameterizedTest
-    @CsvSource({"[A-Z]$,[A-Z]", "[A-Z]+,[A-Z]", "[A-Z]*,[A-Z]", "[A-Z],[A-Z]", "^[A-Z],[A-Z]", "^(?!\\s*$).+,[a-zA-Z0-9]"})
-    void givenAPattern_whenSanitizing_thenTheRightCharactersAreRemoved(String pattern, String expected) {
-        String actual = StringGenerator.sanitize(pattern);
-        Assertions.assertThat(actual).isEqualTo(expected);
     }
 
 }

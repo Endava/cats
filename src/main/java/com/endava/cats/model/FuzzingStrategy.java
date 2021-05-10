@@ -47,10 +47,10 @@ public abstract class FuzzingStrategy {
         if (StringUtils.isBlank(value)) {
             return new ReplaceFuzzingStrategy().withData(innerValue);
         }
-        if (value.startsWith(" ")) {
+        if (value.startsWith(" ") || value.startsWith("\t")) {
             return new PrefixFuzzingStrategy().withData(innerValue);
         }
-        if (value.endsWith(" ")) {
+        if (value.endsWith(" ") || value.endsWith("\t")) {
             return new TrailFuzzingStrategy().withData(innerValue);
         }
 
@@ -65,7 +65,7 @@ public abstract class FuzzingStrategy {
     public String getData() {
         return this.data;
     }
-    
+
     public boolean isSkip() {
         return this.getClass().isAssignableFrom(SkipFuzzingStrategy.class);
     }

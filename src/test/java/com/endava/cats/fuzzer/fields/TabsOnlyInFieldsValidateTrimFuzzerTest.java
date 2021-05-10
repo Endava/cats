@@ -1,12 +1,12 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class SpacesOnlyInFieldsValidateTrimFuzzerTest {
+class TabsOnlyInFieldsValidateTrimFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -36,17 +36,17 @@ class SpacesOnlyInFieldsValidateTrimFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private SpacesOnlyInFieldsValidateTrimFuzzer spacesOnlyInFieldsValidateTrimFuzzer;
+    private TabsOnlyInFieldsValidateTrimFuzzer tabsOnlyInFieldsValidateTrimFuzzer;
 
     @BeforeEach
     void setup() {
-        spacesOnlyInFieldsValidateTrimFuzzer = new SpacesOnlyInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        tabsOnlyInFieldsValidateTrimFuzzer = new TabsOnlyInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
-    void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInFieldsValidateTrimFuzzer() {
-        Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+    void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTabsOnlyInFieldsValidateTrimFuzzer() {
+        Assertions.assertThat(tabsOnlyInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(tabsOnlyInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
@@ -54,18 +54,19 @@ class SpacesOnlyInFieldsValidateTrimFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = spacesOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema");
+        FuzzingStrategy fuzzingStrategy = tabsOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema");
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\t");
 
         stringSchema.setMinLength(5);
 
-        fuzzingStrategy = spacesOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema");
+        fuzzingStrategy = tabsOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema");
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat(" ", stringSchema.getMinLength() + 1));
-        Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.description()).isNotNull();
-        Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.getInvisibleChar()).isEqualTo(" ");
-        Assertions.assertThat(spacesOnlyInFieldsValidateTrimFuzzer.getInvisibleCharDescription()).isEqualTo("spaces");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\t", stringSchema.getMinLength() + 1));
+        Assertions.assertThat(tabsOnlyInFieldsValidateTrimFuzzer.description()).isNotNull();
+        Assertions.assertThat(tabsOnlyInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(tabsOnlyInFieldsValidateTrimFuzzer.getInvisibleChar()).isEqualTo("\t");
+        Assertions.assertThat(tabsOnlyInFieldsValidateTrimFuzzer.getInvisibleCharDescription()).isEqualTo("tabs");
     }
 }
+

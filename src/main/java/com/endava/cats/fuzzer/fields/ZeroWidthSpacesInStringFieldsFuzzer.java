@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -19,8 +20,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-@Component
-@FieldFuzzer
+//@Component
+//@FieldFuzzer
 @ConditionalOnProperty(value = "fuzzer.fields.ZeroWidthSpacesInStringFieldsFuzzer.enabled", havingValue = "true")
 public class ZeroWidthSpacesInStringFieldsFuzzer extends BaseBoundaryFieldFuzzer {
     protected static final String ZERO_WIDTH_SPACE = "\u200B";
@@ -55,6 +56,16 @@ public class ZeroWidthSpacesInStringFieldsFuzzer extends BaseBoundaryFieldFuzzer
     @Override
     public List<HttpMethod> skipFor() {
         return Arrays.asList(HttpMethod.GET, HttpMethod.DELETE);
+    }
+
+    @Override
+    protected ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
+        return ResponseCodeFamily.TWOXX;
+    }
+
+    @Override
+    protected ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
+        return ResponseCodeFamily.TWOXX;
     }
 
     @Override

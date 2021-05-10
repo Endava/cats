@@ -65,6 +65,8 @@ class SpacesOnlyInFieldsTrimValidateFuzzerTest {
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat(" ", stringSchema.getMinLength() + 1));
         Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.getInvisibleChar()).isEqualTo(" ");
+        Assertions.assertThat(spacesOnlyInFieldsTrimValidateFuzzer.getInvisibleCharDescription()).isEqualTo("spaces");
     }
 
     @Test

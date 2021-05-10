@@ -3,8 +3,10 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 class ZeroWidthSpacesInStringFieldsFuzzerTest {
@@ -52,5 +59,27 @@ class ZeroWidthSpacesInStringFieldsFuzzerTest {
         stringSchema.setMaxLength(max);
         String generatedValue = zeroWidthSpacesInStringFieldsFuzzer.getBoundaryValue(stringSchema);
         Assertions.assertThat(generatedValue).contains(ZeroWidthSpacesInStringFieldsFuzzer.ZERO_WIDTH_SPACE).hasSizeBetween(min, max);
+    }
+
+    @Test
+    void shouldHaveBoundariesDefined() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Map<String, Schema> schemaMap = new HashMap<>();
+        StringSchema stringSchema = new StringSchema();
+        schemaMap.put("schema", stringSchema);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
+        Assertions.assertThat(zeroWidthSpacesInStringFieldsFuzzer.hasBoundaryDefined("schema", data)).isTrue();
+    }
+
+    @Test
+    void shouldNotHaveBoundariesDefined() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Map<String, Schema> schemaMap = new HashMap<>();
+        StringSchema stringSchema = Mockito.mock(StringSchema.class);
+        Mockito.when(stringSchema.getEnum()).thenReturn(Collections.singletonList("TEST"));
+        schemaMap.put("schema", stringSchema);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
+        Assertions.assertThat(zeroWidthSpacesInStringFieldsFuzzer.hasBoundaryDefined("schema", data)).isFalse();
+
     }
 }
