@@ -11,21 +11,21 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.fields.SpacesOnlyInFieldsFuzzer.enabled}")
-public class SpacesOnlyInFieldsTrimValidateFuzzer extends InvisibleCharsOnlyTrimValidateFuzzer {
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.TrailingTabsInFieldsFuzzer.enabled}")
+public class TrailingTabsInFieldsValidateTrimFuzzer extends TrailingInvisibleCharsValidateTrimFuzzer {
 
     @Autowired
-    public SpacesOnlyInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    protected TrailingTabsInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
     @Override
     String getInvisibleChar() {
-        return " ";
+        return "\t";
     }
 
     @Override
     String getInvisibleCharDescription() {
-        return "spaces";
+        return "tabs";
     }
 }
