@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -19,6 +20,7 @@ import java.util.List;
 @ExtendWith(SpringExtension.class)
 @SpringJUnitConfig({FilterArguments.class, CheckArguments.class, CatsMain.class})
 @SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class FilterArgumentsTest {
 
     @Autowired
@@ -34,8 +36,6 @@ class FilterArgumentsTest {
             "checkHttp,HappyFuzzer,CheckSecurityHeadersFuzzer",
             "checkContract,TopLevelElementsContractInfoFuzzer,CheckSecurityHeadersFuzzer"})
     void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
-        clearCheckArgsFields();
-
         ReflectionTestUtils.setField(checkArguments, argument, "true");
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
 
@@ -46,8 +46,6 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllFuzzersWhenNoCheckSupplied() {
-        clearCheckArgsFields();
-
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
 
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
@@ -56,18 +54,29 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldRemoveSkippedFuzzers() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzers", "VeryLarge, SecurityHeaders, Jumbo");
+        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+
+        Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
+                .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeStringsFuzzer", "Jumbo");
+
+    }
+
+    @Test
+    void shouldOnlyIncludeSuppliedFuzzers() {
+        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", "VeryLarge, SecurityHeaders, Jumbo");
+        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+
+        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer", "Jumbo")
+                .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsFuzzer");
+    }
+
+    @Test
     void givenAContractAndAServerAndASkipFuzzerArgument_whenStartingCats_thenTheSkipForIsCorrectlyProcessed() {
         filterArguments.loadConfig("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeStringsFuzzerForPath=/pets");
         Assertions.assertThat(filterArguments.skipFuzzersForPaths)
                 .containsOnly(CatsSkipped.builder().fuzzer("VeryLargeStringsFuzzer").forPaths(Collections.singletonList("/pets")).build());
-    }
-
-
-    private void clearCheckArgsFields() {
-        ReflectionTestUtils.setField(checkArguments, "checkFields", "empty");
-        ReflectionTestUtils.setField(checkArguments, "checkHeaders", "empty");
-        ReflectionTestUtils.setField(checkArguments, "checkContract", "empty");
-        ReflectionTestUtils.setField(checkArguments, "checkHttp", "empty");
     }
 
 }

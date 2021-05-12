@@ -49,16 +49,16 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
                 .stream().filter(CATS_REMOVE_FIELD::equalsIgnoreCase).collect(Collectors.toList());
         logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
         Set<String> allFields = data.getAllFields();
-        allFields.removeAll(fieldsToBeRemoved);
+        fieldsToBeRemoved.forEach(allFields::remove);
 
         for (String fuzzedField : data.getAllFields()) {
-            testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField));
+            for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)) {
+                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy));
+            }
         }
     }
 
-    protected void process(FuzzingData data, String fuzzedField) {
-        FuzzingStrategy fuzzingStrategy = this.getFieldFuzzingStrategy(data, fuzzedField);
-
+    protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         FuzzingConstraints fuzzingConstraints = this.createFuzzingConstraints(data, fuzzingStrategy, fuzzedField);
 
         testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
@@ -161,9 +161,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      *
      * @param data        contains all details related to the current contract path
      * @param fuzzedField the name of the current field being fuzzed
-     * @return the FuzzingStrategy applied by the Fuzzer
+     * @return a list of FuzzingStrategies to be applied by the Fuzzer
      */
-    protected abstract FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField);
+    protected abstract List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField);
 
     /**
      * Override this in order to prevent the fuzzer from running for context particular to the given fuzzer.

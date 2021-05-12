@@ -34,7 +34,100 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 public class CatsUtil {
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
-
+    public static final List<String> WHITESPACES = Arrays.asList(
+            " ",
+            "\u2000",
+            "\u2001",
+            "\u2002",
+            "\u2003",
+            "\u2004",
+            "\u2005",
+            "\u2006",
+            "\u2007",
+            "\u2008",
+            "\u2009",
+            "\u200A",
+            "\u2028",
+            "\u2029",
+            "\u202F",
+            "\u205F");
+    public static final List<String> CONTROL_CHARS = Arrays.asList(
+            "\r\n",
+            "\u0000",
+            "\u0001",
+            "\u0002",
+            "\u0003",
+            "\u0004",
+            "\u0005",
+            "\u0006",
+            "\u0007",
+            "\u0008",
+            "\u0009",
+            "\n",
+            "\u000B",
+            "\u000C",
+            "\r",
+            "\u000E",
+            "\u200B",
+            "\u200C",
+            "\u200D",
+            "\u200E",
+            "\u200F",
+            "\u202A",
+            "\u202B",
+            "\u202C",
+            "\u202D",
+            "\u202E",
+            "\u000F",
+            "\u0010",
+            "\u0011",
+            "\u0012",
+            "\u0013",
+            "\u0014",
+            "\u0015",
+            "\u0016",
+            "\u0017",
+            "\u0018",
+            "\u0019",
+            "\u001A",
+            "\u001B",
+            "\u001C",
+            "\u001D",
+            "\u001E",
+            "\u001F",
+            "\u007F",
+            "\u0080",
+            "\u0081",
+            "\u0082",
+            "\u0083",
+            "\u0084",
+            "\u0085",
+            "\u0086",
+            "\u0087",
+            "\u0088",
+            "\u0089",
+            "\u008A",
+            "\u008B",
+            "\u008C",
+            "\u008D",
+            "\u008E",
+            "\u008F",
+            "\u0090",
+            "\u0091",
+            "\u0092",
+            "\u0093",
+            "\u0094",
+            "\u0095",
+            "\u0096",
+            "\u0097",
+            "\u0098",
+            "\u0099",
+            "\u009A",
+            "\u009B",
+            "\u009C",
+            "\u009D",
+            "\u009E",
+            "\u009F");
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())
             .jsonProvider(new JacksonJsonNodeJsonProvider())
@@ -215,11 +308,11 @@ public class CatsUtil {
             Object oldValue = context.read(sanitizeToJsonPath(jsonPropToGetValue));
             String valueToSet = fuzzingStrategyToApply.process(oldValue);
             if (mergeFuzzing) {
-                valueToSet = FuzzingStrategy.mergeFuzzing(this.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData(), "   ");
+                valueToSet = FuzzingStrategy.mergeFuzzing(this.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
             }
             context.set(sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
 
-            return new FuzzingResult(context.jsonString(), fuzzingStrategyToApply.process(oldValue));
+            return new FuzzingResult(context.jsonString(), valueToSet);
         }
         return FuzzingResult.empty();
     }

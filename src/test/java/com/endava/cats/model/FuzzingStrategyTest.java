@@ -21,15 +21,15 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenANullString_whenMergingTheFuzzingWithAnotherString_thenTheReplaceFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing(null, "air", space + space);
+        String result = FuzzingStrategy.mergeFuzzing(String.valueOf(space), "air");
 
-        Assertions.assertThat(result).isEqualTo(space + space);
+        Assertions.assertThat(result).isEqualTo(String.valueOf(space));
     }
 
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenASpacedPrefixedString_whenMergingTheFuzzingWithAnotherString_thenThePrefixFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing(space + space + "test", "air", space + space);
+        String result = FuzzingStrategy.mergeFuzzing(space + space + "test", "air");
 
         Assertions.assertThat(result).isEqualTo(space + space + "air");
     }
@@ -37,7 +37,7 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenASpaceTrailingString_whenMergingTheFuzzingWithAnotherString_thenTheTrailFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing("test" + space + space, "air", space + space);
+        String result = FuzzingStrategy.mergeFuzzing("test" + space + space, "air");
 
         Assertions.assertThat(result).isEqualTo("air" + space + space);
     }
@@ -45,14 +45,14 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenAnEmptyString_whenMergingTheFuzzingWithAnotherString_thenTheReplaceFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing(space + space, "air", "replaced");
+        String result = FuzzingStrategy.mergeFuzzing("replaced", "air");
 
         Assertions.assertThat(result).isEqualTo("replaced");
     }
 
     @Test
     void givenAStringWithNoSpaces_whenMergingTheFuzzingWithAnotherString_thenTheSuppliedValueIsUnchanged() {
-        String result = FuzzingStrategy.mergeFuzzing("test", "air", "replaced");
+        String result = FuzzingStrategy.mergeFuzzing("test", "air");
 
         Assertions.assertThat(result).isEqualTo("test");
     }
@@ -92,4 +92,19 @@ class FuzzingStrategyTest {
 
         Assertions.assertThat(strategy.truncatedValue()).isEqualTo(strategy.name());
     }
+
+    @ParameterizedTest
+    @CsvSource({"'\u2001'", "'\u0001'"})
+    void shouldMatchUnicodeWhitespaceAndPrefix(char c) {
+        String result = FuzzingStrategy.mergeFuzzing(c + "test", "air");
+        Assertions.assertThat(result).isEqualTo(c + "air");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"'\u2001'", "'\u0001'"})
+    void shouldMatchUnicodeWhitespaceAndTrail(char c) {
+        String result = FuzzingStrategy.mergeFuzzing("test" + c, "air");
+        Assertions.assertThat(result).isEqualTo("air" + c);
+    }
+
 }

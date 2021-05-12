@@ -1,7 +1,8 @@
 package com.endava.cats.model;
 
 import com.endava.cats.model.strategy.*;
-import org.apache.commons.lang3.StringUtils;
+
+import java.util.regex.Pattern;
 
 /**
  * Encapsulates various fuzzing strategies:
@@ -14,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
  * </ul>
  */
 public abstract class FuzzingStrategy {
-
+    private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}]+[\\p{C}\\p{Z}]*$");
     protected String data;
 
     public static FuzzingStrategy prefix() {
@@ -37,25 +38,51 @@ public abstract class FuzzingStrategy {
         return new TrailFuzzingStrategy();
     }
 
-    public static String mergeFuzzing(String fuzzedValue, String suppliedValue, String innerValue) {
-        FuzzingStrategy currentStrategy = fromValue(fuzzedValue, innerValue);
+    public static String mergeFuzzing(String fuzzedValue, String suppliedValue) {
+        FuzzingStrategy currentStrategy = fromValue(fuzzedValue);
 
         return currentStrategy.process(suppliedValue);
     }
 
-    public static FuzzingStrategy fromValue(String value, String innerValue) {
-        if (StringUtils.isBlank(value)) {
-            return new ReplaceFuzzingStrategy().withData(innerValue);
+    public static FuzzingStrategy fromValue(String value) {
+        if (value == null || ALL.matcher(value).matches()) {
+            return new ReplaceFuzzingStrategy().withData(value);
         }
-        if (value.startsWith(" ") || value.startsWith("\t")) {
-            return new PrefixFuzzingStrategy().withData(innerValue);
+        if (isUnicodeControlChar(value.charAt(0)) || isUnicodeWhitespace(value.charAt(0))) {
+            return new PrefixFuzzingStrategy().withData(value.replaceAll("[^\\p{Z}\\p{C}]+", ""));
         }
-        if (value.endsWith(" ") || value.endsWith("\t")) {
-            return new TrailFuzzingStrategy().withData(innerValue);
+        if (isUnicodeControlChar(value.charAt(value.length() - 1)) || isUnicodeWhitespace(value.charAt(value.length() - 1))) {
+            return new TrailFuzzingStrategy().withData(value.replaceAll("[^\\p{Z}\\p{C}]+", ""));
         }
 
         return new ReplaceFuzzingStrategy().withData(value);
     }
+
+    public static String formatValue(String data) {
+        if (data == null) {
+            return null;
+        }
+        StringBuilder builder = new StringBuilder();
+        for (char c : data.toCharArray()) {
+            if (isUnicodeWhitespace(c) || isUnicodeControlChar(c)) {
+                builder.append(String.format("\\u%04x", (int) c));
+            } else {
+                builder.append(c);
+            }
+        }
+        return builder.toString();
+    }
+
+    private static boolean isUnicodeControlChar(char c) {
+        return Character.getType(c) == Character.CONTROL || Character.getType(c) == Character.FORMAT
+                || Character.getType(c) == Character.PRIVATE_USE || Character.getType(c) == Character.SURROGATE;
+    }
+
+    private static boolean isUnicodeWhitespace(char c) {
+        return Character.getType(c) == Character.LINE_SEPARATOR ||
+                Character.getType(c) == Character.PARAGRAPH_SEPARATOR || Character.getType(c) == Character.SPACE_SEPARATOR;
+    }
+
 
     public FuzzingStrategy withData(String inner) {
         this.data = inner;
@@ -84,7 +111,7 @@ public abstract class FuzzingStrategy {
             if (data.length() > 30) {
                 toPrint = data.substring(0, 30) + "...";
             }
-            return this.name() + " with " + toPrint;
+            return this.name() + " with " + formatValue(toPrint);
         }
         return this.name();
     }
