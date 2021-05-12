@@ -151,7 +151,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 # CATS Running Times
 
 CATS has a significant number of `Fuzzers`. Currently, **61** and growing. Some of the `Fuzzers` are executing multiple test cases for every given fields within the request.
-For example the `ControlCharsOnlyInFieldsFuzzer` has **76** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1140 test cases**.
+For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 test cases**.
 Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (long meaning minutes, rather than seconds).
 
 
@@ -388,20 +388,34 @@ This `Fuzzer` will inject new fields inside the body of the requests. The new fi
 This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
 
 ### LeadingWhitespacesInFieldsTrimValidateFuzzer, TrailingWhitespacesInFieldsTrimValidateFuzzer and WhitespacesOnlyInFieldsTrimValidateFuzzer
-This `Fuzzers` will send Unicode whitespaces and invisible chars in each field. 
-The expected result is that the service will sanitize these values and a `2XX` response code is received.
+This `Fuzzers` will prefix or trail each field with Unicode whitespaces and invisible chars. 
+The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
 It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
 
-Please note that CATS tests iteratively for **16 whitespace characters**. This means that for **each field** within the requests CATS will run **16 test cases**.
+Please note that CATS tests iteratively for **18 whitespace characters**. This means that for **each field** within the requests CATS will run **18 test cases**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
 Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.   
 
 ### LeadingControlCharsInFieldsTrimValidateFuzzer, TrailingControlCharsInFieldsTrimValidateFuzzer and ControlCharsOnlyInFieldsTrimValidateFuzzer
-This `Fuzzers` will send Unicode control chars in each field.
-The expected result is that the service will sanitize these values and a `2XX` response code is received.
+This `Fuzzers` will prefix or trail each field with Unicode control chars.
+The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
 It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
 
-Please note that CATS tests iteratively for **76 control characters**. This means that for **each field** within the requests CATS will run **76 test cases**.
+Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 test cases**.
+This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
+Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
+
+### ControlCharsWithinFieldsSanitizeValidateFuzzer
+This `Fuzzers` will insert within each field Unicode control chars.
+
+Depending on the `--sanitizationStrategy` argument, this `Fuzzer` will expect:
+- `2XX` if `--sanitizationStrategy=sanitizeAndValidate`. This is also the default value (i.e. when not specifying and explicit strategy).
+- `2XX` or `4XX` depending on the specific regex set for the fuzzed field when `--sanitizationStrategy=validateAndSanitize`.
+
+These `Fuzzers` will fuzz only `String` fields.
+It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
+
+Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 test cases**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
 Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
 

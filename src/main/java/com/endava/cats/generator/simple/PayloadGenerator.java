@@ -54,7 +54,10 @@ public class PayloadGenerator {
         this.schemaMap = schemas;
     }
 
-    public static String generateValueBasedOnMinMAx(Schema<String> property) {
+    public static String generateValueBasedOnMinMAx(Schema<?> property) {
+        if (!CollectionUtils.isEmpty(property.getEnum())) {
+            return String.valueOf(property.getEnum().get(0));
+        }
         int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
         int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
         String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
@@ -65,7 +68,7 @@ public class PayloadGenerator {
     }
 
     public static FuzzingStrategy getFuzzStrategyWithRepeatedCharacterReplacingValidValue(FuzzingData data, String fuzzedField, String characterToRepeat) {
-        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
         String spaceValue = characterToRepeat;
         if (schema != null && schema.getMinLength() != null) {
             spaceValue = StringUtils.repeat(spaceValue, schema.getMinLength() + 1);
