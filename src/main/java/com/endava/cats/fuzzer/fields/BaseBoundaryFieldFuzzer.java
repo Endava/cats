@@ -1,15 +1,16 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.format.FormatGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,7 +31,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     }
 
     @Override
-    protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
+    protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
 
         if (this.fuzzedFieldHasAnAssociatedSchema(schema)) {
@@ -38,18 +39,18 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
 
             if (this.isFieldFuzzable(fuzzedField, data) && this.getBoundaryValue(schema) != null) {
                 logger.start("[{}]. Start fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
-                return FuzzingStrategy.replace().withData(this.getBoundaryValue(schema));
+                return Collections.singletonList(FuzzingStrategy.replace().withData(this.getBoundaryValue(schema)));
             } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
                 logger.skip("Boundaries not defined. Will skip fuzzing...");
-                return FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!");
+                return Collections.singletonList(FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!"));
             } else if (!this.isStringFormatRecognizable(schema) && isRequestSchemaMatchingFuzzerType(schema)) {
                 logger.skip("String format not supplied or not recognized [{}]", schema.getFormat());
-                return FuzzingStrategy.skip().withData("String format not supplied or not recognized!");
+                return Collections.singletonList(FuzzingStrategy.skip().withData("String format not supplied or not recognized!"));
             } else {
                 logger.skip("Not [{}]. Will skip fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
             }
         }
-        return FuzzingStrategy.skip().withData("Data type not matching " + getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+        return Collections.singletonList(FuzzingStrategy.skip().withData("Data type not matching " + getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet())));
     }
 
     private boolean isFieldFuzzable(String fuzzedField, FuzzingData data) {

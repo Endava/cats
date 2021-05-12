@@ -44,7 +44,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingData data = getMockFuzzingData();
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field");
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 
@@ -55,7 +55,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingData data = getMockFuzzingData();
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field");
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData()).startsWith("No LEFT or RIGHT boundary");
     }
@@ -66,7 +66,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingData data = getMockFuzzingData();
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field");
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData()).startsWith("Data type not matching [IntegerSchema]");
     }
@@ -77,7 +77,7 @@ class BaseBoundaryFieldFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(new HashMap<>());
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field");
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData()).startsWith("Data type not matching");
     }

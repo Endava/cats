@@ -21,7 +21,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with **no coding effort**. All tests cases are **generated and run automatically** based on a pre-defined 
-set of **58 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even end-to-end functional flows.
+set of **61 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even end-to-end functional flows.
 
 <div align="center">
   <img alt="CATS" width="100%" src="images/run_result.png"/>
@@ -39,6 +39,10 @@ Table of Contents
    * [Running CATS](#running-cats-with-fuzzers)
       * [Notes on Unit Tests](#notes-on-unit-tests)
       * [Notes on skipped Tests](#notes-on-skipped-tests)
+   * [CATS Running Time](#ss)
+        * [Split by Endpoints](#split-by-endpoints)
+        * [Split by Fuzzer Category](#split-by-fuzzer-category)
+        * [Split by Fuzzer Type](#split-by-fuzzer-type)
    * [Interpreting Results](#interpreting-results) 
    * [Available arguments](#available-arguments)
    * [Available Fuzzers](#available-fuzzers)
@@ -55,6 +59,8 @@ Table of Contents
          * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
          * [NewFieldsFuzzer](#newfieldsfuzzer)
          * [StringsInNumericFieldsFuzzer](#stringsinnumericfieldsfuzzer)
+         * [Control Chars Fuzzers](#leadingcontrolcharsinfieldstrimvalidatefuzzer-trailingcontrolcharsinfieldstrimvalidatefuzzer-and-controlcharsonlyinfieldstrimvalidatefuzzer)
+         * [Whitespace Fuzzers](#leadingwhitespacesinfieldstrimvalidatefuzzer-trailingwhitespacesinfieldstrimvalidatefuzzer-and-whitespacesonlyinfieldstrimvalidatefuzzer)
       * [Header Fuzzers](#header-fuzzers)
          * [LargeValuesInHeadersFuzzer](#largevaluesinheadersfuzzer)
          * [RemoveHeadersFuzzer](#removeheadersfuzzer)
@@ -142,7 +148,30 @@ This will output a `cats.jar` file in the current directory. The file is an exec
 
 You may see some `ERROR` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the `Fuzzers`.
 
-# Available commands
+# CATS Running Times
+
+CATS has a significant number of `Fuzzers`. Currently, **61** and growing. Some of the `Fuzzers` are executing multiple test cases for every given fields within the request.
+For example the `ControlCharsOnlyInFieldsFuzzer` has **76** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1140 test cases**.
+Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (long meaning minutes, rather than seconds).
+
+
+Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages ina deployment pipeline, one after the other.
+
+## Split by Endpoints
+You can use the `--paths=PATH` argument to run CATS sequentially for each path.
+
+## Split by Fuzzer Category
+You can use the `--checkXXX` arguments to run CATS only with specific `Fuzzers` like: `--checkHttp`, `-checkFields`, etc.
+
+## Split by Fuzzer Type
+You can use various arguments like `--fuzers=XXX` or `-skipFuzzer=XXX` to either include or exclude specific `Fuzzers`. 
+For example, you can run all `Fuzzers` except for the `Control Chars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
+After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
+
+
+These are just some recommendations on how you can split the types of tests cases. Depending on how complex your API is, you might go with a combination of the above or with even more granular splits.
+
+# Available Commands
 To list all available commands, run CATS with no arguments:
 `./cats.jar` 
 
@@ -190,7 +219,7 @@ And this is what you get when you click on a specific test:
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
 - `--server=URL` supplies the URL of the service implementing the contract.
 - `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth.
-- `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. If the argument is not supplied all fuzzers will be run.
+- `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. The supplied list of Fuzzers can be partial names, not full Fuzzer names. CATS which check for all Fuzzers containing the supplied strings. If the argument is not supplied, all fuzzers will be run.
 - `--log=PACKAGE:LEVEL` can configure custom log level for a given package. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug`
 - `--paths=PATH_LIST` supplies a comma separated list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
 - `--skipPaths=PATH_LIST` a comma separated list of paths to ignore. If no path is supplied, no path will be ignored
@@ -203,7 +232,7 @@ And this is what you get when you click on a specific test:
 - `--urlParams` A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs. This is useful when you have static parameters in URLs (like 'version' for example).
 - `--customFuzzerFile` a file used by the `CustomFuzzer` that will be used to create user-supplied payloads.
 - `--skipXXXForPath=path1,path2` can configure a fuzzer to be skipped for the specified paths. You must provide a full `Fuzzer` name instead of `XXX`. For example: `--skipVeryLargeStringsFuzzerForPath=/path1,/path2`
-- `--excludedFuzzers=LIST_OF_FIZZERs` a comma separated list of fuzzers that will be excluded for **all** paths. You must provide full `Fuzzer`. For example: `--excludedFuzzers=VeryLargeStringsFuzzer`
+- `--skipFuzzers=LIST_OF_FIZZERs` a comma separated list of fuzzers that will be skipped for **all** paths. You can either provide full `Fuzzer` names (for example: `--skippedFuzzers=VeryLargeStringsFuzzer`) or partial `Fuzzer` names (for example: `--skipFuzzers=VeryLarge`). `CATS` will check if the `Fuzzer` names contains the string you provide in the arguments value.
 - `--securityFuzzerFile` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method
 - `--timestampReports` If supplied (no value needed), it will output the report still inside the `cats-report` folder, but in a sub-folder with the current timestamp
@@ -232,7 +261,7 @@ There are multiple categories of `Fuzzers` available:
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow or security testing
 
 ## Field Fuzzers
-`CATS` has currently 28 registered Field `Fuzzers`:
+`CATS` has currently 31 registered Field `Fuzzers`:
 - `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -245,21 +274,24 @@ There are multiple categories of `Fuzzers` available:
 - `IntegerFieldsLeftBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the left side in the targeted field
 - `IntegerFieldsRightBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the right side in the targeted field
 - `InvalidValuesInEnumsFieldsFuzzer` - iterate through each ENUM field and send invalid values
-- `LeadingSpacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with spaces prefixing the current value in the targeted field
-- `MaxLengthExactValuesInStringFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.StringSchema] fields that have maxLength declared and send requests with values matching the maxLength size/value in the targeted field
-- `MaximumExactValuesInNumericFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.NumberSchema, class io.swagger.v3.oas.models.media.IntegerSchema] fields that have maximum declared and send requests with values matching the maximum size/value in the targeted field
-- `MinLengthExactValuesInStringFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.StringSchema] fields that have minLength declared and send requests with values matching the minLength size/value in the targeted field
-- `MinimumExactValuesInNumericFieldsFuzzer` - iterate through each [class io.swagger.v3.oas.models.media.NumberSchema, class io.swagger.v3.oas.models.media.IntegerSchema] fields that have minimum declared and send requests with values matching the minimum size/value in the targeted field
+- `LeadingWhitespacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode whitespaces and invisible separators prefixing the current value in the targeted field
+- `LeadingControlCharsInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode control chars prefixing the current value in the targeted field
+- `MaxLengthExactValuesInStringFieldsFuzzer` - iterate through each **String** fields that have maxLength declared and send requests with values matching the maxLength size/value in the targeted field
+- `MaximumExactValuesInNumericFieldsFuzzer` - iterate through each **Number and Integer** fields that have maximum declared and send requests with values matching the maximum size/value in the targeted field
+- `MinLengthExactValuesInStringFieldsFuzzer` - iterate through each **String** fields that have minLength declared and send requests with values matching the minLength size/value in the targeted field
+- `MinimumExactValuesInNumericFieldsFuzzer` - iterate through each **Number and Integer** fields that have minimum declared and send requests with values matching the minimum size/value in the targeted field
 - `NewFieldsFuzzer` - send a 'happy' flow request and add a new field inside the request called 'catsFuzzyField'
 - `NullValuesInFieldsFuzzer` - iterate through each field and send requests with null values in the targeted field
 - `RemoveFieldsFuzzer` - iterate through each request fields and remove certain fields according to the supplied 'fieldsFuzzingStrategy'
-- `SpacesOnlyInFieldsTrimValidateFuzzer` - iterate through each field and send requests with spaces in the targeted field
+- `WhitespacesOnlyInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode whitespaces and invisible separators in the targeted field
+- `ControlCharsOnlyInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode control chars in the targeted field
 - `StringFieldsLeftBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the left side in the targeted field
 - `StringFieldsRightBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the right side in the targeted field
 - `StringFormatAlmostValidValuesFuzzer` - iterate through each String field and get its 'format' value (i.e. email, ip, uuid, date, datetime, etc); send requests with values which are almost valid (i.e. email@yhoo. for email, 888.1.1. for ip, etc)  in the targeted field
 - `StringFormatTotallyWrongValuesFuzzer` - iterate through each String field and get its 'format' value (i.e. email, ip, uuid, date, datetime, etc); send requests with values which are totally wrong (i.e. abcd for email, 1244. for ip, etc)  in the targeted field
 - `StringsInNumericFieldsFuzzer` - iterate through each Integer (int, long) and Number field (float, double) and send requests having the `fuzz` string value in the targeted field
-- `TrailingSpacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with trailing spaces in the targeted field
+- `TrailingWhitespacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with trailing with Unicode whitespaces and invisible separators in the targeted field
+- `TrailingControlCharsInFieldsTrimValidateFuzzer` - iterate through each field and send requests with trailing with Unicode control chars in the targeted field
 - `VeryLargeStringsFuzzer` - iterate through each String field and send requests with very large values (40000 characters) in the targeted field
 
 You can run only these `Fuzzers` by supplying the `--checkFields` argument.
@@ -354,6 +386,24 @@ This `Fuzzer` will inject new fields inside the body of the requests. The new fi
 
 ### StringsInNumericFieldsFuzzer
 This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
+
+### LeadingWhitespacesInFieldsTrimValidateFuzzer, TrailingWhitespacesInFieldsTrimValidateFuzzer and WhitespacesOnlyInFieldsTrimValidateFuzzer
+This `Fuzzers` will send Unicode whitespaces and invisible chars in each field. 
+The expected result is that the service will sanitize these values and a `2XX` response code is received.
+It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
+
+Please note that CATS tests iteratively for **16 whitespace characters**. This means that for **each field** within the requests CATS will run **16 test cases**.
+This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
+Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.   
+
+### LeadingControlCharsInFieldsTrimValidateFuzzer, TrailingControlCharsInFieldsTrimValidateFuzzer and ControlCharsOnlyInFieldsTrimValidateFuzzer
+This `Fuzzers` will send Unicode control chars in each field.
+The expected result is that the service will sanitize these values and a `2XX` response code is received.
+It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
+
+Please note that CATS tests iteratively for **76 control characters**. This means that for **each field** within the requests CATS will run **76 test cases**.
+This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
+Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
 
 
 ## Header Fuzzers

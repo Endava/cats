@@ -390,7 +390,7 @@ public class ServiceCaller {
             method.setHeader(suppliedHeader.getKey(), suppliedHeader.getValue());
         } else {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try these behaviour on a valid header value */
-            String finalHeaderValue = FuzzingStrategy.mergeFuzzing(method.getFirstHeader(suppliedHeader.getKey()).getValue(), suppliedHeader.getValue(), "    ");
+            String finalHeaderValue = FuzzingStrategy.mergeFuzzing(method.getFirstHeader(suppliedHeader.getKey()).getValue(), suppliedHeader.getValue());
             method.setHeader(suppliedHeader.getKey(), finalHeaderValue);
             LOGGER.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }

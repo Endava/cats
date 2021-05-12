@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
@@ -8,7 +9,6 @@ import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -22,10 +22,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @ExtendWith(SpringExtension.class)
 class BaseFieldsFuzzerTest {
@@ -131,8 +128,8 @@ class BaseFieldsFuzzerTest {
         }
 
         @Override
-        protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-            return FuzzingStrategy.replace();
+        protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
+            return Collections.singletonList(FuzzingStrategy.replace());
         }
 
         @Override
@@ -168,8 +165,8 @@ class BaseFieldsFuzzerTest {
         }
 
         @Override
-        protected FuzzingStrategy getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-            return FuzzingStrategy.skip();
+        protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
+            return Collections.singletonList(FuzzingStrategy.skip());
         }
 
         @Override

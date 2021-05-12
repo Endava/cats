@@ -2,7 +2,6 @@ package com.endava.cats.args;
 
 import com.endava.cats.fuzzer.*;
 import com.endava.cats.model.CatsSkipped;
-import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
@@ -32,8 +31,8 @@ public class FilterArguments {
     private String paths;
     @Value("${skipPaths:empty}")
     private String skipPaths;
-    @Value("${excludedFuzzers:empty}")
-    private String excludedFuzzers;
+    @Value("${skipFuzzers:empty}")
+    private String skipFuzzers;
 
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
@@ -41,8 +40,8 @@ public class FilterArguments {
     private String pathsHelp;
     @Value("${arg.filter.skipPaths.help:help}")
     private String skipPathsHelp;
-    @Value("${arg.filter.excludedFuzzers.help:help}")
-    private String excludedFuzzersHelp;
+    @Value("${arg.filter.skipFuzzers.help:help}")
+    private String skipFuzzersHelp;
     @Value("${arg.filter.skipXXXForPath.help:help}")
     private String skipXXXForPathHelp;
 
@@ -55,7 +54,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("fuzzers").value(suppliedFuzzers).help(suppliedFuzzersHelp).build());
         args.add(CatsArg.builder().name("paths").value(paths).help(pathsHelp).build());
         args.add(CatsArg.builder().name("skipPaths").value(skipPaths).help(skipPathsHelp).build());
-        args.add(CatsArg.builder().name("excludedFuzzers").value(excludedFuzzers).help(excludedFuzzersHelp).build());
+        args.add(CatsArg.builder().name("excludedFuzzers").value(skipFuzzers).help(skipFuzzersHelp).build());
         args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
     }
 
@@ -85,20 +84,28 @@ public class FilterArguments {
     }
 
     public List<String> getFuzzersForPath(String pathKey) {
-        List<String> allFuzzersName = this.constructFuzzersList();
-        List<String> allowedFuzzers = allFuzzersName;
+        List<String> allowedFuzzers = processSuppliedFuzzers();
+        allowedFuzzers = this.removeSkippedFuzzersForPath(pathKey, allowedFuzzers);
+        allowedFuzzers = this.removeSkippedFuzzersForPath(allowedFuzzers);
 
-        if (!ALL.equalsIgnoreCase(suppliedFuzzers)) {
-            allowedFuzzers = Stream.of(suppliedFuzzers.split(",")).collect(Collectors.toList());
-        }
-
-        allowedFuzzers = this.removeSkippedFuzzers(pathKey, allowedFuzzers);
-        allowedFuzzers = this.removeExcludedFuzzers(allowedFuzzers);
-
-        return CatsUtil.filterAndPrintNotMatching(allowedFuzzers, allFuzzersName::contains, LOGGER, "Supplied Fuzzer does not exist {}", Object::toString);
+        return allowedFuzzers;
     }
 
-    private List<String> constructFuzzersList() {
+    private List<String> processSuppliedFuzzers() {
+        List<String> initialFuzzersList = this.constructFuzzersListFromCheckArguments();
+
+        if (!ALL.equalsIgnoreCase(suppliedFuzzers)) {
+            List<String> suppliedFuzzerNames = Stream.of(suppliedFuzzers.split(",")).map(String::trim).collect(Collectors.toList());
+            initialFuzzersList = initialFuzzersList.stream()
+                    .filter(fuzzer ->
+                            suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
+                    .collect(Collectors.toList());
+        }
+
+        return initialFuzzersList;
+    }
+
+    private List<String> constructFuzzersListFromCheckArguments() {
         List<String> finalList = new ArrayList<>();
         finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.checkFields(), FieldFuzzer.class));
         finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.checkContract(), ContractInfoFuzzer.class));
@@ -119,15 +126,18 @@ public class FilterArguments {
         return Collections.emptyList();
     }
 
-    private List<String> removeSkippedFuzzers(String pathKey, List<String> allowedFuzzers) {
+    private List<String> removeSkippedFuzzersForPath(String pathKey, List<String> allowedFuzzers) {
         return allowedFuzzers.stream().filter(fuzzer -> skipFuzzersForPaths.stream()
                 .noneMatch(catsSkipped -> catsSkipped.getFuzzer().equalsIgnoreCase(fuzzer) && catsSkipped.getForPaths().contains(pathKey)))
                 .collect(Collectors.toList());
     }
 
-    private List<String> removeExcludedFuzzers(List<String> allowedFuzzers) {
-        List<String> fuzzersToExclude = Stream.of(excludedFuzzers.split(",")).collect(Collectors.toList());
-        return allowedFuzzers.stream().filter(fuzzer -> !fuzzersToExclude.contains(fuzzer)).collect(Collectors.toList());
-    }
+    private List<String> removeSkippedFuzzersForPath(List<String> allowedFuzzers) {
+        List<String> fuzzersToExclude = Stream.of(skipFuzzers.split(",")).map(String::trim).collect(Collectors.toList());
 
+        return allowedFuzzers.stream()
+                .filter(fuzzer ->
+                        fuzzersToExclude.stream().noneMatch(fuzzer::contains))
+                .collect(Collectors.toList());
+    }
 }

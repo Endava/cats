@@ -1,40 +1,37 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Component
-@FieldFuzzer
-@ConditionalOnProperty(value = "fuzzer.fields.EmptyStringValuesInFieldsFuzzer.enabled", havingValue = "true")
-public class EmptyStringValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
+public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
 
-    @Autowired
-    public EmptyStringValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    protected InvisibleCharsOnlyTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
     @Override
     protected String typeOfDataSentToTheService() {
-        return "empty strings";
+        return this.getInvisibleCharDescription() + " only";
     }
 
     @Override
     protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return Collections.singletonList(FuzzingStrategy.replace().withData(""));
+        return this.getInvisibleChars()
+                .stream().map(value -> PayloadGenerator.getFuzzStrategyWithRepeatedCharacterReplacingValidValue(data, fuzzedField, value))
+                .collect(Collectors.toList());
+
     }
 
     @Override
@@ -49,6 +46,10 @@ public class EmptyStringValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFie
 
     @Override
     public String description() {
-        return "iterate through each field and send requests with empty String values in the targeted field";
+        return "iterate through each field and send requests with " + this.getInvisibleCharDescription() + " in the targeted field";
     }
+
+    abstract List<String> getInvisibleChars();
+
+    abstract String getInvisibleCharDescription();
 }
