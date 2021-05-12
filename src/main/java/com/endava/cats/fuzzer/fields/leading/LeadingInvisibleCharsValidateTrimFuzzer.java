@@ -30,14 +30,6 @@ public abstract class LeadingInvisibleCharsValidateTrimFuzzer extends ExpectOnly
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Fields used as discriminators will not be fuzzed with leading spaces as they are usually used by marshalling frameworks to choose sub-types.
-     *
-     * @param data
-     * @param fuzzedField
-     * @param fuzzingStrategy
-     * @return
-     */
     @Override
     protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return !PayloadGenerator.GlobalData.getDiscriminators().contains(fuzzedField);
