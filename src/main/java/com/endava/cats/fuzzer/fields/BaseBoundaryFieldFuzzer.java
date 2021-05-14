@@ -32,7 +32,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
 
     @Override
     protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
 
         if (this.fuzzedFieldHasAnAssociatedSchema(schema)) {
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());

@@ -36,9 +36,6 @@ public class ExtraHeaderFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (data.getHeaders().isEmpty()) {
-            LOGGER.skip("No headers to fuzz");
-        }
         testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
     }
 
