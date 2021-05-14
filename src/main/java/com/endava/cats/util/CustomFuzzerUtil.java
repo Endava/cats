@@ -106,6 +106,9 @@ public class CustomFuzzerUtil {
             verifies.forEach((key, value) -> {
                 String valueToCheck = responseValues.get(key);
                 valueToCheck = catsDSLParser.parseAndGetResult(valueToCheck, response.getBody());
+                if (value.startsWith("$")) {
+                    value = variables.get(value.substring(1));
+                }
                 Matcher verifyMatcher = Pattern.compile(value).matcher(valueToCheck);
                 if (!verifyMatcher.matches()) {
                     errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, value));
