@@ -1,6 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.model.strategy.*;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.regex.Pattern;
 
@@ -45,7 +46,7 @@ public abstract class FuzzingStrategy {
     }
 
     public static FuzzingStrategy fromValue(String value) {
-        if (value == null || ALL.matcher(value).matches()) {
+        if (StringUtils.isBlank(value) || ALL.matcher(value).matches()) {
             return new ReplaceFuzzingStrategy().withData(value);
         }
         if (isUnicodeControlChar(value.charAt(0)) || isUnicodeWhitespace(value.charAt(0))) {
