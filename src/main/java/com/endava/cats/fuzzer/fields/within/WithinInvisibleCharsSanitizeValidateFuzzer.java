@@ -4,12 +4,14 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.ExpectOnly2XXBaseFieldsFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class WithinInvisibleCharsSanitizeValidateFuzzer extends ExpectOnly2XXBaseFieldsFuzzer {
@@ -37,6 +39,12 @@ public abstract class WithinInvisibleCharsSanitizeValidateFuzzer extends ExpectO
     @Override
     protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return !PayloadGenerator.GlobalData.getDiscriminators().contains(fuzzedField);
+    }
+
+
+    @Override
+    public List<HttpMethod> skipFor() {
+        return Arrays.asList(HttpMethod.GET, HttpMethod.DELETE);
     }
 
     @Override

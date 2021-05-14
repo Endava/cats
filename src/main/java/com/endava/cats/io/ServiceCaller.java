@@ -206,7 +206,6 @@ public class ServiceCaller {
         return this.replacePathWithRefData(data, actualUrl);
     }
 
-
     /**
      * Parameters in the URL will be replaced with actual values supplied in the {@code --urlParams} parameter
      *
@@ -224,11 +223,9 @@ public class ServiceCaller {
         return startingUrl;
     }
 
-
     private String replaceRemovedParams(String path) {
         return path.replaceAll("\\{(.*?)}", "");
     }
-
 
     private CatsResponse createAndExecute(ServiceData data, HttpRequestBase method) {
         String processedPayload = this.replacePayloadWithRefData(data);
@@ -449,4 +446,5 @@ public class ServiceCaller {
             return payload;
         }
     }
+
 }
