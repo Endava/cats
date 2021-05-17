@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class ControlCharsOnlyInFieldsValidateTrimFuzzerTest {
+class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -36,17 +36,17 @@ class ControlCharsOnlyInFieldsValidateTrimFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private ControlCharsOnlyInFieldsValidateTrimFuzzer controlCharsOnlyInFieldsValidateTrimFuzzer;
+    private OnlyControlCharsInFieldsValidateTrimFuzzer onlyControlCharsInFieldsValidateTrimFuzzer;
 
     @BeforeEach
     void setup() {
-        controlCharsOnlyInFieldsValidateTrimFuzzer = new ControlCharsOnlyInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        onlyControlCharsInFieldsValidateTrimFuzzer = new OnlyControlCharsInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
     void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTabsOnlyInFieldsValidateTrimFuzzer() {
-        Assertions.assertThat(controlCharsOnlyInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(controlCharsOnlyInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
@@ -54,19 +54,19 @@ class ControlCharsOnlyInFieldsValidateTrimFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = controlCharsOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
+        FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0000");
 
         stringSchema.setMinLength(5);
 
-        fuzzingStrategy = controlCharsOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
+        fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\u0000", stringSchema.getMinLength() + 1));
-        Assertions.assertThat(controlCharsOnlyInFieldsValidateTrimFuzzer.description()).isNotNull();
-        Assertions.assertThat(controlCharsOnlyInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(controlCharsOnlyInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");
-        Assertions.assertThat(controlCharsOnlyInFieldsValidateTrimFuzzer.getInvisibleCharDescription()).isEqualTo("unicode control characters");
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleCharDescription()).isEqualTo("unicode control characters");
     }
 }
 

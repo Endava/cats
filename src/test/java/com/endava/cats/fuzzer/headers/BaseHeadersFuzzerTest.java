@@ -66,7 +66,7 @@ class BaseHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
                 responses(responses).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
@@ -81,7 +81,7 @@ class BaseHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").required(true).build())).
                 responses(responses).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
@@ -111,8 +111,8 @@ class BaseHeadersFuzzerTest {
         }
 
         @Override
-        protected FuzzingStrategy fuzzStrategy() {
-            return FuzzingStrategy.replace();
+        protected List<FuzzingStrategy> fuzzStrategy() {
+            return Collections.singletonList(FuzzingStrategy.replace());
         }
 
         @Override

@@ -13,7 +13,7 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize' and ${fuzzer.fields.ControlCharsWhithinFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize' and ${fuzzer.fields.ControlCharsWithinFieldsFuzzer.enabled}")
 public class ControlCharsWithinFieldsValidateSanitizeFuzzer extends WithinInvisibleCharsValidateSanitizeFuzzer {
 
     @Autowired

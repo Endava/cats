@@ -13,21 +13,21 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.ControlCharsOnlyInFieldsFuzzer.enabled}")
-public class ControlCharsOnlyInFieldsValidateTrimFuzzer extends InvisibleCharsOnlyValidateTrimFuzzer {
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.OnlyWhitespacesInFieldsFuzzer.enabled}")
+public class OnlyWhitespacesInFieldsValidateTrimFuzzer extends InvisibleCharsOnlyValidateTrimFuzzer {
 
     @Autowired
-    public ControlCharsOnlyInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    public OnlyWhitespacesInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
     @Override
     List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS;
+        return CatsUtil.WHITESPACES;
     }
 
     @Override
     String getInvisibleCharDescription() {
-        return "unicode control characters";
+        return "unicode whitespaces and invisible separators";
     }
 }

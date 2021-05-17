@@ -3,8 +3,8 @@ package com.endava.cats.model;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.apache.http.Header;
 
 import java.io.StringReader;
 import java.util.List;
@@ -35,5 +35,11 @@ public class CatsRequest {
 
     public void setHttpMethod(String method) {
         this.httpMethod = method;
+    }
+
+    @AllArgsConstructor
+    public static class Header {
+        private String name;
+        private String value;
     }
 }

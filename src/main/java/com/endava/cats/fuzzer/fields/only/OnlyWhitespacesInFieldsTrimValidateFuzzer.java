@@ -13,11 +13,11 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.fields.WhitespacesOnlyInFieldsFuzzer.enabled}")
-public class WhitespacesOnlyInFieldsTrimValidateFuzzer extends InvisibleCharsOnlyTrimValidateFuzzer {
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.fields.OnlyWhitespacesInFieldsFuzzer.enabled}")
+public class OnlyWhitespacesInFieldsTrimValidateFuzzer extends InvisibleCharsOnlyTrimValidateFuzzer {
 
     @Autowired
-    public WhitespacesOnlyInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    public OnlyWhitespacesInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 

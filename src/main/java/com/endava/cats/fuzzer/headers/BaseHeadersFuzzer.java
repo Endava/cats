@@ -14,6 +14,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,23 +39,25 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(headersWithoutAuth);
 
         for (CatsHeader header : clonedHeaders) {
-            testCaseListener.createAndExecuteTest(logger, this, () -> process(fuzzingData, clonedHeaders, header));
+            for (FuzzingStrategy fuzzingStrategy : fuzzStrategy()) {
+                testCaseListener.createAndExecuteTest(logger, this, () -> process(fuzzingData, clonedHeaders, header, fuzzingStrategy));
+            }
         }
     }
 
-    private void process(FuzzingData data, Set<CatsHeader> clonedHeaders, CatsHeader header) {
+    private void process(FuzzingData data, Set<CatsHeader> clonedHeaders, CatsHeader header, FuzzingStrategy fuzzingStrategy) {
         String previousHeaderValue = header.getValue();
-        header.withValue(this.fuzzStrategy().process(previousHeaderValue));
+        header.withValue(fuzzingStrategy.process(previousHeaderValue));
         try {
             boolean isRequiredHeaderFuzzed = clonedHeaders.stream().filter(CatsHeader::isRequired).collect(Collectors.toList()).contains(header);
 
-            testCaseListener.addScenario(logger, "Send [{}] in headers: header [{}] with value [{}]", this.typeOfDataSentToTheService(), header.getName(), header.getTruncatedValue());
+            testCaseListener.addScenario(logger, "Send [{}] in headers: header [{}] with value [{}]", this.typeOfDataSentToTheService(), header.getName(), fuzzingStrategy.truncatedValue());
             testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", this.getExpectedResultCode(isRequiredHeaderFuzzed).asString());
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(clonedHeaders)
-                    .payload(data.getPayload()).fuzzedHeader(header.getName()).queryParams(data.getQueryParams()).build();
+                    .payload(data.getPayload()).fuzzedHeader(header.getName()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build();
 
-            CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
+            CatsResponse response = serviceCaller.call(serviceData);
 
             testCaseListener.reportResult(logger, data, response, this.getExpectedResultCode(isRequiredHeaderFuzzed));
         } finally {
@@ -88,7 +91,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
      *
      * @return expected FuzzingStrategy
      */
-    protected abstract FuzzingStrategy fuzzStrategy();
+    protected abstract List<FuzzingStrategy> fuzzStrategy();
 
     public Set<CatsHeader> getHeadersWithoutAuth(Set<CatsHeader> headers) {
         Set<CatsHeader> headersWithoutAuth = headers.stream()

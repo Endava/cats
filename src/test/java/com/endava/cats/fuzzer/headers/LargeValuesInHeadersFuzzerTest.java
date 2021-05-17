@@ -29,8 +29,8 @@ class LargeValuesInHeadersFuzzerTest {
     void givenANewLargeValuesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLargeValuesInHeadersFuzzer() {
         Assertions.assertThat(largeValuesInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(largeValuesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(largeValuesInHeadersFuzzer.fuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(largeValuesInHeadersFuzzer.fuzzStrategy().getData()).hasSizeGreaterThan(1500);
+        Assertions.assertThat(largeValuesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(largeValuesInHeadersFuzzer.fuzzStrategy().get(0).getData()).hasSizeGreaterThan(1500);
 
     }
 }

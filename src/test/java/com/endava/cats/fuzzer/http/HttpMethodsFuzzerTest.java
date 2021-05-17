@@ -71,13 +71,7 @@ class HttpMethodsFuzzerTest {
     void givenAnOperation_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).build();
-        Mockito.when(serviceCaller.post(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.get(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.delete(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.trace(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.head(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.patch(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.put(Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(7)).reportInfo(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405));
@@ -87,13 +81,7 @@ class HttpMethodsFuzzerTest {
     void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWithA2xx_thenResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.post(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.get(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.delete(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.trace(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.head(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.patch(Mockito.any())).thenReturn(catsResponse);
-        Mockito.when(serviceCaller.put(Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405), Mockito.eq(200));

@@ -1,5 +1,6 @@
 package com.endava.cats.io;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +16,7 @@ public class ServiceData {
     private final String relativePath;
     private final Collection<CatsHeader> headers;
     private final String payload;
+    private final HttpMethod httpMethod;
     @Builder.Default
     private final boolean replaceRefData = true;
     @Builder.Default

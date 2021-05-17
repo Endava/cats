@@ -1,7 +1,5 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.fuzzer.http.HappyFuzzer;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
@@ -65,7 +63,7 @@ class HappyFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").
                 responses(responses).responseCodes(Collections.singleton("200")).build();
 
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         happyFuzzer.fuzz(data);
 
@@ -77,7 +75,7 @@ class HappyFuzzerTest {
     @Test
     void givenARequest_whenCallingTheHappyFuzzerAndAnErrorOccurs_thenTestCasesAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").responseCodes(Collections.singleton("200")).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenThrow(new RuntimeException());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException());
 
         happyFuzzer.fuzz(data);
 

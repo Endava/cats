@@ -3,7 +3,6 @@ package com.endava.cats.io;
 import com.endava.cats.CatsMain;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -17,41 +16,31 @@ import com.google.gson.JsonObject;
 import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.*;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
 import javax.annotation.PostConstruct;
+import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
@@ -71,8 +60,8 @@ public class ServiceCaller {
     private final TestCaseListener testCaseListener;
     private final CatsDSLParser catsDSLParser;
     private final AuthArguments authArguments;
-
-    HttpClient httpClient;
+    //    HttpClient httpClient;
+    OkHttpClient okHttpClient;
 
     @Value("${proxyHost:empty}")
     private String proxyHost;
@@ -90,94 +79,128 @@ public class ServiceCaller {
         this.authArguments = authArguments;
     }
 
+
     @PostConstruct
     public void initHttpClient() {
         try {
-            SSLConnectionSocketFactory sslSocketFactory = this.buildSSLContextFactory();
-            Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory>create().register("http", PlainConnectionSocketFactory.getSocketFactory()).register("https", sslSocketFactory).build();
-            PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
-            connectionManager.setMaxTotal(100);
-            connectionManager.setDefaultMaxPerRoute(100);
-            HttpHost httpHost = getProxyConfig();
-            httpClient = HttpClients.custom().setConnectionManager(connectionManager).setSSLSocketFactory(sslSocketFactory).setProxy(httpHost).build();
+            final TrustManager[] trustAllCerts = this.buildTrustAllManager();
+            final SSLSocketFactory sslSocketFactory = this.buildSslSocketFactory(trustAllCerts);
+
+            okHttpClient = new OkHttpClient.Builder()
+                    .proxy(this.getProxyConfig())
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(10, TimeUnit.SECONDS)
+                    .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
+                    .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+                    .hostnameVerifier((hostname, session) -> true).build();
         } catch (GeneralSecurityException | IOException e) {
             LOGGER.warning("Failed to configure HTTP CLIENT", e);
         }
     }
 
-    private HttpHost getProxyConfig() {
-        HttpHost httpHost = null;
-        if (!EMPTY.equalsIgnoreCase(proxyHost)) {
-            LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
-            httpHost = new HttpHost(proxyHost, proxyPort);
-        }
-        return httpHost;
+    private TrustManager[] buildTrustAllManager() {
+        return new TrustManager[]{
+                new X509TrustManager() {
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                    }
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                }
+        };
     }
 
-    private SSLConnectionSocketFactory buildSSLContextFactory() throws GeneralSecurityException, IOException {
-        SSLContextBuilder sslContextBuilder = new SSLContextBuilder().loadTrustMaterial(null, TrustAllStrategy.INSTANCE);
+    private SSLSocketFactory buildSslSocketFactory(TrustManager[] trustAllCerts) throws IOException, GeneralSecurityException {
+        final SSLContext sslContext = SSLContext.getInstance("SSL");
 
         if (!EMPTY.equalsIgnoreCase(authArguments.getSslKeystore())) {
             KeyStore keyStore = KeyStore.getInstance("jks");
             keyStore.load(new FileInputStream(authArguments.getSslKeystore()), authArguments.getSslKeystorePwd().toCharArray());
-            sslContextBuilder.loadKeyMaterial(keyStore, authArguments.getSslKeyPwd().toCharArray());
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, authArguments.getSslKeystorePwd().toCharArray());
+            sslContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, new SecureRandom());
+        } else {
+            sslContext.init(null, trustAllCerts, new SecureRandom());
         }
-        return new SSLConnectionSocketFactory(sslContextBuilder.build(), NoopHostnameVerifier.INSTANCE);
+
+        return sslContext.getSocketFactory();
     }
 
-    public CatsResponse call(HttpMethod method, ServiceData data) {
-        switch (method) {
-            case POST:
-                return this.post(data);
-            case PUT:
-                return this.put(data);
-            case GET:
-                return this.get(data);
-            case TRACE:
-                return this.trace(data);
-            case DELETE:
-                return this.delete(data);
-            case PATCH:
-                return this.patch(data);
-            case HEAD:
-                return this.head(data);
+    private Proxy getProxyConfig() {
+        Proxy proxy = Proxy.NO_PROXY;
+        if (!EMPTY.equalsIgnoreCase(proxyHost)) {
+            LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
+            proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
         }
-        return null;
+        return proxy;
     }
 
-    public CatsResponse post(ServiceData serviceData) {
-        HttpPost post = new HttpPost(this.getPathWithRefDataReplacedForHttpEntityRequests(serviceData, server + serviceData.getRelativePath()));
-        return createAndExecute(serviceData, post);
+    public CatsResponse call(ServiceData data) {
+        String processedPayload = this.replacePayloadWithRefData(data);
+        Headers headers = this.buildHeaders(data);
+        Request.Builder requestBuilder = new Request.Builder().headers(headers);
+
+        try {
+            String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, server + data.getRelativePath());
+
+            if (!okhttp3.internal.http.HttpMethod.requiresRequestBody(data.getHttpMethod().name())) {
+                url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, server + data.getRelativePath());
+                url = this.addUriParams(processedPayload, data, url);
+            }
+
+            LOGGER.note("Final list of request headers: {}", headers.toMultimap());
+            LOGGER.note("Final payload: {}", processedPayload);
+
+            long startTime = System.currentTimeMillis();
+            requestBuilder.url(url);
+            Response response = this.callService(data, requestBuilder, processedPayload);
+            long endTime = System.currentTimeMillis();
+
+            LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.protocol(),
+                    data.getHttpMethod(), response.message(), response.code(), endTime - startTime);
+
+            String responseBody = this.getAsJson(response);
+            List<CatsHeader> responseHeaders = response.headers()
+                    .toMultimap()
+                    .entrySet().stream()
+                    .map(header -> CatsHeader.builder().name(header.getKey()).value(header.getValue().get(0)).build()).collect(Collectors.toList());
+
+            CatsResponse catsResponse = CatsResponse.from(response.code(), responseBody, data.getHttpMethod().name(), endTime - startTime, responseHeaders, data.getFuzzedFields());
+            this.recordRequestAndResponse(response.request(), processedPayload, catsResponse, data);
+
+            return catsResponse;
+        } catch (IOException | URISyntaxException e) {
+            this.recordRequestAndResponse(requestBuilder.build(), processedPayload, CatsResponse.empty(), data);
+            throw new CatsIOException(e);
+        }
     }
 
-    public CatsResponse get(ServiceData serviceData) {
-        HttpGet get = new HttpGet(this.getPathWithRefDataReplacedForNonHttpEntityRequests(serviceData, server + serviceData.getRelativePath()));
-        return createAndExecute(serviceData, get);
+    private Headers buildHeaders(ServiceData data) {
+        Headers.Builder headersBuilder = new Headers.Builder();
+
+        this.addMandatoryHeaders(data, headersBuilder);
+        this.addSuppliedHeaders(headersBuilder, data.getRelativePath(), data);
+        this.removeSkippedHeaders(data, headersBuilder);
+        this.addBasicAuth(headersBuilder);
+        return headersBuilder.build();
     }
 
-    public CatsResponse delete(ServiceData serviceData) {
-        HttpDelete delete = new HttpDelete(this.getPathWithRefDataReplacedForNonHttpEntityRequests(serviceData, server + serviceData.getRelativePath()));
-        return createAndExecute(serviceData, delete);
-    }
+    private String addUriParams(String processedPayload, ServiceData data, String currentUrl) throws
+            URISyntaxException {
+        if (StringUtils.isNotEmpty(processedPayload) && !"null".equalsIgnoreCase(processedPayload)) {
+            URIBuilder builder = new URIBuilder(currentUrl);
+            builder.addParameters(this.buildQueryParameters(processedPayload, data));
+            return builder.build().toString();
+        }
 
-    public CatsResponse put(ServiceData serviceData) {
-        HttpPut put = new HttpPut(this.getPathWithRefDataReplacedForHttpEntityRequests(serviceData, server + serviceData.getRelativePath()));
-        return createAndExecute(serviceData, put);
-    }
-
-    public CatsResponse patch(ServiceData serviceData) {
-        HttpPatch patch = new HttpPatch(this.getPathWithRefDataReplacedForHttpEntityRequests(serviceData, server + serviceData.getRelativePath()));
-        return createAndExecute(serviceData, patch);
-    }
-
-    public CatsResponse head(ServiceData serviceData) {
-        HttpHead head = new HttpHead(this.getPathWithRefDataReplacedForNonHttpEntityRequests(serviceData, server + serviceData.getRelativePath()));
-        return createAndExecute(serviceData, head);
-    }
-
-    public CatsResponse trace(ServiceData serviceData) {
-        HttpTrace trace = new HttpTrace(this.getPathWithRefDataReplacedForNonHttpEntityRequests(serviceData, server + serviceData.getRelativePath()));
-        return createAndExecute(serviceData, trace);
+        return currentUrl;
     }
 
     /**
@@ -227,61 +250,28 @@ public class ServiceCaller {
         return path.replaceAll("\\{(.*?)}", "");
     }
 
-    private CatsResponse createAndExecute(ServiceData data, HttpRequestBase method) {
-        String processedPayload = this.replacePayloadWithRefData(data);
-
-        try {
-            this.addMandatoryHeaders(data, method);
-            this.addSuppliedHeaders(method, data.getRelativePath(), data);
-            this.setHttpMethodPayload(method, processedPayload, data);
-            this.removeSkippedHeaders(data, method);
-            this.addBasicAuth(method);
-
-            LOGGER.note("Final list of request headers: {}", Arrays.asList(method.getAllHeaders()));
-            LOGGER.note("Final payload: {}", processedPayload);
-            long startTime = System.currentTimeMillis();
-            HttpResponse response = httpClient.execute(method);
-            long endTime = System.currentTimeMillis();
-
-            LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.getStatusLine().getProtocolVersion(),
-                    method.getMethod(), response.getStatusLine().getReasonPhrase(), response.getStatusLine().getStatusCode(), endTime - startTime);
-
-            String responseBody = this.getAsJson(response);
-            List<CatsHeader> responseHeaders = Arrays.stream(response.getAllHeaders()).map(header -> CatsHeader.builder().name(header.getName()).value(header.getValue()).build()).collect(Collectors.toList());
-
-            CatsResponse catsResponse = CatsResponse.from(response.getStatusLine().getStatusCode(), responseBody, method.getMethod(), endTime - startTime, responseHeaders, data.getFuzzedFields());
-            this.recordRequestAndResponse(method, processedPayload, catsResponse, data.getRelativePath());
-
-            return catsResponse;
-        } catch (IOException | URISyntaxException e) {
-            this.recordRequestAndResponse(method, processedPayload, CatsResponse.empty(), data.getRelativePath());
-            throw new CatsIOException(e);
+    private Response callService(ServiceData data, Request.Builder requestBuilder, String body) throws IOException {
+        RequestBody requestBody = null;
+        if (okhttp3.internal.http.HttpMethod.requiresRequestBody(data.getHttpMethod().name())) {
+            requestBody = RequestBody.create(body.getBytes(StandardCharsets.UTF_8));
         }
+        return okHttpClient.newCall(requestBuilder.method(data.getHttpMethod().name(), requestBody).build()).execute();
     }
 
-    private void addBasicAuth(HttpRequestBase method) {
+    private void addBasicAuth(Headers.Builder headersBuilder) {
         if (!EMPTY.equalsIgnoreCase(authArguments.getBasicAuth())) {
-            byte[] encodedAuth = Base64.getEncoder().encode(authArguments.getBasicAuth().getBytes(StandardCharsets.ISO_8859_1));
+            byte[] encodedAuth = Base64.getEncoder().encode(authArguments.getBasicAuth().getBytes(StandardCharsets.UTF_8));
             String authHeader = "Basic " + new String(encodedAuth);
-            method.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
+            headersBuilder.add(HttpHeaders.AUTHORIZATION, authHeader);
         }
     }
 
-    private void removeSkippedHeaders(ServiceData data, HttpRequestBase method) {
+    private void removeSkippedHeaders(ServiceData data, Headers.Builder headersBuilder) {
         for (String skippedHeader : data.getSkippedHeaders()) {
-            method.removeHeaders(skippedHeader);
+            headersBuilder.removeAll(skippedHeader);
         }
     }
 
-    private void setHttpMethodPayload(HttpRequestBase method, String processedPayload, ServiceData data) throws UnsupportedEncodingException, URISyntaxException {
-        if (method instanceof HttpEntityEnclosingRequestBase) {
-            ((HttpEntityEnclosingRequestBase) method).setEntity(new StringEntity(processedPayload));
-        } else if (StringUtils.isNotEmpty(processedPayload) && !"null".equalsIgnoreCase(processedPayload)) {
-            URIBuilder builder = new URIBuilder(method.getURI());
-            builder.addParameters(this.buildQueryParameters(processedPayload, data));
-            method.setURI(builder.build());
-        }
-    }
 
     private String replacePathParams(String path, String processedPayload, ServiceData data) {
         JsonElement jsonElement = catsUtil.parseAsJsonElement(processedPayload);
@@ -304,16 +294,16 @@ public class ServiceCaller {
         return path.replace(" ", "%20");
     }
 
-    private void addMandatoryHeaders(ServiceData data, HttpRequestBase method) {
-        data.getHeaders().forEach(header -> method.addHeader(header.getName(), header.getValue()));
+    private void addMandatoryHeaders(ServiceData data, Headers.Builder method) {
+        data.getHeaders().forEach(header -> method.addUnsafeNonAscii(header.getName(), header.getValue()));
         addIfNotPresent("Accept", data, method);
         addIfNotPresent("Content-Type", data, method);
     }
 
-    private void addIfNotPresent(String header, ServiceData data, HttpRequestBase method) {
+    private void addIfNotPresent(String header, ServiceData data, Headers.Builder method) {
         boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(header));
         if (notAccept) {
-            method.addHeader(header, MimeTypeUtils.APPLICATION_JSON_VALUE);
+            method.addUnsafeNonAscii(header, MimeTypeUtils.APPLICATION_JSON_VALUE);
         }
     }
 
@@ -335,8 +325,13 @@ public class ServiceCaller {
         return queryParams;
     }
 
-    private String getAsJson(HttpResponse response) throws IOException {
-        String responseAsString = response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : null;
+    private String getAsJson(Response response) throws IOException {
+        String responseAsString = null;
+        ResponseBody responseBody = response.body();
+
+        if (responseBody != null) {
+            responseAsString = responseBody.string();
+        }
 
         if (StringUtils.isBlank(responseAsString)) {
             return "";
@@ -346,18 +341,21 @@ public class ServiceCaller {
         return "{\"exception\":\"Received response is not a JSON\"}";
     }
 
-    private void recordRequestAndResponse(HttpRequestBase method, String processedPayload, CatsResponse catsResponse, String relativePath) {
+    private void recordRequestAndResponse(Request httpRequest, String processedPayload, CatsResponse catsResponse, ServiceData serviceData) {
         CatsRequest request = new CatsRequest();
-        request.setHeaders(Arrays.asList(method.getAllHeaders()));
+        request.setHeaders(httpRequest.headers().toMultimap()
+                .entrySet().stream()
+                .map(entry -> new CatsRequest.Header(entry.getKey(), entry.getValue().get(0)))
+                .collect(Collectors.toList()));
         request.setPayload(processedPayload);
-        request.setHttpMethod(method.getMethod());
-        testCaseListener.addPath(relativePath);
+        request.setHttpMethod(serviceData.getHttpMethod().name());
+        testCaseListener.addPath(serviceData.getRelativePath());
         testCaseListener.addRequest(request);
         testCaseListener.addResponse(catsResponse);
-        testCaseListener.addFullRequestPath(HtmlEscapers.htmlEscaper().escape(method.getURI().toString()));
+        testCaseListener.addFullRequestPath(HtmlEscapers.htmlEscaper().escape(httpRequest.url().uri().toString()));
     }
 
-    private void addSuppliedHeaders(HttpRequestBase method, String relativePath, ServiceData data) {
+    private void addSuppliedHeaders(Headers.Builder method, String relativePath, ServiceData data) {
         LOGGER.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
         LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsMain.ALL));
 
@@ -369,7 +367,7 @@ public class ServiceCaller {
             if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(method, data, suppliedHeader);
             } else if (!data.isAddUserHeaders() && (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey()))) {
-                method.setHeader(suppliedHeader.getKey(), suppliedHeader.getValue());
+                method.addUnsafeNonAscii(suppliedHeader.getKey(), suppliedHeader.getValue());
             }
         }
     }
@@ -382,13 +380,14 @@ public class ServiceCaller {
         return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().contains(authHeader));
     }
 
-    private void replaceHeaderIfNotFuzzed(HttpRequestBase method, ServiceData data, Map.Entry<String, String> suppliedHeader) {
+    private void replaceHeaderIfNotFuzzed(Headers.Builder headers, ServiceData
+            data, Map.Entry<String, String> suppliedHeader) {
         if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
-            method.setHeader(suppliedHeader.getKey(), suppliedHeader.getValue());
+            headers.addUnsafeNonAscii(suppliedHeader.getKey(), suppliedHeader.getValue());
         } else {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try these behaviour on a valid header value */
-            String finalHeaderValue = FuzzingStrategy.mergeFuzzing(method.getFirstHeader(suppliedHeader.getKey()).getValue(), suppliedHeader.getValue());
-            method.setHeader(suppliedHeader.getKey(), finalHeaderValue);
+            String finalHeaderValue = FuzzingStrategy.mergeFuzzing(headers.get(suppliedHeader.getKey()), suppliedHeader.getValue());
+            headers.addUnsafeNonAscii(suppliedHeader.getKey(), finalHeaderValue);
             LOGGER.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }
     }
