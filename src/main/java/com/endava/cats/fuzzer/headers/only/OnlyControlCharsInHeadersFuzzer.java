@@ -14,11 +14,11 @@ import java.util.List;
 
 @Component
 @HeaderFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.ControlCharsOnlyInHeadersFuzzer.enabled", havingValue = "true")
-public class ControlCharsOnlyInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
+@ConditionalOnProperty(value = "fuzzer.headers.OnlyControlCharsInHeadersFuzzer.enabled", havingValue = "true")
+public class OnlyControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Autowired
-    public ControlCharsOnlyInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    public OnlyControlCharsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }
 

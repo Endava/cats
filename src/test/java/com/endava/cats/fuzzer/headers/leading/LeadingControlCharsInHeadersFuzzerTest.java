@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.leading;
 
 import com.endava.cats.fuzzer.headers.leading.LeadingControlCharsInHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;

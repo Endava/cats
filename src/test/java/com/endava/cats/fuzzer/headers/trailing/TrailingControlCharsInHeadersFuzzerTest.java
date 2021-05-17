@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.fuzzer.headers.trailing.TrailingControlCharsInHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;
