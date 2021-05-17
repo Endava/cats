@@ -1,7 +1,9 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.fuzzer.headers.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,7 @@ import java.util.List;
 @Component
 @HeaderFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.TrailingWhitespacesInHeadersFuzzer.enabled", havingValue = "true")
-public class TrailingWhitespacesInHeadersFuzzer extends TrailingInvisibleCharsFuzzer {
+public class TrailingWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Autowired
     public TrailingWhitespacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
@@ -22,11 +24,16 @@ public class TrailingWhitespacesInHeadersFuzzer extends TrailingInvisibleCharsFu
 
     @Override
     protected String typeOfDataSentToTheService() {
-        return "trail values with whitespaces";
+        return "trail values with unicode separators";
     }
 
     @Override
-    List<String> getInvisibleChars() {
+    public List<String> getInvisibleChars() {
         return CatsUtil.WHITESPACES_HEADERS;
+    }
+
+    @Override
+    public FuzzingStrategy concreteFuzzStrategy() {
+        return FuzzingStrategy.trail();
     }
 }

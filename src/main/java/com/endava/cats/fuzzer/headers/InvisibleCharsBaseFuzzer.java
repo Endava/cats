@@ -1,6 +1,5 @@
-package com.endava.cats.fuzzer.headers.leading;
+package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.fuzzer.headers.ExpectOnly4XXBaseHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
@@ -8,17 +7,16 @@ import com.endava.cats.report.TestCaseListener;
 import java.util.List;
 import java.util.stream.Collectors;
 
+public abstract class InvisibleCharsBaseFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
-public abstract class LeadingInvisibleCharsFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
-
-    public LeadingInvisibleCharsFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    protected InvisibleCharsBaseFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }
 
     @Override
     public List<FuzzingStrategy> fuzzStrategy() {
         return this.getInvisibleChars()
-                .stream().map(value -> FuzzingStrategy.prefix().withData(value))
+                .stream().map(value -> concreteFuzzStrategy().withData(value))
                 .collect(Collectors.toList());
     }
 
@@ -27,5 +25,7 @@ public abstract class LeadingInvisibleCharsFuzzer extends ExpectOnly4XXBaseHeade
         return "iterate through each header and " + typeOfDataSentToTheService();
     }
 
-    abstract List<String> getInvisibleChars();
+    public abstract List<String> getInvisibleChars();
+
+    public abstract FuzzingStrategy concreteFuzzStrategy();
 }

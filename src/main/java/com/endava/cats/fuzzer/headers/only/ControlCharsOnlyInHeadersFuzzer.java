@@ -1,7 +1,9 @@
 package com.endava.cats.fuzzer.headers.only;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.fuzzer.headers.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,7 @@ import java.util.List;
 @Component
 @HeaderFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.ControlCharsOnlyInHeadersFuzzer.enabled", havingValue = "true")
-public class ControlCharsOnlyInHeadersFuzzer extends InvisibleCharsOnlyFuzzer {
+public class ControlCharsOnlyInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Autowired
     public ControlCharsOnlyInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
@@ -26,8 +28,13 @@ public class ControlCharsOnlyInHeadersFuzzer extends InvisibleCharsOnlyFuzzer {
     }
 
     @Override
-    List<String> getInvisibleChars() {
+    public List<String> getInvisibleChars() {
         return CatsUtil.CONTROL_CHARS_HEADERS;
+    }
+
+    @Override
+    public FuzzingStrategy concreteFuzzStrategy() {
+        return FuzzingStrategy.replace();
     }
 
     @Override
