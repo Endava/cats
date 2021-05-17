@@ -68,7 +68,7 @@ class RemoveHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
                 responses(responses).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(false)).thenReturn(new Object[]{ResponseCodeFamily.TWOXX, "were not"});
         Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(false)).thenReturn(ResponseCodeFamily.TWOXX);
 
@@ -87,7 +87,7 @@ class RemoveHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").required(true).build())).
                 responses(responses).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(false)).thenReturn(new Object[]{ResponseCodeFamily.TWOXX, "were not"});
         Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(false)).thenReturn(ResponseCodeFamily.TWOXX);
         Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(true)).thenReturn(new Object[]{ResponseCodeFamily.FOURXX, "were"});
@@ -104,7 +104,7 @@ class RemoveHeadersFuzzerTest {
     @Test
     void givenASetOfHeaders_whenAnErrorOccursCallingTheService_thenTheErrorIsProperlyReported() {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenThrow(new RuntimeException());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException());
         Mockito.when(catsUtil.getExpectedWordingBasedOnRequiredFields(false)).thenReturn(new Object[]{ResponseCodeFamily.TWOXX, "were not"});
         Mockito.when(catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(false)).thenReturn(ResponseCodeFamily.TWOXX);
         Mockito.doCallRealMethod().when(catsUtil).powerSet(Mockito.anySet());

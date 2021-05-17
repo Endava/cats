@@ -58,7 +58,7 @@ class DummyRequestFuzzerTest {
     void givenAHttpMethodWithoutPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doCallRealMethod().when(catsUtil).isHttpMethodWithPayload(HttpMethod.GET);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
@@ -70,7 +70,7 @@ class DummyRequestFuzzerTest {
     void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.when(catsUtil.isHttpMethodWithPayload(HttpMethod.POST)).thenReturn(true);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 

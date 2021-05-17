@@ -76,8 +76,8 @@ public class RemoveFieldsFuzzer implements Fuzzer {
             boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
             testCaseListener.addExpectedResult(LOGGER, "Should return [{}] response code as required fields [{}] removed", catsUtil.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
 
-            CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                    .payload(finalJsonPayload).queryParams(data.getQueryParams()).build());
+            CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+                    .payload(finalJsonPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
             testCaseListener.reportResult(LOGGER, data, response, catsUtil.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
         } else {
             testCaseListener.skipTest(LOGGER, "Field is from a different ANY_OF or ONE_OF payload");

@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.List;
+
 @Component
 @HeaderFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.EmptyStringValuesInHeadersFuzzer.enabled", havingValue = "true")
@@ -24,8 +27,8 @@ public class EmptyStringValuesInHeadersFuzzer extends Expect4XXBaseHeadersFuzzer
     }
 
     @Override
-    protected FuzzingStrategy fuzzStrategy() {
-        return FuzzingStrategy.replace().withData("");
+    protected List<FuzzingStrategy> fuzzStrategy() {
+        return Collections.singletonList(FuzzingStrategy.replace().withData(""));
     }
 
     @Override

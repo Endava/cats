@@ -65,7 +65,7 @@ public class CustomFuzzerUtil {
         catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
 
         String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(servicePath).replaceRefData(false)
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
                 .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).build());
 
         this.setOutputVariables(currentPathValues, response);
@@ -107,6 +107,7 @@ public class CustomFuzzerUtil {
                 String valueToCheck = responseValues.get(key);
                 valueToCheck = catsDSLParser.parseAndGetResult(valueToCheck, response.getBody());
                 if (value.startsWith("$")) {
+                    /*this is a variable*/
                     value = variables.get(value.substring(1));
                 }
                 Matcher verifyMatcher = Pattern.compile(value).matcher(valueToCheck);

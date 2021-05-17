@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsHeader;
@@ -7,7 +8,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -83,7 +83,7 @@ class BypassAuthenticationFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
                 responses(responses).path("test1").build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doCallRealMethod().when(catsUtil).powerSet(Mockito.anySet());
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
@@ -98,7 +98,7 @@ class BypassAuthenticationFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
                 responses(responses).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doCallRealMethod().when(catsUtil).powerSet(Mockito.anySet());
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 

@@ -58,8 +58,8 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
         testCaseListener.addScenario(LOGGER, "Add a duplicate header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", targetHeader.getName(), targetHeader.getTruncatedValue());
         testCaseListener.addExpectedResult(LOGGER, "Should get a 4XX response code");
 
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(headers)
-                .payload(data.getPayload()).queryParams(data.getQueryParams()).build());
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(headers)
+                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
 
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
     }

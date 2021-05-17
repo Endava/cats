@@ -50,10 +50,10 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(LOGGER, "Should get a 403 or 401 response code");
         Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
         if (!authenticationHeaders.isEmpty()) {
-            ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+            ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).httpMethod(data.getMethod())
                     .payload(data.getPayload()).skippedHeaders(authenticationHeaders).queryParams(data.getQueryParams()).build();
 
-            CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
+            CatsResponse response = serviceCaller.call(serviceData);
             testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX_AA);
         } else {
             testCaseListener.skipTest(LOGGER, "No authentication header provided.");

@@ -116,6 +116,6 @@ class NewFieldsFuzzerTest {
         data = FuzzingData.builder().path("path1").method(method).payload("{'field':'oldValue'}").
                 responses(responses).responseCodes(Collections.singleton("200")).build();
 
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
     }
 }

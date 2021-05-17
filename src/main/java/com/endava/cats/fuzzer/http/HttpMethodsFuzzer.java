@@ -2,9 +2,9 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
 @Component
@@ -39,15 +38,15 @@ public class HttpMethodsFuzzer implements Fuzzer {
 
     public void fuzz(FuzzingData data) {
         if (!fuzzedPaths.contains(data.getPath())) {
-            executeForOperation(data, PathItem::getPost, serviceCaller::post);
-            executeForOperation(data, PathItem::getPut, serviceCaller::put);
-            executeForOperation(data, PathItem::getGet, serviceCaller::get);
-            executeForOperation(data, PathItem::getPatch, serviceCaller::patch);
-            executeForOperation(data, PathItem::getDelete, serviceCaller::delete);
-            executeForOperation(data, PathItem::getTrace, serviceCaller::trace);
+            executeForOperation(data, PathItem::getPost, serviceCaller::call, HttpMethod.POST);
+            executeForOperation(data, PathItem::getPut, serviceCaller::call, HttpMethod.PUT);
+            executeForOperation(data, PathItem::getGet, serviceCaller::call, HttpMethod.GET);
+            executeForOperation(data, PathItem::getPatch, serviceCaller::call, HttpMethod.PATCH);
+            executeForOperation(data, PathItem::getDelete, serviceCaller::call, HttpMethod.DELETE);
+            executeForOperation(data, PathItem::getTrace, serviceCaller::call, HttpMethod.TRACE);
 
             if (data.getPathItem().getGet() == null) {
-                executeForOperation(data, PathItem::getHead, serviceCaller::head);
+                executeForOperation(data, PathItem::getHead, serviceCaller::call, HttpMethod.HEAD);
             }
 
         } else {
@@ -55,18 +54,18 @@ public class HttpMethodsFuzzer implements Fuzzer {
         }
     }
 
-    private void executeForOperation(FuzzingData data, Function<PathItem, Operation> operation, Function<ServiceData, CatsResponse> serviceCall) {
+    private void executeForOperation(FuzzingData data, Function<PathItem, Operation> operation, Function<ServiceData, CatsResponse> serviceCall, HttpMethod httpMethod) {
         if (operation.apply(data.getPathItem()) == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data.getPath(), data.getHeaders(), serviceCall));
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, serviceCall, httpMethod));
         }
     }
 
-    private void process(String path, Set<CatsHeader> headers, Function<ServiceData, CatsResponse> f) {
+    private void process(FuzzingData data, Function<ServiceData, CatsResponse> f, HttpMethod httpMethod) {
         testCaseListener.addScenario(LOGGER, "Send a happy flow request with undocumented HTTP methods");
         testCaseListener.addExpectedResult(LOGGER, "Should get a 405 response code");
-        CatsResponse response = f.apply(ServiceData.builder().relativePath(path).headers(headers).payload("").build());
+        CatsResponse response = f.apply(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).payload("").httpMethod(httpMethod).build());
         this.checkResponse(response);
-        fuzzedPaths.add(path);
+        fuzzedPaths.add(data.getPath());
     }
 
     private void checkResponse(CatsResponse response) {

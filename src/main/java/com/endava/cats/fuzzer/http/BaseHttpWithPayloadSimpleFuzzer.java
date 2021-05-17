@@ -35,10 +35,10 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(logger, "Should get a 4XX response code");
 
         ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(this.getPayload(data)).replaceRefData(false).build();
+                .payload(this.getPayload(data)).replaceRefData(false).httpMethod(data.getMethod()).build();
 
         if (catsUtil.isHttpMethodWithPayload(data.getMethod())) {
-            CatsResponse response = serviceCaller.call(data.getMethod(), serviceData);
+            CatsResponse response = serviceCaller.call(serviceData);
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         } else {
             testCaseListener.skipTest(logger, "Method " + data.getMethod() + " not supported by " + this.toString());

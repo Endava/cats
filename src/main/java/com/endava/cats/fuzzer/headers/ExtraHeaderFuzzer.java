@@ -46,7 +46,7 @@ public class ExtraHeaderFuzzer implements Fuzzer {
         testCaseListener.addScenario(LOGGER, "Add extra header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", CATS_FUZZY_HEADER, CATS_FUZZY_HEADER);
         testCaseListener.addExpectedResult(LOGGER, "Should get a 2XX response code");
 
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath())
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).httpMethod(data.getMethod())
                 .headers(headerSet).payload(data.getPayload()).queryParams(data.getQueryParams()).build());
 
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);

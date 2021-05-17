@@ -44,7 +44,7 @@ class ServiceCallerTest {
     public static void setup() {
         wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort());
         wireMockServer.start();
-        wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
+        wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.ok("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.put("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.delete("/pets/1").willReturn(WireMock.aResponse()));
@@ -80,7 +80,7 @@ class ServiceCallerTest {
     void givenAServer_whenDoingADeleteCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
 
-        CatsResponse catsResponse = serviceCaller.call(HttpMethod.DELETE, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.DELETE)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -92,7 +92,7 @@ class ServiceCallerTest {
     void givenAServer_whenDoingAHeadCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
 
-        CatsResponse catsResponse = serviceCaller.call(HttpMethod.HEAD, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -104,7 +104,7 @@ class ServiceCallerTest {
     void givenAServer_whenDoingAPatchCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
 
-        CatsResponse catsResponse = serviceCaller.call(HttpMethod.PATCH, ServiceData.builder().relativePath("/pets").payload("{'id':'1'}")
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'id':'1'}").httpMethod(HttpMethod.PATCH)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -115,7 +115,7 @@ class ServiceCallerTest {
     void givenAServer_whenDoingATraceCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
 
-        CatsResponse catsResponse = serviceCaller.call(HttpMethod.TRACE, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.TRACE)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -127,7 +127,7 @@ class ServiceCallerTest {
     void givenAServer_whenDoingAPostCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
 
-        CatsResponse catsResponse = serviceCaller.call(HttpMethod.POST, ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}")
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -139,16 +139,16 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:111");
 
         serviceCaller.initHttpClient();
-        ServiceData data = ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}")
+        ServiceData data = ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
-        Assertions.assertThatThrownBy(() -> serviceCaller.call(HttpMethod.POST, data)).isInstanceOf(CatsIOException.class);
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(data)).isInstanceOf(CatsIOException.class);
     }
 
     @Test
     void givenAServer_whenDoingAPutCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
 
-        CatsResponse catsResponse = serviceCaller.call(HttpMethod.PUT, ServiceData.builder().relativePath("/pets").payload("{'field':'newValue'}")
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'field':'newValue'}").httpMethod(HttpMethod.PUT)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -159,7 +159,7 @@ class ServiceCallerTest {
     void givenAServer_whenDoingAGetCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
 
-        CatsResponse catsResponse = serviceCaller.call(HttpMethod.GET, ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.GET)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -183,7 +183,7 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(authArguments, "sslKeyPwd", "password");
 
         serviceCaller.initHttpClient();
-        Assertions.assertThat(serviceCaller.httpClient).isNotNull();
+        Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
     }
 
     @Test
@@ -191,7 +191,7 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(authArguments, "sslKeystore", "src/test/resources/cats_bad.jks");
 
         serviceCaller.initHttpClient();
-        Assertions.assertThat(serviceCaller.httpClient).isNull();
+        Assertions.assertThat(serviceCaller.okHttpClient).isNull();
     }
 
     @Test
@@ -199,6 +199,6 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
 
         serviceCaller.initHttpClient();
-        Assertions.assertThat(serviceCaller.httpClient).isNotNull();
+        Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
     }
 }

@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class WhitespacesOnlyInFieldsValidateTrimFuzzerTest {
+class OnlyWhitespacesInFieldsValidateTrimFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -36,17 +36,17 @@ class WhitespacesOnlyInFieldsValidateTrimFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private WhitespacesOnlyInFieldsValidateTrimFuzzer whitespacesOnlyInFieldsValidateTrimFuzzer;
+    private OnlyWhitespacesInFieldsValidateTrimFuzzer onlyWhitespacesInFieldsValidateTrimFuzzer;
 
     @BeforeEach
     void setup() {
-        whitespacesOnlyInFieldsValidateTrimFuzzer = new WhitespacesOnlyInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        onlyWhitespacesInFieldsValidateTrimFuzzer = new OnlyWhitespacesInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
     void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInFieldsValidateTrimFuzzer() {
-        Assertions.assertThat(whitespacesOnlyInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(whitespacesOnlyInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
@@ -54,18 +54,18 @@ class WhitespacesOnlyInFieldsValidateTrimFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = whitespacesOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
+        FuzzingStrategy fuzzingStrategy = onlyWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).contains(" ");
 
         stringSchema.setMinLength(5);
 
-        fuzzingStrategy = whitespacesOnlyInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
+        fuzzingStrategy = onlyWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat(" ", stringSchema.getMinLength() + 1));
-        Assertions.assertThat(whitespacesOnlyInFieldsValidateTrimFuzzer.description()).isNotNull();
-        Assertions.assertThat(whitespacesOnlyInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(whitespacesOnlyInFieldsValidateTrimFuzzer.getInvisibleChars()).contains(" ");
-        Assertions.assertThat(whitespacesOnlyInFieldsValidateTrimFuzzer.getInvisibleCharDescription()).isEqualTo("unicode whitespaces and invisible separators");
+        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.description()).isNotNull();
+        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.getInvisibleChars()).contains(" ");
+        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.getInvisibleCharDescription()).isEqualTo("unicode whitespaces and invisible separators");
     }
 }

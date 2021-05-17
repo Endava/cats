@@ -80,7 +80,7 @@ class CheckSecurityHeadersFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.any());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(SOME_SECURITY_HEADERS).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         checkSecurityHeadersFuzzer.fuzz(data);
 
@@ -100,7 +100,7 @@ class CheckSecurityHeadersFuzzerTest {
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Stream.concat(allHeaders.stream(), MISSING_HEADERS.stream())
                 .collect(Collectors.toList())).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         checkSecurityHeadersFuzzer.fuzz(data);
 

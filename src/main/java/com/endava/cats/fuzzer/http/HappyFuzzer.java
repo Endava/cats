@@ -38,8 +38,8 @@ public class HappyFuzzer implements Fuzzer {
     private void process(FuzzingData data) {
         testCaseListener.addScenario(LOGGER, "Send a 'happy' flow request will all fields and all headers in");
         testCaseListener.addExpectedResult(LOGGER, "Should get a 2XX response code");
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(data.getPayload()).queryParams(data.getQueryParams()).build());
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
 
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);
     }

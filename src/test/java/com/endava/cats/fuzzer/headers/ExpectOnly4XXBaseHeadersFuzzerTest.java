@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.List;
+
 @ExtendWith(SpringExtension.class)
 class ExpectOnly4XXBaseHeadersFuzzerTest {
     @Mock
@@ -45,7 +47,7 @@ class ExpectOnly4XXBaseHeadersFuzzerTest {
         }
 
         @Override
-        protected FuzzingStrategy fuzzStrategy() {
+        protected List<FuzzingStrategy> fuzzStrategy() {
             return null;
         }
 

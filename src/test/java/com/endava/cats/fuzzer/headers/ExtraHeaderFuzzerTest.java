@@ -64,7 +64,7 @@ class ExtraHeaderFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
                 responses(responses).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         extraHeaderFuzzer.fuzz(data);

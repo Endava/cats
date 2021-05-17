@@ -107,7 +107,7 @@ class RemoveFieldsFuzzerTest {
         ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
         data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload(payload).
                 responses(responses).reqSchema(schema).catsUtil(catsUtil).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200")).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
     }
 
     private Map<String, Schema> createPropertiesMap() {

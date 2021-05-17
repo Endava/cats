@@ -148,7 +148,7 @@ class SecurityFuzzerTest {
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue'}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         return data;
     }

@@ -29,6 +29,6 @@ class EmptyStringValuesInHeadersFuzzerTest {
     void givenANewEmptyStringValuesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheEmptyStringValuesInHeadersFuzzer() {
         Assertions.assertThat(emptyStringValuesInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(emptyStringValuesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(emptyStringValuesInHeadersFuzzer.fuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(emptyStringValuesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 }

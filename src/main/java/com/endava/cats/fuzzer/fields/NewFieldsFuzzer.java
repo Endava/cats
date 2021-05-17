@@ -51,8 +51,8 @@ public class NewFieldsFuzzer implements Fuzzer {
         testCaseListener.addScenario(LOGGER, "Add new field inside the request: name [{}], value [{}]. All other details are similar to a happy flow", NEW_FIELD, NEW_FIELD);
         testCaseListener.addExpectedResult(LOGGER, "Should get a [{}] response code", expectedResultCode.asString());
 
-        CatsResponse response = serviceCaller.call(data.getMethod(), ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzedJson.toString()).queryParams(data.getQueryParams()).build());
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+                .payload(fuzzedJson.toString()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
         testCaseListener.reportResult(LOGGER, data, response, expectedResultCode);
     }
 

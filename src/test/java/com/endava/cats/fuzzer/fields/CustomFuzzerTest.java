@@ -147,7 +147,7 @@ class CustomFuzzerTest {
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "custom");
         Mockito.when(catsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
         Mockito.when(catsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         return data;
     }
 
@@ -237,7 +237,7 @@ class CustomFuzzerTest {
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
-        Mockito.when(serviceCaller.call(Mockito.any(), Mockito.any())).thenReturn(catsResponse);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         return data;
     }
