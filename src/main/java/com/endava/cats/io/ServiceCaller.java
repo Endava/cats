@@ -60,7 +60,7 @@ public class ServiceCaller {
     private final TestCaseListener testCaseListener;
     private final CatsDSLParser catsDSLParser;
     private final AuthArguments authArguments;
-    //    HttpClient httpClient;
+
     OkHttpClient okHttpClient;
 
     @Value("${proxyHost:empty}")
@@ -103,10 +103,12 @@ public class ServiceCaller {
                 new X509TrustManager() {
                     @Override
                     public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                        //we don't do anything here
                     }
 
                     @Override
                     public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                        //we don't do anything here
                     }
 
                     @Override

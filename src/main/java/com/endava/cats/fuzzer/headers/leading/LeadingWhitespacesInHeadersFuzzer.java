@@ -1,7 +1,9 @@
 package com.endava.cats.fuzzer.headers.leading;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.fuzzer.headers.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +15,7 @@ import java.util.List;
 @Component
 @HeaderFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.LeadingWhitespacesInHeadersFuzzer.enabled", havingValue = "true")
-public class LeadingWhitespacesInHeadersFuzzer extends LeadingInvisibleCharsFuzzer {
+public class LeadingWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Autowired
     public LeadingWhitespacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
@@ -22,11 +24,16 @@ public class LeadingWhitespacesInHeadersFuzzer extends LeadingInvisibleCharsFuzz
 
     @Override
     protected String typeOfDataSentToTheService() {
-        return "prefix value with whitespaces";
+        return "prefix value with unicode separators";
     }
 
     @Override
-    List<String> getInvisibleChars() {
+    public List<String> getInvisibleChars() {
         return CatsUtil.WHITESPACES_HEADERS;
+    }
+
+    @Override
+    public FuzzingStrategy concreteFuzzStrategy() {
+        return FuzzingStrategy.prefix();
     }
 }

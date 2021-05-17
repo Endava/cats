@@ -34,6 +34,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.*;
 public class CatsUtil {
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
+    public static final List<String> SPACES_HEADERS = Arrays.asList(" ", "\u0009", "\r");
     public static final List<String> WHITESPACES_HEADERS = Arrays.asList(
             "\u1680",
             "\u2000",
