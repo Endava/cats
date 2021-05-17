@@ -23,7 +23,7 @@ public class TrailingControlCharsInFieldsTrimValidateFuzzer extends TrailingInvi
 
     @Override
     List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS;
+        return CatsUtil.CONTROL_CHARS_FIELDS;
     }
 
     @Override

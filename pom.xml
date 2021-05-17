@@ -48,18 +48,23 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-install-plugin</artifactId>
-                <version>2.5.2</version>
+                <version>3.0.0-M1</version>
                 <executions>
                     <execution>
                         <phase>pre-clean</phase>
+                        <id>ok-http-jar</id>
                         <goals>
                             <goal>install-file</goal>
                         </goals>
                         <configuration>
-                            <file>lib/okhttp-5.0.0-CATS.jar</file>
+                            <file>lib/okhttp-4.9.1-CATS.jar</file>
                             <groupId>com.squareup.okhttp3</groupId>
                             <artifactId>okhttp</artifactId>
                             <version>4.9.1-CATS</version>
+                            <sources>lib/okhttp-4.9.1-CATS-sources.jar</sources>
+                            <javadoc>lib/okhttp-4.9.1-CATS-sources.jar</javadoc>
+                            <pomFile>lib/okhttp-4.9.1-CATS.pom</pomFile>
+                            <createChecksum>true</createChecksum>
                             <packaging>jar</packaging>
                         </configuration>
                     </execution>
@@ -192,7 +197,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.9.0</version>
+            <version>4.9.1-CATS</version>
         </dependency>
         <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>

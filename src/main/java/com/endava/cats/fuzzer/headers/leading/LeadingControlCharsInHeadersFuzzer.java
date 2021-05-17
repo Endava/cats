@@ -5,28 +5,34 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
 @HeaderFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.headers.LeadingControlCharsInHeadersFuzzer.enabled}")
-public class LeadingControlCharsInHeadersTrimValidateFuzzer extends LeadingInvisibleCharsTrimValidateFuzzer {
+@ConditionalOnProperty(value = "fuzzer.headers.LeadingControlCharsInHeadersFuzzer.enabled", havingValue = "true")
+public class LeadingControlCharsInHeadersFuzzer extends LeadingInvisibleCharsFuzzer {
 
     @Autowired
-    public LeadingControlCharsInHeadersTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    public LeadingControlCharsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }
 
     @Override
     List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS;
+        return CatsUtil.CONTROL_CHARS_HEADERS;
     }
 
     @Override
     public String typeOfDataSentToTheService() {
         return "prefix values with control chars";
     }
+
+    @Override
+    protected boolean matchResponseSchema() {
+        return false;
+    }
+
 }
