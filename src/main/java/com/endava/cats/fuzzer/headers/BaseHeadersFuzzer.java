@@ -59,7 +59,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
 
             CatsResponse response = serviceCaller.call(serviceData);
 
-            testCaseListener.reportResult(logger, data, response, this.getExpectedResultCode(isRequiredHeaderFuzzed));
+            testCaseListener.reportResult(logger, data, response, this.getExpectedResultCode(isRequiredHeaderFuzzed), this.matchResponseSchema());
         } finally {
             /* we reset back the current header */
             header.withValue(previousHeaderValue);
@@ -99,5 +99,16 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
                 .collect(Collectors.toSet());
         logger.note("All headers excluding auth headers: {}", headersWithoutAuth);
         return headersWithoutAuth;
+    }
+
+    /**
+     * There is a special case when we send Control Chars in Headers and an error (due to HTTP RFC specs)
+     * is returned by the app server itself, not the application. In this case we don't want to check
+     * if there is even a response body.
+     *
+     * @return true if it should match response schema and false otherwise
+     */
+    protected boolean matchResponseSchema() {
+        return true;
     }
 }

@@ -136,6 +136,9 @@ This is a list of articles with step-by-step guides on how to use CATS:
 
 # Build
 
+**Before running the first build, please make sure you do a `mvn clean`. CATS uses a fork ok `OKHttpClient` which will install locally
+under the `4.9.1-CATS` version, so don't worry about any overriding of official versions.**
+
 You can use the following Maven command to build the project:
 
 `mvn clean package`

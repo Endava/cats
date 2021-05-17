@@ -23,7 +23,7 @@ public class TrailingWhitespacesInFieldsTrimValidateFuzzer extends TrailingInvis
 
     @Override
     List<String> getInvisibleChars() {
-        return CatsUtil.WHITESPACES;
+        return CatsUtil.WHITESPACES_FIELDS;
     }
 
     @Override
