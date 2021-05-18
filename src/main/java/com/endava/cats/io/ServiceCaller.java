@@ -31,7 +31,6 @@ import javax.annotation.PostConstruct;
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -51,7 +50,6 @@ import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
 @Component
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
-    private static final String EMPTY = "empty";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
@@ -63,10 +61,6 @@ public class ServiceCaller {
 
     OkHttpClient okHttpClient;
 
-    @Value("${proxyHost:empty}")
-    private String proxyHost;
-    @Value("${proxyPort:0}")
-    private int proxyPort;
     @Value("${server:empty}")
     private String server;
 
@@ -122,7 +116,7 @@ public class ServiceCaller {
     private SSLSocketFactory buildSslSocketFactory(TrustManager[] trustAllCerts) throws IOException, GeneralSecurityException {
         final SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
 
-        if (!EMPTY.equalsIgnoreCase(authArguments.getSslKeystore())) {
+        if (authArguments.isMutualTls()) {
             KeyStore keyStore = KeyStore.getInstance("jks");
             keyStore.load(new FileInputStream(authArguments.getSslKeystore()), authArguments.getSslKeystorePwd().toCharArray());
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -136,11 +130,9 @@ public class ServiceCaller {
     }
 
     private Proxy getProxyConfig() {
-        Proxy proxy = Proxy.NO_PROXY;
-        if (!EMPTY.equalsIgnoreCase(proxyHost)) {
-            LOGGER.note("Proxy configuration to be used: host={}, port={}", proxyHost, proxyPort);
-            proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-        }
+        Proxy proxy = authArguments.getProxy();
+        LOGGER.note("Proxy configuration to be used: {}}", proxy);
+
         return proxy;
     }
 
@@ -272,10 +264,8 @@ public class ServiceCaller {
     }
 
     private void addBasicAuth(List<CatsRequest.Header> headers) {
-        if (!EMPTY.equalsIgnoreCase(authArguments.getBasicAuth())) {
-            byte[] encodedAuth = Base64.getEncoder().encode(authArguments.getBasicAuth().getBytes(StandardCharsets.UTF_8));
-            String authHeader = "Basic " + new String(encodedAuth);
-            headers.add(new CatsRequest.Header("Authorization", authHeader));
+        if (!authArguments.isBasicAuthSupplied()) {
+            headers.add(authArguments.getBasicAuthHeader());
         }
     }
 
