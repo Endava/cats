@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.headers.trailing;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 class TrailingControlCharsInHeadersFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
+
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -22,7 +25,7 @@ class TrailingControlCharsInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        trailingControlCharsInHeadersFuzzer = new TrailingControlCharsInHeadersFuzzer(serviceCaller, testCaseListener);
+        trailingControlCharsInHeadersFuzzer = new TrailingControlCharsInHeadersFuzzer(catsUtil, serviceCaller, testCaseListener);
     }
 
     @Test

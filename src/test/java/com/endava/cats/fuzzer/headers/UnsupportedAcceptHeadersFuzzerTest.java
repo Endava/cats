@@ -45,7 +45,7 @@ class UnsupportedAcceptHeadersFuzzerTest {
 
         List<Set<CatsHeader>> headers = unsupportedAcceptHeadersFuzzer.getHeaders(data);
 
-        Assertions.assertThat(headers).hasSize(BaseSecurityChecksHeadersFuzzer.UNSUPPORTED_MEDIA_TYPES.size() - 1);
+        Assertions.assertThat(headers).hasSize(29);
         Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Accept").build());
     }
 }

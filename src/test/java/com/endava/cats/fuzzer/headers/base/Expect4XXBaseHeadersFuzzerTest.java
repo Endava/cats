@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -14,30 +14,30 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-class Expect2XXBaseHeadersFuzzerTest {
+class Expect4XXBaseHeadersFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
     @Mock
     private TestCaseListener testCaseListener;
 
-    private Expect2XXBaseHeadersFuzzer expect2XXBaseHeadersFuzzer;
+    private Expect4XXBaseHeadersFuzzer expect4XXBaseHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        expect2XXBaseHeadersFuzzer = new My2XXFuzzer(serviceCaller, testCaseListener);
+        expect4XXBaseHeadersFuzzer = new My4XXFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
-    void givenANewExpect2XXBaseHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheExpect2XXBaseHeadersFuzzer() {
-        Assertions.assertThat(expect2XXBaseHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(expect2XXBaseHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(expect2XXBaseHeadersFuzzer).hasToString(expect2XXBaseHeadersFuzzer.getClass().getSimpleName());
+    void givenANewExpect4XXBaseHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheExpect4XXBaseHeadersFuzzer() {
+        Assertions.assertThat(expect4XXBaseHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(expect4XXBaseHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(expect4XXBaseHeadersFuzzer).hasToString(expect4XXBaseHeadersFuzzer.getClass().getSimpleName());
     }
 
-    static class My2XXFuzzer extends Expect2XXBaseHeadersFuzzer {
+    static class My4XXFuzzer extends Expect4XXBaseHeadersFuzzer {
 
-        public My2XXFuzzer(ServiceCaller sc, TestCaseListener lr) {
+        public My4XXFuzzer(ServiceCaller sc, TestCaseListener lr) {
             super(sc, lr);
         }
 

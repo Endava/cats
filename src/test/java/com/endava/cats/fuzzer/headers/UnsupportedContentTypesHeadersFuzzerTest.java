@@ -72,7 +72,7 @@ class UnsupportedContentTypesHeadersFuzzerTest {
 
         List<Set<CatsHeader>> headers = unsupportedContentTypeHeadersFuzzer.getHeaders(data);
 
-        Assertions.assertThat(headers).hasSize(BaseSecurityChecksHeadersFuzzer.UNSUPPORTED_MEDIA_TYPES.size() - 1);
+        Assertions.assertThat(headers).hasSize(29);
         Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Content-Type").build());
     }
 
@@ -84,7 +84,7 @@ class UnsupportedContentTypesHeadersFuzzerTest {
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT));
         unsupportedContentTypeHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(BaseSecurityChecksHeadersFuzzer.UNSUPPORTED_MEDIA_TYPES.size() - 1)).reportResult(Mockito.any(),
+        Mockito.verify(testCaseListener, Mockito.times(29)).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT));
     }
 }

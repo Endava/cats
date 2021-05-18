@@ -18,8 +18,8 @@ import java.util.List;
 public class LeadingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Autowired
-    protected LeadingSpacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    protected LeadingSpacesInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
+        super(cu, sc, lr);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class LeadingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.SPACES_HEADERS;
+        return catsUtil.getSpacesHeaders();
     }
 
     @Override

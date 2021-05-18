@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.headers.leading;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
-import com.endava.cats.fuzzer.headers.InvisibleCharsBaseFuzzer;
+import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
@@ -18,13 +18,13 @@ import java.util.List;
 public class LeadingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Autowired
-    public LeadingControlCharsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    public LeadingControlCharsInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
+        super(cu, sc, lr);
     }
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS_HEADERS;
+        return catsUtil.getControlCharsHeaders();
     }
 
     @Override

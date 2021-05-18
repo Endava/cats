@@ -17,15 +17,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 class LeadingControlCharsInFieldsValidateTrimFuzzerTest {
 
+    private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
-
     @Mock
     private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
     @Mock
     private FilesArguments filesArguments;
 
@@ -43,6 +39,9 @@ class LeadingControlCharsInFieldsValidateTrimFuzzerTest {
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\r\n");
         Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+
         Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
     }

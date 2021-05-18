@@ -22,16 +22,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class ControlCharsWithinFieldsValidateSanitizeFuzzerTest {
+class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
-
     @Mock
     private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
     @Mock
     private FilesArguments filesArguments;
 
@@ -52,6 +48,9 @@ class ControlCharsWithinFieldsValidateSanitizeFuzzerTest {
 
         Assertions.assertThat(fuzzingStrategy.getData()).contains("\u0000");
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.description()).isNotNull();
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.typeOfDataSentToTheService()).isNotNull();
     }

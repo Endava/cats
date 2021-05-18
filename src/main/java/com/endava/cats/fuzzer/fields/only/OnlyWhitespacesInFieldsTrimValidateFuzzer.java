@@ -28,7 +28,7 @@ public class OnlyWhitespacesInFieldsTrimValidateFuzzer extends InvisibleCharsOnl
 
     @Override
     List<String> getInvisibleChars() {
-        return CatsUtil.WHITESPACES_FIELDS;
+        return catsUtil.getSeparatorsFields();
     }
 
 

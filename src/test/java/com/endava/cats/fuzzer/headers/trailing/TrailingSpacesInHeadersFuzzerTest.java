@@ -3,12 +3,15 @@ package com.endava.cats.fuzzer.headers.trailing;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 class TrailingSpacesInHeadersFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
+
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -19,7 +22,7 @@ class TrailingSpacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        trailingSpacesInHeadersFuzzer = new TrailingSpacesInHeadersFuzzer(serviceCaller, testCaseListener);
+        trailingSpacesInHeadersFuzzer = new TrailingSpacesInHeadersFuzzer(catsUtil, serviceCaller, testCaseListener);
     }
 
     @Test
