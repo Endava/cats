@@ -3,12 +3,15 @@ package com.endava.cats.fuzzer.headers.only;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 class OnlyWhitespacesInHeadersFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
+
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -19,7 +22,7 @@ class OnlyWhitespacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        onlyWhitespacesInHeadersFuzzer = new OnlyWhitespacesInHeadersFuzzer(serviceCaller, testCaseListener);
+        onlyWhitespacesInHeadersFuzzer = new OnlyWhitespacesInHeadersFuzzer(catsUtil, serviceCaller, testCaseListener);
     }
 
     @Test

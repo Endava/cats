@@ -28,7 +28,7 @@ public class OnlyControlCharsInFieldsValidateTrimFuzzer extends InvisibleCharsOn
 
     @Override
     List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS_FIELDS;
+        return catsUtil.getControlCharsFields();
     }
 
 }

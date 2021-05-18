@@ -16,15 +16,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
 class TrailingWhitespacesInFieldsTrimValidateFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
-
     @Mock
     private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
     @Mock
     private FilesArguments filesArguments;
 

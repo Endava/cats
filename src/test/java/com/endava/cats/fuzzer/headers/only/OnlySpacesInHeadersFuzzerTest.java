@@ -4,12 +4,14 @@ import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 class OnlySpacesInHeadersFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -21,7 +23,7 @@ class OnlySpacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        onlySpacesInHeadersFuzzer = new OnlySpacesInHeadersFuzzer(serviceCaller, testCaseListener);
+        onlySpacesInHeadersFuzzer = new OnlySpacesInHeadersFuzzer(catsUtil, serviceCaller, testCaseListener);
     }
 
     @Test

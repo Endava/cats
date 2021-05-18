@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
-import com.endava.cats.fuzzer.headers.InvisibleCharsBaseFuzzer;
+import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
@@ -18,8 +18,8 @@ import java.util.List;
 public class TrailingWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Autowired
-    public TrailingWhitespacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    public TrailingWhitespacesInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
+        super(cu, sc, lr);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class TrailingWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.WHITESPACES_HEADERS;
+        return catsUtil.getSeparatorsHeaders();
     }
 
     @Override

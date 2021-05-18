@@ -19,8 +19,8 @@ import java.util.List;
 public class OnlySpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Autowired
-    protected OnlySpacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    protected OnlySpacesInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
+        super(cu, sc, lr);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class OnlySpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.SPACES_HEADERS;
+        return catsUtil.getSpacesHeaders();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
-    protected static final String CATS_ACCEPT = "application/cats";
-    static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
+    private static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
             "application/javascript",
             "application/octet-stream",
             "application/ogg",
@@ -50,6 +49,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
             "text/javascript",
             "text/plain",
             "text/xml");
+    protected static final String CATS_ACCEPT = "application/cats";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;

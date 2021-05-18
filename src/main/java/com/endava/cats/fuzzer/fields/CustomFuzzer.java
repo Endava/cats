@@ -1,10 +1,10 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CustomFuzzerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -18,8 +18,8 @@ import java.util.List;
 public class TrailingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Autowired
-    protected TrailingSpacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    protected TrailingSpacesInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
+        super(cu, sc, lr);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class TrailingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.SPACES_HEADERS;
+        return catsUtil.getSpacesHeaders();
     }
 
     @Override

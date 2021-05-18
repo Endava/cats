@@ -30,7 +30,7 @@ public class LeadingControlCharsInFieldsTrimValidateFuzzer extends InvisibleChar
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS_FIELDS;
+        return catsUtil.getControlCharsFields();
     }
 
     @Override

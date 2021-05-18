@@ -1,12 +1,11 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.base;
 
-import com.endava.cats.fuzzer.fields.base.ExpectOnly2XXBaseFieldsFuzzer;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +17,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-class ExpectOnly2XXBaseFieldsFuzzerTest {
+class Expect4XXForRequiredBaseFieldsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -31,23 +30,23 @@ class ExpectOnly2XXBaseFieldsFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private ExpectOnly2XXBaseFieldsFuzzer expectOnly2XXBaseFieldsFuzzer;
+    private Expect4XXForRequiredBaseFieldsFuzzer expect4XXForRequiredBaseFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        expectOnly2XXBaseFieldsFuzzer = new CustomExpect2XX(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        expect4XXForRequiredBaseFieldsFuzzer = new CustomExpect4XX(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
-    void givenADummyExpectOnly2XXFieldsFuzzer_whenCreatingANewInstance_thenTheDefaultMethodsAreMatchingThe2XXFuzzer() {
-        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer).hasToString(expectOnly2XXBaseFieldsFuzzer.getClass().getSimpleName());
+    void givenADummyExpect4XXForRequiredFieldsFuzzer_whenCreatingANewInstance_thenTheDefaultMethodsAreMatchingThe4XXFuzzer() {
+        Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(expect4XXForRequiredBaseFieldsFuzzer).hasToString(expect4XXForRequiredBaseFieldsFuzzer.getClass().getSimpleName());
     }
 
-    static class CustomExpect2XX extends ExpectOnly2XXBaseFieldsFuzzer {
+    static class CustomExpect4XX extends Expect4XXForRequiredBaseFieldsFuzzer {
 
-        public CustomExpect2XX(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+        public CustomExpect4XX(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
             super(sc, lr, cu, cp);
         }
 
@@ -57,7 +56,7 @@ class ExpectOnly2XXBaseFieldsFuzzerTest {
         }
 
         @Override
-        public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+        protected ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
             return null;
         }
 

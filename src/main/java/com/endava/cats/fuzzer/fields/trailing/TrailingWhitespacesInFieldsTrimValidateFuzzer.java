@@ -30,7 +30,7 @@ public class TrailingWhitespacesInFieldsTrimValidateFuzzer extends InvisibleChar
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.WHITESPACES_FIELDS;
+        return catsUtil.getSeparatorsFields();
     }
 
     @Override

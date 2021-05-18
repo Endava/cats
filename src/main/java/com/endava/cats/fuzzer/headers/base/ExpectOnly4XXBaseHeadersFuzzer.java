@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -10,12 +10,12 @@ public abstract class ExpectOnly4XXBaseHeadersFuzzer extends BaseHeadersFuzzer {
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
+    public ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
 

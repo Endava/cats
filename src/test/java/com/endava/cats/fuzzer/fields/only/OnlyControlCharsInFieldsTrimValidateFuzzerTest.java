@@ -24,15 +24,11 @@ import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
-
     @Mock
     private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
     @Mock
     private FilesArguments filesArguments;
 

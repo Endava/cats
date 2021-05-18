@@ -1,11 +1,12 @@
 package com.endava.cats.fuzzer.headers.only;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
-import com.endava.cats.fuzzer.headers.InvisibleCharsBaseFuzzer;
+import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -15,8 +16,9 @@ import java.util.List;
 @HeaderFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.OnlyWhitespacesInHeadersFuzzer.enabled", havingValue = "true")
 public class OnlyWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
-    public OnlyWhitespacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    @Autowired
+    public OnlyWhitespacesInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
+        super(cu, sc, lr);
     }
 
     @Override
@@ -26,7 +28,7 @@ public class OnlyWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.WHITESPACES_HEADERS;
+        return catsUtil.getSeparatorsHeaders();
     }
 
     @Override

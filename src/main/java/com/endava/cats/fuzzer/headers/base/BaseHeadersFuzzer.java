@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;

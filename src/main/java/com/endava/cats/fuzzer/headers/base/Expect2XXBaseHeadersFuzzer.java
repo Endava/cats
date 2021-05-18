@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.base;
 
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
@@ -12,12 +12,12 @@ public abstract class Expect2XXBaseHeadersFuzzer extends BaseHeadersFuzzer {
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
+    public ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 

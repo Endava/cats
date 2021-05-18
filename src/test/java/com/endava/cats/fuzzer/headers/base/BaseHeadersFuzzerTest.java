@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.headers;
+package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -27,8 +27,6 @@ import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 class BaseHeadersFuzzerTest {
-
-
     @Mock
     private ServiceCaller serviceCaller;
 

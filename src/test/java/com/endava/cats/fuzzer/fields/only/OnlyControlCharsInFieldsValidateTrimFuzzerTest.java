@@ -24,15 +24,11 @@ import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
-
     @Mock
     private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
     @Mock
     private FilesArguments filesArguments;
 
@@ -44,10 +40,17 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
     }
 
     @Test
-    void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTabsOnlyInFieldsValidateTrimFuzzer() {
+    void shouldOverrideDefaultMethods() {
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");
+    }
 
+    @Test
+    void shouldReturnProperLengthWhenNoMinLLength() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
         StringSchema stringSchema = new StringSchema();
@@ -57,15 +60,22 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
         FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0000");
+    }
 
+    @Test
+    void shouldReturnProperLengthWhenMinValue() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Map<String, Schema> schemaMap = new HashMap<>();
+        StringSchema stringSchema = new StringSchema();
         stringSchema.setMinLength(5);
 
-        fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
+        schemaMap.put("schema", stringSchema);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
+
+        FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\u0000", stringSchema.getMinLength() + 1));
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");
+
     }
 }
 

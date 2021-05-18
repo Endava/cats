@@ -36,7 +36,7 @@ public class WithinControlCharsInFieldsSanitizeValidateFuzzer extends InvisibleC
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS_FIELDS;
+        return catsUtil.getControlCharsFields();
     }
 
     @Override

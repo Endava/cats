@@ -31,7 +31,7 @@ public class LeadingWhitespacesInFieldsTrimValidateFuzzer extends InvisibleChars
 
     @Override
     public List<String> getInvisibleChars() {
-        return CatsUtil.WHITESPACES_FIELDS;
+        return catsUtil.getSeparatorsFields();
     }
 
     @Override

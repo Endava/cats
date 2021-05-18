@@ -3,12 +3,15 @@ package com.endava.cats.fuzzer.headers.leading;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
 class LeadingWhitespacesInHeadersFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
+
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -19,7 +22,7 @@ class LeadingWhitespacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        leadingWhitespacesInHeadersFuzzer = new LeadingWhitespacesInHeadersFuzzer(serviceCaller, testCaseListener);
+        leadingWhitespacesInHeadersFuzzer = new LeadingWhitespacesInHeadersFuzzer(catsUtil, serviceCaller, testCaseListener);
     }
 
     @Test

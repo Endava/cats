@@ -24,15 +24,11 @@ import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 class OnlyWhitespacesInFieldsTrimValidateFuzzerTest {
+    private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
-
     @Mock
     private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
     @Mock
     private FilesArguments filesArguments;
 
@@ -44,10 +40,18 @@ class OnlyWhitespacesInFieldsTrimValidateFuzzerTest {
     }
 
     @Test
-    void givenANewSpacesOnlyInFieldsTrimValidateFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInFieldsTrimValidateFuzzer() {
+    void shouldProperlyOverrideMethods() {
         Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.description()).isNotNull();
+        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.getInvisibleChars()).contains(" ");
         Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+    }
 
+    @Test
+    void shouldReturnProperLengthWhenNoMinLLength() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
         StringSchema stringSchema = new StringSchema();
@@ -57,15 +61,22 @@ class OnlyWhitespacesInFieldsTrimValidateFuzzerTest {
         FuzzingStrategy fuzzingStrategy = onlyWhitespacesInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");
+    }
 
+    @Test
+    void shouldReturnProperLengthWhenMinValue() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Map<String, Schema> schemaMap = new HashMap<>();
+        StringSchema stringSchema = new StringSchema();
         stringSchema.setMinLength(5);
 
-        fuzzingStrategy = onlyWhitespacesInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
+        schemaMap.put("schema", stringSchema);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
+
+        FuzzingStrategy fuzzingStrategy = onlyWhitespacesInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat(" ", stringSchema.getMinLength() + 1));
-        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.description()).isNotNull();
-        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.getInvisibleChars()).contains(" ");
+
     }
 
     @Test
