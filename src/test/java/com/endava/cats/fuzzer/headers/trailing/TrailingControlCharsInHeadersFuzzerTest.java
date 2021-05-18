@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
-import com.endava.cats.fuzzer.headers.trailing.TrailingControlCharsInHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
@@ -32,6 +31,6 @@ class TrailingControlCharsInHeadersFuzzerTest {
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0000");
-
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
     }
 }

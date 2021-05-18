@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -28,22 +29,22 @@ public class StringsInNumericFieldsFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Arrays.asList(NumberSchema.class, IntegerSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    public String getBoundaryValue(Schema schema) {
         return StringGenerator.generateRandomString();
     }
 
     @Override
-    protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+    public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         return true;
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
+    public String typeOfDataSentToTheService() {
         return "strings in numeric fields";
     }
 

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class ControlCharsWithinFieldsSanitizeValidateFuzzerTest {
+class WithinControlCharsInFieldsSanitizeValidateFuzzerTest {
 
     @Mock
     private ServiceCaller serviceCaller;
@@ -36,11 +36,11 @@ class ControlCharsWithinFieldsSanitizeValidateFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private ControlCharsWithinFieldsSanitizeValidateFuzzer controlCharsWithinFieldsSanitizeValidateFuzzer;
+    private WithinControlCharsInFieldsSanitizeValidateFuzzer withinControlCharsInFieldsSanitizeValidateFuzzer;
 
     @BeforeEach
     void setup() {
-        controlCharsWithinFieldsSanitizeValidateFuzzer = new ControlCharsWithinFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        withinControlCharsInFieldsSanitizeValidateFuzzer = new WithinControlCharsInFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
@@ -49,24 +49,24 @@ class ControlCharsWithinFieldsSanitizeValidateFuzzerTest {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("field", new StringSchema());
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
-        FuzzingStrategy fuzzingStrategy = controlCharsWithinFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
+        FuzzingStrategy fuzzingStrategy = withinControlCharsInFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).contains("\u0000");
-        Assertions.assertThat(controlCharsWithinFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(controlCharsWithinFieldsSanitizeValidateFuzzer.description()).isNotNull();
-        Assertions.assertThat(controlCharsWithinFieldsSanitizeValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.description()).isNotNull();
+        Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
         PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
-        Assertions.assertThat(controlCharsWithinFieldsSanitizeValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
         PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
-        Assertions.assertThat(controlCharsWithinFieldsSanitizeValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
     }
 }

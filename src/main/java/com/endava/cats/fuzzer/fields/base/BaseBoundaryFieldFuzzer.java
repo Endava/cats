@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.format.FormatGenerator;
@@ -26,12 +26,12 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
+    public String typeOfDataSentToTheService() {
         return "outside the boundary values";
     }
 
     @Override
-    protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
+    public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
 
         if (this.fuzzedFieldHasAnAssociatedSchema(schema)) {
@@ -77,23 +77,23 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      *
      * @return schema type for which the Fuzzer will apply.
      */
-    protected abstract List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo();
+    public abstract List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo();
 
     /**
-     * The value that will be used for fuzzing
+     * The value that will be used for fuzzing.
      *
      * @param schema used to extract boundary information
      * @return a value to be used for fuzzing
      */
-    protected abstract String getBoundaryValue(Schema schema);
+    public abstract String getBoundaryValue(Schema schema);
 
     /**
      * Override this to provide information about whether the current field has boundaries defined or not. For example a String
-     * field without minLength defined is not considered to have a left boundary
+     * field without minLength defined is not considered to have a left boundary.
      *
      * @param fuzzedField used to extract boundary information
      * @param data        FuzzingData constructed by CATS
      * @return true if the filed has a boundary defined or false otherwise
      */
-    protected abstract boolean hasBoundaryDefined(String fuzzedField, FuzzingData data);
+    public abstract boolean hasBoundaryDefined(String fuzzedField, FuzzingData data);
 }

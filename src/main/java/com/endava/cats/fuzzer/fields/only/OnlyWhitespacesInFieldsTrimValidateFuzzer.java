@@ -22,12 +22,14 @@ public class OnlyWhitespacesInFieldsTrimValidateFuzzer extends InvisibleCharsOnl
     }
 
     @Override
+    protected String typeOfDataSentToTheService() {
+        return "values with unicode separators only";
+    }
+
+    @Override
     List<String> getInvisibleChars() {
         return CatsUtil.WHITESPACES_FIELDS;
     }
 
-    @Override
-    String getInvisibleCharDescription() {
-        return "unicode whitespaces and invisible separators";
-    }
+
 }

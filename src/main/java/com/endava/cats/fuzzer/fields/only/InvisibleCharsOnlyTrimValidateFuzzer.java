@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.fields.Expect4XXForRequiredBaseFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
@@ -22,11 +22,6 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
-        return this.getInvisibleCharDescription() + " only";
-    }
-
-    @Override
     protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         return this.getInvisibleChars()
                 .stream().map(value -> PayloadGenerator.getFuzzStrategyWithRepeatedCharacterReplacingValidValue(data, fuzzedField, value))
@@ -35,7 +30,7 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
         return ResponseCodeFamily.FOURXX;
     }
 
@@ -46,10 +41,8 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
 
     @Override
     public String description() {
-        return "iterate through each field and send requests with " + this.getInvisibleCharDescription() + " in the targeted field";
+        return "iterate through each field and send  " + this.typeOfDataSentToTheService();
     }
 
     abstract List<String> getInvisibleChars();
-
-    abstract String getInvisibleCharDescription();
 }

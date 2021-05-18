@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.StringGenerator;
@@ -26,35 +26,35 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
+    public String typeOfDataSentToTheService() {
         return String.format("exact %s size values", this.exactValueTypeString());
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(StringSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    public String getBoundaryValue(Schema schema) {
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC;
         return StringGenerator.generate(pattern, getExactMethod().apply(schema).intValue(), getExactMethod().apply(schema).intValue());
     }
 
     @Override
-    protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+    public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
         Map<String, String> currentPath = filesArguments.getRefData(data.getPath());
         return currentPath.isEmpty() && getExactMethod().apply(schema) != null;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 

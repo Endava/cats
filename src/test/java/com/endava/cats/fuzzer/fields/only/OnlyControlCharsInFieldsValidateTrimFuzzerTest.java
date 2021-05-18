@@ -66,7 +66,6 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleCharDescription()).isEqualTo("unicode control characters");
     }
 }
 

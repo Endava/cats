@@ -31,6 +31,6 @@ class OnlyControlCharsInHeadersFuzzerTest {
         Assertions.assertThat(onlyControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(onlyControlCharsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(onlyControlCharsInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0000");
-
+        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
     }
 }

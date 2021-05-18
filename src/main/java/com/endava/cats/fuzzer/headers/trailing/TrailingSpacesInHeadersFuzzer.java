@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
-import com.endava.cats.fuzzer.headers.InvisibleCharsBaseFuzzer;
 import com.endava.cats.fuzzer.headers.SpacesCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;

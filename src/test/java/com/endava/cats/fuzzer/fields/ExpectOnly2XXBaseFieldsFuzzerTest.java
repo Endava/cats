@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.fields.base.ExpectOnly2XXBaseFieldsFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -56,7 +57,7 @@ class ExpectOnly2XXBaseFieldsFuzzerTest {
         }
 
         @Override
-        protected ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+        public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
             return null;
         }
 

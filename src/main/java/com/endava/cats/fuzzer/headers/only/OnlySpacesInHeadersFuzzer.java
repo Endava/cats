@@ -24,7 +24,7 @@ public class OnlySpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
 

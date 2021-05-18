@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
@@ -13,17 +13,12 @@ public abstract class ExpectOnly4XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
-        return ResponseCodeFamily.FOURXX;
-    }
-
-    @Override
-    public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
 
@@ -31,4 +26,10 @@ public abstract class ExpectOnly4XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
     public String toString() {
         return this.getClass().getSimpleName();
     }
+
+    @Override
+    public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+        return ResponseCodeFamily.FOURXX;
+    }
+
 }

@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.fuzzer.Fuzzer;
 

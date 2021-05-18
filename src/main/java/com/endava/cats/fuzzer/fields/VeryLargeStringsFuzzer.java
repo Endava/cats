@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -27,22 +28,22 @@ public class VeryLargeStringsFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
+    public String typeOfDataSentToTheService() {
         return "very large string values";
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(StringSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    public String getBoundaryValue(Schema schema) {
         return StringGenerator.generateLargeString(10000);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+    public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         return true;
     }
 

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.NumberGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -27,17 +28,17 @@ public class IntegerFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(IntegerSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    public String getBoundaryValue(Schema schema) {
         return NumberGenerator.generateLeftBoundaryIntegerValue(schema);
     }
 
     @Override
-    protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+    public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         return true;
     }
 

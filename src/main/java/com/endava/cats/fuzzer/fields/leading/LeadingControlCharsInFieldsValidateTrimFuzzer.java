@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields.leading;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -9,12 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Component
 @FieldFuzzer
 @ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.LeadingControlCharsInFieldsFuzzer.enabled}")
-public class LeadingControlCharsInFieldsValidateTrimFuzzer extends LeadingInvisibleCharsValidateTrimFuzzer {
+public class LeadingControlCharsInFieldsValidateTrimFuzzer extends LeadingControlCharsInFieldsTrimValidateFuzzer {
 
     @Autowired
     protected LeadingControlCharsInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
@@ -22,13 +21,19 @@ public class LeadingControlCharsInFieldsValidateTrimFuzzer extends LeadingInvisi
     }
 
     @Override
-    List<String> getInvisibleChars() {
-        return CatsUtil.CONTROL_CHARS_FIELDS;
+    public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
+        return ResponseCodeFamily.FOURXX;
     }
 
     @Override
-    String getInvisibleCharDescription() {
-        return "unicode control chars";
+    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
+        return ResponseCodeFamily.FOURXX;
     }
+
+    @Override
+    public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+        return ResponseCodeFamily.FOURXX;
+    }
+
 
 }
