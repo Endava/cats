@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.base.ExactValuesInFieldsFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.args.FilesArguments;
@@ -26,7 +27,7 @@ public class MinLengthExactValuesInStringFieldsFuzzer extends ExactValuesInField
     }
 
     @Override
-    protected Function<Schema, Number> getExactMethod() {
+    public Function<Schema, Number> getExactMethod() {
         return Schema::getMinLength;
     }
 }

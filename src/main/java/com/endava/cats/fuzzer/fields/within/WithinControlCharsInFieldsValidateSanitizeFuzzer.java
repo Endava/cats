@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.fields.trailing;
+package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
@@ -12,11 +12,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.TrailingWhitespacesInFieldsFuzzer.enabled}")
-public class TrailingWhitespacesInFieldsValidateTrimFuzzer extends TrailingWhitespacesInFieldsTrimValidateFuzzer {
+@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize' and ${fuzzer.fields.WithinControlCharsInFieldsFuzzer.enabled}")
+public class WithinControlCharsInFieldsValidateSanitizeFuzzer extends WithinControlCharsInFieldsSanitizeValidateFuzzer {
 
     @Autowired
-    protected TrailingWhitespacesInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    protected WithinControlCharsInFieldsValidateSanitizeFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
@@ -26,13 +26,12 @@ public class TrailingWhitespacesInFieldsValidateTrimFuzzer extends TrailingWhite
     }
 
     @Override
-    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
-        return ResponseCodeFamily.FOURXX;
-    }
-
-    @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
 
+    @Override
+    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
+        return ResponseCodeFamily.FOURXX;
+    }
 }

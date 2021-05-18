@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -13,12 +13,12 @@ public abstract class Expect4XXForRequiredBaseFieldsFuzzer extends BaseFieldsFuz
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 

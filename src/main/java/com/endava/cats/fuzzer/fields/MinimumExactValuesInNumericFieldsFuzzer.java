@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.base.ExactValuesInFieldsFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.args.FilesArguments;
@@ -35,12 +36,12 @@ public class MinimumExactValuesInNumericFieldsFuzzer extends ExactValuesInFields
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Arrays.asList(NumberSchema.class, IntegerSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    public String getBoundaryValue(Schema schema) {
         return String.valueOf(getExactMethod().apply(schema));
     }
 }

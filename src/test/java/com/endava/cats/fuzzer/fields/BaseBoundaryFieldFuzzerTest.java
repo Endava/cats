@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
@@ -97,17 +98,17 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
             return Collections.singletonList(StringSchema.class);
         }
 
         @Override
-        protected String getBoundaryValue(Schema schema) {
+        public String getBoundaryValue(Schema schema) {
             return "test";
         }
 
         @Override
-        protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+        public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
             return true;
         }
 
@@ -124,17 +125,17 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
             return Collections.singletonList(StringSchema.class);
         }
 
         @Override
-        protected String getBoundaryValue(Schema schema) {
+        public String getBoundaryValue(Schema schema) {
             return "test";
         }
 
         @Override
-        protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+        public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
             return false;
         }
 
@@ -151,17 +152,17 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
             return Collections.singletonList(IntegerSchema.class);
         }
 
         @Override
-        protected String getBoundaryValue(Schema schema) {
+        public String getBoundaryValue(Schema schema) {
             return "test";
         }
 
         @Override
-        protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+        public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
             return true;
         }
 

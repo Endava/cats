@@ -120,7 +120,7 @@ public class ServiceCaller {
     }
 
     private SSLSocketFactory buildSslSocketFactory(TrustManager[] trustAllCerts) throws IOException, GeneralSecurityException {
-        final SSLContext sslContext = SSLContext.getInstance("SSL");
+        final SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
 
         if (!EMPTY.equalsIgnoreCase(authArguments.getSslKeystore())) {
             KeyStore keyStore = KeyStore.getInstance("jks");

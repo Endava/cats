@@ -35,11 +35,11 @@ class ControlCharsWithinFieldsValidateSanitizeFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private ControlCharsWithinFieldsValidateSanitizeFuzzer controlCharsWithinFieldsValidateSanitizeFuzzer;
+    private WithinControlCharsInFieldsValidateSanitizeFuzzer controlCharsWithinFieldsValidateSanitizeFuzzer;
 
     @BeforeEach
     void setup() {
-        controlCharsWithinFieldsValidateSanitizeFuzzer = new ControlCharsWithinFieldsValidateSanitizeFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        controlCharsWithinFieldsValidateSanitizeFuzzer = new WithinControlCharsInFieldsValidateSanitizeFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test

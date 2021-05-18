@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -25,17 +26,17 @@ public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
+    public String typeOfDataSentToTheService() {
         return "invalid ENUM values";
     }
 
     @Override
-    protected List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
         return Collections.singletonList(StringSchema.class);
     }
 
     @Override
-    protected String getBoundaryValue(Schema schema) {
+    public String getBoundaryValue(Schema schema) {
         if (schema.getEnum() != null) {
             int length = String.valueOf(schema.getEnum().get(0)).length();
             return StringGenerator.generate("[A-Z]+", length, length);
@@ -44,7 +45,7 @@ public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    protected boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+    public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
         return schema.getEnum() != null;
     }

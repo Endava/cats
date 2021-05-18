@@ -34,6 +34,6 @@ public class LeadingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Override
     public FuzzingStrategy concreteFuzzStrategy() {
-        return FuzzingStrategy.trail();
+        return FuzzingStrategy.prefix();
     }
 }

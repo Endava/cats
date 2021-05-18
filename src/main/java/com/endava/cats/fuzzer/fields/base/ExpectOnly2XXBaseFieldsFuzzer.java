@@ -1,9 +1,9 @@
-package com.endava.cats.fuzzer.fields;
+package com.endava.cats.fuzzer.fields.base;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsUtil;
 
 public abstract class ExpectOnly2XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
@@ -13,15 +13,19 @@ public abstract class ExpectOnly2XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 
+    @Override
+    public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+        return ResponseCodeFamily.TWOXX;
+    }
 
     @Override
     public String toString() {

@@ -11,12 +11,12 @@ public abstract class SpacesCharsBaseFuzzer extends InvisibleCharsBaseFuzzer {
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
+    public ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 
     @Override
-    protected ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
+    public ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
 

@@ -22,12 +22,13 @@ public class OnlyControlCharsInFieldsTrimValidateFuzzer extends InvisibleCharsOn
     }
 
     @Override
+    protected String typeOfDataSentToTheService() {
+        return "values with control chars only";
+    }
+
+    @Override
     List<String> getInvisibleChars() {
         return CatsUtil.CONTROL_CHARS_FIELDS;
     }
 
-    @Override
-    String getInvisibleCharDescription() {
-        return "unicode control characters";
-    }
 }
