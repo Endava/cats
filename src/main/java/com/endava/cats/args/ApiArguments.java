@@ -8,6 +8,9 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Holds all arguments related to API details.
+ */
 @Component
 @Getter
 public class ApiArguments {

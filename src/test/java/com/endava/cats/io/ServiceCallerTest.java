@@ -65,8 +65,8 @@ class ServiceCallerTest {
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments);
 
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
-        ReflectionTestUtils.setField(serviceCaller, "proxyHost", "empty");
         ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
+        ReflectionTestUtils.setField(authArguments, "proxyHost", "empty");
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(filesArguments, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(filesArguments, "headersFile", "src/test/resources/headers.yml");
@@ -197,8 +197,8 @@ class ServiceCallerTest {
 
     @Test
     void shouldSetProxy() {
-        ReflectionTestUtils.setField(serviceCaller, "proxyHost", "http://localhost");
-        ReflectionTestUtils.setField(serviceCaller, "proxyPort", 8080);
+        ReflectionTestUtils.setField(authArguments, "proxyHost", "http://localhost");
+        ReflectionTestUtils.setField(authArguments, "proxyPort", 8080);
 
         serviceCaller.initHttpClient();
         Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
