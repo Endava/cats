@@ -248,6 +248,8 @@ And this is what you get when you click on a specific test:
 - `--sslKeystore` Location of the JKS keystore holding certificates used when authenticating calls using one-way or two-way SSL 
 - `--sslKeystorePwd` The password of the `sslKeystore`
 - `--sslKeyPwd` The password of the private key from the `sslKeystore`
+- `--proxyHost` The proxy server's host name (if running behind proxy)
+- `--proxyPort` The proxy server's port number (if running behind proxy)
 
 Using some of these options a typical invocation of CATS might look like this:
 
