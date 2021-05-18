@@ -23,6 +23,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.net.Proxy;
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
@@ -192,6 +193,16 @@ class ServiceCallerTest {
 
         serviceCaller.initHttpClient();
         Assertions.assertThat(serviceCaller.okHttpClient).isNull();
+    }
+
+    @Test
+    void shouldSetProxy() {
+        ReflectionTestUtils.setField(serviceCaller, "proxyHost", "http://localhost");
+        ReflectionTestUtils.setField(serviceCaller, "proxyPort", 8080);
+
+        serviceCaller.initHttpClient();
+        Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
+        Assertions.assertThat(serviceCaller.okHttpClient.proxy()).isNotEqualTo(Proxy.NO_PROXY);
     }
 
     @Test

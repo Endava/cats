@@ -34,6 +34,14 @@ public enum HttpMethod {
         RECOMMENDED_CODES.put(HttpMethod.TRACE, Arrays.asList("400", "500", "200"));
     }
 
+    public static boolean requiresBody(HttpMethod method) {
+        return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
+    }
+
+    public static boolean requiresBody(String method) {
+        return requiresBody(HttpMethod.valueOf(method));
+    }
+
     public static Operation getOperation(HttpMethod method, PathItem pathItem) {
         return OPERATIONS.get(method).apply(pathItem);
     }

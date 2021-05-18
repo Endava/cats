@@ -3,9 +3,13 @@ package com.endava.cats.model.report;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+
+import java.io.StringReader;
 
 @Getter
 @Setter
@@ -39,7 +43,9 @@ public class CatsTestCase {
     }
 
     public String getRequestJson() {
-        return TestCaseExporter.GSON.toJson(request.getPayload());
+        JsonReader reader = new JsonReader(new StringReader(request.getPayload()));
+        reader.setLenient(true);
+        return TestCaseExporter.GSON.toJson(JsonParser.parseReader(reader));
     }
 
     public String getResponseJson() {
