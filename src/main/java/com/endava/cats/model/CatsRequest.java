@@ -1,32 +1,33 @@
 package com.endava.cats.model;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.ToString;
 
-import java.io.StringReader;
 import java.util.List;
 
 @Getter
 public class CatsRequest {
     List<Header> headers;
-    JsonElement payload;
+    String payload;
     String httpMethod;
+    String url;
 
 
     public static CatsRequest empty() {
         CatsRequest request = new CatsRequest();
-        request.payload = JsonParser.parseReader(new StringReader("{}"));
+        request.payload = "{}";
         request.httpMethod = "";
+        request.url = "";
         return request;
     }
 
     public void setPayload(String payload) {
-        JsonReader reader = new JsonReader(new StringReader(payload));
-        reader.setLenient(true);
-        this.payload = JsonParser.parseReader(reader);
+        this.payload = payload;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public void setHeaders(List<Header> headers) {
@@ -38,8 +39,10 @@ public class CatsRequest {
     }
 
     @AllArgsConstructor
+    @Getter
+    @ToString
     public static class Header {
-        private String name;
-        private String value;
+        private final String name;
+        private final String value;
     }
 }
