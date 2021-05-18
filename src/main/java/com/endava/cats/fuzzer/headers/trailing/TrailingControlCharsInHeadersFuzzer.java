@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -29,7 +30,10 @@ public class TrailingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzze
 
     @Override
     public List<String> getInvisibleChars() {
-        return catsUtil.getControlCharsHeaders();
+        List<String> controlChars = new ArrayList<>(catsUtil.getControlCharsHeaders());
+        controlChars.remove("\r");
+
+        return controlChars;
     }
 
     @Override
