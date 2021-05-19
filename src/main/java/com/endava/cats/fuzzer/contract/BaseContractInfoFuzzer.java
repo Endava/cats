@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * Base class for all Contract Fuzzers. If you need additional behaviour please make sure you don't break existing Fuzzers.
+ */
 public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String DESCRIPTION = "description";
     protected static final String COMMA = ", ";
@@ -21,16 +24,37 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String IS_TOO_SHORT = " is too short";
     protected static final String EMPTY = "";
     protected final TestCaseListener testCaseListener;
-    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     protected final List<String> fuzzedPaths = new ArrayList<>();
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     @Autowired
     protected BaseContractInfoFuzzer(TestCaseListener tcl) {
         this.testCaseListener = tcl;
     }
 
-    public abstract void process(FuzzingData data);
+    @Override
+    public void fuzz(FuzzingData data) {
+        if (!fuzzedPaths.contains(this.runKey(data))) {
+            testCaseListener.createAndExecuteTest(log, this, () -> addDefaultsAndProcess(data));
 
+            fuzzedPaths.add(this.runKey(data));
+        }
+    }
+
+    /**
+     * Contract Fuzzers are only analyzing the contract without doing nay HTTP Call.
+     * This is why we set the below default values for all Contract Fuzzers.
+     *
+     * @param data the current FuzzingData
+     */
+    private void addDefaultsAndProcess(FuzzingData data) {
+        testCaseListener.addPath(data.getPath());
+        testCaseListener.addFullRequestPath("NA");
+        testCaseListener.addRequest(CatsRequest.empty());
+        testCaseListener.addResponse(CatsResponse.empty());
+
+        this.process(data);
+    }
 
     protected <T> String getOrEmpty(Supplier<T> function, String toReturn) {
         if (function.get() == null) {
@@ -51,27 +75,16 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
         return text + newLine(newLines);
     }
 
-    @Override
-    public void fuzz(FuzzingData data) {
-        if (!fuzzedPaths.contains(this.runKey(data))) {
-            testCaseListener.createAndExecuteTest(log, this, () -> addDefaultsAndProcess(data));
-
-            fuzzedPaths.add(this.runKey(data));
-        }
-    }
-
-    private void addDefaultsAndProcess(FuzzingData data) {
-        testCaseListener.addPath(data.getPath());
-        testCaseListener.addFullRequestPath("NA");
-        testCaseListener.addRequest(CatsRequest.empty());
-        testCaseListener.addResponse(CatsResponse.empty());
-
-        this.process(data);
-    }
+    /**
+     * Each Fuzzer will implement this in order to provide specific logic.
+     *
+     * @param data the current FuzzingData object
+     */
+    public abstract void process(FuzzingData data);
 
     /**
      * This will avoid running the same fuzzer more than once if not relevant. You can define the runKey based on any combination of elements
-     * that will make the run unique for the context
+     * that will make the run unique for the context. Some Fuzzers might run once per contract while others once per path.
      *
      * @param data the FuzzingData
      * @return a unique running key for the Fuzzer context

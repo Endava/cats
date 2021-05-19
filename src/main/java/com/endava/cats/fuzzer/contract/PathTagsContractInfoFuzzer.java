@@ -42,7 +42,7 @@ public class PathTagsContractInfoFuzzer extends BaseContractInfoFuzzer {
         if (CollectionUtils.isEmpty(data.getTags())) {
             testCaseListener.reportError(log, "The current path does not contain any [tags] element");
         } else if (matching.size() == data.getTags().size()) {
-            testCaseListener.reportInfo(log, "The current path's [tags] are correctly defined in the top level [tags] element");
+            testCaseListener.reportInfo(log, "The current path's [tags] are correctly defined at the top level [tags] element");
         } else {
             List<String> missing = new ArrayList<>(data.getTags());
             missing.removeAll(matching);
