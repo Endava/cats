@@ -65,7 +65,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     private String checkElement(String element, String errors) {
         if (!errors.isEmpty()) {
-            return String.format("%s is misconfigured:%s %s", this.bold(element), errors, this.newLine(2));
+            return String.format("%s is misconfigured: %s %s", this.bold(element), errors, this.newLine(2));
         }
 
         return EMPTY;
