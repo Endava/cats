@@ -127,7 +127,7 @@ class BypassAuthenticationFuzzerTest {
     void shouldProperlyIdentifyAuthHeadersFromHeadersFile() throws Exception {
         ReflectionTestUtils.setField(filesArguments, "headersFile", "notEmpty");
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
-        Mockito.doCallRealMethod().when(catsUtil).mapObjsToString(Mockito.anyString(), Mockito.anyMap());
+        Mockito.doCallRealMethod().when(catsUtil).loadFileToMap(Mockito.anyString(), Mockito.anyMap());
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").build();
 
         filesArguments.loadHeaders();

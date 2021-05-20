@@ -65,7 +65,6 @@ public class CustomFuzzer implements CustomFuzzerBase {
         MDC.put("fuzzerKey", null);
     }
 
-
     @Override
     public String toString() {
         return this.getClass().getSimpleName();

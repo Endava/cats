@@ -24,11 +24,11 @@ import java.util.stream.Collectors;
  */
 public abstract class BaseFieldsFuzzer implements Fuzzer {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
+    protected final CatsUtil catsUtil;
     final FilesArguments filesArguments;
     final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    protected final CatsUtil catsUtil;
 
 
     @Autowired
@@ -48,6 +48,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         List<String> fieldsToBeRemoved = filesArguments.getRefData(data.getPath()).keySet()
                 .stream().filter(CATS_REMOVE_FIELD::equalsIgnoreCase).collect(Collectors.toList());
         logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
+
         Set<String> allFields = data.getAllFields();
         fieldsToBeRemoved.forEach(allFields::remove);
 
@@ -67,8 +68,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
             FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
-
-
+            
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
                     .headers(data.getHeaders()).payload(fuzzingResult.getJson()).httpMethod(data.getMethod())
                     .fuzzedField(fuzzedField).queryParams(data.getQueryParams()).build();

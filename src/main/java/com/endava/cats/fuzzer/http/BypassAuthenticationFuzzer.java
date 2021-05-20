@@ -39,7 +39,6 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
         this.filesArguments = filesArguments;
     }
 
-
     @Override
     public void fuzz(FuzzingData data) {
         testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));

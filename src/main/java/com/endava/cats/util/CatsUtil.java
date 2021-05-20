@@ -299,7 +299,7 @@ public class CatsUtil {
         return JsonParser.parseReader(reader);
     }
 
-    public void mapObjsToString(String headersFile, Map<String, Map<String, String>> headers) throws IOException {
+    public void loadFileToMap(String headersFile, Map<String, Map<String, String>> headers) throws IOException {
         Map<String, Map<String, Object>> headersAsObject = this.parseYaml(headersFile);
         for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
             headers.put(entry.getKey(), entry.getValue().entrySet()
@@ -307,6 +307,14 @@ public class CatsUtil {
         }
     }
 
+    /**
+     * When parsing the custom fuzzer files the additionalProperties element will be parsed as:
+     * {@code {topElement=metadata, mapValues={test1=value1,test2=value2}}}.
+     *
+     * @param currentPathValues current path values from custom fuzzer
+     * @param payload           the existing payload
+     * @return a payload with additionalProperties added
+     */
     public String setAdditionalPropertiesToPayload(Map<String, String> currentPathValues, String payload) {
         String additionalProperties = currentPathValues.get(ADDITIONAL_PROPERTIES);
         if (!"null".equalsIgnoreCase(additionalProperties) && additionalProperties != null && StringUtils.isNotBlank(payload)) {

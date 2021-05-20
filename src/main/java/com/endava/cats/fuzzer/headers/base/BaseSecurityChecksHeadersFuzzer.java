@@ -18,7 +18,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Base class used to send different values in Accept and Content-Type headers.
+ */
 public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
+    protected static final String CATS_ACCEPT = "application/cats";
     private static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
             "application/javascript",
             "application/octet-stream",
@@ -49,7 +53,6 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
             "text/javascript",
             "text/plain",
             "text/xml");
-    protected static final String CATS_ACCEPT = "application/cats";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -60,6 +63,15 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
         this.testCaseListener = lr;
     }
 
+    /**
+     * Removes content types defined in the contract from the {@link BaseSecurityChecksHeadersFuzzer.UNSUPPORTED_MEDIA_TYPES} list.
+     * Content Types already defined in contract should be treated as invalid by the service.
+     *
+     * @param data         the current FuzzingData
+     * @param headerName   either Accept or Content-Type
+     * @param contentTypes Content-Type headers supported by the contract
+     * @return a list of set of headers that will be sent in independent requests
+     */
     protected static List<Set<CatsHeader>> filterHeaders(FuzzingData data, String headerName, List<String> contentTypes) {
         List<Set<CatsHeader>> setOfSets = new ArrayList<>();
 
@@ -90,14 +102,36 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
         testCaseListener.reportResult(log, data, response, ResponseCodeFamily.FOURXX_MT);
     }
 
+    /**
+     * What is the specific expected response code.
+     *
+     * @return a HTTP expected response code
+     */
     public abstract String getExpectedResponseCode();
 
+    /**
+     * Short description of the type of data sent within the headers.
+     *
+     * @return a short description
+     */
     public abstract String typeOfHeader();
 
+    /**
+     * The name of the targeted header.
+     *
+     * @return the name of the header
+     */
     public abstract String targetHeaderName();
 
+    /**
+     * A list of HTTP headers sets that will be used to create test cases. CATS will create a test case for each Set.
+     *
+     * @param data the current FuzzingData
+     * @return a list of header sets
+     */
     public abstract List<Set<CatsHeader>> getHeaders(FuzzingData data);
 
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }

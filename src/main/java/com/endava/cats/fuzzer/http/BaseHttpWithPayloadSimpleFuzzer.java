@@ -11,6 +11,10 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+/**
+ * This is a base class for Fuzzers that want to send invalid payloads for HTTP methods accepting bodies.
+ * It expects a 4XX within the response.
+ */
 public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
 
@@ -41,7 +45,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
             CatsResponse response = serviceCaller.call(serviceData);
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         } else {
-            testCaseListener.skipTest(logger, "Method " + data.getMethod() + " not supported by " + this.toString());
+            testCaseListener.skipTest(logger, "Method " + data.getMethod() + " not supported by " + this);
         }
     }
 

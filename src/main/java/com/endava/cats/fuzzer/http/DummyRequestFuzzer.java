@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 public class DummyRequestFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     protected static final String DUMMY_JSON = "{\"cats\":\"cats\"}";
 
-
     @Autowired
     public DummyRequestFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
         super(sc, lr, catsUtil);
@@ -30,7 +29,6 @@ public class DummyRequestFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     protected String getPayload(FuzzingData data) {
         return DUMMY_JSON;
     }
-
 
     @Override
     public String description() {
