@@ -227,7 +227,7 @@ public class TestCaseListener {
     }
 
     private boolean isActualResponseMatchingDocumentedResponses(CatsResponse response, JsonElement jsonElement, List<String> responses) {
-        return responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement, "ROOT"))
+        return responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement))
                 && ((isErrorResponse(response) && isFuzzedFieldPresentInResponse(response)) || isNotErrorResponse(response));
     }
 
@@ -255,15 +255,15 @@ public class TestCaseListener {
         return body.trim().isEmpty() || body.trim().equalsIgnoreCase("[]") || body.trim().equalsIgnoreCase("{}");
     }
 
-    private boolean matchesElement(String responseSchema, JsonElement element, String name) {
+    private boolean matchesElement(String responseSchema, JsonElement element) {
         if (element.isJsonArray()) {
-            return matchesArrayElement(responseSchema, element, name);
+            return matchesArrayElement(responseSchema, element);
         }
 
-        return matchesSingleElement(responseSchema, element, name);
+        return matchesSingleElement(responseSchema, element, "ROOT");
     }
 
-    private boolean matchesArrayElement(String responseSchema, JsonElement element, String name) {
+    private boolean matchesArrayElement(String responseSchema, JsonElement element) {
         JsonArray jsonArray = ((JsonArray) element);
 
         if (jsonArray.size() == 0 && JsonParser.parseString(responseSchema).isJsonArray()) {
@@ -273,7 +273,7 @@ public class TestCaseListener {
         }
 
         JsonElement firstElement = jsonArray.get(0);
-        return matchesSingleElement(responseSchema, firstElement, name);
+        return matchesSingleElement(responseSchema, firstElement, "ROOT");
     }
 
     private boolean matchesSingleElement(String responseSchema, JsonElement element, String name) {

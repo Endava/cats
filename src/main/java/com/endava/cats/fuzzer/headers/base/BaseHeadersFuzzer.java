@@ -66,11 +66,24 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
         }
     }
 
-    protected abstract String typeOfDataSentToTheService();
-
     ResponseCodeFamily getExpectedResultCode(boolean required) {
         return required ? this.getExpectedHttpCodeForRequiredHeadersFuzzed() : this.getExpectedHttpForOptionalHeadersFuzzed();
     }
+
+    public Set<CatsHeader> getHeadersWithoutAuth(Set<CatsHeader> headers) {
+        Set<CatsHeader> headersWithoutAuth = headers.stream()
+                .filter(catsHeader -> !serviceCaller.isAuthenticationHeader(catsHeader.getName()))
+                .collect(Collectors.toSet());
+        logger.note("All headers excluding auth headers: {}", headersWithoutAuth);
+        return headersWithoutAuth;
+    }
+
+    /**
+     * Short description of data that is sent to the service.
+     *
+     * @return a short description
+     */
+    protected abstract String typeOfDataSentToTheService();
 
     /**
      * What is the expected HTTP Code when required headers are fuzzed with invalid values
@@ -93,18 +106,10 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
      */
     protected abstract List<FuzzingStrategy> fuzzStrategy();
 
-    public Set<CatsHeader> getHeadersWithoutAuth(Set<CatsHeader> headers) {
-        Set<CatsHeader> headersWithoutAuth = headers.stream()
-                .filter(catsHeader -> !serviceCaller.isAuthenticationHeader(catsHeader.getName()))
-                .collect(Collectors.toSet());
-        logger.note("All headers excluding auth headers: {}", headersWithoutAuth);
-        return headersWithoutAuth;
-    }
-
     /**
      * There is a special case when we send Control Chars in Headers and an error (due to HTTP RFC specs)
      * is returned by the app server itself, not the application. In this case we don't want to check
-     * if there is even a response body.
+     * if there is even a response body as the error page/response is served by the server, not the application layer.
      *
      * @return true if it should match response schema and false otherwise
      */

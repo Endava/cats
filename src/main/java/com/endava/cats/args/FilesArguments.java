@@ -99,7 +99,7 @@ public class FilesArguments {
         if (EMPTY.equalsIgnoreCase(refDataFile)) {
             log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
-            catsUtil.mapObjsToString(refDataFile, refData);
+            catsUtil.loadFileToMap(refDataFile, refData);
             log.info("Reference data file loaded successfully: {}", refData);
         }
     }
@@ -122,7 +122,7 @@ public class FilesArguments {
             if (EMPTY.equalsIgnoreCase(headersFile)) {
                 log.info("No headers file was supplied! No additional header will be added!");
             } else {
-                catsUtil.mapObjsToString(headersFile, headers);
+                catsUtil.loadFileToMap(headersFile, headers);
             }
         } catch (Exception e) {
             throw new IOException("There was a problem parsing the headers file: " + e.getMessage());
@@ -131,6 +131,17 @@ public class FilesArguments {
 
     public List<String> getUrlParamsList() {
         return this.urlParamsList;
+    }
+
+    public String replacePathWithUrlParams(String startingUrl) {
+        for (String line : this.getUrlParamsList()) {
+            String[] urlParam = line.split(":");
+            String pathVar = "{" + urlParam[0] + "}";
+            if (startingUrl.contains(pathVar)) {
+                startingUrl = startingUrl.replace("{" + urlParam[0] + "}", urlParam[1]);
+            }
+        }
+        return startingUrl;
     }
 
     public Map<String, Map<String, String>> getHeaders() {

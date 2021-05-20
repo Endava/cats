@@ -56,7 +56,7 @@ class PathTagsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.contains("The current path's [tags] are correctly defined in the top level [tags] element"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.contains("The current path's [tags] are correctly defined at the top level [tags] element"));
 
     }
 
@@ -84,7 +84,7 @@ class PathTagsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("The current path's [tags] are correctly defined in the top level [tags] element"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("The current path's [tags] are correctly defined at the top level [tags] element"));
 
         Mockito.reset(testCaseListener);
         pathTagsContractInfoFuzzer.fuzz(data);

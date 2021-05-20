@@ -8,6 +8,9 @@ import com.endava.cats.util.CatsUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Base class for fuzzers sending Control Chars or Unicode Separators in headers.
+ */
 public abstract class InvisibleCharsBaseFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
     protected CatsUtil catsUtil;
 

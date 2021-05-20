@@ -209,7 +209,7 @@ public class ServiceCaller {
      * @return
      */
     private String getPathWithRefDataReplacedForNonHttpEntityRequests(ServiceData data, String startingUrl) {
-        String actualUrl = this.getPathWithSuppliedURLParamsReplaced(startingUrl);
+        String actualUrl = this.filesArguments.replacePathWithUrlParams(startingUrl);
 
         if (StringUtils.isNotEmpty(data.getPayload())) {
             String processedPayload = this.replacePayloadWithRefData(data);
@@ -223,25 +223,8 @@ public class ServiceCaller {
     }
 
     private String getPathWithRefDataReplacedForHttpEntityRequests(ServiceData data, String startingUrl) {
-        String actualUrl = this.getPathWithSuppliedURLParamsReplaced(startingUrl);
+        String actualUrl = filesArguments.replacePathWithUrlParams(startingUrl);
         return this.replacePathWithRefData(data, actualUrl);
-    }
-
-    /**
-     * Parameters in the URL will be replaced with actual values supplied in the {@code --urlParams} parameter
-     *
-     * @param startingUrl
-     * @return
-     */
-    private String getPathWithSuppliedURLParamsReplaced(String startingUrl) {
-        for (String line : filesArguments.getUrlParamsList()) {
-            String[] urlParam = line.split(":");
-            String pathVar = "{" + urlParam[0] + "}";
-            if (startingUrl.contains(pathVar)) {
-                startingUrl = startingUrl.replace("{" + urlParam[0] + "}", urlParam[1]);
-            }
-        }
-        return startingUrl;
     }
 
     private String replaceRemovedParams(String path) {
@@ -264,7 +247,7 @@ public class ServiceCaller {
     }
 
     private void addBasicAuth(List<CatsRequest.Header> headers) {
-        if (!authArguments.isBasicAuthSupplied()) {
+        if (authArguments.isBasicAuthSupplied()) {
             headers.add(authArguments.getBasicAuthHeader());
         }
     }
@@ -415,6 +398,7 @@ public class ServiceCaller {
         } else {
             Map<String, String> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             LOGGER.note("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+
             Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -422,12 +406,13 @@ public class ServiceCaller {
 
             for (Map.Entry<String, String> entry : refDataWithoutAdditionalProperties.entrySet()) {
                 String refDataValue = catsDSLParser.parseAndGetResult(entry.getValue(), data.getPayload());
-                FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
-                boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
+
                 try {
                     if (CATS_REMOVE_FIELD.equalsIgnoreCase(refDataValue)) {
                         payload = catsUtil.deleteNode(payload, entry.getKey());
                     } else {
+                        FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
+                        boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
                         payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();
                     }
                 } catch (PathNotFoundException e) {
