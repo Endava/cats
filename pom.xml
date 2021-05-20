@@ -78,6 +78,7 @@
                     <outputDirectory>${project.basedir}</outputDirectory>
                     <excludeDevtools>true</excludeDevtools>
                     <layout>ZIP</layout>
+                    <jvmArguments>-Xverify:none -XX:TieredStopAtLevel=1</jvmArguments>
                 </configuration>
                 <executions>
                     <execution>
