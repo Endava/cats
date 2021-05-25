@@ -21,11 +21,15 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with **no coding effort**. All tests cases are **generated and run automatically** based on a pre-defined 
-set of **61 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even end-to-end functional flows.
+set of **68 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even end-to-end functional flows.
 
 <div align="center">
   <img alt="CATS" width="100%" src="images/run_result.png"/>
 </div>
+
+<h3 align="center" style="color:orangered">
+ WARNING! Starting with version 6.0, CATS generates significant more test case (more the 10k for small APIs). Please check the <a href=#cats-running-times">CATS Running Times</a> for strategies on how to split the Fuzzers.
+</h3>
 
 Table of Contents
 =================
@@ -39,7 +43,7 @@ Table of Contents
    * [Running CATS](#running-cats-with-fuzzers)
       * [Notes on Unit Tests](#notes-on-unit-tests)
       * [Notes on skipped Tests](#notes-on-skipped-tests)
-   * [CATS Running Time](#ss)
+   * [CATS Running Time](#cats-running-times)
         * [Split by Endpoints](#split-by-endpoints)
         * [Split by Fuzzer Category](#split-by-fuzzer-category)
         * [Split by Fuzzer Type](#split-by-fuzzer-type)
@@ -153,7 +157,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 
 # CATS Running Times
 
-CATS has a significant number of `Fuzzers`. Currently, **61** and growing. Some of the `Fuzzers` are executing multiple test cases for every given fields within the request.
+CATS has a significant number of `Fuzzers`. Currently, **68** and growing. Some of the `Fuzzers` are executing multiple test cases for every given fields within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 test cases**.
 Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (long meaning minutes, rather than seconds).
 
@@ -266,7 +270,7 @@ There are multiple categories of `Fuzzers` available:
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow or security testing
 
 ## Field Fuzzers
-`CATS` has currently 31 registered Field `Fuzzers`:
+`CATS` has currently 32 registered Field `Fuzzers`:
 - `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -287,9 +291,9 @@ There are multiple categories of `Fuzzers` available:
 - `MinimumExactValuesInNumericFieldsFuzzer` - iterate through each **Number and Integer** fields that have minimum declared and send requests with values matching the minimum size/value in the targeted field
 - `NewFieldsFuzzer` - send a 'happy' flow request and add a new field inside the request called 'catsFuzzyField'
 - `NullValuesInFieldsFuzzer` - iterate through each field and send requests with null values in the targeted field
+- `OnlyControlCharsInFieldsTrimValidateFuzzer` - iterate through each field and send  values with control chars only
+- `OnlyWhitespacesInFieldsTrimValidateFuzzer` - iterate through each field and send  values with unicode separators only
 - `RemoveFieldsFuzzer` - iterate through each request fields and remove certain fields according to the supplied 'fieldsFuzzingStrategy'
-- `WhitespacesOnlyInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode whitespaces and invisible separators in the targeted field
-- `ControlCharsOnlyInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode control chars in the targeted field
 - `StringFieldsLeftBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the left side in the targeted field
 - `StringFieldsRightBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the right side in the targeted field
 - `StringFormatAlmostValidValuesFuzzer` - iterate through each String field and get its 'format' value (i.e. email, ip, uuid, date, datetime, etc); send requests with values which are almost valid (i.e. email@yhoo. for email, 888.1.1. for ip, etc)  in the targeted field
@@ -298,6 +302,7 @@ There are multiple categories of `Fuzzers` available:
 - `TrailingWhitespacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with trailing with Unicode whitespaces and invisible separators in the targeted field
 - `TrailingControlCharsInFieldsTrimValidateFuzzer` - iterate through each field and send requests with trailing with Unicode control chars in the targeted field
 - `VeryLargeStringsFuzzer` - iterate through each String field and send requests with very large values (40000 characters) in the targeted field
+- `WithinControlCharsInFieldsSanitizeValidateFuzzer` - iterate through each field and send values containing unicode control chars
 
 You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 
@@ -426,7 +431,7 @@ Please check the [CATS running times](#cats-running-times) section on recommenda
 
 
 ## Header Fuzzers
-`CATS` has currently 14 registered Header `Fuzzers`: 
+`CATS` has currently 19 registered Header `Fuzzers`: 
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
 - `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
 - `DummyContentTypeHeadersFuzzer` - send a request with a dummy Content-Type header and expect to get 415 code
@@ -434,11 +439,16 @@ Please check the [CATS running times](#cats-running-times) section on recommenda
 - `EmptyStringValuesInHeadersFuzzer` - iterate through each header and send requests with empty String values in the targeted header
 - `ExtraHeaderFuzzer` - send a 'happy' flow request and add an extra field inside the request called 'Cats-Fuzzy-Header'
 - `LargeValuesInHeadersFuzzer` - iterate through each header and send requests with large values in the targeted header
+- `LeadingControlCharsInHeadersFuzzer` - iterate through each header and prefix values with control chars
+- `LeadingWhitespacesInHeadersFuzzer` - iterate through each header and prefix value with unicode separators
 - `LeadingSpacesInHeadersFuzzer` - iterate through each header and send requests with spaces prefixing the value in the targeted header
-- `NullValuesInHeadersFuzzer` - iterate through each header and send requests with null values in the targeted header
 - `RemoveHeadersFuzzer` - iterate through each header and remove different combinations of them
-- `SpacesOnlyInHeadersFuzzer` - iterate through each header and send requests with empty spaces in the targeted header
-- `TrailingSpacesInHeadersFuzzer` - iterate through each header and send requests with trailing spaces in the targeted header
+- `OnlyControlCharsInHeadersFuzzer` - iterate through each header and replace value with control chars
+- `OnlySpacesInHeadersFuzzer` - iterate through each header and replace value with spaces
+- `OnlyWhitespacesInHeadersFuzzer` - iterate through each header and replace value with unicode separators
+- `TrailingSpacesInHeadersFuzzer` - iterate through each header and send requests with trailing spaces in the targeted header \
+- `TrailingControlCharsInHeadersFuzzer` - iterate through each header and trail values with control chars
+- `TrailingWhitespacesInHeadersFuzzer` - iterate through each header and trail values with unicode separators
 - `UnsupportedAcceptHeadersFuzzer` - send a request with a unsupported Accept header and expect to get 406 code
 - `UnsupportedContentTypesHeadersFuzzer` - send a request with a unsupported Content-Type header and expect to get 415 code
 
@@ -481,12 +491,13 @@ The `Fuzzer` expects a `2XX` response with the following headers set:
 - `X-XSS-Protection: 1; mode=block`
 
 ## HTTP Fuzzers
-`CATS` has currently 5 registered HTTP `Fuzzers`:
+`CATS` has currently 6 registered HTTP `Fuzzers`:
 - `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
 - `DummyRequestFuzzer` - send a dummy json request {'cats': 'cats'}
 - `HappyFuzzer` - send a request with all fields and headers populated
 - `HttpMethodsFuzzer` - iterate through each undocumented HTTP method and send an empty request
 - `MalformedJsonFuzzer` - send a malformed json request which has the String 'bla' at the end
+- `NonRestHttpMethodsFuzzer` - iterate through a list of HTTP method specific to the WebDav protocol that are not expected to be implemented by REST APIs
 
 You can run only these `Fuzzers` by supplying the `--checkHttp` argument.
 
