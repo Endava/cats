@@ -54,7 +54,9 @@ jobs:
     - name: Build
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: mvn -B clean install
+      run: |
+        mvn -B clean --file pom.xml
+        mvn -B install --file pom.xml
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
