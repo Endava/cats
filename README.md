@@ -27,8 +27,8 @@ set of **68 Fuzzers**. The Fuzzers cover different types of testing like: negati
   <img alt="CATS" width="100%" src="images/run_result.png"/>
 </div>
 
-<h3 align="center" style="color:orangered">
- WARNING! Starting with version 6.0, CATS generates significant more test case (more the 10k for small APIs). Please check the <a href=#cats-running-times">CATS Running Times</a> for strategies on how to split the Fuzzers.
+<h3 align="center" style="color:orange">
+ Starting with version 6.0, CATS generates significant more test case (more than 10k for small APIs). Please check the <a href=#cats-running-times">CATS Running Times</a> for strategies on how to slice the Fuzzers.
 </h3>
 
 Table of Contents
