@@ -15,12 +15,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 @ExtendWith(SpringExtension.class)
+@SpringJUnitConfig(HttpMethodFuzzerUtil.class)
 class HttpMethodsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
@@ -37,6 +40,9 @@ class HttpMethodsFuzzerTest {
     @SpyBean
     private BuildProperties buildProperties;
 
+    @Autowired
+    private HttpMethodFuzzerUtil httpMethodFuzzerUtil;
+
 
     private HttpMethodsFuzzer httpMethodsFuzzer;
 
@@ -49,7 +55,7 @@ class HttpMethodsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        httpMethodsFuzzer = new HttpMethodsFuzzer(serviceCaller, testCaseListener);
+        httpMethodsFuzzer = new HttpMethodsFuzzer(serviceCaller, testCaseListener, httpMethodFuzzerUtil);
     }
 
     @Test

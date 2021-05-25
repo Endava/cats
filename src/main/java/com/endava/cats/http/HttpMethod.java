@@ -10,7 +10,15 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public enum HttpMethod {
-    POST, PUT, GET, TRACE, DELETE, PATCH, HEAD;
+    POST, PUT, GET, TRACE, DELETE, PATCH, HEAD, CONNECT, COPY, MOVE,
+    PROPPATCH, PROPFIND, MKCOL, LOCK, UNLOCK, SEARCH,
+    BIND, UNBIND, REBIND, MKREDIRECTREF,
+    UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT;
+
+    private static final List<HttpMethod> NON_REST_METHODS = Arrays.asList(CONNECT, COPY, MOVE,
+            PROPPATCH, PROPFIND, MKCOL, LOCK, UNLOCK, SEARCH,
+            BIND, UNBIND, REBIND, MKREDIRECTREF,
+            UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT);
 
     private static final EnumMap<HttpMethod, Function<PathItem, Operation>> OPERATIONS = new EnumMap<>(HttpMethod.class);
     private static final EnumMap<HttpMethod, List<String>> RECOMMENDED_CODES = new EnumMap<>(HttpMethod.class);
@@ -32,6 +40,10 @@ public enum HttpMethod {
         RECOMMENDED_CODES.put(HttpMethod.DELETE, Arrays.asList("400", "404", "500", TWOXX));
         RECOMMENDED_CODES.put(HttpMethod.PATCH, Arrays.asList("400", "404", "500", TWOXX));
         RECOMMENDED_CODES.put(HttpMethod.TRACE, Arrays.asList("400", "500", "200"));
+    }
+
+    public static List<HttpMethod> nonRestMethods() {
+        return NON_REST_METHODS;
     }
 
     public static boolean requiresBody(HttpMethod method) {

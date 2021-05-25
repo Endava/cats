@@ -202,11 +202,11 @@ public class ServiceCaller {
     }
 
     /**
-     * Parameters in the URL will be replaced with actual values supplied in the path.properties and catsParams.getRefData().yml files
+     * Parameters in the URL will be replaced with actual values supplied in the {@code --urlParams} and {@code filesArguments.getRefData()} file.
      *
-     * @param data
-     * @param startingUrl
-     * @return
+     * @param data        the service data
+     * @param startingUrl initial url constructed from contract
+     * @return the URL with variables replaced based on the supplied values
      */
     private String getPathWithRefDataReplacedForNonHttpEntityRequests(ServiceData data, String startingUrl) {
         String actualUrl = this.filesArguments.replacePathWithUrlParams(startingUrl);
