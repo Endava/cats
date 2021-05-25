@@ -125,14 +125,14 @@ public class FuzzingDataFactory {
     }
 
     /**
-     * In order to increase reusability we will create a synthetic Schema object that will resemble the Schemas used by POST requests.
+     * In order to increase re-usability we will create a synthetic Schema object that will resemble the Schemas used by POST requests.
      * This will allow us to use the same code to fuzz the requests.
      * We will also do another "hack" so that required Parameters are also marked as required in their corresponding schema
      * <p>
      * Parameters supplied via the `urlParams` argument are not fuzzed.
      *
-     * @param operationParameters
-     * @return
+     * @param operationParameters the parameters defined in the OpenAPI contract
+     * @return a Schema associated with the GET request which resembles the model for POST
      */
     private ObjectSchema createSyntheticSchemaForGet(List<Parameter> operationParameters) {
         ObjectSchema syntheticSchema = new ObjectSchema();

@@ -9,6 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.google.common.collect.Sets;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,11 +63,9 @@ class BaseHeadersFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
-                responses(responses).build();
+                responses(responses).responseCodes(Sets.newHashSet("200", "202")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
-        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX), Mockito.eq(true));
@@ -76,8 +75,9 @@ class BaseHeadersFuzzerTest {
     void givenAConcreteBaseHeadersFuzzerInstanceWithMandatoryHeader_whenExecutingTheFuzzMethod_thenTheFuzzingLogicIsProperlyExecuted() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
-        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").required(true).build())).
-                responses(responses).build();
+        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").required(true).build()))
+                .responseCodes(Sets.newHashSet("200", "202"))
+                .responses(responses).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

@@ -12,7 +12,6 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -29,11 +28,13 @@ public class HttpMethodsFuzzer implements Fuzzer {
     private final List<String> fuzzedPaths = new ArrayList<>();
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
+    private final HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
     @Autowired
-    public HttpMethodsFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    public HttpMethodsFuzzer(ServiceCaller sc, TestCaseListener lr, HttpMethodFuzzerUtil hmfu) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
+        this.httpMethodFuzzerUtil = hmfu;
     }
 
     public void fuzz(FuzzingData data) {
@@ -48,7 +49,7 @@ public class HttpMethodsFuzzer implements Fuzzer {
             if (data.getPathItem().getGet() == null) {
                 executeForOperation(data, PathItem::getHead, serviceCaller::call, HttpMethod.HEAD);
             }
-
+            fuzzedPaths.add(data.getPath());
         } else {
             LOGGER.skip("Skip path {} as already fuzzed!", data.getPath());
         }
@@ -56,30 +57,10 @@ public class HttpMethodsFuzzer implements Fuzzer {
 
     private void executeForOperation(FuzzingData data, Function<PathItem, Operation> operation, Function<ServiceData, CatsResponse> serviceCall, HttpMethod httpMethod) {
         if (operation.apply(data.getPathItem()) == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, serviceCall, httpMethod));
+            testCaseListener.createAndExecuteTest(LOGGER, this, () -> httpMethodFuzzerUtil.process(data, serviceCall, httpMethod));
         }
     }
 
-    private void process(FuzzingData data, Function<ServiceData, CatsResponse> f, HttpMethod httpMethod) {
-        testCaseListener.addScenario(LOGGER, "Send a happy flow request with undocumented HTTP methods");
-        testCaseListener.addExpectedResult(LOGGER, "Should get a 405 response code");
-        CatsResponse response = f.apply(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).payload("").httpMethod(httpMethod).build());
-        this.checkResponse(response);
-        fuzzedPaths.add(data.getPath());
-    }
-
-    private void checkResponse(CatsResponse response) {
-        if (response.getResponseCode() == HttpStatus.SC_METHOD_NOT_ALLOWED) {
-            testCaseListener.reportInfo(LOGGER, "Request failed as expected for http method [{}] with response code [{}]",
-                    response.getHttpMethod(), response.getResponseCode());
-        } else if (ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            testCaseListener.reportError(LOGGER, "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
-                    response.getHttpMethod(), HttpStatus.SC_METHOD_NOT_ALLOWED, response.getResponseCode());
-        } else {
-            testCaseListener.reportWarn(LOGGER, "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
-                    response.getHttpMethod(), HttpStatus.SC_METHOD_NOT_ALLOWED, response.getResponseCode());
-        }
-    }
 
     public String toString() {
         return this.getClass().getSimpleName();
