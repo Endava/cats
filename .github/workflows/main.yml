@@ -32,4 +32,6 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: mvn -B clean install sonar:sonar -Dsonar.projectKey=cats -Dsonar.organization=en-milie -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
+      run: |
+        mvn -B clean --file pom.xml
+        mvn -B install sonar:sonar -Dsonar.projectKey=cats -Dsonar.organization=en-milie -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
