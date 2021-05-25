@@ -349,6 +349,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     protected void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         List<String> configuredFuzzers = filterArguments.getFuzzersForPath(pathItemEntry.getKey());
         Map<String, Schema> schemas = getSchemas(openAPI);
+        filterArguments.printWarningIfNeeded(configuredFuzzers);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info(" ");

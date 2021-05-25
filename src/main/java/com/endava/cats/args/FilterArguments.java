@@ -4,7 +4,10 @@ import com.endava.cats.fuzzer.*;
 import com.endava.cats.model.CatsSkipped;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.github.ludovicianul.prettylogger.config.level.ConfigFactory;
+import io.github.ludovicianul.prettylogger.config.level.PrettyMarker;
 import lombok.Getter;
+import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -61,6 +64,20 @@ public class FilterArguments {
     public void loadConfig(String... args) {
         this.processSkipFuzzerFor(args);
         init();
+    }
+
+    public void printWarningIfNeeded(List<String> finalList) {
+        if (finalList.size() == fuzzers.size()) {
+            PrettyMarker config = ConfigFactory.warning().bold(true).underline(true).showLabel(true).showSymbol(true);
+            String warning = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("\t\t\t !!!! WARNING !!!!").reset().toString();
+            String text = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("You are running with all Fuzzers enabled. This will take a long time to run!").reset().toString();
+            String check = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("\t\t Please check the CATS README page for slicing strategies!").reset().toString();
+            LOGGER.log(config, " ");
+            LOGGER.log(config, warning);
+            LOGGER.log(config, text);
+            LOGGER.log(config, check);
+            LOGGER.log(config, " ");
+        }
     }
 
     private void processSkipFuzzerFor(String... args) {
