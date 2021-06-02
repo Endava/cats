@@ -47,7 +47,7 @@ public enum HttpMethod {
     }
 
     public static boolean requiresBody(HttpMethod method) {
-        return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
+        return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH || method == HttpMethod.PROPPATCH || method == HttpMethod.REPORT;
     }
 
     public static boolean requiresBody(String method) {

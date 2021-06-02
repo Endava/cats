@@ -12,6 +12,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeTypeUtils;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -129,10 +130,17 @@ public class PayloadGenerator {
         } else if (property instanceof ObjectSchema) {
             return this.getExampleForObjectSchema(property);
         } else if (property instanceof UUIDSchema) {
-            return "046b6c7f-0b8a-43b9-b35d-6489e6daee91";
+            return UUID.randomUUID().toString();
+        } else if (property instanceof ByteArraySchema) {
+            return this.getExampleForByteArraySchema(property);
         }
 
         return property.getExample();
+    }
+
+    private <T> Object getExampleForByteArraySchema(Schema<T> property) {
+        String value = generateValueBasedOnMinMAx(property);
+        return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
