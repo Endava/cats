@@ -28,7 +28,7 @@ set of **68 Fuzzers**. The Fuzzers cover different types of testing like: negati
 </div>
 
 <h3 align="center" style="color:orange">
- Starting with version 6.0, CATS generates significant more test case (more than 10k for small APIs). Please check the <a href=#cats-running-times">CATS Running Times</a> for strategies on how to slice the Fuzzers.
+ Starting with version 6.0, CATS generates significant more test case (more than 10k for small APIs). Please check the <a href="#cats-running-times">CATS Running Times</a> for strategies on how to slice the Fuzzers.
 </h3>
 
 Table of Contents
@@ -117,7 +117,7 @@ CATS is a tool that **generates tests at runtime** based on a given OpenAPI cont
 
 The tests are generated based on configured `Fuzzer`s. Each `Fuzzer` will test several scenarios and report the resulting behaviour in both the console and in the generated test report.
 
-The following logging levels are used (in both the console and the test report) to report the testing activity:
+The following logging levels are used (in both the console, and the test report) to report the testing activity:
 
 - `INFO` will report normal documented behaviour. This is expected behaviour. No need for action.
 - `WARN` will report normal but undocumented behaviour or some misalignment between the contract and the service. This will **ideally** be actioned.
@@ -159,7 +159,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 
 CATS has a significant number of `Fuzzers`. Currently, **68** and growing. Some of the `Fuzzers` are executing multiple test cases for every given fields within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 test cases**.
-Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (long meaning minutes, rather than seconds).
+Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
 
 Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages ina deployment pipeline, one after the other.
@@ -397,7 +397,7 @@ This `Fuzzer` will inject new fields inside the body of the requests. The new fi
 ### StringsInNumericFieldsFuzzer
 This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
 
-### LeadingWhitespacesInFieldsTrimValidateFuzzer, TrailingWhitespacesInFieldsTrimValidateFuzzer and WhitespacesOnlyInFieldsTrimValidateFuzzer
+### LeadingWhitespacesInFieldsTrimValidateFuzzer, TrailingWhitespacesInFieldsTrimValidateFuzzer and OnlyWhitespacesInFieldsTrimValidateFuzzer
 This `Fuzzers` will prefix or trail each field with Unicode whitespaces and invisible chars. 
 The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
 It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
@@ -406,7 +406,7 @@ Please note that CATS tests iteratively for **18 whitespace characters**. This m
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
 Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.   
 
-### LeadingControlCharsInFieldsTrimValidateFuzzer, TrailingControlCharsInFieldsTrimValidateFuzzer and ControlCharsOnlyInFieldsTrimValidateFuzzer
+### LeadingControlCharsInFieldsTrimValidateFuzzer, TrailingControlCharsInFieldsTrimValidateFuzzer and OnlyControlCharsInFieldsTrimValidateFuzzer
 This `Fuzzers` will prefix or trail each field with Unicode control chars.
 The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
 It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
@@ -415,7 +415,7 @@ Please note that CATS tests iteratively for **63 control characters**. This mean
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
 Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
 
-### ControlCharsWithinFieldsSanitizeValidateFuzzer
+### WithinControlCharsInFieldsSanitizeValidateFuzzer
 This `Fuzzers` will insert within each field Unicode control chars.
 
 Depending on the `--sanitizationStrategy` argument, this `Fuzzer` will expect:
