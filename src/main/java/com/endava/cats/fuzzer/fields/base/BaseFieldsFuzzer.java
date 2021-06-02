@@ -11,6 +11,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -68,7 +69,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
             FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
-            
+
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
                     .headers(data.getHeaders()).payload(fuzzingResult.getJson()).httpMethod(data.getMethod())
                     .fuzzedField(fuzzedField).queryParams(data.getQueryParams()).build();
@@ -108,9 +109,17 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
                 .hasRequiredFieldsFuzzed(hasRequiredFieldsFuzzed).build();
     }
 
+    /**
+     * For byte format OpenAPI is expecting a base64 encoded string. We consider this matching any pattern.
+     *
+     * @param fieldValue
+     * @param data
+     * @param fuzzedField
+     * @return
+     */
     private boolean isFuzzedValueMatchingPattern(String fieldValue, FuzzingData data, String fuzzedField) {
         Schema fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        if (fieldSchema.getPattern() == null) {
+        if (fieldSchema.getPattern() == null || fieldSchema instanceof ByteArraySchema) {
             return true;
         }
         Pattern pattern = Pattern.compile(fieldSchema.getPattern());
