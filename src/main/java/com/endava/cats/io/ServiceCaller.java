@@ -20,7 +20,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +30,7 @@ import javax.annotation.PostConstruct;
 import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Proxy;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -117,11 +117,13 @@ public class ServiceCaller {
         final SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
 
         if (authArguments.isMutualTls()) {
-            KeyStore keyStore = KeyStore.getInstance("jks");
-            keyStore.load(new FileInputStream(authArguments.getSslKeystore()), authArguments.getSslKeystorePwd().toCharArray());
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyManagerFactory.init(keyStore, authArguments.getSslKeystorePwd().toCharArray());
-            sslContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, new SecureRandom());
+            try (InputStream inputStream = new FileInputStream(authArguments.getSslKeystore())) {
+                KeyStore keyStore = KeyStore.getInstance("jks");
+                keyStore.load(inputStream, authArguments.getSslKeystorePwd().toCharArray());
+                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                keyManagerFactory.init(keyStore, authArguments.getSslKeystorePwd().toCharArray());
+                sslContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, new SecureRandom());
+            }
         } else {
             sslContext.init(null, trustAllCerts, new SecureRandom());
         }
@@ -190,12 +192,14 @@ public class ServiceCaller {
         return headers;
     }
 
-    private String addUriParams(String processedPayload, ServiceData data, String currentUrl) throws
-            URISyntaxException {
+    private String addUriParams(String processedPayload, ServiceData data, String currentUrl) throws URISyntaxException {
         if (StringUtils.isNotEmpty(processedPayload) && !"null".equalsIgnoreCase(processedPayload)) {
-            URIBuilder builder = new URIBuilder(currentUrl);
-            builder.addParameters(this.buildQueryParameters(processedPayload, data));
-            return builder.build().toString();
+            HttpUrl.Builder httpUrl = HttpUrl.get(currentUrl).newBuilder();
+            List<NameValuePair> queryParams = this.buildQueryParameters(processedPayload, data);
+            for (NameValuePair param : queryParams) {
+                httpUrl.addEncodedQueryParameter(param.getName(), param.getValue());
+            }
+            return httpUrl.build().toString();
         }
 
         return currentUrl;
