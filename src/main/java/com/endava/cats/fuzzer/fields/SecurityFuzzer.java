@@ -87,7 +87,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     @Override
     public List<String> reservedWords() {
-        return Arrays.asList(CustomFuzzerUtil.EXPECTED_RESPONSE_CODE, CustomFuzzerUtil.DESCRIPTION, CustomFuzzerUtil.OUTPUT, CustomFuzzerUtil.VERIFY, STRINGS_FILE, TARGET_FIELDS,
-                CustomFuzzerUtil.MAP_VALUES, CustomFuzzerUtil.ONE_OF_SELECTION, CustomFuzzerUtil.ADDITIONAL_PROPERTIES, CustomFuzzerUtil.ELEMENT, CustomFuzzerUtil.HTTP_METHOD);
+        return Arrays.asList(EXPECTED_RESPONSE_CODE, DESCRIPTION, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS,
+                MAP_VALUES, ONE_OF_SELECTION, ADDITIONAL_PROPERTIES, ELEMENT, HTTP_METHOD);
     }
 }

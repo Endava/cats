@@ -8,6 +8,9 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Holds all args related to category of Fuzzers to run.
+ */
 @Component
 public class CheckArguments {
     public static final String EMPTY = "empty";
