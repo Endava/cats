@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
@@ -22,10 +23,12 @@ import java.util.List;
 @FieldFuzzer
 @ConditionalOnProperty(value = "fuzzer.fields.EmptyStringValuesInFieldsFuzzer.enabled", havingValue = "true")
 public class EmptyStringValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
+    private final FilterArguments filterArguments;
 
     @Autowired
-    public EmptyStringValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    public EmptyStringValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp);
+        this.filterArguments = fa;
     }
 
     @Override
@@ -44,8 +47,13 @@ public class EmptyStringValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFie
     }
 
     @Override
-    public List<HttpMethod> skipFor() {
+    public List<HttpMethod> skipForHttpMethods() {
         return Arrays.asList(HttpMethod.GET, HttpMethod.DELETE);
+    }
+
+    @Override
+    public List<String> skipForFields() {
+        return filterArguments.getSkippedFields();
     }
 
     @Override

@@ -42,7 +42,7 @@ class OnlyWhitespacesInFieldsValidateTrimFuzzerTest {
     @Test
     void givenANewSpacesOnlyInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInFieldsValidateTrimFuzzer() {
         Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();

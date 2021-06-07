@@ -42,7 +42,7 @@ class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
     @Test
     void givenANewTabsOnlyInFieldsTrimValidateFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTabsOnlyInFieldsTrimValidateFuzzer() {
         Assertions.assertThat(onlyControlCharsInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyControlCharsInFieldsTrimValidateFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyControlCharsInFieldsTrimValidateFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();

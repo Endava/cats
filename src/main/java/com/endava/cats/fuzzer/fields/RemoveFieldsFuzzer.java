@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Fuzzer at fields level. It will remove different fields from the payload based on multiple strategies.
@@ -33,6 +35,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
+    private final FilterArguments filterArguments;
 
     @Value("${fieldsFuzzingStrategy:ONEBYONE}")
     private String fieldsFuzzingStrategy;
@@ -41,10 +44,11 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     private String maxFieldsToRemove;
 
     @Autowired
-    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilterArguments fa) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = cu;
+        this.filterArguments = fa;
     }
 
     public void fuzz(FuzzingData data) {
@@ -52,8 +56,17 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         Set<Set<String>> sets = this.getAllFields(data);
 
         for (Set<String> subset : sets) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, data.getAllRequiredFields(), subset));
+            Set<String> finalSubset = this.removeIfSkipped(subset);
+            if (!finalSubset.isEmpty()) {
+                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, data.getAllRequiredFields(), finalSubset));
+            }
         }
+    }
+
+    private Set<String> removeIfSkipped(Set<String> subset) {
+        return subset.stream()
+                .filter(field -> !filterArguments.getSkippedFields().contains(field))
+                .collect(Collectors.toSet());
     }
 
     private Set<Set<String>> getAllFields(FuzzingData data) {
@@ -109,7 +122,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     }
 
     @Override
-    public List<HttpMethod> skipFor() {
+    public List<HttpMethod> skipForHttpMethods() {
         return Arrays.asList(HttpMethod.GET, HttpMethod.DELETE);
     }
 

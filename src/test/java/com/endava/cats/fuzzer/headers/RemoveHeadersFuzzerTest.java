@@ -119,6 +119,6 @@ class RemoveHeadersFuzzerTest {
     void givenARemoveHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(removeHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(removeHeadersFuzzer).hasToString(removeHeadersFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(removeHeadersFuzzer.skipFor()).isEmpty();
+        Assertions.assertThat(removeHeadersFuzzer.skipForHttpMethods()).isEmpty();
     }
 }

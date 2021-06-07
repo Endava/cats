@@ -53,7 +53,7 @@ class MaximumExactValuesInNumericFieldsFuzzerTest {
         Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.typeOfDataSentToTheService()).isEqualTo("exact maximum size values");
-        Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.skipFor()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
 
         stringSchema.setMaximum(BigDecimal.TEN);
         Assertions.assertThat(maximumExactValuesInNumericFieldsFuzzer.hasBoundaryDefined("test", data)).isTrue();

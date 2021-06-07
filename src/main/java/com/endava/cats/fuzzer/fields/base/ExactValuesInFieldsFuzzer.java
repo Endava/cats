@@ -62,7 +62,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     }
 
     @Override
-    public List<HttpMethod> skipFor() {
+    public List<HttpMethod> skipForHttpMethods() {
         return Arrays.asList(HttpMethod.GET, HttpMethod.DELETE);
     }
 

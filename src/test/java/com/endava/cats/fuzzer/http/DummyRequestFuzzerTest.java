@@ -82,7 +82,7 @@ class DummyRequestFuzzerTest {
     void givenAMalformedJsonFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(dummyRequestFuzzer.description()).isNotNull();
         Assertions.assertThat(dummyRequestFuzzer).hasToString(dummyRequestFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(dummyRequestFuzzer.skipFor()).isEmpty();
+        Assertions.assertThat(dummyRequestFuzzer.skipForHttpMethods()).isEmpty();
         Assertions.assertThat(dummyRequestFuzzer.getPayload(FuzzingData.builder().build())).isEqualTo(DummyRequestFuzzer.DUMMY_JSON);
     }
 }

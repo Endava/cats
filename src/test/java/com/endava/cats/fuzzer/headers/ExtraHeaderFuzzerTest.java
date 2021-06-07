@@ -77,6 +77,6 @@ class ExtraHeaderFuzzerTest {
     void givenAExtraHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(extraHeaderFuzzer.description()).isNotNull();
         Assertions.assertThat(extraHeaderFuzzer).hasToString(extraHeaderFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(extraHeaderFuzzer.skipFor()).isEmpty();
+        Assertions.assertThat(extraHeaderFuzzer.skipForHttpMethods()).isEmpty();
     }
 }

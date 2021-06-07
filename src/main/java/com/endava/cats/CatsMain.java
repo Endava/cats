@@ -366,7 +366,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
         for (Fuzzer fuzzer : fuzzers) {
             if (configuredFuzzers.contains(fuzzer.toString())) {
-                CatsUtil.filterAndPrintNotMatching(fuzzingDataList, data -> !fuzzer.skipFor().contains(data.getMethod()),
+                CatsUtil.filterAndPrintNotMatching(fuzzingDataList, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
                         LOGGER, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
                         .forEach(data -> {
                             LOGGER.info("Fuzzer {} and payload: {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getPayload());

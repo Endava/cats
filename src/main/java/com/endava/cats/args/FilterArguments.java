@@ -36,6 +36,8 @@ public class FilterArguments {
     private String skipPaths;
     @Value("${skipFuzzers:empty}")
     private String skipFuzzers;
+    @Value("${skipFields:empty}")
+    private String skipFields;
 
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
@@ -47,6 +49,8 @@ public class FilterArguments {
     private String skipFuzzersHelp;
     @Value("${arg.filter.skipXXXForPath.help:help}")
     private String skipXXXForPathHelp;
+    @Value("${arg.filter.skipFields.help:help}")
+    private String skipFieldsHelp;
 
     @Autowired
     private List<Fuzzer> fuzzers;
@@ -59,6 +63,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("skipPaths").value(skipPaths).help(skipPathsHelp).build());
         args.add(CatsArg.builder().name("excludedFuzzers").value(skipFuzzers).help(skipFuzzersHelp).build());
         args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
+        args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
     }
 
     public void loadConfig(String... args) {
@@ -78,6 +83,12 @@ public class FilterArguments {
             LOGGER.log(config, check);
             LOGGER.log(config, " ");
         }
+    }
+
+    public List<String> getSkippedFields() {
+        return Arrays.stream(skipFields.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
     }
 
     private void processSkipFuzzerFor(String... args) {
