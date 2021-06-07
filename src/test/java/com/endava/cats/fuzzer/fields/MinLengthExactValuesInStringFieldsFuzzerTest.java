@@ -50,7 +50,7 @@ class MinLengthExactValuesInStringFieldsFuzzerTest {
         Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.typeOfDataSentToTheService()).isEqualTo("exact minLength size values");
-        Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer  .skipFor()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer  .skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
 
         stringSchema.setMinLength(2);
         Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.hasBoundaryDefined("test", data)).isTrue();

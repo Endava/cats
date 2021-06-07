@@ -240,6 +240,7 @@ And this is what you get when you click on a specific test:
 - `--customFuzzerFile` a file used by the `CustomFuzzer` that will be used to create user-supplied payloads.
 - `--skipXXXForPath=path1,path2` can configure a fuzzer to be skipped for the specified paths. You must provide a full `Fuzzer` name instead of `XXX`. For example: `--skipVeryLargeStringsFuzzerForPath=/path1,/path2`
 - `--skipFuzzers=LIST_OF_FIZZERs` a comma separated list of fuzzers that will be skipped for **all** paths. You can either provide full `Fuzzer` names (for example: `--skippedFuzzers=VeryLargeStringsFuzzer`) or partial `Fuzzer` names (for example: `--skipFuzzers=VeryLarge`). `CATS` will check if the `Fuzzer` names contains the string you provide in the arguments value.
+- `--skipFields=field1,field2#subField1` a comma separated list of fields that will be skipped by replacement Fuzzers like EmptyStringsInFields, NullValuesInFields, etc.
 - `--securityFuzzerFile` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method
 - `--timestampReports` If supplied (no value needed), it will output the report still inside the `cats-report` folder, but in a sub-folder with the current timestamp

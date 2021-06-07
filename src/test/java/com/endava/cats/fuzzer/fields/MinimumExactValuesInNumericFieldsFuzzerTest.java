@@ -53,7 +53,7 @@ class MinimumExactValuesInNumericFieldsFuzzerTest {
         Assertions.assertThat(minimumExactValuesInNumericFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(minimumExactValuesInNumericFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(minimumExactValuesInNumericFieldsFuzzer.typeOfDataSentToTheService()).isEqualTo("exact minimum size values");
-        Assertions.assertThat(minimumExactValuesInNumericFieldsFuzzer.skipFor()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(minimumExactValuesInNumericFieldsFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
 
         stringSchema.setMinimum(BigDecimal.TEN);
         Assertions.assertThat(minimumExactValuesInNumericFieldsFuzzer.hasBoundaryDefined("test", data)).isTrue();

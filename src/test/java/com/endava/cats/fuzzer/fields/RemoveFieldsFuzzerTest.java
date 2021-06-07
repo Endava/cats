@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -46,6 +47,9 @@ class RemoveFieldsFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
+    @MockBean
+    private FilterArguments filterArguments;
+
     @SpyBean
     private BuildProperties buildProperties;
 
@@ -69,7 +73,18 @@ class RemoveFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
+        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filterArguments);
+    }
+
+    @Test
+    void shouldSkipFuzzerIfSkippedTests() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFields(Mockito.any(), Mockito.any())).thenReturn(Collections.singleton(Collections.singleton("id")));
+        ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
+        Mockito.when(filterArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
+        removeFieldsFuzzer.fuzz(data);
+
+        Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test
@@ -94,7 +109,7 @@ class RemoveFieldsFuzzerTest {
     void givenARemoveFieldsFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(removeFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(removeFieldsFuzzer).hasToString(removeFieldsFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(removeFieldsFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(removeFieldsFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
     private void setup(String payload) {

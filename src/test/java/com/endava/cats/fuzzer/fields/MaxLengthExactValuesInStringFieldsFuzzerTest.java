@@ -50,7 +50,7 @@ class MaxLengthExactValuesInStringFieldsFuzzerTest {
         Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.typeOfDataSentToTheService()).isEqualTo("exact maxLength size values");
-        Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.skipFor()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
 
         stringSchema.setMaxLength(2);
         Assertions.assertThat(maxLengthExactValuesInStringFieldsFuzzer.hasBoundaryDefined("test", data)).isTrue();

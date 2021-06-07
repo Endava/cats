@@ -32,7 +32,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Proxy;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -175,7 +174,7 @@ public class ServiceCaller {
             this.recordRequestAndResponse(catsRequest, catsResponse, data);
 
             return catsResponse;
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException e) {
             this.recordRequestAndResponse(catsRequest, CatsResponse.empty(), data);
             throw new CatsIOException(e);
         }
@@ -192,7 +191,7 @@ public class ServiceCaller {
         return headers;
     }
 
-    private String addUriParams(String processedPayload, ServiceData data, String currentUrl) throws URISyntaxException {
+    private String addUriParams(String processedPayload, ServiceData data, String currentUrl) {
         if (StringUtils.isNotEmpty(processedPayload) && !"null".equalsIgnoreCase(processedPayload)) {
             HttpUrl.Builder httpUrl = HttpUrl.get(currentUrl).newBuilder();
             List<NameValuePair> queryParams = this.buildQueryParameters(processedPayload, data);

@@ -1,25 +1,36 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.TestCaseExporter;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.google.common.collect.Sets;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
 class NullValuesInFieldsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
-    @Mock
+    @SpyBean
     private TestCaseListener testCaseListener;
 
     @Mock
@@ -28,17 +39,40 @@ class NullValuesInFieldsFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
+    @Mock
+    private FilterArguments filterArguments;
+
+    @MockBean
+    private ExecutionStatisticsListener executionStatisticsListener;
+
+    @MockBean
+    private TestCaseExporter testCaseExporter;
+
+    @SpyBean
+    private BuildProperties buildProperties;
+    
     private NullValuesInFieldsFuzzer nullValuesInFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+    }
+
+    @Test
+    void shouldNotRunForSkippedFields() {
+        Mockito.when(filterArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
+        Assertions.assertThat(nullValuesInFieldsFuzzer.skipForFields()).containsOnly("id");
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFields()).thenReturn(Sets.newHashSet("id"));
+        nullValuesInFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.any());
     }
 
     @Test
     void givenANewNullValuesInFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheNullValuesInFieldsFuzzer() {
         Assertions.assertThat(nullValuesInFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(nullValuesInFieldsFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(nullValuesInFieldsFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingStrategy fuzzingStrategy = nullValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());

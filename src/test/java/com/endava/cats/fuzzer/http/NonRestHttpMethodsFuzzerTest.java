@@ -104,6 +104,6 @@ class NonRestHttpMethodsFuzzerTest {
     void shouldOverrideMethods() {
         Assertions.assertThat(nonRestHttpMethodsFuzzer.description()).isNotNull();
         Assertions.assertThat(nonRestHttpMethodsFuzzer).hasToString(nonRestHttpMethodsFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(nonRestHttpMethodsFuzzer.skipFor()).isEmpty();
+        Assertions.assertThat(nonRestHttpMethodsFuzzer.skipForHttpMethods()).isEmpty();
     }
 }

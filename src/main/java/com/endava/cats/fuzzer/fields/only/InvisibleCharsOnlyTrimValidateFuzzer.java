@@ -35,7 +35,7 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
     }
 
     @Override
-    public List<HttpMethod> skipFor() {
+    public List<HttpMethod> skipForHttpMethods() {
         return Arrays.asList(HttpMethod.GET, HttpMethod.DELETE);
     }
 

@@ -52,7 +52,7 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
     }
 
     @Override
-    public List<HttpMethod> skipFor() {
+    public List<HttpMethod> skipForHttpMethods() {
         return Arrays.asList(HttpMethod.DELETE, HttpMethod.GET);
     }
 }

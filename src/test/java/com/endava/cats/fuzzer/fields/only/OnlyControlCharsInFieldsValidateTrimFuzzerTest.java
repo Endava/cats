@@ -43,7 +43,7 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
     void shouldOverrideDefaultMethods() {
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.skipFor()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");

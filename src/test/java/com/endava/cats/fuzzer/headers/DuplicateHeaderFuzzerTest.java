@@ -91,6 +91,6 @@ class DuplicateHeaderFuzzerTest {
     void givenADuplicateHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
         Assertions.assertThat(duplicateHeaderFuzzer.description()).isNotNull();
         Assertions.assertThat(duplicateHeaderFuzzer).hasToString(duplicateHeaderFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(duplicateHeaderFuzzer.skipFor()).isEmpty();
+        Assertions.assertThat(duplicateHeaderFuzzer.skipForHttpMethods()).isEmpty();
     }
 }

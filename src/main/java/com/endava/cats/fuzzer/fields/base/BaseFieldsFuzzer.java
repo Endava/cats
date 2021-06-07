@@ -91,7 +91,13 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private boolean isFuzzingPossible(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        return !fuzzingStrategy.isSkip() && catsUtil.isPrimitive(data.getPayload(), fuzzedField) && isFuzzingPossibleSpecificToFuzzer(data, fuzzedField, fuzzingStrategy);
+        return !fuzzingStrategy.isSkip() && catsUtil.isPrimitive(data.getPayload(), fuzzedField)
+                && isFuzzingPossibleSpecificToFuzzer(data, fuzzedField, fuzzingStrategy)
+                && !isSkippedField(fuzzedField);
+    }
+
+    private boolean isSkippedField(String fuzzedField) {
+        return skipForFields().contains(fuzzedField);
     }
 
     private ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
