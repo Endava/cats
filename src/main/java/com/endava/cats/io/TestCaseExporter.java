@@ -27,7 +27,10 @@ import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -75,9 +78,12 @@ public abstract class TestCaseExporter {
     }
 
     private void deleteFiles(Path path) throws IOException {
-        for (File file : Objects.requireNonNull(path.toFile().listFiles())) {
-            if (!file.isDirectory()) {
-                Files.delete(file.toPath());
+        File[] files = path.toFile().listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (!file.isDirectory()) {
+                    Files.delete(file.toPath());
+                }
             }
         }
     }
