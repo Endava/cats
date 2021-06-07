@@ -129,10 +129,23 @@ public class FilesArguments {
         }
     }
 
+
+    /**
+     * Returns a list of the --urlParams supplied. The list will contain strings in the {@code name:value} pairs.
+     *
+     * @return a name:value list of url params to be replaced when calling the service
+     */
     public List<String> getUrlParamsList() {
         return this.urlParamsList;
     }
 
+    /**
+     * Replaces the current URL parameters with the {@code --urlParams} arguments supplied.
+     * The URL parameters are expected to be included in curly brackets.
+     *
+     * @param startingUrl the base url; http://localhost:8080/{petId}
+     * @return the initial URL with the parameters replaced with --urlParams supplied values
+     */
     public String replacePathWithUrlParams(String startingUrl) {
         for (String line : this.getUrlParamsList()) {
             String[] urlParam = line.split(":");

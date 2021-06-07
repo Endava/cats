@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+/**
+ * Holds all args related to Authentication details.
+ */
 @Component
 @Getter
 public class AuthArguments {
@@ -66,6 +69,11 @@ public class AuthArguments {
         return !EMPTY.equalsIgnoreCase(proxyHost);
     }
 
+    /**
+     * Returns the Proxy if set or NO_PROXY otherwise
+     *
+     * @return the Proxy settings supplied through args
+     */
     public Proxy getProxy() {
         Proxy proxy = Proxy.NO_PROXY;
         if (isProxySupplied()) {
@@ -74,9 +82,15 @@ public class AuthArguments {
         return proxy;
     }
 
+    /**
+     * Returns the basic auth header if supplied. This method does not do any checks. It assumes the calling method already performed
+     * the {@link #isBasicAuthSupplied()} check.
+     *
+     * @return the basic auth Header
+     */
     public CatsRequest.Header getBasicAuthHeader() {
         byte[] encodedAuth = Base64.getEncoder().encode(this.basicAuth.getBytes(StandardCharsets.UTF_8));
-        String authHeader = "Basic " + new String(encodedAuth);
+        String authHeader = "Basic " + new String(encodedAuth, StandardCharsets.UTF_8);
         return new CatsRequest.Header("Authorization", authHeader);
     }
 }

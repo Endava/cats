@@ -33,14 +33,29 @@ public class ApiArguments {
         args.add(CatsArg.builder().name("server").value(server).help(serverHelp).build());
     }
 
+    /**
+     * Checks if there was any contract supplied.
+     *
+     * @return true if a contract was supplied, false otherwise
+     */
     public boolean isContractEmpty() {
         return EMPTY.equalsIgnoreCase(contract);
     }
 
+    /**
+     * Checks if there was any server address supplied.
+     *
+     * @return true if a server address was supplied, false otherwise
+     */
     public boolean isServerEmpty() {
         return EMPTY.equalsIgnoreCase(server);
     }
 
+    /**
+     * Checks if there supplied contract is from an http address.
+     *
+     * @return true if a http contract, false otherwise
+     */
     public boolean isRemoteContract() {
         return this.contract.startsWith("http");
     }

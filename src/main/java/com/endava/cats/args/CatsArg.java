@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Builder
 @Getter
-public class CatsArg {
+public final class CatsArg {
     private final String name;
     private final String help;
     private final String value;
