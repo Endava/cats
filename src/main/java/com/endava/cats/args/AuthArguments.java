@@ -70,7 +70,7 @@ public class AuthArguments {
     }
 
     /**
-     * Returns the Proxy if set or NO_PROXY otherwise
+     * Returns the Proxy if set or NO_PROXY otherwise.
      *
      * @return the Proxy settings supplied through args
      */
