@@ -71,6 +71,11 @@ public class FilesArguments {
         args.add(CatsArg.builder().name("securityFuzzerFile").value(securityFuzzerFile).help(securityFuzzerFileHelp).build());
     }
 
+    /**
+     * Loads all supplied files for --securityFuzzerFile, --customFuzzerFile, --refData, --urlParams and --headers.
+     *
+     * @throws IOException if something happens during file processing
+     */
     public void loadConfig() throws IOException {
         loadSecurityFuzzerFile();
         loadCustomFuzzerFile();
@@ -157,10 +162,25 @@ public class FilesArguments {
         return startingUrl;
     }
 
+    /**
+     * Returns the header values supplied in the --headers argument.
+     * <p>
+     * The map keys are the contract paths or {@code all} if headers are applied to all paths.
+     *
+     * @return a Map representation of the --headers file with paths being the Map keys
+     */
     public Map<String, Map<String, String>> getHeaders() {
         return this.headers;
     }
 
+    /**
+     * Returns the reference data from the --refData file supplied as argument.
+     * <p>
+     * It return reference data for both the given path and under the {@code all} key.
+     *
+     * @param currentPath the current API path
+     * @return a Map with the supplied --refData
+     */
     public Map<String, String> getRefData(String currentPath) {
         Map<String, String> currentPathRefData = Optional.ofNullable(this.refData.get(currentPath)).orElse(Maps.newHashMap());
         Map<String, String> allValues = Optional.ofNullable(this.refData.get(ALL)).orElse(Collections.emptyMap());
@@ -169,10 +189,20 @@ public class FilesArguments {
         return currentPathRefData;
     }
 
+    /**
+     * Returns a Map representation of the --customFuzzer. Map keys are test cases IDs.
+     *
+     * @return a Map representation of the --customFuzzer
+     */
     public Map<String, Map<String, Object>> getCustomFuzzerDetails() {
         return this.customFuzzerDetails;
     }
 
+    /**
+     * Returns a Map representation of the --securityFuzzer. Map keys are test cases IDs.
+     *
+     * @return a Map representation of the --securityFuzzer
+     */
     public Map<String, Map<String, Object>> getSecurityFuzzerDetails() {
         return this.securityFuzzerDetails;
     }
