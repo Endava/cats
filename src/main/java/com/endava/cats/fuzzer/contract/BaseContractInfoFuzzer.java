@@ -16,6 +16,7 @@ import java.util.function.Supplier;
 
 /**
  * Base class for all Contract Fuzzers. If you need additional behaviour please make sure you don't break existing Fuzzers.
+ * Contract Fuzzers are only focused on contract following best practices without calling the actual service.
  */
 public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected static final String DESCRIPTION = "description";
@@ -42,7 +43,7 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     }
 
     /**
-     * Contract Fuzzers are only analyzing the contract without doing nay HTTP Call.
+     * Contract Fuzzers are only analyzing the contract without doing any HTTP Call.
      * This is why we set the below default values for all Contract Fuzzers.
      *
      * @param data the current FuzzingData
@@ -63,14 +64,27 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
         return EMPTY;
     }
 
+    /**
+     * HTML bold the text.
+     *
+     * @param text the text
+     * @return the text enclosed in <strong></strong>
+     */
     protected String bold(String text) {
         return "<strong>" + text + "</strong>";
     }
 
+    /**
+     * Adds a new HTML line break.
+     *
+     * @param times how many line breaks
+     * @return line breaks according to the given times
+     */
     protected String newLine(int times) {
         return StringUtils.repeat("<br />", times);
     }
 
+    
     protected String trailNewLines(String text, int newLines) {
         return text + newLine(newLines);
     }
