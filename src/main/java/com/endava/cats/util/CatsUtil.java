@@ -185,7 +185,7 @@ public class CatsUtil {
             Map<String, Object> paths = mapper.convertValue(node, Map.class);
 
             for (Map.Entry<String, Object> entry : paths.entrySet()) {
-                Map<String, Object> properties = mapper.convertValue(entry.getValue(), Map.class);
+                Map<String, Object> properties = mapper.convertValue(entry.getValue(), LinkedHashMap.class);
                 result.put(entry.getKey(), properties);
             }
         }
