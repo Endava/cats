@@ -8,7 +8,8 @@ import java.util.Optional;
 
 @Component
 public class CatsDSLParser {
-    private static final Map<String, Parser> PARSERS = ImmutableMap.of("T(java.time", new SimpleParser(), "T(org.apache.commons.lang3", new SimpleParser());
+    private static final Map<String, Parser> PARSERS = ImmutableMap.of("T(java.time", new SimpleParser(), "T(org.apache.commons.lang3", new SimpleParser(),
+            "T(java.util", new SimpleParser());
 
     public String parseAndGetResult(String valueFromFile, String jsonPayload) {
 
