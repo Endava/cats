@@ -66,11 +66,23 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
     }
 
+    /**
+     * Triggers the processing of skipped Fuzzers for specific paths.
+     *
+     * @param args the program arguments
+     */
     public void loadConfig(String... args) {
         this.processSkipFuzzerFor(args);
         init();
     }
 
+    /**
+     * Prints a warning if the final list of Fuzzers to be run matches all Fuzzer registered in CATS.
+     * <p>
+     * This warning is printing because it will take significant time to run all Fuzzers and a split strategy should be in place.
+     *
+     * @param finalList the final list with Fuzzers to be applied after parsing all filter arguments
+     */
     public void printWarningIfNeeded(List<String> finalList) {
         if (finalList.size() == fuzzers.size()) {
             PrettyMarker config = ConfigFactory.warning().bold(true).underline(true).showLabel(true).showSymbol(true);
