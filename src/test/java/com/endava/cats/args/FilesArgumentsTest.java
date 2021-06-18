@@ -4,14 +4,18 @@ import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 
+@ExtendWith(SpringExtension.class)
 class FilesArgumentsTest {
 
     private final CatsUtil catsUtil = new CatsUtil(Mockito.mock(CatsDSLParser.class));
+    private FilesArguments filesArguments;
 
     @Test
     void shouldReturnSameUrlWhenUrlParamsEmpty() throws Exception {
