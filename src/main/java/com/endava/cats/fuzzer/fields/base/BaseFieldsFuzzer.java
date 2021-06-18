@@ -183,10 +183,10 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     /**
      * Override this in order to prevent the fuzzer from running for context particular to the given fuzzer.
      *
-     * @param data
-     * @param fuzzedField
-     * @param fuzzingStrategy
-     * @return
+     * @param data            the current FuzzingData object
+     * @param fuzzedField     the current field being fuzzed
+     * @param fuzzingStrategy the current FuzzingStrategy
+     * @return true by default
      */
     protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return true;
