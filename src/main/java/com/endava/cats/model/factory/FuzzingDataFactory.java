@@ -69,23 +69,37 @@ public class FuzzingDataFactory {
         }
 
         if (item.getGet() != null) {
-            fuzzingDataList.addAll(this.getFuzzDataForGet(path, item, schemas, item.getGet(), openAPI));
+            fuzzingDataList.addAll(this.getFuzzingDataForGet(path, item, schemas, item.getGet(), openAPI));
+        }
+
+        if (item.getDelete() != null) {
+            fuzzingDataList.addAll(this.getFuzzingDataForDelete(path, item, schemas, item.getDelete(), openAPI));
         }
 
         return fuzzingDataList;
     }
 
+    private List<FuzzingData> getFuzzingDataForDelete(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
+        return getFuzzDataForNonBodyMethods(path, item, schemas, operation, openAPI, HttpMethod.DELETE);
+    }
+
+    private List<FuzzingData> getFuzzingDataForGet(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
+        return getFuzzDataForNonBodyMethods(path, item, schemas, operation, openAPI, HttpMethod.GET);
+    }
+
     /**
-     * A similar FuzzingData object will created for GET requests. The "payload" will be a JSON with all the query or path params.
+     * A similar FuzzingData object will created for GET or DELETE requests. The "payload" will be a JSON with all the query or path params.
      * In order to achieve this a "synth" object is created that will act as a root object holding all the query or path params as child schemas.
+     * The method returns a list of FuzzingData as you might have oneOf operations which will create multiple payloads.
      *
-     * @param path
-     * @param item
-     * @param schemas
-     * @param operation
-     * @return
+     * @param path      the current path
+     * @param item      the current path item
+     * @param schemas   the current extracted schemas from OpenAPI
+     * @param openAPI   the full OpenAPI object
+     * @param operation the OpenApi operation
+     * @return a list of FuzzingData objects
      */
-    private List<FuzzingData> getFuzzDataForGet(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
+    private List<FuzzingData> getFuzzDataForNonBodyMethods(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI, HttpMethod method) {
         Set<CatsHeader> headers = this.extractHeaders(operation);
         ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
 
@@ -97,7 +111,7 @@ public class FuzzingDataFactory {
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
 
-        return payloadSamples.stream().map(payload -> FuzzingData.builder().method(HttpMethod.GET).path(path).headers(headers).payload(payload)
+        return payloadSamples.stream().map(payload -> FuzzingData.builder().method(method).path(path).headers(headers).payload(payload)
                 .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
                 .schemaMap(schemas).responses(responses)
                 .responseContentTypes(responsesContentTypes)
@@ -112,10 +126,10 @@ public class FuzzingDataFactory {
     }
 
     /**
-     * We filter the query parameters out of the synthetic schema created for the GET requests
+     * We filter the query parameters out of the synthetic schema created for the GET requests.
      *
-     * @param schema
-     * @return
+     * @param schema the current ObjectSchema
+     * @return a Set with all the query parameters
      */
     private Set<String> extractQueryParams(ObjectSchema schema) {
         return schema.getProperties().entrySet().stream()
@@ -169,12 +183,12 @@ public class FuzzingDataFactory {
      * The reason we get more than one {@code FuzzingData} objects is related to the usage of {@code anyOf, oneOf or allOf} elements inside the contract definition.
      * The method will compute all the possible combinations so that it covers all payload definitions.
      *
-     * @param path
-     * @param item
-     * @param schemas
-     * @param operation
-     * @param method
-     * @return
+     * @param path      the current path
+     * @param item      the current PathItem
+     * @param schemas   all schemas extracted from the OpenAPI
+     * @param operation the current OpenAPI Operation
+     * @param method    the current HTTP method
+     * @return a list  of FuzzingData used to Fuzz
      */
     private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Map<String, Schema> schemas, Operation operation, HttpMethod method, OpenAPI openAPI) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
@@ -209,10 +223,10 @@ public class FuzzingDataFactory {
     }
 
     /**
-     * We get the definition name for each request type. This also includes cases when we have AnyOf or OneOf schemas
+     * We get the definition name for each request type. This also includes cases when we have AnyOf or OneOf schemas.
      *
-     * @param mediaType
-     * @return
+     * @param mediaType the media type extracted from the Operation
+     * @return a list of request scheme names from the current media type
      */
     private List<String> getCurrentRequestSchemaName(MediaType mediaType) {
         List<String> reqSchemas = new ArrayList<>();
@@ -279,9 +293,9 @@ public class FuzzingDataFactory {
      * When we deal with AnyOf or OneOf data types, we need to create multiple payloads based on the number of sub-types defined within the contract. This method will return all these combinations
      * based on the keywords 'ANY_OF' and 'ONE_OF' generated by the PayloadGenerator
      *
-     * @param initialPayload
-     * @param discriminators
-     * @return
+     * @param initialPayload initial Payload including ONE_OF and ANY_OF information
+     * @param discriminators the discriminators used to create multiple Payloads specific for each type
+     * @return a list of Payload associated with each ANY_OF, ONE_OF combination
      */
     private List<String> getPayloadCombinationsBasedOnOneOfAndAnyOf(String initialPayload, List<String> discriminators) {
         List<String> result = new ArrayList<>();
@@ -360,7 +374,7 @@ public class FuzzingDataFactory {
      * When a sample payload is created by the PayloadGenerator, the ALL_OF elements are marked with the ALL_OF json key.
      * We now make sure that we combine all these elements under one root element.
      *
-     * @param element
+     * @param element the current Json element
      */
     private void squashAllOf(JsonElement element) {
         if (element.isJsonObject()) {
@@ -410,12 +424,12 @@ public class FuzzingDataFactory {
     }
 
     /**
-     * We need to get JSON structural samples for each response code documented into the contract
+     * We need to get JSON structural samples for each response code documented into the contract. This includes ONE_OF or ANY_OF combinations.
      *
-     * @param operation
-     * @param responseCodes
-     * @param schemas
-     * @return
+     * @param operation     the current OpenAPI operation
+     * @param responseCodes the list of response codes associated to the current Operation
+     * @param schemas       the schemas extracted from the OpenAPI contract
+     * @return a list if response payloads associated to each response code
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes, Map<String, Schema> schemas) {
         Map<String, List<String>> responses = new HashMap<>();
