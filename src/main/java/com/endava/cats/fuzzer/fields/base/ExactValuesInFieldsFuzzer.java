@@ -47,8 +47,8 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     @Override
     public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
-        Map<String, String> currentPath = filesArguments.getRefData(data.getPath());
-        return currentPath.isEmpty() && getExactMethod().apply(schema) != null;
+        Map<String, String> refDataForCurrentPath = filesArguments.getRefData(data.getPath());
+        return refDataForCurrentPath.isEmpty() && getExactMethod().apply(schema) != null;
     }
 
     @Override
@@ -71,7 +71,17 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         return String.format("iterate through each %s fields that have %s declared and send requests with values matching the %s size/value in the targeted field", getSchemasThatTheFuzzerWillApplyTo(), exactValueTypeString(), exactValueTypeString());
     }
 
+    /**
+     * Either minimum or maximum String.
+     *
+     * @return minimum or maximum string
+     */
     protected abstract String exactValueTypeString();
 
+    /**
+     * The exact Function used to generate the exact values. This is either getMinimum, getMaximum, getMinLength or getMaxLength.
+     *
+     * @return the function to apply to get the exact value
+     */
     protected abstract Function<Schema, Number> getExactMethod();
 }

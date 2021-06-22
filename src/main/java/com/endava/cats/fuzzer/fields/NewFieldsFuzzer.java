@@ -42,7 +42,7 @@ public class NewFieldsFuzzer implements Fuzzer {
     }
 
     private void process(FuzzingData data) {
-        JsonElement fuzzedJson = this.getFuzzedJson(data);
+        JsonElement fuzzedJson = this.addNewField(data);
 
         ResponseCodeFamily expectedResultCode = ResponseCodeFamily.TWOXX;
         if (catsUtil.isHttpMethodWithPayload(data.getMethod())) {
@@ -56,7 +56,7 @@ public class NewFieldsFuzzer implements Fuzzer {
         testCaseListener.reportResult(LOGGER, data, response, expectedResultCode);
     }
 
-    protected JsonElement getFuzzedJson(FuzzingData data) {
+    protected JsonElement addNewField(FuzzingData data) {
         JsonElement jsonElement = JsonParser.parseString(data.getPayload());
 
         if (jsonElement instanceof JsonObject) {

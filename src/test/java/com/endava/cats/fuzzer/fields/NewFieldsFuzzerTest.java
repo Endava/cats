@@ -93,7 +93,7 @@ class NewFieldsFuzzerTest {
     @Test
     void shouldAddANewFieldToFuzzToSingleElement() {
         setup(HttpMethod.POST);
-        JsonElement element = newFieldsFuzzer.getFuzzedJson(data);
+        JsonElement element = newFieldsFuzzer.addNewField(data);
 
         Assertions.assertThat(element.getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD)).isNotNull();
         Assertions.assertThat(element.getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD + "random")).isNull();
@@ -103,7 +103,7 @@ class NewFieldsFuzzerTest {
     void shouldAddANewFieldToFuzzToArray() {
         String payload = "[{ 'field': 'value1'}, {'field': 'value2'}]";
         data = FuzzingData.builder().payload(payload).build();
-        JsonElement element = newFieldsFuzzer.getFuzzedJson(data);
+        JsonElement element = newFieldsFuzzer.addNewField(data);
 
         Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD)).isNotNull();
         Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD + "random")).isNull();

@@ -37,7 +37,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         if (this.fuzzedFieldHasAnAssociatedSchema(schema)) {
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
 
-            if (this.isFieldFuzzable(fuzzedField, data) && this.getBoundaryValue(schema) != null) {
+            if (this.isFieldFuzzable(fuzzedField, data) && this.fuzzerGeneratedBoundaryValue(schema)) {
                 logger.start("[{}]. Start fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
                 return Collections.singletonList(FuzzingStrategy.replace().withData(this.getBoundaryValue(schema)));
             } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
@@ -53,6 +53,22 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         return Collections.singletonList(FuzzingStrategy.skip().withData("Data type not matching " + getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet())));
     }
 
+    private boolean fuzzerGeneratedBoundaryValue(Schema<?> schema) {
+        return this.getBoundaryValue(schema) != null;
+    }
+
+    /**
+     * Checks if the current field is fuzzable by the boundary fuzzers. The following cases might skip the current fuzzer:
+     * <ol>
+     *     <li>the fuzzed field schema is not fuzzable by the current fuzzer. Each boundary Fuzzer provides a list with all applicable schemas.</li>
+     *     <li>there is no boundary defined for the current field. This is also specific for each Fuzzer</li>
+     *     <li>the string format is not recognizable. Check {@link FormatGenerator} for supported formats</li>
+     * </ol>
+     *
+     * @param fuzzedField the current fuzzed field
+     * @param data        the current FuzzingData
+     * @return true if the field is fuzzble, false otherwise
+     */
     private boolean isFieldFuzzable(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
         return this.isRequestSchemaMatchingFuzzerType(schema) && (this.hasBoundaryDefined(fuzzedField, data) || this.isStringFormatRecognizable(schema));

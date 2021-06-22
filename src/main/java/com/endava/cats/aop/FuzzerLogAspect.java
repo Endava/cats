@@ -7,7 +7,7 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 
 /**
- * Aspect used to prefix logging with the right Fuzzer name. In order to it to work all Fuzzers must implement the
+ * Aspect used to prefix logging with the right Fuzzer name. In order for it to work, all Fuzzers must implement the
  * {@link com.endava.cats.fuzzer.Fuzzer} interface.
  */
 @Aspect

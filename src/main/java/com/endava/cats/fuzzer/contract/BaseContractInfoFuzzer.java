@@ -84,7 +84,7 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
         return StringUtils.repeat("<br />", times);
     }
 
-    
+
     protected String trailNewLines(String text, int newLines) {
         return text + newLine(newLines);
     }
@@ -109,5 +109,4 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     public String toString() {
         return this.getClass().getSimpleName();
     }
-
 }

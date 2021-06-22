@@ -33,7 +33,6 @@ import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
 import org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.MimeTypeUtils;
@@ -57,7 +56,6 @@ import static org.fusesource.jansi.Ansi.ansi;
         resources = {"${spring.info.build.location:classpath:META-INF/build-info.properties}"}
 )
 @SpringBootApplication
-@ComponentScan(basePackages = "com.endava.cats")
 @Import({AopAutoConfiguration.class, GsonAutoConfiguration.class, MustacheAutoConfiguration.class, ProjectInfoAutoConfiguration.class})
 public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     public static final AtomicInteger TEST = new AtomicInteger(0);

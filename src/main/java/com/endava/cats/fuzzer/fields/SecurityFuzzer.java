@@ -45,7 +45,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
         } else {
-            log.skip("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
+            log.skip("Skipping path [{}] as it was not configured in securityFuzzerFile", data.getPath());
         }
     }
 
@@ -76,6 +76,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         }
     }
 
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }

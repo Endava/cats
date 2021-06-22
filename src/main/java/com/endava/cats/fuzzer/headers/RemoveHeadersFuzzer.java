@@ -67,6 +67,7 @@ public class RemoveHeadersFuzzer implements Fuzzer {
         return intersection.size() != requiredHeaders.size();
     }
 
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }
