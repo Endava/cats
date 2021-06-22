@@ -588,9 +588,8 @@ This is a description of the elements within the `customFuzzer.yml` file:
 - *at most* one of the properties can have multiple values. When this situation happens, that test will actually become a list of tests one for each of the values supplied. For example in the above example `prop7` has 3 values. This will actually result in 3 tests, one for each value.
 - `CustomFuzzer` only triggers when you supply a `customFuzzer.yml`-like file using the `--customFuzzerFile=XXX` argument.
 - test within the file are executed **in the declared order**. This is why you can have outputs from one test act as inputs for the next one(s) (see the next section for details).
-- if no `httpMethod` parameter is supplied, then the `CustomFuzzer` will run for all http method defined in the OpenAPI contract under the given path
-- if a `httpMethod` parameter is supplied, but it doesn't exist in the OpenAPI given path, a `warning` will be issued and no test will be executed
-- if a `httpMethod` parameter is supplied, but is not a valid HTTP method, a `warning` will be issued and no test will be executed
+- if the supplied `httpMethod` doesn't exist in the OpenAPI given path, a `warning` will be issued and no test will be executed
+- if the supplied `httpMethod` is not a valid HTTP method, a `warning` will be issued and no test will be executed
 - if the request payload uses a `oneOf` element to allow multiple request types, you can control which of the possible types the `CustomFuzzer` will apply to using the `oneOfSelection` keyword. The value of the `oneOfSelection` keyword must match the fully qualified name of the `discriminator`.
 - if no `oneOfSelection` is supplied, and the request payload accepts multiple `oneOf` elements, than a custom test will be created for each type of payload
 - the file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above instead of `.`
