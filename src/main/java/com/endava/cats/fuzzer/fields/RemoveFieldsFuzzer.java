@@ -117,6 +117,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         return payload;
     }
 
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }

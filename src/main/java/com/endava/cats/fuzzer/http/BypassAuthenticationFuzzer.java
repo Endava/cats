@@ -76,6 +76,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
         return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().contains(authHeader));
     }
 
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }

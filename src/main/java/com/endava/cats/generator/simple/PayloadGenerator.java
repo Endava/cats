@@ -370,7 +370,7 @@ public class PayloadGenerator {
                 schemaToExample = schemaMap.get(schemaRef);
             }
             String propertyKey = propertyName.toString() + (schemaRef == null ? "object" : schemaRef);
-            values.put(propertyName.toString() + of + allOfSchema.get$ref(), resolveModelToExample(propertyKey, mediaType, schemaToExample));
+            values.put(propertyName + of + allOfSchema.get$ref(), resolveModelToExample(propertyKey, mediaType, schemaToExample));
         }
     }
 

@@ -31,7 +31,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData fuzzingData) {
-        Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuth(fuzzingData.getHeaders());
+        Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuthHeaders(fuzzingData.getHeaders());
         if (headersWithoutAuth.isEmpty()) {
             logger.skip("No headers to fuzz");
         }
@@ -70,7 +70,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
         return required ? this.getExpectedHttpCodeForRequiredHeadersFuzzed() : this.getExpectedHttpForOptionalHeadersFuzzed();
     }
 
-    public Set<CatsHeader> getHeadersWithoutAuth(Set<CatsHeader> headers) {
+    public Set<CatsHeader> getHeadersWithoutAuthHeaders(Set<CatsHeader> headers) {
         Set<CatsHeader> headersWithoutAuth = headers.stream()
                 .filter(catsHeader -> !serviceCaller.isAuthenticationHeader(catsHeader.getName()))
                 .collect(Collectors.toSet());

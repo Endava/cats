@@ -49,11 +49,23 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
         }
     }
 
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }
 
+    /**
+     * Returns the scenario to be displayed in the test report.
+     *
+     * @return the test scenario
+     */
     protected abstract String getScenario();
 
+    /**
+     * Returns the payload to be sent to the service.
+     *
+     * @param data the current FuzzingData
+     * @return the payload to be sent to the service
+     */
     protected abstract String getPayload(FuzzingData data);
 }

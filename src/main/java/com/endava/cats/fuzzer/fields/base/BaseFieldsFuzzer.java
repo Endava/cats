@@ -87,9 +87,23 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private FuzzingStrategy createSkipStrategy(FuzzingStrategy fuzzingStrategy) {
-        return fuzzingStrategy.isSkip() ? fuzzingStrategy : FuzzingStrategy.skip().withData("Field is not a primitive or is a discriminator");
+        return fuzzingStrategy.isSkip() ? fuzzingStrategy : FuzzingStrategy.skip().withData("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas");
     }
 
+    /**
+     * Fuzzing is not always possible. We will skip fuzzing if:
+     * <ol>
+     *     <li>the field is not a JSON primitive</li>
+     *     <li>the field is not marked as skipped</li>
+     *     <li>FuzzingStrategy is marked as skipped. This might happen if there is no boundary defined for the field, the Fuzzer cannot be applied to the current fuzzedField type or the String format is not recognized. </li>
+     *     <li>each Fuzzer can have additional logic to skip its execution</li>
+     * </ol>
+     *
+     * @param data            the current FuzzingData object
+     * @param fuzzedField     the current fuzzed field
+     * @param fuzzingStrategy the current FuzzingStrategy return by the current fuzzer
+     * @return true if fuzzing is possible, false otherwise
+     */
     private boolean isFuzzingPossible(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return !fuzzingStrategy.isSkip() && catsUtil.isPrimitive(data.getPayload(), fuzzedField)
                 && isFuzzingPossibleSpecificToFuzzer(data, fuzzedField, fuzzingStrategy)
@@ -100,6 +114,17 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         return skipForFields().contains(fuzzedField);
     }
 
+    /**
+     * Compute the expected response code based on various constraints. Each specific Fuzzer will override the methods to return what is expected when the following criteria are met:
+     * <ol>
+     *     <li>what is the expected response code when the fuzzed value is not matching the pattern defined inside the contract</li>
+     *     <li>is the fuzzed field mandatory or not</li>
+     * </ol>
+     *
+     * @param isFuzzedValueMatchingPattern is the fuzzed value matching the pattern defined in the contract?
+     * @param fuzzingConstraints           fuzzing constraints associated to the current fuzzed field
+     * @return the appropriate ResponseCodeFamily based on the supplied conditions
+     */
     private ResponseCodeFamily getExpectedResponseCodeBasedOnConstraints(boolean isFuzzedValueMatchingPattern, FuzzingConstraints fuzzingConstraints) {
         if (!isFuzzedValueMatchingPattern) {
             return this.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern();
@@ -118,13 +143,13 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     /**
      * For byte format OpenAPI is expecting a base64 encoded string. We consider this matching any pattern.
      *
-     * @param fieldValue
-     * @param data
-     * @param fuzzedField
-     * @return
+     * @param fieldValue  the current value of the field
+     * @param data        the current FuzzingData object
+     * @param fuzzedField the name of the field being fuzzed
+     * @return true if the fuzzed value matches the pattern, false otherwise
      */
     private boolean isFuzzedValueMatchingPattern(String fieldValue, FuzzingData data, String fuzzedField) {
-        Schema fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         if (fieldSchema.getPattern() == null || fieldSchema instanceof ByteArraySchema) {
             return true;
         }
@@ -134,7 +159,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     private boolean hasMinValue(FuzzingData data, String fuzzedField) {
-        Schema fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         return fieldSchema != null && fieldSchema.getMinLength() != null && fieldSchema.getMinLength() > 0;
     }
 

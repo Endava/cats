@@ -64,8 +64,8 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     }
 
     /**
-     * Removes content types defined in the contract from the {@link BaseSecurityChecksHeadersFuzzer.UNSUPPORTED_MEDIA_TYPES} list.
-     * Content Types already defined in contract should be treated as invalid by the service.
+     * Removes content types defined in the contract from the {@link UNSUPPORTED_MEDIA_TYPES} list.
+     * Content Types not already defined in contract should be treated as invalid by the service.
      *
      * @param data         the current FuzzingData
      * @param headerName   either Accept or Content-Type
@@ -94,7 +94,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     private void process(FuzzingData data, Set<CatsHeader> headers) {
         String headerValue = headers.stream().filter(header -> header.getName().equalsIgnoreCase(targetHeaderName()))
                 .findFirst().orElse(CatsHeader.builder().build()).getValue();
-        testCaseListener.addScenario(log, "Send a flow request with a [{}] {} header, value [{}]", typeOfHeader(), targetHeaderName(), headerValue);
+        testCaseListener.addScenario(log, "Send a happy flow request with a [{}] {} header, value [{}]", typeOfHeader(), targetHeaderName(), headerValue);
         testCaseListener.addExpectedResult(log, "Should get a {} response code", getExpectedResponseCode());
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(new ArrayList<>(headers))
                 .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
