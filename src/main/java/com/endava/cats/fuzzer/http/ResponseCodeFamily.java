@@ -65,6 +65,21 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return Arrays.asList("406", "415");
         }
+    }, FOURXX_NF {
+        @Override
+        public String getStartingDigit() {
+            return "4";
+        }
+
+        @Override
+        public String asString() {
+            return "4XX";
+        }
+
+        @Override
+        public List<String> allowedResponseCodes() {
+            return Collections.singletonList("404");
+        }
     }, FIVEXX {
         @Override
         public String getStartingDigit() {
@@ -93,7 +108,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Collections.singletonList("100");
+            return Arrays.asList("100", "101");
         }
     }, THREEXX {
         @Override
@@ -108,7 +123,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("301", "302");
+            return Arrays.asList("300", "301", "302");
         }
     }, ZEROXX {
         @Override
@@ -133,7 +148,7 @@ public enum ResponseCodeFamily {
 
     public static ResponseCodeFamily from(String responseCode) {
         for (ResponseCodeFamily value : values()) {
-            if (responseCode.charAt(0) == value.getStartingDigit().charAt(0)) {
+            if (value.allowedResponseCodes().contains(responseCode)) {
                 return value;
             }
         }

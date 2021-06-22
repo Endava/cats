@@ -2,7 +2,6 @@ package com.endava.cats.util;
 
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -105,7 +104,7 @@ public class CustomFuzzerUtil {
 
             verifies.forEach((key, value) -> {
                 String valueToCheck = responseValues.get(key);
-                valueToCheck = catsDSLParser.parseAndGetResult(valueToCheck, response.getBody());
+                value = catsDSLParser.parseAndGetResult(value, response.getBody());
                 if (value.startsWith("$")) {
                     /*this is a variable*/
                     value = variables.get(value.substring(1));
@@ -195,16 +194,13 @@ public class CustomFuzzerUtil {
 
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
         log.info("Path [{}] for method [{}] has the following custom data [{}]", data.getPath(), data.getMethod(), value);
-        boolean isHttpMethodMatchingCustomTest = this.isHttpMethodMatchingCustomTest((Map<String, Object>) value, data.getMethod());
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
 
-        if (this.entryIsValid((Map<String, Object>) value) && isHttpMethodMatchingCustomTest && isValidOneOf) {
+        if (this.entryIsValid((Map<String, Object>) value) && isValidOneOf) {
             List<Map<String, String>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
             for (Map<String, String> testCase : individualTestCases) {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
             }
-        } else if (!isHttpMethodMatchingCustomTest) {
-            log.warning("Skipping path [{}] as HTTP method [{}] does not match custom test", data.getPath(), data.getMethod());
         } else if (!isValidOneOf) {
             log.skip("Skipping path [{}] with payload [{}] as it does not match oneOfSelection", data.getPath(), data.getPayload());
         } else {
@@ -229,18 +225,12 @@ public class CustomFuzzerUtil {
         return catsUtil.equalAsJson(data.getPayload(), updatedJson);
     }
 
-    private boolean isHttpMethodMatchingCustomTest(Map<String, Object> currentPathValues, HttpMethod httpMethod) {
-        Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CustomFuzzerUtil.HTTP_METHOD)));
-
-        return !httpMethodFromYaml.isPresent() || httpMethodFromYaml.get().equals(httpMethod);
-    }
-
-
     private boolean entryIsValid(Map<String, Object> currentPathValues) {
         boolean responseCodeValid = ResponseCodeFamily.isValidCode(String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE)));
         boolean hasAtMostOneArrayOfData = currentPathValues.entrySet().stream().filter(entry -> entry.getValue() instanceof ArrayList).count() <= 1;
+        boolean hasHttpMethod = currentPathValues.get(HTTP_METHOD) != null;
 
-        return responseCodeValid && hasAtMostOneArrayOfData;
+        return responseCodeValid && hasAtMostOneArrayOfData && hasHttpMethod;
     }
 
     /**
@@ -255,7 +245,7 @@ public class CustomFuzzerUtil {
 
         if (listOfValuesOptional.isPresent()) {
             Map.Entry<String, Object> listOfValues = listOfValuesOptional.get();
-            for (Object value : (List) listOfValues.getValue()) {
+            for (Object value : (List<?>) listOfValues.getValue()) {
                 testCase.put(listOfValues.getKey(), value);
                 allValues.add(testCase.entrySet()
                         .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));

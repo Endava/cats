@@ -4,6 +4,7 @@
     pet:
       - stay
     expectedResponseCode: 200
+    httpMethod: POST
     oneOfSelection:
       test#test: "mumu"
     additionalProperties:

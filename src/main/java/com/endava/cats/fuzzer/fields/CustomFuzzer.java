@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CustomFuzzerUtil;
@@ -12,10 +13,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 @SpecialFuzzer
@@ -45,16 +43,30 @@ public class CustomFuzzer implements CustomFuzzerBase {
     protected void processCustomFuzzerFile(FuzzingData data) {
         Map<String, Object> currentPathValues = filesArguments.getCustomFuzzerDetails().get(data.getPath());
         if (currentPathValues != null) {
-            currentPathValues.forEach((key, value) -> executions.add(CustomFuzzerExecution.builder()
-                    .fuzzingData(data).testId(key).testEntry(value).build()));
+            currentPathValues.entrySet().stream().filter(stringObjectEntry -> isMatchingHttpMethod(stringObjectEntry.getValue(), data.getMethod()))
+                    .forEach(entry -> executions.add(CustomFuzzerExecution.builder()
+                            .fuzzingData(data).testId(entry.getKey()).testEntry(entry.getValue()).build()));
         } else {
-            LOGGER.info("Skipping path [{}] as it was not configured in customFuzzerFile", data.getPath());
+            LOGGER.info("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getPath(), data.getMethod());
         }
     }
 
+    private boolean isMatchingHttpMethod(Object currentValues, HttpMethod httpMethod) {
+        Map<String, Object> currentPathValues = (Map<String, Object>) currentValues;
+        Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CustomFuzzerUtil.HTTP_METHOD)));
+
+        return !httpMethodFromYaml.isPresent() || httpMethodFromYaml.get().equals(httpMethod);
+    }
+
+    /**
+     * This will executed the CustomTests stored in the {@code executions} collection.
+     * Before executing we make sure we sort the collection so that it appears in the same order as in the custom fuzzer file.
+     */
     public void executeCustomFuzzerTests() {
         MDC.put("fuzzer", "CF");
         MDC.put("fuzzerKey", "CustomFuzzer");
+
+        Collections.sort(executions);
 
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))

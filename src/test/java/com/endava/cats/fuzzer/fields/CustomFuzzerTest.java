@@ -141,7 +141,7 @@ class CustomFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").
-                responses(responses).responseCodes(Collections.singleton("200")).build();
+                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
 
 
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "custom");
@@ -249,6 +249,7 @@ class CustomFuzzerTest {
         tests.put("k1", "v1");
         tests.put("field", Arrays.asList(customFieldValues));
         tests.put("expectedResponseCode", "200");
+        tests.put("httpMethod", "POST");
 
         path.put("test1", tests);
         path.put("test2", tests);
