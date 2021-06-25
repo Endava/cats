@@ -132,7 +132,7 @@ public class ServiceCaller {
 
     private Proxy getProxyConfig() {
         Proxy proxy = authArguments.getProxy();
-        LOGGER.note("Proxy configuration to be used: {}}", proxy);
+        LOGGER.note("Proxy configuration to be used: {}", proxy);
 
         return proxy;
     }
@@ -362,8 +362,7 @@ public class ServiceCaller {
         return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().contains(authHeader));
     }
 
-    private void replaceHeaderIfNotFuzzed(List<CatsRequest.Header> headers, ServiceData
-            data, Map.Entry<String, String> suppliedHeader) {
+    private void replaceHeaderIfNotFuzzed(List<CatsRequest.Header> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {
         if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
             headers.add(new CatsRequest.Header(suppliedHeader.getKey(), suppliedHeader.getValue()));
         } else {
@@ -375,13 +374,6 @@ public class ServiceCaller {
         }
     }
 
-    /**
-     * This method will replace the path parameters with reference data values, without any fuzzing around the values.
-     *
-     * @param data
-     * @param currentUrl
-     * @return the path with reference data replacing path parameters
-     */
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
         Map<String, String> currentPathRefData = filesArguments.getRefData(data.getRelativePath());
         LOGGER.note("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);

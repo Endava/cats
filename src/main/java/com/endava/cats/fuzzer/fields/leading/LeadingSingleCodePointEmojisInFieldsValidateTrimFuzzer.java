@@ -12,11 +12,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.LeadingControlCharsInFieldsFuzzer.enabled}")
-public class LeadingControlCharsInFieldsValidateTrimFuzzer extends LeadingControlCharsInFieldsTrimValidateFuzzer {
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.LeadingSingleCodePointEmojisInFields.enabled}")
+public class LeadingSingleCodePointEmojisInFieldsValidateTrimFuzzer extends LeadingSingleCodePointEmojisInFieldsTrimValidateFuzzer {
 
     @Autowired
-    protected LeadingControlCharsInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    protected LeadingSingleCodePointEmojisInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
@@ -35,3 +35,4 @@ public class LeadingControlCharsInFieldsValidateTrimFuzzer extends LeadingContro
         return ResponseCodeFamily.FOURXX;
     }
 }
+

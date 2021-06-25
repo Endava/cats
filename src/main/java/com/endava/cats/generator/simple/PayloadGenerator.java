@@ -72,7 +72,7 @@ public class PayloadGenerator {
         Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
         String spaceValue = characterToRepeat;
         if (schema != null && schema.getMinLength() != null) {
-            spaceValue = StringUtils.repeat(spaceValue, schema.getMinLength() + 1);
+            spaceValue = StringUtils.repeat(spaceValue, (schema.getMinLength() / spaceValue.length()) + 1);
         }
         return FuzzingStrategy.replace().withData(spaceValue);
     }

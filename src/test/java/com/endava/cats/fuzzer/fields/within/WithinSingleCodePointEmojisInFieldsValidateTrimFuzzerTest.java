@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
+class WithinSingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
     private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
@@ -31,11 +31,11 @@ class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private WithinControlCharsInFieldsValidateSanitizeFuzzer controlCharsWithinFieldsValidateSanitizeFuzzer;
+    private WithinSingleCodePointEmojisInFieldsValidateTrimFuzzer withinSingleCodePointEmojisInFieldsValidateTrimFuzzer;
 
     @BeforeEach
     void setup() {
-        controlCharsWithinFieldsValidateSanitizeFuzzer = new WithinControlCharsInFieldsValidateSanitizeFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        withinSingleCodePointEmojisInFieldsValidateTrimFuzzer = new WithinSingleCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
@@ -44,26 +44,26 @@ class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("field", new StringSchema());
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
-        FuzzingStrategy fuzzingStrategy = controlCharsWithinFieldsValidateSanitizeFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
+        FuzzingStrategy fuzzingStrategy = withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
 
-        Assertions.assertThat(fuzzingStrategy.getData()).contains("\u0007");
-        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(fuzzingStrategy.getData()).contains("\uD83D\uDC80");
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
 
-        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.description()).isNotNull();
-        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.description()).isNotNull();
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
         PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
-        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
         PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
-        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
     }
 }
