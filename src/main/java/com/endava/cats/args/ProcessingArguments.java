@@ -19,6 +19,8 @@ public class ProcessingArguments {
     private String maxFieldsToRemove;
     @Value("${edgeSpacesStrategy:trimAndValidate}")
     private String edgeSpacesStrategy;
+    @Value("${sanitizationStrategy:sanitizeAndValidate}")
+    private String sanitizationStrategy;
     @Value("${useExamples:true}")
     private String useExamples;
 
@@ -28,6 +30,8 @@ public class ProcessingArguments {
     private String maxFieldsToRemoveHelp;
     @Value("${arg.processing.edgeSpacesStrategy.help:help}")
     private String edgeSpacesStrategyHelp;
+    @Value("${arg.processing.sanitizationStrategy.help:help}")
+    private String sanitizationStrategyHelp;
     @Value("${arg.processing.useExamples.help:help}")
     private String useExamplesHelp;
 
@@ -36,6 +40,7 @@ public class ProcessingArguments {
         args.add(CatsArg.builder().name("fieldsFuzzingStrategy").value(fieldsFuzzingStrategy).help(fieldsFuzzingStrategyHelp).build());
         args.add(CatsArg.builder().name("maxFieldsToRemove").value(maxFieldsToRemove).help(maxFieldsToRemoveHelp).build());
         args.add(CatsArg.builder().name("edgeSpacesStrategy").value(edgeSpacesStrategy).help(edgeSpacesStrategyHelp).build());
+        args.add(CatsArg.builder().name("sanitizationStrategy").value(sanitizationStrategy).help(sanitizationStrategyHelp).build());
         args.add(CatsArg.builder().name("useExamples").value(useExamples).help(useExamplesHelp).build());
     }
 }
