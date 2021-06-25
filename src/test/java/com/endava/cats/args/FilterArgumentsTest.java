@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -77,6 +78,22 @@ class FilterArgumentsTest {
         filterArguments.loadConfig("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeStringsFuzzerForPath=/pets");
         Assertions.assertThat(filterArguments.skipFuzzersForPaths)
                 .containsOnly(CatsSkipped.builder().fuzzer("VeryLargeStringsFuzzer").forPaths(Collections.singletonList("/pets")).build());
+    }
+
+    @Test
+    void shouldReturnAllHttpMethodsWhenNotHttpMethodSupplied() {
+        ReflectionTestUtils.setField(filterArguments, "httpMethods", "empty");
+        List<HttpMethod> httpMethods = filterArguments.getHttpMethods();
+
+        Assertions.assertThat(httpMethods).containsExactlyElementsOf(HttpMethod.restMethods());
+    }
+
+    @Test
+    void shouldReturnGetAndDeleteWhenNotHttpMethodSupplied() {
+        ReflectionTestUtils.setField(filterArguments, "httpMethods", "GET,DELETE");
+        List<HttpMethod> httpMethods = filterArguments.getHttpMethods();
+
+        Assertions.assertThat(httpMethods).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
 }
