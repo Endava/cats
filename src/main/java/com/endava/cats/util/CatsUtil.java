@@ -64,9 +64,7 @@ public class CatsUtil {
             "\u0080", "\u0081", "\u0082", "\u0083", "\u0085", "\u0086", "\u0087", "\u0088", "\u008A", "\u008B", "\u008C", "\u008D",
             "\u0090", "\u0091", "\u0093", "\u0094", "\u0095", "\u0096", "\u0097", "\u0098", "\u0099", "\u009A", "\u009B", "\u009C",
             "\u009D", "\u009E", "\u009F", "\uFEFF", "\uFFFE", "\u00AD");
-
-    private final List<String> specialChars = Arrays.asList("\u0000");
-
+    
     private final List<String> singleCodePointEmojis = Arrays.asList("\uD83E\uDD76", "\uD83D\uDC80", "\uD83D\uDC7B", "\uD83D\uDC7E");
 
     private final CatsDSLParser catsDSLParser;
