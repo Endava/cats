@@ -3,6 +3,7 @@ package com.endava.cats.model;
 import com.endava.cats.model.strategy.*;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -16,7 +17,9 @@ import java.util.regex.Pattern;
  * </ul>
  */
 public abstract class FuzzingStrategy {
-    private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}]+[\\p{C}\\p{Z}]*$");
+    private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}]+[\\p{C}\\p{Z}\\p{So}]*$");
+    private static final Pattern WITHIN = Pattern.compile("[\\p{C}\\p{Z}\\p{So}]+");
+
     protected String data;
 
     public static FuzzingStrategy prefix() {
@@ -39,6 +42,10 @@ public abstract class FuzzingStrategy {
         return new TrailFuzzingStrategy();
     }
 
+    public static FuzzingStrategy insert() {
+        return new InsertFuzzingStrategy();
+    }
+
     public static String mergeFuzzing(String fuzzedValue, String suppliedValue) {
         FuzzingStrategy currentStrategy = fromValue(fuzzedValue);
 
@@ -47,16 +54,20 @@ public abstract class FuzzingStrategy {
 
     public static FuzzingStrategy fromValue(String value) {
         if (StringUtils.isBlank(value) || ALL.matcher(value).matches()) {
-            return new ReplaceFuzzingStrategy().withData(value);
+            return replace().withData(value);
         }
-        if (isUnicodeControlChar(value.charAt(0)) || isUnicodeWhitespace(value.charAt(0))) {
-            return new PrefixFuzzingStrategy().withData(value.replaceAll("[^\\p{Z}\\p{C}]+", ""));
+        if (isUnicodeControlChar(value.charAt(0)) || isUnicodeWhitespace(value.charAt(0)) || isUnicodeOtherSymbol(value.charAt(0))) {
+            return prefix().withData(value.replaceAll("[^\\p{Z}\\p{C}\\p{So}]+", ""));
         }
-        if (isUnicodeControlChar(value.charAt(value.length() - 1)) || isUnicodeWhitespace(value.charAt(value.length() - 1))) {
-            return new TrailFuzzingStrategy().withData(value.replaceAll("[^\\p{Z}\\p{C}]+", ""));
+        if (isUnicodeControlChar(value.charAt(value.length() - 1)) || isUnicodeWhitespace(value.charAt(value.length() - 1)) || isUnicodeOtherSymbol(value.charAt(value.length() - 1))) {
+            return trail().withData(value.replaceAll("[^\\p{Z}\\p{C}\\p{So}]+", ""));
+        }
+        Matcher withinMatcher = WITHIN.matcher(value);
+        if (withinMatcher.find()) {
+            return insert().withData(withinMatcher.group());
         }
 
-        return new ReplaceFuzzingStrategy().withData(value);
+        return replace().withData(value);
     }
 
     public static String formatValue(String data) {
@@ -65,7 +76,7 @@ public abstract class FuzzingStrategy {
         }
         StringBuilder builder = new StringBuilder();
         for (char c : data.toCharArray()) {
-            if (isUnicodeWhitespace(c) || isUnicodeControlChar(c)) {
+            if (isUnicodeWhitespace(c) || isUnicodeControlChar(c) || isUnicodeOtherSymbol(c)) {
                 builder.append(String.format("\\u%04x", (int) c));
             } else {
                 builder.append(c);
@@ -82,6 +93,10 @@ public abstract class FuzzingStrategy {
     private static boolean isUnicodeWhitespace(char c) {
         return Character.getType(c) == Character.LINE_SEPARATOR ||
                 Character.getType(c) == Character.PARAGRAPH_SEPARATOR || Character.getType(c) == Character.SPACE_SEPARATOR;
+    }
+
+    private static boolean isUnicodeOtherSymbol(char c) {
+        return Character.getType(c) == Character.OTHER_SYMBOL;
     }
 
 

@@ -80,6 +80,13 @@ class FuzzingStrategyTest {
     }
 
     @Test
+    void shouldHaveProperNameForInsert() {
+        FuzzingStrategy strategy = FuzzingStrategy.insert().withData(null);
+
+        Assertions.assertThat(strategy).hasToString(strategy.name());
+    }
+
+    @Test
     void shouldTruncateValue() {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("a", 31));
 
@@ -105,6 +112,12 @@ class FuzzingStrategyTest {
     void shouldMatchUnicodeWhitespaceAndTrail(char c) {
         String result = FuzzingStrategy.mergeFuzzing("test" + c, "air");
         Assertions.assertThat(result).isEqualTo("air" + c);
+    }
+
+    @Test
+    void shouldInsertInSuppliedValue() {
+        String result = FuzzingStrategy.mergeFuzzing("te\uD83E\uDD76st", "air");
+        Assertions.assertThat(result).isEqualTo("a\uD83E\uDD76ir");
     }
 
 }
