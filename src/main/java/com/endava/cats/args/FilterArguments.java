@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import com.endava.cats.fuzzer.*;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -14,10 +15,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,6 +36,8 @@ public class FilterArguments {
     private String skipFuzzers;
     @Value("${skipFields:empty}")
     private String skipFields;
+    @Value("${httpMethods:empty}")
+    private String httpMethods;
 
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
@@ -51,6 +51,8 @@ public class FilterArguments {
     private String skipXXXForPathHelp;
     @Value("${arg.filter.skipFields.help:help}")
     private String skipFieldsHelp;
+    @Value("${arg.filter.httpMethods.help:help}")
+    private String httpMethodsHelp;
 
     @Autowired
     private List<Fuzzer> fuzzers;
@@ -64,6 +66,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("excludedFuzzers").value(skipFuzzers).help(skipFuzzersHelp).build());
         args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
         args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
+        args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
     }
 
     /**
@@ -95,6 +98,16 @@ public class FilterArguments {
             LOGGER.log(config, check);
             LOGGER.log(config, " ");
         }
+    }
+
+    public List<HttpMethod> getHttpMethods() {
+        if ("empty".equals(httpMethods)) {
+            return HttpMethod.restMethods();
+        }
+
+        return Arrays.stream(httpMethods.split(","))
+                .map(String::trim).map(method -> HttpMethod.fromString(method).orElse(null))
+                .filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public List<String> getSkippedFields() {

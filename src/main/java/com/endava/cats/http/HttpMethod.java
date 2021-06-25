@@ -15,6 +15,8 @@ public enum HttpMethod {
     BIND, UNBIND, REBIND, MKREDIRECTREF,
     UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT;
 
+    private static final List<HttpMethod> REST_METHODS = Arrays.asList(POST, PUT, GET, TRACE, DELETE, PATCH, HEAD);
+
     private static final List<HttpMethod> NON_REST_METHODS = Arrays.asList(CONNECT, COPY, MOVE,
             PROPPATCH, PROPFIND, MKCOL, LOCK, UNLOCK, SEARCH,
             BIND, UNBIND, REBIND, MKREDIRECTREF,
@@ -44,6 +46,10 @@ public enum HttpMethod {
 
     public static List<HttpMethod> nonRestMethods() {
         return NON_REST_METHODS;
+    }
+
+    public static List<HttpMethod> restMethods() {
+        return REST_METHODS;
     }
 
     public static boolean requiresBody(HttpMethod method) {

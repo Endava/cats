@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import com.endava.cats.args.*;
 import com.endava.cats.fuzzer.*;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -363,12 +364,21 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             return;
         }
 
+        List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered = fuzzingDataList.stream()
+                .filter(fuzzingData -> filterArguments.getHttpMethods().contains(fuzzingData.getMethod()))
+                .collect(Collectors.toList());
+        List<HttpMethod> excludedHttpMethods = fuzzingDataList.stream()
+                .map(FuzzingData::getMethod)
+                .filter(method -> !filterArguments.getHttpMethods().contains(method))
+                .collect(Collectors.toList());
+
+        LOGGER.info("The following HTTP methods won't be executed for path {}: {}", pathItemEntry.getKey(), excludedHttpMethods);
         LOGGER.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), fuzzers.size(), configuredFuzzers);
 
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
         for (Fuzzer fuzzer : fuzzers) {
             if (configuredFuzzers.contains(fuzzer.toString())) {
-                CatsUtil.filterAndPrintNotMatching(fuzzingDataList, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
+                CatsUtil.filterAndPrintNotMatching(fuzzingDataListWithHttpMethodsFiltered, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
                         LOGGER, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
                         .forEach(data -> {
                             LOGGER.info("Fuzzer {} and payload: {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getPayload());
