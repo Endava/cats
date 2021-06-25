@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -19,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,12 +33,15 @@ class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
     private TestCaseListener testCaseListener;
     @Mock
     private FilesArguments filesArguments;
+    @Mock
+    private FilterArguments filterArguments;
 
     private OnlyControlCharsInFieldsTrimValidateFuzzer onlyControlCharsInFieldsTrimValidateFuzzer;
 
     @BeforeEach
     void setup() {
-        onlyControlCharsInFieldsTrimValidateFuzzer = new OnlyControlCharsInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        onlyControlCharsInFieldsTrimValidateFuzzer = new OnlyControlCharsInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+        Mockito.when(filterArguments.getSkippedFields()).thenReturn(Collections.singletonList("pet"));
     }
 
     @Test
@@ -52,17 +57,18 @@ class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0000");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0007");
 
         stringSchema.setMinLength(5);
 
         fuzzingStrategy = onlyControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
 
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\u0000", stringSchema.getMinLength() + 1));
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\u0007", stringSchema.getMinLength() + 1));
         Assertions.assertThat(onlyControlCharsInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsTrimValidateFuzzer.getInvisibleChars()).contains("\t");
+        Assertions.assertThat(onlyControlCharsInFieldsTrimValidateFuzzer.skipForFields()).containsOnly("pet");
     }
 
     @Test

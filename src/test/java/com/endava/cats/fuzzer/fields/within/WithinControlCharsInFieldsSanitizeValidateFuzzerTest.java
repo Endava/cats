@@ -48,7 +48,7 @@ class WithinControlCharsInFieldsSanitizeValidateFuzzerTest {
         FuzzingStrategy fuzzingStrategy = withinControlCharsInFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).contains("\u0000");
+        Assertions.assertThat(fuzzingStrategy.getData()).contains("\u0007");
         Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(withinControlCharsInFieldsSanitizeValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());

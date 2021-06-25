@@ -14,22 +14,21 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.OnlyControlCharsInFieldsFuzzer.enabled}")
-public class OnlyControlCharsInFieldsValidateTrimFuzzer extends InvisibleCharsOnlyValidateTrimFuzzer {
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.OnlySingleCodePointEmojisInFieldsFuzzer.enabled}")
+public class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer extends InvisibleCharsOnlyValidateTrimFuzzer {
 
     @Autowired
-    public OnlyControlCharsInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
+    public OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp, fa);
     }
 
     @Override
     protected String typeOfDataSentToTheService() {
-        return "values with control chars only";
+        return "values with single code point emojis only";
     }
 
     @Override
     List<String> getInvisibleChars() {
-        return catsUtil.getControlCharsFields();
+        return catsUtil.getSingleCodePointEmojis();
     }
-
 }

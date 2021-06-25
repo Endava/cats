@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Fuzzer that sends a "happy" flow request with no fuzzing applied
+ * Fuzzer that sends a "happy" flow request with no fuzzing applied.
  */
 @Component
 @HttpFuzzer

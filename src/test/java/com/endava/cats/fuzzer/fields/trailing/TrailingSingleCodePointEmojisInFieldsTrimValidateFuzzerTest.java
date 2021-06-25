@@ -15,8 +15,7 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-class TrailingControlCharsInFieldsTrimValidateFuzzerTest {
-
+class TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzerTest {
     private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
@@ -25,33 +24,33 @@ class TrailingControlCharsInFieldsTrimValidateFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    private TrailingControlCharsInFieldsTrimValidateFuzzer trailingControlCharsInFieldsTrimValidateFuzzer;
+    private TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzer trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer;
 
     @BeforeEach
     void setup() {
-        trailingControlCharsInFieldsTrimValidateFuzzer = new TrailingControlCharsInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer = new TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
     @Test
     void givenANewTrailingTabsInFieldsTrimValidateFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingTabsInFieldsTrimValidateFuzzer() {
-        FuzzingStrategy fuzzingStrategy = trailingControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(null, null).get(1);
+        FuzzingStrategy fuzzingStrategy = trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(null, null).get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.trail().name());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0007");
-        Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.description()).isNotNull();
-        Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\uD83D\uDC80");
+        Assertions.assertThat(trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer.description()).isNotNull();
+        Assertions.assertThat(trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
         PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
-        Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
         PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
-        Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(trailingSingleCodePointEmojisInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
     }
 }

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
-class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
+class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
     private final CatsUtil catsUtil = new CatsUtil(null);
     @Mock
     private ServiceCaller serviceCaller;
@@ -35,21 +35,21 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
     @Mock
     private FilterArguments filterArguments;
 
-    private OnlyControlCharsInFieldsValidateTrimFuzzer onlyControlCharsInFieldsValidateTrimFuzzer;
+    private OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer onlySingleCodePointEmojisInFieldsValidateTrimFuzzer;
 
     @BeforeEach
     void setup() {
-        onlyControlCharsInFieldsValidateTrimFuzzer = new OnlyControlCharsInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+        onlySingleCodePointEmojisInFieldsValidateTrimFuzzer = new OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
     }
 
     @Test
     void shouldOverrideDefaultMethods() {
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.description()).isNotNull();
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\uD83D\uDC7E");
     }
 
     @Test
@@ -60,9 +60,9 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
+        FuzzingStrategy fuzzingStrategy = onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0007");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\uD83D\uDC80");
     }
 
     @Test
@@ -75,10 +75,8 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
+        FuzzingStrategy fuzzingStrategy = onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\u0007", stringSchema.getMinLength() + 1));
-
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\uD83D\uDC80", (stringSchema.getMinLength() / 2) + 1));
     }
 }
-

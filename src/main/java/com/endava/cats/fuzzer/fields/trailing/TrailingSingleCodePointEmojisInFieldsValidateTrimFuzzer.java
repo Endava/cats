@@ -12,11 +12,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.TrailingControlCharsInFieldsFuzzer.enabled}")
-public class TrailingControlCharsInFieldsValidateTrimFuzzer extends TrailingControlCharsInFieldsTrimValidateFuzzer {
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.TrailingSingleCodePointEmojisInFieldsFuzzer.enabled}")
+public class TrailingSingleCodePointEmojisInFieldsValidateTrimFuzzer extends TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzer {
 
     @Autowired
-    protected TrailingControlCharsInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    protected TrailingSingleCodePointEmojisInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
