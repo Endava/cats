@@ -103,7 +103,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
-        Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
+        Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas())
+                .orElseGet(HashMap::new);
 
         Optional.ofNullable(openAPI.getComponents().getRequestBodies())
                 .orElseGet(Collections::emptyMap)
