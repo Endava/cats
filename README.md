@@ -162,7 +162,7 @@ For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values
 Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
 
-Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages ina deployment pipeline, one after the other.
+Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages in a deployment pipeline, one after the other.
 
 ## Split by Endpoints
 You can use the `--paths=PATH` argument to run CATS sequentially for each path.
