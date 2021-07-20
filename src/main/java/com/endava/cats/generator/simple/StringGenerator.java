@@ -62,16 +62,21 @@ public class StringGenerator {
      * @param schema the associated schema of current fuzzed field
      * @return a random String whose length is bigger than maxLength
      */
-    public static String generateRightBoundString(Schema schema) {
+    public static String generateRightBoundString(Schema<?> schema) {
+        long minLength = getRightBoundaryLength(schema);
+        return StringUtils.repeat('a', (int) minLength);
+    }
+
+    public static long getRightBoundaryLength(Schema<?> schema) {
         long minLength = schema.getMaxLength() != null ? schema.getMaxLength().longValue() + 10 : DEFAULT_MAX_LENGTH;
 
         if (minLength > Integer.MAX_VALUE) {
             minLength = Integer.MAX_VALUE - 2L;
         }
-        return StringUtils.repeat('a', (int) minLength);
+        return minLength;
     }
 
-    public static String generateLeftBoundString(Schema schema) {
+    public static String generateLeftBoundString(Schema<?> schema) {
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
 
         if (minLength <= 0) {
