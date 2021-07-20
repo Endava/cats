@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 public abstract class BaseFieldsFuzzer implements Fuzzer {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
     protected final CatsUtil catsUtil;
+    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     final FilesArguments filesArguments;
-    final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
@@ -52,8 +52,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
         Set<String> allFields = data.getAllFields();
         fieldsToBeRemoved.forEach(allFields::remove);
-
-        for (String fuzzedField : data.getAllFields()) {
+        
+        for (String fuzzedField : allFields) {
             for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)) {
                 testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy));
             }

@@ -8,7 +8,7 @@ import java.security.SecureRandom;
 
 public class StringGenerator {
     public static final String FUZZ = "fuzz";
-    public static final int DEFAULT_MAX_LENGTH = 2000;
+    public static final int DEFAULT_MAX_LENGTH = 10000;
     public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -52,11 +52,23 @@ public class StringGenerator {
         return trimmed;
     }
 
+    /**
+     * Generates a random right boundary String value. If the maxLength of the associated schema is between {@code Integer.MAX_VALUE - 10}
+     * and {@code Integer.MAX_VALUE} (including), the generated String length will be {@code Integer.MAX_VALUE - 2}, which is the maximum length
+     * allowed for an char array on most JVMs. If the maxLength is less than
+     * {@code Integer.MAX_VALUE - 10}, then the generated value will have maxLength + 10 length. If the Schema has no maxLength
+     * defined, it will default to {@link DEFAULT_MAX_LENGTH}.
+     *
+     * @param schema the associated schema of current fuzzed field
+     * @return a random String whose length is bigger than maxLength
+     */
     public static String generateRightBoundString(Schema schema) {
-        int minLength = schema.getMaxLength() != null ? schema.getMaxLength() + 10 : DEFAULT_MAX_LENGTH;
+        long minLength = schema.getMaxLength() != null ? schema.getMaxLength().longValue() + 10 : DEFAULT_MAX_LENGTH;
 
-        String pattern = ALPHANUMERIC + "{" + minLength + ",}";
-        return new RgxGen(pattern).generate();
+        if (minLength > Integer.MAX_VALUE) {
+            minLength = Integer.MAX_VALUE - 2L;
+        }
+        return StringUtils.repeat('a', (int) minLength);
     }
 
     public static String generateLeftBoundString(Schema schema) {
