@@ -59,6 +59,7 @@ Table of Contents
             * [POWERSET](#powerset)
             * [ONEBYONE](#onebyone)
             * [SIZE](#size)
+         * [StringFieldsRightBoundaryFuzzer](#stringfieldsrightboundaryfuzzer)
          * [StringFormatAlmostValidValuesFuzzer](#stringformatalmostvalidvaluesfuzzer)
          * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
          * [NewFieldsFuzzer](#newfieldsfuzzer)
@@ -382,6 +383,20 @@ Independent of the strategy used to generate the subsets of the fields that will
 - In the case when the request didn't have any required field (or subfield) removed and the service responds with `2XX`, this is expected behaviour and will be reported using an `INFO` level message.
 - In the case when the request didn't have any required field removed, but the service responds with a `4XX` or `5XX` code, this is abnormal behaviour and will be reported as an `ERROR` message.
 - Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
+
+### StringFieldsRightBoundaryFuzzer
+The max length of a String supported by the JVM APIs is `Integer.MAX_VALUE` which is `2^31-1`. 
+
+Based on this constraint, this Fuzzer will send String values whose length are bigger than the defined `maxLength` property:
+- if the `maxLength` is equal to `2^31-1`, the Fuzzer won't run as it cannot create Strings larger than this value
+- if the `maxLength` is between `2^31-1 - 10` and `2^31-1 - 2`, the Fuzzer will generate Strings with a length of `2^31-1 - 2`
+- if the `maxLength` is less than `2^31-1 - 10`, the Fuzzer will generate Strings with a length of `maxLength + 10`
+- if no `maxLength` is defined, the Fuzzer will generate a string of `10 000` characters
+
+**Please note that when having string properties with such high `maxLength` the probability of getting `OutOfMemoryErrors` is quite high. 
+There are very few cases when this is actually needed as it will also take a long time to send such a huge payloads to the service. 
+Please consider setting reasonable `maxLength` values which make sense in your business context.
+Setting reasonable boundaries for your inputs is also a good practice from a security perspective and will prevent your service to crash when dealing with large inputs.**
 
 ### StringFormatAlmostValidValuesFuzzer
 OpenAPI offers the option to specify `formats` for each `string` field. This gives hints to the client on what type of data is expected by the API.

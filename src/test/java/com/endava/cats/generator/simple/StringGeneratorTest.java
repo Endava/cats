@@ -72,4 +72,13 @@ class StringGeneratorTest {
         Assertions.assertThat(actual).isEmpty();
     }
 
+    @Test
+    void shouldReturnLongLengthWhenMaxLengthIsIntegerMax() {
+        Schema<String> schema = new StringSchema();
+        schema.setMaxLength(Integer.MAX_VALUE - 2);
+        int maxExpected = Integer.MAX_VALUE - 2;
+        String actual = StringGenerator.generateRightBoundString(schema);
+
+        Assertions.assertThat(actual).hasSize(maxExpected);
+    }
 }
