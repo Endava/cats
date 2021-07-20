@@ -77,8 +77,8 @@ class StringGeneratorTest {
         Schema<String> schema = new StringSchema();
         schema.setMaxLength(Integer.MAX_VALUE - 2);
         int maxExpected = Integer.MAX_VALUE - 2;
-        String actual = StringGenerator.generateRightBoundString(schema);
+        long actual = StringGenerator.getRightBoundaryLength(schema);
 
-        Assertions.assertThat(actual).hasSize(maxExpected);
+        Assertions.assertThat(actual).isEqualTo(maxExpected);
     }
 }
