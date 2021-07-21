@@ -52,10 +52,14 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
         Set<String> allFields = data.getAllFields();
         fieldsToBeRemoved.forEach(allFields::remove);
-        
-        for (String fuzzedField : allFields) {
-            for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)) {
-                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy));
+
+        if (allFields.isEmpty()) {
+            logger.skip("Skipped due to: no fields to fuzz!");
+        } else {
+            for (String fuzzedField : allFields) {
+                for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)) {
+                    testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy));
+                }
             }
         }
     }
