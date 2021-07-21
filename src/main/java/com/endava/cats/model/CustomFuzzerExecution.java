@@ -30,6 +30,6 @@ public class CustomFuzzerExecution implements Comparable<CustomFuzzerExecution> 
 
     @Override
     public int hashCode() {
-        return Objects.hash(fuzzingData, testId);
+        return Objects.hash(fuzzingData.getPath(), testId);
     }
 }
