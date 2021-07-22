@@ -33,7 +33,7 @@ class CheckSecurityHeadersFuzzerTest {
     private static final List<CatsHeader> SOME_SECURITY_HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),
             CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build());
     private static final List<CatsHeader> MISSING_HEADERS = Arrays.asList(CatsHeader.builder().name("X-Frame-Options").value("DENY").build(),
-            CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build());
+            CatsHeader.builder().name("X-XSS-Protection").value("0").build());
     @Mock
     private ServiceCaller serviceCaller;
 

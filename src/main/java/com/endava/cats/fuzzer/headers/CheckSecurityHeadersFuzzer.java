@@ -32,7 +32,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     private static final List<CatsHeader> SECURITY_HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),
             CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build(),
             CatsHeader.builder().name("X-Frame-Options").value("DENY").build(),
-            CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build());
+            CatsHeader.builder().name("X-XSS-Protection").value("0").build());
 
     protected static final String SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet()).toString();
 
