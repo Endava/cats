@@ -34,8 +34,26 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         return Collections.singletonList(StringSchema.class);
     }
 
+    /**
+     * This method will generate a boundary value based on the supplied schema.
+     * There are 2 cases when this method gets involved (see {@link BaseBoundaryFieldFuzzer#isFieldFuzzable(String, FuzzingData)}):
+     * <ol>
+     *     <li>When the schema has left or right boundaries defined</li>
+     *     <li>When the field has a defined format and the format is recognizable</li>
+     * </ol>
+     * <p>
+     * The method will generate a boundary value only if there is a left or right boundary defined.
+     * It won't generate values if the format is recognized but it doesn't have any boundaries defined,
+     * as those scenarios are already covered by the HappyFuzzer.
+     *
+     * @param schema used to extract boundary information
+     * @return null of the schema has proper boundaries defined or a generated string value matching the boundaries otherwise
+     */
     @Override
     public String getBoundaryValue(Schema schema) {
+        if (getExactMethod().apply(schema) == null) {
+            return null;
+        }
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC;
         String generated = StringGenerator.generate(pattern, getExactMethod().apply(schema).intValue(), getExactMethod().apply(schema).intValue());
         if (schema instanceof ByteArraySchema) {
