@@ -7,6 +7,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class ExactValuesInFieldsFuzzerTest {
 
     @Test
     void shouldGetBoundaryValueForSchemaWithPattern() {
-        Schema schema = new Schema();
+        Schema<String> schema = new StringSchema();
         schema.setPattern("[0-9]+");
         schema.setMaxLength(10);
         String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
@@ -50,11 +51,19 @@ class ExactValuesInFieldsFuzzerTest {
 
     @Test
     void shouldGetBoundaryValueForSchemaWithNoPattern() {
-        Schema schema = new Schema();
+        Schema<String> schema = new StringSchema();
         schema.setMaxLength(10);
         String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
         Assertions.assertThat(generated).matches(StringGenerator.ALPHANUMERIC + "+");
+    }
+
+    @Test
+    void shouldGetNullBoundaryValueWhenNoBoundaries() {
+        Schema<String> schema = new StringSchema();
+        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).isNull();
     }
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {

@@ -69,7 +69,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      * @param data        the current FuzzingData
      * @return true if the field is fuzzble, false otherwise
      */
-    private boolean isFieldFuzzable(String fuzzedField, FuzzingData data) {
+    protected boolean isFieldFuzzable(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
         return this.isRequestSchemaMatchingFuzzerType(schema) && (this.hasBoundaryDefined(fuzzedField, data) || this.isStringFormatRecognizable(schema));
     }
