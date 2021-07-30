@@ -17,8 +17,8 @@ import java.util.regex.Pattern;
  * </ul>
  */
 public abstract class FuzzingStrategy {
-    private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}]+[\\p{C}\\p{Z}\\p{So}]*$");
-    private static final Pattern WITHIN = Pattern.compile("[\\p{C}\\p{Z}\\p{So}]+");
+    private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]*$");
+    private static final Pattern WITHIN = Pattern.compile("[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+");
 
     protected String data;
 
@@ -57,10 +57,10 @@ public abstract class FuzzingStrategy {
             return replace().withData(value);
         }
         if (isUnicodeControlChar(value.charAt(0)) || isUnicodeWhitespace(value.charAt(0)) || isUnicodeOtherSymbol(value.charAt(0))) {
-            return prefix().withData(value.replaceAll("[^\\p{Z}\\p{C}\\p{So}]+", ""));
+            return prefix().withData(replaceSpecialCharsWithEmpty(value));
         }
         if (isUnicodeControlChar(value.charAt(value.length() - 1)) || isUnicodeWhitespace(value.charAt(value.length() - 1)) || isUnicodeOtherSymbol(value.charAt(value.length() - 1))) {
-            return trail().withData(value.replaceAll("[^\\p{Z}\\p{C}\\p{So}]+", ""));
+            return trail().withData(replaceSpecialCharsWithEmpty(value));
         }
         Matcher withinMatcher = WITHIN.matcher(value);
         if (withinMatcher.find()) {
@@ -68,6 +68,10 @@ public abstract class FuzzingStrategy {
         }
 
         return replace().withData(value);
+    }
+
+    private static String replaceSpecialCharsWithEmpty(String value) {
+        return value.replaceAll("[^\\p{Z}\\p{C}\\p{So}\\p{Sk}\\p{M}]+", "");
     }
 
     public static String formatValue(String data) {
@@ -96,7 +100,7 @@ public abstract class FuzzingStrategy {
     }
 
     private static boolean isUnicodeOtherSymbol(char c) {
-        return Character.getType(c) == Character.OTHER_SYMBOL;
+        return Character.getType(c) == Character.OTHER_SYMBOL || Character.getType(c) == Character.MODIFIER_SYMBOL;
     }
 
 

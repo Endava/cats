@@ -64,8 +64,10 @@ public class CatsUtil {
             "\u0080", "\u0081", "\u0082", "\u0083", "\u0085", "\u0086", "\u0087", "\u0088", "\u008A", "\u008B", "\u008C", "\u008D",
             "\u0090", "\u0091", "\u0093", "\u0094", "\u0095", "\u0096", "\u0097", "\u0098", "\u0099", "\u009A", "\u009B", "\u009C",
             "\u009D", "\u009E", "\u009F", "\uFEFF", "\uFFFE", "\u00AD");
-    
+
     private final List<String> singleCodePointEmojis = Arrays.asList("\uD83E\uDD76", "\uD83D\uDC80", "\uD83D\uDC7B", "\uD83D\uDC7E");
+
+    private final List<String> multiCodePointEmojis = Arrays.asList("\uD83D\uDC69\uD83C\uDFFE", "\uD83D\uDC68\u200D\uD83C\uDFED️", "\uD83D\uDC69\u200D\uD83D\uDE80");
 
     private final CatsDSLParser catsDSLParser;
 
@@ -106,6 +108,10 @@ public class CatsUtil {
 
     public List<String> getSingleCodePointEmojis() {
         return this.singleCodePointEmojis;
+    }
+
+    public List<String> getMultiCodePointEmojis() {
+        return this.multiCodePointEmojis;
     }
 
     /**
