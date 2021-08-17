@@ -363,14 +363,18 @@ public class PayloadGenerator {
 
     private void addXXXOfExamples(String mediaType, Map<String, Object> values, Object propertyName, List<Schema> allOf, String of) {
         for (Schema allOfSchema : allOf) {
-            String schemaRef = allOfSchema.get$ref();
+            String fullSchemaRef = allOfSchema.get$ref();
+            String schemaRef = fullSchemaRef;
+            if (allOfSchema instanceof ArraySchema) {
+                fullSchemaRef = ((ArraySchema) allOfSchema).getItems().get$ref();
+            }
             Schema schemaToExample = allOfSchema;
-            if (allOfSchema.get$ref() != null) {
-                schemaRef = schemaRef.substring(schemaRef.lastIndexOf('/') + 1);
+            if (fullSchemaRef != null) {
+                schemaRef = fullSchemaRef.substring(fullSchemaRef.lastIndexOf('/') + 1);
                 schemaToExample = schemaMap.get(schemaRef);
             }
             String propertyKey = propertyName.toString() + (schemaRef == null ? "object" : schemaRef);
-            values.put(propertyName + of + allOfSchema.get$ref(), resolveModelToExample(propertyKey, mediaType, schemaToExample));
+            values.put(propertyName + of + fullSchemaRef, resolveModelToExample(propertyKey, mediaType, schemaToExample));
         }
     }
 
