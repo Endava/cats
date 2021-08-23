@@ -26,7 +26,7 @@
         <pitest-maven.version>1.6.4</pitest-maven.version>
         <pitest-junit5-plugin.version>0.12</pitest-junit5-plugin.version>
         <jacoco-maven-plugin.version>0.8.6</jacoco-maven-plugin.version>
-        <guava.version>30.1-jre</guava.version>
+        <guava.version>30.1.1-jre</guava.version>
         <openapi-generator.version>5.1.1</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*

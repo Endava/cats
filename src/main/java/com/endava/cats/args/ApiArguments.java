@@ -21,16 +21,21 @@ public class ApiArguments {
     private String contract;
     @Value("${server:empty}")
     private String server;
+    @Value("${maxRequestsPerMinute:empty}")
+    private String maxRequestsPerMinute;
 
     @Value("${arg.api.contract.help:help}")
     private String contractHelp;
     @Value("${arg.api.server.help:help}")
     private String serverHelp;
+    @Value("${arg.api.maxRequestsPerMinute.help:help}")
+    private String maxRequestsPerMinuteHelp;
 
     @PostConstruct
     public void init() {
         args.add(CatsArg.builder().name("contract").value(contract).help(contractHelp).build());
         args.add(CatsArg.builder().name("server").value(server).help(serverHelp).build());
+        args.add(CatsArg.builder().name("maxRequestsPerMinute").value(maxRequestsPerMinute).help(maxRequestsPerMinuteHelp).build());
     }
 
     /**

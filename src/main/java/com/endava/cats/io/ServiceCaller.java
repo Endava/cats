@@ -12,6 +12,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.html.HtmlEscapers;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jayway.jsonpath.PathNotFoundException;
@@ -47,6 +48,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
  */
 @Component
+@SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
@@ -60,6 +62,9 @@ public class ServiceCaller {
 
     OkHttpClient okHttpClient;
 
+    private RateLimiter rateLimiter;
+    @Value("${maxRequestsPerMinute:empty}")
+    private String maxRequestsPerMinute;
     @Value("${server:empty}")
     private String server;
 
@@ -72,6 +77,14 @@ public class ServiceCaller {
         this.authArguments = authArguments;
     }
 
+    @PostConstruct
+    public void initRateLimiter() {
+        int reqPerMinute = 100;
+        if (!"empty".equals(maxRequestsPerMinute)) {
+            reqPerMinute = Integer.parseInt(maxRequestsPerMinute);
+        }
+        rateLimiter = RateLimiter.create(1.0 * reqPerMinute / 60);
+    }
 
     @PostConstruct
     public void initHttpClient() {
@@ -138,6 +151,7 @@ public class ServiceCaller {
     }
 
     public CatsResponse call(ServiceData data) {
+        rateLimiter.acquire();
         String processedPayload = this.replacePayloadWithRefData(data);
         List<CatsRequest.Header> headers = this.buildHeaders(data);
         CatsRequest catsRequest = new CatsRequest();
