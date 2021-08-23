@@ -64,6 +64,7 @@ class ServiceCallerTest {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments);
 
+        ReflectionTestUtils.setField(serviceCaller, "maxRequestsPerMinute", "empty");
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
         ReflectionTestUtils.setField(authArguments, "proxyHost", "empty");
@@ -78,8 +79,45 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldSetRateLimiter() {
+        ReflectionTestUtils.setField(serviceCaller, "maxRequestsPerMinute", "30");
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        long t0 = System.currentTimeMillis();
+        serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+        serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+        serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+        long t1 = System.currentTimeMillis();
+
+        Assertions.assertThat(t1 - t0).isGreaterThan(3900);
+    }
+
+    @Test
+    void shouldNotSetRateLimiter() {
+        ReflectionTestUtils.setField(serviceCaller, "maxRequestsPerMinute", "empty");
+
+        serviceCaller.initRateLimiter();
+        serviceCaller.initHttpClient();
+
+        long t0 = System.currentTimeMillis();
+        serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+        serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+
+        long t1 = System.currentTimeMillis();
+
+        Assertions.assertThat(t1 - t0).isLessThan(1000);
+    }
+
+    @Test
     void givenAServer_whenDoingADeleteCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.DELETE)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
@@ -92,6 +130,7 @@ class ServiceCallerTest {
     @Test
     void givenAServer_whenDoingAHeadCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
@@ -104,6 +143,7 @@ class ServiceCallerTest {
     @Test
     void givenAServer_whenDoingAPatchCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'id':'1'}").httpMethod(HttpMethod.PATCH)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
@@ -115,6 +155,7 @@ class ServiceCallerTest {
     @Test
     void givenAServer_whenDoingATraceCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.TRACE)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
@@ -127,6 +168,7 @@ class ServiceCallerTest {
     @Test
     void givenAServer_whenDoingAPostCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
@@ -140,6 +182,8 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:111");
 
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
         ServiceData data = ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
         Assertions.assertThatThrownBy(() -> serviceCaller.call(data)).isInstanceOf(CatsIOException.class);
@@ -148,6 +192,7 @@ class ServiceCallerTest {
     @Test
     void givenAServer_whenDoingAPutCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'field':'newValue'}").httpMethod(HttpMethod.PUT)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
@@ -159,6 +204,7 @@ class ServiceCallerTest {
     @Test
     void givenAServer_whenDoingAGetCall_thenProperDetailsAreBeingReturned() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.GET)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
@@ -170,6 +216,7 @@ class ServiceCallerTest {
     @Test
     void shouldRemoveRefDataFieldsWhichAreMarkedForRemoval() {
         serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
 
         ServiceData data = ServiceData.builder().relativePath("/pets").payload("{\"id\":\"1\", \"field\":\"old_value\",\"name\":\"cats\"}")
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
