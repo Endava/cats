@@ -118,9 +118,9 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content) {
-        Schema schemaToAdd;
-        if (ref == null && content != null) {
-            Schema refSchema = content.get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema();
+        Schema<?> schemaToAdd = new Schema();
+        if (ref == null && isJsonContentType(content)) {
+            Schema<?> refSchema = content.get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema();
 
             if (refSchema instanceof ArraySchema) {
                 ref = ((ArraySchema) refSchema).getItems().get$ref();
@@ -132,9 +132,14 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
                 schemaToAdd = schemas.get(schemaKey);
             }
             schemas.put(schemaName, schemaToAdd);
-        } else if (ref == null) {
-            schemas.put(schemaName, new Schema());
+        } else if (content != null) {
+            LOGGER.warn("CATS only supports application/json as content-type. Found: {} for {}", content.keySet(), schemaName);
         }
+        schemas.put(schemaName, schemaToAdd);
+    }
+
+    private static boolean isJsonContentType(Content content) {
+        return content != null && content.get(MimeTypeUtils.APPLICATION_JSON_VALUE) != null;
     }
 
     @Override
