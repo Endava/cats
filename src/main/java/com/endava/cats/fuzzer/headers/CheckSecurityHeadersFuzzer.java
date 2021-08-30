@@ -9,15 +9,14 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -29,12 +28,15 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(value = "fuzzer.headers.CheckSecurityHeadersFuzzer.enabled", havingValue = "true")
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
-    private static final List<CatsHeader> SECURITY_HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),
-            CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build(),
-            CatsHeader.builder().name("X-Frame-Options").value("DENY").build(),
-            CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build());
+    private static final Map<String, List<CatsHeader>> SECURITY_HEADERS = new HashMap<String, List<CatsHeader>>() {{
+        put("Cache-Control", Collections.singletonList(CatsHeader.builder().name("Cache-Control").value("no-store").build()));
+        put("X-Content-Type-Options", Collections.singletonList(CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build()));
+        put("X-Frame-Options",  Collections.singletonList(CatsHeader.builder().name("X-Frame-Options").value("DENY").build()));
+        put("X-XSS-Protection", Arrays.asList(CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(),
+                CatsHeader.builder().name("X-XSS-Protection").value("0").build()));
+    }};
 
-    protected static final String SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet()).toString();
+    protected static final String SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.entrySet().stream().map(Object::toString).collect(Collectors.toSet()).toString();
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ServiceCaller serviceCaller;
@@ -67,11 +69,12 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     private List<CatsHeader> getMissingSecurityHeaders(CatsResponse catsResponse) {
         List<CatsHeader> notMatching = new ArrayList<>();
-        for (CatsHeader securityHeader : SECURITY_HEADERS) {
-            boolean noneMatch = catsResponse.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(securityHeader.getName())
-                    && catsHeader.getValue().toLowerCase().contains(securityHeader.getValue().toLowerCase()));
+        for (Map.Entry<String, List<CatsHeader>> securityHeaders : SECURITY_HEADERS.entrySet()) {
+            boolean noneMatch = catsResponse.getHeaders().stream()
+                    .noneMatch(catsHeader -> securityHeaders.getValue().stream().anyMatch(securityHeader -> catsHeader.getName().equalsIgnoreCase(securityHeader.getName())
+                    && catsHeader.getValue().toLowerCase().contains(securityHeader.getValue().toLowerCase())));
             if (noneMatch) {
-                notMatching.add(securityHeader);
+                notMatching.addAll(securityHeaders.getValue());
             }
         }
 
