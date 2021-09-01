@@ -27,20 +27,19 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(value = "fuzzer.headers.CheckSecurityHeadersFuzzer.enabled", havingValue = "true")
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
-    private static final Map<String, List<CatsHeader>> SECURITY_HEADERS;
+    private static final Map<String, List<CatsHeader>> SECURITY_HEADERS = new HashMap<>();
+    protected static String SECURITY_HEADERS_AS_STRING;
 
     static {
-        SECURITY_HEADERS = Collections.unmodifiableMap(new HashMap<String, List<CatsHeader>>() {{
-            put("Cache-Control", Collections.singletonList(CatsHeader.builder().name("Cache-Control").value("no-store").build()));
-            put("X-Content-Type-Options", Collections.singletonList(CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build()));
-            put("X-Frame-Options", Collections.singletonList(CatsHeader.builder().name("X-Frame-Options").value("DENY").build()));
-            put("X-XSS-Protection", Arrays.asList(CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(),
+        SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(CatsHeader.builder().name("Cache-Control").value("no-store").build()));
+        SECURITY_HEADERS.put("X-Content-Type-Options", Collections.singletonList(CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build()));
+        SECURITY_HEADERS.put("X-Frame-Options", Collections.singletonList(CatsHeader.builder().name("X-Frame-Options").value("DENY").build()));
+        SECURITY_HEADERS.put("X-XSS-Protection", Arrays.asList(CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(),
                     CatsHeader.builder().name("X-XSS-Protection").value("0").build()));
-        }});
+
+        SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.entrySet().stream().map(Object::toString).collect(Collectors.toSet()).toString();
     }
-
-    protected static final String SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.entrySet().stream().map(Object::toString).collect(Collectors.toSet()).toString();
-
+    
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
