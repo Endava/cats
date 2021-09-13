@@ -9,7 +9,7 @@ import java.security.SecureRandom;
 public class StringGenerator {
     public static final String FUZZ = "fuzz";
     public static final int DEFAULT_MAX_LENGTH = 10000;
-    public static final String ALPHANUMERIC = "[a-zA-Z0-9\u200B]";
+    public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private StringGenerator() {
