@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     private static final Map<String, List<CatsHeader>> SECURITY_HEADERS = new HashMap<>();
-    protected static String SECURITY_HEADERS_AS_STRING;
+    protected static String securityHeadersAsString;
 
     static {
         SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(CatsHeader.builder().name("Cache-Control").value("no-store").build()));
@@ -37,9 +37,9 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
         SECURITY_HEADERS.put("X-XSS-Protection", Arrays.asList(CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(),
                     CatsHeader.builder().name("X-XSS-Protection").value("0").build()));
 
-        SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.entrySet().stream().map(Object::toString).collect(Collectors.toSet()).toString();
+        securityHeadersAsString = SECURITY_HEADERS.entrySet().stream().map(Object::toString).collect(Collectors.toSet()).toString();
     }
-    
+
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -56,7 +56,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     }
 
     private void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Send a happy flow request and check the following Security Headers: {}", SECURITY_HEADERS_AS_STRING);
+        testCaseListener.addScenario(log, "Send a happy flow request and check the following Security Headers: {}", securityHeadersAsString);
         testCaseListener.addExpectedResult(log, "Should get a 2XX response code and all the above security headers within the response");
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
@@ -90,6 +90,6 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     @Override
     public String description() {
-        return "check all responses for good practices around Security related headers like: " + SECURITY_HEADERS_AS_STRING;
+        return "check all responses for good practices around Security related headers like: " + securityHeadersAsString;
     }
 }
