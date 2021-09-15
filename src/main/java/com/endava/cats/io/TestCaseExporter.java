@@ -16,6 +16,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.annotation.PostConstruct;
@@ -57,6 +58,8 @@ public abstract class TestCaseExporter {
     private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
     @Autowired
     private ReportingArguments reportingArguments;
+    @Autowired
+    private BuildProperties buildProperties;
     private Path path;
     private long t0;
 
@@ -154,6 +157,7 @@ public abstract class TestCaseExporter {
         context.put("TIMESTAMP", report.getTimestamp());
         context.put("TEST_CASES", report.getSummaryList());
         context.put("EXECUTION", report.getExecutionTime());
+        context.put("VERSION", report.getCatsVersion());
         context.putAll(this.getSpecificContext(report));
 
         Writer writer = SUMMARY_MUSTACHE.execute(new StringWriter(), context);
@@ -175,7 +179,8 @@ public abstract class TestCaseExporter {
         return CatsTestReport.builder().summaryList(summaries).errors(executionStatisticsListener.getErrors())
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
                 .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME))
-                .executionTime(((System.currentTimeMillis() - t0) / 1000)).build();
+                .executionTime(((System.currentTimeMillis() - t0) / 1000))
+                .catsVersion(buildProperties.getVersion()).build();
     }
 
     public void writeHelperFiles() {
@@ -193,6 +198,7 @@ public abstract class TestCaseExporter {
         Map<String, Object> context = new HashMap<>();
         context.put("TEST_CASE", testCase);
         context.put("TIMESTAMP", OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
+        context.put("VERSION", buildProperties.getVersion());
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);
         try {

@@ -88,6 +88,9 @@ h4>p {
   margin: 0;
 }
 
+#header-version {
+  font-size: 10px;
+}
 /* Alignment */
 
 .padding-lr {
