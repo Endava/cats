@@ -9,8 +9,7 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.report.CatsTestCase;
-import com.github.jknack.handlebars.internal.text.StringEscapeUtils;
-import com.google.gson.Gson;
+import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -18,7 +17,6 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.text.translate.UnicodeUnescaper;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -44,6 +42,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class TestCaseListener {
 
     protected static final String ID = "id";
+    protected static final String ID_ANSI = "id_ansi";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414");
@@ -69,7 +68,9 @@ public class TestCaseListener {
     }
 
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
-        MDC.put(ID, "Test " + CatsMain.TEST.incrementAndGet());
+        String testId = "Test " + CatsMain.TEST.incrementAndGet();
+        MDC.put(ID, testId);
+        MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 10, Ansi.Color.MAGENTA));
         this.startTestCase();
         try {
             s.run();
@@ -80,6 +81,8 @@ public class TestCaseListener {
         this.endTestCase();
         LOGGER.info("{} {}", SEPARATOR, "\n");
         MDC.put(ID, null);
+        MDC.put(ID_ANSI, null);
+
     }
 
     private void startTestCase() {
@@ -175,7 +178,7 @@ public class TestCaseListener {
 
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
-                        responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
+                responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
 
         if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
             this.reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
