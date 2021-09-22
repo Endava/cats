@@ -56,8 +56,8 @@ import static org.fusesource.jansi.Ansi.ansi;
 @ConditionalOnResource(
         resources = {"${spring.info.build.location:classpath:META-INF/build-info.properties}"}
 )
-@SpringBootApplication
-@Import({AopAutoConfiguration.class, GsonAutoConfiguration.class, MustacheAutoConfiguration.class, ProjectInfoAutoConfiguration.class})
+@SpringBootApplication(exclude = {MustacheAutoConfiguration.class})
+@Import({AopAutoConfiguration.class, GsonAutoConfiguration.class, ProjectInfoAutoConfiguration.class})
 public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     public static final AtomicInteger TEST = new AtomicInteger(0);
     public static final String ALL = "all";
@@ -385,7 +385,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         for (Fuzzer fuzzer : fuzzers) {
             if (configuredFuzzers.contains(fuzzer.toString())) {
                 CatsUtil.filterAndPrintNotMatching(fuzzingDataListWithHttpMethodsFiltered, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
-                        LOGGER, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
+                                LOGGER, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
                         .forEach(data -> {
                             LOGGER.info("Fuzzer {} and payload: {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getPayload());
                             fuzzer.fuzz(data);
