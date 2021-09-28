@@ -20,15 +20,18 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
 # Overview
-By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with **no coding effort**. All tests cases are **generated and run automatically** based on a pre-defined 
-set of **76 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations, security and even end-to-end functional flows.
+By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with **no coding effort**. All test cases are **generated and run automatically** based on a pre-defined 
+set of **76 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations and security. 
+Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional flows.
 
 <div align="center">
   <img alt="CATS" width="100%" src="images/run_result.png"/>
 </div>
 
 <h3 align="center" style="color:orange">
- Starting with version 6.0, CATS generates significant more test cases (more than 10k for small APIs). Please check the <a href="#cats-running-times">CATS Running Times</a> for strategies on how to slice the Fuzzers.
+ Starting with version 6.0, CATS generates significantly more test cases (more than 10k even for small APIs) which result in increased running times and bigger reports. 
+
+Please check the <a href="#slicint-strategies">Slicing Strategies</a> section for options on how to split the Fuzzers.
 </h3>
 
 Table of Contents
@@ -43,10 +46,10 @@ Table of Contents
    * [Running CATS](#running-cats-with-fuzzers)
       * [Notes on Unit Tests](#notes-on-unit-tests)
       * [Notes on skipped Tests](#notes-on-skipped-tests)
-   * [CATS Running Time](#cats-running-times)
-        * [Split by Endpoints](#split-by-endpoints)
-        * [Split by Fuzzer Category](#split-by-fuzzer-category)
-        * [Split by Fuzzer Type](#split-by-fuzzer-type)
+   * [Slicing Strategies for Running CATS](#slicing-strategies-for-running-cats)
+        * [Slice by Endpoints](#split-by-endpoints)
+        * [Slice by Fuzzer Category](#split-by-fuzzer-category)
+        * [Slice by Fuzzer Type](#split-by-fuzzer-type)
    * [Interpreting Results](#interpreting-results) 
    * [Available arguments](#available-arguments)
    * [Available Fuzzers](#available-fuzzers)
@@ -104,6 +107,7 @@ Table of Contents
       * [HTTP header(s) based authentication](#http-headers-based-authentication)
       * [One-Way or Two-Way SSL](#one-way-or-two-way-ssl)
    * [Limitations](#limitations)
+      * [API Specs](#api-specs)
       * [Media types and HTTP methods](#media-types-and-http-methods)
       * [Inheritance and composition](#inheritance-and-composition)
       * [Additional Parameters](#additional-parameters)
@@ -112,21 +116,21 @@ Table of Contents
    * [Contributing](#contributing)
 
 # Contract driven Auto-generated Tests for Swagger
-Automation testing is cool, but what if you could automate testers? More specifically, what if you could automate **all** of the process of writing test cases, getting test data, writing the automation tests and then running them?  This is what CATS does.
+Automation testing is cool, but what if you could automate testers? More specifically, what if you could automate **the entire** process of writing test cases, getting test data, writing the automation tests and then running them?  This is what CATS does.
 
-CATS is a tool that **generates tests at runtime** based on a given OpenAPI contract. It will also automatically run those tests against a given service instance to check if the API has been implemented in accordance with its contract.   Think of it as a tool that **eliminates the boring testing** activities from contract and API testing, allowing you to **focus on creative activities**.
+CATS is a tool that **generates tests at runtime** based on a given **OpenAPI** contract. It will also automatically run those tests against a given service instance to check if the API has been implemented in accordance with its contract. Think of it as a tool that **eliminates the boring testing** activities from contract and API testing, allowing you to **focus on creative exploratory scenarios**.
 
 The tests are generated based on configured `Fuzzer`s. Each `Fuzzer` will test several scenarios and report the resulting behaviour in both the console and in the generated test report.
 
 The following logging levels are used (in both the console, and the test report) to report the testing activity:
 
-- `INFO` will report normal documented behaviour. This is expected behaviour. No need for action.
+- `INFO`/`SUCCESS` will report normal documented behaviour. This is expected behaviour. No need for action.
 - `WARN` will report normal but undocumented behaviour or some misalignment between the contract and the service. This will **ideally** be actioned.
 - `ERROR` will report abnormal/unexpected behaviour. This **must** be actioned.
 
 
 # How the Fuzzing works
-CATS will iterate through all endpoints, **all HTTP methods** and **all the associated requests bodies and parameters** (including multiple combinations when dealing with `oneOf`/`anyOf` elements) and `fuzz` their data models fields values according to their defined data type and constraints. The actual fuzzing depends on the specific `Fuzzer` executed. Please see the list of fuzzers and their behaviour.
+CATS will iterate through **all endpoints**, **all HTTP methods** and **all the associated requests bodies and parameters** (including multiple combinations when dealing with `oneOf`/`anyOf` elements) and fuzz their data models fields values according to their defined data type and constraints. The actual fuzzing depends on the specific `Fuzzer` executed. Please see the list of fuzzers and their behaviour.
 There are also differences on how the fuzzing works depending on the HTTP method:
 
 - for methods with request bodies like **POST, PUT** the fuzzing will be applied at the **request body data models level**
@@ -141,12 +145,14 @@ This is a list of articles with step-by-step guides on how to use CATS:
 
 # Build
 
-**Before running the first build, please make sure you do a `mvn clean`. CATS uses a fork ok `OKHttpClient` which will install locally
+You can build CATS from sources on you local box. You just need Java 11+. Maven is already bundled.
+
+**Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork ok `OKHttpClient` which will install locally
 under the `4.9.1-CATS` version, so don't worry about any overriding of official versions.**
 
 You can use the following Maven command to build the project:
 
-`mvn clean package`
+`./mvnw clean package`
 
 This will output a `cats.jar` file in the current directory. The file is an executable JAR that will run in Linux environments. Just run `chmod +x cats.jar` to make the file executable.
 
@@ -156,12 +162,11 @@ This will output a `cats.jar` file in the current directory. The file is an exec
 
 You may see some `ERROR` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the `Fuzzers`.
 
-# CATS Running Times
+# Slicing Strategies for Running Cats
 
-CATS has a significant number of `Fuzzers`. Currently, **76** and growing. Some of the `Fuzzers` are executing multiple test cases for every given fields within the request.
+CATS has a significant number of `Fuzzers`. Currently, **76** and growing. Some of the `Fuzzers` are executing multiple test cases for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 test cases**.
 Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
-
 
 Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages in a deployment pipeline, one after the other.
 
@@ -173,7 +178,7 @@ You can use the `--checkXXX` arguments to run CATS only with specific `Fuzzers` 
 
 ## Split by Fuzzer Type
 You can use various arguments like `--fuzers=XXX` or `-skipFuzzer=XXX` to either include or exclude specific `Fuzzers`. 
-For example, you can run all `Fuzzers` except for the `Control Chars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
+For example, you can run all `Fuzzers` except for the `ControlChars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
 After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
 
 
@@ -204,15 +209,15 @@ But there are multiple other arguments you can supply. More details in the [avai
 
 ## Notes on skipped Tests
 You may notice a significant number of tests marked as `skipped`. CATS will try to apply all `Fuzzers` to all fields, but this is not always possible.
-For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will me marked as skipped.
+For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will be marked as skipped.
 It was an intentional decision to report also the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
 
 # Interpreting Results
 After you run it, CATS will produce an execution report in a folder called `cats-report/TIMESTAMP` or `cats-report` depending on the `--timestampReports` argument. The folder will be created inside the current folder (if it doesn't exist) and for each run a new subfolder will be 
-created with the `TIMESTAMP` value when the run started. This allows to have a history of the runs. The report itself is in the `index.html` file, which will contain the following details:
+created with the `TIMESTAMP` value when the run started. This allows you to have a history of the runs. The report itself is in the `index.html` file, which will contain the following details:
 
 - filter test runs based on the result: `All`, `Success`, `Warn` and `Error`
-- filter based on the `Fuzzer` so that you can only see the runs only for that specific `Fuzzer`
+- filter based on the `Fuzzer` so that you can only see the runs for that specific `Fuzzer`
 - a summary table with all the test cases with their corresponding path against they were run, and the result
 - ability to click on any test case and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
 
@@ -261,15 +266,21 @@ And this is what you get when you click on a specific test:
 
 Using some of these options a typical invocation of CATS might look like this:
 
-`./cats.jar --contract=my.yml --server=https://locathost:8080 --log=org.apache.http.wire:debug --checkHeaders`
+`./cats.jar --contract=my.yml --server=https://locathost:8080 --checkHeaders`
+
+This will run CATS against `http://localhost:8080` using `my.yml` as an API spec and will only run the HTTP headers `Fuzzers`.
 
 # Available Fuzzers
-To get a list of fuzzers just run `./cats.jar list fuzzers`. A list of all available fuzzers will be returned, along with a short description for each.
+To get a list of fuzzers run `./cats.jar list fuzzers`. A list of all available fuzzers will be returned, along with a short description for each.
 
 There are multiple categories of `Fuzzers` available:
+
 - `Field Fuzzers` which target request body fields or path parameters
 - `Header Fuzzers` which target HTTP headers
 - `HTTP Fuzzers` which target just the interaction with the service (without fuzzing fields or headers)
+
+Additional checks which are not actually using any fuzzing, but leverage the CATS internal model of running the test cases as `Fuzzers`:
+
 - `ContractInfo Fuzzers` which checks the contract for API good practices
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow or security testing
 
@@ -400,7 +411,7 @@ Based on this constraint, this Fuzzer will send String values whose length are b
 **Please note that when having string properties with such high `maxLength` the probability of getting `OutOfMemoryErrors` is quite high. 
 There are very few cases when this is actually needed as it will also take a long time to send such a huge payloads to the service. 
 Please consider setting reasonable `maxLength` values which make sense in your business context.
-Setting reasonable boundaries for your inputs is also a good practice from a security perspective and will prevent your service to crash when dealing with large inputs.**
+Setting reasonable boundaries for your inputs is also a good practice from a security perspective and will prevent your service from crashing when dealing with large inputs.**
 
 ### StringFormatAlmostValidValuesFuzzer
 OpenAPI offers the option to specify `formats` for each `string` field. This gives hints to the client on what type of data is expected by the API.
@@ -430,7 +441,7 @@ It's critical for APIs to sanitize input values as they will eventually lead to 
 
 Please note that CATS tests iteratively for **18 whitespace characters**. This means that for **each field** within the requests CATS will run **18 test cases**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
-Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.   
+Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.   
 
 ### LeadingControlCharsInFieldsTrimValidateFuzzer, TrailingControlCharsInFieldsTrimValidateFuzzer and OnlyControlCharsInFieldsTrimValidateFuzzer
 This `Fuzzers` will prefix or trail each field with Unicode control chars.
@@ -439,10 +450,10 @@ It's critical for APIs to sanitize input values as they will eventually lead to 
 
 Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 test cases**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
-Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
+Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
 
 ### WithinControlCharsInFieldsSanitizeValidateFuzzer
-This `Fuzzers` will insert within each field Unicode control chars.
+This `Fuzzers` will insert Unicode control chars within each field.
 
 Depending on the `--sanitizationStrategy` argument, this `Fuzzer` will expect:
 - `2XX` if `--sanitizationStrategy=sanitizeAndValidate`. This is also the default value (i.e. when not specifying and explicit strategy).
@@ -453,7 +464,7 @@ It's critical for APIs to sanitize input values as they will eventually lead to 
 
 Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 test cases**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
-Please check the [CATS running times](#cats-running-times) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
+Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
 
 
 ## Header Fuzzers
@@ -660,8 +671,7 @@ Suppose the `test_1` execution outputs:
 When executing `test_1` the value of the pet id will be stored in the `petId` variable (value `2`).
 When executing `test_2` the `id` parameter will be replaced with the `petId` variable (value `2`) from the previous case.
 
-**Please note:**
-- variables are visible across all custom tests; please be careful with the naming as they will get overridden
+**Please note: variables are visible across all custom tests; please be careful with the naming as they will get overridden.**
 
 #### Verifying responses
 The `CustomFuzzer` can verify more than just the `expectedResponseCode`. This is achieved using the `verify` element. This is an extended version of the above `customFuzzer.yml` file.  
@@ -969,6 +979,9 @@ For two-way SSL you can specify a JKS file (Java Keystore) that holds the client
 For details on how to load the certificate and private key into a Java Keystore you can use this guide: [https://mrkandreev.name/blog/java-two-way-ssl/](https://mrkandreev.name/blog/java-two-way-ssl/).
 
 # Limitations
+
+## API specs
+At this moment, CATS only works with OpenAPI spec.
 
 ## Media types and HTTP methods
 The `Fuzzers` has the following support for media types and HTTP methods:
