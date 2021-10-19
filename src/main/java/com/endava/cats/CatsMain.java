@@ -1,8 +1,20 @@
 package com.endava.cats;
 
 import ch.qos.logback.classic.Level;
-import com.endava.cats.args.*;
-import com.endava.cats.fuzzer.*;
+import com.endava.cats.args.ApiArguments;
+import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.CatsArg;
+import com.endava.cats.args.CheckArguments;
+import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.fuzzer.ContractInfoFuzzer;
+import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
@@ -19,7 +31,6 @@ import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
-import org.apache.commons.io.Charsets;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +51,16 @@ import org.springframework.util.MimeTypeUtils;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -71,7 +88,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private static final String VERSION = "version";
     private static final String EXAMPLE = ansi().fg(Ansi.Color.CYAN).a("./cats.jar --server=http://localhost:8080 --contract=con.yml").reset().toString();
     private static final String COMMAND_TEMPLATE = ansi().render("\t --@|cyan {}|@={}").reset().toString();
-
 
     @Autowired
     private ApiArguments apiArguments;
@@ -132,7 +148,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
                 String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
                 schemaToAdd = schemas.get(schemaKey);
             }
-            schemas.put(schemaName, schemaToAdd);
         } else if (content != null) {
             LOGGER.warn("CATS only supports application/json as content-type. Found: {} for {}", content.keySet(), schemaName);
         }
@@ -145,11 +160,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     @Override
     public void run(String... args) {
-        testCaseListener.startSession();
         try {
+            testCaseListener.startSession();
             this.doLogic(args);
             testCaseListener.endSession();
-
         } catch (StopExecutionException e) {
             LOGGER.debug("StopExecution: {}", e.getMessage());
         } catch (Exception e) {
@@ -159,8 +173,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     public void doLogic(String... args) throws IOException {
         this.sortFuzzersByName();
-        filesArguments.loadConfig();
-        filterArguments.loadConfig(args);
         this.processArgs(args);
         this.printArgs();
 
@@ -263,7 +275,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         return args.length == 3 && args[0].equalsIgnoreCase(LIST) && args[1].equalsIgnoreCase(PATHS_STRING);
     }
 
-    private void processArgs(String[] args) {
+    private void processArgs(String[] args) throws IOException {
         if (args.length == 0) {
             this.processNoArgument();
         }
@@ -275,12 +287,18 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             this.processTwoArguments(args);
         }
 
-        this.processRemainingArguments(args);
+        this.checkMinimumArguments(args);
         this.processLogLevelArgument();
+        this.processFilesAndFilterArguments(args);
         this.setReportingLevel();
     }
 
-    private void processRemainingArguments(String[] args) {
+    private void processFilesAndFilterArguments(String[] args) throws IOException {
+        filesArguments.loadConfig();
+        filterArguments.loadConfig(args);
+    }
+
+    private void checkMinimumArguments(String[] args) {
         if (this.isMinimumArgumentsNotSupplied(args)) {
             LOGGER.error("Missing or invalid required arguments 'contract' or 'server'. Usage: ./cats.jar --server=URL --contract=location. You can run './cats.jar' with no arguments for more options.");
             throw new StopExecutionException("minimum arguments not supplied");

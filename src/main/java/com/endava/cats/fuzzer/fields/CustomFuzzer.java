@@ -59,9 +59,10 @@ public class CustomFuzzer implements CustomFuzzerBase {
     }
 
     /**
-     * This will executed the CustomTests stored in the {@code executions} collection.
+     * This will execute the CustomTests stored in the {@code executions} collection.
      * Before executing we make sure we sort the collection so that it appears in the same order as in the custom fuzzer file.
-     * We decouple the execution of the custom fuzzer tests from their creation in order to execute them in the order defined in the customFuzzerFile.
+     * We decouple the execution of the custom fuzzer tests from their creation in order to execute them in the order defined in the customFuzzerFile,
+     * rather than the order defined by the OpenAPI contract.
      */
     public void executeCustomFuzzerTests() {
         MDC.put("fuzzer", "CF");

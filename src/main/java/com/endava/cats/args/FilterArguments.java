@@ -139,7 +139,7 @@ public class FilterArguments {
     public List<String> getFuzzersForPath(String pathKey) {
         List<String> allowedFuzzers = processSuppliedFuzzers();
         allowedFuzzers = this.removeSkippedFuzzersForPath(pathKey, allowedFuzzers);
-        allowedFuzzers = this.removeSkippedFuzzersForPath(allowedFuzzers);
+        allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
 
         return allowedFuzzers;
     }
@@ -185,7 +185,7 @@ public class FilterArguments {
                 .collect(Collectors.toList());
     }
 
-    private List<String> removeSkippedFuzzersForPath(List<String> allowedFuzzers) {
+    private List<String> removeSkippedFuzzersGlobally(List<String> allowedFuzzers) {
         List<String> fuzzersToExclude = Stream.of(skipFuzzers.split(",")).map(String::trim).collect(Collectors.toList());
 
         return allowedFuzzers.stream()
