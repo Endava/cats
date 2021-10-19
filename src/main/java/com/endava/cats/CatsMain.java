@@ -174,11 +174,10 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     public void doLogic(String... args) throws IOException {
         this.sortFuzzersByName();
         this.processArgs(args);
-        this.printArgs();
-
         OpenAPI openAPI = this.createOpenAPI();
         this.processContractDependentCommands(openAPI, args);
-
+        this.processFilesAndFilterArguments(args);
+        this.printArgs();
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
 
         this.startFuzzing(openAPI, suppliedPaths);
@@ -187,10 +186,11 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
+        Map<String, Schema> schemas = getSchemas(openAPI);
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
 
             if (suppliedPaths.contains(entry.getKey())) {
-                this.fuzzPath(entry, openAPI);
+                this.fuzzPath(entry, openAPI, schemas);
             } else {
                 LOGGER.skip("Skipping path {}", entry.getKey());
             }
@@ -235,13 +235,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         try {
             String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
             long t0 = System.currentTimeMillis();
-            OpenAPIParser openAPIV3Parser = new OpenAPIParser();
-            ParseOptions options = new ParseOptions();
-            options.setResolve(true);
-            options.setFlatten(true);
-            OpenAPI openAPI = this.getOpenAPI(openAPIV3Parser, options);
+            OpenAPI openAPI = this.getOpenAPI();
             LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
-
             return openAPI;
         } catch (Exception e) {
             LOGGER.fatal("Error parsing OPEN API contract {}", apiArguments.getContract());
@@ -249,7 +244,12 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         }
     }
 
-    private OpenAPI getOpenAPI(OpenAPIParser openAPIV3Parser, ParseOptions options) throws IOException {
+    private OpenAPI getOpenAPI() throws IOException {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+
         if (apiArguments.isRemoteContract()) {
             return openAPIV3Parser.readLocation(apiArguments.getContract(), null, options).getOpenAPI();
         } else {
@@ -289,7 +289,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
         this.checkMinimumArguments(args);
         this.processLogLevelArgument();
-        this.processFilesAndFilterArguments(args);
         this.setReportingLevel();
     }
 
@@ -374,9 +373,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         }
     }
 
-    protected void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
+    protected void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI, Map<String, Schema> schemas) {
         List<String> configuredFuzzers = filterArguments.getFuzzersForPath(pathItemEntry.getKey());
-        Map<String, Schema> schemas = getSchemas(openAPI);
         filterArguments.printWarningIfNeeded(configuredFuzzers);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
