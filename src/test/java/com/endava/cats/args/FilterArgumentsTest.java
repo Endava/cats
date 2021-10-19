@@ -48,7 +48,7 @@ class FilterArgumentsTest {
     @Test
     void shouldReturnAllFuzzersWhenNoCheckSupplied() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
-
+        filterArguments.loadConfig();
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
 
         Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
@@ -57,6 +57,7 @@ class FilterArgumentsTest {
     @Test
     void shouldRemoveSkippedFuzzers() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", "VeryLarge, SecurityHeaders, Jumbo");
+        filterArguments.loadConfig();
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
 
         Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
@@ -67,6 +68,7 @@ class FilterArgumentsTest {
     @Test
     void shouldOnlyIncludeSuppliedFuzzers() {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", "VeryLarge, SecurityHeaders, Jumbo");
+        filterArguments.loadConfig();
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
 
         Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer", "Jumbo")
