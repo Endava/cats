@@ -143,7 +143,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
                 ref = ((ArraySchema) refSchema).getItems().get$ref();
                 refSchema.set$ref(ref);
                 schemaToAdd = refSchema;
-            } else {
+            } else if (refSchema.get$ref() != null) {
                 ref = refSchema.get$ref();
                 String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
                 schemaToAdd = schemas.get(schemaKey);
