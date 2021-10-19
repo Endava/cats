@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.endava.cats.fuzzer.headers.CheckSecurityHeadersFuzzer.securityHeadersAsString;
+import static com.endava.cats.fuzzer.headers.CheckSecurityHeadersFuzzer.SECURITY_HEADERS_AS_STRING;
 import static com.endava.cats.fuzzer.headers.UnsupportedAcceptHeadersFuzzerTest.HEADERS;
 
 @ExtendWith(SpringExtension.class)
@@ -66,7 +66,7 @@ class CheckSecurityHeadersFuzzerTest {
 
     @Test
     void shouldProperlyOverrideParentMethods() {
-        Assertions.assertThat(checkSecurityHeadersFuzzer.description()).isEqualTo("check all responses for good practices around Security related headers like: " + securityHeadersAsString);
+        Assertions.assertThat(checkSecurityHeadersFuzzer.description()).isEqualTo("check all responses for good practices around Security related headers like: " + SECURITY_HEADERS_AS_STRING);
         Assertions.assertThat(checkSecurityHeadersFuzzer).hasToString(checkSecurityHeadersFuzzer.getClass().getSimpleName());
     }
 

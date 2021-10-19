@@ -275,7 +275,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         return args.length == 3 && args[0].equalsIgnoreCase(LIST) && args[1].equalsIgnoreCase(PATHS_STRING);
     }
 
-    private void processArgs(String[] args) throws IOException {
+    private void processArgs(String[] args) {
         if (args.length == 0) {
             this.processNoArgument();
         }
