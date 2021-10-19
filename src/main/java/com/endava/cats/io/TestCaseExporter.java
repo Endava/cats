@@ -164,7 +164,7 @@ public abstract class TestCaseExporter {
 
         try {
             writer.flush();
-            Files.write(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML), writer.toString().getBytes(StandardCharsets.UTF_8));
+            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML), writer.toString());
         } catch (IOException e) {
             LOGGER.error("There was an error writing the report summary: {}", e.getMessage(), e);
         }
@@ -202,7 +202,7 @@ public abstract class TestCaseExporter {
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);
         try {
-            Files.write(Paths.get(path.toFile().getAbsolutePath(), testFileName), writer.toString().getBytes(StandardCharsets.UTF_8));
+            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), testFileName), writer.toString());
         } catch (IOException e) {
             LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
         }

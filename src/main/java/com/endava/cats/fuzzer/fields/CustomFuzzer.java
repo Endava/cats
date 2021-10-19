@@ -55,7 +55,7 @@ public class CustomFuzzer implements CustomFuzzerBase {
         Map<String, Object> currentPathValues = (Map<String, Object>) currentValues;
         Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CustomFuzzerUtil.HTTP_METHOD)));
 
-        return !httpMethodFromYaml.isPresent() || httpMethodFromYaml.get().equals(httpMethod);
+        return httpMethodFromYaml.isEmpty() || httpMethodFromYaml.get().equals(httpMethod);
     }
 
     /**

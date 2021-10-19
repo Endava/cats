@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     private static final Map<String, List<CatsHeader>> SECURITY_HEADERS = new HashMap<>();
-    protected static String securityHeadersAsString;
+    protected final static String securityHeadersAsString;
 
     static {
         SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(CatsHeader.builder().name("Cache-Control").value("no-store").build()));
