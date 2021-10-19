@@ -6,7 +6,11 @@ import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.*;
+import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.FuzzingConstraints;
+import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.FuzzingResult;
+import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -219,5 +223,10 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      */
     protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
     }
 }

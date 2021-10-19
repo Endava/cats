@@ -103,7 +103,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     }
 
     /**
-     * What is the specific expected response code.
+     * What is the expected response code.
      *
      * @return a HTTP expected response code
      */
