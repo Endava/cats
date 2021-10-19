@@ -88,8 +88,8 @@ public class FuzzingDataFactory {
     }
 
     /**
-     * A similar FuzzingData object will created for GET or DELETE requests. The "payload" will be a JSON with all the query or path params.
-     * In order to achieve this a "synth" object is created that will act as a root object holding all the query or path params as child schemas.
+     * A similar FuzzingData object will be created for GET or DELETE requests. The "payload" will be a JSON with all the query or path params.
+     * In order to achieve this a synthetic object is created that will act as a root object holding all the query or path params as child schemas.
      * The method returns a list of FuzzingData as you might have oneOf operations which will create multiple payloads.
      *
      * @param path      the current path
@@ -302,7 +302,7 @@ public class FuzzingDataFactory {
         JsonElement jsonElement = JsonParser.parseString(initialPayload);
 
         if (jsonElement.isJsonObject()) {
-            this.addNewCombination(result, jsonElement, discriminators);
+            result = this.addNewCombination(jsonElement, discriminators);
         }
         if (result.isEmpty()) {
             result.add(initialPayload);
@@ -311,7 +311,8 @@ public class FuzzingDataFactory {
         return result;
     }
 
-    private void addNewCombination(List<String> result, JsonElement jsonElement, List<String> discriminators) {
+    private List<String> addNewCombination(JsonElement jsonElement, List<String> discriminators) {
+        List<String> result = new ArrayList<>();
         Map<String, JsonElement> anyOfOrOneOf = this.getAnyOrOneOffElements(jsonElement);
         anyOfOrOneOf.forEach((key, value) -> jsonElement.getAsJsonObject().remove(key));
 
@@ -337,6 +338,7 @@ public class FuzzingDataFactory {
             jsonElement.getAsJsonObject().remove(key);
 
         });
+        return result;
     }
 
     private Map<String, JsonElement> getAnyOrOneOffElements(JsonElement jsonElement) {
@@ -366,8 +368,7 @@ public class FuzzingDataFactory {
         JsonElement jsonElement = JsonParser.parseString(payloadSample);
         this.squashAllOf(jsonElement);
 
-        payloadSample = jsonElement.toString();
-        return payloadSample;
+        return jsonElement.toString();
     }
 
     /**
@@ -398,8 +399,7 @@ public class FuzzingDataFactory {
     private List<String> getRequestContentTypes(Operation operation, OpenAPI openAPI) {
         List<String> requests = new ArrayList<>();
         if (operation.getRequestBody() != null) {
-            Content defaultContent = new Content();
-            defaultContent.addMediaType(MimeTypeUtils.APPLICATION_JSON_VALUE, new MediaType());
+            Content defaultContent = buildDefaultContent();
             String reqBodyRef = operation.getRequestBody().get$ref();
             if (reqBodyRef != null) {
                 operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent());
@@ -410,12 +410,17 @@ public class FuzzingDataFactory {
         return requests;
     }
 
+    private Content buildDefaultContent() {
+        Content defaultContent = new Content();
+        defaultContent.addMediaType(MimeTypeUtils.APPLICATION_JSON_VALUE, new MediaType());
+        return defaultContent;
+    }
+
     private Map<String, List<String>> getResponseContentTypes(Operation operation, Set<String> responseCodes) {
         Map<String, List<String>> responses = new HashMap<>();
         for (String responseCode : responseCodes) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
-            Content defaultContent = new Content();
-            defaultContent.addMediaType(MimeTypeUtils.APPLICATION_JSON_VALUE, new MediaType());
+            Content defaultContent = buildDefaultContent();
             responses.put(responseCode, new ArrayList<>(Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent)
                     .keySet()));
         }
