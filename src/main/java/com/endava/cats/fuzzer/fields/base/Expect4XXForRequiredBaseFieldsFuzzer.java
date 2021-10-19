@@ -22,8 +22,4 @@ public abstract class Expect4XXForRequiredBaseFieldsFuzzer extends BaseFieldsFuz
         return ResponseCodeFamily.TWOXX;
     }
 
-
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
 }

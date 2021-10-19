@@ -27,8 +27,5 @@ public abstract class ExpectOnly2XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
         return ResponseCodeFamily.TWOXX;
     }
 
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
+
 }

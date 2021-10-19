@@ -116,4 +116,10 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
     protected boolean matchResponseSchema() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName();
+    }
+
 }

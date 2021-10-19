@@ -19,9 +19,4 @@ public abstract class Expect4XXBaseHeadersFuzzer extends BaseHeadersFuzzer {
     public ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
 }

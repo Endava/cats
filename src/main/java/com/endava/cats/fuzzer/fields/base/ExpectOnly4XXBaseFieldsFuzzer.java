@@ -23,11 +23,6 @@ public abstract class ExpectOnly4XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
     }
 
     @Override
-    public String toString() {
-        return this.getClass().getSimpleName();
-    }
-
-    @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
         return ResponseCodeFamily.FOURXX;
     }
