@@ -40,6 +40,7 @@ import org.springframework.util.MimeTypeUtils;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -240,7 +241,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         if (apiArguments.isRemoteContract()) {
             return openAPIV3Parser.readLocation(apiArguments.getContract(), null, options).getOpenAPI();
         } else {
-            return openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(apiArguments.getContract())), Charsets.UTF_8), null, options).getOpenAPI();
+            return openAPIV3Parser.readContents(Files.readString(Paths.get(apiArguments.getContract())), null, options).getOpenAPI();
         }
     }
 

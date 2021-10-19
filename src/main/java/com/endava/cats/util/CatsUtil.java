@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -186,7 +187,7 @@ public class CatsUtil {
     public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
         Map<String, Map<String, Object>> result = new LinkedHashMap<>();
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        try (Reader reader = new InputStreamReader(new FileInputStream(yaml), Charsets.UTF_8)) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(yaml), StandardCharsets.UTF_8)) {
             JsonNode node = mapper.reader().readTree(reader);
             Map<String, Object> paths = mapper.convertValue(node, Map.class);
 
