@@ -23,6 +23,13 @@ public class ApiArguments {
     private String server;
     @Value("${maxRequestsPerMinute:empty}")
     private String maxRequestsPerMinute;
+    @Value("${connectionTimeout:10}")
+    private int connectionTimeout;
+    @Value("${writeTimeout:10}")
+    private int writeTimeout;
+    @Value("${readTimeout:10}")
+    private int readTimeout;
+
 
     @Value("${arg.api.contract.help:help}")
     private String contractHelp;
@@ -30,12 +37,21 @@ public class ApiArguments {
     private String serverHelp;
     @Value("${arg.api.maxRequestsPerMinute.help:help}")
     private String maxRequestsPerMinuteHelp;
+    @Value("${arg.api.connectionTimeout.help:help}")
+    private String connectionTimeoutHelp;
+    @Value("${arg.api.writeTimeout.help:help}")
+    private String writeTimeoutHelp;
+    @Value("${arg.api.readTimeout.help:help}")
+    private String readTimeoutHelp;
 
     @PostConstruct
     public void init() {
         args.add(CatsArg.builder().name("contract").value(contract).help(contractHelp).build());
         args.add(CatsArg.builder().name("server").value(server).help(serverHelp).build());
         args.add(CatsArg.builder().name("maxRequestsPerMinute").value(maxRequestsPerMinute).help(maxRequestsPerMinuteHelp).build());
+        args.add(CatsArg.builder().name("connectionTimeout").value(String.valueOf(connectionTimeout)).help(connectionTimeoutHelp).build());
+        args.add(CatsArg.builder().name("writeTimeout").value(String.valueOf(writeTimeout)).help(writeTimeoutHelp).build());
+        args.add(CatsArg.builder().name("readTimeout").value(String.valueOf(readTimeout)).help(readTimeoutHelp).build());
     }
 
     /**

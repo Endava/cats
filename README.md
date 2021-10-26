@@ -263,6 +263,10 @@ And this is what you get when you click on a specific test:
 - `--sslKeyPwd` The password of the private key from the `sslKeystore`
 - `--proxyHost` The proxy server's host name (if running behind proxy)
 - `--proxyPort` The proxy server's port number (if running behind proxy)
+- `--maxRequestsPerMinute` Maximum number of requests per minute; this is useful when APIs have rate limiting implemented; default is 100
+- `--connectionTimeout` Time period in seconds which CATS should establish a connection with the server; default is 10 seconds
+- `--writeTimeout` Maximum time of inactivity in seconds between two data packets when sending the request to the server; default is 10 seconds
+- `--readTimeout` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
 
 Using some of these options a typical invocation of CATS might look like this:
 

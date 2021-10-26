@@ -1,5 +1,6 @@
 package com.endava.cats.io;
 
+import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
@@ -27,7 +28,7 @@ import java.net.Proxy;
 import java.util.Collections;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsUtil.class, CatsDSLParser.class, AuthArguments.class})
+@SpringJUnitConfig({CatsUtil.class, CatsDSLParser.class, AuthArguments.class, ApiArguments.class})
 class ServiceCallerTest {
 
     public static WireMockServer wireMockServer;
@@ -39,6 +40,8 @@ class ServiceCallerTest {
     private AuthArguments authArguments;
     @Autowired
     private CatsUtil catsUtil;
+    @Autowired
+    private ApiArguments apiArguments;
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -62,16 +65,16 @@ class ServiceCallerTest {
     @BeforeEach
     public void setupEach() throws Exception {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments);
+        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments);
 
-        ReflectionTestUtils.setField(serviceCaller, "maxRequestsPerMinute", "empty");
-        ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:" + wireMockServer.port());
+        ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
         ReflectionTestUtils.setField(authArguments, "proxyHost", "empty");
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(filesArguments, "refDataFile", "src/test/resources/refFields.yml");
         ReflectionTestUtils.setField(filesArguments, "headersFile", "src/test/resources/headers.yml");
         ReflectionTestUtils.setField(filesArguments, "params", "id=1,test=2");
+
 
         filesArguments.loadHeaders();
         filesArguments.loadRefData();
@@ -80,7 +83,7 @@ class ServiceCallerTest {
 
     @Test
     void shouldSetRateLimiter() {
-        ReflectionTestUtils.setField(serviceCaller, "maxRequestsPerMinute", "30");
+        ReflectionTestUtils.setField(apiArguments, "maxRequestsPerMinute", "30");
         serviceCaller.initRateLimiter();
         serviceCaller.initHttpClient();
 
@@ -98,8 +101,6 @@ class ServiceCallerTest {
 
     @Test
     void shouldNotSetRateLimiter() {
-        ReflectionTestUtils.setField(serviceCaller, "maxRequestsPerMinute", "empty");
-
         serviceCaller.initRateLimiter();
         serviceCaller.initHttpClient();
 
@@ -179,7 +180,7 @@ class ServiceCallerTest {
 
     @Test
     void givenAServer_whenDoingAPostCallAndServerUnavailable_thenProperDetailsAreBeingReturned() {
-        ReflectionTestUtils.setField(serviceCaller, "server", "http://localhost:111");
+        ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:111");
 
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();
@@ -258,5 +259,29 @@ class ServiceCallerTest {
 
         serviceCaller.initHttpClient();
         Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
+    }
+
+    @Test
+    void shouldGetDefaultTimeouts() {
+        Assertions.assertThat(apiArguments.getConnectionTimeout()).isEqualTo(10);
+        Assertions.assertThat(apiArguments.getReadTimeout()).isEqualTo(10);
+        Assertions.assertThat(apiArguments.getWriteTimeout()).isEqualTo(10);
+        serviceCaller.initHttpClient();
+
+        Assertions.assertThat(serviceCaller.okHttpClient.readTimeoutMillis()).isEqualTo(10000);
+        Assertions.assertThat(serviceCaller.okHttpClient.connectTimeoutMillis()).isEqualTo(10000);
+        Assertions.assertThat(serviceCaller.okHttpClient.writeTimeoutMillis()).isEqualTo(10000);
+    }
+
+    @Test
+    void shouldChangeTimeouts() {
+        ReflectionTestUtils.setField(apiArguments, "connectionTimeout", 50);
+        ReflectionTestUtils.setField(apiArguments, "readTimeout", 49);
+        ReflectionTestUtils.setField(apiArguments, "writeTimeout", 48);
+        serviceCaller.initHttpClient();
+
+        Assertions.assertThat(serviceCaller.okHttpClient.readTimeoutMillis()).isEqualTo(49000);
+        Assertions.assertThat(serviceCaller.okHttpClient.connectTimeoutMillis()).isEqualTo(50000);
+        Assertions.assertThat(serviceCaller.okHttpClient.writeTimeoutMillis()).isEqualTo(48000);
     }
 }
