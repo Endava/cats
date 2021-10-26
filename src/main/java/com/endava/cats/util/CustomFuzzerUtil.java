@@ -17,7 +17,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,7 +78,7 @@ public class CustomFuzzerUtil {
 
         String verify = currentPathValues.get(CustomFuzzerUtil.VERIFY);
         if (verify != null) {
-            this.checkVerifies(response, verify, expectedResponseCode);
+            this.checkVerifiesAndReport(payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
         } else {
             testCaseListener.reportResult(log, data, response, ResponseCodeFamily.from(expectedResponseCode));
         }
@@ -88,7 +95,7 @@ public class CustomFuzzerUtil {
         }
     }
 
-    private void checkVerifies(CatsResponse response, String verify, String expectedResponseCode) {
+    private void checkVerifiesAndReport(String request, CatsResponse response, String verify, String expectedResponseCode) {
         Map<String, String> verifies = this.parseYmlEntryIntoMap(verify);
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         log.info("Parameters to verify: {}", verifies);
@@ -105,10 +112,14 @@ public class CustomFuzzerUtil {
             verifies.forEach((key, value) -> {
                 String valueToCheck = responseValues.get(key);
                 value = catsDSLParser.parseAndGetResult(value, response.getBody());
-                if (value.startsWith("$")) {
-                    /*this is a variable*/
+
+                /*this is a variable*/
+                if (value.startsWith("$request")) {
+                    value = String.valueOf(this.getVariableFromJson(request, value.replace("request","").substring(2)));
+                } else if (value.startsWith("$")) {
                     value = variables.get(value.substring(1));
                 }
+
                 Matcher verifyMatcher = Pattern.compile(value).matcher(valueToCheck);
                 if (!verifyMatcher.matches()) {
                     errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, value));
@@ -146,13 +157,13 @@ public class CustomFuzzerUtil {
         result.putAll(variablesMap.entrySet().stream().collect(
                 Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> String.valueOf(this.getOutputVariable(response.getBody(), mappingFunction.apply(entry))))
+                        entry -> String.valueOf(this.getVariableFromJson(response.getBody(), mappingFunction.apply(entry))))
         ));
 
         return result;
     }
 
-    private Object getOutputVariable(String body, String value) {
+    private Object getVariableFromJson(String body, String value) {
         DocumentContext jsonDoc = JsonPath.parse(body);
         try {
             return jsonDoc.read(catsUtil.sanitizeToJsonPath(value));

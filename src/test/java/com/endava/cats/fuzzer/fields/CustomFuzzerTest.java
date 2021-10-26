@@ -183,6 +183,16 @@ class CustomFuzzerTest {
     }
 
     @Test
+    void shouldVerifyWithRequestVariables() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer-req-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\", \"pet\":\"myPet\"}");
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        filesArguments.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"));
+    }
+
+    @Test
     void givenACustomFuzzerFileWithVerifyParametersThatDoNotMatchTheResponseValues_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
@@ -231,6 +241,7 @@ class CustomFuzzerTest {
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).equalAsJson(Mockito.anyString(), Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
