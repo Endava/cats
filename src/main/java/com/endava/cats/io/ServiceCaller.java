@@ -1,6 +1,7 @@
 package com.endava.cats.io;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
@@ -59,29 +60,27 @@ public class ServiceCaller {
     private final TestCaseListener testCaseListener;
     private final CatsDSLParser catsDSLParser;
     private final AuthArguments authArguments;
-
+    private final ApiArguments apiArguments;
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
-    @Value("${maxRequestsPerMinute:empty}")
-    private String maxRequestsPerMinute;
-    @Value("${server:empty}")
-    private String server;
+
 
     @Autowired
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments) {
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.filesArguments = filesArguments;
         this.catsDSLParser = cdsl;
         this.authArguments = authArguments;
+        this.apiArguments = apiArguments;
     }
 
     @PostConstruct
     public void initRateLimiter() {
         int reqPerMinute = 100;
-        if (!"empty".equals(maxRequestsPerMinute)) {
-            reqPerMinute = Integer.parseInt(maxRequestsPerMinute);
+        if (!"empty".equals(apiArguments.getMaxRequestsPerMinute())) {
+            reqPerMinute = Integer.parseInt(apiArguments.getMaxRequestsPerMinute());
         }
         rateLimiter = RateLimiter.create(1.0 * reqPerMinute / 60);
     }
@@ -94,8 +93,9 @@ public class ServiceCaller {
 
             okHttpClient = new OkHttpClient.Builder()
                     .proxy(this.getProxyConfig())
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(10, TimeUnit.SECONDS)
+                    .connectTimeout(apiArguments.getConnectionTimeout(), TimeUnit.SECONDS)
+                    .readTimeout(apiArguments.getReadTimeout(), TimeUnit.SECONDS)
+                    .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
                     .hostnameVerifier((hostname, session) -> true).build();
@@ -160,10 +160,10 @@ public class ServiceCaller {
         catsRequest.setHttpMethod(data.getHttpMethod().name());
 
         try {
-            String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, server + data.getRelativePath());
+            String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
 
             if (!HttpMethod.requiresBody(data.getHttpMethod())) {
-                url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, server + data.getRelativePath());
+                url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
                 url = this.addUriParams(processedPayload, data, url);
             }
             catsRequest.setUrl(url);
