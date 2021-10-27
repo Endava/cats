@@ -724,6 +724,24 @@ But this one won't (`pet#name` is missing):
 }
 ```
 
+You can also refer to request fields in the `verify` section by using the `request.` qualifier. Using the above example, by having the following `verify` section:
+
+```yaml
+/pet:
+  test_1:
+    description: Create a Pet
+    httpMethod: POST
+    name: "My Pet"
+    expectedResponseCode: 200
+    output:
+      petId: pet#id
+    verify:
+      pet#name: "request#name"
+      pet#id: "[0-9]+"
+```
+
+It will verify if the response contains a `pet#name` element and that its value equals `My Pet` as sent in the request.
+
 Some notes:
 - `verify` parameters support Java regexes as values
 - you can supply more than one parameter to check (as seen above)
@@ -1014,7 +1032,7 @@ If a response contains a free Map specified using the `additionalParameters` tag
 CATS uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
 
 # Custom Files General Info
-All custom files that can be used by CATS (`customFuzzerFile`, `headers`, `refData`, etc) are in a YAML format. When setting or getting values to/from JSON for input and/or output variables, you must use a [JsonPath](https://goessner.net/articles/JsonPath/) syntax using either `#`  (not `.`) as separators.
+All custom files that can be used by CATS (`customFuzzerFile`, `headers`, `refData`, etc) are in a YAML format. When setting or getting values to/from JSON for input and/or output variables, you must use a [JsonPath](https://goessner.net/articles/JsonPath/) syntax using either `#` or `.` as separators.
 You can find some selector examples here: [JsonPath](https://github.com/json-path/JsonPath).
 
 # Contributing
