@@ -38,6 +38,8 @@ public class FilterArguments {
     private String skipFields;
     @Value("${httpMethods:empty}")
     private String httpMethods;
+    @Value("${dryRun:false}")
+    private boolean dryRun;
 
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
@@ -53,6 +55,8 @@ public class FilterArguments {
     private String skipFieldsHelp;
     @Value("${arg.filter.httpMethods.help:help}")
     private String httpMethodsHelp;
+    @Value("${arg.filter.dryRun.help:help}")
+    private String dryRunHelp;
 
     @Autowired
     private List<Fuzzer> fuzzers;
@@ -98,6 +102,10 @@ public class FilterArguments {
             LOGGER.log(config, check);
             LOGGER.log(config, " ");
         }
+    }
+
+    public boolean isDryRun() {
+        return dryRun;
     }
 
     public List<HttpMethod> getHttpMethods() {
