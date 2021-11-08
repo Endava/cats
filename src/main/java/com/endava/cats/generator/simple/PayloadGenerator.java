@@ -372,6 +372,8 @@ public class PayloadGenerator {
             if (fullSchemaRef != null) {
                 schemaRef = fullSchemaRef.substring(fullSchemaRef.lastIndexOf('/') + 1);
                 schemaToExample = schemaMap.get(schemaRef);
+            } else {
+                fullSchemaRef = "#";
             }
             String propertyKey = propertyName.toString() + (schemaRef == null ? "object" : schemaRef);
             values.put(propertyName + of + fullSchemaRef, resolveModelToExample(propertyKey, mediaType, schemaToExample));

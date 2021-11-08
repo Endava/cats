@@ -1,6 +1,12 @@
 package com.endava.cats;
 
-import com.endava.cats.args.*;
+import com.endava.cats.args.ApiArguments;
+import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.CheckArguments;
+import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
@@ -14,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(SpringExtension.class)
@@ -70,7 +77,7 @@ class CatsMainTest {
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         ReflectionTestUtils.setField(reportingArguments, "logData", "org.apache.wire:debug");
 
-        CatsMain spyMain = Mockito.spy(catsMain);
+        CatsMain spyMain = Mockito.spy(AopTestUtils.<CatsMain>getTargetObject(catsMain));
         spyMain.run("test");
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
@@ -92,7 +99,7 @@ class CatsMainTest {
     void givenAnOpenApiContract_whenStartingCats_thenTheContractIsCorrectlyParsed() {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/openapi.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
-        CatsMain spyMain = Mockito.spy(catsMain);
+        CatsMain spyMain = Mockito.spy(AopTestUtils.<CatsMain>getTargetObject(catsMain));
         spyMain.run("test");
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
