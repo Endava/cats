@@ -3,7 +3,18 @@ package com.endava.cats.generator.simple;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import io.swagger.v3.core.util.Json;
-import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.BooleanSchema;
+import io.swagger.v3.oas.models.media.ByteArraySchema;
+import io.swagger.v3.oas.models.media.ComposedSchema;
+import io.swagger.v3.oas.models.media.DateSchema;
+import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.NumberSchema;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -17,7 +28,14 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 
 /**
  * A modified version of @code{io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -373,9 +391,10 @@ public class PayloadGenerator {
                 schemaRef = fullSchemaRef.substring(fullSchemaRef.lastIndexOf('/') + 1);
                 schemaToExample = schemaMap.get(schemaRef);
             } else {
-                fullSchemaRef = "#";
+                schemaRef = StringGenerator.generate("[A-Z]{5,10}", 5, 10);
+                fullSchemaRef = "#" + schemaRef;
             }
-            String propertyKey = propertyName.toString() + (schemaRef == null ? "object" : schemaRef);
+            String propertyKey = propertyName.toString() + schemaRef;
             values.put(propertyName + of + fullSchemaRef, resolveModelToExample(propertyKey, mediaType, schemaToExample));
         }
     }

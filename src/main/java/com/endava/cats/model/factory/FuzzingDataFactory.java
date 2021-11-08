@@ -319,14 +319,16 @@ public class FuzzingDataFactory {
         anyOfOrOneOf.forEach((key, value) ->
         {
             String newKey = key.substring(0, key.indexOf('#')).replace(ANY_OF, "").replace(ONE_OF, "");
-            value.getAsJsonObject().entrySet().forEach(jsonElementEntry ->
-                    {
-                        String dataTypeKey = newKey + "#" + jsonElementEntry.getKey();
-                        if (discriminators.contains(dataTypeKey)) {
-                            value.getAsJsonObject().addProperty(jsonElementEntry.getKey(), key.substring(key.lastIndexOf('/') + 1));
+            if (value.isJsonObject()) {
+                value.getAsJsonObject().entrySet().forEach(jsonElementEntry ->
+                        {
+                            String dataTypeKey = newKey + "#" + jsonElementEntry.getKey();
+                            if (discriminators.contains(dataTypeKey)) {
+                                value.getAsJsonObject().addProperty(jsonElementEntry.getKey(), key.substring(key.lastIndexOf('/') + 1));
+                            }
                         }
-                    }
-            );
+                );
+            }
 
             //when a request has only oneOf or anyOf fields, there is no additional key to create this
             if (newKey.equalsIgnoreCase("body")) {
