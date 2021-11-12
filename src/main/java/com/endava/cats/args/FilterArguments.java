@@ -1,6 +1,10 @@
 package com.endava.cats.args;
 
-import com.endava.cats.fuzzer.*;
+import com.endava.cats.fuzzer.ContractInfoFuzzer;
+import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -14,8 +18,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,7 +48,7 @@ public class FilterArguments {
     @Value("${httpMethods:empty}")
     private String httpMethods;
     @Value("${dryRun:false}")
-    private boolean dryRun;
+    private String dryRun;
 
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
@@ -71,6 +80,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
         args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
         args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
+        args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());
     }
 
     /**
@@ -102,10 +112,6 @@ public class FilterArguments {
             LOGGER.log(config, check);
             LOGGER.log(config, " ");
         }
-    }
-
-    public boolean isDryRun() {
-        return dryRun;
     }
 
     public List<HttpMethod> getHttpMethods() {
@@ -189,7 +195,7 @@ public class FilterArguments {
 
     private List<String> removeSkippedFuzzersForPath(String pathKey, List<String> allowedFuzzers) {
         return allowedFuzzers.stream().filter(fuzzer -> skipFuzzersForPaths.stream()
-                .noneMatch(catsSkipped -> catsSkipped.getFuzzer().equalsIgnoreCase(fuzzer) && catsSkipped.getForPaths().contains(pathKey)))
+                        .noneMatch(catsSkipped -> catsSkipped.getFuzzer().equalsIgnoreCase(fuzzer) && catsSkipped.getForPaths().contains(pathKey)))
                 .collect(Collectors.toList());
     }
 
