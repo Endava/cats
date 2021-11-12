@@ -3,7 +3,7 @@
 </h1>
 
 <h4 align="center">
-  Generate and run hundreds of API tests within seconds!
+  Generate and run thousands of self-healing API tests within minutes!
 </h4>
 
 <div align="center">
@@ -67,8 +67,8 @@ Table of Contents
          * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
          * [NewFieldsFuzzer](#newfieldsfuzzer)
          * [StringsInNumericFieldsFuzzer](#stringsinnumericfieldsfuzzer)
-         * [Control Chars Fuzzers](#leadingcontrolcharsinfieldstrimvalidatefuzzer-trailingcontrolcharsinfieldstrimvalidatefuzzer-and-controlcharsonlyinfieldstrimvalidatefuzzer)
-         * [Whitespace Fuzzers](#leadingwhitespacesinfieldstrimvalidatefuzzer-trailingwhitespacesinfieldstrimvalidatefuzzer-and-whitespacesonlyinfieldstrimvalidatefuzzer)
+         * [Control Chars Fuzzers](#leadingcontrolcharsinfieldstrimvalidatefuzzer-trailingcontrolcharsinfieldstrimvalidatefuzzer-and-onlycontrolcharsinfieldstrimvalidatefuzzer)
+         * [Whitespace Fuzzers](#leadingwhitespacesinfieldstrimvalidatefuzzer-trailingwhitespacesinfieldstrimvalidatefuzzer-and-onlywhitespacesinfieldstrimvalidatefuzzer)
       * [Header Fuzzers](#header-fuzzers)
          * [LargeValuesInHeadersFuzzer](#largevaluesinheadersfuzzer)
          * [RemoveHeadersFuzzer](#removeheadersfuzzer)
@@ -97,7 +97,7 @@ Table of Contents
       * [Sending Ref Data for all paths](#sending-ref-data-for-all-paths)
       * [Removing fields](#removing-fields)
    * [Headers File](#headers-file)
-   * [URL Params](#url-params)
+   * [URL Params](#url-parameters)
    * [Edge Spaces Strategy](#edge-spaces-strategy)
    * [URL Parameters](#url-parameters)
    * [Dealing with AnyOf, AllOf and OneOf](#dealing-with-anyof-allof-and-oneof)
@@ -263,10 +263,11 @@ And this is what you get when you click on a specific test:
 - `--sslKeyPwd` The password of the private key from the `sslKeystore`
 - `--proxyHost` The proxy server's host name (if running behind proxy)
 - `--proxyPort` The proxy server's port number (if running behind proxy)
-- `--maxRequestsPerMinute` Maximum number of requests per minute; this is useful when APIs have rate limiting implemented; default is 100
+- `--maxRequestsPerMinute` Maximum number of requests per minute; this is useful when APIs have rate limiting implemented; default is 10000
 - `--connectionTimeout` Time period in seconds which CATS should establish a connection with the server; default is 10 seconds
 - `--writeTimeout` Maximum time of inactivity in seconds between two data packets when sending the request to the server; default is 10 seconds
 - `--readTimeout` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
+- `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
 
 Using some of these options a typical invocation of CATS might look like this:
 
@@ -361,7 +362,7 @@ This `Fuzzer` will remove fields from the requests based on a supplied strategy.
 These subsets can be generated using the following strategies (supplied through the `--fieldsFuzzingStrategy` option):
 
 #### POWERSET
-This is the most time consuming strategy. This will create all possible subsets of the request fields (including subfields). If the request contains a lot of fields, this strategy might not be the right choice as the total number of possibilities is `2^n`, where `n` is the number of fields.
+This is the most time-consuming strategy. This will create all possible subsets of the request fields (including subfields). If the request contains a lot of fields, this strategy might not be the right choice as the total number of possibilities is `2^n`, where `n` is the number of fields.
 
 For example given the request:
 
@@ -490,8 +491,8 @@ Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) sect
 - `TrailingSpacesInHeadersFuzzer` - iterate through each header and send requests with trailing spaces in the targeted header \
 - `TrailingControlCharsInHeadersFuzzer` - iterate through each header and trail values with control chars
 - `TrailingWhitespacesInHeadersFuzzer` - iterate through each header and trail values with unicode separators
-- `UnsupportedAcceptHeadersFuzzer` - send a request with a unsupported Accept header and expect to get 406 code
-- `UnsupportedContentTypesHeadersFuzzer` - send a request with a unsupported Content-Type header and expect to get 415 code
+- `UnsupportedAcceptHeadersFuzzer` - send a request with an unsupported Accept header and expect to get 406 code
+- `UnsupportedContentTypesHeadersFuzzer` - send a request with an unsupported Content-Type header and expect to get 415 code
 
 You can run only these `Fuzzers` by supplying the `--checkHeaders` argument.
 
@@ -504,7 +505,7 @@ This `Fuzzer` will send large values in the request headers. It will iterate thr
 - Any other case will be reported using an `ERROR` level message.
 
 ### RemoveHeadersFuzzer
-This `Fuzzer` will create the Powerset of the headers set. It will then iterate through all those sets and remove them from the payload. The `Fuzzer` will behave as follows:
+This `Fuzzer` will create the power set of the headers set. It will then iterate through all those sets and remove them from the payload. The `Fuzzer` will behave as follows:
 - Normal behaviour is for the service to respond with a `4XX` code in the case when required headers were removed and with a `2XX` code in the case of optional headers being removed. If the response code is a documented one, this will be reported as an `INFO` level message, otherwise as a `WARN` message.
 - In the case that the request has at least one required header removed and the service responds with a `2XX` code, this will be reported as an `ERROR` message.
 - In the case that the request didn't have any required headers removed and the service response is a `2XX` code, this is expected behaviour and will be reported as an `INFO` level log message.
