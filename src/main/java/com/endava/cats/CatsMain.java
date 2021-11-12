@@ -438,6 +438,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void handleArgs(Consumer<CatsArg> consumer) {
+        filterArguments.loadConfig();
         apiArguments.getArgs().forEach(consumer);
         filterArguments.getArgs().forEach(consumer);
         checkArgs.getArgs().forEach(consumer);
