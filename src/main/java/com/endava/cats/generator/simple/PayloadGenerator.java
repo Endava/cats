@@ -382,7 +382,7 @@ public class PayloadGenerator {
     private void addXXXOfExamples(String mediaType, Map<String, Object> values, Object propertyName, List<Schema> allOf, String of) {
         for (Schema allOfSchema : allOf) {
             String fullSchemaRef = allOfSchema.get$ref();
-            String schemaRef = fullSchemaRef;
+            String schemaRef;
             if (allOfSchema instanceof ArraySchema) {
                 fullSchemaRef = ((ArraySchema) allOfSchema).getItems().get$ref();
             }
