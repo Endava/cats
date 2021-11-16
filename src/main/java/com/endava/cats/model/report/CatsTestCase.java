@@ -19,6 +19,7 @@ public class CatsTestCase {
     private String scenario;
     private String expectedResult;
     private String result;
+    private String resultReason;
     private String resultDetails;
     private CatsRequest request;
     private CatsResponse response;

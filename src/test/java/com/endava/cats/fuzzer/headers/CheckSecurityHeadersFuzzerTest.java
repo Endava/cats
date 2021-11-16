@@ -77,7 +77,7 @@ class CheckSecurityHeadersFuzzerTest {
                 .requestContentTypes(Collections.singletonList("application/json")).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
-        Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.anyString());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(SOME_SECURITY_HEADERS).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
@@ -94,7 +94,7 @@ class CheckSecurityHeadersFuzzerTest {
                 .requestContentTypes(Collections.singletonList("application/json")).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
-        Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.anyString());
         List<CatsHeader> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
         allHeaders.add(CatsHeader.builder().name("dummy").value("dummy").build());
 

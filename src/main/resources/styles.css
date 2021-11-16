@@ -194,6 +194,7 @@ background-color: green;
 .result{
   width:50px;
   display:inline-block;
+  text-align: center;
 }
 .rounded {
   border-radius:20px;
@@ -219,7 +220,7 @@ background-color: green;
   color:#fff;
 }
 
-.wrapper {width:80%; margin:0 auto;}
+.wrapper {width:90%; margin:0 auto;}
 
 /* Table */
 .table-container {

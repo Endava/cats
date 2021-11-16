@@ -221,6 +221,13 @@ created with the `TIMESTAMP` value when the run started. This allows you to have
 - a summary table with all the test cases with their corresponding path against they were run, and the result
 - ability to click on any test case and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
 
+Understanding the `Result Reason` values:
+- `Unexpected Exception` - reported as `error`; this might indicate a possible bug in the service or a corner case that is not handled correctly by CATS
+- `Not Matching Response Schema` - reported as a `warn`; this indicates that the service returns an expected response code and a response body, but the response body does not match the schema defined in the contract
+- `Undocumented Response Code` - reported as a `warn`; this indicates that the service returns an expected response code, but the response code is not documented in the contract
+- `Unexpected Response Code` - reported as an `error`; this indicates a possible bug in the service - the response code is documented, but is not expected for this scenario
+- `Unexpected Behaviour` - reported as an `error`; this indicates a possible bug in the service - the response code is neither documented nor expected for this scenario
+
 This is the summary page:
 ![run result](images/index_html.png)
 

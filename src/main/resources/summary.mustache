@@ -50,6 +50,7 @@
                 <th>Fuzzer</th>
                 <th>Scenario</th>
                 <th>Result</th>
+                <th>Result Reason</th>
             </tr>
             {{#TEST_CASES}}
             <tr data-id="{{key}}" class="{{key}}">
@@ -58,6 +59,7 @@
                 <td><a href="{{key}}.html"><span class="item-path active rounded">path={{path}}</span>&nbsp;&nbsp;<span
                         class="scenario">{{scenario}}</span></a></td>
                 <td><a href="{{key}}.html"><label class="rounded result {{result}}">{{result}}</label></a></td>
+                <td><a href="{{key}}.html">{{resultReason}}</a></td>
             </tr>
             {{/TEST_CASES}}
         </table>

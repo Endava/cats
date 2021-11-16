@@ -8,6 +8,7 @@ import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.report.CatsResult;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
@@ -75,7 +76,7 @@ public class TestCaseListener {
         try {
             s.run();
         } catch (Exception e) {
-            this.reportError(externalLogger, "Fuzzer [{}] failed due to [{}]", fuzzer.getClass().getSimpleName(), e.getMessage());
+            this.reportError(externalLogger, CatsResult.EXCEPTION, fuzzer.getClass().getSimpleName(), e.getMessage());
             externalLogger.error("Exception while processing!", e);
         }
         this.endTestCase();
@@ -140,11 +141,25 @@ public class TestCaseListener {
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
     }
 
-
     public void reportWarn(PrettyLogger logger, String message, Object... params) {
         executionStatisticsListener.increaseWarns();
         logger.warning(message, params);
         recordResult(message, params, Level.WARN.toString().toLowerCase());
+    }
+
+    public void reportWarn(PrettyLogger logger, CatsResult catsResult, Object... params) {
+        this.reportWarn(logger, catsResult.getMessage(), params);
+        setResultReason(catsResult);
+    }
+
+    private void setResultReason(CatsResult catsResult) {
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        testCase.setResultReason(catsResult.getReason());
+    }
+
+    public void reportError(PrettyLogger logger, CatsResult catsResult, Object... params) {
+        this.reportError(logger, catsResult.getMessage(), params);
+        setResultReason(catsResult);
     }
 
     public void reportError(PrettyLogger logger, String message, Object... params) {
@@ -164,7 +179,11 @@ public class TestCaseListener {
     public void reportInfo(PrettyLogger logger, String message, Object... params) {
         executionStatisticsListener.increaseSuccess();
         logger.success(message, params);
-        recordResult(message, params, "success");
+        this.recordResult(message, params, "success");
+    }
+
+    public void reportInfo(PrettyLogger logger, CatsResult catsResult, Object... params) {
+        this.reportInfo(logger, catsResult.getMessage(), params);
     }
 
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
@@ -181,17 +200,17 @@ public class TestCaseListener {
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
 
         if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
-            this.reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
+            this.reportInfo(logger, CatsResult.OK, response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
-            this.reportWarn(logger, "Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", response.responseCodeAsString());
+            this.reportWarn(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA, response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
-            this.reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected {}, actual [{}], documented response codes: {}", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
+            this.reportWarn(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            this.reportError(logger, "Response does NOT match expected result. Response code is NOT from a list of expected codes for this FUZZER: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
+            this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeUnimplemented()) {
-            this.reportWarn(logger, "Response HTTP code 501: you forgot to implement this functionality!");
+            this.reportWarn(logger, CatsResult.NOT_IMPLEMENTED);
         } else {
-            this.reportError(logger, "Unexpected behaviour: expected {}, actual [{}]", expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
+            this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         }
     }
 
@@ -213,8 +232,8 @@ public class TestCaseListener {
     }
 
     /**
-     * The response code is expected if the the response code received from the server matches the Cats test case expectations.
-     * There is also a particular case when we fuzz GET requests and we reach unimplemented endpoints. This is why we also test for 501
+     * The response code is expected if the response code received from the server matches the Cats test case expectations.
+     * There is also a particular case when we fuzz GET requests, and we reach unimplemented endpoints. This is why we also test for 501
      *
      * @param response
      * @param expectedResultCode
