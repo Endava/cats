@@ -77,7 +77,7 @@ public class PayloadGenerator {
         if (!CollectionUtils.isEmpty(property.getEnum())) {
             return String.valueOf(property.getEnum().get(0));
         }
-        int minLength = property.getMinLength() != null ? property.getMinLength() : 0;
+        int minLength = property.getMinLength() != null ? property.getMinLength() : 5;
         int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
         String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
         if (maxLength < minLength) {
