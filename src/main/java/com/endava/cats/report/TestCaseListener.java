@@ -198,8 +198,9 @@ public class TestCaseListener {
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
-
-        if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
+        if (isNotFound(response)) {
+            this.reportError(logger, CatsResult.NOT_FOUND);
+        } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
             this.reportInfo(logger, CatsResult.OK, response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.reportWarn(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA, response.responseCodeAsString());
@@ -212,6 +213,10 @@ public class TestCaseListener {
         } else {
             this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         }
+    }
+
+    private boolean isNotFound(CatsResponse response) {
+        return response.getResponseCode() == 404;
     }
 
     private boolean isResponseCodeDocumented(FuzzingData data, CatsResponse response) {
