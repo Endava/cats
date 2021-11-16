@@ -8,6 +8,7 @@ import lombok.Getter;
 public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private String scenario;
     private String result;
+    private String resultReason;
     private String id;
     private String fuzzer;
     private String path;
@@ -19,6 +20,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.result = testCase.getResult();
         summary.fuzzer = testCase.getFuzzer();
         summary.path = testCase.getPath();
+        summary.resultReason = testCase.getResultReason();
 
         return summary;
     }
