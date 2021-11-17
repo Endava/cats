@@ -14,8 +14,6 @@ public class ReportingArguments {
     private static final String EMPTY = "empty";
     private final List<CatsArg> args = new ArrayList<>();
 
-    @Value("${reportingLevel:info}")
-    private String reportingLevel;
     @Value("${log:empty}")
     private String logData;
     @Value("${printExecutionStatistics:empty}")
@@ -39,7 +37,6 @@ public class ReportingArguments {
 
     @PostConstruct
     public void init() {
-        args.add(CatsArg.builder().name("reportingLevel").value(reportingLevel).help(reportingLevelHelp).build());
         args.add(CatsArg.builder().name("log").value(logData).help(logDataHelp).build());
         args.add(CatsArg.builder().name("printExecutionStatistics").value(String.valueOf(this.printExecutionStatistics())).help(printExecutionStatisticsHelp).build());
         args.add(CatsArg.builder().name("timestampReports").value(timestampReports).help(timestampReportsHelp).build());

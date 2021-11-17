@@ -22,6 +22,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -101,6 +102,14 @@ public class CatsUtil {
         notMatching.forEach(element -> logger.skip(messageWhenNotMatching, functionToApplyToLoggedItems.apply(element), params));
 
         return results.get(true);
+    }
+
+    public static void setCatsLogLevel(ch.qos.logback.classic.Level level) {
+        setLogLevel("com.endava.cats", level);
+    }
+
+    public static void setLogLevel(String pkg, ch.qos.logback.classic.Level level) {
+        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(pkg)).setLevel(level);
     }
 
     public List<String> getControlCharsFields() {

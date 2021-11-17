@@ -23,6 +23,8 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
+
 @ExtendWith(SpringExtension.class)
 @SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class, ReportingArguments.class, ApiArguments.class, FilterArguments.class, FilesArguments.class, ProcessingArguments.class})
 @SpringBootTest
@@ -72,10 +74,10 @@ class CatsMainTest {
     }
 
     @Test
-    void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() {
+    void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() throws Exception {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
-        ReflectionTestUtils.setField(reportingArguments, "logData", "org.apache.wire:debug");
+        ReflectionTestUtils.setField(reportingArguments, "logData", "org.apache.wire:debug,com.endava.cats:warn");
 
         CatsMain spyMain = Mockito.spy(AopTestUtils.<CatsMain>getTargetObject(catsMain));
         spyMain.run("test");
@@ -90,13 +92,13 @@ class CatsMainTest {
         ReflectionTestUtils.setField(apiArguments, "contract", "pet.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
 
-        Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers", "contract=pet.yml")).isInstanceOf(StopExecutionException.class).hasMessage(null);
+        Assertions.assertThatThrownBy(() -> catsMain.doLogic("list", "fuzzers", "contract=pet.yml")).isInstanceOf(IOException.class).hasMessageContaining("pet.yml");
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
 
     @Test
-    void givenAnOpenApiContract_whenStartingCats_thenTheContractIsCorrectlyParsed() {
+    void givenAnOpenApiContract_whenStartingCats_thenTheContractIsCorrectlyParsed() throws Exception {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/openapi.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         CatsMain spyMain = Mockito.spy(AopTestUtils.<CatsMain>getTargetObject(catsMain));
