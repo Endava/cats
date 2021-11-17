@@ -48,6 +48,11 @@ public class DryRunAspect {
         return null;
     }
 
+    @Around("execution(* com.endava.cats.report.ExecutionStatisticsListener.getErrors(..))")
+    public Object exitCodeAspect(ProceedingJoinPoint joinPoint) {
+        return 0;
+    }
+
     @Around("execution(* com.endava.cats.report.TestCaseListener.endSession(..))")
     public Object endSession(ProceedingJoinPoint joinPoint) {
         System.out.print("\n");
