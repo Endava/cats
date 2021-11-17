@@ -239,7 +239,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
             return openAPI;
         } catch (Exception e) {
-            LOGGER.fatal("Error parsing OPEN API contract {}", apiArguments.getContract());
+            LOGGER.fatal("Error parsing OPEN API contract {}", apiArguments.getContract(), e);
             throw new StopExecutionException();
         }
     }
