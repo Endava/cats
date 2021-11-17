@@ -32,7 +32,6 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import org.fusesource.jansi.Ansi;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.Banner;
 import org.springframework.boot.CommandLineRunner;
@@ -167,7 +166,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         } catch (StopExecutionException e) {
             LOGGER.debug("StopExecution: {}", e.getMessage());
         } catch (Exception e) {
-            LOGGER.error("Something went wrong while running CATS!", e);
+            CatsUtil.setCatsLogLevel(Level.INFO);
+            LOGGER.fatal("Something went wrong while running CATS!", e);
         }
     }
 
@@ -231,17 +231,12 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         return suppliedPaths;
     }
 
-    public OpenAPI createOpenAPI() {
-        try {
-            String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
-            long t0 = System.currentTimeMillis();
-            OpenAPI openAPI = this.getOpenAPI();
-            LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
-            return openAPI;
-        } catch (Exception e) {
-            LOGGER.fatal("Error parsing OPEN API contract {}", apiArguments.getContract(), e);
-            throw new StopExecutionException();
-        }
+    public OpenAPI createOpenAPI() throws IOException {
+        String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
+        long t0 = System.currentTimeMillis();
+        OpenAPI openAPI = this.getOpenAPI();
+        LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
+        return openAPI;
     }
 
     private OpenAPI getOpenAPI() throws IOException {
@@ -289,7 +284,6 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
         this.checkMinimumArguments(args);
         this.processLogLevelArgument();
-        this.setReportingLevel();
     }
 
     private void processFilesAndFilterArguments(String[] args) throws IOException {
@@ -308,15 +302,14 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         return apiArguments.isContractEmpty() && (args.length != 3 || apiArguments.isContractEmpty());
     }
 
-    private void setReportingLevel() {
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.endava.cats")).setLevel(Level.toLevel(reportingArguments.getReportingLevel()));
-    }
-
     private void processLogLevelArgument() {
         if (reportingArguments.hasLogData()) {
-            String[] log = reportingArguments.getLogData().split(":");
-            ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(log[0])).setLevel(Level.toLevel(log[1]));
-            LOGGER.info("Setting log level to {} for package {}", log[1], log[0]);
+            String[] logList = reportingArguments.getLogData().split(",");
+            for (String logLine : logList) {
+                String[] log = logLine.strip().trim().split(":");
+                CatsUtil.setLogLevel(log[0], Level.toLevel(log[1]));
+                LOGGER.info("Setting log level to {} for package {}", log[1], log[0]);
+            }
         }
     }
 
@@ -373,7 +366,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         }
     }
 
-    protected void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI, Map<String, Schema> schemas) {
+    public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI, Map<String, Schema> schemas) {
         List<String> configuredFuzzers = filterArguments.getFuzzersForPath(pathItemEntry.getKey());
         filterArguments.printWarningIfNeeded(configuredFuzzers);
 

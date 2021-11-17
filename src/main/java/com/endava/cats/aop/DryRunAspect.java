@@ -3,12 +3,12 @@ package com.endava.cats.aop;
 import ch.qos.logback.classic.Level;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -30,15 +30,12 @@ public class DryRunAspect {
     private final Map<String, Integer> paths = new TreeMap<>();
     private int counter;
 
-    /**
-     * We suppress logging when doing a dry run.
-     *
-     * @param joinPoint the AspectJ join point
-     * @return "OFF" of the actual log level, depending on the --dryRun arg
-     */
-    @Around("execution(* com.endava.cats.args.ReportingArguments.getReportingLevel())")
-    public Object reportingLevel(ProceedingJoinPoint joinPoint) {
-        return "OFF";
+
+    @Around("execution(* com.endava.cats.report.TestCaseListener.startSession(..))")
+    public Object switchLoggingOnOff(ProceedingJoinPoint joinPoint) throws Throwable {
+        Object result = joinPoint.proceed();
+        CatsUtil.setCatsLogLevel(Level.OFF);
+        return result;
     }
 
     @Around("execution(* com.endava.cats.io.ServiceCaller.call(..))")
@@ -54,7 +51,7 @@ public class DryRunAspect {
     @Around("execution(* com.endava.cats.report.TestCaseListener.endSession(..))")
     public Object endSession(ProceedingJoinPoint joinPoint) {
         System.out.print("\n");
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger("com.endava.cats")).setLevel(Level.INFO);
+        CatsUtil.setCatsLogLevel(Level.INFO);
         LOGGER.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
         paths.forEach((s, integer) -> LOGGER.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
         return null;

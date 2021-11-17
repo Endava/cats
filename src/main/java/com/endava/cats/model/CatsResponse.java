@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -31,7 +32,7 @@ public class CatsResponse {
 
     public static CatsResponse from(int code, String body, String methodType, long ms) {
         return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)
-                .jsonBody(JsonParser.parseString(body)).responseTimeInMs(ms).build();
+                .jsonBody(JsonParser.parseString(body)).headers(Collections.emptyList()).responseTimeInMs(ms).build();
     }
 
     public static CatsResponse empty() {
