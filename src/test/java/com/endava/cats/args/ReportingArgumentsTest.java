@@ -31,6 +31,16 @@ class ReportingArgumentsTest {
         ReflectionTestUtils.setField(reportingArguments, "printExecutionStatistics", "true");
 
         Assertions.assertThat(reportingArguments.printExecutionStatistics()).isTrue();
+        Assertions.assertThat(reportingArguments.printDetailedExecutionStatistics()).isFalse();
+    }
+
+    @Test
+    void shouldPrintDetailedExecutionStatistics() {
+        ReportingArguments reportingArguments = new ReportingArguments();
+
+        ReflectionTestUtils.setField(reportingArguments, "printExecutionStatistics", "detailed");
+
+        Assertions.assertThat(reportingArguments.printExecutionStatistics()).isTrue();
     }
 
     @Test
