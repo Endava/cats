@@ -47,6 +47,10 @@ public class ReportingArguments {
         return !EMPTY.equalsIgnoreCase(printExecutionStatistics);
     }
 
+    public boolean printDetailedExecutionStatistics() {
+        return "detailed".equalsIgnoreCase(printExecutionStatistics);
+    }
+
     public boolean hasLogData() {
         return !EMPTY.equalsIgnoreCase(logData);
     }
