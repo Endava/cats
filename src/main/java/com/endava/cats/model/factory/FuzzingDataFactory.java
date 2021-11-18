@@ -331,7 +331,7 @@ public class FuzzingDataFactory {
             }
 
             //when a request has only oneOf or anyOf fields, there is no additional key to create this
-            if (newKey.equalsIgnoreCase("body")) {
+            if (newKey.toLowerCase().contains("body")) {
                 result.add(value.toString());
             } else {
                 jsonElement.getAsJsonObject().add(newKey, value);
