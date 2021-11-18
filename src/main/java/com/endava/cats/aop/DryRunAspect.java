@@ -23,7 +23,7 @@ import static org.fusesource.jansi.Ansi.ansi;
  */
 @Aspect
 @Component
-@ConditionalOnProperty(name = "dryRun", havingValue = "")
+@ConditionalOnProperty(name = "dryRun")
 public class DryRunAspect {
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(DryRunAspect.class);
@@ -62,7 +62,7 @@ public class DryRunAspect {
         return null;
     }
 
-    @Around("execution(* com.endava.cats.report.TestCaseListener.reportInfo(..)) || execution(* com.endava.cats.report.TestCaseListener.reportResult(..))")
+    @Around("execution(* com.endava.cats.report.TestCaseListener.report*(..))")
     public Object report(ProceedingJoinPoint joinPoint) {
         Object data = joinPoint.getArgs()[1];
         if (data instanceof FuzzingData) {
