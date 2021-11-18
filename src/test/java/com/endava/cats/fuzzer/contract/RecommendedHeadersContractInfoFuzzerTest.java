@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsHeader;
@@ -24,6 +25,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 class RecommendedHeadersContractInfoFuzzerTest {
     @SpyBean
     private TestCaseListener testCaseListener;
+
+    @MockBean
+    private FilterArguments filterArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;

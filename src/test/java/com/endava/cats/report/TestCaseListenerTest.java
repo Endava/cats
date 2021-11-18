@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.TestCaseExporter;
@@ -37,6 +38,9 @@ class TestCaseListenerTest {
     private TestCaseExporter testCaseExporter;
 
     @Mock
+    private FilterArguments filterArguments;
+
+    @Mock
     private BuildProperties buildProperties;
 
     @Mock
@@ -50,7 +54,7 @@ class TestCaseListenerTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties);
+        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties, filterArguments);
     }
 
     @AfterEach

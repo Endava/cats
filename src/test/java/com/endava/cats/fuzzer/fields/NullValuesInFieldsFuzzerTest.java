@@ -39,7 +39,7 @@ class NullValuesInFieldsFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
 
-    @Mock
+    @MockBean
     private FilterArguments filterArguments;
 
     @MockBean

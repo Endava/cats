@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
@@ -29,6 +30,9 @@ class NonRestHttpMethodsFuzzerTest {
 
     @SpyBean
     private TestCaseListener testCaseListener;
+
+    @MockBean
+    private FilterArguments filterArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;

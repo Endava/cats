@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
@@ -32,6 +33,9 @@ class DuplicateHeaderFuzzerTest {
 
     @SpyBean
     private TestCaseListener testCaseListener;
+
+    @MockBean
+    private FilterArguments filterArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;

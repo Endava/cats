@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -28,7 +29,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -39,6 +44,9 @@ class CustomFuzzerTest {
 
     @SpyBean
     private TestCaseListener testCaseListener;
+
+    @MockBean
+    private FilterArguments filterArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;

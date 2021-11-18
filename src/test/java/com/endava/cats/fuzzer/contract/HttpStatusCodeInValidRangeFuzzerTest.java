@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -11,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -26,6 +29,9 @@ class HttpStatusCodeInValidRangeFuzzerTest {
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;
+
+    @MockBean
+    private FilterArguments filterArguments;
 
     @MockBean
     private TestCaseExporter testCaseExporter;

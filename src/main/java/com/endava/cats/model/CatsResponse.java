@@ -36,7 +36,7 @@ public class CatsResponse {
     }
 
     public static CatsResponse empty() {
-        return CatsResponse.from(100, "{}", "SKIPPED", 0);
+        return CatsResponse.from(99, "{}", "", 0);
     }
 
     public String responseCodeAsString() {
