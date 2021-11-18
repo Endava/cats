@@ -34,87 +34,6 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
 Please check the <a href="#slicint-strategies">Slicing Strategies</a> section for options on how to split the Fuzzers.
 </h3>
 
-Table of Contents
-=================
-
-   * [Overview](#overview)
-   * [Contract driven Auto-generated Tests for Swagger](#contract-driven-auto-generated-tests-for-swagger)
-   * [How the Fuzzing works](#how-the-fuzzing-works)
-   * [Tutorials on how to use CATS](#tutorials-on-how-to-use-cats)
-   * [Build](#build)
-   * [Available commands](#available-commands)
-   * [Running CATS](#running-cats-with-fuzzers)
-      * [Notes on Unit Tests](#notes-on-unit-tests)
-      * [Notes on skipped Tests](#notes-on-skipped-tests)
-   * [Slicing Strategies for Running CATS](#slicing-strategies-for-running-cats)
-        * [Slice by Endpoints](#split-by-endpoints)
-        * [Slice by Fuzzer Category](#split-by-fuzzer-category)
-        * [Slice by Fuzzer Type](#split-by-fuzzer-type)
-   * [Interpreting Results](#interpreting-results) 
-   * [Available arguments](#available-arguments)
-   * [Available Fuzzers](#available-fuzzers)
-      * [Field Fuzzers](#field-fuzzers)
-         * [BooleanFieldsFuzzer](#booleanfieldsfuzzer)
-         * [DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer](#decimalfieldsleftboundaryfuzzer-and-decimalfieldsrightboundaryfuzzer)
-         * [IntegerFieldsLeftBoundaryFuzzer and IntegerFieldsRightBoundaryFuzzer](#integerfieldsleftboundaryfuzzer-and-integerfieldsrightboundaryfuzzer)
-         * [ExtremeNegativeValueXXXFieldsFuzzer and ExtremePositiveValueXXXFuzzer](#extremenegativevaluexxxfieldsfuzzer-and-extremepositivevaluexxxfuzzer)
-         * [RemoveFieldsFuzzer](#removefieldsfuzzer)
-            * [POWERSET](#powerset)
-            * [ONEBYONE](#onebyone)
-            * [SIZE](#size)
-         * [StringFieldsRightBoundaryFuzzer](#stringfieldsrightboundaryfuzzer)
-         * [StringFormatAlmostValidValuesFuzzer](#stringformatalmostvalidvaluesfuzzer)
-         * [StringFormatTotallyWrongValuesFuzzer](#stringformattotallywrongvaluesfuzzer)
-         * [NewFieldsFuzzer](#newfieldsfuzzer)
-         * [StringsInNumericFieldsFuzzer](#stringsinnumericfieldsfuzzer)
-         * [Control Chars Fuzzers](#leadingcontrolcharsinfieldstrimvalidatefuzzer-trailingcontrolcharsinfieldstrimvalidatefuzzer-and-onlycontrolcharsinfieldstrimvalidatefuzzer)
-         * [Whitespace Fuzzers](#leadingwhitespacesinfieldstrimvalidatefuzzer-trailingwhitespacesinfieldstrimvalidatefuzzer-and-onlywhitespacesinfieldstrimvalidatefuzzer)
-      * [Header Fuzzers](#header-fuzzers)
-         * [LargeValuesInHeadersFuzzer](#largevaluesinheadersfuzzer)
-         * [RemoveHeadersFuzzer](#removeheadersfuzzer)
-         * [DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer](#dummycontenttypeheadersfuzzer--dummyacceptheadersfuzzer-unsupportedtypeheadersfuzzer-unsupportedacceptheadersfuzzer)
-         * [CheckSecurityHeadersFuzzer](#checksecurityheadersfuzzer)
-      * [HTTP Fuzzers](#http-fuzzers)
-         * [HappyFuzzer](#happyfuzzer)
-         * [HttpMethodsFuzzer](#httpmethodsfuzzer)
-         * [BypassAuthenticationFuzzer](#bypassauthenticationfuzzer)
-      * [ContractInfo Fuzzers](#contractinfo-fuzzers)
-      * [Special Fuzzers](#special-fuzzers)
-         * [CustomFuzzer](#customfuzzer)
-            * [Writing Custom Tests](#writing-custom-tests)
-            * [Dealing with oneOf, anyOf](#dealing-with-oneof-anyof)
-            * [Correlating Tests](#correlating-tests)
-            * [Verifying responses](#verifying-responses)
-            * [Working with additionalProperties in CustomFuzzer](#working-with-additionalproperties-in-customfuzzer)
-            * [CustomFuzzer Reserved keywords](#customfuzzer-reserved-keywords)
-         * [Security Fuzzer](#security-fuzzer)
-            * [Working with additionalProperties in SecurityFuzzer](#working-with-additionalproperties-in-securityfuzzer)
-            * [SecurityFuzzer Reserved keywords](#securityfuzzer-reserved-keywords)
-   * [Skipping Fuzzers for specific paths](#skipping-fuzzers-for-specific-paths)
-   * [Reference Data File](#reference-data-file)
-      * [Setting additionalProperties](#setting-additionalproperties)
-      * [RefData reserved keywords](#refdata-reserved-keywords)
-      * [Sending Ref Data for all paths](#sending-ref-data-for-all-paths)
-      * [Removing fields](#removing-fields)
-   * [Headers File](#headers-file)
-   * [URL Params](#url-parameters)
-   * [Edge Spaces Strategy](#edge-spaces-strategy)
-   * [URL Parameters](#url-parameters)
-   * [Dealing with AnyOf, AllOf and OneOf](#dealing-with-anyof-allof-and-oneof)
-   * [Dynamic values in configuration files](#dynamic-values-in-configuration-files)
-   * [Running behind proxy](#running-behind-proxy)
-   * [Dealing with Authentication](#dealing-with-authentication)
-      * [HTTP header(s) based authentication](#http-headers-based-authentication)
-      * [One-Way or Two-Way SSL](#one-way-or-two-way-ssl)
-   * [Limitations](#limitations)
-      * [API Specs](#api-specs)
-      * [Media types and HTTP methods](#media-types-and-http-methods)
-      * [Inheritance and composition](#inheritance-and-composition)
-      * [Additional Parameters](#additional-parameters)
-      * [Regexes within 'pattern'](#regexes-within-pattern)
-   * [Custom Files General Info](#custom-files-general-info)
-   * [Contributing](#contributing)
-
 # Contract driven Auto-generated Tests for Swagger
 Automation testing is cool, but what if you could automate testers? More specifically, what if you could automate **the entire** process of writing test cases, getting test data, writing the automation tests and then running them?  This is what CATS does.
 
@@ -232,9 +151,13 @@ Understanding the `Result Reason` values:
 This is the summary page:
 ![run result](images/index_html.png)
 
-
 And this is what you get when you click on a specific test:
 ![test details](images/test_details.png)
+
+# Ignoring Specific HTTP Result Codes
+By default, CATS will report `WARNs` and `ERRORs` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.
+You can use the `--ignoreResponseCodes` argument to supply a list of result codes that should be ignored as issues (overriding the Fuzzer behaviour) and report those cases as success instead or `WARN` or `ERROR`.
+For example, if you want CATS to report `ERRORs` only when there is an Exception or the service returns a `500`, you can use this: `--ignoreResultCodes="2xx,4xx"`.
 
 # Available arguments
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
@@ -275,6 +198,7 @@ And this is what you get when you click on a specific test:
 - `--writeTimeout` Maximum time of inactivity in seconds between two data packets when sending the request to the server; default is 10 seconds
 - `--readTimeout` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
 - `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
+- `--ignoreResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. You can use response code families as `2xx`, `4xx`, etc. **If provided, all Contract Fuzzers will be skipped**.
 
 Using some of these options a typical invocation of CATS might look like this:
 

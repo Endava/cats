@@ -33,14 +33,14 @@ class EmptyStringValuesInFieldsFuzzerTest {
     @SpyBean
     private TestCaseListener testCaseListener;
 
+    @MockBean
+    private FilterArguments filterArguments;
+
     @Mock
     private CatsUtil catsUtil;
 
     @Mock
     private FilesArguments filesArguments;
-
-    @Mock
-    private FilterArguments filterArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;

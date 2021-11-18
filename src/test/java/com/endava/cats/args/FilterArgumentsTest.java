@@ -98,4 +98,29 @@ class FilterArgumentsTest {
         Assertions.assertThat(httpMethods).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
+    @Test
+    void shouldReturnIgnoreHttpCodes() {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "200,4XX");
+        List<String> ignoredCodes = filterArguments.getIgnoreResponseCodes();
+
+        Assertions.assertThat(ignoredCodes).containsOnly("200", "4XX");
+    }
+    
+    @Test
+    void shouldReturnEmptyIgnoreHttpCodes() {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "empty");
+        List<String> ignoredCodes = filterArguments.getIgnoreResponseCodes();
+
+        Assertions.assertThat(ignoredCodes).isEmpty();
+    }
+
+    @Test
+    void shouldMatchIgnoredResponseCodes() {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "2XX,400");
+        Assertions.assertThat(filterArguments.isIgnoredResponseCode("200")).isTrue();
+        Assertions.assertThat(filterArguments.isIgnoredResponseCode("202")).isTrue();
+        Assertions.assertThat(filterArguments.isIgnoredResponseCode("400")).isTrue();
+        Assertions.assertThat(filterArguments.isIgnoredResponseCode("404")).isFalse();
+    }
+
 }

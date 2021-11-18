@@ -36,7 +36,7 @@ public class CatsTestCase {
     }
 
     public boolean notIgnoredForExecutionStatistics() {
-        return !"SKIPPED".equalsIgnoreCase(response.getHttpMethod());
+        return response.getResponseCode() == 99;
     }
 
     public String getHeaders() {

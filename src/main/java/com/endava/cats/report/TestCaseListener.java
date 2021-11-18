@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.CatsMain;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.PayloadGenerator;
@@ -31,6 +32,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,7 +44,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @Component
 public class TestCaseListener {
 
-    protected static final String ID = "id";
+    public static final String ID = "id";
     protected static final String ID_ANSI = "id_ansi";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
@@ -51,13 +53,14 @@ public class TestCaseListener {
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
     private final BuildProperties buildProperties;
-
+    private final FilterArguments filterArguments;
 
     @Autowired
-    public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties) {
+    public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties, FilterArguments filterArguments) {
         this.executionStatisticsListener = er;
         this.testCaseExporter = tce;
         this.buildProperties = buildProperties;
+        this.filterArguments = filterArguments;
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -141,10 +144,23 @@ public class TestCaseListener {
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
     }
 
+    /**
+     * If {@code --ignoreResponseCodes} is supplied and the response code received from the service
+     * is in the ignored list, the method will actually report INFO instead of WARN.
+     *
+     * @param logger  the current logger
+     * @param message message to be logged
+     * @param params  params needed by the message
+     */
     public void reportWarn(PrettyLogger logger, String message, Object... params) {
-        executionStatisticsListener.increaseWarns();
-        logger.warning(message, params);
-        recordResult(message, params, Level.WARN.toString().toLowerCase());
+        int responseCode = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty()).getResponseCode();
+        if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))) {
+            executionStatisticsListener.increaseWarns();
+            logger.warning(message, params);
+            recordResult(message, params, Level.WARN.toString().toLowerCase());
+        } else {
+            this.reportInfo(logger, message, params);
+        }
     }
 
     public void reportWarn(PrettyLogger logger, CatsResult catsResult, Object... params) {
@@ -162,12 +178,25 @@ public class TestCaseListener {
         setResultReason(catsResult);
     }
 
+    /**
+     * If {@code --ignoreResponseCodes} is supplied and the response code received from the service
+     * is in the ignored list, the method will actually report INFO instead of ERROR.
+     *
+     * @param logger  the current logger
+     * @param message message to be logged
+     * @param params  params needed by the message
+     */
     public void reportError(PrettyLogger logger, String message, Object... params) {
-        executionStatisticsListener.increaseErrors();
-        logger.error(message, params);
+        int responseCode = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty()).getResponseCode();
         this.addRequest(CatsRequest.empty());
         this.addResponse(CatsResponse.empty());
-        this.recordResult(message, params, Level.ERROR.toString().toLowerCase());
+        if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))) {
+            executionStatisticsListener.increaseErrors();
+            logger.error(message, params);
+            this.recordResult(message, params, Level.ERROR.toString().toLowerCase());
+        } else {
+            this.reportInfo(logger, message, params);
+        }
     }
 
     private void reportSkipped(PrettyLogger logger, Object... params) {

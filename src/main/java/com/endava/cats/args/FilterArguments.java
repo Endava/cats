@@ -48,6 +48,8 @@ public class FilterArguments {
     private String httpMethods;
     @Value("${dryRun:false}")
     private String dryRun;
+    @Value("${ignoreResponseCodes:empty}")
+    private String ignoreResponseCodes;
 
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
@@ -65,6 +67,8 @@ public class FilterArguments {
     private String httpMethodsHelp;
     @Value("${arg.filter.dryRun.help:help}")
     private String dryRunHelp;
+    @Value("${arg.filter.ignoreResponseCodes.help:help}")
+    private String ignoreResponseCodesHelp;
 
     @Autowired
     private List<Fuzzer> fuzzers;
@@ -80,6 +84,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
         args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
         args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());
+        args.add(CatsArg.builder().name("ignoreResponseCodes").value(ignoreResponseCodes).help(ignoreResponseCodesHelp).build());
     }
 
     /**
@@ -153,8 +158,18 @@ public class FilterArguments {
         List<String> allowedFuzzers = processSuppliedFuzzers();
         allowedFuzzers = this.removeSkippedFuzzersForPath(pathKey, allowedFuzzers);
         allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
+        allowedFuzzers = this.removeContractFuzzersIfNeeded(allowedFuzzers);
 
         return allowedFuzzers;
+    }
+
+    private List<String> removeContractFuzzersIfNeeded(List<String> currentFuzzers) {
+        if (!isEmptyIgnoredResponseCodes()) {
+            return currentFuzzers.stream().filter(fuzzer -> !fuzzer.contains("Contract"))
+                    .collect(Collectors.toList());
+        }
+
+        return currentFuzzers;
     }
 
     private List<String> processSuppliedFuzzers() {
@@ -205,5 +220,25 @@ public class FilterArguments {
                 .filter(fuzzer ->
                         fuzzersToExclude.stream().noneMatch(fuzzer::contains))
                 .collect(Collectors.toList());
+    }
+
+    public List<String> getIgnoreResponseCodes() {
+        if (isEmptyIgnoredResponseCodes()) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(ignoreResponseCodes.split(",")).map(code -> code.trim().strip())
+                .collect(Collectors.toList());
+    }
+
+    public boolean isEmptyIgnoredResponseCodes() {
+        return "empty".equalsIgnoreCase(ignoreResponseCodes) || ignoreResponseCodes == null;
+    }
+
+    public boolean isIgnoredResponseCode(String receivedResponseCode) {
+        return getIgnoreResponseCodes().stream()
+                .anyMatch(code -> code.equalsIgnoreCase(receivedResponseCode)
+                        || (code.substring(1, 3).equalsIgnoreCase("xx") && code.substring(0, 1).equalsIgnoreCase(receivedResponseCode.substring(0, 1))));
+
     }
 }
