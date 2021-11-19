@@ -119,6 +119,8 @@ Other ways to get help from the CATS command are as follows:
 
 - `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
 
+- `./cats.jar replay --testCases="test1,test2"` will replay the given test cases `test1` and `test2`
+
 # Running CATS with Fuzzers
 A minimal run must provide the Swagger/OpenAPI contract, and the URL address of the service:
 
@@ -158,6 +160,23 @@ And this is what you get when you click on a specific test:
 By default, CATS will report `WARNs` and `ERRORs` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.
 You can use the `--ignoreResponseCodes` argument to supply a list of result codes that should be ignored as issues (overriding the Fuzzer behaviour) and report those cases as success instead or `WARN` or `ERROR`.
 For example, if you want CATS to report `ERRORs` only when there is an Exception or the service returns a `500`, you can use this: `--ignoreResultCodes="2xx,4xx"`.
+
+# Replaying Test Cases
+When CATS runs, for each test case, it will export both an HTML file that will be linked in the final report and individual JSON files. The JSON files can be used to replay that test case.
+When replaying a test case (or a list of test cases), CATS won't produce any report. The output will be solely available in the console. 
+This is useful when you want to see the exact behaviour of the specific test case or attach it in a bug report for example.
+
+The syntax for replaying test cases is the following:
+
+```shell
+./cats.jar replay --testCases="Test1,Test233,Test15.json,dir/Test19.json"
+```
+
+Some notes on the above example:
+- test case names can be separated by comma `,`
+- if you provide a json extension to a test case name, that file will be search as a path i.e. it will search for `Test15.json` in the current folder and `Test19.json` in the `dir` folder
+- if you don't provide a json extension to a test case name, it will search for that test in the `cats-report` folder i.e. `cats-report/Test1.json` and `cats-report/Test233.json`
+
 
 # Available arguments
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
@@ -199,6 +218,7 @@ For example, if you want CATS to report `ERRORs` only when there is an Exception
 - `--readTimeout` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
 - `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
 - `--ignoreResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. You can use response code families as `2xx`, `4xx`, etc. **If provided, all Contract Fuzzers will be skipped**.
+- `--testCases` TEST_CASES_LIST a comma separated list of executed test cases in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test case in the cats-report folder
 
 Using some of these options a typical invocation of CATS might look like this:
 

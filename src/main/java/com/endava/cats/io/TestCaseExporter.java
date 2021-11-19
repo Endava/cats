@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +46,7 @@ public abstract class TestCaseExporter {
     public static final Gson GSON = new GsonBuilder()
             .setLenient()
             .setPrettyPrinting()
+            .disableHtmlEscaping()
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
             .serializeNulls().create();
@@ -54,6 +54,7 @@ public abstract class TestCaseExporter {
     private static final String REPORT_HTML = "index.html";
     private static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     private static final String HTML = ".html";
+    private static final String JSON = ".json";
     private static final String TEST_CASES_FOLDER = "cats-report";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
     private static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
@@ -66,24 +67,22 @@ public abstract class TestCaseExporter {
     private Path path;
     private long t0;
 
-    @PostConstruct
-    void initPath() throws IOException {
+    public void initPath() throws IOException {
         String subFolder = reportingArguments.isTimestampReports() ? String.valueOf(System.currentTimeMillis()) : "";
         path = Paths.get(TEST_CASES_FOLDER, subFolder);
+
         if (!reportingArguments.isTimestampReports() && path.toFile().exists()) {
             deleteFiles(path);
         }
         if (!path.toFile().exists()) {
-            try {
-                Files.createDirectories(path);
-            } catch (Exception e) {
-                LOGGER.error("Exception while creating root test cases folder: {}", e.getMessage());
-            }
+            Files.createDirectories(path);
         }
+
         t0 = System.currentTimeMillis();
     }
 
     private void deleteFiles(Path path) throws IOException {
+        LOGGER.start("Start cleaning up cats-report folder ...");
         File[] files = path.toFile().listFiles();
         if (files != null) {
             for (File file : files) {
@@ -92,6 +91,7 @@ public abstract class TestCaseExporter {
                 }
             }
         }
+        LOGGER.complete("Cleanup complete!");
     }
 
     public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
@@ -199,6 +199,20 @@ public abstract class TestCaseExporter {
     }
 
     public void writeTestCase(CatsTestCase testCase) {
+        writeHtmlTestCase(testCase);
+        writeJsonTestCase(testCase);
+    }
+
+    private void writeJsonTestCase(CatsTestCase testCase) {
+        String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
+        try {
+            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), testFileName), GSON.toJson(testCase));
+        } catch (IOException e) {
+            LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
+        }
+    }
+
+    private void writeHtmlTestCase(CatsTestCase testCase) {
         StringWriter stringWriter = new StringWriter();
         Map<String, Object> context = new HashMap<>();
         context.put("TEST_CASE", testCase);

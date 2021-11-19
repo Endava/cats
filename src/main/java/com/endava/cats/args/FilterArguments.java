@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.github.ludovicianul.prettylogger.config.level.ConfigFactory;
@@ -50,7 +51,8 @@ public class FilterArguments {
     private String dryRun;
     @Value("${ignoreResponseCodes:empty}")
     private String ignoreResponseCodes;
-
+    @Value("${testCases:empty}")
+    private String testCases;
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
     @Value("${arg.filter.paths.help:help}")
@@ -69,7 +71,8 @@ public class FilterArguments {
     private String dryRunHelp;
     @Value("${arg.filter.ignoreResponseCodes.help:help}")
     private String ignoreResponseCodesHelp;
-
+    @Value("${arg.filter.testCases.help:help}")
+    private String testCasesHelp;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -85,6 +88,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
         args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());
         args.add(CatsArg.builder().name("ignoreResponseCodes").value(ignoreResponseCodes).help(ignoreResponseCodesHelp).build());
+        args.add(CatsArg.builder().name("testCases").value(testCases).help(testCasesHelp).build());
     }
 
     /**
@@ -119,7 +123,7 @@ public class FilterArguments {
     }
 
     public List<HttpMethod> getHttpMethods() {
-        if ("empty".equals(httpMethods)) {
+        if (!CatsUtil.isArgumentValid(httpMethods)) {
             return HttpMethod.restMethods();
         }
 
@@ -232,13 +236,30 @@ public class FilterArguments {
     }
 
     public boolean isEmptyIgnoredResponseCodes() {
-        return "empty".equalsIgnoreCase(ignoreResponseCodes) || ignoreResponseCodes == null;
+        return !CatsUtil.isArgumentValid(ignoreResponseCodes);
     }
 
     public boolean isIgnoredResponseCode(String receivedResponseCode) {
         return getIgnoreResponseCodes().stream()
                 .anyMatch(code -> code.equalsIgnoreCase(receivedResponseCode)
                         || (code.substring(1, 3).equalsIgnoreCase("xx") && code.substring(0, 1).equalsIgnoreCase(receivedResponseCode.substring(0, 1))));
+
+    }
+
+    public boolean areTestCasesSupplied() {
+        return CatsUtil.isArgumentValid(testCases);
+    }
+
+    /**
+     * Test Cases that do not have a json extension will be resolved from the cats-report folder.
+     *
+     * @return a list of all supplied test cases fully resolved
+     */
+    public List<String> parseTestCases() {
+        return Arrays.stream(testCases.split(","))
+                .map(testCase -> testCase.trim().strip())
+                .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
+                .collect(Collectors.toList());
 
     }
 }

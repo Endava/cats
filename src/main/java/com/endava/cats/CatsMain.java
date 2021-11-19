@@ -9,6 +9,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.ReplayCommand;
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
@@ -102,7 +103,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private CheckArguments checkArgs;
     @Autowired
     private AuthArguments authArgs;
-
+    @Autowired
+    private ReplayCommand replayCommand;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -315,14 +317,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private void processTwoArguments(String[] args) {
         if (this.isListFuzzers(args)) {
-            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
-            LOGGER.info(message, fuzzers.size());
-            filterAndDisplay(FieldFuzzer.class);
-            filterAndDisplay(HeaderFuzzer.class);
-            filterAndDisplay(HttpFuzzer.class);
-            filterAndDisplay(ContractInfoFuzzer.class);
-            filterAndDisplay(SpecialFuzzer.class);
-
+            this.listFuzzers();
             throw new StopExecutionException("list fuzzers");
         }
 
@@ -330,6 +325,24 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
             LOGGER.info("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
             throw new StopExecutionException("list fieldsFuzzerStrategies");
         }
+        if (this.isReplay(args)) {
+            replayCommand.execute();
+            throw new StopExecutionException("replay test");
+        }
+    }
+
+    private boolean isReplay(String... args) {
+        return args[0].equalsIgnoreCase("replay");
+    }
+
+    private void listFuzzers() {
+        String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
+        LOGGER.info(message, fuzzers.size());
+        filterAndDisplay(FieldFuzzer.class);
+        filterAndDisplay(HeaderFuzzer.class);
+        filterAndDisplay(HttpFuzzer.class);
+        filterAndDisplay(ContractInfoFuzzer.class);
+        filterAndDisplay(SpecialFuzzer.class);
     }
 
     private void filterAndDisplay(Class<? extends Annotation> annotation) {
@@ -422,6 +435,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         LOGGER.info("\t./cats.jar list fuzzers");
         LOGGER.info("\t./cats.jar list fieldsFuzzerStrategies");
         LOGGER.info("\t./cats.jar list paths --contract=CONTRACT");
+        LOGGER.info("\t./cats.jar replay --testCases=\"test1,test2\"");
     }
 
     private void printArgs() {

@@ -112,6 +112,10 @@ public class CatsUtil {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(pkg)).setLevel(level);
     }
 
+    public static boolean isArgumentValid(String argument) {
+        return argument != null && !"empty".equalsIgnoreCase(argument) && !"".equalsIgnoreCase(argument.trim().strip());
+    }
+
     public List<String> getControlCharsFields() {
         return this.controlCharsFields;
     }

@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -185,23 +186,10 @@ public class ServiceCaller {
             LOGGER.note("Final list of request headers: {}", headers);
             LOGGER.note("Final payload: {}", processedPayload);
 
-            long startTime = System.currentTimeMillis();
-            Response response = this.callService(catsRequest);
-            long endTime = System.currentTimeMillis();
+            CatsResponse response = this.callService(catsRequest, data.getFuzzedFields());
 
-            LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.protocol(),
-                    data.getHttpMethod(), response.message(), response.code(), endTime - startTime);
-
-            String responseBody = this.getAsJson(response);
-            List<CatsHeader> responseHeaders = response.headers()
-                    .toMultimap()
-                    .entrySet().stream()
-                    .map(header -> CatsHeader.builder().name(header.getKey()).value(header.getValue().get(0)).build()).collect(Collectors.toList());
-
-            CatsResponse catsResponse = CatsResponse.from(response.code(), responseBody, data.getHttpMethod().name(), endTime - startTime, responseHeaders, data.getFuzzedFields());
-            this.recordRequestAndResponse(catsRequest, catsResponse, data);
-
-            return catsResponse;
+            this.recordRequestAndResponse(catsRequest, response, data);
+            return response;
         } catch (IOException e) {
             this.recordRequestAndResponse(catsRequest, CatsResponse.empty(), data);
             throw new CatsIOException(e);
@@ -262,7 +250,8 @@ public class ServiceCaller {
         return path.replaceAll("\\{(.*?)}", "");
     }
 
-    private Response callService(CatsRequest catsRequest) throws IOException {
+    public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields) throws IOException {
+        long startTime = System.currentTimeMillis();
         RequestBody requestBody = null;
         Headers.Builder headers = new Headers.Builder();
         catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getName(), header.getValue()));
@@ -270,11 +259,24 @@ public class ServiceCaller {
         if (HttpMethod.requiresBody(catsRequest.getHttpMethod())) {
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8));
         }
-        return okHttpClient.newCall(new Request.Builder()
+        Response response = okHttpClient.newCall(new Request.Builder()
                 .url(catsRequest.getUrl())
                 .headers(headers.build())
                 .method(catsRequest.getHttpMethod(), requestBody)
                 .build()).execute();
+        long endTime = System.currentTimeMillis();
+
+
+        LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.protocol(),
+                catsRequest.getHttpMethod(), response.message(), response.code(), endTime - startTime);
+
+        String responseBody = this.getAsJson(response);
+        List<CatsHeader> responseHeaders = response.headers()
+                .toMultimap()
+                .entrySet().stream()
+                .map(header -> CatsHeader.builder().name(header.getKey()).value(header.getValue().get(0)).build()).collect(Collectors.toList());
+
+        return CatsResponse.from(response.code(), responseBody, catsRequest.getHttpMethod(), endTime - startTime, responseHeaders, fuzzedFields);
     }
 
     private void addBasicAuth(List<CatsRequest.Header> headers) {
@@ -342,7 +344,7 @@ public class ServiceCaller {
         return queryParams;
     }
 
-    private String getAsJson(Response response) throws IOException {
+    public String getAsJson(Response response) throws IOException {
         String responseAsString = null;
         ResponseBody responseBody = response.body();
 

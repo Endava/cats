@@ -21,6 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -63,6 +64,31 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldNotCallInitPathWhenReplayTests() throws Exception {
+        mockBuildProperties();
+
+        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+        testCaseListener.startSession();
+
+        Mockito.verifyNoInteractions(testCaseExporter);
+    }
+
+    private void mockBuildProperties() {
+        Mockito.when(buildProperties.getName()).thenReturn("CATS");
+        Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
+        Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
+    }
+
+    @Test
+    void shouldCallInitPathWhenNotReplayTests() throws Exception {
+        mockBuildProperties();
+        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(false);
+        testCaseListener.startSession();
+
+        Mockito.verify(testCaseExporter, Mockito.times(1)).initPath();
+    }
+
+    @Test
     void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> executionStatisticsListener.increaseSkipped());
 
@@ -96,10 +122,8 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() {
-        Mockito.when(buildProperties.getName()).thenReturn("CATS");
-        Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
-        Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
+    void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() throws Exception {
+        mockBuildProperties();
 
         testCaseListener.startSession();
         testCaseListener.endSession();
@@ -123,6 +147,52 @@ class TestCaseListenerTest {
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
         Assertions.assertThat(testCase.getResult()).isEqualTo(Level.WARN.toString().toLowerCase());
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Warn 1 happened");
+    }
+
+    @Test
+    void shouldCallInfoInsteadOfWarnWhenIgnoreCodeSupplied() {
+        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+        Mockito.when(filterArguments.isIgnoredResponseCode("200")).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addScenario(logger, "Given a {} field", "string");
+            testCaseListener.addRequest(new CatsRequest());
+            testCaseListener.addResponse(CatsResponse.builder().responseCode(200).build());
+            testCaseListener.addFullRequestPath("fullPath");
+            testCaseListener.addPath("path");
+            testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
+        });
+        MDC.put(TestCaseListener.ID, "Test 1");
+
+        testCaseListener.reportWarn(logger, "Warn");
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        MDC.put(TestCaseListener.ID, null);
+    }
+
+    @Test
+    void shouldCallInfoInsteadOfErrorWhenIgnoreCodeSupplied() {
+        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+        Mockito.when(filterArguments.isIgnoredResponseCode("200")).thenReturn(true);
+
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addScenario(logger, "Given a {} field", "string");
+            testCaseListener.addRequest(new CatsRequest());
+            testCaseListener.addResponse(CatsResponse.builder().responseCode(200).build());
+            testCaseListener.addFullRequestPath("fullPath");
+            testCaseListener.addPath("path");
+            testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
+        });
+        MDC.put(TestCaseListener.ID, "Test 1");
+
+        testCaseListener.reportError(logger, "Warn");
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        MDC.put(TestCaseListener.ID, null);
     }
 
     @Test

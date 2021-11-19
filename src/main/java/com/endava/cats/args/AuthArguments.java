@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import com.endava.cats.model.CatsRequest;
+import com.endava.cats.util.CatsUtil;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,7 +20,6 @@ import java.util.List;
 @Component
 @Getter
 public class AuthArguments {
-    public static final String EMPTY = "empty";
     private final List<CatsArg> args = new ArrayList<>();
     @Value("${sslKeystore:empty}")
     private String sslKeystore;
@@ -58,15 +58,15 @@ public class AuthArguments {
     }
 
     public boolean isBasicAuthSupplied() {
-        return !EMPTY.equalsIgnoreCase(basicAuth);
+        return CatsUtil.isArgumentValid(basicAuth);
     }
 
     public boolean isMutualTls() {
-        return !EMPTY.equalsIgnoreCase(sslKeystore);
+        return CatsUtil.isArgumentValid(sslKeystore);
     }
 
     public boolean isProxySupplied() {
-        return !EMPTY.equalsIgnoreCase(proxyHost);
+        return CatsUtil.isArgumentValid(proxyHost);
     }
 
     /**

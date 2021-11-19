@@ -15,7 +15,6 @@ import java.io.IOException;
 class FilesArgumentsTest {
 
     private final CatsUtil catsUtil = new CatsUtil(Mockito.mock(CatsDSLParser.class));
-    private FilesArguments filesArguments;
 
     @Test
     void shouldReturnSameUrlWhenUrlParamsEmpty() throws Exception {
@@ -67,9 +66,10 @@ class FilesArgumentsTest {
     }
 
     @Test
-    void shouldThrowExceptionOnNullUrlParams() {
+    void shouldReturnEmptyUrlParams() {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
 
-        Assertions.assertThrows(IOException.class, filesArguments::loadURLParams);
+        filesArguments.loadURLParams();
+        org.assertj.core.api.Assertions.assertThat(filesArguments.getUrlParamsList()).isEmpty();
     }
 }

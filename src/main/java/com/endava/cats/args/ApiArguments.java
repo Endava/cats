@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.util.CatsUtil;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -14,7 +15,6 @@ import java.util.List;
 @Component
 @Getter
 public class ApiArguments {
-    public static final String EMPTY = "empty";
     private final List<CatsArg> args = new ArrayList<>();
 
     @Value("${contract:empty}")
@@ -60,7 +60,7 @@ public class ApiArguments {
      * @return true if a contract was supplied, false otherwise
      */
     public boolean isContractEmpty() {
-        return EMPTY.equalsIgnoreCase(contract);
+        return !CatsUtil.isArgumentValid(contract);
     }
 
     /**
@@ -69,7 +69,7 @@ public class ApiArguments {
      * @return true if a server address was supplied, false otherwise
      */
     public boolean isServerEmpty() {
-        return EMPTY.equalsIgnoreCase(server);
+        return !CatsUtil.isArgumentValid(server);
     }
 
     /**
