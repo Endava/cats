@@ -83,7 +83,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("paths").value(paths).help(pathsHelp).build());
         args.add(CatsArg.builder().name("skipPaths").value(skipPaths).help(skipPathsHelp).build());
         args.add(CatsArg.builder().name("excludedFuzzers").value(skipFuzzers).help(skipFuzzersHelp).build());
-        args.add(CatsArg.builder().name("skipXXXForPath").value(skipFuzzersForPaths.toString()).help(skipXXXForPathHelp).build());
+        args.add(CatsArg.builder().name("skipXXXForPath").value(String.valueOf(skipFuzzersForPaths)).help(skipXXXForPathHelp).build());
         args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
         args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
         args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());

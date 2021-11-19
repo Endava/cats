@@ -182,6 +182,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         this.printArgs();
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
 
+        testCaseListener.initReportingPath();
         this.startFuzzing(openAPI, suppliedPaths);
         this.executeCustomFuzzer();
     }
@@ -422,6 +423,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
 
     private void printUsage() {
         LOGGER.info("The following arguments are supported: ");
+        filterArguments.init();
         this.handleArgs(this::renderHelpToConsole);
 
         LOGGER.note("Example: ");
@@ -441,11 +443,11 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private void printArgs() {
         LOGGER.info(" ");
         LOGGER.info("Supplied arguments");
+        filterArguments.loadConfig();
         this.handleArgs(this::printArg);
     }
 
     private void handleArgs(Consumer<CatsArg> consumer) {
-        filterArguments.loadConfig();
         apiArguments.getArgs().forEach(consumer);
         filterArguments.getArgs().forEach(consumer);
         checkArgs.getArgs().forEach(consumer);

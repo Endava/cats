@@ -132,14 +132,14 @@ public class TestCaseListener {
         }
     }
 
-    public void startSession() throws IOException {
+    public void startSession() {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("UTC"));
         LOGGER.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(buildProperties.getName().toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(buildProperties.getVersion()), ansi().fg(Ansi.Color.GREEN).a(formatter.format(buildProperties.getTime())).reset());
         LOGGER.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
+    }
 
-        if (!filterArguments.areTestCasesSupplied()) {
-            testCaseExporter.initPath();
-        }
+    public void initReportingPath() throws IOException {
+        testCaseExporter.initPath();
     }
 
     public void endSession() {

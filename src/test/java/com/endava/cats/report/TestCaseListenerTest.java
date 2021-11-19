@@ -80,15 +80,6 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void shouldCallInitPathWhenNotReplayTests() throws Exception {
-        mockBuildProperties();
-        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(false);
-        testCaseListener.startSession();
-
-        Mockito.verify(testCaseExporter, Mockito.times(1)).initPath();
-    }
-
-    @Test
     void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> executionStatisticsListener.increaseSkipped());
 
