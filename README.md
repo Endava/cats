@@ -1,14 +1,17 @@
-<h1 align="center">
-  CATS
-</h1>
+<h1></h1>
 
-<h4 align="center">
-  Generate and run thousands of self-healing API tests within minutes!
+<h4>
+  REST APIs fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!
 </h4>
 
-<div align="center">
-  <img alt="CATS" width="60%" src="images/cats.png"/>
-</div>
+- **fast**:
+- **highly configurable**:
+- **self-healing**:
+- **simple to learn**:
+
+<img alt="CATS" width="50%" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true" align="right"/>
+
+<h1></h1>
 
 ![CI](https://github.com/Endava/cats/workflows/CI/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
@@ -20,7 +23,7 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
 # Overview
-By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate hundreds of API tests within seconds with **no coding effort**. All test cases are **generated and run automatically** based on a pre-defined 
+By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate thousands of API tests within minutes with **no coding effort**. All test cases are **generated and run automatically** based on a pre-defined 
 set of **76 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations and security. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional flows.
 
@@ -29,7 +32,7 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
 </div>
 
 <h3 align="center" style="color:orange">
- Starting with version 6.0, CATS generates significantly more test cases (more than 10k even for small APIs) which result in increased running times and bigger reports. 
+ Starting with version 6.0, CATS generates significantly more test cases (more than 10k even for small APIs) which result in increased running times and bigger reports.
 
 Please check the <a href="#slicint-strategies">Slicing Strategies</a> section for options on how to split the Fuzzers.
 </h3>
