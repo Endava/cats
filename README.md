@@ -6,7 +6,7 @@
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
 <h1></h1>
-<img alt="CATS" width="30%" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true" align="right" />
+<img alt="CATS" width="50%" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true" align="right" />
 
 **REST APIs fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
 
