@@ -36,7 +36,7 @@ public class CatsTestCase {
     }
 
     public boolean notIgnoredForExecutionStatistics() {
-        return response.getResponseCode() == 99;
+        return response.getResponseCode() != 99;
     }
 
     public String getHeaders() {

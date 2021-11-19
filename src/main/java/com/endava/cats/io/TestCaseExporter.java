@@ -133,9 +133,10 @@ public abstract class TestCaseExporter {
         LOGGER.note(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
         LOGGER.note(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
 
-
-        LOGGER.note("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
-        LOGGER.info(" ");
+        if (reportingArguments.printDetailedExecutionStatistics()) {
+            LOGGER.note("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
+            LOGGER.info(" ");
+        }
     }
 
     public void printExecutionDetails(ExecutionStatisticsListener executionStatisticsListener) {
