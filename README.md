@@ -1,5 +1,9 @@
 <p align="center">
-<img alt="CATS" width="50%" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true"  />
+
+<img alt="CATS" width="400" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true"  />
+
+</p>
+<p align="center">
 
 ![CI](https://github.com/Endava/cats/workflows/CI/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
