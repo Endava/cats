@@ -10,10 +10,11 @@
 
 **REST APIs fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
 
-- **Fast**: generates thousands of tests and runs them automatically in minutes
-- **Highly Configurable**: supports a high amount of customization to adapt to each context
+- **Comprehensive**: tests are generated automatically based on a large number scenarios
+- **Highly Configurable**: high amount of customization to adapt to each context
 - **Self-Healing**: as tests are generated, any OpenAPI spec change is picked up automatically
 - **Simple to Learn**: flat learning curve, with intuitive configuration and syntax
+- **Fast**: automatic process for write, run and report test cases which covers thousands of tests within minutes
 
 <p align="center"></p>
 
