@@ -1,3 +1,6 @@
+<p align="center">
+<img alt="CATS" width="50%" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true"  />
+
 ![CI](https://github.com/Endava/cats/workflows/CI/badge.svg)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=sqale_index)](https://sonarcloud.io/dashboard?id=cats)
@@ -5,8 +8,9 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=bugs)](https://sonarcloud.io/dashboard?id=cats)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=code_smells)](https://sonarcloud.io/dashboard?id=cats)
 
+</p>
+
 <h1></h1>
-<img alt="CATS" width="50%" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true" align="right" />
 
 **REST APIs fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
 
