@@ -370,12 +370,12 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     }
 
     private void processSingleArgument(String[] args) {
-        if (args[0].equalsIgnoreCase(HELP)) {
+        if (args[0].endsWith(HELP) || args[0].equalsIgnoreCase("-h")) {
             this.printUsage();
             throw new StopExecutionException(HELP);
         }
 
-        if (args[0].equalsIgnoreCase(VERSION)) {
+        if (args[0].endsWith(VERSION) || args[0].equalsIgnoreCase("-v")) {
             throw new StopExecutionException(VERSION);
         }
     }
