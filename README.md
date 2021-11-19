@@ -154,7 +154,9 @@ This is the summary page:
 ![run result](images/index_html.png)
 
 And this is what you get when you click on a specific test:
-![test details](images/test_details.png)
+![test details](images/test_details_1.png)
+![test details](images/test_details_2.png)
+
 
 # Ignoring Specific HTTP Result Codes
 By default, CATS will report `WARNs` and `ERRORs` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.
