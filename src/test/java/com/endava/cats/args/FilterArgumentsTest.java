@@ -55,6 +55,18 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldNotReturnContractFuzzersWhenIgnoredSupplied() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "2xx");
+
+        filterArguments.loadConfig();
+        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+
+        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
+        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer");
+    }
+
+    @Test
     void shouldRemoveSkippedFuzzers() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", "VeryLarge, SecurityHeaders, Jumbo");
         filterArguments.loadConfig();
@@ -98,6 +110,14 @@ class FilterArgumentsTest {
         Assertions.assertThat(httpMethods).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
+    @ParameterizedTest
+    @CsvSource(value = {"null", "'", "'   '", "empty"}, nullValues = {"null"})
+    void shouldReturnFalseForProvidedIgnoredCodes(String codes) {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", codes);
+
+        Assertions.assertThat(filterArguments.isEmptyIgnoredResponseCodes()).isTrue();
+    }
+
     @Test
     void shouldReturnIgnoreHttpCodes() {
         ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "200,4XX");
@@ -105,13 +125,37 @@ class FilterArgumentsTest {
 
         Assertions.assertThat(ignoredCodes).containsOnly("200", "4XX");
     }
-    
+
     @Test
     void shouldReturnEmptyIgnoreHttpCodes() {
         ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "empty");
         List<String> ignoredCodes = filterArguments.getIgnoreResponseCodes();
 
         Assertions.assertThat(ignoredCodes).isEmpty();
+    }
+
+    @Test
+    void shouldReturnNotPresentTestCases() {
+        ReflectionTestUtils.setField(filterArguments, "testCases", "empty");
+        boolean testCasesPresent = filterArguments.areTestCasesSupplied();
+
+        Assertions.assertThat(testCasesPresent).isFalse();
+    }
+
+    @Test
+    void shouldReturnTestCases() {
+        ReflectionTestUtils.setField(filterArguments, "testCases", "Test10,Test12.json");
+        boolean testCasesPresent = filterArguments.areTestCasesSupplied();
+
+        Assertions.assertThat(testCasesPresent).isTrue();
+    }
+
+    @Test
+    void shouldParseTestCases() {
+        ReflectionTestUtils.setField(filterArguments, "testCases", "Test10,Test12.json");
+        List<String> testCases = filterArguments.parseTestCases();
+
+        Assertions.assertThat(testCases).contains("cats-report/Test10.json", "Test12.json");
     }
 
     @Test

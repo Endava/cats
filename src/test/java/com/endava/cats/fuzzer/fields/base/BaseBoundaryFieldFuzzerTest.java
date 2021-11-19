@@ -80,6 +80,7 @@ class BaseBoundaryFieldFuzzerTest {
         FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData()).startsWith("Data type not matching");
+        Assertions.assertThat(myBaseBoundaryFuzzer.typeOfDataSentToTheService()).startsWith("outside the boundary values");
     }
 
     private FuzzingData getMockFuzzingData() {

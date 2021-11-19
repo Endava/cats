@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.util.CatsUtil;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -25,8 +26,6 @@ public class ReportingArguments {
 
     @Value("${arg.reporting.timestampReports.help:help}")
     private String timestampReportsHelp;
-    @Value("${arg.reporting.reportingLevel.help:help}")
-    private String reportingLevelHelp;
     @Value("${arg.reporting.log.help:help}")
     private String logDataHelp;
     @Value("${arg.reporting.printExecutionStatistics.help:help}")
@@ -52,7 +51,7 @@ public class ReportingArguments {
     }
 
     public boolean hasLogData() {
-        return !EMPTY.equalsIgnoreCase(logData);
+        return CatsUtil.isArgumentValid(logData);
     }
 
     public boolean isTimestampReports() {

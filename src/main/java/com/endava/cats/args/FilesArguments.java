@@ -11,13 +11,18 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
 public class FilesArguments {
     private static final String ALL = "all";
-    private static final String EMPTY = "empty";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final Map<String, Map<String, String>> headers = new HashMap<>();
     private final Map<String, Map<String, String>> refData = new HashMap<>();
@@ -85,7 +90,7 @@ public class FilesArguments {
     }
 
     public void loadSecurityFuzzerFile() throws IOException {
-        if (EMPTY.equalsIgnoreCase(securityFuzzerFile)) {
+        if (!CatsUtil.isArgumentValid(securityFuzzerFile)) {
             log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
         } else {
             securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile);
@@ -93,7 +98,7 @@ public class FilesArguments {
     }
 
     public void loadCustomFuzzerFile() throws IOException {
-        if (EMPTY.equalsIgnoreCase(customFuzzerFile)) {
+        if (!CatsUtil.isArgumentValid(customFuzzerFile)) {
             log.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
         } else {
             customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
@@ -101,7 +106,7 @@ public class FilesArguments {
     }
 
     public void loadRefData() throws IOException {
-        if (EMPTY.equalsIgnoreCase(refDataFile)) {
+        if (!CatsUtil.isArgumentValid(refDataFile)) {
             log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
             catsUtil.loadFileToMap(refDataFile, refData);
@@ -109,22 +114,18 @@ public class FilesArguments {
         }
     }
 
-    public void loadURLParams() throws IOException {
-        try {
-            if (EMPTY.equalsIgnoreCase(params)) {
-                log.info("No URL parameters supplied!");
-            } else {
-                urlParamsList = Arrays.stream(params.split(",")).map(String::trim).collect(Collectors.toList());
-                log.info("URL parameters: {}", urlParamsList);
-            }
-        } catch (Exception e) {
-            throw new IOException("There was a problem parsing the urlParams argument: " + e.getMessage());
+    public void loadURLParams() {
+        if (!CatsUtil.isArgumentValid(params)) {
+            log.info("No URL parameters supplied!");
+        } else {
+            urlParamsList = Arrays.stream(params.split(",")).map(String::trim).collect(Collectors.toList());
+            log.info("URL parameters: {}", urlParamsList);
         }
     }
 
     public void loadHeaders() throws IOException {
         try {
-            if (EMPTY.equalsIgnoreCase(headersFile)) {
+            if (!CatsUtil.isArgumentValid(headersFile)) {
                 log.info("No headers file was supplied! No additional header will be added!");
             } else {
                 catsUtil.loadFileToMap(headersFile, headers);
