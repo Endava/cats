@@ -1,6 +1,6 @@
 <p align="center">
 
-<img alt="CATS" width="400" src="https://github.com/Endava/cats/blob/0e17aa8b8fc88fd727afb163f43d748fbf58f1a8/images/cats.png?raw=true"  />
+<img alt="CATS" width="400" src="https://raw.githubusercontent.com/Endava/cats/master/images/cats.png"  />
 
 </p>
 <p align="center">
@@ -22,13 +22,13 @@
 - **Highly Configurable**: high amount of customization to adapt to each context
 - **Self-Healing**: as tests are generated, any OpenAPI spec change is picked up automatically
 - **Simple to Learn**: flat learning curve, with intuitive configuration and syntax
-- **Fast**: automatic process for write, run and report test cases which covers thousands of tests within minutes
+- **Fast**: automatic process for write, run and report tests which covers thousands of scenarios within minutes
 
 <p align="center"></p>
 
 
 # Overview
-By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate thousands of API tests within minutes with **no coding effort**. All test cases are **generated and run automatically** based on a pre-defined 
+By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate thousands of API tests within minutes with **no coding effort**. All tests are **generated and run automatically** based on a pre-defined 
 set of **76 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations and security. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional flows.
 
@@ -37,7 +37,7 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
 </div>
 
 <h3 align="center" style="color:orange">
- Starting with version 6.0, CATS generates significantly more test cases (more than 10k even for small APIs) which result in increased running times and bigger reports.
+ Starting with version 6.0, CATS generates significantly more tests (more than 10k even for small APIs) which result in increased running times and bigger reports.
 
 Please check the <a href="#slicint-strategies">Slicing Strategies</a> section for options on how to split the Fuzzers.
 </h3>
@@ -91,9 +91,9 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 
 # Slicing Strategies for Running Cats
 
-CATS has a significant number of `Fuzzers`. Currently, **76** and growing. Some of the `Fuzzers` are executing multiple test cases for every given field within the request.
-For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 test cases**.
-Considering that there are additional `Fuzzers` with the same magnitude of test cases being generated, you can easily get to 20k test cases being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
+CATS has a significant number of `Fuzzers`. Currently, **76** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
+Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
 Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages in a deployment pipeline, one after the other.
 
@@ -127,7 +127,7 @@ Other ways to get help from the CATS command are as follows:
 
 - `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
 
-- `./cats.jar replay --testCases="test1,test2"` will replay the given test cases `test1` and `test2`
+- `./cats.jar replay --testCases="test1,test2"` will replay the given tests `test1` and `test2`
 
 # Running CATS with Fuzzers
 A minimal run must provide the Swagger/OpenAPI contract, and the URL address of the service:
@@ -147,8 +147,8 @@ created with the `TIMESTAMP` value when the run started. This allows you to have
 
 - filter test runs based on the result: `All`, `Success`, `Warn` and `Error`
 - filter based on the `Fuzzer` so that you can only see the runs for that specific `Fuzzer`
-- a summary table with all the test cases with their corresponding path against they were run, and the result
-- ability to click on any test case and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
+- a summary table with all the tests with their corresponding path against they were run, and the result
+- ability to click on any tests and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
 
 Understanding the `Result Reason` values:
 - `Unexpected Exception` - reported as `error`; this might indicate a possible bug in the service or a corner case that is not handled correctly by CATS
@@ -171,21 +171,21 @@ By default, CATS will report `WARNs` and `ERRORs` according to the specific beha
 You can use the `--ignoreResponseCodes` argument to supply a list of result codes that should be ignored as issues (overriding the Fuzzer behaviour) and report those cases as success instead or `WARN` or `ERROR`.
 For example, if you want CATS to report `ERRORs` only when there is an Exception or the service returns a `500`, you can use this: `--ignoreResultCodes="2xx,4xx"`.
 
-# Replaying Test Cases
-When CATS runs, for each test case, it will export both an HTML file that will be linked in the final report and individual JSON files. The JSON files can be used to replay that test case.
-When replaying a test case (or a list of test cases), CATS won't produce any report. The output will be solely available in the console. 
-This is useful when you want to see the exact behaviour of the specific test case or attach it in a bug report for example.
+# Replaying Tests
+When CATS runs, for each test, it will export both an HTML file that will be linked in the final report and individual JSON files. The JSON files can be used to replay that test.
+When replaying a test (or a list of tests), CATS won't produce any report. The output will be solely available in the console. 
+This is useful when you want to see the exact behaviour of the specific test or attach it in a bug report for example.
 
-The syntax for replaying test cases is the following:
+The syntax for replaying tests is the following:
 
 ```shell
 ./cats.jar replay --testCases="Test1,Test233,Test15.json,dir/Test19.json"
 ```
 
 Some notes on the above example:
-- test case names can be separated by comma `,`
-- if you provide a json extension to a test case name, that file will be search as a path i.e. it will search for `Test15.json` in the current folder and `Test19.json` in the `dir` folder
-- if you don't provide a json extension to a test case name, it will search for that test in the `cats-report` folder i.e. `cats-report/Test1.json` and `cats-report/Test233.json`
+- test names can be separated by comma `,`
+- if you provide a json extension to a test name, that file will be search as a path i.e. it will search for `Test15.json` in the current folder and `Test19.json` in the `dir` folder
+- if you don't provide a json extension to a test name, it will search for that test in the `cats-report` folder i.e. `cats-report/Test1.json` and `cats-report/Test233.json`
 
 
 # Available arguments
@@ -228,7 +228,7 @@ Some notes on the above example:
 - `--readTimeout` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
 - `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
 - `--ignoreResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. You can use response code families as `2xx`, `4xx`, etc. **If provided, all Contract Fuzzers will be skipped**.
-- `--testCases` TEST_CASES_LIST a comma separated list of executed test cases in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test case in the cats-report folder
+- `--testCases` TEST_CASES_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
 
 Using some of these options a typical invocation of CATS might look like this:
 
@@ -245,7 +245,7 @@ There are multiple categories of `Fuzzers` available:
 - `Header Fuzzers` which target HTTP headers
 - `HTTP Fuzzers` which target just the interaction with the service (without fuzzing fields or headers)
 
-Additional checks which are not actually using any fuzzing, but leverage the CATS internal model of running the test cases as `Fuzzers`:
+Additional checks which are not actually using any fuzzing, but leverage the CATS internal model of running the tests as `Fuzzers`:
 
 - `ContractInfo Fuzzers` which checks the contract for API good practices
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow or security testing
@@ -405,7 +405,7 @@ This `Fuzzers` will prefix or trail each field with Unicode whitespaces and invi
 The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
 It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
 
-Please note that CATS tests iteratively for **18 whitespace characters**. This means that for **each field** within the requests CATS will run **18 test cases**.
+Please note that CATS tests iteratively for **18 whitespace characters**. This means that for **each field** within the requests CATS will run **18 tests**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
 Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.   
 
@@ -414,7 +414,7 @@ This `Fuzzers` will prefix or trail each field with Unicode control chars.
 The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
 It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
 
-Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 test cases**.
+Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 tests**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
 Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
 
@@ -428,7 +428,7 @@ Depending on the `--sanitizationStrategy` argument, this `Fuzzer` will expect:
 These `Fuzzers` will fuzz only `String` fields.
 It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
 
-Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 test cases**.
+Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 tests**.
 This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
 Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
 
@@ -570,7 +570,7 @@ The `CustomFuzzer` will only trigger if a valid `customFuzzer.yml` file is suppl
 ```yaml
 /path:
     testNumber:
-        description: Short description of the test case
+        description: Short description of the test
         prop: value
         prop#subprop: value
         prop7:
@@ -584,7 +584,7 @@ The `CustomFuzzer` will only trigger if a valid `customFuzzer.yml` file is suppl
 ```
 
 This is a description of the elements within the `customFuzzer.yml` file:
-- you can supply a `description` of the test case. This will be set as the `Scenario` description. If you don't supply a `description` the `testNumber` will be used instead.
+- you can supply a `description` of the test. This will be set as the `Scenario` description. If you don't supply a `description` the `testNumber` will be used instead.
 - you can have multiple tests under the same path: `test1`, `test2`, etc.
 - `expectedResponseCode` is mandatory, otherwise the `Fuzzer` will ignore this test. The `expectedResponseCode` tells CATS what to expect from the service when sending this test.
 - *at most* one of the properties can have multiple values. When this situation happens, that test will actually become a list of tests one for each of the values supplied. For example in the above example `prop7` has 3 values. This will actually result in 3 tests, one for each value.
@@ -604,7 +604,7 @@ If you don't provide this element, all combinations will be considered. If you s
 As CATs mostly relies on generated data with small help from some reference data, testing complex business scenarios with the pre-defined `Fuzzers` is not possible. Suppose we have an endpoint that creates data (doing a `POST`), and we want to check its existence (via `GET`).
 We need a way to get some identifier from the POST call and send it to the GET call. This is now possible using the `CustomFuzzer`.
 The `customFuzzerFile` can have an `output` entry where you can state a variable name, and its fully qualified name from the response in order to set its value. 
-You can then refer the variable using `${variable_name}` from another test case in order to use its value. 
+You can then refer the variable using `${variable_name}` from another test in order to use its value. 
 
 Here is an example:
 ```yaml
@@ -920,7 +920,7 @@ A `customFuzzerFile` using this can look like:
 ```yaml
 /path:
     testNumber:
-        description: Short description of the test case
+        description: Short description of the test
         prop: value
         prop#subprop: "T(java.time.OffsetDateTime).now().plusDays(10)"
         prop7:
