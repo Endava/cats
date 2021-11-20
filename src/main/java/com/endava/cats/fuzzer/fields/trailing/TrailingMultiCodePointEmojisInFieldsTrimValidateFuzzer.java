@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields.trailing;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.EmojiFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.InvisibleCharsBaseTrimValidateFuzzer;
 import com.endava.cats.io.ServiceCaller;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
+@EmojiFuzzer
 @ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}' == 'trimAndValidate' and ${fuzzer.fields.TrailingMultiCodePointEmojisInFieldsFuzzer.enabled}")
 public class TrailingMultiCodePointEmojisInFieldsTrimValidateFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
 

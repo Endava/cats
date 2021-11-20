@@ -1,10 +1,13 @@
 package com.endava.cats.args;
 
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
+import com.endava.cats.fuzzer.ControlCharFuzzer;
+import com.endava.cats.fuzzer.EmojiFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.fuzzer.WhitespaceFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
 import com.endava.cats.util.CatsUtil;
@@ -198,9 +201,24 @@ public class FilterArguments {
         finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.checkHttp(), HttpFuzzer.class));
 
         if (finalList.isEmpty()) {
-            return fuzzers.stream().map(Object::toString).collect(Collectors.toList());
+            finalList = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
         }
+
+        this.removeIfNotSupplied(checkArguments.includeControlChars(), ControlCharFuzzer.class, finalList);
+        this.removeIfNotSupplied(checkArguments.includeEmojis(), EmojiFuzzer.class, finalList);
+        this.removeIfNotSupplied(checkArguments.includeWhitespaces(), WhitespaceFuzzer.class, finalList);
+
         return finalList;
+    }
+
+    private void removeIfNotSupplied(boolean includeArgument, Class<? extends Annotation> annotation, List<String> currentFuzzers) {
+        if (!includeArgument) {
+            for (Fuzzer fuzzer : fuzzers) {
+                if (AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null) {
+                    currentFuzzers.remove(fuzzer.toString());
+                }
+            }
+        }
     }
 
     private List<String> getFuzzersFromCheckArgument(boolean checkArgument, Class<? extends Annotation> annotation) {

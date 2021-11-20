@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.ControlCharFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
+@ControlCharFuzzer
 @ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize' and ${fuzzer.fields.WithinControlCharsInFieldsFuzzer.enabled}")
 public class WithinControlCharsInFieldsValidateSanitizeFuzzer extends WithinControlCharsInFieldsSanitizeValidateFuzzer {
 

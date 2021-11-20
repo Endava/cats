@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.fuzzer.ControlCharFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
+@ControlCharFuzzer
 @ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.fields.OnlyControlCharsInFieldsFuzzer.enabled}")
 public class OnlyControlCharsInFieldsTrimValidateFuzzer extends InvisibleCharsOnlyTrimValidateFuzzer {
 

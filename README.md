@@ -36,10 +36,13 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
   <img alt="CATS" width="100%" src="images/run_result.png"/>
 </div>
 
-<h3 align="center" style="color:orange">
- Starting with version 6.0, CATS generates significantly more tests (more than 10k even for small APIs) which result in increased running times and bigger reports.
+<h3 align="center" style="color:orange"> 
 
-Please check the <a href="#slicint-strategies">Slicing Strategies</a> section for options on how to split the Fuzzers.
+Starting with version 6.1.0, CATS does not include the `ControlChars, Emojis and Whitespaces` Fuzzers in a normal run. 
+In order to include them use the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments. 
+
+Please check the <a href="#slicint-strategies">Slicing Strategies</a> section for making CATS running fast and comprehensive in the same time.
+
 </h3>
 
 # Contract driven Auto-generated Tests for Swagger
@@ -108,8 +111,11 @@ You can use various arguments like `--fuzers=XXX` or `-skipFuzzer=XXX` to either
 For example, you can run all `Fuzzers` except for the `ControlChars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
 After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
 
-
 These are just some recommendations on how you can split the types of tests cases. Depending on how complex your API is, you might go with a combination of the above or with even more granular splits.
+
+Please note that due to the fact that `ControlChars, Emojis and Whitespaces` generate huge number of tests even for small OpenAPI contracts, they are disabled by default.
+You can enable them using the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments. 
+The recommendation is to run them in separate runs so that you get manageable reports and optimal running times.
 
 # Available Commands
 To list all available commands, run CATS with no arguments:
@@ -217,6 +223,9 @@ Some notes on the above example:
 - `--checkHeaders` If supplied (no value needed), it will only run the Header Fuzzers
 - `--checkHttp` If supplied (no value needed), it will only run the HTTP Fuzzers
 - `--checkContract` If supplied (no value needed), it will only run the ContractInfo Fuzzers 
+- `--includeWhitespaces` If supplied (no value needed), it will include the Whitespaces Fuzzers 
+- `--includeEmojis` If supplied (no value needed), it will include the Emojis Fuzzers 
+- `--includeControlChars` If supplied (no value needed), it will include the ControlChars Fuzzers 
 - `--sslKeystore` Location of the JKS keystore holding certificates used when authenticating calls using one-way or two-way SSL 
 - `--sslKeystorePwd` The password of the `sslKeystore`
 - `--sslKeyPwd` The password of the private key from the `sslKeystore`

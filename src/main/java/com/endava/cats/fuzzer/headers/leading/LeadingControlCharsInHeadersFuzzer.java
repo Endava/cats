@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers.leading;
 
+import com.endava.cats.fuzzer.ControlCharFuzzer;
 import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Component
 @HeaderFuzzer
+@ControlCharFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.LeadingControlCharsInHeadersFuzzer.enabled", havingValue = "true")
 public class LeadingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
