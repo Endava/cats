@@ -25,6 +25,13 @@ public class CheckArguments {
     private String checkHttp;
     @Value("${checkContract:empty}")
     private String checkContract;
+    @Value("${includeWhitespaces:empty}")
+    private String includeWhitespaces;
+    @Value("${includeEmojis:empty}")
+    private String includeEmojis;
+    @Value("${includeControlChars:empty}")
+    private String includeControlChars;
+
 
     @Value("${arg.check.checkHeaders.help:help}")
     private String checkHeadersHelp;
@@ -34,6 +41,12 @@ public class CheckArguments {
     private String checkHttpHelp;
     @Value("${arg.check.checkContract.help:help}")
     private String checkContractHelp;
+    @Value("${arg.check.includeWhitespaces.help:help}")
+    private String includeWhitespacesHelp;
+    @Value("${arg.check.includeEmojis.help:help}")
+    private String includeEmojisHelp;
+    @Value("${arg.check.includeControlChars.help:help}")
+    private String includeControlCharsHelp;
 
     @PostConstruct
     public void init() {
@@ -41,6 +54,21 @@ public class CheckArguments {
         args.add(CatsArg.builder().name("checkFields").value(String.valueOf(this.checkFields())).help(checkFieldsHelp).build());
         args.add(CatsArg.builder().name("checkHttp").value(String.valueOf(this.checkHttp())).help(checkHttpHelp).build());
         args.add(CatsArg.builder().name("checkContract").value(String.valueOf(this.checkContract())).help(checkContractHelp).build());
+        args.add(CatsArg.builder().name("includeControlChars").value(String.valueOf(this.includeControlChars())).help(includeControlCharsHelp).build());
+        args.add(CatsArg.builder().name("includeEmojis").value(String.valueOf(this.includeEmojis())).help(includeEmojisHelp).build());
+        args.add(CatsArg.builder().name("includeControlChars").value(String.valueOf(this.includeWhitespaces())).help(includeWhitespacesHelp).build());
+    }
+
+    public boolean includeControlChars() {
+        return !EMPTY.equalsIgnoreCase(this.includeControlChars);
+    }
+
+    public boolean includeEmojis() {
+        return !EMPTY.equalsIgnoreCase(this.includeEmojis);
+    }
+
+    public boolean includeWhitespaces() {
+        return !EMPTY.equalsIgnoreCase(this.includeWhitespaces);
     }
 
     public boolean checkHeaders() {

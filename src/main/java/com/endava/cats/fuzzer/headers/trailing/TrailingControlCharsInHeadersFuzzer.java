@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
+import com.endava.cats.fuzzer.ControlCharFuzzer;
 import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Component
 @HeaderFuzzer
+@ControlCharFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.TrailingControlCharsInHeadersFuzzer.enabled", havingValue = "true")
 public class TrailingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 

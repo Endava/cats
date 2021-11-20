@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields.leading;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.fields.base.InvisibleCharsBaseTrimValidateFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
+@WhitespaceFuzzer
 @ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.fields.LeadingWhitespacesInFieldsFuzzer.enabled}")
 public class LeadingWhitespacesInFieldsTrimValidateFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
 

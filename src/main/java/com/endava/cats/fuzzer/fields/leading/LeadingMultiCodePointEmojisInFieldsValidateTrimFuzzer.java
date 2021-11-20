@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields.leading;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.EmojiFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
+@EmojiFuzzer
 @ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.LeadingMultiCodePointEmojisInFields.enabled}")
 public class LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzer extends LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer {
 

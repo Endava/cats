@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields.trailing;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
+@WhitespaceFuzzer
 @ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.TrailingWhitespacesInFieldsFuzzer.enabled}")
 public class TrailingWhitespacesInFieldsValidateTrimFuzzer extends TrailingWhitespacesInFieldsTrimValidateFuzzer {
 

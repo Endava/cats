@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.ControlCharFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.InvisibleCharsBaseTrimValidateFuzzer;
 import com.endava.cats.io.ServiceCaller;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
+@ControlCharFuzzer
 @ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'sanitizeAndValidate' and ${fuzzer.fields.WithinControlCharsInFieldsFuzzer.enabled}")
 public class WithinControlCharsInFieldsSanitizeValidateFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
 

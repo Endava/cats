@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.headers.only;
 
 import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.fuzzer.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Component
 @HeaderFuzzer
+@WhitespaceFuzzer
 @ConditionalOnProperty(value = "fuzzer.headers.OnlyWhitespacesInHeadersFuzzer.enabled", havingValue = "true")
 public class OnlyWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
     @Autowired
