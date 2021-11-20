@@ -54,8 +54,8 @@ public class FilterArguments {
     private String dryRun;
     @Value("${ignoreResponseCodes:empty}")
     private String ignoreResponseCodes;
-    @Value("${testCases:empty}")
-    private String testCases;
+    @Value("${tests:empty}")
+    private String tests;
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
     @Value("${arg.filter.paths.help:help}")
@@ -74,8 +74,8 @@ public class FilterArguments {
     private String dryRunHelp;
     @Value("${arg.filter.ignoreResponseCodes.help:help}")
     private String ignoreResponseCodesHelp;
-    @Value("${arg.filter.testCases.help:help}")
-    private String testCasesHelp;
+    @Value("${arg.filter.tests.help:help}")
+    private String testsHelp;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -91,7 +91,7 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
         args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());
         args.add(CatsArg.builder().name("ignoreResponseCodes").value(ignoreResponseCodes).help(ignoreResponseCodesHelp).build());
-        args.add(CatsArg.builder().name("testCases").value(testCases).help(testCasesHelp).build());
+        args.add(CatsArg.builder().name("testCases").value(tests).help(testsHelp).build());
     }
 
     /**
@@ -265,7 +265,7 @@ public class FilterArguments {
     }
 
     public boolean areTestCasesSupplied() {
-        return CatsUtil.isArgumentValid(testCases);
+        return CatsUtil.isArgumentValid(tests);
     }
 
     /**
@@ -274,7 +274,7 @@ public class FilterArguments {
      * @return a list of all supplied test cases fully resolved
      */
     public List<String> parseTestCases() {
-        return Arrays.stream(testCases.split(","))
+        return Arrays.stream(tests.split(","))
                 .map(testCase -> testCase.trim().strip())
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
                 .collect(Collectors.toList());
