@@ -165,7 +165,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnNotPresentTestCases() {
-        ReflectionTestUtils.setField(filterArguments, "testCases", "empty");
+        ReflectionTestUtils.setField(filterArguments, "tests", "empty");
         boolean testCasesPresent = filterArguments.areTestCasesSupplied();
 
         Assertions.assertThat(testCasesPresent).isFalse();
@@ -173,7 +173,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnTestCases() {
-        ReflectionTestUtils.setField(filterArguments, "testCases", "Test10,Test12.json");
+        ReflectionTestUtils.setField(filterArguments, "tests", "Test10,Test12.json");
         boolean testCasesPresent = filterArguments.areTestCasesSupplied();
 
         Assertions.assertThat(testCasesPresent).isTrue();
@@ -181,7 +181,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldParseTestCases() {
-        ReflectionTestUtils.setField(filterArguments, "testCases", "Test10,Test12.json");
+        ReflectionTestUtils.setField(filterArguments, "tests", "Test10,Test12.json");
         List<String> testCases = filterArguments.parseTestCases();
 
         Assertions.assertThat(testCases).contains("cats-report/Test10.json", "Test12.json");

@@ -133,7 +133,7 @@ Other ways to get help from the CATS command are as follows:
 
 - `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
 
-- `./cats.jar replay --testCases="test1,test2"` will replay the given tests `test1` and `test2`
+- `./cats.jar replay --tests="test1,test2"` will replay the given tests `test1` and `test2`
 
 # Running CATS with Fuzzers
 A minimal run must provide the Swagger/OpenAPI contract, and the URL address of the service:
@@ -185,7 +185,7 @@ This is useful when you want to see the exact behaviour of the specific test or 
 The syntax for replaying tests is the following:
 
 ```shell
-./cats.jar replay --testCases="Test1,Test233,Test15.json,dir/Test19.json"
+./cats.jar replay --tests="Test1,Test233,Test15.json,dir/Test19.json"
 ```
 
 Some notes on the above example:
@@ -237,7 +237,7 @@ Some notes on the above example:
 - `--readTimeout` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
 - `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
 - `--ignoreResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. You can use response code families as `2xx`, `4xx`, etc. **If provided, all Contract Fuzzers will be skipped**.
-- `--testCases` TEST_CASES_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
+- `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
 
 Using some of these options a typical invocation of CATS might look like this:
 
