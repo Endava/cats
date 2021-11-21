@@ -371,9 +371,13 @@ public class ServiceCaller {
         LOGGER.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
         LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsMain.ALL));
 
-        Map<String, String> suppliedHeaders = filesArguments.getHeaders().entrySet().stream()
+        Map<String, String> suppliedHeadersFromFile = filesArguments.getHeaders().entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsMain.ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
+
+        Map<String, String> suppliedHeaders = suppliedHeadersFromFile.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> catsDSLParser.parseAndGetResult(entry.getValue(), null)));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
@@ -396,7 +400,7 @@ public class ServiceCaller {
         if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
             headers.add(new CatsRequest.Header(suppliedHeader.getKey(), suppliedHeader.getValue()));
         } else {
-            /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try these behaviour on a valid header value */
+            /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behaviour on a valid header value */
             CatsRequest.Header existingHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey())).findFirst().orElse(new CatsRequest.Header("", ""));
             String finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
             headers.add(new CatsRequest.Header(suppliedHeader.getKey(), finalHeaderValue));

@@ -51,4 +51,16 @@ class CatsDSLParserTest {
 
         Assertions.assertThat(actual).isEqualTo("true");
     }
+
+    @Test
+    void shouldGetSystemVariable() {
+        String actual = catsDSLParser.parseAndGetResult("$$PATH", null);
+        Assertions.assertThat(actual).isNotBlank();
+    }
+
+    @Test
+    void shouldGetNotFoundSystemVariable() {
+        String actual = catsDSLParser.parseAndGetResult("$$cats", null);
+        Assertions.assertThat(actual).isEqualTo("not_found_$$cats");
+    }
 }
