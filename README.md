@@ -830,6 +830,8 @@ This will result in any fuzzed request to the `/path/0.1/auth` endpoint being up
 
 The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above instead of `.`.
 
+You can use environment (system) variables in a ref data file using: `$$VARIABLE_NAME`. (notice double `$$`)
+
 ## Setting additionalProperties
 As additional properties are maps i.e. they don't actually have a structure, CATS cannot currently generate valid values. If the elements within such a data structure are essential for a request,
 you can supply them via the `refData` file using the following syntax:
@@ -897,7 +899,7 @@ all:
     jwt: YYYYYYYYYYYYY
 ```
 
-This will add the `Accept` header to all calls and the `jwt` header to the specified paths.
+This will add the `Accept` header to all calls and the `jwt` header to the specified paths. You can use environment (system) variables in a headers file using: `$$VARIABLE_NAME`. (notice double `$$`)
 
 # Edge Spaces Strategy
 There isn't a consensus on how you should handle situations when you trail or prefix valid values with spaces.
