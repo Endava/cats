@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.SecureRandom;
-import java.util.Random;
 
 public class StringGenerator {
     public static final String FUZZ = "fuzz";
@@ -89,12 +88,11 @@ public class StringGenerator {
     }
 
     public static String generateRandomUnicode(int length) {
-        Random r = new Random();
         StringBuilder builder = new StringBuilder(length);
 
         int count = length;
         while (count > 0) {
-            int codePoint = r.nextInt(Character.MAX_CODE_POINT + 1);
+            int codePoint = RANDOM.nextInt(Character.MAX_CODE_POINT + 1);
             int type = Character.getType(codePoint);
 
             if (!Character.isDefined(codePoint) || type == Character.PRIVATE_USE || type == Character.SURROGATE || type == Character.UNASSIGNED) {

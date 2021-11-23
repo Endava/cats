@@ -101,6 +101,9 @@ class CatsMainTest {
     void givenAnOpenApiContract_whenStartingCats_thenTheContractIsCorrectlyParsed() throws Exception {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/openapi.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
+        ReflectionTestUtils.setField(checkArguments, "includeEmojis", "true");
+        ReflectionTestUtils.setField(checkArguments, "includeControlChars", "true");
+        ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", "true");
         CatsMain spyMain = Mockito.spy(AopTestUtils.<CatsMain>getTargetObject(catsMain));
         spyMain.run("test");
         Mockito.verify(spyMain).createOpenAPI();

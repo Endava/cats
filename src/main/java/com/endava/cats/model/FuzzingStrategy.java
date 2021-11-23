@@ -1,6 +1,11 @@
 package com.endava.cats.model;
 
-import com.endava.cats.model.strategy.*;
+import com.endava.cats.model.strategy.InsertFuzzingStrategy;
+import com.endava.cats.model.strategy.NoopFuzzingStrategy;
+import com.endava.cats.model.strategy.PrefixFuzzingStrategy;
+import com.endava.cats.model.strategy.ReplaceFuzzingStrategy;
+import com.endava.cats.model.strategy.SkipFuzzingStrategy;
+import com.endava.cats.model.strategy.TrailFuzzingStrategy;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.regex.Matcher;
@@ -62,6 +67,9 @@ public abstract class FuzzingStrategy {
         if (isUnicodeControlChar(value.charAt(value.length() - 1)) || isUnicodeWhitespace(value.charAt(value.length() - 1)) || isUnicodeOtherSymbol(value.charAt(value.length() - 1))) {
             return trail().withData(replaceSpecialCharsWithEmpty(value));
         }
+        if (isLargeString(value)) {
+            return replace().withData(value);
+        }
         Matcher withinMatcher = WITHIN.matcher(value);
         if (withinMatcher.find()) {
             return insert().withData(withinMatcher.group());
@@ -103,6 +111,9 @@ public abstract class FuzzingStrategy {
         return Character.getType(c) == Character.OTHER_SYMBOL || Character.getType(c) == Character.MODIFIER_SYMBOL;
     }
 
+    public static boolean isLargeString(String data) {
+        return data.startsWith("ca") && data.endsWith("ts");
+    }
 
     public FuzzingStrategy withData(String inner) {
         this.data = inner;
