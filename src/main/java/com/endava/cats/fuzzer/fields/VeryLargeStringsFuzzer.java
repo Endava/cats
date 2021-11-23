@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
@@ -22,9 +23,12 @@ import java.util.List;
 @ConditionalOnProperty(value = "fuzzer.fields.VeryLargeStringsFuzzer.enabled", havingValue = "true")
 public class VeryLargeStringsFuzzer extends BaseBoundaryFieldFuzzer {
 
+    private final ProcessingArguments processingArguments;
+
     @Autowired
-    public VeryLargeStringsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    public VeryLargeStringsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, ProcessingArguments pa) {
         super(sc, lr, cu, cp);
+        this.processingArguments = pa;
     }
 
     @Override
@@ -39,7 +43,8 @@ public class VeryLargeStringsFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Override
     public String getBoundaryValue(Schema schema) {
-        return StringGenerator.generateLargeString(10000);
+        int payloadSize = processingArguments.getLargeStringsSize() / 4;
+        return StringGenerator.generateLargeString(payloadSize);
     }
 
     @Override
