@@ -9,3 +9,10 @@ test-report
 *.cer
 *.key
 *.txt
+cats-report
+log
+examples
+rules
+__pycache__
+pom_native.xml
+
