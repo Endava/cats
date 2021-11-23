@@ -234,6 +234,7 @@ table {
   font-family: Tahoma, Arial;
   border-collapse: collapse;
   width: 100%;
+  table-layout: fixed;
 }
 
 td,
