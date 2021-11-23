@@ -5,7 +5,7 @@ public class EnvVariableParser implements Parser {
 
     @Override
     public String parse(String expression, String payload) {
-        String result = System.getenv(expression.substring(1));
+        String result = System.getenv(expression.substring(2));
         return result == null ? ENV_VARIABLE_NOT_FOUND + expression : result;
     }
 }
