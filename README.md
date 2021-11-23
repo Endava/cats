@@ -172,10 +172,19 @@ And this is what you get when you click on a specific test:
 ![test details](images/test_details_2.png)
 
 
-# Ignoring Specific HTTP Result Codes
+# Ignoring Specific HTTP Response Codes
 By default, CATS will report `WARNs` and `ERRORs` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.
 You can use the `--ignoreResponseCodes` argument to supply a list of result codes that should be ignored as issues (overriding the Fuzzer behaviour) and report those cases as success instead or `WARN` or `ERROR`.
 For example, if you want CATS to report `ERRORs` only when there is an Exception or the service returns a `500`, you can use this: `--ignoreResultCodes="2xx,4xx"`.
+
+# Ignoring Undocumented Response Code Checks
+You can also choose to ignore checks done by the Fuzzers. By default, each Fuzzer has an expected response code, based on the scenario under test and will report and `WARN` the service returns the expected response code, 
+but the response code is not documented inside the contract.
+You can make CATS ignore the undocumented response code checks (i.e. checking expected response code inside the contract) using the `--ignoreResponseCodeUndocumentedCheck` argument. CATS with now report these cases as `SUCCESS` instead of `WARN`.
+
+# Ignoring Response Body Checks
+Additionally, you can also choose to ignore the response body checks. By default, on top of checking the expected response code, each Fuzzer will check if the response body matches what is defined in the contract and will report and `WARN` if not matching.
+You can make CATS ignore the response body checks using the `--ingoreResponseBodyCheck` argument. CATS with now report these cases as `SUCCESS` instead of `WARN`.
 
 # Replaying Tests
 When CATS runs, for each test, it will export both an HTML file that will be linked in the final report and individual JSON files. The JSON files can be used to replay that test.
@@ -238,6 +247,9 @@ Some notes on the above example:
 - `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
 - `--ignoreResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. You can use response code families as `2xx`, `4xx`, etc. **If provided, all Contract Fuzzers will be skipped**.
 - `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
+- `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
+- `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
+
 
 Using some of these options a typical invocation of CATS might look like this:
 

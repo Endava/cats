@@ -159,7 +159,8 @@ public class TestCaseListener {
      */
     public void reportWarn(PrettyLogger logger, String message, Object... params) {
         int responseCode = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty()).getResponseCode();
-        if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))) {
+        if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))
+                && !filterArguments.isIgnoreResponseCodeUndocumentedCheck() && !filterArguments.isIgnoreResponseBodyCheck()) {
             executionStatisticsListener.increaseWarns();
             logger.warning(message, params);
             recordResult(message, params, Level.WARN.toString().toLowerCase());
@@ -355,12 +356,13 @@ public class TestCaseListener {
     }
 
     @Builder
-    static class ResponseAssertions {
+    static
+    class ResponseAssertions {
         private final boolean matchesResponseSchema;
         private final boolean responseCodeExpected;
         private final boolean responseCodeDocumented;
         private final boolean responseCodeUnimplemented;
-
+      
         private boolean isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema() {
             return matchesResponseSchema && responseCodeDocumented && responseCodeExpected;
         }
