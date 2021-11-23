@@ -172,6 +172,38 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldReturnIgnoreUndocumentedCode() {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodeUndocumentedCheck", "true");
+        boolean testCasesPresent = filterArguments.isIgnoreResponseCodeUndocumentedCheck();
+
+        Assertions.assertThat(testCasesPresent).isTrue();
+    }
+
+    @Test
+    void shouldReturnFalseIgnoreUndocumentedCode() {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodeUndocumentedCheck", "empty");
+        boolean testCasesPresent = filterArguments.isIgnoreResponseCodeUndocumentedCheck();
+
+        Assertions.assertThat(testCasesPresent).isFalse();
+    }
+
+    @Test
+    void shouldReturnIgnoreResponseBodyCheck() {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseBodyCheck", "true");
+        boolean testCasesPresent = filterArguments.isIgnoreResponseBodyCheck();
+
+        Assertions.assertThat(testCasesPresent).isTrue();
+    }
+
+    @Test
+    void shouldReturnFalseIgnoreResponseBodyCheck() {
+        ReflectionTestUtils.setField(filterArguments, "ignoreResponseBodyCheck", "empty");
+        boolean testCasesPresent = filterArguments.isIgnoreResponseBodyCheck();
+
+        Assertions.assertThat(testCasesPresent).isFalse();
+    }
+
+    @Test
     void shouldReturnTestCases() {
         ReflectionTestUtils.setField(filterArguments, "tests", "Test10,Test12.json");
         boolean testCasesPresent = filterArguments.areTestCasesSupplied();

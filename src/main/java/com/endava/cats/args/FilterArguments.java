@@ -56,6 +56,11 @@ public class FilterArguments {
     private String ignoreResponseCodes;
     @Value("${tests:empty}")
     private String tests;
+    @Value("${ignoreResponseCodeUndocumentedCheck:empty}")
+    private String ignoreResponseCodeUndocumentedCheck;
+    @Value("${ignoreResponseBodyCheck:empty}")
+    private String ignoreResponseBodyCheck;
+
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
     @Value("${arg.filter.paths.help:help}")
@@ -76,6 +81,11 @@ public class FilterArguments {
     private String ignoreResponseCodesHelp;
     @Value("${arg.filter.tests.help:help}")
     private String testsHelp;
+    @Value("${arg.filter.ignoreResponseCodeUndocumentedCheck.help:help}")
+    private String ignoreResponseCodeUndocumentedCheckHelp;
+    @Value("${arg.filter.ignoreResponseBodyCheck.help:help}")
+    private String ignoreResponseBodyCheckHelp;
+
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -91,7 +101,9 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
         args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());
         args.add(CatsArg.builder().name("ignoreResponseCodes").value(ignoreResponseCodes).help(ignoreResponseCodesHelp).build());
-        args.add(CatsArg.builder().name("testCases").value(tests).help(testsHelp).build());
+        args.add(CatsArg.builder().name("tests").value(tests).help(testsHelp).build());
+        args.add(CatsArg.builder().name("ignoreResponseCodeUndocumentedCheck").value(ignoreResponseCodeUndocumentedCheck).help(ignoreResponseCodeUndocumentedCheckHelp).build());
+        args.add(CatsArg.builder().name("ignoreResponseBodyCheck").value(ignoreResponseBodyCheck).help(ignoreResponseBodyCheckHelp).build());
     }
 
     /**
@@ -279,5 +291,13 @@ public class FilterArguments {
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
                 .collect(Collectors.toList());
 
+    }
+
+    public boolean isIgnoreResponseCodeUndocumentedCheck() {
+        return !"empty".equalsIgnoreCase(ignoreResponseCodeUndocumentedCheck);
+    }
+
+    public boolean isIgnoreResponseBodyCheck() {
+        return !"empty".equalsIgnoreCase(ignoreResponseBodyCheck);
     }
 }

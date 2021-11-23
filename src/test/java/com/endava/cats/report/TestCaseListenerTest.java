@@ -140,9 +140,13 @@ class TestCaseListenerTest {
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Warn 1 happened");
     }
 
-    @Test
-    void shouldCallInfoInsteadOfWarnWhenIgnoreCodeSupplied() {
-        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+    @ParameterizedTest
+    @CsvSource({"true,false,false", "false,true,false", "false,false,false", "true,true,true"})
+    void shouldCallInfoInsteadOfWarnWhenIgnoreCodeSupplied(boolean testCasesSupplied, boolean ignoreUndocumentedRespCode, boolean ignoreResponseBodyCheck) {
+        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(testCasesSupplied);
+        Mockito.when(filterArguments.isIgnoreResponseCodeUndocumentedCheck()).thenReturn(ignoreUndocumentedRespCode);
+        Mockito.when(filterArguments.isIgnoreResponseBodyCheck()).thenReturn(ignoreResponseBodyCheck);
+
         Mockito.when(filterArguments.isIgnoredResponseCode("200")).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
