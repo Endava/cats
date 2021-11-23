@@ -71,7 +71,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(76);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(78);
     }
 
     @Test
@@ -102,7 +102,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
 
         Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
-                .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeStringsFuzzer", "Jumbo");
+                .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeValuesInFieldsFuzzer", "Jumbo");
 
     }
 
@@ -113,14 +113,14 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
 
         Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer", "Jumbo")
-                .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsFuzzer");
+                .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeValuesInFieldsFuzzer", "VeryLargeUnicodeValuesInFieldsFuzzer", "VeryLargeUnicodeValuesInHeadersFuzzer", "VeryLargeValuesInHeadersFuzzer");
     }
 
     @Test
     void givenAContractAndAServerAndASkipFuzzerArgument_whenStartingCats_thenTheSkipForIsCorrectlyProcessed() {
-        filterArguments.loadConfig("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeStringsFuzzerForPath=/pets");
+        filterArguments.loadConfig("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeValuesInFieldsFuzzerForPath=/pets");
         Assertions.assertThat(filterArguments.skipFuzzersForPaths)
-                .containsOnly(CatsSkipped.builder().fuzzer("VeryLargeStringsFuzzer").forPaths(Collections.singletonList("/pets")).build());
+                .containsOnly(CatsSkipped.builder().fuzzer("VeryLargeValuesInFieldsFuzzer").forPaths(Collections.singletonList("/pets")).build());
     }
 
     @Test
@@ -195,5 +195,4 @@ class FilterArgumentsTest {
         Assertions.assertThat(filterArguments.isIgnoredResponseCode("400")).isTrue();
         Assertions.assertThat(filterArguments.isIgnoredResponseCode("404")).isFalse();
     }
-
 }

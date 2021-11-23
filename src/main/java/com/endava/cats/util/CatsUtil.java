@@ -1,6 +1,7 @@
 package com.endava.cats.util;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
@@ -35,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -104,6 +106,10 @@ public class CatsUtil {
         return results.get(true);
     }
 
+    public static String markLargeString(String input) {
+        return "ca" + input + "ts";
+    }
+
     public static void setCatsLogLevel(ch.qos.logback.classic.Level level) {
         setLogLevel("com.endava.cats", level);
     }
@@ -114,6 +120,15 @@ public class CatsUtil {
 
     public static boolean isArgumentValid(String argument) {
         return argument != null && !"empty".equalsIgnoreCase(argument) && !"".equalsIgnoreCase(argument.trim().strip());
+    }
+
+    public static List<FuzzingStrategy> getLargeValuesStrategy(int largeStringsSize) {
+        String generatedValue = StringGenerator.generateRandomUnicode(1000);
+        int payloadSize = largeStringsSize / 1000;
+        if (payloadSize == 0) {
+            return Collections.singletonList(FuzzingStrategy.replace().withData(CatsUtil.markLargeString(generatedValue.substring(0, largeStringsSize))));
+        }
+        return Collections.singletonList(FuzzingStrategy.replace().withData(CatsUtil.markLargeString(StringUtils.repeat(generatedValue, payloadSize))));
     }
 
     public List<String> getControlCharsFields() {

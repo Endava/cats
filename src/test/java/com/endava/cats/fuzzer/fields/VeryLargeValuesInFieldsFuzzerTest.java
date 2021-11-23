@@ -3,10 +3,8 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +14,7 @@ import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-class VeryLargeStringsFuzzerTest {
+class VeryLargeValuesInFieldsFuzzerTest {
     @Mock
     private ServiceCaller serviceCaller;
 
@@ -32,21 +30,17 @@ class VeryLargeStringsFuzzerTest {
     @Mock
     private ProcessingArguments processingArguments;
 
-    private VeryLargeStringsFuzzer veryLargeStringsFuzzer;
+    private VeryLargeValuesInFieldsFuzzer veryLargeValuesInFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        veryLargeStringsFuzzer = new VeryLargeStringsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, processingArguments);
+        veryLargeValuesInFieldsFuzzer = new VeryLargeValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, processingArguments);
     }
 
     @Test
     void givenANewVeryLargeStringsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheVeryLargeStringsFuzzer() {
-        StringSchema nrSchema = new StringSchema();
-        Assertions.assertThat(veryLargeStringsFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsExactly(StringSchema.class);
-        Assertions.assertThat(veryLargeStringsFuzzer.getBoundaryValue(nrSchema)).isNotNull();
-        Assertions.assertThat(veryLargeStringsFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
-        Assertions.assertThat(veryLargeStringsFuzzer.description()).isNotNull();
-        Assertions.assertThat(veryLargeStringsFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(veryLargeValuesInFieldsFuzzer.description()).isNotNull();
+        Assertions.assertThat(veryLargeValuesInFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
 
     }
 
@@ -54,6 +48,6 @@ class VeryLargeStringsFuzzerTest {
     void shouldGetPayloadSize() {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20000);
 
-        Assertions.assertThat(veryLargeStringsFuzzer.getBoundaryValue(null)).hasSize(20000);
+        Assertions.assertThat(veryLargeValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData()).hasSize(20000);
     }
 }

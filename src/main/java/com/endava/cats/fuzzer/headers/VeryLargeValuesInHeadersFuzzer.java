@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
@@ -19,12 +20,14 @@ import java.util.List;
  */
 @Component
 @HeaderFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.LargeValuesInHeadersFuzzer.enabled", havingValue = "true")
-public class LargeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
+@ConditionalOnProperty(value = "fuzzer.headers.VeryLargeValuesInHeadersFuzzer.enabled", havingValue = "true")
+public class VeryLargeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
+    private final ProcessingArguments processingArguments;
 
     @Autowired
-    public LargeValuesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    public VeryLargeValuesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr, ProcessingArguments pa) {
         super(sc, lr);
+        this.processingArguments = pa;
     }
 
     @Override
@@ -34,7 +37,9 @@ public class LargeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return Collections.singletonList(FuzzingStrategy.replace().withData(StringGenerator.generateLargeString(1500)));
+        return Collections.singletonList(
+                FuzzingStrategy.replace().withData(
+                        StringGenerator.generateLargeString(processingArguments.getLargeStringsSize() / 4)));
     }
 
     @Override

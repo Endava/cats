@@ -7,7 +7,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 class CatsUtilTest {
 
@@ -102,5 +106,12 @@ class CatsUtilTest {
 
         Assertions.assertThat(result.getFuzzedValue()).isEmpty();
         Assertions.assertThat(result.getJson()).isEmpty();
+    }
+
+    @Test
+    void shouldMarkText() {
+        String result = CatsUtil.markLargeString("test");
+
+        Assertions.assertThat(result).isEqualTo("catestts");
     }
 }

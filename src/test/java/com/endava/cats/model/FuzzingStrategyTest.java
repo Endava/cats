@@ -1,6 +1,10 @@
 package com.endava.cats.model;
 
-import com.endava.cats.model.strategy.*;
+import com.endava.cats.model.strategy.NoopFuzzingStrategy;
+import com.endava.cats.model.strategy.PrefixFuzzingStrategy;
+import com.endava.cats.model.strategy.ReplaceFuzzingStrategy;
+import com.endava.cats.model.strategy.SkipFuzzingStrategy;
+import com.endava.cats.model.strategy.TrailFuzzingStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -118,6 +122,12 @@ class FuzzingStrategyTest {
     void shouldInsertInSuppliedValue() {
         String result = FuzzingStrategy.mergeFuzzing("te\uD83E\uDD76st", "air");
         Assertions.assertThat(result).isEqualTo("a\uD83E\uDD76ir");
+    }
+
+    @Test
+    void shouldReplaceWhenLargeString() {
+        String result = FuzzingStrategy.mergeFuzzing("caTTTTTTTTts", "air");
+        Assertions.assertThat(result).isEqualTo("caTTTTTTTTts");
     }
 
 }
