@@ -23,6 +23,8 @@ public class ProcessingArguments {
     private String sanitizationStrategy;
     @Value("${useExamples:true}")
     private String useExamples;
+    @Value("${largeStringsSize:40000}")
+    private int largeStringsSize;
 
     @Value("${arg.processing.fieldsFuzzingStrategy.help:help}")
     private String fieldsFuzzingStrategyHelp;
@@ -34,6 +36,8 @@ public class ProcessingArguments {
     private String sanitizationStrategyHelp;
     @Value("${arg.processing.useExamples.help:help}")
     private String useExamplesHelp;
+    @Value("${arg.processing.largeStringsSize.help:help}")
+    private String largeStringsSizeHelp;
 
     @PostConstruct
     public void init() {
@@ -42,5 +46,6 @@ public class ProcessingArguments {
         args.add(CatsArg.builder().name("edgeSpacesStrategy").value(edgeSpacesStrategy).help(edgeSpacesStrategyHelp).build());
         args.add(CatsArg.builder().name("sanitizationStrategy").value(sanitizationStrategy).help(sanitizationStrategyHelp).build());
         args.add(CatsArg.builder().name("useExamples").value(useExamples).help(useExamplesHelp).build());
+        args.add(CatsArg.builder().name("largeStringsSize").value(String.valueOf(largeStringsSize)).help(largeStringsSizeHelp).build());
     }
 }
