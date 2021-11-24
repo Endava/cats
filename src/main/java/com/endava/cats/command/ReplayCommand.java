@@ -6,7 +6,7 @@ import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.report.CatsTestCase;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,7 +21,7 @@ import java.util.List;
  */
 @Component
 public class ReplayCommand {
-    private static final PrettyLogger LOGGER = PrettyLogger.fromSlf4j(LoggerFactory.getLogger(ReplayCommand.class));
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
     private final FilterArguments filterArguments;
 
