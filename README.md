@@ -29,7 +29,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate thousands of API tests within minutes with **no coding effort**. All tests are **generated and run automatically** based on a pre-defined 
-set of **76 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations and security. 
+set of **78 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations and security. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional flows.
 
 <div align="center">
@@ -94,7 +94,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 
 # Slicing Strategies for Running Cats
 
-CATS has a significant number of `Fuzzers`. Currently, **76** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+CATS has a significant number of `Fuzzers`. Currently, **78** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
 Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
