@@ -32,7 +32,6 @@ public class CheckArguments {
     @Value("${includeControlChars:empty}")
     private String includeControlChars;
 
-
     @Value("${arg.check.checkHeaders.help:help}")
     private String checkHeadersHelp;
     @Value("${arg.check.checkFields.help:help}")
