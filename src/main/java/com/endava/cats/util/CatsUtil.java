@@ -123,12 +123,12 @@ public class CatsUtil {
     }
 
     public static List<FuzzingStrategy> getLargeValuesStrategy(int largeStringsSize) {
-        String generatedValue = StringGenerator.generateRandomUnicode(1000);
-        int payloadSize = largeStringsSize / 1000;
+        String generatedValue = StringGenerator.generateRandomUnicode();
+        int payloadSize = largeStringsSize / generatedValue.length();
         if (payloadSize == 0) {
             return Collections.singletonList(FuzzingStrategy.replace().withData(CatsUtil.markLargeString(generatedValue.substring(0, largeStringsSize))));
         }
-        return Collections.singletonList(FuzzingStrategy.replace().withData(CatsUtil.markLargeString(StringUtils.repeat(generatedValue, payloadSize))));
+        return Collections.singletonList(FuzzingStrategy.replace().withData(CatsUtil.markLargeString(StringUtils.repeat(generatedValue, payloadSize + 1))));
     }
 
     public List<String> getControlCharsFields() {
