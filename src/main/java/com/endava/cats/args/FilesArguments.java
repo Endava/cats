@@ -157,7 +157,7 @@ public class FilesArguments {
             String[] urlParam = line.split(":");
             String pathVar = "{" + urlParam[0] + "}";
             if (startingUrl.contains(pathVar)) {
-                startingUrl = startingUrl.replace("{" + urlParam[0] + "}", urlParam[1]);
+                startingUrl = startingUrl.replace(pathVar, urlParam[1]);
             }
         }
         return startingUrl;
