@@ -159,13 +159,22 @@ public class TestCaseListener {
      */
     public void reportWarn(PrettyLogger logger, String message, Object... params) {
         int responseCode = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty()).getResponseCode();
-        if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))
-                && !filterArguments.isIgnoreResponseCodeUndocumentedCheck() && !filterArguments.isIgnoreResponseBodyCheck()) {
+        if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))) {
             executionStatisticsListener.increaseWarns();
             logger.warning(message, params);
             recordResult(message, params, Level.WARN.toString().toLowerCase());
         } else {
             this.reportInfo(logger, message, params);
+        }
+    }
+
+
+    private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, CatsResult catsResult, boolean ignoreCheck, Object... params) {
+        if (ignoreCheck) {
+            this.reportInfo(logger, catsResult, params);
+            setResultReason(catsResult);
+        } else {
+            this.reportWarn(logger, catsResult, params);
         }
     }
 
@@ -238,9 +247,9 @@ public class TestCaseListener {
         } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
             this.reportInfo(logger, CatsResult.OK, response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
-            this.reportWarn(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA, response.responseCodeAsString());
+            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA, filterArguments.isIgnoreResponseBodyCheck(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
-            this.reportWarn(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
+            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE, filterArguments.isIgnoreResponseCodeUndocumentedCheck(), expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
             this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeUnimplemented()) {
@@ -362,7 +371,7 @@ public class TestCaseListener {
         private final boolean responseCodeExpected;
         private final boolean responseCodeDocumented;
         private final boolean responseCodeUnimplemented;
-      
+
         private boolean isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema() {
             return matchesResponseSchema && responseCodeDocumented && responseCodeExpected;
         }
