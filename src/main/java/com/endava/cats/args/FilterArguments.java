@@ -46,20 +46,12 @@ public class FilterArguments {
     private String skipPaths;
     @Value("${skipFuzzers:empty}")
     private String skipFuzzers;
-    @Value("${skipFields:empty}")
-    private String skipFields;
     @Value("${httpMethods:empty}")
     private String httpMethods;
     @Value("${dryRun:false}")
     private String dryRun;
-    @Value("${ignoreResponseCodes:empty}")
-    private String ignoreResponseCodes;
     @Value("${tests:empty}")
     private String tests;
-    @Value("${ignoreResponseCodeUndocumentedCheck:empty}")
-    private String ignoreResponseCodeUndocumentedCheck;
-    @Value("${ignoreResponseBodyCheck:empty}")
-    private String ignoreResponseBodyCheck;
 
     @Value("${arg.filter.fuzzers.help:help}")
     private String suppliedFuzzersHelp;
@@ -71,23 +63,20 @@ public class FilterArguments {
     private String skipFuzzersHelp;
     @Value("${arg.filter.skipXXXForPath.help:help}")
     private String skipXXXForPathHelp;
-    @Value("${arg.filter.skipFields.help:help}")
-    private String skipFieldsHelp;
     @Value("${arg.filter.httpMethods.help:help}")
     private String httpMethodsHelp;
     @Value("${arg.filter.dryRun.help:help}")
     private String dryRunHelp;
-    @Value("${arg.filter.ignoreResponseCodes.help:help}")
-    private String ignoreResponseCodesHelp;
     @Value("${arg.filter.tests.help:help}")
     private String testsHelp;
-    @Value("${arg.filter.ignoreResponseCodeUndocumentedCheck.help:help}")
-    private String ignoreResponseCodeUndocumentedCheckHelp;
-    @Value("${arg.filter.ignoreResponseBodyCheck.help:help}")
-    private String ignoreResponseBodyCheckHelp;
+
 
     @Autowired
     private List<Fuzzer> fuzzers;
+
+    @Autowired
+    private IgnoreArguments ignoreArguments;
+
     @Autowired
     private CheckArguments checkArguments;
 
@@ -97,13 +86,9 @@ public class FilterArguments {
         args.add(CatsArg.builder().name("skipPaths").value(skipPaths).help(skipPathsHelp).build());
         args.add(CatsArg.builder().name("excludedFuzzers").value(skipFuzzers).help(skipFuzzersHelp).build());
         args.add(CatsArg.builder().name("skipXXXForPath").value(String.valueOf(skipFuzzersForPaths)).help(skipXXXForPathHelp).build());
-        args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
         args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
         args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());
-        args.add(CatsArg.builder().name("ignoreResponseCodes").value(ignoreResponseCodes).help(ignoreResponseCodesHelp).build());
         args.add(CatsArg.builder().name("tests").value(tests).help(testsHelp).build());
-        args.add(CatsArg.builder().name("ignoreResponseCodeUndocumentedCheck").value(ignoreResponseCodeUndocumentedCheck).help(ignoreResponseCodeUndocumentedCheckHelp).build());
-        args.add(CatsArg.builder().name("ignoreResponseBodyCheck").value(ignoreResponseBodyCheck).help(ignoreResponseBodyCheckHelp).build());
     }
 
     /**
@@ -147,12 +132,6 @@ public class FilterArguments {
                 .filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    public List<String> getSkippedFields() {
-        return Arrays.stream(skipFields.split(","))
-                .map(String::trim)
-                .collect(Collectors.toList());
-    }
-
     private void processSkipFuzzerFor(String... args) {
         List<String> skipForArgs = Arrays.stream(args)
                 .filter(arg -> arg.startsWith("--skip") && arg.contains("ForPath")).collect(Collectors.toList());
@@ -183,7 +162,7 @@ public class FilterArguments {
     }
 
     private List<String> removeContractFuzzersIfNeeded(List<String> currentFuzzers) {
-        if (!isEmptyIgnoredResponseCodes()) {
+        if (!ignoreArguments.isEmptyIgnoredResponseCodes()) {
             return currentFuzzers.stream().filter(fuzzer -> !fuzzer.contains("Contract"))
                     .collect(Collectors.toList());
         }
@@ -256,25 +235,6 @@ public class FilterArguments {
                 .collect(Collectors.toList());
     }
 
-    public List<String> getIgnoreResponseCodes() {
-        if (isEmptyIgnoredResponseCodes()) {
-            return Collections.emptyList();
-        }
-
-        return Arrays.stream(ignoreResponseCodes.split(",")).map(code -> code.trim().strip())
-                .collect(Collectors.toList());
-    }
-
-    public boolean isEmptyIgnoredResponseCodes() {
-        return !CatsUtil.isArgumentValid(ignoreResponseCodes);
-    }
-
-    public boolean isIgnoredResponseCode(String receivedResponseCode) {
-        return getIgnoreResponseCodes().stream()
-                .anyMatch(code -> code.equalsIgnoreCase(receivedResponseCode)
-                        || (code.substring(1, 3).equalsIgnoreCase("xx") && code.substring(0, 1).equalsIgnoreCase(receivedResponseCode.substring(0, 1))));
-
-    }
 
     public boolean areTestCasesSupplied() {
         return CatsUtil.isArgumentValid(tests);
@@ -291,13 +251,5 @@ public class FilterArguments {
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
                 .collect(Collectors.toList());
 
-    }
-
-    public boolean isIgnoreResponseCodeUndocumentedCheck() {
-        return !"empty".equalsIgnoreCase(ignoreResponseCodeUndocumentedCheck);
-    }
-
-    public boolean isIgnoreResponseBodyCheck() {
-        return !"empty".equalsIgnoreCase(ignoreResponseBodyCheck);
     }
 }

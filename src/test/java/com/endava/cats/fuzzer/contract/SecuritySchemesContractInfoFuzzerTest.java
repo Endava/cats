@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
@@ -32,7 +33,7 @@ class SecuritySchemesContractInfoFuzzerTest {
     private ExecutionStatisticsListener executionStatisticsListener;
 
     @MockBean
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     @MockBean
     private TestCaseExporter testCaseExporter;

@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsHeader;
@@ -37,7 +38,7 @@ class BypassAuthenticationFuzzerTest {
     private TestCaseListener testCaseListener;
 
     @MockBean
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;

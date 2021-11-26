@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({FilterArguments.class, CheckArguments.class, CatsMain.class})
+@SpringJUnitConfig({FilterArguments.class, CheckArguments.class, CatsMain.class, IgnoreArguments.class})
 @SpringBootTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class FilterArgumentsTest {
@@ -29,6 +29,9 @@ class FilterArgumentsTest {
 
     @Autowired
     private CheckArguments checkArguments;
+
+    @Autowired
+    private IgnoreArguments ignoreArguments;
 
 
     @ParameterizedTest
@@ -86,7 +89,7 @@ class FilterArgumentsTest {
     @Test
     void shouldNotReturnContractFuzzersWhenIgnoredSupplied() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "2xx");
+        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", "2xx");
 
         filterArguments.loadConfig();
         List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
@@ -139,29 +142,6 @@ class FilterArgumentsTest {
         Assertions.assertThat(httpMethods).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
     }
 
-    @ParameterizedTest
-    @CsvSource(value = {"null", "'", "'   '", "empty"}, nullValues = {"null"})
-    void shouldReturnFalseForProvidedIgnoredCodes(String codes) {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", codes);
-
-        Assertions.assertThat(filterArguments.isEmptyIgnoredResponseCodes()).isTrue();
-    }
-
-    @Test
-    void shouldReturnIgnoreHttpCodes() {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "200,4XX");
-        List<String> ignoredCodes = filterArguments.getIgnoreResponseCodes();
-
-        Assertions.assertThat(ignoredCodes).containsOnly("200", "4XX");
-    }
-
-    @Test
-    void shouldReturnEmptyIgnoreHttpCodes() {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "empty");
-        List<String> ignoredCodes = filterArguments.getIgnoreResponseCodes();
-
-        Assertions.assertThat(ignoredCodes).isEmpty();
-    }
 
     @Test
     void shouldReturnNotPresentTestCases() {
@@ -171,37 +151,6 @@ class FilterArgumentsTest {
         Assertions.assertThat(testCasesPresent).isFalse();
     }
 
-    @Test
-    void shouldReturnIgnoreUndocumentedCode() {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodeUndocumentedCheck", "true");
-        boolean testCasesPresent = filterArguments.isIgnoreResponseCodeUndocumentedCheck();
-
-        Assertions.assertThat(testCasesPresent).isTrue();
-    }
-
-    @Test
-    void shouldReturnFalseIgnoreUndocumentedCode() {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodeUndocumentedCheck", "empty");
-        boolean testCasesPresent = filterArguments.isIgnoreResponseCodeUndocumentedCheck();
-
-        Assertions.assertThat(testCasesPresent).isFalse();
-    }
-
-    @Test
-    void shouldReturnIgnoreResponseBodyCheck() {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseBodyCheck", "true");
-        boolean testCasesPresent = filterArguments.isIgnoreResponseBodyCheck();
-
-        Assertions.assertThat(testCasesPresent).isTrue();
-    }
-
-    @Test
-    void shouldReturnFalseIgnoreResponseBodyCheck() {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseBodyCheck", "empty");
-        boolean testCasesPresent = filterArguments.isIgnoreResponseBodyCheck();
-
-        Assertions.assertThat(testCasesPresent).isFalse();
-    }
 
     @Test
     void shouldReturnTestCases() {
@@ -217,14 +166,5 @@ class FilterArgumentsTest {
         List<String> testCases = filterArguments.parseTestCases();
 
         Assertions.assertThat(testCases).contains("cats-report/Test10.json", "Test12.json");
-    }
-
-    @Test
-    void shouldMatchIgnoredResponseCodes() {
-        ReflectionTestUtils.setField(filterArguments, "ignoreResponseCodes", "2XX,400");
-        Assertions.assertThat(filterArguments.isIgnoredResponseCode("200")).isTrue();
-        Assertions.assertThat(filterArguments.isIgnoredResponseCode("202")).isTrue();
-        Assertions.assertThat(filterArguments.isIgnoredResponseCode("400")).isTrue();
-        Assertions.assertThat(filterArguments.isIgnoredResponseCode("404")).isFalse();
     }
 }

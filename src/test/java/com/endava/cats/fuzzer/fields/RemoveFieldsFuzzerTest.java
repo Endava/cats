@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -48,7 +48,7 @@ class RemoveFieldsFuzzerTest {
     private TestCaseExporter testCaseExporter;
 
     @MockBean
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     @SpyBean
     private BuildProperties buildProperties;
@@ -73,7 +73,7 @@ class RemoveFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filterArguments);
+        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, ignoreArguments);
     }
 
     @Test
@@ -81,7 +81,7 @@ class RemoveFieldsFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getAllFields(Mockito.any(), Mockito.any())).thenReturn(Collections.singleton(Collections.singleton("id")));
         ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
-        Mockito.when(filterArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
+        Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
         removeFieldsFuzzer.fuzz(data);
 
         Mockito.verifyNoInteractions(testCaseListener);

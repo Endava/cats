@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
@@ -39,7 +40,7 @@ class RemoveHeadersFuzzerTest {
     private TestCaseListener testCaseListener;
 
     @MockBean
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;

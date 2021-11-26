@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -46,7 +47,7 @@ class CustomFuzzerTest {
     private TestCaseListener testCaseListener;
 
     @MockBean
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;
