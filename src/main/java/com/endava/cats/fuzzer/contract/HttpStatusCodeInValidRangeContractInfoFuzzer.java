@@ -14,12 +14,12 @@ import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Component
-@ConditionalOnProperty(value = "fuzzer.contract.HttpStatusCodeInValidRangeFuzzer.enabled", havingValue = "true")
-public class HttpStatusCodeInValidRangeFuzzer extends BaseContractInfoFuzzer {
+@ConditionalOnProperty(value = "fuzzer.contract.HttpStatusCodeInValidRangeContractInfoFuzzer.enabled", havingValue = "true")
+public class HttpStatusCodeInValidRangeContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     @Autowired
-    public HttpStatusCodeInValidRangeFuzzer(TestCaseListener tcl) {
+    public HttpStatusCodeInValidRangeContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 

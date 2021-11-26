@@ -99,6 +99,19 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldNotReturnContractFuzzersWhenBlackbox() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
+        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", "empty");
+        ReflectionTestUtils.setField(ignoreArguments, "blackbox", "true");
+
+        filterArguments.loadConfig();
+        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+
+        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
+                .doesNotContain("TopLevelElementsContractInfoFuzzer");
+    }
+
+    @Test
     void shouldRemoveSkippedFuzzers() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", "VeryLarge, SecurityHeaders, Jumbo");
         filterArguments.loadConfig();
