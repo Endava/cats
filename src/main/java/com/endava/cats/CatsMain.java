@@ -7,6 +7,7 @@ import com.endava.cats.args.CatsArg;
 import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.ReplayCommand;
@@ -106,6 +107,8 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     private AuthArguments authArgs;
     @Autowired
     private ReplayCommand replayCommand;
+    @Autowired
+    private IgnoreArguments ignoreArguments;
     @Autowired
     private List<Fuzzer> fuzzers;
     @Autowired
@@ -456,6 +459,7 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
         reportingArguments.getArgs().forEach(consumer);
         filesArguments.getArgs().forEach(consumer);
         authArgs.getArgs().forEach(consumer);
+        ignoreArguments.getArgs().forEach(consumer);
     }
 
     private void printArg(CatsArg arg) {

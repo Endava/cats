@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
@@ -13,16 +12,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
-class HttpStatusCodeInValidRangeFuzzerTest {
+class HttpStatusCodeInValidRangeContractInfoFuzzerTest {
 
 
     @SpyBean
@@ -40,7 +37,7 @@ class HttpStatusCodeInValidRangeFuzzerTest {
     @SpyBean
     private BuildProperties buildProperties;
 
-    private HttpStatusCodeInValidRangeFuzzer httpStatusCodeInValidRangeFuzzer;
+    private HttpStatusCodeInValidRangeContractInfoFuzzer httpStatusCodeInValidRangeContractInfoFuzzer;
 
     @BeforeAll
     static void init() {
@@ -51,7 +48,7 @@ class HttpStatusCodeInValidRangeFuzzerTest {
 
     @BeforeEach
     void setup() {
-        httpStatusCodeInValidRangeFuzzer = new HttpStatusCodeInValidRangeFuzzer(testCaseListener);
+        httpStatusCodeInValidRangeContractInfoFuzzer = new HttpStatusCodeInValidRangeContractInfoFuzzer(testCaseListener);
     }
 
     @ParameterizedTest
@@ -59,7 +56,7 @@ class HttpStatusCodeInValidRangeFuzzerTest {
     void shouldReportInfoWhenAllResponseCodesAreValid(String responseCode) {
         FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData("PetStore", responseCode);
 
-        httpStatusCodeInValidRangeFuzzer.fuzz(data);
+        httpStatusCodeInValidRangeContractInfoFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("All defined response codes are valid!"));
     }
@@ -69,7 +66,7 @@ class HttpStatusCodeInValidRangeFuzzerTest {
     void shouldReportErrorWhenAllResponseCodesAreValid(String responseCode) {
         FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData("PetStore", responseCode);
 
-        httpStatusCodeInValidRangeFuzzer.fuzz(data);
+        httpStatusCodeInValidRangeContractInfoFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following response codes are not valid: {}"), Mockito.any());
     }
@@ -77,11 +74,11 @@ class HttpStatusCodeInValidRangeFuzzerTest {
 
     @Test
     void shouldReturnSimpleClassNameForToString() {
-        Assertions.assertThat(httpStatusCodeInValidRangeFuzzer).hasToString(httpStatusCodeInValidRangeFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(httpStatusCodeInValidRangeContractInfoFuzzer).hasToString(httpStatusCodeInValidRangeContractInfoFuzzer.getClass().getSimpleName());
     }
 
     @Test
     void shouldReturnMeaningfulDescription() {
-        Assertions.assertThat(httpStatusCodeInValidRangeFuzzer.description()).isEqualTo("verifies that all HTTP response codes are within the range of 100 to 599");
+        Assertions.assertThat(httpStatusCodeInValidRangeContractInfoFuzzer.description()).isEqualTo("verifies that all HTTP response codes are within the range of 100 to 599");
     }
 }

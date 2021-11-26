@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 @Component
 @Getter
 public class IgnoreArguments {
+    private static final String EMPTY = "empty";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(IgnoreArguments.class);
     private final List<CatsArg> args = new ArrayList<>();
 
@@ -28,6 +29,8 @@ public class IgnoreArguments {
     private String ignoreResponseCodes;
     @Value("${skipFields:empty}")
     private String skipFields;
+    @Value("${blackbox:empty}")
+    private String blackbox;
 
     @Value("${arg.filter.ignoreResponseCodeUndocumentedCheck.help:help}")
     private String ignoreResponseCodeUndocumentedCheckHelp;
@@ -37,6 +40,8 @@ public class IgnoreArguments {
     private String ignoreResponseCodesHelp;
     @Value("${arg.filter.skipFields.help:help}")
     private String skipFieldsHelp;
+    @Value("${arg.filter.blackbox.help:help}")
+    private String blackboxHelp;
 
     @PostConstruct
     public void init() {
@@ -44,6 +49,7 @@ public class IgnoreArguments {
         args.add(CatsArg.builder().name("ignoreResponseCodeUndocumentedCheck").value(ignoreResponseCodeUndocumentedCheck).help(ignoreResponseCodeUndocumentedCheckHelp).build());
         args.add(CatsArg.builder().name("ignoreResponseBodyCheck").value(ignoreResponseBodyCheck).help(ignoreResponseBodyCheckHelp).build());
         args.add(CatsArg.builder().name("skipFields").value(skipFields).help(skipFieldsHelp).build());
+        args.add(CatsArg.builder().name("blackbox").value(blackbox).help(blackboxHelp).build());
     }
 
     public List<String> getIgnoreResponseCodes() {
@@ -73,10 +79,14 @@ public class IgnoreArguments {
     }
 
     public boolean isIgnoreResponseCodeUndocumentedCheck() {
-        return !"empty".equalsIgnoreCase(ignoreResponseCodeUndocumentedCheck);
+        return !EMPTY.equalsIgnoreCase(ignoreResponseCodeUndocumentedCheck);
     }
 
     public boolean isIgnoreResponseBodyCheck() {
-        return !"empty".equalsIgnoreCase(ignoreResponseBodyCheck);
+        return !EMPTY.equalsIgnoreCase(ignoreResponseBodyCheck);
+    }
+
+    public boolean isBlackbox() {
+        return !EMPTY.equalsIgnoreCase(blackbox);
     }
 }

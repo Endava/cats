@@ -78,6 +78,21 @@ class IgnoreArgumentsTest {
         Assertions.assertThat(testCasesPresent).isFalse();
     }
 
+    @Test
+    void shouldReturnTrueIsBlackbox() {
+        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseBodyCheck", "true");
+        boolean testCasesPresent = ignoreArguments.isIgnoreResponseBodyCheck();
+
+        Assertions.assertThat(testCasesPresent).isTrue();
+    }
+
+    @Test
+    void shouldReturnFalseIsBlackbox() {
+        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseBodyCheck", "empty");
+        boolean testCasesPresent = ignoreArguments.isIgnoreResponseBodyCheck();
+
+        Assertions.assertThat(testCasesPresent).isFalse();
+    }
 
     @Test
     void shouldMatchIgnoredResponseCodes() {
