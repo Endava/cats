@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -33,13 +34,13 @@ class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
     @Mock
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     private OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer onlySingleCodePointEmojisInFieldsValidateTrimFuzzer;
 
     @BeforeEach
     void setup() {
-        onlySingleCodePointEmojisInFieldsValidateTrimFuzzer = new OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+        onlySingleCodePointEmojisInFieldsValidateTrimFuzzer = new OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, ignoreArguments);
     }
 
     @Test

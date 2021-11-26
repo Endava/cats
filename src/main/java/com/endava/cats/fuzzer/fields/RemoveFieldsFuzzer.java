@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -35,7 +35,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
-    private final FilterArguments filterArguments;
+    private final IgnoreArguments ignoreArguments;
 
     @Value("${fieldsFuzzingStrategy:ONEBYONE}")
     private String fieldsFuzzingStrategy;
@@ -44,11 +44,11 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     private String maxFieldsToRemove;
 
     @Autowired
-    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilterArguments fa) {
+    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, IgnoreArguments fa) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = cu;
-        this.filterArguments = fa;
+        this.ignoreArguments = fa;
     }
 
     public void fuzz(FuzzingData data) {
@@ -65,7 +65,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
     private Set<String> removeIfSkipped(Set<String> subset) {
         return subset.stream()
-                .filter(field -> !filterArguments.getSkippedFields().contains(field))
+                .filter(field -> !ignoreArguments.getSkippedFields().contains(field))
                 .collect(Collectors.toSet());
     }
 

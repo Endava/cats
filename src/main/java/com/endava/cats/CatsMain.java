@@ -38,13 +38,13 @@ import org.springframework.boot.Banner;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
 import org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration;
-import org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.MimeTypeUtils;
@@ -74,8 +74,9 @@ import static org.fusesource.jansi.Ansi.ansi;
 @ConditionalOnResource(
         resources = {"${spring.info.build.location:classpath:META-INF/build-info.properties}"}
 )
-@SpringBootApplication(exclude = {MustacheAutoConfiguration.class})
 @Import({AopAutoConfiguration.class, GsonAutoConfiguration.class, ProjectInfoAutoConfiguration.class})
+@ComponentScan(basePackages = {"com.endava.cats"})
+@SpringBootConfiguration
 public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
     public static final AtomicInteger TEST = new AtomicInteger(0);
     public static final String ALL = "all";

@@ -2,6 +2,7 @@ package com.endava.cats.report;
 
 import com.endava.cats.CatsMain;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.TestCaseExporter;
@@ -41,6 +42,9 @@ class TestCaseListenerTest {
     private TestCaseExporter testCaseExporter;
 
     @Mock
+    private IgnoreArguments ignoreArguments;
+
+    @Mock
     private FilterArguments filterArguments;
 
     @Mock
@@ -57,7 +61,7 @@ class TestCaseListenerTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties, filterArguments);
+        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties, ignoreArguments);
     }
 
     @AfterEach
@@ -145,9 +149,9 @@ class TestCaseListenerTest {
     @ParameterizedTest
     @CsvSource({"true,false,false", "false,true,false", "true,true,true"})
     void shouldCallInfoInsteadOfWarnWhenIgnoreCodeSupplied(boolean ignoreResponseCodes, boolean ignoreUndocumentedRespCode, boolean ignoreResponseBodyCheck) {
-        Mockito.when(filterArguments.isIgnoredResponseCode(Mockito.anyString())).thenReturn(ignoreResponseCodes);
-        Mockito.when(filterArguments.isIgnoreResponseCodeUndocumentedCheck()).thenReturn(ignoreUndocumentedRespCode);
-        Mockito.when(filterArguments.isIgnoreResponseBodyCheck()).thenReturn(ignoreResponseBodyCheck);
+        Mockito.when(ignoreArguments.isIgnoredResponseCode(Mockito.anyString())).thenReturn(ignoreResponseCodes);
+        Mockito.when(ignoreArguments.isIgnoreResponseCodeUndocumentedCheck()).thenReturn(ignoreUndocumentedRespCode);
+        Mockito.when(ignoreArguments.isIgnoreResponseBodyCheck()).thenReturn(ignoreResponseBodyCheck);
 
         CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
         FuzzingData data = Mockito.mock(FuzzingData.class);
@@ -175,7 +179,7 @@ class TestCaseListenerTest {
     @Test
     void shouldCallInfoInsteadOfErrorWhenIgnoreCodeSupplied() {
         Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
-        Mockito.when(filterArguments.isIgnoredResponseCode("200")).thenReturn(true);
+        Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addScenario(logger, "Given a {} field", "string");

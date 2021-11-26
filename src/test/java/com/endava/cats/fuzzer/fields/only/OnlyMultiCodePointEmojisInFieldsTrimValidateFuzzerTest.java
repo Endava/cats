@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -31,13 +32,13 @@ class OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
     @Mock
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     private OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzer onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer;
 
     @BeforeEach
     void setup() {
-        onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer = new OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+        onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer = new OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, ignoreArguments);
     }
 
     @Test

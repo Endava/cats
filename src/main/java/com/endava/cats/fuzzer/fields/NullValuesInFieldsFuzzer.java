@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
@@ -23,12 +23,12 @@ import java.util.List;
 @FieldFuzzer
 @ConditionalOnProperty(value = "fuzzer.fields.NullValuesInFieldsFuzzer.enabled", havingValue = "true")
 public class NullValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
-    private final FilterArguments filterArguments;
+    private final IgnoreArguments ignoreArguments;
 
     @Autowired
-    public NullValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
+    public NullValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, IgnoreArguments fa) {
         super(sc, lr, cu, cp);
-        this.filterArguments = fa;
+        this.ignoreArguments = fa;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class NullValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzz
 
     @Override
     public List<String> skipForFields() {
-        return filterArguments.getSkippedFields();
+        return ignoreArguments.getSkippedFields();
     }
 
     @Override

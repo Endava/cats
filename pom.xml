@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.endava</groupId>
@@ -10,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.5</version>
+        <version>2.6.0</version>
     </parent>
 
     <properties>
@@ -75,8 +76,8 @@
                     <executable>true</executable>
                     <outputDirectory>${project.basedir}</outputDirectory>
                     <excludeDevtools>true</excludeDevtools>
-                    <layout>ZIP</layout>
-                    <jvmArguments>-Xverify:none -XX:TieredStopAtLevel=1</jvmArguments>
+                    <noverify>true</noverify>
+                    <jvmArguments>-Xverify:none -XX:TieredStopAtLevel=1 -noverify -Xquickstart</jvmArguments>
                 </configuration>
                 <executions>
                     <execution>

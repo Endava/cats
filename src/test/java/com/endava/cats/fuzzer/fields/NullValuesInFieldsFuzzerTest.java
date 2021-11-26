@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -40,7 +40,7 @@ class NullValuesInFieldsFuzzerTest {
     private FilesArguments filesArguments;
 
     @MockBean
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     @MockBean
     private ExecutionStatisticsListener executionStatisticsListener;
@@ -50,17 +50,17 @@ class NullValuesInFieldsFuzzerTest {
 
     @SpyBean
     private BuildProperties buildProperties;
-    
+
     private NullValuesInFieldsFuzzer nullValuesInFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, ignoreArguments);
     }
 
     @Test
     void shouldNotRunForSkippedFields() {
-        Mockito.when(filterArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
+        Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
         Assertions.assertThat(nullValuesInFieldsFuzzer.skipForFields()).containsOnly("id");
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getAllFields()).thenReturn(Sets.newHashSet("id"));

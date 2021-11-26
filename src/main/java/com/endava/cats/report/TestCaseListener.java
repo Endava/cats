@@ -1,7 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.CatsMain;
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.PayloadGenerator;
@@ -54,10 +54,10 @@ public class TestCaseListener {
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
     private final BuildProperties buildProperties;
-    private final FilterArguments filterArguments;
+    private final IgnoreArguments filterArguments;
 
     @Autowired
-    public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties, FilterArguments filterArguments) {
+    public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties, IgnoreArguments filterArguments) {
         this.executionStatisticsListener = er;
         this.testCaseExporter = tce;
         this.buildProperties = buildProperties;

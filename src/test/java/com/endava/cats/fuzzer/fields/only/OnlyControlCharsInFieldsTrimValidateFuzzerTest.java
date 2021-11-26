@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -34,14 +34,14 @@ class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
     @Mock
     private FilesArguments filesArguments;
     @Mock
-    private FilterArguments filterArguments;
+    private IgnoreArguments ignoreArguments;
 
     private OnlyControlCharsInFieldsTrimValidateFuzzer onlyControlCharsInFieldsTrimValidateFuzzer;
 
     @BeforeEach
     void setup() {
-        onlyControlCharsInFieldsTrimValidateFuzzer = new OnlyControlCharsInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
-        Mockito.when(filterArguments.getSkippedFields()).thenReturn(Collections.singletonList("pet"));
+        onlyControlCharsInFieldsTrimValidateFuzzer = new OnlyControlCharsInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, ignoreArguments);
+        Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("pet"));
     }
 
     @Test
