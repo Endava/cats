@@ -18,8 +18,9 @@
 
 **REST APIs fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
 
-- **Comprehensive**: tests are generated automatically based on a large number scenarios
-- **Highly Configurable**: high amount of customization to adapt to each context
+- **Comprehensive**: tests are generated automatically based on a large number scenarios and cover **every** field and header
+- **Intelligent**: tests are generated based on data types and constraints; each Fuzzer have specific expectations depending on the scenario under test
+- **Highly Configurable**: high amount of customization: you can exclude specific Fuzzers, HTTP response codes, provide business context and a lot more
 - **Self-Healing**: as tests are generated, any OpenAPI spec change is picked up automatically
 - **Simple to Learn**: flat learning curve, with intuitive configuration and syntax
 - **Fast**: automatic process for write, run and report tests which covers thousands of scenarios within minutes
@@ -28,8 +29,9 @@
 
 
 # Overview
-By using a simple and minimal syntax, with a flat learning curve, CATS enables you to generate thousands of API tests within minutes with **no coding effort**. All tests are **generated and run automatically** based on a pre-defined 
-set of **78 Fuzzers**. The Fuzzers cover different types of testing like: negative testing, boundary testing, structural validations and security. 
+By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
+All tests are **generated, run and reported automatically** based on a pre-defined set of **78 Fuzzers**. 
+The Fuzzers cover a wide range up input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional flows.
 
 <div align="center">
@@ -41,120 +43,108 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
 Starting with version 6.1.0, CATS does not include the `ControlChars, Emojis and Whitespaces` Fuzzers in a normal run. 
 In order to include them use the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments. 
 
-Please check the <a href="#slicint-strategies">Slicing Strategies</a> section for making CATS running fast and comprehensive in the same time.
+Please check the <a href="#slicing-strategies-for-running-cats">Slicing Strategies</a> section for making CATS running fast and comprehensive in the same time.
 
 </h3>
 
-# Contract driven Auto-generated Tests for Swagger
-Automation testing is cool, but what if you could automate testers? More specifically, what if you could automate **the entire** process of writing test cases, getting test data, writing the automation tests and then running them?  This is what CATS does.
-
-CATS is a tool that **generates tests at runtime** based on a given **OpenAPI** contract. It will also automatically run those tests against a given service instance to check if the API has been implemented in accordance with its contract. Think of it as a tool that **eliminates the boring testing** activities from contract and API testing, allowing you to **focus on creative exploratory scenarios**.
-
-The tests are generated based on configured `Fuzzer`s. Each `Fuzzer` will test several scenarios and report the resulting behaviour in both the console and in the generated test report.
-
-The following logging levels are used (in both the console, and the test report) to report the testing activity:
-
-- `INFO`/`SUCCESS` will report normal documented behaviour. This is expected behaviour. No need for action.
-- `WARN` will report normal but undocumented behaviour or some misalignment between the contract and the service. This will **ideally** be actioned.
-- `ERROR` will report abnormal/unexpected behaviour. This **must** be actioned.
-
-
-# How the Fuzzing works
-CATS will iterate through **all endpoints**, **all HTTP methods** and **all the associated requests bodies and parameters** (including multiple combinations when dealing with `oneOf`/`anyOf` elements) and fuzz their data models fields values according to their defined data type and constraints. The actual fuzzing depends on the specific `Fuzzer` executed. Please see the list of fuzzers and their behaviour.
-There are also differences on how the fuzzing works depending on the HTTP method:
-
-- for methods with request bodies like **POST, PUT** the fuzzing will be applied at the **request body data models level**
-- for methods without request bodies like **GET, DELETE** the fuzzing will be applied at the **URL parameters level**
-
-This means that for methods with request bodies (`POST,PUT`) that have also URL/path parameters, you need to supply the `path` parameters via `urlParams` or the `referenceData` file as failure to do so will result in `Illegal character in path at index ...` errors. 
-
 # Tutorials on how to use CATS
+
 This is a list of articles with step-by-step guides on how to use CATS:
 * [Testing the GitHub API with CATS](https://ludovicianul.github.io/2020/10/05/github-api-testing/)
 * [How to write self-healing functional tests with no coding effort](https://ludovicianul.github.io/2020/09/09/cats/)
 
-# Build
+# Some bugs found by CATS
 
-You can build CATS from sources on you local box. You just need Java 11+. Maven is already bundled.
+- https://github.com/hashicorp/vault/issues/13274
+- https://github.com/hashicorp/vault/issues/13273
+- https://github.com/hashicorp/vault/issues/13225
+- https://github.com/hashicorp/vault/issues/13232
+
+# Installation
+
+CATS is bundled as an executable JAR which can be run as a simple script as `>./cats.jar` or `>cats` (if properly symlinked and/or placed inside `PATH`). It requires Java11+. 
+
+Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
+
+## Build
+
+You can build CATS from sources on you local box. You need Java 11+. Maven is already bundled.
 
 **Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork ok `OKHttpClient` which will install locally
-under the `4.9.1-CATS` version, so don't worry about any overriding of official versions.**
+under the `4.9.1-CATS` version, so don't worry about overriding the official versions.**
 
 You can use the following Maven command to build the project:
 
 `./mvnw clean package`
 
-This will output a `cats.jar` file in the current directory. The file is an executable JAR that will run in Linux environments. Just run `chmod +x cats.jar` to make the file executable.
+This will output a `cats.jar` in the current folder. Do a `chmod +x cats.jar` to make it executable. 
 
 **Note:** You will need to configure Maven with a [Github PAT](https://docs.github.com/en/free-pro-team@latest/packages/guides/configuring-apache-maven-for-use-with-github-packages) with `read-packages` scope to get some dependencies for the build.
 
-## Notes on Unit Tests
+### Notes on Unit Tests
 
 You may see some `ERROR` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the `Fuzzers`.
 
-# Slicing Strategies for Running Cats
+# Running CATS
 
-CATS has a significant number of `Fuzzers`. Currently, **78** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
-For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
-Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
+## Blackbox mode
 
-Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages in a deployment pipeline, one after the other.
+Blackbox mode means that CATS doesn't need any specific context for the service. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](#headers-file).
 
-## Split by Endpoints
-You can use the `--paths=PATH` argument to run CATS sequentially for each path.
+`./cats.jar --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox`
 
-## Split by Fuzzer Category
-You can use the `--checkXXX` arguments to run CATS only with specific `Fuzzers` like: `--checkHttp`, `-checkFields`, etc.
+In blackbox mode CATS will only report ERRORs if the HTTP response codes received by Fuzzers is a `5XX`. 
+Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and service returns `200`) will be ignored.
 
-## Split by Fuzzer Type
-You can use various arguments like `--fuzers=XXX` or `-skipFuzzer=XXX` to either include or exclude specific `Fuzzers`. 
-For example, you can run all `Fuzzers` except for the `ControlChars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
-After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
+The blackbox mode is similar to a smoke test. It will quickly tell you if the application has major bugs that must be addressed **immediately**.
 
-These are just some recommendations on how you can split the types of tests cases. Depending on how complex your API is, you might go with a combination of the above or with even more granular splits.
+## Context mode
 
-Please note that due to the fact that `ControlChars, Emojis and Whitespaces` generate huge number of tests even for small OpenAPI contracts, they are disabled by default.
-You can enable them using the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments. 
-The recommendation is to run them in separate runs so that you get manageable reports and optimal running times.
+The real power of CATS relies on running it in a non-blackbox mode also called context mode. 
+Each Fuzzer has an expected HTTP response code based on the scenario under test and will also check if the response is matching the schema defined in the OpenAPI spec specific to that response code.
+This will allow you to tweak either your OpenAPI spec or service behaviour in order to create good quality APIs and documentation and also to avoid possible bugs.
 
-# Available Commands
-To list all available commands, run CATS with no arguments:
-`./cats.jar` 
+Running CATS in context mode usually implies providing it a [--refData](#reference-data-file) file with identifiers that are specific to the business logic like. 
+CATS cannot create data on its own (yet), so it's important that any request field or query param that requires pre-existence of those entities/resources to be created in advance and added to the reference data file.
 
-Other ways to get help from the CATS command are as follows:
-
-- `./cats.jar help` will list all available options
-
-- `./cats.jar version` will display the current CATS version
-
-- `./cats.jar list fuzzers` will list all the existing fuzzers, grouped on categories
-
-- `./cats.jar list fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
-
-- `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
-
-- `./cats.jar replay --tests="test1,test2"` will replay the given tests `test1` and `test2`
-
-# Running CATS with Fuzzers
-A minimal run must provide the Swagger/OpenAPI contract, and the URL address of the service:
-
-`./cats.jar --contract=mycontract.yml --server=https://localhost:8080`
-
-But there are multiple other arguments you can supply. More details in the [available arguments](#available-arguments) section.
+`./cats.jar --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml`
 
 ## Notes on skipped Tests
 You may notice a significant number of tests marked as `skipped`. CATS will try to apply all `Fuzzers` to all fields, but this is not always possible.
 For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will be marked as skipped.
 It was an intentional decision to report also the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
 
+
+Additionally, CATS support a lot [more arguments](#available-arguments) that allows you to restrict the number of fuzzers, provide timeouts, limit the number of requests per minute and so on.
+
+# Understanding how CATS works and reports results
+
+CATS generates tests based on configured `Fuzzer`s. Each `Fuzzer` has a specific scenario and a specific expected result.
+The CATS engine will run the scenario, get the result from the service and match it with the `Fuzzer` expected result.
+Depending on ont the matching outcome, CATS will report as follows:
+
+- `INFO`/`SUCCESS` is expected and documented behaviour. No need for action.
+- `WARN` is expected but undocumented behaviour or some misalignment between the contract and the service. This will **ideally** be actioned.
+- `ERROR` is abnormal/unexpected behaviour. This **must** be actioned.
+
+CATS will iterate through **all endpoints**, **all HTTP methods** and **all the associated requests bodies and parameters** (including multiple combinations when dealing with `oneOf`/`anyOf` elements) and fuzz their values considering their defined data type and constraints.
+The actual fuzzing depends on the specific `Fuzzer` executed. Please see the list of fuzzers and their behaviour.
+There are also differences on how the fuzzing works depending on the HTTP method:
+
+- for methods with request bodies like **POST, PUT** the fuzzing will be applied at the **request body data models level**
+- for methods without request bodies like **GET, DELETE** the fuzzing will be applied at the **URL parameters level**
+
+This means that for methods with request bodies (`POST,PUT`) that have also URL/path parameters, you need to supply the `path` parameters via [`urlParams`](#url-parameters) or the [`referenceData`](#reference-data-file) file as failure to do so will result in `Illegal character in path at index ...` errors.
+
 # Interpreting Results
-After you run it, CATS will produce an execution report in a folder called `cats-report/TIMESTAMP` or `cats-report` depending on the `--timestampReports` argument. The folder will be created inside the current folder (if it doesn't exist) and for each run a new subfolder will be 
-created with the `TIMESTAMP` value when the run started. This allows you to have a history of the runs. The report itself is in the `index.html` file, which will contain the following details:
+
+CATS produces an execution report in a folder called `cats-report/TIMESTAMP` or `cats-report` depending on the `--timestampReports` argument. The folder will be created inside the current folder (if it doesn't exist) and for each run a new subfolder will be
+created with the `TIMESTAMP` value when the run started. This allows you to have a history of the runs. The report itself is in the `index.html` file, where you can:
 
 - filter test runs based on the result: `All`, `Success`, `Warn` and `Error`
 - filter based on the `Fuzzer` so that you can only see the runs for that specific `Fuzzer`
-- a summary table with all the tests with their corresponding path against they were run, and the result
-- ability to click on any tests and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
+- see summary with all the tests with their corresponding path against they were run, and the result
+- have ability to click on any tests and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
 
 Understanding the `Result Reason` values:
 - `Unexpected Exception` - reported as `error`; this might indicate a possible bug in the service or a corner case that is not handled correctly by CATS
@@ -171,6 +161,42 @@ And this is what you get when you click on a specific test:
 ![test details](images/test_details_1.png)
 ![test details](images/test_details_2.png)
 
+
+# Slicing Strategies for Running Cats
+
+CATS has a significant number of `Fuzzers`. Currently, **78** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
+Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
+
+Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages in a deployment pipeline, one after the other.
+
+## Split by Endpoints
+You can use the `--paths=PATH` argument to run CATS sequentially for each path.
+
+## Split by Fuzzer Category
+You can use the `--checkXXX` arguments to run CATS only with specific `Fuzzers` like: `--checkHttp`, `-checkFields`, etc.
+
+## Split by Fuzzer Type
+You can use various arguments like `--fuzers=Fuzzer1,Fuzzer2` or `-skipFuzzers=Fuzzer1,Fuzzer2` to either include or exclude specific `Fuzzers`. 
+For example, you can run all `Fuzzers` except for the `ControlChars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
+After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
+
+There might be situations when you would want to skip some fuzzers for specific paths. This can be done using the `--skipXXXForPath=path1,path2` argument.
+This is an example:
+
+```bash
+./cats.jar --contract=api.yml --server=http://localhost:8080 --skipVeryLargeValuesInFieldsFuzzerForPath=/pet/{id},/pets
+```
+
+Running the above command will run all the fuzzers for all the paths, except for the `VeryLargeValuesInFieldsFuzzer` which won't be run for the `/pet/{id}` and `/pets` paths.
+
+You can supply multiple `--skipXXXForPath` arguments.
+
+These are just some recommendations on how you can split the types of tests cases. Depending on how complex your API is, you might go with a combination of the above or with even more granular splits.
+
+Please note that due to the fact that `ControlChars, Emojis and Whitespaces` generate huge number of tests even for small OpenAPI contracts, they are disabled by default.
+You can enable them using the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments. 
+The recommendation is to run them in separate runs so that you get manageable reports and optimal running times.
 
 # Ignoring Specific HTTP Response Codes
 By default, CATS will report `WARNs` and `ERRORs` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.
@@ -201,6 +227,25 @@ Some notes on the above example:
 - test names can be separated by comma `,`
 - if you provide a json extension to a test name, that file will be search as a path i.e. it will search for `Test15.json` in the current folder and `Test19.json` in the `dir` folder
 - if you don't provide a json extension to a test name, it will search for that test in the `cats-report` folder i.e. `cats-report/Test1.json` and `cats-report/Test233.json`
+
+# Available Commands
+
+To list all available commands, run CATS with no arguments:
+`./cats.jar`
+
+Other ways to get help from the CATS command are as follows:
+
+- `./cats.jar help` will list all available options
+
+- `./cats.jar version` will display the current CATS version
+
+- `./cats.jar list fuzzers` will list all the existing fuzzers, grouped on categories
+
+- `./cats.jar list fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
+
+- `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
+
+- `./cats.jar replay --tests="test1,test2"` will replay the given tests `test1` and `test2`
 
 
 # Available arguments
@@ -249,9 +294,9 @@ Some notes on the above example:
 - `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
 - `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
 - `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
+- `--blackbox` If supplied (not value needed) it will ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
 
 
-Using some of these options a typical invocation of CATS might look like this:
 
 `./cats.jar --contract=my.yml --server=https://locathost:8080 --checkHeaders`
 
@@ -272,7 +317,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow or security testing
 
 ## Field Fuzzers
-`CATS` has currently 40 registered Field `Fuzzers`:
+`CATS` has currently 41 registered Field `Fuzzers`:
 - `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -316,146 +361,8 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 
 You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 
-Some of the `Fuzzers` are detailed into the next sessions.
-
-### BooleanFieldsFuzzer
-This `Fuzzer` applies only to Boolean fields. It will try to send invalid boolean values and expects a `4XX` response code.
-
-### DecimalFieldsLeftBoundaryFuzzer and DecimalFieldsRightBoundaryFuzzer
-This `Fuzzer` will run boundary tests for fields marked as `Number`, including `float` and `double` formats.  It will use the `minimum` property to generate a left boundary value or `maximum` for the right boundary one.
-If any of these values are not set, it will use `Long.MIN_VALUE` and `Long.MAX_VALUE`. It expects a `4XX` response code.
-
-### IntegerFieldsLeftBoundaryFuzzer and IntegerFieldsRightBoundaryFuzzer
-This `Fuzzer` is similar to the `Decimal Fuzzers`, but for `Integer` fields, both `int32` and `int64` formats.
-
-### ExtremeNegativeValueXXXFieldsFuzzer and ExtremePositiveValueXXXFuzzer
-These `Fuzzers` apply for `Decimal` and `Integer` fields. They will send either an extremely low negative value or an extremely high positive value as follows:
-- for `Decimal` fields: `-999999999999999999999999999999999999999999.99999999999`when no format is specified, and `-Float.MAX_VALUE` for `float` and `-Double.MAX_VALUE` for `double`
-- for `Integer` fields: `Long.MIN_VALUE` when no format is specified or `int32`and `2 * Long.MIN_VALE` for `int64`
-
-These `Fuzzers` expect a `4XX` response code.
-
-### RemoveFieldsFuzzer
-This `Fuzzer` will remove fields from the requests based on a supplied strategy. It will create subsets of all the fields and subfields within the request schema. Based on these subsets, it will:
-- iterate through them one by one 
-- remove the fields present in the current subset from a full service payload
-- send the modified request to the server 
-
-These subsets can be generated using the following strategies (supplied through the `--fieldsFuzzingStrategy` option):
-
-#### POWERSET
-This is the most time-consuming strategy. This will create all possible subsets of the request fields (including subfields). If the request contains a lot of fields, this strategy might not be the right choice as the total number of possibilities is `2^n`, where `n` is the number of fields.
-
-For example given the request:
-
-```json
-
-{
-    "address": {
-        "phone": "123",
-        "postCode": "408",
-        "street": "cool street"    
-    },
-    "name": "john"
-}
-
-```
-
-All the fields, including subfields will look like this: `{name, address#phone, address#postcode, address#street}`. Using the `POWERSET` strategy there are 16 possible subsets. The `FieldsFuzzer` will iterate through each set and remove those fields (and subfields) from the request. All the other headers and request fields will remain unchanged.
-
-#### ONEBYONE
-This is the faster strategy and also the **default** one. This will iterate though each request field (including subfields) and create a single element set from it. The `FieldFuzzer` will iterate though the resulting sets and remove those fields (and subfields) from the request i.e. one field at a time. All the other headers and fields will remain unchanged.
-
-If we take the example above again, the resulting sets produced by this strategy will be as follows:
-
-`{address#phone}, {address#postcode}, {address#street}, {name}`
-
-#### SIZE
-This is a mixed strategy. It applies principles from the `POWERSET` strategy, but will remove a maximum number of fields (and subfields) supplied though the `--maxFieldsToRemove` option. This means that will generate subsets of fields (and subfields) having size `n - maxFieldsToRemove` or greater, where `n` is the total number of fields and subfields.
-
-If `--maxFieldsToRemove` for the example above is `2`, the resulting sets produced by this strategy will be as follows:
-
-`
-{address#phone, address#postcode, address#street}, {name, address#postcode, address#street}, {name, address#phone, address#street}, {name, address#phone, address#postcode}, {name, address#street}, {name, address#postalcode}, {name, address#phone}, {address#phone, address#postalcode}, {address#phone, address#street}, {address#postalcode, address#street}
-`
-
-Independent of the strategy used to generate the subsets of the fields that will be iteratively removed, the `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to respond with `4XX` in cases where required fields (or subfields) were removed and with a `2XX` code in cases where optional fields (or subfields) were removed. If the response code received is a documented one, this will be logged with an `INFO` level log message, otherwise with a `WARN` message.
-- In the case when the request has at least one required field removed and the service responds with `2XX` this will be reported using an `ERROR` message.
-- In the case when the request didn't have any required field (or subfield) removed and the service responds with `2XX`, this is expected behaviour and will be reported using an `INFO` level message.
-- In the case when the request didn't have any required field removed, but the service responds with a `4XX` or `5XX` code, this is abnormal behaviour and will be reported as an `ERROR` message.
-- Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
-
-### StringFieldsRightBoundaryFuzzer
-The max length of a String supported by the JVM APIs is `Integer.MAX_VALUE` which is `2^31-1`. 
-
-Based on this constraint, this Fuzzer will send String values whose length are bigger than the defined `maxLength` property:
-- if the `maxLength` is equal to `2^31-1`, the Fuzzer won't run as it cannot create Strings larger than this value
-- if the `maxLength` is between `2^31-1 - 10` and `2^31-1 - 2`, the Fuzzer will generate Strings with a length of `2^31-1 - 2`
-- if the `maxLength` is less than `2^31-1 - 10`, the Fuzzer will generate Strings with a length of `maxLength + 10`
-- if no `maxLength` is defined, the Fuzzer will generate a string of `10 000` characters
-
-**Please note that when having string properties with such high `maxLength` the probability of getting `OutOfMemoryErrors` is quite high. 
-There are very few cases when this is actually needed as it will also take a long time to send such a huge payloads to the service. 
-Please consider setting reasonable `maxLength` values which make sense in your business context.
-Setting reasonable boundaries for your inputs is also a good practice from a security perspective and will prevent your service from crashing when dealing with large inputs.**
-
-### StringFormatAlmostValidValuesFuzzer
-OpenAPI offers the option to specify `formats` for each `string` field. This gives hints to the client on what type of data is expected by the API.
-This `Fuzzer` has a predefined list of `formats`. For all `strings` matching any of the predefined `formats` it will send values which are 'almost valid' for that particular format. For example:
-- if the `format` is `password` it will send the `string` `bgZD89DEkl` which is an almost valid strong password (except that it doesn't contain special characters).
-- if the `format` is `email` it will send the `string` `email@bubu.` which is an almost valid email (except it doesn't contain the domain extension).
-- and so on.
-The following formats are supported: `byte, date, date-time, hostname, ipv4, ipv6, ip, password, uri, url, uuid`
-The `Fuzzer` expects a `4XX` response code.
-
-### StringFormatTotallyWrongValuesFuzzer
-This behaves in the same way as the previous `Fuzzer`, but the values sent for each format are totally invalid (like `aaa` for `email` for example).
-
-### NewFieldsFuzzer
-This `Fuzzer` will inject new fields inside the body of the requests. The new field is called `fuzzyField`. The `Fuzzers` will behave as follows:
-- Normal behaviour is for the service to return a `4XX` code for `POST`, `PUT` and `PATCH` and a `2XX` code for `GET`. If the code is documented, this will be reported as an `INFO` message, otherwise as a `WARN` message.
-- If the code responds with a `2XX` or `4XX` code, depending on the previous point, this is considered abnormal behaviour and will reported as an `ERROR` message.
-- Any other case is reported as an `ERROR` message.
-
-### StringsInNumericFieldsFuzzer
-This `Fuzzer` will send the `fuzz` string in every numeric fields and expect all requests to fail with `4XX`.
-
-### LeadingWhitespacesInFieldsTrimValidateFuzzer, TrailingWhitespacesInFieldsTrimValidateFuzzer and OnlyWhitespacesInFieldsTrimValidateFuzzer
-This `Fuzzers` will prefix or trail each field with Unicode whitespaces and invisible chars. 
-The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
-It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
-
-Please note that CATS tests iteratively for **18 whitespace characters**. This means that for **each field** within the requests CATS will run **18 tests**.
-This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
-Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.   
-
-### LeadingControlCharsInFieldsTrimValidateFuzzer, TrailingControlCharsInFieldsTrimValidateFuzzer and OnlyControlCharsInFieldsTrimValidateFuzzer
-This `Fuzzers` will prefix or trail each field with Unicode control chars.
-The expected result is that the service will sanitize these values and a `2XX` response code is received. These `Fuzzers` will fuzz all fields types except for discriminator fields.
-It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
-
-Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 tests**.
-This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
-Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
-
-### WithinControlCharsInFieldsSanitizeValidateFuzzer
-This `Fuzzers` will insert Unicode control chars within each field.
-
-Depending on the `--sanitizationStrategy` argument, this `Fuzzer` will expect:
-- `2XX` if `--sanitizationStrategy=sanitizeAndValidate`. This is also the default value (i.e. when not specifying and explicit strategy).
-- `2XX` or `4XX` depending on the specific regex set for the fuzzed field when `--sanitizationStrategy=validateAndSanitize`.
-
-These `Fuzzers` will fuzz only `String` fields.
-It's critical for APIs to sanitize input values as they will eventually lead to unexpected behaviour.
-
-Please note that CATS tests iteratively for **63 control characters**. This means that for **each field** within the requests CATS will run **63 tests**.
-This is why the number of tests (and time to run) CATS will increase significantly depending on the number of endpoints and request fields.
-Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) section on recommendations on how to split Fuzzers in batches so that you get optimal running times and reporting.
-
-
 ## Header Fuzzers
-`CATS` has currently 19 registered Header `Fuzzers`: 
+`CATS` has currently 20 registered Header `Fuzzers`: 
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
 - `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
 - `DummyContentTypeHeadersFuzzer` - send a request with a dummy Content-Type header and expect to get 415 code
@@ -478,42 +385,6 @@ Please check the [Slicing Strategies](#slicing-strategies-for-running-cats) sect
 
 You can run only these `Fuzzers` by supplying the `--checkHeaders` argument.
 
-Some of the `Fuzzers` are detailed into the next sessions.
-
-### LargeValuesInHeadersFuzzer
-This `Fuzzer` will send large values in the request headers. It will iterate through each header and fuzz it with a large value. All the other headers and the request body and query string will be similar to a 'normal' request. This `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to respond with a `4XX` code. In case the response code is a documented one, this will be reported with an `INFO` level log message, otherwise with a `WARN` level message.
-- If the service responds with a `2XX` code, the `Fuzzer` will report it as an `ERROR` level message.
-- Any other case will be reported using an `ERROR` level message.
-
-### RemoveHeadersFuzzer
-This `Fuzzer` will create the power set of the headers set. It will then iterate through all those sets and remove them from the payload. The `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to respond with a `4XX` code in the case when required headers were removed and with a `2XX` code in the case of optional headers being removed. If the response code is a documented one, this will be reported as an `INFO` level message, otherwise as a `WARN` message.
-- In the case that the request has at least one required header removed and the service responds with a `2XX` code, this will be reported as an `ERROR` message.
-- In the case that the request didn't have any required headers removed and the service response is a `2XX` code, this is expected behaviour and will be reported as an `INFO` level log message.
-- In the case where the request didn't have any required headers removed, but the service responded with a `4XX` or `5XX` code, this is abnormal behaviour and will be reported as an `ERROR` message.
-- Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
-
-Please note: **When the RemoveHeadersFuzzer is running any security (either named `authorization` or `jwt`) header mentioned in the `headers.yml` will be added to the requests.**
-
-### DummyContentTypeHeadersFuzzer,  DummyAcceptHeadersFuzzer, UnsupportedTypeHeadersFuzzer, UnsupportedAcceptHeadersFuzzer
-These `Fuzzers` are implementing the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html).
-They check that the API has correctly set the `Content-Type` and `Accept` headers and no invalid values can be supplied.
-
-The `Fuzzers` expect:
-- `406` for unsupported or invalid `Accept` headers
-- `415` for unsupported or invalid `Content-Type` headers
-
-### CheckSecurityHeadersFuzzer
-This `Fuzzer` will continue the [OWASP REST API recommendations](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html) by checking
-a list of required Security headers that must be supplied in each response. 
-
-The `Fuzzer` expects a `2XX` response with the following headers set:
-- `Cache-Control: no-store`
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `X-XSS-Protection: 1; mode=block`
-
 ## HTTP Fuzzers
 `CATS` has currently 6 registered HTTP `Fuzzers`:
 - `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
@@ -524,30 +395,6 @@ The `Fuzzer` expects a `2XX` response with the following headers set:
 - `NonRestHttpMethodsFuzzer` - iterate through a list of HTTP method specific to the WebDav protocol that are not expected to be implemented by REST APIs
 
 You can run only these `Fuzzers` by supplying the `--checkHttp` argument.
-
-Some of the `Fuzzers` are detailed into the next sessions.
-
-### HappyFuzzer
-This `Fuzzer` will send a full request to the service, including all fields and headers. The `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to return a `2XX` code. This will be reported as an `INFO` message if it's a documented code or as a `WARN` message otherwise.
-- Any other case is considered abnormal behaviour and will be reported as an `ERROR` message.
-
-### HttpMethodsFuzzer
-This `Fuzzer` will set the http request for any unspecified HTTP method in the contract. The `Fuzzer` will behave as follows:
-- Normal behaviour is for the service to respond with a `405` code if the method is not documented in the contract. This is reported as an level `INFO` message.
-- If the service responds with a `2XX` code this is considered abnormal behaviour and will be reported as an `ERROR` message.
-- Any other case is reported as a `WARN` level message.
-
-### BypassAuthenticationFuzzer
-This `Fuzzer` will try to send 'happy' flow requests, but will omit any supplied header which might be used for authentication like: `Authorization` or headers containing `JWT`.
-The expected result is a `401` or `403` response code.
-
-### MalformedJsonFuzzer
-This `Fuzzer` will send a malformed JSON to the service and expects a validation error. The malformed JSON is obtained by taking a valid JSON from the `HappyFuzzer` and append the word `bla` at the end.  
-
-**Please note that because the CATS report will only display valid JSON files for both request and responses, the final report won't display the malformed JSON which includes the `bla` string at the end.
-No need to worry, as CATS is actually sending the right malformed data to the service. You can check the running logs for the line starting with `Final payload:` to see the exact string which is being send to the service.**
-
 
 ## ContractInfo Fuzzers
 Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
@@ -577,7 +424,6 @@ Usually a good OpenAPI contract must follow several good practices in order to m
 - `XmlContentTypeContractInfoFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
 
 You can run only these `Fuzzers` by supplying the `--checkContract` argument.
-
 
 ## Special Fuzzers
 ### CustomFuzzer
@@ -776,18 +622,6 @@ You can also set `additionalProperties` fields through the `customFuzzerFile` us
 
 #### SecurityFuzzer Reserved keywords
 The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields`, `stringsFile`, `additionalProperties`, `topElement` and `mapValues`.
-
-
-# Skipping Fuzzers for specific paths
-There might be situations when you would want to skip some fuzzers for specific paths. This can be done using the `--skipXXXForPath=path1,path2` argument.
-Some examples:
-```bash
-./cats.jar --contract=api.yml --server=http://localhost:8080 --skipVeryLargeStringsFuzzerForPath=/pet/{id},/pets
-```
-
-Running the above command will run all the fuzzers for all the paths, except for the `VeryLargeStringsFuzzer` which won't be run for the `/pet/{id}` and `/pets` paths.
-
-You can supply multiple `--skipXXXForPath` arguments.
 
 # Reference Data File
 There are often cases where some fields need to contain relevant business values in order for a request to succeed. You can provide such values using a reference data file specified by the `--refData` argument. The reference data file is a YAML-format file that contains specific fixed values for different paths in the request document. The file structure is as follows:
@@ -995,21 +829,6 @@ The `Fuzzers` has the following support for media types and HTTP methods:
 - `application/json` media type only
 - HTTP methods: `POST`, `PUT`, `PATCH` and `GET`
 
-## Inheritance and composition
-
-`allOf` are supported at any object tree level. However, `anyOf` and `oneOf` are supported just at the first level within the object tree model. For example, this is a supported Object composition:
-
-```yaml
-Request:
-    payload:
-      oneOf:
-        - $ref: '#/components/schemas/Payload1'
-        - $ref: '#/components/schemas/Payload2'
-      discriminator:
-        propertyName: payloadType
-```
-However, if `Payload1` or `Payload2` will have an additional compositions, this won't be considered by CATS.
-
 ## Additional Parameters
 If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `WARN` level log message as it won't be able to validate that the response matches the schema.
 
@@ -1021,4 +840,4 @@ All custom files that can be used by CATS (`customFuzzerFile`, `headers`, `refDa
 You can find some selector examples here: [JsonPath](https://github.com/json-path/JsonPath).
 
 # Contributing
-Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md). 
