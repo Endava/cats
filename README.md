@@ -31,8 +31,8 @@
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
 All tests are **generated, run and reported automatically** based on a pre-defined set of **78 Fuzzers**. 
-The Fuzzers cover a wide range up input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
-Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional flows.
+The Fuzzers cover a wide range of input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
+Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
 
 <div align="center">
   <img alt="CATS" width="100%" src="images/run_result.png"/>
@@ -62,7 +62,7 @@ This is a list of articles with step-by-step guides on how to use CATS:
 
 # Installation
 
-CATS is bundled as an executable JAR which can be run as a simple script as `>./cats.jar` or `>cats` (if properly symlinked and/or placed inside `PATH`). It requires Java11+. 
+CATS is bundled as an executable JAR which can be run as a simple script as `$ ./cats.jar` or `$ cats` (if properly symlinked and/or placed inside `PATH`). It requires Java 11+. 
 
 Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
 
@@ -89,11 +89,11 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 
 ## Blackbox mode
 
-Blackbox mode means that CATS doesn't need any specific context for the service. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](#headers-file).
+Blackbox mode means that CATS doesn't need any specific context. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](#headers-file).
 
 `./cats.jar --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox`
 
-In blackbox mode CATS will only report ERRORs if the HTTP response codes received by Fuzzers is a `5XX`. 
+In blackbox mode CATS will only report `ERRORs` if the received HTTP response code is a `5XX`. 
 Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and service returns `200`) will be ignored.
 
 The blackbox mode is similar to a smoke test. It will quickly tell you if the application has major bugs that must be addressed **immediately**.
@@ -102,9 +102,9 @@ The blackbox mode is similar to a smoke test. It will quickly tell you if the ap
 
 The real power of CATS relies on running it in a non-blackbox mode also called context mode. 
 Each Fuzzer has an expected HTTP response code based on the scenario under test and will also check if the response is matching the schema defined in the OpenAPI spec specific to that response code.
-This will allow you to tweak either your OpenAPI spec or service behaviour in order to create good quality APIs and documentation and also to avoid possible bugs.
+This will allow you to tweak either your OpenAPI spec or service behaviour in order to create good quality APIs and documentation and also to avoid possible serious bugs.
 
-Running CATS in context mode usually implies providing it a [--refData](#reference-data-file) file with identifiers that are specific to the business logic like. 
+Running CATS in context mode usually implies providing it a [--refData](#reference-data-file) file with resource identifiers specific to the business logic. 
 CATS cannot create data on its own (yet), so it's important that any request field or query param that requires pre-existence of those entities/resources to be created in advance and added to the reference data file.
 
 `./cats.jar --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml`
@@ -112,7 +112,7 @@ CATS cannot create data on its own (yet), so it's important that any request fie
 ## Notes on skipped Tests
 You may notice a significant number of tests marked as `skipped`. CATS will try to apply all `Fuzzers` to all fields, but this is not always possible.
 For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will be marked as skipped.
-It was an intentional decision to report also the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
+It was an intentional decision to also report the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
 
 
 Additionally, CATS support a lot [more arguments](#available-arguments) that allows you to restrict the number of fuzzers, provide timeouts, limit the number of requests per minute and so on.
@@ -121,7 +121,7 @@ Additionally, CATS support a lot [more arguments](#available-arguments) that all
 
 CATS generates tests based on configured `Fuzzer`s. Each `Fuzzer` has a specific scenario and a specific expected result.
 The CATS engine will run the scenario, get the result from the service and match it with the `Fuzzer` expected result.
-Depending on ont the matching outcome, CATS will report as follows:
+Depending on the matching outcome, CATS will report as follows:
 
 - `INFO`/`SUCCESS` is expected and documented behaviour. No need for action.
 - `WARN` is expected but undocumented behaviour or some misalignment between the contract and the service. This will **ideally** be actioned.
@@ -209,7 +209,7 @@ but the response code is not documented inside the contract.
 You can make CATS ignore the undocumented response code checks (i.e. checking expected response code inside the contract) using the `--ignoreResponseCodeUndocumentedCheck` argument. CATS with now report these cases as `SUCCESS` instead of `WARN`.
 
 # Ignoring Response Body Checks
-Additionally, you can also choose to ignore the response body checks. By default, on top of checking the expected response code, each Fuzzer will check if the response body matches what is defined in the contract and will report and `WARN` if not matching.
+Additionally, you can also choose to ignore the response body checks. By default, on top of checking the expected response code, each Fuzzer will check if the response body matches what is defined in the contract and will report an `WARN` if not matching.
 You can make CATS ignore the response body checks using the `--ingoreResponseBodyCheck` argument. CATS with now report these cases as `SUCCESS` instead of `WARN`.
 
 # Replaying Tests
