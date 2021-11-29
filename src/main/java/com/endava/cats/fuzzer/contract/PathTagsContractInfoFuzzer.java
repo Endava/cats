@@ -7,7 +7,6 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -19,7 +18,6 @@ import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Component
-@ConditionalOnProperty(value = "fuzzer.contract.PathTagsContractInfoFuzzer.enabled", havingValue = "true")
 public class PathTagsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 

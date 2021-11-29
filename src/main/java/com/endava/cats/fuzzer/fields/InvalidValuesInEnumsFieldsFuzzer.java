@@ -10,7 +10,6 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -18,7 +17,6 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnProperty(value = "fuzzer.fields.InvalidValuesInEnumsFieldsFuzzer.enabled", havingValue = "true")
 public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
     public InvalidValuesInEnumsFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {

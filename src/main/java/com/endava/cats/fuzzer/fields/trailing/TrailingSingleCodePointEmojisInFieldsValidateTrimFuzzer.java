@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @FieldFuzzer
 @EmojiFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.TrailingSingleCodePointEmojisInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim'")
 public class TrailingSingleCodePointEmojisInFieldsValidateTrimFuzzer extends TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzer {
 
     @Autowired

@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
@@ -22,7 +21,6 @@ import java.util.regex.Pattern;
 
 @ContractInfoFuzzer
 @Component
-@ConditionalOnProperty(value = "fuzzer.contract.NamingsContractInfoFuzzer.enabled", havingValue = "true")
 public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final Pattern HYPHEN_CASE = Pattern.compile("(^[a-z]+((-)?[a-z])+$)+");
     private static final Pattern SNAKE_CASE = Pattern.compile("(^[a-z]+((_)?[a-z])+$)+");

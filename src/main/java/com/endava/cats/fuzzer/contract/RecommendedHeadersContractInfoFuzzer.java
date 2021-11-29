@@ -7,7 +7,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -16,7 +15,6 @@ import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Component
-@ConditionalOnProperty(value = "fuzzer.contract.RecommendedHeadersContractInfoFuzzer.enabled", havingValue = "true")
 public class RecommendedHeadersContractInfoFuzzer extends BaseContractInfoFuzzer {
     static final List<String> HEADERS = Arrays.asList("correlationid", "traceid");
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());

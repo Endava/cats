@@ -12,7 +12,6 @@ import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Component
 @HeaderFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.RemoveHeadersFuzzer.enabled", havingValue = "true")
 public class RemoveHeadersFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RemoveHeadersFuzzer.class);
 

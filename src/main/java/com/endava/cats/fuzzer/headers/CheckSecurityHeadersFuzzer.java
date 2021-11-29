@@ -12,10 +12,14 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -24,18 +28,17 @@ import java.util.stream.Collectors;
 
 @Component
 @HeaderFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.CheckSecurityHeadersFuzzer.enabled", havingValue = "true")
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
+    protected static final String SECURITY_HEADERS_AS_STRING;
     private static final Map<String, List<CatsHeader>> SECURITY_HEADERS = new HashMap<>();
-    protected static final  String SECURITY_HEADERS_AS_STRING;
 
     static {
         SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(CatsHeader.builder().name("Cache-Control").value("no-store").build()));
         SECURITY_HEADERS.put("X-Content-Type-Options", Collections.singletonList(CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build()));
         SECURITY_HEADERS.put("X-Frame-Options", Collections.singletonList(CatsHeader.builder().name("X-Frame-Options").value("DENY").build()));
         SECURITY_HEADERS.put("X-XSS-Protection", Arrays.asList(CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(),
-                    CatsHeader.builder().name("X-XSS-Protection").value("0").build()));
+                CatsHeader.builder().name("X-XSS-Protection").value("0").build()));
 
         SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.entrySet().stream().map(Object::toString).collect(Collectors.toSet()).toString();
     }

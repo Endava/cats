@@ -10,7 +10,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @HttpFuzzer
-@ConditionalOnProperty(value = "fuzzer.http.HappyFuzzer.enabled", havingValue = "true")
 public class HappyFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
 
