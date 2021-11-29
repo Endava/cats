@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @FieldFuzzer
 @ControlCharFuzzer
-@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize' and ${fuzzer.fields.WithinControlCharsInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize'")
 public class WithinControlCharsInFieldsValidateSanitizeFuzzer extends WithinControlCharsInFieldsSanitizeValidateFuzzer {
 
     @Autowired

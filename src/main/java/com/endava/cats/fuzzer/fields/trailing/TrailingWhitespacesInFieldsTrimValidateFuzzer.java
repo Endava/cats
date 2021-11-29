@@ -17,7 +17,7 @@ import java.util.List;
 @Component
 @FieldFuzzer
 @WhitespaceFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}' == 'trimAndValidate' and ${fuzzer.fields.TrailingWhitespacesInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}' == 'trimAndValidate'")
 public class TrailingWhitespacesInFieldsTrimValidateFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
 
     @Autowired

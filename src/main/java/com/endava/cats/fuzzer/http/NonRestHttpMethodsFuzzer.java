@@ -9,7 +9,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -17,7 +16,6 @@ import java.util.List;
 
 @HttpFuzzer
 @Component
-@ConditionalOnProperty(value = "fuzzer.http.NonRestHttpMethodsFuzzer.enabled", havingValue = "true")
 public class NonRestHttpMethodsFuzzer implements Fuzzer {
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(NonRestHttpMethodsFuzzer.class);

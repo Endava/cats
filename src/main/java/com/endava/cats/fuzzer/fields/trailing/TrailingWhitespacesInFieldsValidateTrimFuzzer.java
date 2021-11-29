@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @FieldFuzzer
 @WhitespaceFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.TrailingWhitespacesInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim'")
 public class TrailingWhitespacesInFieldsValidateTrimFuzzer extends TrailingWhitespacesInFieldsTrimValidateFuzzer {
 
     @Autowired

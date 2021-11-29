@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @FieldFuzzer
 @EmojiFuzzer
-@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize' and ${fuzzer.fields.WithinMultiCodePointEmojisInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize'")
 public class WithinMultiCodePointEmojisInFieldsValidateTrimFuzzer extends WithinMultiCodePointEmojisInFieldsTrimValidateFuzzer {
 
     @Autowired

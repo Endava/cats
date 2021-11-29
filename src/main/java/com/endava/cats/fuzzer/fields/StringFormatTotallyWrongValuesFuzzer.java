@@ -8,9 +8,14 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.media.DateSchema;
+import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.EmailSchema;
+import io.swagger.v3.oas.models.media.PasswordSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.media.UUIDSchema;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -18,7 +23,6 @@ import java.util.List;
 
 @Component
 @FieldFuzzer
-@ConditionalOnProperty(value = "fuzzer.fields.StringFormatTotallyWrongValuesFuzzer.enabled", havingValue = "true")
 public class StringFormatTotallyWrongValuesFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Autowired

@@ -16,7 +16,7 @@ import java.util.List;
 @Component
 @FieldFuzzer
 @EmojiFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate' and ${fuzzer.fields.OnlySingleCodePointEmojisInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='trimAndValidate'")
 public class OnlySingleCodePointEmojisInFieldsTrimValidateFuzzer extends InvisibleCharsOnlyTrimValidateFuzzer {
 
     @Autowired

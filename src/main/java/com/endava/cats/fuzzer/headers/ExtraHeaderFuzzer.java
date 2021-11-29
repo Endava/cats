@@ -12,7 +12,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -20,7 +19,6 @@ import java.util.Set;
 
 @Component
 @HeaderFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.ExtraHeaderFuzzer.enabled", havingValue = "true")
 public class ExtraHeaderFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ExtraHeaderFuzzer.class);
     private static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";

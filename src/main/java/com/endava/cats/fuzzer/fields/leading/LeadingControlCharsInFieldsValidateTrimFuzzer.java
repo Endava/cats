@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @FieldFuzzer
 @ControlCharFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim' and ${fuzzer.fields.LeadingControlCharsInFieldsFuzzer.enabled}")
+@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim'")
 public class LeadingControlCharsInFieldsValidateTrimFuzzer extends LeadingControlCharsInFieldsTrimValidateFuzzer {
 
     @Autowired

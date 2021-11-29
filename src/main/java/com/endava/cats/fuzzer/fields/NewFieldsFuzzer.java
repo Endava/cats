@@ -16,12 +16,10 @@ import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
 @FieldFuzzer
-@ConditionalOnProperty(value = "fuzzer.fields.NewFieldsFuzzer.enabled", havingValue = "true")
 public class NewFieldsFuzzer implements Fuzzer {
     protected static final String NEW_FIELD = "catsFuzzyField";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(NewFieldsFuzzer.class);

@@ -8,7 +8,6 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.List;
 @Component
 @HeaderFuzzer
 @WhitespaceFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.LeadingWhitespacesInHeadersFuzzer.enabled", havingValue = "true")
 public class LeadingWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Autowired

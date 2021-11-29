@@ -7,7 +7,6 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -15,7 +14,6 @@ import java.util.List;
 
 @Component
 @HeaderFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.LeadingSpacesInHeadersFuzzer.enabled", havingValue = "true")
 public class LeadingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Autowired

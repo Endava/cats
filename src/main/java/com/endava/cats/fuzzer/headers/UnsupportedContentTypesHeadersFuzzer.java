@@ -7,7 +7,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import org.apache.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,7 +17,6 @@ import java.util.Set;
  */
 @Component
 @HeaderFuzzer
-@ConditionalOnProperty(value = "fuzzer.headers.UnsupportedContentTypesHeadersFuzzer.enabled", havingValue = "true")
 public class UnsupportedContentTypesHeadersFuzzer extends DummyContentTypeHeadersFuzzer {
 
     @Autowired
