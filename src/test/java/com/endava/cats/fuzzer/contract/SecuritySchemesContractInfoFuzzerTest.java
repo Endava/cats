@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
@@ -10,12 +9,10 @@ import com.endava.cats.report.TestCaseListener;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -38,17 +35,7 @@ class SecuritySchemesContractInfoFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @SpyBean
-    private BuildProperties buildProperties;
-
     private SecuritySchemesContractInfoFuzzer securitySchemesContractInfoFuzzer;
-
-    @BeforeAll
-    static void init() {
-        System.setProperty("name", "cats");
-        System.setProperty("version", "4.3.2");
-        System.setProperty("time", "100011111");
-    }
 
     @BeforeEach
     void setup() {

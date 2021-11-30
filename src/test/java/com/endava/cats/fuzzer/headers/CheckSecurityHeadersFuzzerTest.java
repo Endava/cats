@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -11,18 +10,20 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,18 +52,7 @@ class CheckSecurityHeadersFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @SpyBean
-    private BuildProperties buildProperties;
-
-
     private CheckSecurityHeadersFuzzer checkSecurityHeadersFuzzer;
-
-    @BeforeAll
-    static void init() {
-        System.setProperty("name", "cats");
-        System.setProperty("version", "4.3.2");
-        System.setProperty("time", "100011111");
-    }
 
     @BeforeEach
     void setup() {

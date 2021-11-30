@@ -21,6 +21,13 @@ import java.util.List;
 @Getter
 public class AuthArguments {
     private final List<CatsArg> args = new ArrayList<>();
+    private final String sslKeystoreHelp = "Location of the keystore holding certificates used when authenticating calls using one-way or two-way SSL";
+    private final String sslKeystorePwdHelp = "The password of the sslKeystore";
+    private final String sslKeyPwdHelp = "The password of the private key from the sslKeystore";
+    private final String basicAuthHelp = "Supplies a `username:password` pair, in case the service uses basic auth";
+    private final String proxyHostHelp = "HOST the proxy server's host name";
+    private final String proxyPortHelp = "PORT the proxy server's port number";
+
     @Value("${sslKeystore:empty}")
     private String sslKeystore;
     @Value("${sslKeystorePwd:empty}")
@@ -33,19 +40,6 @@ public class AuthArguments {
     private String proxyHost;
     @Value("${proxyPort:0}")
     private int proxyPort;
-
-    @Value("${arg.auth.sslKeystore.help:help}")
-    private String sslKeystoreHelp;
-    @Value("${arg.auth.sslKeystorePwd.help:help}")
-    private String sslKeystorePwdHelp;
-    @Value("${arg.auth.sslKeyPwd.help:help}")
-    private String sslKeyPwdHelp;
-    @Value("${arg.auth.basicAuth.help:help}")
-    private String basicAuthHelp;
-    @Value("${arg.auth.proxyHost.help:help}")
-    private String proxyHostHelp;
-    @Value("${arg.auth.proxyPort.help:help}")
-    private String proxyPortHelp;
 
     @PostConstruct
     public void init() {

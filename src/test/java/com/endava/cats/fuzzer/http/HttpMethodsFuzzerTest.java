@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
@@ -11,14 +10,12 @@ import com.endava.cats.report.TestCaseListener;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -42,21 +39,10 @@ class HttpMethodsFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @SpyBean
-    private BuildProperties buildProperties;
-
     @Autowired
     private HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
-
     private HttpMethodsFuzzer httpMethodsFuzzer;
-
-    @BeforeAll
-    static void init() {
-        System.setProperty("name", "cats");
-        System.setProperty("version", "4.3.2");
-        System.setProperty("time", "100011111");
-    }
 
     @BeforeEach
     void setup() {

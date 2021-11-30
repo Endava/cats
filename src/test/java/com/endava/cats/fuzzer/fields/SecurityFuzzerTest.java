@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
@@ -15,19 +14,16 @@ import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.FileNotFoundException;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -53,9 +49,6 @@ class SecurityFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @SpyBean
-    private BuildProperties buildProperties;
-
     @MockBean
     private CatsUtil catsUtil;
 
@@ -67,20 +60,9 @@ class SecurityFuzzerTest {
 
     private SecurityFuzzer securityFuzzer;
 
-    @BeforeAll
-    static void init() {
-        System.setProperty("name", "cats");
-        System.setProperty("version", "4.3.2");
-        System.setProperty("time", "100011111");
-    }
-
     @BeforeEach
     void setup() {
         securityFuzzer = new SecurityFuzzer(filesArguments, customFuzzerUtil);
-        Mockito.when(buildProperties.getName()).thenReturn("CATS");
-        Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
-        Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
-        ReflectionTestUtils.setField(testCaseListener, "buildProperties", buildProperties);
     }
 
     @Test

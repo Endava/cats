@@ -37,6 +37,16 @@ public class FilterArguments {
     private static final String ALL = "all";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FilterArguments.class);
     private final List<CatsArg> args = new ArrayList<>();
+
+    private final String suppliedFuzzersHelp = "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to run. You can use 'all' to include all fuzzers. To list all available fuzzers run: './cats.jar list fuzzers";
+    private final String pathsHelp = "PATH_LIST a comma separated list of paths to test. If no path is supplied, all paths will be considered";
+    private final String skipPathsHelp = "PATH_LIST a comma separated list of paths to ignore. If no path is supplied, no path will be ignored";
+    private final String skipFuzzersHelp = "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude. This is either a full or partial Fuzzer name";
+    private final String skipXXXForPathHelp = "/path1,/path2 can configure fuzzers to be excluded for the specified paths. XXX must be a full Fuzzer name";
+    private final String httpMethodsHelp = "POST,PUT,GET,etc a comma separated list of HTTP methods that will be used to filter which http methods will be executed for each path within the contract";
+    private final String dryRunHelp = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers";
+    private final String testsHelp = "TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder";
+
     protected List<CatsSkipped> skipFuzzersForPaths;
     @Value("${fuzzers:all}")
     private String suppliedFuzzers;
@@ -52,24 +62,6 @@ public class FilterArguments {
     private String dryRun;
     @Value("${tests:empty}")
     private String tests;
-
-    @Value("${arg.filter.fuzzers.help:help}")
-    private String suppliedFuzzersHelp;
-    @Value("${arg.filter.paths.help:help}")
-    private String pathsHelp;
-    @Value("${arg.filter.skipPaths.help:help}")
-    private String skipPathsHelp;
-    @Value("${arg.filter.skipFuzzers.help:help}")
-    private String skipFuzzersHelp;
-    @Value("${arg.filter.skipXXXForPath.help:help}")
-    private String skipXXXForPathHelp;
-    @Value("${arg.filter.httpMethods.help:help}")
-    private String httpMethodsHelp;
-    @Value("${arg.filter.dryRun.help:help}")
-    private String dryRunHelp;
-    @Value("${arg.filter.tests.help:help}")
-    private String testsHelp;
-
 
     @Autowired
     private List<Fuzzer> fuzzers;

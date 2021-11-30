@@ -13,6 +13,13 @@ import java.util.List;
 public class ProcessingArguments {
     private final List<CatsArg> args = new ArrayList<>();
 
+    private final String fieldsFuzzingStrategyHelp = "STRATEGY set the strategy for tge fields fuzzers. Supported strategies ONEBYONE, SIZE, POWERSET";
+    private final String maxFieldsToRemoveHelp = "NUMBER set the maximum number of fields that will be removed from a request when using the SIZE fieldsFuzzingStrategy";
+    private final String edgeSpacesStrategyHelp = "STRATEGY this can be either validateAndTrim or trimAndValidate. It can be used to specify what CATS should expect when sending trailing and leading spaces valid values within fields";
+    private final String sanitizationStrategyHelp = "STRATEGY this can be either sanitizeAndValidation or validateAndSanitize. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields";
+    private final String useExamplesHelp = "true/false (default true), instruct CATS on whether to use examples from the OpenAPI contract or not";
+    private final String largeStringsSizeHelp = "SIZE the size of the strings used by the Fuzzers sending large values like VeryLargeStringsFuzzer";
+
     @Value("${fieldsFuzzingStrategy:ONEBYONE}")
     private String fieldsFuzzingStrategy;
     @Value("${maxFieldsToRemove:empty}")
@@ -25,19 +32,6 @@ public class ProcessingArguments {
     private String useExamples;
     @Value("${largeStringsSize:40000}")
     private int largeStringsSize;
-
-    @Value("${arg.processing.fieldsFuzzingStrategy.help:help}")
-    private String fieldsFuzzingStrategyHelp;
-    @Value("${arg.processing.maxFieldsToRemove.help:help}")
-    private String maxFieldsToRemoveHelp;
-    @Value("${arg.processing.edgeSpacesStrategy.help:help}")
-    private String edgeSpacesStrategyHelp;
-    @Value("${arg.processing.sanitizationStrategy.help:help}")
-    private String sanitizationStrategyHelp;
-    @Value("${arg.processing.useExamples.help:help}")
-    private String useExamplesHelp;
-    @Value("${arg.processing.largeStringsSize.help:help}")
-    private String largeStringsSizeHelp;
 
     @PostConstruct
     public void init() {

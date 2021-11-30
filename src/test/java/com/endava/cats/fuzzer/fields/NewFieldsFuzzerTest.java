@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
@@ -14,12 +13,10 @@ import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -48,9 +45,6 @@ class NewFieldsFuzzerTest {
     private TestCaseExporter testCaseExporter;
 
     @SpyBean
-    private BuildProperties buildProperties;
-
-    @SpyBean
     private CatsUtil catsUtil;
 
     @SpyBean
@@ -60,13 +54,6 @@ class NewFieldsFuzzerTest {
 
     private FuzzingData data;
     private CatsResponse catsResponse;
-
-    @BeforeAll
-    static void init() {
-        System.setProperty("name", "cats");
-        System.setProperty("version", "4.3.2");
-        System.setProperty("time", "100011111");
-    }
 
     @BeforeEach
     void setup() {

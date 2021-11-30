@@ -43,7 +43,6 @@ import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -107,7 +106,7 @@ public class ServiceCaller {
             final SSLSocketFactory sslSocketFactory = this.buildSslSocketFactory(trustAllCerts);
 
             okHttpClient = new OkHttpClient.Builder()
-                    .proxy(this.getProxyConfig())
+                    .proxy(authArguments.getProxy())
                     .connectTimeout(apiArguments.getConnectionTimeout(), TimeUnit.SECONDS)
                     .readTimeout(apiArguments.getReadTimeout(), TimeUnit.SECONDS)
                     .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
@@ -158,14 +157,8 @@ public class ServiceCaller {
         return sslContext.getSocketFactory();
     }
 
-    private Proxy getProxyConfig() {
-        Proxy proxy = authArguments.getProxy();
-        LOGGER.note("Proxy configuration to be used: {}", proxy);
-
-        return proxy;
-    }
-
     public CatsResponse call(ServiceData data) {
+        LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
         rateLimiter.acquire();
         String processedPayload = this.replacePayloadWithRefData(data);
         List<CatsRequest.Header> headers = this.buildHeaders(data);

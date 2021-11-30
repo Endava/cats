@@ -24,10 +24,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -48,9 +47,6 @@ class TestCaseListenerTest {
     private FilterArguments filterArguments;
 
     @Mock
-    private BuildProperties buildProperties;
-
-    @Mock
     private PrettyLogger logger;
 
     @Mock
@@ -61,7 +57,7 @@ class TestCaseListenerTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, buildProperties, ignoreArguments);
+        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, ignoreArguments);
     }
 
     @AfterEach
@@ -70,19 +66,12 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void shouldNotCallInitPathWhenReplayTests() throws Exception {
-        mockBuildProperties();
-
+    void shouldNotCallInitPathWhenReplayTests() {
+        ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
         Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
         testCaseListener.startSession();
 
         Mockito.verifyNoInteractions(testCaseExporter);
-    }
-
-    private void mockBuildProperties() {
-        Mockito.when(buildProperties.getName()).thenReturn("CATS");
-        Mockito.when(buildProperties.getVersion()).thenReturn("1.1");
-        Mockito.when(buildProperties.getTime()).thenReturn(Instant.now());
     }
 
     @Test
@@ -119,15 +108,11 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() throws Exception {
-        mockBuildProperties();
-
+    void givenATestCase_whenExecutingStartAndEndSession_thenTheSummaryAndReportFilesAreCreated() {
+        ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
         testCaseListener.startSession();
         testCaseListener.endSession();
 
-        Mockito.verify(buildProperties, Mockito.times(1)).getName();
-        Mockito.verify(buildProperties, Mockito.times(1)).getVersion();
-        Mockito.verify(buildProperties, Mockito.times(1)).getTime();
         Mockito.verify(testCaseExporter, Mockito.times(1)).writeHelperFiles();
         Mockito.verify(testCaseExporter, Mockito.times(1)).writeSummary(Mockito.anyMap(), Mockito.any());
     }
