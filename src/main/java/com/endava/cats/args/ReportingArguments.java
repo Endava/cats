@@ -24,14 +24,10 @@ public class ReportingArguments {
     @Value("${reportFormat:htmlJs}")
     private String reportFormat;
 
-    @Value("${arg.reporting.timestampReports.help:help}")
-    private String timestampReportsHelp;
-    @Value("${arg.reporting.log.help:help}")
-    private String logDataHelp;
-    @Value("${arg.reporting.printExecutionStatistics.help:help}")
-    private String printExecutionStatisticsHelp;
-    @Value("${arg.reporting.reportFormat.help:help}")
-    private String reportFormatHelp;
+    private final String timestampReportsHelp = "If supplied (no value needed), it will output the report still inside the 'cats-report' folder, but in a sub-folder with the current timestamp";
+    private final String logDataHelp = "PACKAGE:LEVEL set custom log level of a given package. You can provide a comma separated list of PACKAGE:LEVEL pairs";
+    private final String printExecutionStatisticsHelp = "If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply --printExecutionStatistics=detailed";
+    private final String reportFormatHelp = "FORMAT specifies the format of the CATS report. You can use 'htmlOnly' if you want the report to not contain any Javascript. This is useful for large number of tests, as the page will render faster and also in CI environments due to Javascript content security policies. Default is 'htmlJs' which is the original CATS single page report format.";
 
 
     @PostConstruct

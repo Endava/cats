@@ -17,6 +17,14 @@ public class CheckArguments {
     @Getter
     private final List<CatsArg> args = new ArrayList<>();
 
+    private final String checkHeadersHelp = "If supplied (no value needed), it will only run the Header Fuzzers";
+    private final String checkFieldsHelp = "If supplied (no value needed), it will only run the Field Fuzzers";
+    private final String checkHttpHelp = "If supplied (no value needed), it will only run the HTTP Fuzzers";
+    private final String checkContractHelp = "If supplied (no value needed), it will only run the ContractInfo Fuzzers";
+    private final String includeWhitespacesHelp = "If supplied (no value needed), it will include the Whitespaces Fuzzers";
+    private final String includeEmojisHelp = "If supplied (no value needed), it will include the Emojis Fuzzers";
+    private final String includeControlCharsHelp = "If supplied (no value needed), it will include the ControlChars Fuzzers";
+
     @Value("${checkHeaders:empty}")
     private String checkHeaders;
     @Value("${checkFields:empty}")
@@ -31,21 +39,6 @@ public class CheckArguments {
     private String includeEmojis;
     @Value("${includeControlChars:empty}")
     private String includeControlChars;
-
-    @Value("${arg.check.checkHeaders.help:help}")
-    private String checkHeadersHelp;
-    @Value("${arg.check.checkFields.help:help}")
-    private String checkFieldsHelp;
-    @Value("${arg.check.checkHttp.help:help}")
-    private String checkHttpHelp;
-    @Value("${arg.check.checkContract.help:help}")
-    private String checkContractHelp;
-    @Value("${arg.check.includeWhitespaces.help:help}")
-    private String includeWhitespacesHelp;
-    @Value("${arg.check.includeEmojis.help:help}")
-    private String includeEmojisHelp;
-    @Value("${arg.check.includeControlChars.help:help}")
-    private String includeControlCharsHelp;
 
     @PostConstruct
     public void init() {

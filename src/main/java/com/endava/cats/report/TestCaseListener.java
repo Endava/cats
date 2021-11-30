@@ -23,12 +23,10 @@ import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.info.BuildProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -53,14 +51,18 @@ public class TestCaseListener {
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
-    private final BuildProperties buildProperties;
     private final IgnoreArguments filterArguments;
+    @Value("${app.version}")
+    private String appVersion;
+    @Value("${app.name}")
+    private String appName;
+    @Value("${app.timestamp}")
+    private String appBuildTime;
 
     @Autowired
-    public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, BuildProperties buildProperties, IgnoreArguments filterArguments) {
+    public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, IgnoreArguments filterArguments) {
         this.executionStatisticsListener = er;
         this.testCaseExporter = tce;
-        this.buildProperties = buildProperties;
         this.filterArguments = filterArguments;
     }
 
@@ -70,6 +72,17 @@ public class TestCaseListener {
         }
 
         return message;
+    }
+
+    public void beforeFuzz(Class<?> fuzzer) {
+        String clazz = fuzzer.getSimpleName().replaceAll("[a-z]", "");
+        MDC.put("fuzzer", ConsoleUtils.centerWithAnsiColor(clazz, 5, Ansi.Color.MAGENTA));
+        MDC.put("fuzzerKey", fuzzer.getSimpleName());
+    }
+
+    public void afterFuzz() {
+        MDC.put("fuzzer", null);
+        MDC.put("fuzzerKey", null);
     }
 
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
@@ -133,8 +146,7 @@ public class TestCaseListener {
     }
 
     public void startSession() {
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of("UTC"));
-        LOGGER.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(buildProperties.getName().toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(buildProperties.getVersion()), ansi().fg(Ansi.Color.GREEN).a(formatter.format(buildProperties.getTime())).reset());
+        LOGGER.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(appName.toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(appVersion), ansi().fg(Ansi.Color.GREEN).a(appBuildTime).reset());
         LOGGER.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }
 

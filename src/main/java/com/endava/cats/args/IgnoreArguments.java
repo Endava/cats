@@ -21,6 +21,12 @@ public class IgnoreArguments {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(IgnoreArguments.class);
     private final List<CatsArg> args = new ArrayList<>();
 
+    private final String ignoreResponseCodeUndocumentedCheckHelp = "If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN";
+    private final String ignoreResponseBodyCheckHelp = "If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN";
+    private final String ignoreResponseCodesHelp = "HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. If provided, all Contract Fuzzers will be skipped";
+    private final String skipFieldsHelp = "field1,field2#subField1 a comma separated list of fields that will be skipped by replacement Fuzzers like EmptyStringsInFields, NullValuesInFields, etc.";
+    private final String blackboxHelp = "If supplied (not value needed) it will ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to --ignoreResponseCodes=\"2xx,4xx\"";
+
     @Value("${ignoreResponseCodeUndocumentedCheck:empty}")
     private String ignoreResponseCodeUndocumentedCheck;
     @Value("${ignoreResponseBodyCheck:empty}")
@@ -31,17 +37,6 @@ public class IgnoreArguments {
     private String skipFields;
     @Value("${blackbox:empty}")
     private String blackbox;
-
-    @Value("${arg.filter.ignoreResponseCodeUndocumentedCheck.help:help}")
-    private String ignoreResponseCodeUndocumentedCheckHelp;
-    @Value("${arg.filter.ignoreResponseBodyCheck.help:help}")
-    private String ignoreResponseBodyCheckHelp;
-    @Value("${arg.filter.ignoreResponseCodes.help:help}")
-    private String ignoreResponseCodesHelp;
-    @Value("${arg.filter.skipFields.help:help}")
-    private String skipFieldsHelp;
-    @Value("${arg.filter.blackbox.help:help}")
-    private String blackboxHelp;
 
     @PostConstruct
     public void init() {

@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
@@ -11,14 +10,12 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -38,17 +35,7 @@ class NamingsContractInfoFuzzerTest {
     @MockBean
     private TestCaseExporter testCaseExporter;
 
-    @SpyBean
-    private BuildProperties buildProperties;
-
     private NamingsContractInfoFuzzer namingsContractInfoFuzzer;
-
-    @BeforeAll
-    static void init() {
-        System.setProperty("name", "cats");
-        System.setProperty("version", "4.3.2");
-        System.setProperty("time", "100011111");
-    }
 
     @BeforeEach
     void setup() {

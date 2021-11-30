@@ -16,6 +16,12 @@ import java.util.List;
 @Getter
 public class ApiArguments {
     private final List<CatsArg> args = new ArrayList<>();
+    private final String contractHelp = "LOCATION_OF_THE_CONTRACT";
+    private final String serverHelp = "BASE_URL_OF_THE_SERVICE";
+    private final String maxRequestsPerMinuteHelp = "maximum number of requests per minute; this is useful when APIs have rate limiting implemented; default is 100";
+    private final String connectionTimeoutHelp = "time period in seconds which CATS should establish a connection with the server; default is 10 seconds";
+    private final String writeTimeoutHelp = "maximum time of inactivity in seconds between two data packets when sending the request to the server; default is 10 seconds";
+    private final String readTimeoutHelp = "maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds";
 
     @Value("${contract:empty}")
     private String contract;
@@ -29,20 +35,6 @@ public class ApiArguments {
     private int writeTimeout;
     @Value("${readTimeout:10}")
     private int readTimeout;
-
-
-    @Value("${arg.api.contract.help:help}")
-    private String contractHelp;
-    @Value("${arg.api.server.help:help}")
-    private String serverHelp;
-    @Value("${arg.api.maxRequestsPerMinute.help:help}")
-    private String maxRequestsPerMinuteHelp;
-    @Value("${arg.api.connectionTimeout.help:help}")
-    private String connectionTimeoutHelp;
-    @Value("${arg.api.writeTimeout.help:help}")
-    private String writeTimeoutHelp;
-    @Value("${arg.api.readTimeout.help:help}")
-    private String readTimeoutHelp;
 
     @PostConstruct
     public void init() {

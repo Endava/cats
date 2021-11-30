@@ -40,13 +40,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
-import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
-import org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.MimeTypeUtils;
 
@@ -72,10 +67,6 @@ import static org.fusesource.jansi.Ansi.ansi;
 /**
  * We need to print the build version and build time
  */
-@ConditionalOnResource(
-        resources = {"${spring.info.build.location:classpath:META-INF/build-info.properties}"}
-)
-@Import({AopAutoConfiguration.class, GsonAutoConfiguration.class, ProjectInfoAutoConfiguration.class})
 @ComponentScan(basePackages = {"com.endava.cats"})
 @SpringBootConfiguration
 public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
@@ -416,7 +407,9 @@ public class CatsMain implements CommandLineRunner, ExitCodeGenerator {
                                 LOGGER, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
                         .forEach(data -> {
                             LOGGER.info("Fuzzer {} and payload: {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getPayload());
+                            testCaseListener.beforeFuzz(fuzzer.getClass());
                             fuzzer.fuzz(data);
+                            testCaseListener.afterFuzz();
                         });
             } else {
                 LOGGER.debug("Skipping fuzzer {} for path {} as configured!", fuzzer, pathItemEntry.getKey());

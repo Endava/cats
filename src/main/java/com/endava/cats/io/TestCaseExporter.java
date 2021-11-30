@@ -16,7 +16,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.info.BuildProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.File;
@@ -62,8 +62,8 @@ public abstract class TestCaseExporter {
     private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
     @Autowired
     private ReportingArguments reportingArguments;
-    @Autowired
-    private BuildProperties buildProperties;
+    @Value("${app.version}")
+    private String version;
     private Path path;
     private long t0;
 
@@ -186,7 +186,7 @@ public abstract class TestCaseExporter {
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
                 .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME))
                 .executionTime(((System.currentTimeMillis() - t0) / 1000))
-                .catsVersion(buildProperties.getVersion()).build();
+                .catsVersion(this.version).build();
     }
 
     public void writeHelperFiles() {
@@ -218,7 +218,7 @@ public abstract class TestCaseExporter {
         Map<String, Object> context = new HashMap<>();
         context.put("TEST_CASE", testCase);
         context.put("TIMESTAMP", OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
-        context.put("VERSION", buildProperties.getVersion());
+        context.put("VERSION", this.version);
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);
         try {

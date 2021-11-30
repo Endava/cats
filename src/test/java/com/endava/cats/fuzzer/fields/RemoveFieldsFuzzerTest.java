@@ -15,12 +15,10 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -33,8 +31,6 @@ import java.util.Map;
 
 @ExtendWith(SpringExtension.class)
 class RemoveFieldsFuzzerTest {
-
-
     @MockBean
     private ServiceCaller serviceCaller;
 
@@ -51,9 +47,6 @@ class RemoveFieldsFuzzerTest {
     private IgnoreArguments ignoreArguments;
 
     @SpyBean
-    private BuildProperties buildProperties;
-
-    @SpyBean
     private CatsUtil catsUtil;
 
     @SpyBean
@@ -63,13 +56,6 @@ class RemoveFieldsFuzzerTest {
 
     private FuzzingData data;
     private CatsResponse catsResponse;
-
-    @BeforeAll
-    static void init() {
-        System.setProperty("name", "cats");
-        System.setProperty("version", "4.3.2");
-        System.setProperty("time", "100011111");
-    }
 
     @BeforeEach
     void setup() {
