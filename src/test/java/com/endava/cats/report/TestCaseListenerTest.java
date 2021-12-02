@@ -68,7 +68,7 @@ class TestCaseListenerTest {
     @Test
     void shouldNotCallInitPathWhenReplayTests() {
         ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
-        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+       // Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
         testCaseListener.startSession();
 
         Mockito.verifyNoInteractions(testCaseExporter);
@@ -163,7 +163,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldCallInfoInsteadOfErrorWhenIgnoreCodeSupplied() {
-        Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+      //  Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
         Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {

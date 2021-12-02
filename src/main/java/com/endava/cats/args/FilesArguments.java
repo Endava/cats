@@ -6,19 +6,16 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import picocli.CommandLine;
 
-import javax.annotation.PostConstruct;
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class FilesArguments {
@@ -28,46 +25,37 @@ public class FilesArguments {
     private final Map<String, Map<String, String>> refData = new HashMap<>();
     private final CatsUtil catsUtil;
 
-    @Getter
-    private final List<CatsArg> args = new ArrayList<>();
-
-    private final String paramsHelp = "A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs";
-    private final String headersFileHelp = "FILE specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example";
-    private final String refDataFileHelp = "FILE specifies the file with fields that must have a fixed value in order for requests to succeed";
-    private final String customFuzzerFileHelp = "A file used by the `CustomFuzzer` that will be used to create user-supplied payloads";
-    private final String securityFuzzerFileHelp = "A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities";
-
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
-    private List<String> urlParamsList = new ArrayList<>();
-    @Value("${urlParams:empty}")
+
+    @CommandLine.Option(names = {"--urlParams"},
+            description = "A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs", split = ",")
     @Getter
-    private String params;
-    @Value("${headers:empty}")
+    private List<String> params;
+
+    @CommandLine.Option(names = {"--headers"},
+            description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example")
     @Getter
-    private String headersFile;
-    @Value("${refData:empty}")
+    private File headersFile;
+
+    @CommandLine.Option(names = {"--refData"},
+            description = "Specifies the file with fields that must have a fixed value in order for requests to succeed")
     @Getter
-    private String refDataFile;
-    @Value("${customFuzzerFile:empty}")
+    private File refDataFile;
+
+    @CommandLine.Option(names = {"--customFuzzerFile"},
+            description = "Specifies the file used by the `CustomFuzzer` that will be used to create user-supplied payloads")
     @Getter
-    private String customFuzzerFile;
-    @Value("${securityFuzzerFile:empty}")
+    private File customFuzzerFile;
+
+    @CommandLine.Option(names = {"--securityFuzzerFile"},
+            description = "Specifies the file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities")
     @Getter
-    private String securityFuzzerFile;
+    private File securityFuzzerFile;
 
     @Autowired
     public FilesArguments(CatsUtil cu) {
         this.catsUtil = cu;
-    }
-
-    @PostConstruct
-    public void init() {
-        args.add(CatsArg.builder().name("urlParams").value(params).help(paramsHelp).build());
-        args.add(CatsArg.builder().name("headers").value(headersFile).help(headersFileHelp).build());
-        args.add(CatsArg.builder().name("refData").value(refDataFile).help(refDataFileHelp).build());
-        args.add(CatsArg.builder().name("customFuzzerFile").value(customFuzzerFile).help(customFuzzerFileHelp).build());
-        args.add(CatsArg.builder().name("securityFuzzerFile").value(securityFuzzerFile).help(securityFuzzerFileHelp).build());
     }
 
     /**
@@ -84,48 +72,43 @@ public class FilesArguments {
     }
 
     public void loadSecurityFuzzerFile() throws IOException {
-        if (!CatsUtil.isArgumentValid(securityFuzzerFile)) {
+        if (securityFuzzerFile == null) {
             log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
         } else {
-            securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile);
+            securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile.getAbsolutePath());
         }
     }
 
     public void loadCustomFuzzerFile() throws IOException {
-        if (!CatsUtil.isArgumentValid(customFuzzerFile)) {
+        if (customFuzzerFile == null) {
             log.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
         } else {
-            customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile);
+            customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile.getAbsolutePath());
         }
     }
 
     public void loadRefData() throws IOException {
-        if (!CatsUtil.isArgumentValid(refDataFile)) {
+        if (refDataFile == null) {
             log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
-            catsUtil.loadFileToMap(refDataFile, refData);
+            catsUtil.loadFileToMap(refDataFile.getAbsolutePath(), refData);
             log.info("Reference data file loaded successfully: {}", refData);
         }
     }
 
     public void loadURLParams() {
-        if (!CatsUtil.isArgumentValid(params)) {
+        if (params == null) {
             log.info("No URL parameters supplied!");
         } else {
-            urlParamsList = Arrays.stream(params.split(",")).map(String::trim).collect(Collectors.toList());
-            log.info("URL parameters: {}", urlParamsList);
+            log.info("URL parameters: {}", params);
         }
     }
 
     public void loadHeaders() throws IOException {
-        try {
-            if (!CatsUtil.isArgumentValid(headersFile)) {
-                log.info("No headers file was supplied! No additional header will be added!");
-            } else {
-                catsUtil.loadFileToMap(headersFile, headers);
-            }
-        } catch (Exception e) {
-            throw new IOException("There was a problem parsing the headers file: " + e.getMessage());
+        if (headersFile == null) {
+            log.info("No headers file was supplied! No additional header will be added!");
+        } else {
+            catsUtil.loadFileToMap(headersFile.getAbsolutePath(), headers);
         }
     }
 
@@ -136,7 +119,7 @@ public class FilesArguments {
      * @return a name:value list of url params to be replaced when calling the service
      */
     public List<String> getUrlParamsList() {
-        return this.urlParamsList;
+        return Optional.ofNullable(this.params).orElse(Collections.emptyList());
     }
 
     /**

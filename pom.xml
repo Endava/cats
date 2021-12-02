@@ -39,6 +39,7 @@
         <pretty-logger.version>1.8</pretty-logger.version>
         <compiler.version>0.9.10</compiler.version>
         <json-path.version>2.5.0</json-path.version>
+        <picocli-spring-boot-starter.version>4.6.2</picocli-spring-boot-starter.version>
     </properties>
 
     <build>
@@ -185,6 +186,11 @@
     </distributionManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli-spring-boot-starter</artifactId>
+            <version>${picocli-spring-boot-starter.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>

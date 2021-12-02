@@ -24,6 +24,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
@@ -73,8 +74,8 @@ class CustomFuzzerTest {
 
     @Test
     void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "mumu");
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml("mumu");
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("mumu"));
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.anyString());
 
         Assertions.assertThatThrownBy(() -> filesArguments.loadCustomFuzzerFile()).isInstanceOf(FileNotFoundException.class);
     }
@@ -82,7 +83,6 @@ class CustomFuzzerTest {
     @Test
     void givenAnEmptyCustomFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
         FuzzingData data = FuzzingData.builder().build();
-        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "empty");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
@@ -135,7 +135,7 @@ class CustomFuzzerTest {
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
 
 
-        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", "custom");
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));
         Mockito.when(catsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
         Mockito.when(catsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
@@ -226,8 +226,8 @@ class CustomFuzzerTest {
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", fuzzerFile);
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File(fuzzerFile));
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).sanitizeToJsonPath(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).equalAsJson(Mockito.anyString(), Mockito.anyString());

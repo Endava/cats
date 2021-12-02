@@ -21,6 +21,9 @@ import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.core.models.ParseOptions;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -106,6 +111,19 @@ public class CatsUtil {
         return results.get(true);
     }
 
+    public static OpenAPI readOpenApi(String location) throws IOException {
+        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        options.setFlatten(true);
+
+        if (location.startsWith("http")) {
+            return openAPIV3Parser.readLocation(location, null, options).getOpenAPI();
+        } else {
+            return openAPIV3Parser.readContents(Files.readString(Paths.get(location)), null, options).getOpenAPI();
+        }
+    }
+
     public static String markLargeString(String input) {
         return "ca" + input + "ts";
     }
@@ -118,8 +136,8 @@ public class CatsUtil {
         ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(pkg)).setLevel(level);
     }
 
-    public static boolean isArgumentValid(String argument) {
-        return argument != null && !"empty".equalsIgnoreCase(argument) && !"".equalsIgnoreCase(argument.trim().strip());
+    public static boolean isArgumentValid(List<String> argument) {
+        return argument != null && !argument.isEmpty();
     }
 
     public static List<FuzzingStrategy> getLargeValuesStrategy(int largeStringsSize) {

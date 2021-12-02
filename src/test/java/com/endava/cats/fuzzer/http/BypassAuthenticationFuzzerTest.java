@@ -21,6 +21,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ class BypassAuthenticationFuzzerTest {
 
     @Test
     void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerRuns() throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "headersFile", "notEmpty");
+        ReflectionTestUtils.setField(filesArguments, "headersFile", new File("notEmpty"));
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
         filesArguments.loadHeaders();
 
@@ -122,7 +123,7 @@ class BypassAuthenticationFuzzerTest {
 
     @Test
     void shouldProperlyIdentifyAuthHeadersFromHeadersFile() throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "headersFile", "notEmpty");
+        ReflectionTestUtils.setField(filesArguments, "headersFile", new File("notEmpty"));
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
         Mockito.doCallRealMethod().when(catsUtil).loadFileToMap(Mockito.anyString(), Mockito.anyMap());
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").build();

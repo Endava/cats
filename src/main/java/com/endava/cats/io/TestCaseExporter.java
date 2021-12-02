@@ -95,7 +95,7 @@ public abstract class TestCaseExporter {
     }
 
     public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
-        if (reportingArguments.printExecutionStatistics()) {
+        if (reportingArguments.isPrintExecutionStatistics()) {
             Map<String, List<CatsTestCase>> executionDetails = extractExecutionDetails(testCaseMap);
 
             LOGGER.info(" ");
@@ -133,7 +133,7 @@ public abstract class TestCaseExporter {
         LOGGER.note(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
         LOGGER.note(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
 
-        if (reportingArguments.printDetailedExecutionStatistics()) {
+        if (reportingArguments.isPrintDetailedExecutionStatistics()) {
             LOGGER.note("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
             LOGGER.info(" ");
         }

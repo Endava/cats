@@ -23,6 +23,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,8 +68,8 @@ class SecurityFuzzerTest {
 
     @Test
     void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", "mumu");
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml("mumu");
+        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File("mumu"));
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.anyString());
 
         Assertions.assertThatThrownBy(() -> filesArguments.loadSecurityFuzzerFile()).isInstanceOf(FileNotFoundException.class);
     }
@@ -76,7 +77,6 @@ class SecurityFuzzerTest {
     @Test
     void givenAnEmptySecurityFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
         FuzzingData data = FuzzingData.builder().build();
-        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", "empty");
         SecurityFuzzer spyCustomFuzzer = Mockito.spy(securityFuzzer);
         spyCustomFuzzer.fuzz(data);
 
@@ -125,8 +125,8 @@ class SecurityFuzzerTest {
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", fuzzerFile);
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml(fuzzerFile);
+        ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
+        Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
         Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
         Map<String, List<String>> responses = new HashMap<>();

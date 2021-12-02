@@ -92,11 +92,7 @@ public class ServiceCaller {
 
     @PostConstruct
     public void initRateLimiter() {
-        int reqPerMinute = 10000;
-        if (!"empty".equals(apiArguments.getMaxRequestsPerMinute())) {
-            reqPerMinute = Integer.parseInt(apiArguments.getMaxRequestsPerMinute());
-        }
-        rateLimiter = RateLimiter.create(1.0 * reqPerMinute / 60);
+        rateLimiter = RateLimiter.create(1.0 * apiArguments.getMaxRequestsPerMinute() / 60);
     }
 
     @PostConstruct
