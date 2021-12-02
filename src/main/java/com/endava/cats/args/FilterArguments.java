@@ -10,7 +10,6 @@ import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.fuzzer.WhitespaceFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
-import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.github.ludovicianul.prettylogger.config.level.ConfigFactory;
@@ -18,50 +17,47 @@ import io.github.ludovicianul.prettylogger.config.level.PrettyMarker;
 import lombok.Getter;
 import org.fusesource.jansi.Ansi;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
+import picocli.CommandLine;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
 @Getter
 public class FilterArguments {
-    private static final String ALL = "all";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FilterArguments.class);
-    private final List<CatsArg> args = new ArrayList<>();
+    protected List<CatsSkipped> skipFuzzersForPaths = new ArrayList<>();
 
-    private final String suppliedFuzzersHelp = "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to run. You can use 'all' to include all fuzzers. To list all available fuzzers run: './cats.jar list fuzzers";
-    private final String pathsHelp = "PATH_LIST a comma separated list of paths to test. If no path is supplied, all paths will be considered";
-    private final String skipPathsHelp = "PATH_LIST a comma separated list of paths to ignore. If no path is supplied, no path will be ignored";
-    private final String skipFuzzersHelp = "COMMA_SEPARATED_LIST_OF_FUZZERS the list of fuzzers you want to exclude. This is either a full or partial Fuzzer name";
-    private final String skipXXXForPathHelp = "/path1,/path2 can configure fuzzers to be excluded for the specified paths. XXX must be a full Fuzzer name";
-    private final String httpMethodsHelp = "POST,PUT,GET,etc a comma separated list of HTTP methods that will be used to filter which http methods will be executed for each path within the contract";
-    private final String dryRunHelp = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers";
-    private final String testsHelp = "TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder";
+    @CommandLine.Option(names = {"--fuzzers"},
+            description = "A comma separated list of fuzzers you want to run. You can use full or partial Fuzzer names. To list all available fuzzers run: `./cats.jar list -f`", split = ",")
+    private List<String> suppliedFuzzers;
 
-    protected List<CatsSkipped> skipFuzzersForPaths;
-    @Value("${fuzzers:all}")
-    private String suppliedFuzzers;
-    @Value("${paths:all}")
-    private String paths;
-    @Value("${skipPaths:empty}")
-    private String skipPaths;
-    @Value("${skipFuzzers:empty}")
-    private String skipFuzzers;
-    @Value("${httpMethods:empty}")
-    private String httpMethods;
-    @Value("${dryRun:false}")
-    private String dryRun;
-    @Value("${tests:empty}")
-    private String tests;
+    @CommandLine.Option(names = {"--paths"},
+            description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. To list all available paths run: `./cats.jar list -p -c api.yml`", split = ",")
+    private List<String> paths;
+
+    @CommandLine.Option(names = {"--skipPaths"},
+            description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. To list all available paths run: `./cats.jar list -p -c api.yml`", split = ",")
+    private List<String> skipPaths;
+
+    @CommandLine.Option(names = {"--skipFuzzers"},
+            description = "A comma separated list of fuzzers you want to ignore. You can use full or partial Fuzzer names. To list all available fuzzers run: `./cats.jar list -f`", split = ",")
+    private List<String> skipFuzzers;
+
+    @CommandLine.Option(names = {"--httpMethods"},
+            description = "A comma separated list of HTTP methods. When supplied, only these methods will be considered for each contract path. Default: ${DEFAULT-VALUE}", split = ",")
+    private List<HttpMethod> httpMethods = HttpMethod.restMethods();
+
+    @CommandLine.Option(names = {"--dryRun"},
+            description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
+    private boolean dryRun;
 
     @Autowired
     private List<Fuzzer> fuzzers;
@@ -72,25 +68,13 @@ public class FilterArguments {
     @Autowired
     private CheckArguments checkArguments;
 
-    public void init() {
-        args.add(CatsArg.builder().name("fuzzers").value(suppliedFuzzers).help(suppliedFuzzersHelp).build());
-        args.add(CatsArg.builder().name("paths").value(paths).help(pathsHelp).build());
-        args.add(CatsArg.builder().name("skipPaths").value(skipPaths).help(skipPathsHelp).build());
-        args.add(CatsArg.builder().name("excludedFuzzers").value(skipFuzzers).help(skipFuzzersHelp).build());
-        args.add(CatsArg.builder().name("skipXXXForPath").value(String.valueOf(skipFuzzersForPaths)).help(skipXXXForPathHelp).build());
-        args.add(CatsArg.builder().name("httpMethods").value(httpMethods).help(httpMethodsHelp).build());
-        args.add(CatsArg.builder().name("dryRun").value(dryRun).help(dryRunHelp).build());
-        args.add(CatsArg.builder().name("tests").value(tests).help(testsHelp).build());
-    }
-
     /**
      * Triggers the processing of skipped Fuzzers for specific paths.
      *
      * @param args the program arguments
      */
     public void loadConfig(String... args) {
-        this.processSkipFuzzerFor(args);
-        init();
+        this.processSkipFuzzerFor(List.of(Optional.ofNullable(args).orElse(new String[]{})));
     }
 
     /**
@@ -114,18 +98,24 @@ public class FilterArguments {
         }
     }
 
-    public List<HttpMethod> getHttpMethods() {
-        if (!CatsUtil.isArgumentValid(httpMethods)) {
-            return HttpMethod.restMethods();
-        }
-
-        return Arrays.stream(httpMethods.split(","))
-                .map(String::trim).map(method -> HttpMethod.fromString(method).orElse(null))
-                .filter(Objects::nonNull).collect(Collectors.toList());
+    public List<String> getSkipFuzzers() {
+        return Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList());
     }
 
-    private void processSkipFuzzerFor(String... args) {
-        List<String> skipForArgs = Arrays.stream(args)
+    public List<String> getSkipPaths() {
+        return Optional.ofNullable(this.skipPaths).orElse(Collections.emptyList());
+    }
+
+    public List<String> getSuppliedFuzzers() {
+        return Optional.ofNullable(this.suppliedFuzzers).orElse(Collections.emptyList());
+    }
+
+    public List<String> getPaths() {
+        return Optional.ofNullable(this.paths).orElse(Collections.emptyList());
+    }
+
+    private void processSkipFuzzerFor(List<String> args) {
+        List<String> skipForArgs = args.stream()
                 .filter(arg -> arg.startsWith("--skip") && arg.contains("ForPath")).collect(Collectors.toList());
 
         List<CatsSkipped> catsSkipped = skipForArgs.stream()
@@ -154,7 +144,7 @@ public class FilterArguments {
     }
 
     private List<String> removeContractFuzzersIfNeeded(List<String> currentFuzzers) {
-        if (!ignoreArguments.isEmptyIgnoredResponseCodes() || ignoreArguments.isBlackbox()) {
+        if (!ignoreArguments.getIgnoreResponseCodes().isEmpty() || ignoreArguments.isBlackbox()) {
             return currentFuzzers.stream().filter(fuzzer -> !fuzzer.contains("Contract"))
                     .collect(Collectors.toList());
         }
@@ -165,8 +155,8 @@ public class FilterArguments {
     private List<String> processSuppliedFuzzers() {
         List<String> initialFuzzersList = this.constructFuzzersListFromCheckArguments();
 
-        if (!ALL.equalsIgnoreCase(suppliedFuzzers)) {
-            List<String> suppliedFuzzerNames = Stream.of(suppliedFuzzers.split(",")).map(String::trim).collect(Collectors.toList());
+        if (!this.getSuppliedFuzzers().isEmpty()) {
+            List<String> suppliedFuzzerNames = suppliedFuzzers.stream().map(String::trim).collect(Collectors.toList());
             initialFuzzersList = initialFuzzersList.stream()
                     .filter(fuzzer ->
                             suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
@@ -178,18 +168,18 @@ public class FilterArguments {
 
     private List<String> constructFuzzersListFromCheckArguments() {
         List<String> finalList = new ArrayList<>();
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.checkFields(), FieldFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.checkContract(), ContractInfoFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.checkHeaders(), HeaderFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.checkHttp(), HttpFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckFields(), FieldFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckContract(), ContractInfoFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckHeaders(), HeaderFuzzer.class));
+        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckHttp(), HttpFuzzer.class));
 
         if (finalList.isEmpty()) {
             finalList = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
         }
 
-        this.removeIfNotSupplied(checkArguments.includeControlChars(), ControlCharFuzzer.class, finalList);
-        this.removeIfNotSupplied(checkArguments.includeEmojis(), EmojiFuzzer.class, finalList);
-        this.removeIfNotSupplied(checkArguments.includeWhitespaces(), WhitespaceFuzzer.class, finalList);
+        this.removeIfNotSupplied(checkArguments.isIncludeControlChars(), ControlCharFuzzer.class, finalList);
+        this.removeIfNotSupplied(checkArguments.isIncludeEmojis(), EmojiFuzzer.class, finalList);
+        this.removeIfNotSupplied(checkArguments.isIncludeWhitespaces(), WhitespaceFuzzer.class, finalList);
 
         return finalList;
     }
@@ -219,29 +209,11 @@ public class FilterArguments {
     }
 
     private List<String> removeSkippedFuzzersGlobally(List<String> allowedFuzzers) {
-        List<String> fuzzersToExclude = Stream.of(skipFuzzers.split(",")).map(String::trim).collect(Collectors.toList());
+        List<String> fuzzersToExclude = this.getSkipFuzzers();
 
         return allowedFuzzers.stream()
                 .filter(fuzzer ->
                         fuzzersToExclude.stream().noneMatch(fuzzer::contains))
                 .collect(Collectors.toList());
-    }
-
-
-    public boolean areTestCasesSupplied() {
-        return CatsUtil.isArgumentValid(tests);
-    }
-
-    /**
-     * Test Cases that do not have a json extension will be resolved from the cats-report folder.
-     *
-     * @return a list of all supplied test cases fully resolved
-     */
-    public List<String> parseTestCases() {
-        return Arrays.stream(tests.split(","))
-                .map(testCase -> testCase.trim().strip())
-                .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
-                .collect(Collectors.toList());
-
     }
 }

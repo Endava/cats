@@ -44,6 +44,8 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class TestCaseListener {
 
     public static final String ID = "id";
+    public static final String FUZZER_KEY = "fuzzerKey";
+    public static final String FUZZER = "fuzzer";
     protected static final String ID_ANSI = "id_ansi";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
@@ -76,13 +78,13 @@ public class TestCaseListener {
 
     public void beforeFuzz(Class<?> fuzzer) {
         String clazz = fuzzer.getSimpleName().replaceAll("[a-z]", "");
-        MDC.put("fuzzer", ConsoleUtils.centerWithAnsiColor(clazz, 5, Ansi.Color.MAGENTA));
-        MDC.put("fuzzerKey", fuzzer.getSimpleName());
+        MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, 5, Ansi.Color.MAGENTA));
+        MDC.put(FUZZER_KEY, fuzzer.getSimpleName());
     }
 
     public void afterFuzz() {
-        MDC.put("fuzzer", null);
-        MDC.put("fuzzerKey", null);
+        MDC.put(FUZZER, null);
+        MDC.put(FUZZER_KEY, null);
     }
 
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
@@ -139,7 +141,7 @@ public class TestCaseListener {
     }
 
     private void endTestCase() {
-        testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get("fuzzerKey"));
+        testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get(FUZZER_KEY));
         if (testCaseMap.get(MDC.get(ID)).isNotSkipped()) {
             testCaseExporter.writeTestCase(testCaseMap.get(MDC.get(ID)));
         }

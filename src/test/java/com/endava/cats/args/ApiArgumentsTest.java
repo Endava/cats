@@ -6,60 +6,27 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 class ApiArgumentsTest {
 
-
     @Test
-    void shouldReturnContractEmpty() {
+    void shouldNotReturnRemoteContractWhenNull() {
         ApiArguments apiArguments = new ApiArguments();
-
-        ReflectionTestUtils.setField(apiArguments, "contract", "empty");
-
-        Assertions.assertThat(apiArguments.isContractEmpty()).isTrue();
+        Assertions.assertThat(apiArguments.isRemoteContract()).isFalse();
     }
 
     @Test
-    void shouldNotReturnContractEmpty() {
+    void shouldNotReturnRemoteContractWhenLocal() {
         ApiArguments apiArguments = new ApiArguments();
+        ReflectionTestUtils.setField(apiArguments, "contract", "local");
 
-        ReflectionTestUtils.setField(apiArguments, "contract", "contract");
-
-        Assertions.assertThat(apiArguments.isContractEmpty()).isFalse();
+        Assertions.assertThat(apiArguments.isRemoteContract()).isFalse();
     }
 
     @Test
-    void shouldNotReturnServerEmpty() {
+    void shouldReturnRemoteContractWhenHttp() {
         ApiArguments apiArguments = new ApiArguments();
-
-        ReflectionTestUtils.setField(apiArguments, "server", "contract");
-
-        Assertions.assertThat(apiArguments.isServerEmpty()).isFalse();
-    }
-
-
-    @Test
-    void shouldReturnServerEmpty() {
-        ApiArguments apiArguments = new ApiArguments();
-
-        ReflectionTestUtils.setField(apiArguments, "server", "empty");
-
-        Assertions.assertThat(apiArguments.isServerEmpty()).isTrue();
-    }
-
-    @Test
-    void shouldReturnRemoteContract() {
-        ApiArguments apiArguments = new ApiArguments();
-
-        ReflectionTestUtils.setField(apiArguments, "contract", "http://localhost");
+        ReflectionTestUtils.setField(apiArguments, "contract", "http://localhost/apu.yml");
 
         Assertions.assertThat(apiArguments.isRemoteContract()).isTrue();
     }
 
-    @Test
-    void shouldNotReturnRemoteContract() {
-        ApiArguments apiArguments = new ApiArguments();
-
-        ReflectionTestUtils.setField(apiArguments, "contract", "contract");
-
-        Assertions.assertThat(apiArguments.isRemoteContract()).isFalse();
-    }
 
 }

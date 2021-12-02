@@ -24,8 +24,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.File;
 import java.net.Proxy;
 import java.util.Collections;
+import java.util.List;
 
 @ExtendWith(SpringExtension.class)
 @SpringJUnitConfig({CatsUtil.class, CatsDSLParser.class, AuthArguments.class, ApiArguments.class})
@@ -68,13 +70,13 @@ class ServiceCallerTest {
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments);
 
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
-        ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
-        ReflectionTestUtils.setField(authArguments, "proxyHost", "empty");
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
-        ReflectionTestUtils.setField(filesArguments, "refDataFile", "src/test/resources/refFields.yml");
-        ReflectionTestUtils.setField(filesArguments, "headersFile", "src/test/resources/headers.yml");
-        ReflectionTestUtils.setField(filesArguments, "params", "id=1,test=2");
-
+        ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("src/test/resources/refFields.yml"));
+        ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
+        ReflectionTestUtils.setField(filesArguments, "params", List.of("id=1", "test=2"));
+        ReflectionTestUtils.setField(authArguments, "sslKeystore", null);
+        ReflectionTestUtils.setField(authArguments, "proxyHost", null);
+        ReflectionTestUtils.setField(authArguments, "proxyPort", 0);
 
         filesArguments.loadHeaders();
         filesArguments.loadRefData();
@@ -83,7 +85,7 @@ class ServiceCallerTest {
 
     @Test
     void shouldSetRateLimiter() {
-        ReflectionTestUtils.setField(apiArguments, "maxRequestsPerMinute", "30");
+        ReflectionTestUtils.setField(apiArguments, "maxRequestsPerMinute", 30);
         serviceCaller.initRateLimiter();
         serviceCaller.initHttpClient();
 
@@ -255,8 +257,6 @@ class ServiceCallerTest {
 
     @Test
     void shouldNotCreateSSLFactoryWhenKeystoreEmpty() {
-        ReflectionTestUtils.setField(authArguments, "sslKeystore", "empty");
-
         serviceCaller.initHttpClient();
         Assertions.assertThat(serviceCaller.okHttpClient).isNotNull();
     }

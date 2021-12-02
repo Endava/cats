@@ -1,64 +1,40 @@
 package com.endava.cats.args;
 
-import com.endava.cats.util.CatsUtil;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import picocli.CommandLine;
 
-import javax.annotation.PostConstruct;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @Getter
 public class ReportingArguments {
     private static final String EMPTY = "empty";
-    private final List<CatsArg> args = new ArrayList<>();
 
-    @Value("${log:empty}")
-    private String logData;
-    @Value("${printExecutionStatistics:empty}")
-    private String printExecutionStatistics;
-    @Value("${timestampReports:empty}")
-    private String timestampReports;
-    @Value("${reportFormat:htmlJs}")
-    private String reportFormat;
+    @CommandLine.Option(names = {"--log"},
+            description = "Set custom log level of a given package(s). You can provide a comma separated list of PACKAGE:LEVEL pairs", split = ",")
+    private List<String> logData;
 
-    private final String timestampReportsHelp = "If supplied (no value needed), it will output the report still inside the 'cats-report' folder, but in a sub-folder with the current timestamp";
-    private final String logDataHelp = "PACKAGE:LEVEL set custom log level of a given package. You can provide a comma separated list of PACKAGE:LEVEL pairs";
-    private final String printExecutionStatisticsHelp = "If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply --printExecutionStatistics=detailed";
-    private final String reportFormatHelp = "FORMAT specifies the format of the CATS report. You can use 'htmlOnly' if you want the report to not contain any Javascript. This is useful for large number of tests, as the page will render faster and also in CI environments due to Javascript content security policies. Default is 'htmlJs' which is the original CATS single page report format.";
+    @CommandLine.Option(names = {"--printExecutionStatistics"},
+            description = "Print a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply --printExecutionStatistics=detailed")
+    private boolean printExecutionStatistics;
 
+    @CommandLine.Option(names = {"--printDetailedExecutionStatistics"},
+            description = "Print detailed execution statistics with execution times for each request")
+    private boolean printDetailedExecutionStatistics;
 
-    @PostConstruct
-    public void init() {
-        args.add(CatsArg.builder().name("log").value(logData).help(logDataHelp).build());
-        args.add(CatsArg.builder().name("printExecutionStatistics").value(String.valueOf(this.printExecutionStatistics())).help(printExecutionStatisticsHelp).build());
-        args.add(CatsArg.builder().name("timestampReports").value(timestampReports).help(timestampReportsHelp).build());
-        args.add(CatsArg.builder().name("reportFormat").value(reportFormat).help(reportFormatHelp).build());
-    }
+    @CommandLine.Option(names = {"--timestampReports"},
+            description = "Output the report inside the 'cats-report' folder in a sub-folder with the current timestamp")
+    private boolean timestampReports;
 
-    public boolean printExecutionStatistics() {
-        return !EMPTY.equalsIgnoreCase(printExecutionStatistics);
-    }
+    @CommandLine.Option(names = {"--reportFormat"},
+            description = "The format of the CATS report. Default: ${DEFAULT-VALUE}. You can use 'HTML_ONLY' if you want the report to not contain any Javascript. This is useful for large number of tests, as the page will render faster and also in CI environments due to Javascript content security policies.")
+    private ReportFormat reportFormat = ReportFormat.HTML_JS;
 
-    public boolean printDetailedExecutionStatistics() {
-        return "detailed".equalsIgnoreCase(printExecutionStatistics);
-    }
-
-    public boolean hasLogData() {
-        return CatsUtil.isArgumentValid(logData);
-    }
-
-    public boolean isTimestampReports() {
-        return !EMPTY.equalsIgnoreCase(timestampReports);
-    }
-
-    public ReportFormat getReportFormat() {
-        if (reportFormat.equalsIgnoreCase("htmlOnly")) {
-            return ReportFormat.HTML_ONLY;
-        }
-        return ReportFormat.HTML_JS;
+    public List<String> getLogData() {
+        return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }
 
     public enum ReportFormat {
