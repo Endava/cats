@@ -5,15 +5,15 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @ContractInfoFuzzer
-@Component
+@Singleton
 public class VersionsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final List<String> VERSIONS = Arrays.asList("version\\d*\\.?", "v\\d+\\.?");
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());

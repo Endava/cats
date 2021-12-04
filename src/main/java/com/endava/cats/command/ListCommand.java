@@ -12,11 +12,12 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.fusesource.jansi.Ansi;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
+import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.Any;
+import javax.enterprise.inject.Instance;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -32,15 +33,15 @@ import static org.fusesource.jansi.Ansi.ansi;
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
         helpCommand = true,
         version = "cats list 7.0.0")
-@Component
+@Dependent
 public class ListCommand implements Runnable {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ListCommand.class);
-    private final List<Fuzzer> fuzzersList;
+    private final Instance<Fuzzer> fuzzersList;
+
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
 
-    @Autowired
-    public ListCommand(List<Fuzzer> fuzzersList) {
+    public ListCommand(@Any Instance<Fuzzer> fuzzersList) {
         this.fuzzersList = fuzzersList;
     }
 
@@ -73,7 +74,7 @@ public class ListCommand implements Runnable {
 
     void listFuzzers() {
         String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
-        LOGGER.info(message, fuzzersList.size());
+        LOGGER.info(message, fuzzersList.stream().count());
         filterAndDisplay(FieldFuzzer.class);
         filterAndDisplay(HeaderFuzzer.class);
         filterAndDisplay(HttpFuzzer.class);

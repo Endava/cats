@@ -1,27 +1,24 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
@@ -29,29 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class RemoveFieldsFuzzerTest {
-    @MockBean
     private ServiceCaller serviceCaller;
-
-    @SpyBean
+    @InjectSpy
     private TestCaseListener testCaseListener;
-
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
-    @MockBean
     private IgnoreArguments ignoreArguments;
-
-    @SpyBean
+    private ProcessingArguments processingArguments;
     private CatsUtil catsUtil;
-
-    @SpyBean
-    private CatsDSLParser catsDSLParser;
-
     private RemoveFieldsFuzzer removeFieldsFuzzer;
 
     private FuzzingData data;
@@ -59,14 +41,19 @@ class RemoveFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, ignoreArguments);
+        ignoreArguments = Mockito.mock(IgnoreArguments.class);
+        processingArguments = Mockito.mock(ProcessingArguments.class);
+        catsUtil = new CatsUtil(null);
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, ignoreArguments, processingArguments);
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test
     void shouldSkipFuzzerIfSkippedTests() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getAllFields(Mockito.any(), Mockito.any())).thenReturn(Collections.singleton(Collections.singleton("id")));
-        ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
+        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(FuzzingData.SetFuzzingStrategy.ONEBYONE);
+        Mockito.when(data.getAllFields(Mockito.any(), Mockito.anyInt())).thenReturn(Collections.singleton(Collections.singleton("id")));
         Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
         removeFieldsFuzzer.fuzz(data);
 
@@ -105,7 +92,7 @@ class RemoveFieldsFuzzerTest {
         Schema schema = new ObjectSchema();
         schema.setProperties(this.createPropertiesMap());
         schema.setRequired(Collections.singletonList("field"));
-        ReflectionTestUtils.setField(removeFieldsFuzzer, "fieldsFuzzingStrategy", "ONEBYONE");
+        Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(FuzzingData.SetFuzzingStrategy.ONEBYONE);
         data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload(payload).
                 responses(responses).reqSchema(schema).catsUtil(catsUtil).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);

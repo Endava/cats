@@ -7,6 +7,10 @@ import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.fuzzer.SanitizeAndValidate;
+import com.endava.cats.fuzzer.TrimAndValidate;
+import com.endava.cats.fuzzer.ValidateAndSanitize;
+import com.endava.cats.fuzzer.ValidateAndTrim;
 import com.endava.cats.fuzzer.WhitespaceFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
@@ -16,11 +20,12 @@ import io.github.ludovicianul.prettylogger.config.level.ConfigFactory;
 import io.github.ludovicianul.prettylogger.config.level.PrettyMarker;
 import lombok.Getter;
 import org.fusesource.jansi.Ansi;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,44 +34,39 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Component
+@Singleton
 @Getter
 public class FilterArguments {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FilterArguments.class);
     protected List<CatsSkipped> skipFuzzersForPaths = new ArrayList<>();
 
+    @Inject
+    Instance<Fuzzer> fuzzers;
+    @Inject
+    IgnoreArguments ignoreArguments;
+    @Inject
+    CheckArguments checkArguments;
+    @Inject
+    ProcessingArguments processingArguments;
+
     @CommandLine.Option(names = {"--fuzzers"},
             description = "A comma separated list of fuzzers you want to run. You can use full or partial Fuzzer names. To list all available fuzzers run: `./cats.jar list -f`", split = ",")
     private List<String> suppliedFuzzers;
-
     @CommandLine.Option(names = {"--paths"},
             description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. To list all available paths run: `./cats.jar list -p -c api.yml`", split = ",")
     private List<String> paths;
-
     @CommandLine.Option(names = {"--skipPaths"},
             description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. To list all available paths run: `./cats.jar list -p -c api.yml`", split = ",")
     private List<String> skipPaths;
-
     @CommandLine.Option(names = {"--skipFuzzers"},
             description = "A comma separated list of fuzzers you want to ignore. You can use full or partial Fuzzer names. To list all available fuzzers run: `./cats.jar list -f`", split = ",")
     private List<String> skipFuzzers;
-
     @CommandLine.Option(names = {"--httpMethods"},
             description = "A comma separated list of HTTP methods. When supplied, only these methods will be considered for each contract path. Default: ${DEFAULT-VALUE}", split = ",")
     private List<HttpMethod> httpMethods = HttpMethod.restMethods();
-
     @CommandLine.Option(names = {"--dryRun"},
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
     private boolean dryRun;
-
-    @Autowired
-    private List<Fuzzer> fuzzers;
-
-    @Autowired
-    private IgnoreArguments ignoreArguments;
-
-    @Autowired
-    private CheckArguments checkArguments;
 
     /**
      * Triggers the processing of skipped Fuzzers for specific paths.
@@ -85,7 +85,7 @@ public class FilterArguments {
      * @param finalList the final list with Fuzzers to be applied after parsing all filter arguments
      */
     public void printWarningIfNeeded(List<String> finalList) {
-        if (finalList.size() == fuzzers.size()) {
+        if (finalList.size() == fuzzers.stream().count()) {
             PrettyMarker config = ConfigFactory.warning().bold(true).underline(true).showLabel(true).showSymbol(true);
             String warning = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("\t\t\t !!!! WARNING !!!!").reset().toString();
             String text = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("You are running with all Fuzzers enabled. This will take a long time to run!").reset().toString();
@@ -139,8 +139,28 @@ public class FilterArguments {
         allowedFuzzers = this.removeSkippedFuzzersForPath(pathKey, allowedFuzzers);
         allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
         allowedFuzzers = this.removeContractFuzzersIfNeeded(allowedFuzzers);
+        allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
+        allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
 
         return allowedFuzzers;
+    }
+
+    public List<String> removeBasedOnSanitizationStrategy(List<String> currentFuzzers) {
+        Class<? extends Annotation> filterAnnotation = processingArguments.getSanitizationStrategy() == ProcessingArguments.SanitizationStrategy.SANITIZE_AND_VALIDATE
+                ? ValidateAndSanitize.class : SanitizeAndValidate.class;
+        List<String> trimFuzzers = this.getFuzzersFromCheckArgument(true, filterAnnotation);
+
+        return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer))
+                .collect(Collectors.toList());
+    }
+
+    public List<String> removeBasedOnTrimStrategy(List<String> currentFuzzers) {
+        Class<? extends Annotation> filterAnnotation = processingArguments.getEdgeSpacesStrategy() == ProcessingArguments.TrimmingStrategy.TRIM_AND_VALIDATE
+                ? ValidateAndTrim.class : TrimAndValidate.class;
+        List<String> trimFuzzers = this.getFuzzersFromCheckArgument(true, filterAnnotation);
+
+        return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer))
+                .collect(Collectors.toList());
     }
 
     private List<String> removeContractFuzzersIfNeeded(List<String> currentFuzzers) {

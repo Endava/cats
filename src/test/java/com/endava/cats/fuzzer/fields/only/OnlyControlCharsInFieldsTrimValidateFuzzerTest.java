@@ -9,37 +9,35 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
     private final CatsUtil catsUtil = new CatsUtil(null);
-    @Mock
     private ServiceCaller serviceCaller;
-    @Mock
     private TestCaseListener testCaseListener;
-    @Mock
     private FilesArguments filesArguments;
-    @Mock
     private IgnoreArguments ignoreArguments;
 
     private OnlyControlCharsInFieldsTrimValidateFuzzer onlyControlCharsInFieldsTrimValidateFuzzer;
 
     @BeforeEach
     void setup() {
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
+        ignoreArguments = Mockito.mock(IgnoreArguments.class);
         onlyControlCharsInFieldsTrimValidateFuzzer = new OnlyControlCharsInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, ignoreArguments);
         Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("pet"));
     }

@@ -4,22 +4,20 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.EmojiFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.ValidateAndTrim;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.List;
 
-@Component
+@Singleton
 @FieldFuzzer
 @EmojiFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim'")
+@ValidateAndTrim
 public class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer extends InvisibleCharsOnlyValidateTrimFuzzer {
 
-    @Autowired
     public OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, IgnoreArguments fa) {
         super(sc, lr, cu, cp, fa);
     }

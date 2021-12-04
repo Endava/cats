@@ -11,10 +11,9 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import javax.inject.Singleton;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,11 +21,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
-@Component
+@Singleton
 public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     public TopLevelElementsContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

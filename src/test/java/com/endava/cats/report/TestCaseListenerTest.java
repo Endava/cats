@@ -1,11 +1,11 @@
 package com.endava.cats.report;
 
-import com.endava.cats.CatsMain;
-import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.CatsCommand;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
-import com.endava.cats.io.TestCaseExporter;
+import com.endava.cats.io.TestCaseExporterHtmlJs;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -13,62 +13,57 @@ import com.endava.cats.model.report.CatsTestCase;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class TestCaseListenerTest {
 
-    @Mock
+    TestCaseListener testCaseListener;
+
+    @InjectSpy
     private ExecutionStatisticsListener executionStatisticsListener;
-
-    @Mock
-    private TestCaseExporter testCaseExporter;
-
-    @Mock
+    @InjectSpy
     private IgnoreArguments ignoreArguments;
+    @InjectSpy
+    private ReportingArguments reportingArguments;
 
-    @Mock
-    private FilterArguments filterArguments;
-
-    @Mock
     private PrettyLogger logger;
-
-    @Mock
     private Fuzzer fuzzer;
-
-    private TestCaseListener testCaseListener;
+    private TestCaseExporterHtmlJs testCaseExporter;
 
 
     @BeforeEach
     void setup() {
-        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, ignoreArguments);
+        logger = Mockito.mock(PrettyLogger.class);
+        fuzzer = Mockito.mock(Fuzzer.class);
+        testCaseExporter = Mockito.mock(TestCaseExporterHtmlJs.class);
+        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, testCaseExporter, ignoreArguments, reportingArguments);
     }
 
     @AfterEach
     void tearDown() {
-        CatsMain.TEST.set(0);
+        CatsCommand.TEST.set(0);
     }
 
     @Test
     void shouldNotCallInitPathWhenReplayTests() {
         ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
-       // Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+        // Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
         testCaseListener.startSession();
 
         Mockito.verifyNoInteractions(testCaseExporter);
@@ -158,12 +153,12 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        MDC.put(TestCaseListener.ID, null);
+        MDC.remove(TestCaseListener.ID);
     }
 
     @Test
     void shouldCallInfoInsteadOfErrorWhenIgnoreCodeSupplied() {
-      //  Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
+        //  Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
         Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
@@ -181,7 +176,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        MDC.put(TestCaseListener.ID, null);
+        MDC.remove(TestCaseListener.ID);
     }
 
     @Test

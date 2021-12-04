@@ -1,5 +1,6 @@
 package com.endava.cats.model;
 
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
+@QuarkusTest
 class CatsHeaderTest {
 
     @Test

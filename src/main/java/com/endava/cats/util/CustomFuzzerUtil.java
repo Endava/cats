@@ -14,9 +14,8 @@ import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@Component
+@Singleton
 public class CustomFuzzerUtil {
     public static final String DESCRIPTION = "description";
     public static final String HTTP_METHOD = "httpMethod";
@@ -54,7 +53,6 @@ public class CustomFuzzerUtil {
     private final ServiceCaller serviceCaller;
     private final CatsDSLParser catsDSLParser;
 
-    @Autowired
     public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl, CatsDSLParser cdsl) {
         this.serviceCaller = sc;
         catsUtil = cu;
@@ -115,7 +113,7 @@ public class CustomFuzzerUtil {
 
                 /*this is a variable*/
                 if (value.startsWith("$request")) {
-                    value = String.valueOf(this.getVariableFromJson(request, value.replace("request","").substring(2)));
+                    value = String.valueOf(this.getVariableFromJson(request, value.replace("request", "").substring(2)));
                 } else if (value.startsWith("$")) {
                     value = variables.get(value.substring(1));
                 }

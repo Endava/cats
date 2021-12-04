@@ -2,20 +2,19 @@ package com.endava.cats.command;
 
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class ReplayCommandTest {
 
-    @Mock
+    @InjectMock
     private ServiceCaller serviceCaller;
 
     private ReplayCommand replayCommand;

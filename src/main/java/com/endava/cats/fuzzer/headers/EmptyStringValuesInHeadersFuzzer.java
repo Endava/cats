@@ -5,17 +5,15 @@ import com.endava.cats.fuzzer.headers.base.Expect4XXBaseHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 
-@Component
+@Singleton
 @HeaderFuzzer
 public class EmptyStringValuesInHeadersFuzzer extends Expect4XXBaseHeadersFuzzer {
 
-    @Autowired
     public EmptyStringValuesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }

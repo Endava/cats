@@ -1,28 +1,19 @@
 package com.endava.cats.fuzzer.headers.only;
 
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 
+@QuarkusTest
 class OnlyWhitespacesInHeadersFuzzerTest {
-    private final CatsUtil catsUtil = new CatsUtil(null);
-
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
     private OnlyWhitespacesInHeadersFuzzer onlyWhitespacesInHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        onlyWhitespacesInHeadersFuzzer = new OnlyWhitespacesInHeadersFuzzer(catsUtil, serviceCaller, testCaseListener);
+        onlyWhitespacesInHeadersFuzzer = new OnlyWhitespacesInHeadersFuzzer(new CatsUtil(null), null, null);
     }
 
     @Test

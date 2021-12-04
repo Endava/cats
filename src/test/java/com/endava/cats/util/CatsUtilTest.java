@@ -2,6 +2,7 @@ package com.endava.cats.util;
 
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,6 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+@QuarkusTest
 class CatsUtilTest {
 
     @Test
@@ -28,7 +30,7 @@ class CatsUtilTest {
     void givenASetAndMinSize_whenGettingAllSetsWithMinSize_thenAllSubsetsAreProperlyReturned() {
         CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         Set<String> data = new HashSet<>(Arrays.asList("a", "b", "c"));
-        Set<Set<String>> sets = catsUtil.getAllSetsWithMinSize(data, "2");
+        Set<Set<String>> sets = catsUtil.getAllSetsWithMinSize(data, 2);
 
         Assertions.assertThat(sets)
                 .isNotEmpty()

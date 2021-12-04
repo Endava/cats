@@ -4,28 +4,20 @@ import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class ExpectOnly4XXBaseHeadersFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
     private ExpectOnly4XXBaseHeadersFuzzer expectOnly4XXBaseHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        expectOnly4XXBaseHeadersFuzzer = new My4XXFuzzer(serviceCaller, testCaseListener);
+        expectOnly4XXBaseHeadersFuzzer = new My4XXFuzzer(null, null);
     }
 
     @Test

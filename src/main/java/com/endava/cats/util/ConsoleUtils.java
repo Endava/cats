@@ -10,7 +10,7 @@ public final class ConsoleUtils {
     }
 
     public static String centerWithAnsiColor(String str, int padding, Ansi.Color color) {
-        String strAnsi = Ansi.ansi().fg(color).bold().a(str).reset().fgCyan().toString();
+        String strAnsi = Ansi.ansi().fg(color).bold().a(str).reset().toString();
         int paddingLength = strAnsi.length() - str.length() + padding;
         return StringUtils.center(strAnsi, paddingLength, "*");
     }

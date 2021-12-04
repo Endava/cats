@@ -2,16 +2,16 @@ package com.endava.cats.io;
 
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Named;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Service
-@ConditionalOnProperty(name = "reportFormat", havingValue = "htmlJs", matchIfMissing = true)
+@ApplicationScoped
+@Named("htmlJs")
 public class TestCaseExporterHtmlJs extends TestCaseExporter {
 
     @Override

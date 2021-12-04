@@ -7,9 +7,8 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CustomFuzzerUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 
 import static com.endava.cats.util.CustomFuzzerUtil.*;
 
-@Component
+@Singleton
 @SpecialFuzzer
 public class SecurityFuzzer implements CustomFuzzerBase {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -27,7 +26,6 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
 
-    @Autowired
     public SecurityFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
         this.filesArguments = cp;
         this.customFuzzerUtil = cfu;

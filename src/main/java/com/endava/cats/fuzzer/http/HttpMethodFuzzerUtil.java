@@ -8,17 +8,17 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.function.Function;
 
-@Component
+@Singleton
 public class HttpMethodFuzzerUtil {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HttpMethodFuzzerUtil.class);
     private final TestCaseListener testCaseListener;
 
-    @Autowired
+    @Inject
     public HttpMethodFuzzerUtil(TestCaseListener tcl) {
         this.testCaseListener = tcl;
     }

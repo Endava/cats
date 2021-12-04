@@ -1,23 +1,19 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,33 +26,23 @@ import java.util.stream.Stream;
 import static com.endava.cats.fuzzer.headers.CheckSecurityHeadersFuzzer.SECURITY_HEADERS_AS_STRING;
 import static com.endava.cats.fuzzer.headers.UnsupportedAcceptHeadersFuzzerTest.HEADERS;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class CheckSecurityHeadersFuzzerTest {
 
     private static final List<CatsHeader> SOME_SECURITY_HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),
             CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build());
     private static final List<CatsHeader> MISSING_HEADERS = Arrays.asList(CatsHeader.builder().name("X-Frame-Options").value("DENY").build(),
             CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(), CatsHeader.builder().name("X-XSS-Protection").value("0").build());
-    @Mock
     private ServiceCaller serviceCaller;
-
-    @SpyBean
+    @InjectSpy
     private TestCaseListener testCaseListener;
-
-    @MockBean
-    private IgnoreArguments ignoreArguments;
-
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
     private CheckSecurityHeadersFuzzer checkSecurityHeadersFuzzer;
 
     @BeforeEach
     void setup() {
+        serviceCaller = Mockito.mock(ServiceCaller.class);
         checkSecurityHeadersFuzzer = new CheckSecurityHeadersFuzzer(serviceCaller, testCaseListener);
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test

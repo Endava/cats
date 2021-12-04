@@ -1,29 +1,20 @@
 package com.endava.cats.fuzzer.headers.leading;
 
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 
+@QuarkusTest
 class LeadingSpacesInHeadersFuzzerTest {
-    private final CatsUtil catsUtil = new CatsUtil(null);
-
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
     private LeadingSpacesInHeadersFuzzer leadingSpacesInHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        leadingSpacesInHeadersFuzzer = new LeadingSpacesInHeadersFuzzer(catsUtil, serviceCaller, testCaseListener);
+        leadingSpacesInHeadersFuzzer = new LeadingSpacesInHeadersFuzzer(new CatsUtil(null), null, null);
     }
 
     @Test

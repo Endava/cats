@@ -1,9 +1,11 @@
 package com.endava.cats.args;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+@QuarkusTest
 class ApiArgumentsTest {
 
     @Test

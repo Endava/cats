@@ -1,14 +1,14 @@
 package com.endava.cats.io;
 
 import com.endava.cats.model.report.CatsTestReport;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Named;
 import java.util.Collections;
 import java.util.Map;
 
-@Service
-@ConditionalOnProperty(name = "reportFormat", havingValue = "htmlOnly")
+@ApplicationScoped
+@Named("htmlOnly")
 public class TestCaseExporterHtmlOnly extends TestCaseExporter {
 
     @Override

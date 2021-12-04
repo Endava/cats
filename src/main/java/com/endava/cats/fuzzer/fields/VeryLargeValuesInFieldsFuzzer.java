@@ -10,19 +10,17 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 
-@Component
+@Singleton
 @FieldFuzzer
 public class VeryLargeValuesInFieldsFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
 
     private final ProcessingArguments processingArguments;
 
-    @Autowired
     public VeryLargeValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, ProcessingArguments pa) {
         super(sc, lr, cu, cp);
         this.processingArguments = pa;

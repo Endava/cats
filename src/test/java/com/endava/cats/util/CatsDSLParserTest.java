@@ -1,11 +1,13 @@
 package com.endava.cats.util;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 
+@QuarkusTest
 class CatsDSLParserTest {
 
     private CatsDSLParser catsDSLParser;

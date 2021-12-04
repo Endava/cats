@@ -5,18 +5,16 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
-@Component
+@Singleton
 public class HttpStatusCodeInValidRangeContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     public HttpStatusCodeInValidRangeContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

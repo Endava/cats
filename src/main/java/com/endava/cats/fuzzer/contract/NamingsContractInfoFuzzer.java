@@ -9,10 +9,9 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +19,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 @ContractInfoFuzzer
-@Component
+@Singleton
 public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final Pattern HYPHEN_CASE = Pattern.compile("(^[a-z]+((-)?[a-z])+$)+");
     private static final Pattern SNAKE_CASE = Pattern.compile("(^[a-z]+((_)?[a-z])+$)+");
@@ -30,7 +29,6 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final String PLURAL_END = "s";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     public NamingsContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

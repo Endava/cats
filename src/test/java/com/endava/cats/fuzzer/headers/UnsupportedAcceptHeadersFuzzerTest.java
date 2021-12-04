@@ -1,34 +1,28 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class UnsupportedAcceptHeadersFuzzerTest {
     public static final List<CatsHeader> HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),
             CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build(),
             CatsHeader.builder().name("X-Frame-Options").value("DENY").build());
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
     private UnsupportedAcceptHeadersFuzzer unsupportedAcceptHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        unsupportedAcceptHeadersFuzzer = new UnsupportedAcceptHeadersFuzzer(serviceCaller, testCaseListener);
+        unsupportedAcceptHeadersFuzzer = new UnsupportedAcceptHeadersFuzzer(null, null);
     }
 
     @Test

@@ -1,10 +1,12 @@
 package com.endava.cats.fuzzer.http;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+@QuarkusTest
 class ResponseCodeFamilyTest {
 
 

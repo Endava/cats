@@ -1,8 +1,10 @@
 package com.endava.cats.model;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+@QuarkusTest
 class FuzzingConstraintsTest {
 
     private FuzzingConstraints fuzzingConstraints;

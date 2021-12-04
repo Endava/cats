@@ -1,28 +1,18 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class EmptyStringValuesInHeadersFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
     private EmptyStringValuesInHeadersFuzzer emptyStringValuesInHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        emptyStringValuesInHeadersFuzzer = new EmptyStringValuesInHeadersFuzzer(serviceCaller, testCaseListener);
+        emptyStringValuesInHeadersFuzzer = new EmptyStringValuesInHeadersFuzzer(null, null);
     }
 
     @Test

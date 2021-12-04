@@ -3,21 +3,20 @@ package com.endava.cats.fuzzer.fields.trailing;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.ControlCharFuzzer;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.ValidateAndTrim;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.stereotype.Component;
 
-@Component
+import javax.inject.Singleton;
+
+@Singleton
 @FieldFuzzer
 @ControlCharFuzzer
-@ConditionalOnExpression(value = "'${edgeSpacesStrategy:trimAndValidate}'=='validateAndTrim'")
+@ValidateAndTrim
 public class TrailingControlCharsInFieldsValidateTrimFuzzer extends TrailingControlCharsInFieldsTrimValidateFuzzer {
 
-    @Autowired
     protected TrailingControlCharsInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

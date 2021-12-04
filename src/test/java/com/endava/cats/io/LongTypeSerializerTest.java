@@ -1,9 +1,11 @@
 package com.endava.cats.io;
 
 import com.google.gson.JsonElement;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+@QuarkusTest
 class LongTypeSerializerTest {
 
     @Test

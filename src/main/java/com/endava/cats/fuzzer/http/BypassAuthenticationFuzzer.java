@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.CatsMain;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.command.CatsCommand;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.io.ServiceCaller;
@@ -12,9 +12,8 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -23,7 +22,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Component
+@Singleton
 @HttpFuzzer
 public class BypassAuthenticationFuzzer implements Fuzzer {
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
@@ -34,7 +33,6 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final FilesArguments filesArguments;
 
-    @Autowired
     public BypassAuthenticationFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments filesArguments) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
@@ -64,7 +62,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     protected Set<String> getAuthenticationHeaderProvided(FuzzingData data) {
         Set<String> authenticationHeadersInContract = data.getHeaders().stream().map(CatsHeader::getName)
                 .filter(this::isAuthenticationHeader).collect(Collectors.toSet());
-        Set<String> authenticationHeadersInFile = filesArguments.getHeaders().entrySet().stream().filter(path -> CatsMain.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
+        Set<String> authenticationHeadersInFile = filesArguments.getHeaders().entrySet().stream().filter(path -> CatsCommand.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
                 .map(Map.Entry::getValue).collect(Collectors.toList())
                 .stream().flatMap(entry -> entry.keySet().stream())
                 .collect(Collectors.toSet())

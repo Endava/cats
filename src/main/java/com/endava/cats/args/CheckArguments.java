@@ -1,13 +1,14 @@
 package com.endava.cats.args;
 
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
+
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Holds all args related to category of Fuzzers to run.
  */
-@Component
+@ApplicationScoped
 @Getter
 public class CheckArguments {
     @CommandLine.Option(names = {"--checkHeaders"},

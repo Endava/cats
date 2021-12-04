@@ -5,12 +5,14 @@ import com.endava.cats.model.strategy.PrefixFuzzingStrategy;
 import com.endava.cats.model.strategy.ReplaceFuzzingStrategy;
 import com.endava.cats.model.strategy.SkipFuzzingStrategy;
 import com.endava.cats.model.strategy.TrailFuzzingStrategy;
+import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+@QuarkusTest
 class FuzzingStrategyTest {
 
     @Test

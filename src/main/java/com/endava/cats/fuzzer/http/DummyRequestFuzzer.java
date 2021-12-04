@@ -5,15 +5,16 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 @HttpFuzzer
 public class DummyRequestFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     protected static final String DUMMY_JSON = "{\"cats\":\"cats\"}";
 
-    @Autowired
+    @Inject
     public DummyRequestFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
         super(sc, lr, catsUtil);
     }

@@ -6,10 +6,10 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.report.CatsTestCase;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
+import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
         description = "Replay previously executed CATS tests",
         helpCommand = true,
         version = "cats replay 7.0.0")
-@Component
+@Dependent
 public class ReplayCommand implements Runnable {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
@@ -39,7 +39,7 @@ public class ReplayCommand implements Runnable {
             required = true, split = ",")
     List<String> tests;
 
-    @Autowired
+    @Inject
     public ReplayCommand(ServiceCaller serviceCaller) {
         this.serviceCaller = serviceCaller;
     }

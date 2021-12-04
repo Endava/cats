@@ -9,9 +9,8 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import org.apache.http.HttpHeaders;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -20,11 +19,10 @@ import java.util.Set;
 /**
  * dummy content type
  */
-@Component
+@Singleton
 @HeaderFuzzer
 public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
 
-    @Autowired
     public DummyContentTypeHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }

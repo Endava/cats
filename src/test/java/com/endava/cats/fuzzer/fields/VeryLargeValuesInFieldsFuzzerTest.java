@@ -1,40 +1,21 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class VeryLargeValuesInFieldsFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
-    @Mock
-    private FilesArguments filesArguments;
-
-    @Mock
-    private ProcessingArguments processingArguments;
-
     private VeryLargeValuesInFieldsFuzzer veryLargeValuesInFieldsFuzzer;
+    private ProcessingArguments processingArguments;
 
     @BeforeEach
     void setup() {
-        veryLargeValuesInFieldsFuzzer = new VeryLargeValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, processingArguments);
+        processingArguments = Mockito.mock(ProcessingArguments.class);
+        veryLargeValuesInFieldsFuzzer = new VeryLargeValuesInFieldsFuzzer(null, null, null, null, processingArguments);
     }
 
     @Test

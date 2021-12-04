@@ -2,33 +2,43 @@ package com.endava.cats.args;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
-@SpringJUnitConfig(value = {FilterArguments.class, CheckArguments.class, IgnoreArguments.class, TestConfig.class})
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@QuarkusTest
 class FilterArgumentsTest {
 
-    @Autowired
-    private FilterArguments filterArguments;
+    @Inject
+    FilterArguments filterArguments;
 
-    @Autowired
-    private CheckArguments checkArguments;
+    IgnoreArguments ignoreArguments;
 
-    @Autowired
-    private IgnoreArguments ignoreArguments;
+    CheckArguments checkArguments;
+
+    ProcessingArguments processingArguments;
+
+
+    @BeforeEach
+    void setup() {
+        checkArguments = new CheckArguments();
+        ignoreArguments = new IgnoreArguments();
+        processingArguments = new ProcessingArguments();
+        ReflectionTestUtils.setField(filterArguments, "checkArguments", checkArguments);
+        ReflectionTestUtils.setField(filterArguments, "ignoreArguments", ignoreArguments);
+        ReflectionTestUtils.setField(filterArguments, "processingArguments", processingArguments);
+
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzers", Collections.emptyList());
+        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", Collections.emptyList());
+    }
 
     @ParameterizedTest
     @CsvSource({"checkHeaders,CheckSecurityHeadersFuzzer,RemoveFieldsFuzzer",

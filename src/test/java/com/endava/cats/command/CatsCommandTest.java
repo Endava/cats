@@ -1,47 +1,34 @@
-package com.endava.cats;
+package com.endava.cats.command;
 
 import com.endava.cats.args.ApiArguments;
-import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
-import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.FilterArguments;
-import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.inject.Inject;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsMain.class, AuthArguments.class, CheckArguments.class, ReportingArguments.class, ApiArguments.class, FilterArguments.class, FilesArguments.class, ProcessingArguments.class})
-class CatsMainTest {
+@QuarkusTest
+class CatsCommandTest {
 
-    @MockBean
+    @Inject
+    CatsCommand catsMain;
+    @Inject
+    CheckArguments checkArguments;
+    @Inject
+    ReportingArguments reportingArguments;
+    @Inject
+    ApiArguments apiArguments;
+    @InjectMock
     private TestCaseListener testCaseListener;
-
-    @Autowired
-    private CatsMain catsMain;
-
-    @Autowired
-    private CheckArguments checkArguments;
-
-    @Autowired
-    private ReportingArguments reportingArguments;
-
-    @Autowired
-    private ApiArguments apiArguments;
-
-    @SpyBean
+    @InjectMock
     private FuzzingDataFactory fuzzingDataFactory;
 
     @Test
@@ -50,8 +37,8 @@ class CatsMainTest {
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         ReflectionTestUtils.setField(reportingArguments, "logData", List.of("org.apache.wire:debug", "com.endava.cats:warn"));
 
-        CatsMain spyMain = Mockito.spy(AopTestUtils.<CatsMain>getTargetObject(catsMain));
-        spyMain.run("test");
+        CatsCommand spyMain = Mockito.spy(AopTestUtils.<CatsCommand>getTargetObject(catsMain));
+        spyMain.run();
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
@@ -65,8 +52,8 @@ class CatsMainTest {
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
-        CatsMain spyMain = Mockito.spy(AopTestUtils.<CatsMain>getTargetObject(catsMain));
-        spyMain.run("test");
+        CatsCommand spyMain = Mockito.spy(AopTestUtils.<CatsCommand>getTargetObject(catsMain));
+        spyMain.run();
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
         Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.anyMap(), Mockito.any());

@@ -1,14 +1,15 @@
 package com.endava.cats.args;
 
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
+
+import javax.inject.Singleton;
 
 /**
  * Holds all arguments related to API details.
  */
-@Component
 @Getter
+@Singleton
 public class ApiArguments {
     @CommandLine.Option(names = {"--maxRequestsPerMinute"},
             description = "Maximum number of requests per minute; this is useful when APIs have rate limiting implemented. Default: ${DEFAULT-VALUE}",

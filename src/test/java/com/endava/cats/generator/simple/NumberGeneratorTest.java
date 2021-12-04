@@ -1,5 +1,6 @@
 package com.endava.cats.generator.simple;
 
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
+@QuarkusTest
 class NumberGeneratorTest {
 
     @Test

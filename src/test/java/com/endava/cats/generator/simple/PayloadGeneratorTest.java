@@ -1,6 +1,7 @@
 package com.endava.cats.generator.simple;
 
-import com.endava.cats.CatsMain;
+import com.endava.cats.command.CatsCommand;
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
@@ -14,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
+@QuarkusTest
 class PayloadGeneratorTest {
 
 
@@ -57,7 +59,7 @@ class PayloadGeneratorTest {
         options.setResolve(true);
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
-        Map<String, Schema> schemas = CatsMain.getSchemas(openAPI);
+        Map<String, Schema> schemas = CatsCommand.getSchemas(openAPI);
 
         return new PayloadGenerator(schemas);
     }

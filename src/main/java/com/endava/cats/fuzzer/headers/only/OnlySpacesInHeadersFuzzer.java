@@ -7,16 +7,14 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.List;
 
-@Component
+@Singleton
 @HeaderFuzzer
 public class OnlySpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
-    @Autowired
     protected OnlySpacesInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
         super(cu, sc, lr);
     }

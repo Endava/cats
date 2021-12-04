@@ -6,37 +6,23 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.function.Function;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class ExactValuesInFieldsFuzzerTest {
-
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
-    @Mock
-    private FilesArguments filesArguments;
 
     private ExactValuesInFieldsFuzzer myBaseBoundaryFuzzer;
 
     @BeforeEach
     public void setup() {
-        myBaseBoundaryFuzzer = new MyExactValueFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        myBaseBoundaryFuzzer = new MyExactValueFuzzer(null, null, null, null);
     }
 
     @Test

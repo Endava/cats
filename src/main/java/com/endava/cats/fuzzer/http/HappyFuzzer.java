@@ -9,13 +9,14 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Fuzzer that sends a "happy" flow request with no fuzzing applied.
  */
-@Component
+@Singleton
 @HttpFuzzer
 public class HappyFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
@@ -23,7 +24,7 @@ public class HappyFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
-    @Autowired
+    @Inject
     public HappyFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

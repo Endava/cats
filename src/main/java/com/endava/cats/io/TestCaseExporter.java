@@ -14,11 +14,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +49,7 @@ public abstract class TestCaseExporter {
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
             .serializeNulls().create();
+
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
     private static final String REPORT_HTML = "index.html";
     private static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
@@ -59,11 +59,12 @@ public abstract class TestCaseExporter {
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
     private static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
 
-    private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-    @Autowired
-    private ReportingArguments reportingArguments;
-    @Value("${app.version}")
-    private String version;
+    @Inject
+    ReportingArguments reportingArguments;
+
+    @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
+    String version;
+
     private Path path;
     private long t0;
 
@@ -165,7 +166,6 @@ public abstract class TestCaseExporter {
         context.put("EXECUTION", report.getExecutionTime());
         context.put("VERSION", report.getCatsVersion());
         context.putAll(this.getSpecificContext(report));
-
         Writer writer = SUMMARY_MUSTACHE.execute(new StringWriter(), context);
 
         try {
@@ -191,7 +191,7 @@ public abstract class TestCaseExporter {
 
     public void writeHelperFiles() {
         for (String file : this.getSpecificHelperFiles()) {
-            try (InputStream stream = resolver.getResourceLoader().getResource(file).getInputStream()) {
+            try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
                 Files.copy(stream, Paths.get(path.toFile().getAbsolutePath(), file));
             } catch (IOException e) {
                 LOGGER.error("Unable to write reporting files!", e);

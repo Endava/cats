@@ -2,20 +2,25 @@ package com.endava.cats.command;
 
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.model.FuzzingData;
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import picocli.CommandLine;
 
-import java.util.List;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
 
+@QuarkusTest
 class ListCommandTest {
+
+    @Inject
+    Instance<Fuzzer> fuzzers;
 
     private ListCommand listCommand;
 
     @BeforeEach
     void setup() {
-        List<Fuzzer> fuzzers = List.of(new DummyFuzzer());
         listCommand = new ListCommand(fuzzers);
     }
 

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -12,10 +13,8 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +24,7 @@ import java.util.stream.Collectors;
 /**
  * Fuzzer at fields level. It will remove different fields from the payload based on multiple strategies.
  */
-@Component
+@Singleton
 @FieldFuzzer
 public class RemoveFieldsFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RemoveFieldsFuzzer.class);
@@ -34,19 +33,14 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
     private final IgnoreArguments ignoreArguments;
+    private final ProcessingArguments processingArguments;
 
-    @Value("${fieldsFuzzingStrategy:ONEBYONE}")
-    private String fieldsFuzzingStrategy;
-
-    @Value("${maxFieldsToRemove:0}")
-    private String maxFieldsToRemove;
-
-    @Autowired
-    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, IgnoreArguments fa) {
+    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, IgnoreArguments fa, ProcessingArguments pa) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.ignoreArguments = fa;
+        this.processingArguments = pa;
     }
 
     public void fuzz(FuzzingData data) {
@@ -68,8 +62,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     }
 
     private Set<Set<String>> getAllFields(FuzzingData data) {
-        FuzzingData.SetFuzzingStrategy strategy = FuzzingData.SetFuzzingStrategy.valueOf(fieldsFuzzingStrategy);
-        Set<Set<String>> sets = data.getAllFields(strategy, maxFieldsToRemove);
+        Set<Set<String>> sets = data.getAllFields(processingArguments.getFieldsFuzzingStrategy(), processingArguments.getMaxFieldsToRemove());
 
         LOGGER.info("Fuzzer will run with [{}] fields configuration possibilities out of [{}] maximum possible",
                 sets.size(), (int) Math.pow(2, data.getAllFields().size()));

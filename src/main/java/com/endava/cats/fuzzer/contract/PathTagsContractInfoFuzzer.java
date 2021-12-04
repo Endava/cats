@@ -6,10 +6,9 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,11 +16,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
-@Component
+@Singleton
 public class PathTagsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     public PathTagsContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

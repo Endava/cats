@@ -12,14 +12,14 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
-@Component
+@Singleton
 @HttpFuzzer
 public class HttpMethodsFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HttpMethodsFuzzer.class);
@@ -28,7 +28,7 @@ public class HttpMethodsFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
-    @Autowired
+    @Inject
     public HttpMethodsFuzzer(ServiceCaller sc, TestCaseListener lr, HttpMethodFuzzerUtil hmfu) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

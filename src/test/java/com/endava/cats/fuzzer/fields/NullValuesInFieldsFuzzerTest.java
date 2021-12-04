@@ -4,54 +4,38 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.collect.Sets;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class NullValuesInFieldsFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @SpyBean
-    private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
-    @Mock
-    private FilesArguments filesArguments;
-
-    @MockBean
     private IgnoreArguments ignoreArguments;
-
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
+    @InjectSpy
+    private TestCaseListener testCaseListener;
     private NullValuesInFieldsFuzzer nullValuesInFieldsFuzzer;
+    private FilesArguments filesArguments;
+    private CatsUtil catsUtil;
 
     @BeforeEach
     void setup() {
-        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, ignoreArguments);
+        ignoreArguments = Mockito.mock(IgnoreArguments.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
+        catsUtil = Mockito.mock(CatsUtil.class);
+        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(null, testCaseListener, catsUtil, filesArguments, ignoreArguments);
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test

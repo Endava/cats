@@ -11,13 +11,12 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
+@Singleton
 @HeaderFuzzer
 public class DuplicateHeaderFuzzer implements Fuzzer {
     private static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
@@ -26,7 +25,6 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
-    @Autowired
     public DuplicateHeaderFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

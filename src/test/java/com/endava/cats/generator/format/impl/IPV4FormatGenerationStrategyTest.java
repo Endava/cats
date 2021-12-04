@@ -1,8 +1,10 @@
 package com.endava.cats.generator.format.impl;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+@QuarkusTest
 class IPV4FormatGenerationStrategyTest {
     @Test
     void givenAIPV4FormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {

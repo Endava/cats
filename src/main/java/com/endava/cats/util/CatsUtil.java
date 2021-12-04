@@ -26,10 +26,9 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.jboss.logmanager.LogContext;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -45,20 +44,25 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
 import static com.endava.cats.util.CustomFuzzerUtil.ELEMENT;
 import static com.endava.cats.util.CustomFuzzerUtil.MAP_VALUES;
 
-@Component
+@ApplicationScoped
 public class CatsUtil {
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
+    public static final String FUZZER_KEY_DEFAULT = "*******";
+    public static final String TEST_KEY_DEFAULT = "**********";
+
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())
             .jsonProvider(new JacksonJsonNodeJsonProvider())
@@ -96,7 +100,6 @@ public class CatsUtil {
 
     private final CatsDSLParser catsDSLParser;
 
-    @Autowired
     public CatsUtil(CatsDSLParser parser) {
         this.catsDSLParser = parser;
     }
@@ -128,14 +131,6 @@ public class CatsUtil {
         return "ca" + input + "ts";
     }
 
-    public static void setCatsLogLevel(ch.qos.logback.classic.Level level) {
-        setLogLevel("com.endava.cats", level);
-    }
-
-    public static void setLogLevel(String pkg, ch.qos.logback.classic.Level level) {
-        ((ch.qos.logback.classic.Logger) LoggerFactory.getLogger(pkg)).setLevel(level);
-    }
-
     public static boolean isArgumentValid(List<String> argument) {
         return argument != null && !argument.isEmpty();
     }
@@ -147,6 +142,14 @@ public class CatsUtil {
             return Collections.singletonList(FuzzingStrategy.replace().withData(CatsUtil.markLargeString(generatedValue.substring(0, largeStringsSize))));
         }
         return Collections.singletonList(FuzzingStrategy.replace().withData(CatsUtil.markLargeString(StringUtils.repeat(generatedValue, payloadSize + 1))));
+    }
+
+    public static void setCatsLogLevel(String level) {
+        setLogLevel("com.endava.cats", level);
+    }
+
+    public static void setLogLevel(String pkg, String level) {
+        LogContext.getLogContext().getLogger(pkg).setLevel(Level.parse(level.toUpperCase(Locale.ROOT)));
     }
 
     public List<String> getControlCharsFields() {
@@ -268,16 +271,15 @@ public class CatsUtil {
      * @param maxFieldsToRemove number of max fields to remove
      * @return a Set of Sets with all fields combinations
      */
-    public Set<Set<String>> getAllSetsWithMinSize(Set<String> allFields, String maxFieldsToRemove) {
+    public Set<Set<String>> getAllSetsWithMinSize(Set<String> allFields, int maxFieldsToRemove) {
         Set<Set<String>> sets = new HashSet<>();
-        int maxFieldsToRemoveAsInt = Integer.parseInt(maxFieldsToRemove);
-        if (maxFieldsToRemoveAsInt == 0) {
+        if (maxFieldsToRemove == 0) {
             LOGGER.info("fieldsSubsetMinSize is ZERO, the value will be changed to {}", allFields.size() / 2);
-            maxFieldsToRemoveAsInt = allFields.size() / 2;
-        } else if (allFields.size() < maxFieldsToRemoveAsInt) {
+            maxFieldsToRemove = allFields.size() / 2;
+        } else if (allFields.size() < maxFieldsToRemove) {
             LOGGER.info("fieldsSubsetMinSize is bigger than the number of fields, the value will be changed to {}", allFields.size());
         }
-        for (int i = maxFieldsToRemoveAsInt; i >= 1; i--) {
+        for (int i = maxFieldsToRemove; i >= 1; i--) {
             sets.addAll(this.getAllSubsetsOfSize(new ArrayList<>(allFields), i));
         }
         return sets;

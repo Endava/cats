@@ -1,37 +1,25 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilesArguments;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
-import io.swagger.v3.oas.models.media.*;
+import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.DateSchema;
+import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.EmailSchema;
+import io.swagger.v3.oas.models.media.NumberSchema;
+import io.swagger.v3.oas.models.media.PasswordSchema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.media.UUIDSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class StringFormatTotallyWrongValuesFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
-    @Mock
-    private FilesArguments filesArguments;
-
     private StringFormatTotallyWrongValuesFuzzer stringFormatTotallyWrongValuesFuzzer;
 
     @BeforeEach
     void setup() {
-        stringFormatTotallyWrongValuesFuzzer = new StringFormatTotallyWrongValuesFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        stringFormatTotallyWrongValuesFuzzer = new StringFormatTotallyWrongValuesFuzzer(null, null, null, null);
     }
 
     @Test

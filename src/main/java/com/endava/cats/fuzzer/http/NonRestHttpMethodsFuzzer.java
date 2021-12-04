@@ -8,14 +8,13 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+@Singleton
 @HttpFuzzer
-@Component
 public class NonRestHttpMethodsFuzzer implements Fuzzer {
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(NonRestHttpMethodsFuzzer.class);
@@ -24,7 +23,6 @@ public class NonRestHttpMethodsFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
-    @Autowired
     public NonRestHttpMethodsFuzzer(ServiceCaller sc, TestCaseListener lr, HttpMethodFuzzerUtil hmfu) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

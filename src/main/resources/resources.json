@@ -1,0 +1,31 @@
+{
+  "resources": [
+    {
+      "pattern": "summary.mustache"
+    },
+    {
+      "pattern": "pl4j.properties"
+    },
+    {
+      "pattern": "test-case.mustache"
+    },
+    {
+      "pattern": "jquery.min.js"
+    },
+    {
+      "pattern": "cats.png"
+    },
+    {
+      "pattern": "LICENSE"
+    },
+    {
+      "pattern": "pl4j.properties"
+    },
+    {
+      "pattern": "script.js"
+    },
+    {
+      "pattern": "styles.css"
+    }
+  ]
+}

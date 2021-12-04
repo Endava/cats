@@ -1,10 +1,12 @@
 package com.endava.cats.generator.simple;
 
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+@QuarkusTest
 class StringGeneratorTest {
 
     @Test

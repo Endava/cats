@@ -1,14 +1,14 @@
 package com.endava.cats.args;
 
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@Component
+@ApplicationScoped
 @Getter
 public class ReportingArguments {
     private static final String EMPTY = "empty";
