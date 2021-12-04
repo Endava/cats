@@ -11,19 +11,17 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-@Component
+@Singleton
 @FieldFuzzer
 public class EmptyStringValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
     private final IgnoreArguments ignoreArguments;
 
-    @Autowired
     public EmptyStringValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, IgnoreArguments fa) {
         super(sc, lr, cu, cp);
         this.ignoreArguments = fa;

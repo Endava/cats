@@ -2,9 +2,9 @@ package com.endava.cats.args;
 
 import com.endava.cats.model.CatsRequest;
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
+import javax.inject.Singleton;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +13,7 @@ import java.util.Base64;
 /**
  * Holds all args related to Authentication details.
  */
-@Component
+@Singleton
 @Getter
 public class AuthArguments {
     @CommandLine.Option(names = {"--sslKeystore"},

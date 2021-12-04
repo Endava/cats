@@ -7,24 +7,26 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
+import org.mockito.Mockito;
 
+@QuarkusTest
 class TrailingMultiCodePointEmojisInFieldsTrimValidateFuzzerTest {
     private final CatsUtil catsUtil = new CatsUtil(null);
-    @Mock
     private ServiceCaller serviceCaller;
-    @Mock
     private TestCaseListener testCaseListener;
-    @Mock
     private FilesArguments filesArguments;
 
     private TrailingMultiCodePointEmojisInFieldsTrimValidateFuzzer trailingMultiCodePointEmojisInFieldsTrimValidateFuzzer;
 
     @BeforeEach
     void setup() {
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
         trailingMultiCodePointEmojisInFieldsTrimValidateFuzzer = new TrailingMultiCodePointEmojisInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 

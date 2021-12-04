@@ -6,19 +6,17 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import org.apache.http.HttpHeaders;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Component
+@Singleton
 @HeaderFuzzer
 public class UnsupportedAcceptHeadersFuzzer extends DummyAcceptHeadersFuzzer {
 
-    @Autowired
     public UnsupportedAcceptHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }

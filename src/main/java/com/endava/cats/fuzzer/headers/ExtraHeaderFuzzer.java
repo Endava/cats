@@ -11,13 +11,12 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.HashSet;
 import java.util.Set;
 
-@Component
+@Singleton
 @HeaderFuzzer
 public class ExtraHeaderFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ExtraHeaderFuzzer.class);
@@ -26,7 +25,6 @@ public class ExtraHeaderFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
-    @Autowired
     public ExtraHeaderFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

@@ -1,9 +1,9 @@
 package com.endava.cats.io;
 
-import com.endava.cats.CatsMain;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.command.CatsCommand;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
@@ -30,11 +30,10 @@ import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.MimeTypeUtils;
 
 import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -62,7 +61,7 @@ import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
  */
-@Component
+@ApplicationScoped
 @SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
@@ -79,8 +78,6 @@ public class ServiceCaller {
 
     private RateLimiter rateLimiter;
 
-
-    @Autowired
     public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
@@ -358,10 +355,10 @@ public class ServiceCaller {
 
     private void addSuppliedHeaders(List<CatsRequest.Header> headers, String relativePath, ServiceData data) {
         LOGGER.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
-        LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsMain.ALL));
+        LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsCommand.ALL));
 
         Map<String, String> suppliedHeadersFromFile = filesArguments.getHeaders().entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsMain.ALL))
+                .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsCommand.ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
 
         Map<String, String> suppliedHeaders = suppliedHeadersFromFile.entrySet().stream()

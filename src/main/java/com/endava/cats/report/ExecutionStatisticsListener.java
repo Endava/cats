@@ -1,9 +1,10 @@
 package com.endava.cats.report;
 
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 
-@Component
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 @Getter
 public class ExecutionStatisticsListener {
 

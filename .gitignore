@@ -8,7 +8,6 @@ test-report
 *.csv
 *.cer
 *.key
-*.txt
 cats-report
 log
 examples

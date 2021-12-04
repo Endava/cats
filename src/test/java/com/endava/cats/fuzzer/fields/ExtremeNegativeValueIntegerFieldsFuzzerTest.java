@@ -1,39 +1,22 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilesArguments;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class ExtremeNegativeValueIntegerFieldsFuzzerTest {
-    @Mock
-    private ServiceCaller serviceCaller;
-
-    @Mock
-    private TestCaseListener testCaseListener;
-
-    @Mock
-    private CatsUtil catsUtil;
-
-    @Mock
-    private FilesArguments filesArguments;
 
     private ExtremeNegativeValueIntegerFieldsFuzzer extremeNegativeValueIntegerFieldsFuzzer;
 
     @BeforeEach
     void setup() {
-        extremeNegativeValueIntegerFieldsFuzzer = new ExtremeNegativeValueIntegerFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        extremeNegativeValueIntegerFieldsFuzzer = new ExtremeNegativeValueIntegerFieldsFuzzer(null, null, null, null);
     }
 
     @Test

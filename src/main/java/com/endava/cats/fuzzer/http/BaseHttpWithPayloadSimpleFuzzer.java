@@ -9,7 +9,6 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * This is a base class for Fuzzers that want to send invalid payloads for HTTP methods accepting bodies.
@@ -22,8 +21,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
 
-    @Autowired
-    protected BaseHttpWithPayloadSimpleFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
+    BaseHttpWithPayloadSimpleFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = catsUtil;

@@ -2,11 +2,10 @@ package com.endava.cats.args;
 
 import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
@@ -14,7 +13,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class FilesArgumentsTest {
 
     private final CatsUtil catsUtil = new CatsUtil(Mockito.mock(CatsDSLParser.class));
@@ -30,7 +29,7 @@ class FilesArgumentsTest {
     }
 
     @Test
-    void shouldReplaceUrlWhenUrlParamsSupplied() throws Exception {
+    void shouldReplaceUrlWhenUrlParamsSupplied() {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
         ReflectionTestUtils.setField(filesArguments, "params", List.of("version:v1.0"));
         filesArguments.loadURLParams();
@@ -42,7 +41,7 @@ class FilesArgumentsTest {
     }
 
     @Test
-    void shouldNotReplaceUrlWhenUrlParamsSuppliedButNotMatching() throws Exception {
+    void shouldNotReplaceUrlWhenUrlParamsSuppliedButNotMatching() {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
         ReflectionTestUtils.setField(filesArguments, "params", List.of("someOther:v1.0"));
         filesArguments.loadURLParams();

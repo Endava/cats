@@ -3,14 +3,14 @@ package com.endava.cats.args;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@Component
+@ApplicationScoped
 @Getter
 public class IgnoreArguments {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(IgnoreArguments.class);

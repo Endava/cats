@@ -8,33 +8,31 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
     private final CatsUtil catsUtil = new CatsUtil(null);
-    @Mock
     private ServiceCaller serviceCaller;
-    @Mock
     private TestCaseListener testCaseListener;
-    @Mock
     private FilesArguments filesArguments;
 
     private WithinControlCharsInFieldsValidateSanitizeFuzzer controlCharsWithinFieldsValidateSanitizeFuzzer;
 
     @BeforeEach
     void setup() {
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
         controlCharsWithinFieldsValidateSanitizeFuzzer = new WithinControlCharsInFieldsValidateSanitizeFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 

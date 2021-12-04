@@ -1,15 +1,14 @@
 package com.endava.cats.args;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class IgnoreArgumentsTest {
 
     private IgnoreArguments ignoreArguments;

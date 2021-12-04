@@ -8,7 +8,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +27,6 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected final List<String> fuzzedPaths = new ArrayList<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    @Autowired
     protected BaseContractInfoFuzzer(TestCaseListener tcl) {
         this.testCaseListener = tcl;
     }

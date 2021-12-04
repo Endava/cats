@@ -1,7 +1,8 @@
 package com.endava.cats.report;
 
-import com.endava.cats.CatsMain;
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.CatsCommand;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.PayloadGenerator;
@@ -11,6 +12,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.report.CatsResult;
 import com.endava.cats.model.report.CatsTestCase;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -19,13 +21,13 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Named;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,7 +42,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 /**
  * This class exposes methods to record the progress of a test case
  */
-@Component
+@ApplicationScoped
 public class TestCaseListener {
 
     public static final String ID = "id";
@@ -53,18 +55,19 @@ public class TestCaseListener {
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
-    private final IgnoreArguments filterArguments;
-    @Value("${app.version}")
-    private String appVersion;
-    @Value("${app.name}")
-    private String appName;
-    @Value("${app.timestamp}")
-    private String appBuildTime;
 
-    @Autowired
-    public TestCaseListener(ExecutionStatisticsListener er, TestCaseExporter tce, IgnoreArguments filterArguments) {
+    private final IgnoreArguments filterArguments;
+
+    @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
+    String appVersion;
+    @ConfigProperty(name = "quarkus.application.name", defaultValue = "cats")
+    String appName;
+    @ConfigProperty(name = "app.timestamp", defaultValue = "1-1-1")
+    String appBuildTime;
+
+    public TestCaseListener(ExecutionStatisticsListener er, @Named("htmlOnly") TestCaseExporter tcehtml, @Named("htmlJs") TestCaseExporter tcejs, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
         this.executionStatisticsListener = er;
-        this.testCaseExporter = tce;
+        this.testCaseExporter = reportingArguments.getReportFormat() == ReportingArguments.ReportFormat.HTML_JS ? tcejs : tcehtml;
         this.filterArguments = filterArguments;
     }
 
@@ -78,17 +81,17 @@ public class TestCaseListener {
 
     public void beforeFuzz(Class<?> fuzzer) {
         String clazz = fuzzer.getSimpleName().replaceAll("[a-z]", "");
-        MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, 5, Ansi.Color.MAGENTA));
+        MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, CatsUtil.FUZZER_KEY_DEFAULT.length(), Ansi.Color.MAGENTA));
         MDC.put(FUZZER_KEY, fuzzer.getSimpleName());
     }
 
     public void afterFuzz() {
-        MDC.put(FUZZER, null);
-        MDC.put(FUZZER_KEY, null);
+        MDC.put(FUZZER, CatsUtil.FUZZER_KEY_DEFAULT);
+        MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
     }
 
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
-        String testId = "Test " + CatsMain.TEST.incrementAndGet();
+        String testId = "Test " + CatsCommand.TEST.incrementAndGet();
         MDC.put(ID, testId);
         MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 10, Ansi.Color.MAGENTA));
         this.startTestCase();
@@ -100,8 +103,8 @@ public class TestCaseListener {
         }
         this.endTestCase();
         LOGGER.info("{} {}", SEPARATOR, "\n");
-        MDC.put(ID, null);
-        MDC.put(ID_ANSI, null);
+        MDC.remove(ID);
+        MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
 
     }
 
@@ -148,6 +151,10 @@ public class TestCaseListener {
     }
 
     public void startSession() {
+        MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
+        MDC.put(FUZZER, CatsUtil.FUZZER_KEY_DEFAULT);
+        MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
+
         LOGGER.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(appName.toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(appVersion), ansi().fg(Ansi.Color.GREEN).a(appBuildTime).reset());
         LOGGER.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }

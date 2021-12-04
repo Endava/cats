@@ -1,27 +1,23 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import com.google.gson.JsonObject;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
@@ -35,47 +31,32 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class CustomFuzzerTest {
-    @MockBean
-    private ServiceCaller serviceCaller;
-
-    @SpyBean
-    private TestCaseListener testCaseListener;
-
-    @MockBean
-    private IgnoreArguments ignoreArguments;
-
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
-    @SpyBean
-    private CatsDSLParser catsDSLParser;
-
-    @SpyBean
     private FilesArguments filesArguments;
-
-    @MockBean
+    private ServiceCaller serviceCaller;
+    @InjectSpy
+    private TestCaseListener testCaseListener;
+    private CatsDSLParser catsDSLParser;
     private CatsUtil catsUtil;
-
-    @SpyBean
     private CustomFuzzerUtil customFuzzerUtil;
-
     private CustomFuzzer customFuzzer;
 
     @BeforeEach
     void setup() {
+        catsDSLParser = new CatsDSLParser();
+        catsUtil = new CatsUtil(catsDSLParser);
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        filesArguments = new FilesArguments(catsUtil);
+        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener, catsDSLParser);
         customFuzzer = new CustomFuzzer(filesArguments, customFuzzerUtil);
         filesArguments.getCustomFuzzerDetails().clear();
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test
     void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("mumu"));
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.anyString());
 
         Assertions.assertThatThrownBy(() -> filesArguments.loadCustomFuzzerFile()).isInstanceOf(FileNotFoundException.class);
     }
@@ -101,8 +82,6 @@ class CustomFuzzerTest {
         jsonObject.addProperty("field", "oldValue");
 
         FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "newValue", "newValue2");
-        Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
-        Mockito.doCallRealMethod().when(catsUtil).sanitizeToJsonPath(Mockito.anyString());
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
@@ -134,11 +113,16 @@ class CustomFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
 
-
-        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));
-        Mockito.when(catsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
-        Mockito.when(catsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
+        CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
+        Mockito.when(mockCatsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
+        Mockito.when(mockCatsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        filesArguments = new FilesArguments(mockCatsUtil);
+        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, mockCatsUtil, testCaseListener, catsDSLParser);
+        customFuzzer = new CustomFuzzer(filesArguments, customFuzzerUtil);
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));
+
         return data;
     }
 
@@ -227,12 +211,6 @@ class CustomFuzzerTest {
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File(fuzzerFile));
-        Mockito.doCallRealMethod().when(catsUtil).parseYaml(Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).sanitizeToJsonPath(Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).parseAsJsonElement(Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).equalAsJson(Mockito.anyString(), Mockito.anyString());
-        Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
-        Mockito.doCallRealMethod().when(catsUtil).replaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyBoolean());
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);

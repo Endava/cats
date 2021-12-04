@@ -1,12 +1,14 @@
 package com.endava.cats.model;
 
 import com.google.common.collect.Sets;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashSet;
 
+@QuarkusTest
 class CatsResponseTest {
 
     @Test

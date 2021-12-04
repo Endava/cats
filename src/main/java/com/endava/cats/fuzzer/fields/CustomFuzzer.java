@@ -6,27 +6,29 @@ import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import java.util.*;
+import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-@Component
+@Singleton
 @SpecialFuzzer
 public class CustomFuzzer implements CustomFuzzerBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(CustomFuzzer.class);
-
 
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();
 
-
-    @Autowired
     public CustomFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
         this.filesArguments = cp;
         this.customFuzzerUtil = cfu;
@@ -75,8 +77,8 @@ public class CustomFuzzer implements CustomFuzzerBase {
                     .forEach(customFuzzerExecution -> customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
                             customFuzzerExecution.getTestEntry(), this));
         }
-        MDC.put("fuzzer", null);
-        MDC.put("fuzzerKey", null);
+        MDC.put("fuzzer", CatsUtil.FUZZER_KEY_DEFAULT);
+        MDC.put("fuzzerKey", CatsUtil.FUZZER_KEY_DEFAULT);
     }
 
     @Override

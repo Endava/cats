@@ -1,10 +1,12 @@
 package com.endava.cats.model.ann;
 
 import com.google.gson.FieldAttributes;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@QuarkusTest
 class ExcludeTestCaseStrategyTest {
 
     private ExcludeTestCaseStrategy excludeTestCaseStrategy;

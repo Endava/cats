@@ -17,7 +17,6 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Set;
@@ -35,8 +34,6 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
-
-    @Autowired
     protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

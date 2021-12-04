@@ -10,19 +10,19 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @ContractInfoFuzzer
-@Component
+@Singleton
 public class SecuritySchemesContractInfoFuzzer extends BaseContractInfoFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    protected SecuritySchemesContractInfoFuzzer(TestCaseListener tcl) {
+    public SecuritySchemesContractInfoFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 

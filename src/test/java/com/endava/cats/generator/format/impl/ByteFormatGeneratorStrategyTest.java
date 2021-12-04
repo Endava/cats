@@ -1,9 +1,11 @@
 package com.endava.cats.generator.format.impl;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.codec.binary.Base64;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+@QuarkusTest
 class ByteFormatGeneratorStrategyTest {
 
     @Test

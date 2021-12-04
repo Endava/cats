@@ -1,25 +1,22 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,31 +24,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class BaseFieldsFuzzerTest {
 
-    @Mock
     private ServiceCaller serviceCaller;
-
-    @SpyBean
+    @InjectSpy
     private TestCaseListener testCaseListener;
-
-    @MockBean
-    private IgnoreArguments ignoreArguments;
-
-    @Mock
     private CatsUtil catsUtil;
-
-    @Mock
     private FilesArguments filesArguments;
 
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
     private BaseFieldsFuzzer baseFieldsFuzzer;
+
+    @BeforeEach
+    void setup() {
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        catsUtil = Mockito.mock(CatsUtil.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+    }
 
     @Test
     void givenAFieldWithAReplaceFuzzingStrategyWithANonPrimitiveField_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {

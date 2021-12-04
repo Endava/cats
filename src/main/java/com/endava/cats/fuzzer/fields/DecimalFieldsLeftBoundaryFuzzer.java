@@ -10,17 +10,15 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.Schema;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 
-@Component
+@Singleton
 @FieldFuzzer
 public class DecimalFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
-    @Autowired
     public DecimalFieldsLeftBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

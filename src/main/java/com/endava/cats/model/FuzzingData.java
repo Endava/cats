@@ -10,7 +10,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Builder
@@ -93,7 +98,7 @@ public class FuzzingData {
         return allFields;
     }
 
-    public Set<Set<String>> getAllFields(SetFuzzingStrategy setFuzzingStrategy, String maxFieldsToRemove) {
+    public Set<Set<String>> getAllFields(SetFuzzingStrategy setFuzzingStrategy, int maxFieldsToRemove) {
         if (allFieldsSetOfSets == null) {
 
             Set<Set<String>> sets;

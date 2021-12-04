@@ -15,10 +15,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
+import javax.inject.Singleton;
+
+@Singleton
 @FieldFuzzer
 public class NewFieldsFuzzer implements Fuzzer {
     protected static final String NEW_FIELD = "catsFuzzyField";
@@ -27,7 +27,6 @@ public class NewFieldsFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
 
-    @Autowired
     public NewFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

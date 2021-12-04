@@ -5,10 +5,9 @@ import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import picocli.CommandLine;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@Component
+@ApplicationScoped
 public class FilesArguments {
     private static final String ALL = "all";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -53,7 +52,6 @@ public class FilesArguments {
     @Getter
     private File securityFuzzerFile;
 
-    @Autowired
     public FilesArguments(CatsUtil cu) {
         this.catsUtil = cu;
     }

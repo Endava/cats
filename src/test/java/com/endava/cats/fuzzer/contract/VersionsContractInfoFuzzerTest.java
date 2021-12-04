@@ -1,39 +1,28 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class VersionsContractInfoFuzzerTest {
-    @SpyBean
     private TestCaseListener testCaseListener;
-
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private IgnoreArguments ignoreArguments;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
     private VersionsContractInfoFuzzer versionsContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
+                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         versionsContractInfoFuzzer = new VersionsContractInfoFuzzer(testCaseListener);
     }
 

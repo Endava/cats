@@ -1,10 +1,12 @@
 package com.endava.cats.model.factory;
 
-import com.endava.cats.CatsMain;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.command.CatsCommand;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectMock;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -13,9 +15,6 @@ import io.swagger.v3.parser.core.models.ParseOptions;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,12 +22,12 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class FuzzingDataFactoryTest {
 
-    @MockBean
+    @InjectMock
     private CatsUtil catsUtil;
-    @MockBean
+    @InjectMock
     private FilesArguments filesArguments;
 
     private FuzzingDataFactory fuzzingDataFactory;
@@ -54,7 +53,7 @@ class FuzzingDataFactoryTest {
         options.setResolve(true);
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
-        Map<String, Schema> schemas = CatsMain.getSchemas(openAPI);
+        Map<String, Schema> schemas = CatsCommand.getSchemas(openAPI);
         PathItem pathItem = openAPI.getPaths().get(path);
         return fuzzingDataFactory.fromPathItem(path, pathItem, schemas, openAPI);
     }

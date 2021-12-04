@@ -11,9 +11,8 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,7 +25,7 @@ import java.util.stream.Collectors;
  * Check that responses include Content-Type, Content-Type-Options, X-Frame-Options: deny
  */
 
-@Component
+@ApplicationScoped
 @HeaderFuzzer
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
@@ -47,7 +46,6 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
-    @Autowired
     public CheckSecurityHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

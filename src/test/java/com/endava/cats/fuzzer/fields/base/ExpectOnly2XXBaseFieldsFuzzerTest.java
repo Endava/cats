@@ -7,33 +7,30 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.mockito.Mockito;
 
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class ExpectOnly2XXBaseFieldsFuzzerTest {
-    @Mock
+
     private ServiceCaller serviceCaller;
-
-    @Mock
     private TestCaseListener testCaseListener;
-
-    @Mock
     private CatsUtil catsUtil;
-
-    @Mock
     private FilesArguments filesArguments;
 
     private ExpectOnly2XXBaseFieldsFuzzer expectOnly2XXBaseFieldsFuzzer;
 
     @BeforeEach
     void setup() {
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        catsUtil = Mockito.mock(CatsUtil.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
         expectOnly2XXBaseFieldsFuzzer = new CustomExpect2XX(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 

@@ -12,38 +12,34 @@ import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.net.Proxy;
 import java.util.Collections;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
-@SpringJUnitConfig({CatsUtil.class, CatsDSLParser.class, AuthArguments.class, ApiArguments.class})
+@QuarkusTest
 class ServiceCallerTest {
 
     public static WireMockServer wireMockServer;
-    @MockBean
-    private TestCaseListener testCaseListener;
-    @Autowired
-    private CatsDSLParser catsDSLParser;
-    @Autowired
-    private AuthArguments authArguments;
-    @Autowired
-    private CatsUtil catsUtil;
-    @Autowired
-    private ApiArguments apiArguments;
+    @Inject
+    CatsDSLParser catsDSLParser;
+    @Inject
+    AuthArguments authArguments;
+    @Inject
+    CatsUtil catsUtil;
+    @Inject
+    ApiArguments apiArguments;
+
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -67,6 +63,7 @@ class ServiceCallerTest {
     @BeforeEach
     public void setupEach() throws Exception {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
+        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments);
 
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());

@@ -10,12 +10,12 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 
-@Component
+@Singleton
 @FieldFuzzer
 public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 

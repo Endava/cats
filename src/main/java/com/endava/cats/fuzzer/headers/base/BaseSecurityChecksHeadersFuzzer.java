@@ -11,7 +11,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +56,6 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
-    @Autowired
     protected BaseSecurityChecksHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

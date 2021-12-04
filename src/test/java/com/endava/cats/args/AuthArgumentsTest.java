@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -8,6 +9,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.net.Proxy;
 
+@QuarkusTest
 class AuthArgumentsTest {
 
     @Test

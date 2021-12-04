@@ -2,20 +2,19 @@ package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.fuzzer.ValidateAndSanitize;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.stereotype.Component;
 
-@Component
+import javax.inject.Singleton;
+
+@Singleton
 @FieldFuzzer
-@ConditionalOnExpression(value = "'${sanitizationStrategy:sanitizeAndValidate}' == 'validateAndSanitize'")
+@ValidateAndSanitize
 public class WithinSingleCodePointEmojisInFieldsValidateTrimFuzzer extends WithinSingleCodePointEmojisInFieldsTrimValidateFuzzer {
 
-    @Autowired
     protected WithinSingleCodePointEmojisInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

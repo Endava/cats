@@ -7,17 +7,15 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
+import javax.inject.Singleton;
 import java.util.List;
 
-@Component
+@Singleton
 @HeaderFuzzer
 public class VeryLargeUnicodeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
     private final ProcessingArguments processingArguments;
 
-    @Autowired
     public VeryLargeUnicodeValuesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr, ProcessingArguments pa) {
         super(sc, lr);
         this.processingArguments = pa;

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsHeader;
@@ -8,35 +9,24 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.google.common.collect.Sets;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
+@QuarkusTest
 class RecommendedHeadersContractInfoFuzzerTest {
-    @SpyBean
     private TestCaseListener testCaseListener;
-
-    @MockBean
-    private IgnoreArguments ignoreArguments;
-
-    @MockBean
-    private ExecutionStatisticsListener executionStatisticsListener;
-
-    @MockBean
-    private TestCaseExporter testCaseExporter;
-
     private RecommendedHeadersContractInfoFuzzer recommendedHeadersContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
+
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
+                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         recommendedHeadersContractInfoFuzzer = new RecommendedHeadersContractInfoFuzzer(testCaseListener);
     }
 
