@@ -15,6 +15,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.parser.OpenAPIParser;
@@ -52,8 +53,8 @@ import static org.fusesource.jansi.Ansi.ansi;
         name = "cats",
         mixinStandardHelpOptions = true,
         header = "cats - OpenAPI fuzzer and negative testing tool; version 7.0.0%n",
-        version = "cats 7.0.0",
         usageHelpAutoWidth = true,
+        versionProvider = VersionProvider.class,
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
                 CommandLine.HelpCommand.class,
