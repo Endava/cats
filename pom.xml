@@ -24,7 +24,7 @@
         <guava.version>31.0.1-jre</guava.version>
         <openapi-generator.version>5.2.1</openapi-generator.version>
         <sonar.coverage.exclusions>
-            **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*
+            **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*, **/*VersionProvider*.*
         </sonar.coverage.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <maven-site-plugin.version>3.9.1</maven-site-plugin.version>
