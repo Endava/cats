@@ -56,6 +56,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         usageHelpAutoWidth = true,
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
+                CommandLine.HelpCommand.class,
                 ListCommand.class,
                 ReplayCommand.class
         })
