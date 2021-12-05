@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Singleton
 @Getter
@@ -65,15 +64,7 @@ public class FilterArguments {
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
     private boolean dryRun;
 
-    /**
-     * Triggers the processing of skipped Fuzzers for specific paths.
-     *
-     * @param args the program arguments
-     */
-    public void loadConfig(String... args) {
-        this.processSkipFuzzerFor(List.of(Optional.ofNullable(args).orElse(new String[]{})));
-    }
-    
+
     public List<String> getSkipFuzzers() {
         return Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList());
     }
@@ -90,29 +81,8 @@ public class FilterArguments {
         return Optional.ofNullable(this.paths).orElse(Collections.emptyList());
     }
 
-    private void processSkipFuzzerFor(List<String> args) {
-        List<String> skipForArgs = args.stream()
-                .filter(arg -> arg.startsWith("--skip") && arg.contains("ForPath")).collect(Collectors.toList());
-
-        List<CatsSkipped> catsSkipped = skipForArgs.stream()
-                .map(skipFor -> skipFor.replace("--skip", "")
-                        .replace("ForPath", "").split("="))
-                .map(skipForArr -> CatsSkipped.builder()
-                        .fuzzer(skipForArr[0].trim())
-                        .forPaths(Stream.of(skipForArr[1].trim().split(",")).collect(Collectors.toList()))
-                        .build())
-                .collect(Collectors.toList());
-        LOGGER.start("skipXXXForPath supplied arguments: {}. Matching with registered fuzzers...", catsSkipped);
-
-        this.skipFuzzersForPaths = catsSkipped.stream()
-                .filter(skipped -> fuzzers.stream().map(Object::toString).anyMatch(fuzzerName -> fuzzerName.equalsIgnoreCase(skipped.getFuzzer())))
-                .collect(Collectors.toList());
-        LOGGER.complete("skipXXXForPath list after matching with registered fuzzers: {}", this.skipFuzzersForPaths);
-    }
-
-    public List<String> getFuzzersForPath(String pathKey) {
+    public List<String> getFuzzersForPath() {
         List<String> allowedFuzzers = processSuppliedFuzzers();
-        allowedFuzzers = this.removeSkippedFuzzersForPath(pathKey, allowedFuzzers);
         allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
         allowedFuzzers = this.removeContractFuzzersIfNeeded(allowedFuzzers);
         allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
@@ -196,12 +166,6 @@ public class FilterArguments {
                     .map(Object::toString).collect(Collectors.toList());
         }
         return Collections.emptyList();
-    }
-
-    private List<String> removeSkippedFuzzersForPath(String pathKey, List<String> allowedFuzzers) {
-        return allowedFuzzers.stream().filter(fuzzer -> skipFuzzersForPaths.stream()
-                        .noneMatch(catsSkipped -> catsSkipped.getFuzzer().equalsIgnoreCase(fuzzer) && catsSkipped.getForPaths().contains(pathKey)))
-                .collect(Collectors.toList());
     }
 
     private List<String> removeSkippedFuzzersGlobally(List<String> allowedFuzzers) {

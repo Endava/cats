@@ -32,7 +32,7 @@ public class IgnoreArguments {
     private List<String> skipFields;
 
     @CommandLine.Option(names = {"--blackbox"},
-            description = "ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes=\"2xx,4xx\"`")
+            description = "Ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes=\"2xx,4xx\"`")
     private boolean blackbox;
 
     public List<String> getIgnoreResponseCodes() {
