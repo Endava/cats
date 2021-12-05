@@ -1,10 +1,11 @@
 package com.endava.cats.command;
 
 import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import picocli.CommandLine;
 
@@ -56,28 +57,13 @@ class ListCommandTest {
         Mockito.verify(spyListCommand, Mockito.times(0)).listFuzzerStrategies();
     }
 
-    @Test
-    void shouldListContractPaths() {
+    @ParameterizedTest
+    @CsvSource({"-p,-c,src/test/resources/openapi.yml,1", "-p=false,-c,src/test/resources/openapi.yml,0", "-p,-c,openapi.yml,1"})
+    void shouldListContractPaths(String arg1, String arg2, String arg3, int times) {
         ListCommand spyListCommand = Mockito.spy(listCommand);
         CommandLine commandLine = new CommandLine(spyListCommand);
-        commandLine.execute("-p", "-c", "src/test/resources/openapi.yml");
-        Mockito.verify(spyListCommand, Mockito.times(1)).listContractPaths();
-    }
-
-    @Test
-    void shouldNotListContractPaths() {
-        ListCommand spyListCommand = Mockito.spy(listCommand);
-        CommandLine commandLine = new CommandLine(spyListCommand);
-        commandLine.execute("-p=false", "-c", "src/test/resources/openapi.yml");
-        Mockito.verify(spyListCommand, Mockito.times(0)).listContractPaths();
-    }
-
-    @Test
-    void shouldThrowIOException() {
-        ListCommand spyListCommand = Mockito.spy(listCommand);
-        CommandLine commandLine = new CommandLine(spyListCommand);
-        commandLine.execute("-p", "-c", "openapi.yml");
-        Mockito.verify(spyListCommand, Mockito.times(1)).listContractPaths();
+        commandLine.execute(arg1, arg2, arg3);
+        Mockito.verify(spyListCommand, Mockito.times(times)).listContractPaths();
     }
 
     @Test
@@ -86,18 +72,5 @@ class ListCommandTest {
         CommandLine commandLine = new CommandLine(spyListCommand);
         commandLine.execute();
         Mockito.verifyNoInteractions(spyListCommand);
-    }
-
-    static class DummyFuzzer implements Fuzzer {
-
-        @Override
-        public void fuzz(FuzzingData data) {
-
-        }
-
-        @Override
-        public String description() {
-            return null;
-        }
     }
 }
