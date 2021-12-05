@@ -4,6 +4,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.report.CatsTestCase;
+import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import picocli.CommandLine;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
         usageHelpWidth = 100,
         description = "Replay previously executed CATS tests",
         helpCommand = true,
-        version = "cats replay 7.0.0")
+        versionProvider = VersionProvider.class)
 @Dependent
 public class ReplayCommand implements Runnable {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ReplayCommand.class);

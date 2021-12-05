@@ -8,6 +8,7 @@ import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -32,7 +33,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         usageHelpWidth = 100,
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
         helpCommand = true,
-        version = "cats list 7.0.0")
+        versionProvider = VersionProvider.class)
 @Dependent
 public class ListCommand implements Runnable {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ListCommand.class);
