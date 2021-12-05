@@ -181,17 +181,6 @@ You can use various arguments like `--fuzers=Fuzzer1,Fuzzer2` or `-skipFuzzers=F
 For example, you can run all `Fuzzers` except for the `ControlChars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
 After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
 
-There might be situations when you would want to skip some fuzzers for specific paths. This can be done using the `--skipXXXForPath=path1,path2` argument.
-This is an example:
-
-```bash
-./cats.jar --contract=api.yml --server=http://localhost:8080 --skipVeryLargeValuesInFieldsFuzzerForPath=/pet/{id},/pets
-```
-
-Running the above command will run all the fuzzers for all the paths, except for the `VeryLargeValuesInFieldsFuzzer` which won't be run for the `/pet/{id}` and `/pets` paths.
-
-You can supply multiple `--skipXXXForPath` arguments.
-
 These are just some recommendations on how you can split the types of tests cases. Depending on how complex your API is, you might go with a combination of the above or with even more granular splits.
 
 Please note that due to the fact that `ControlChars, Emojis and Whitespaces` generate huge number of tests even for small OpenAPI contracts, they are disabled by default.
