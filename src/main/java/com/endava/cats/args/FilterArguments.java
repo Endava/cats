@@ -16,10 +16,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsSkipped;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.github.ludovicianul.prettylogger.config.level.ConfigFactory;
-import io.github.ludovicianul.prettylogger.config.level.PrettyMarker;
 import lombok.Getter;
-import org.fusesource.jansi.Ansi;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
@@ -76,28 +73,7 @@ public class FilterArguments {
     public void loadConfig(String... args) {
         this.processSkipFuzzerFor(List.of(Optional.ofNullable(args).orElse(new String[]{})));
     }
-
-    /**
-     * Prints a warning if the final list of Fuzzers to be run matches all Fuzzer registered in CATS.
-     * <p>
-     * This warning is printing because it will take significant time to run all Fuzzers and a split strategy should be in place.
-     *
-     * @param finalList the final list with Fuzzers to be applied after parsing all filter arguments
-     */
-    public void printWarningIfNeeded(List<String> finalList) {
-        if (finalList.size() == fuzzers.stream().count()) {
-            PrettyMarker config = ConfigFactory.warning().bold(true).underline(true).showLabel(true).showSymbol(true);
-            String warning = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("\t\t\t !!!! WARNING !!!!").reset().toString();
-            String text = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("You are running with all Fuzzers enabled. This will take a long time to run!").reset().toString();
-            String check = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("\t\t Please check the CATS README page for slicing strategies!").reset().toString();
-            LOGGER.log(config, " ");
-            LOGGER.log(config, warning);
-            LOGGER.log(config, text);
-            LOGGER.log(config, check);
-            LOGGER.log(config, " ");
-        }
-    }
-
+    
     public List<String> getSkipFuzzers() {
         return Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList());
     }

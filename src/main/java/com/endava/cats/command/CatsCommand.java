@@ -255,7 +255,6 @@ public class CatsCommand implements Runnable {
 
     public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI, Map<String, Schema> schemas) {
         List<String> configuredFuzzers = filterArguments.getFuzzersForPath(pathItemEntry.getKey());
-        filterArguments.printWarningIfNeeded(configuredFuzzers);
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info(" ");
