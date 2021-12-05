@@ -13,6 +13,7 @@ import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
@@ -62,7 +63,7 @@ import static org.fusesource.jansi.Ansi.ansi;
                 ReplayCommand.class
         })
 @Dependent
-public class CatsCommand implements Runnable {
+public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public static final AtomicInteger TEST = new AtomicInteger(0);
     public static final String ALL = "all";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsCommand.class);
@@ -102,9 +103,15 @@ public class CatsCommand implements Runnable {
     @CommandLine.ArgGroup(heading = "Reporting Options:%n", exclusive = false)
     ReportingArguments reportingArguments;
 
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
     @Inject
     @Any
     Instance<Fuzzer> fuzzers;
+
+    @Inject
+    ExecutionStatisticsListener executionStatisticsListener;
 
     public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
         Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas())
@@ -151,7 +158,7 @@ public class CatsCommand implements Runnable {
             testCaseListener.startSession();
             this.doLogic();
             testCaseListener.endSession();
-        } catch (Exception e) {
+        } catch (IOException e) {
             CatsUtil.setCatsLogLevel("info");
             LOGGER.fatal("Something went wrong while running CATS!", e);
         }
@@ -237,6 +244,9 @@ public class CatsCommand implements Runnable {
     private void processArgs() throws IOException {
         this.processLogLevelArgument();
         filesArguments.loadConfig();
+        if (apiArguments.getContract() == null) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
+        }
     }
 
     private void processLogLevelArgument() {
@@ -289,4 +299,8 @@ public class CatsCommand implements Runnable {
         }
     }
 
+    @Override
+    public int getExitCode() {
+        return executionStatisticsListener.getErrors();
+    }
 }
