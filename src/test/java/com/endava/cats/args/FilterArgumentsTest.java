@@ -1,7 +1,6 @@
 package com.endava.cats.args;
 
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsSkipped;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +48,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(checkArguments, argument, true);
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
 
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains(matching).doesNotContain(notMatching);
     }
@@ -63,7 +62,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         ReflectionTestUtils.setField(checkArguments, argument, true);
 
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains(matching).doesNotContain(notMatching);
     }
@@ -74,7 +73,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
                 , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(78);
@@ -83,8 +82,7 @@ class FilterArgumentsTest {
     @Test
     void shouldReturnAllFuzzersWhenNoCheckSupplied() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
-        filterArguments.loadConfig();
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
     }
@@ -94,8 +92,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", List.of("2xx"));
 
-        filterArguments.loadConfig();
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
                 .doesNotContain("TopLevelElementsContractInfoFuzzer");
@@ -106,8 +103,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         ReflectionTestUtils.setField(ignoreArguments, "blackbox", true);
 
-        filterArguments.loadConfig();
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
                 .doesNotContain("TopLevelElementsContractInfoFuzzer");
@@ -116,8 +112,7 @@ class FilterArgumentsTest {
     @Test
     void shouldRemoveSkippedFuzzers() {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
-        filterArguments.loadConfig();
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
                 .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeValuesInFieldsFuzzer", "Jumbo");
@@ -127,18 +122,10 @@ class FilterArgumentsTest {
     @Test
     void shouldOnlyIncludeSuppliedFuzzers() {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
-        filterArguments.loadConfig();
-        List<String> fuzzers = filterArguments.getFuzzersForPath("myPath");
+        List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer", "Jumbo")
                 .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeValuesInFieldsFuzzer", "VeryLargeUnicodeValuesInFieldsFuzzer", "VeryLargeUnicodeValuesInHeadersFuzzer", "VeryLargeValuesInHeadersFuzzer");
-    }
-
-    @Test
-    void givenAContractAndAServerAndASkipFuzzerArgument_whenStartingCats_thenTheSkipForIsCorrectlyProcessed() {
-        filterArguments.loadConfig("--contract=src/test/resources/petstore.yml", "--server=http://localhost:8080", "--skipVeryLargeValuesInFieldsFuzzerForPath=/pets");
-        Assertions.assertThat(filterArguments.skipFuzzersForPaths)
-                .containsOnly(CatsSkipped.builder().fuzzer("VeryLargeValuesInFieldsFuzzer").forPaths(Collections.singletonList("/pets")).build());
     }
 
     @Test

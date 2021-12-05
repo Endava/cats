@@ -12,31 +12,31 @@ import javax.enterprise.context.ApplicationScoped;
 @Getter
 public class CheckArguments {
     @CommandLine.Option(names = {"--checkHeaders"},
-            description = "Instructs CATS to only run Header Fuzzers")
+            description = "Run only Header Fuzzers")
     private boolean checkHeaders;
 
     @CommandLine.Option(names = {"--checkFields"},
-            description = "Instructs CATS to only run Fields Fuzzers")
+            description = "Run only Fields Fuzzers")
     private boolean checkFields;
 
     @CommandLine.Option(names = {"--checkHttp"},
-            description = "Instructs CATS to only run HTTP Fuzzers")
+            description = "Run only HTTP Fuzzers")
     private boolean checkHttp;
 
     @CommandLine.Option(names = {"--checkContract"},
-            description = "Instructs CATS to only run Contract Fuzzers")
+            description = "Run only Contract Fuzzers")
     private boolean checkContract;
 
     @CommandLine.Option(names = {"--includeWhitespaces"},
-            description = "Instructs CATS to include Whitespaces Fuzzers")
+            description = "Include Whitespaces Fuzzers")
     private boolean includeWhitespaces;
 
     @CommandLine.Option(names = {"--includeEmojis"},
-            description = "Instructs CATS to include Emojis Fuzzers")
+            description = "Include Emojis Fuzzers")
     private boolean includeEmojis;
 
     @CommandLine.Option(names = {"--includeControlChars"},
-            description = "Instructs CATS to include ControlChars Fuzzers")
+            description = "Include ControlChars Fuzzers")
     private boolean includeControlChars;
 
 }

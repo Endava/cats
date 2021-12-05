@@ -29,7 +29,7 @@ public class AuthArguments {
     private String sslKeyPwd;
 
     @CommandLine.Option(names = {"--basicAuth", "--basicauth"},
-            description = "Supplies a username:password pair, in case the service uses basic auth")
+            description = "A username:password pair, in case the service uses basic auth")
     private String basicAuth;
 
     @CommandLine.Option(names = {"--proxyHost"},

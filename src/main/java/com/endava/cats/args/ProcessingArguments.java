@@ -26,7 +26,7 @@ public class ProcessingArguments {
     private SanitizationStrategy sanitizationStrategy = SanitizationStrategy.SANITIZE_AND_VALIDATE;
 
     @CommandLine.Option(names = {"--useExamples"},
-            description = "Instruct CATS on whether to use examples from the OpenAPI contract or not")
+            description = "Use examples from the OpenAPI contract or not")
     private boolean useExamples;
 
     @CommandLine.Option(names = {"--largeStringsSize"},

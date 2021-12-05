@@ -104,9 +104,6 @@ public class CatsCommand implements Runnable {
     @Any
     Instance<Fuzzer> fuzzers;
 
-    //    @CommandLine.Unmatched
-    private String[] unmatched;
-
     public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
         Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas())
                 .orElseGet(HashMap::new);
@@ -161,7 +158,6 @@ public class CatsCommand implements Runnable {
     public void doLogic() throws IOException {
         this.processArgs();
         OpenAPI openAPI = this.createOpenAPI();
-        this.processFilesAndFilterArguments();
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
 
         testCaseListener.initReportingPath();
@@ -236,13 +232,9 @@ public class CatsCommand implements Runnable {
         }
     }
 
-    private void processArgs() {
+    private void processArgs() throws IOException {
         this.processLogLevelArgument();
-    }
-
-    private void processFilesAndFilterArguments() throws IOException {
         filesArguments.loadConfig();
-        filterArguments.loadConfig(unmatched);
     }
 
     private void processLogLevelArgument() {
@@ -254,7 +246,7 @@ public class CatsCommand implements Runnable {
     }
 
     public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI, Map<String, Schema> schemas) {
-        List<String> configuredFuzzers = filterArguments.getFuzzersForPath(pathItemEntry.getKey());
+        List<String> configuredFuzzers = filterArguments.getFuzzersForPath();
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info(" ");
