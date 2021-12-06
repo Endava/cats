@@ -308,4 +308,8 @@ public class CustomFuzzerUtil {
         }
         return propertyValue;
     }
+
+    public Map<String, String> getVariables() {
+        return variables;
+    }
 }

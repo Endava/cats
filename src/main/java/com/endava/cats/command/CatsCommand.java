@@ -53,7 +53,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @CommandLine.Command(
         name = "cats",
         mixinStandardHelpOptions = true,
-        header = "cats - OpenAPI fuzzer and negative testing tool; version 7.0.0%n",
+        header = "%ncats - OpenAPI fuzzer and negative testing tool %n",
         usageHelpAutoWidth = true,
         versionProvider = VersionProvider.class,
         subcommands = {
@@ -74,8 +74,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     CustomFuzzer customFuzzer;
     @Inject
     TestCaseListener testCaseListener;
-    @Inject
-    CatsUtil catsUtil;
 
     /*API Arguments*/
     @Inject
@@ -192,8 +190,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private void executeCustomFuzzer() {
+    private void executeCustomFuzzer() throws IOException {
         customFuzzer.executeCustomFuzzerTests();
+        customFuzzer.replaceRefData();
     }
 
     private List<Fuzzer> sortFuzzersByName() {

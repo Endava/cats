@@ -25,6 +25,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,6 +56,28 @@ class CustomFuzzerTest {
         customFuzzer = new CustomFuzzer(filesArguments, customFuzzerUtil);
         filesArguments.getCustomFuzzerDetails().clear();
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+    }
+
+    @Test
+    void shouldReplaceRefData() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
+        File refData = File.createTempFile("refData", ".yml");
+        String line = "this/is/custom/${resp}";
+        Files.write(refData.toPath(), line.getBytes());
+        ReflectionTestUtils.setField(filesArguments, "refDataFile", refData);
+
+        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        filesArguments.loadCustomFuzzerFile();
+        spyCustomFuzzer.fuzz(data);
+        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyCustomFuzzer.replaceRefData();
+
+        File refDataReplaced = new File(refData.getAbsolutePath().substring(0, refData.getAbsolutePath().lastIndexOf(".")) + "_replaced.yml");
+        String replaced = Files.readString(refDataReplaced.toPath());
+
+        Assertions.assertThat(replaced).isEqualTo("this/is/custom/200\n");
+        refData.deleteOnExit();
+        refDataReplaced.deleteOnExit();
     }
 
     @Test
