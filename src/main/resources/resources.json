@@ -26,6 +26,9 @@
     },
     {
       "pattern": "styles.css"
+    },
+    {
+      "pattern": "version.properties"
     }
   ]
 }
