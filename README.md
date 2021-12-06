@@ -62,9 +62,29 @@ This is a list of articles with step-by-step guides on how to use CATS:
 
 # Installation
 
-CATS is bundled as an executable JAR which can be run as a simple script as `$ ./cats.jar` or `$ cats` (if properly symlinked and/or placed inside `PATH`). It requires Java 11+. 
+CATS is bundled both as an executable JAR or a native binary. The native binaries do not need Java installed. 
 
-Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
+After downloading your OS native binary, you can add it in classpath so that you can execute it as any other command line tool:
+
+```shell
+sudo cp cats-macos /usr/local/bin/cats
+```
+
+You can also get autocomplete by downloading the [cats_autocomplete](cats_autocomplete) script and do:
+
+```shell
+source cats_autocomplete
+```
+
+To get persistent autocomplete, add the above line in `~/.zshrc` or `./bashrc`, but make sure you put the fully qualified path for the `cats_autocomplete` script.
+
+You can also check the `cats_autocomplete` source for alternative setup.
+
+There is no native binary for Windows, but you can use the uberjar version. This requires Java 11+ to be installed.
+
+You can run it as `java -jar cats.jar`.
+
+Head to the releases page to download the latest versions: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
 
 ## Build
 
@@ -75,9 +95,15 @@ under the `4.9.1-CATS` version, so don't worry about overriding the official ver
 
 You can use the following Maven command to build the project:
 
-`./mvnw clean package`
+`./mvnw package -Dquarkus.package.type=uber-jar`
 
-This will output a `cats.jar` in the current folder. Do a `chmod +x cats.jar` to make it executable. 
+`cp target/`
+
+You will end up with a `cats.jar` in the current folder. You can run it wih `java -jar cats.jar ...`. 
+
+You can also build native images using a GraalVM Java version. 
+
+`./mvnw package -Pnative`
 
 **Note:** You will need to configure Maven with a [Github PAT](https://docs.github.com/en/free-pro-team@latest/packages/guides/configuring-apache-maven-for-use-with-github-packages) with `read-packages` scope to get some dependencies for the build.
 
@@ -91,7 +117,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 
 Blackbox mode means that CATS doesn't need any specific context. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](#headers-file).
 
-`./cats.jar --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox`
+`cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox`
 
 In blackbox mode CATS will only report `ERRORs` if the received HTTP response code is a `5XX`. 
 Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and service returns `200`) will be ignored.
@@ -107,7 +133,7 @@ This will allow you to tweak either your OpenAPI spec or service behaviour in or
 Running CATS in context mode usually implies providing it a [--refData](#reference-data-file) file with resource identifiers specific to the business logic. 
 CATS cannot create data on its own (yet), so it's important that any request field or query param that requires pre-existence of those entities/resources to be created in advance and added to the reference data file.
 
-`./cats.jar --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml`
+`cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml`
 
 ## Notes on skipped Tests
 You may notice a significant number of tests marked as `skipped`. CATS will try to apply all `Fuzzers` to all fields, but this is not always possible.
@@ -209,7 +235,7 @@ This is useful when you want to see the exact behaviour of the specific test or 
 The syntax for replaying tests is the following:
 
 ```shell
-./cats.jar replay --tests="Test1,Test233,Test15.json,dir/Test19.json"
+cats replay --tests="Test1,Test233,Test15.json,dir/Test19.json"
 ```
 
 Some notes on the above example:
@@ -220,21 +246,21 @@ Some notes on the above example:
 # Available Commands
 
 To list all available commands, run CATS with no arguments:
-`./cats.jar`
+`cats -h`
 
 Other ways to get help from the CATS command are as follows:
 
-- `./cats.jar help` will list all available options
+- `cats help` or `cats -h` will list all available options
 
-- `./cats.jar version` will display the current CATS version
+- `cats --version` will display the current CATS version
 
-- `./cats.jar list fuzzers` will list all the existing fuzzers, grouped on categories
+- `cats list --fuzzers` will list all the existing fuzzers, grouped on categories
 
-- `./cats.jar list fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
+- `cats list --fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
 
-- `./cats.jar list paths --contract=CONTRACT` will list all the paths available within the contract
+- `cats list --paths --contract=CONTRACT` will list all the paths available within the contract
 
-- `./cats.jar replay --tests="test1,test2"` will replay the given tests `test1` and `test2`
+- `cats replay --tests="test1,test2"` will replay the given tests `test1` and `test2`
 
 
 # Available arguments
@@ -285,13 +311,12 @@ Other ways to get help from the CATS command are as follows:
 - `--blackbox` If supplied (not value needed) it will ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
 
 
-
-`./cats.jar --contract=my.yml --server=https://locathost:8080 --checkHeaders`
+`cats --contract=my.yml --server=https://locathost:8080 --checkHeaders`
 
 This will run CATS against `http://localhost:8080` using `my.yml` as an API spec and will only run the HTTP headers `Fuzzers`.
 
 # Available Fuzzers
-To get a list of fuzzers run `./cats.jar list fuzzers`. A list of all available fuzzers will be returned, along with a short description for each.
+To get a list of fuzzers run `cats list --fuzzers`. A list of all available fuzzers will be returned, along with a short description for each.
 
 There are multiple categories of `Fuzzers` available:
 
@@ -788,7 +813,7 @@ If you need to run CATS behind a proxy, you can supply the following arguments: 
 A typical run with proxy settings on `localhost:8080` will look as follows:
 
 ```bash
-./cats.jar --contract=YAML_FILE --server=SERVER_URL --proxyHost=localhost --proxyPort=8080
+cats --contract=YAML_FILE --server=SERVER_URL --proxyHost=localhost --proxyPort=8080
 ```
 
 # Dealing with Authentication
