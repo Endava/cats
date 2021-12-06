@@ -12,11 +12,13 @@ import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import com.google.gson.JsonObject;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -33,10 +35,11 @@ import static org.mockito.ArgumentMatchers.any;
 
 @QuarkusTest
 class CustomFuzzerTest {
-    private FilesArguments filesArguments;
-    private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
+
+    private FilesArguments filesArguments;
+    private ServiceCaller serviceCaller;
     private CatsDSLParser catsDSLParser;
     private CatsUtil catsUtil;
     private CustomFuzzerUtil customFuzzerUtil;
@@ -154,7 +157,7 @@ class CustomFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"));
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     @Test
@@ -164,7 +167,7 @@ class CustomFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(PrettyLogger.class), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     @Test
@@ -174,7 +177,7 @@ class CustomFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportError(Mockito.any(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "));
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportError(Mockito.any(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "), Mockito.any());
     }
 
     @Test
@@ -196,7 +199,7 @@ class CustomFuzzerTest {
         spyCustomFuzzer.fuzz(data);
         spyCustomFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following Verify parameters were not present in the response: {}"),
-                Mockito.eq(Collections.singletonList("address")));
+                AdditionalMatchers.aryEq(new Object[]{List.of("address")}));
     }
 
     @Test

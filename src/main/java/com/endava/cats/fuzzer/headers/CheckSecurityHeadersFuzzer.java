@@ -12,7 +12,7 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * Check that responses include Content-Type, Content-Type-Options, X-Frame-Options: deny
  */
 
-@ApplicationScoped
+@Singleton
 @HeaderFuzzer
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 

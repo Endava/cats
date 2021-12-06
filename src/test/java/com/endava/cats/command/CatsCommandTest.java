@@ -33,6 +33,16 @@ class CatsCommandTest {
     private TestCaseListener testCaseListener;
 
     @Test
+    void shouldNotCallEndSessionWhenIOException() {
+        ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/not_existent.yml");
+        ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
+
+        catsMain.run();
+        Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
+        Mockito.verify(testCaseListener, Mockito.times(0)).endSession();
+    }
+
+    @Test
     void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() throws Exception {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");

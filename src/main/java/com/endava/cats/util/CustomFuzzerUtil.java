@@ -15,6 +15,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Singleton;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-@Singleton
+@ApplicationScoped
 public class CustomFuzzerUtil {
     public static final String DESCRIPTION = "description";
     public static final String HTTP_METHOD = "httpMethod";

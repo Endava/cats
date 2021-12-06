@@ -30,6 +30,7 @@ class BaseFieldsFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
+    @InjectSpy
     private CatsUtil catsUtil;
     private FilesArguments filesArguments;
 
@@ -38,7 +39,6 @@ class BaseFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsUtil = Mockito.mock(CatsUtil.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
@@ -49,6 +49,7 @@ class BaseFieldsFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
         Mockito.when(data.getAllFields()).thenReturn(fields);
+        Mockito.when(data.getPayload()).thenReturn("{}");
 
         baseFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas"));
@@ -75,15 +76,17 @@ class BaseFieldsFuzzerTest {
         schemaMap.put("field", new StringSchema());
         Mockito.when(data.getAllFields()).thenReturn(fields);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
+        Mockito.when(data.getPayload()).thenReturn("{}");
 
-        Mockito.when(catsUtil.isPrimitive(Mockito.eq(null), Mockito.anyString())).thenReturn(true);
-        Mockito.when(catsUtil.replaceField(Mockito.eq(null), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
-        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
+        Mockito.when(mockCatsUtil.isPrimitive(Mockito.eq("{}"), Mockito.anyString())).thenReturn(true);
+        Mockito.when(mockCatsUtil.replaceField(Mockito.eq("{}"), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
+        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, mockCatsUtil, filesArguments);
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(catsUtil).isPrimitive(Mockito.eq(null), Mockito.anyString());
+        Mockito.verify(mockCatsUtil).isPrimitive(Mockito.eq("{}"), Mockito.anyString());
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
     }
 

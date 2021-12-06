@@ -26,7 +26,7 @@ class CustomFuzzerExecutionTest {
 
         Assertions.assertThat(cfe1).isLessThan(cfe2);
     }
-  
+
     @Test
     void shouldBeEqual() {
         CustomFuzzerExecution cfe1 = buildCfe("path1", "test1");

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.models.PathItem;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -51,21 +52,22 @@ class HttpMethodsFuzzerTest {
     @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportInfo(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405));
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportInfo(Mockito.any(), Mockito.anyString(),
+                AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
     }
 
     @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWithA2xx_thenResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405), Mockito.eq(200));
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
     }
 
     @Test

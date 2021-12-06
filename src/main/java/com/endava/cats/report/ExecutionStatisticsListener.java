@@ -1,11 +1,13 @@
 package com.endava.cats.report;
 
+import com.endava.cats.aop.DryRun;
 import lombok.Getter;
 
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @Getter
+@DryRun
 public class ExecutionStatisticsListener {
 
     private int errors;

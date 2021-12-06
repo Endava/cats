@@ -1,5 +1,6 @@
 package com.endava.cats.io;
 
+import com.endava.cats.aop.DryRun;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
@@ -34,6 +35,7 @@ import org.springframework.util.MimeTypeUtils;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -78,6 +80,7 @@ public class ServiceCaller {
 
     private RateLimiter rateLimiter;
 
+    @Inject
     public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
@@ -150,6 +153,13 @@ public class ServiceCaller {
         return sslContext.getSocketFactory();
     }
 
+    /**
+     * When in dryRun mode ServiceCaller won't do any actual calls.
+     *
+     * @param data the current context data
+     * @return the result of service invocation
+     */
+    @DryRun
     public CatsResponse call(ServiceData data) {
         LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
         rateLimiter.acquire();
