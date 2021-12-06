@@ -6,7 +6,6 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -15,6 +14,7 @@ import io.swagger.v3.parser.core.models.ParseOptions;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,15 +25,15 @@ import java.util.Map;
 @QuarkusTest
 class FuzzingDataFactoryTest {
 
-    @InjectMock
     private CatsUtil catsUtil;
-    @InjectMock
     private FilesArguments filesArguments;
 
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
     void setup() {
+        catsUtil = new CatsUtil(null);
+        filesArguments = Mockito.mock(FilesArguments.class);
         fuzzingDataFactory = new FuzzingDataFactory(catsUtil, filesArguments);
     }
 

@@ -7,7 +7,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
 import picocli.CommandLine;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@ApplicationScoped
+@Singleton
 public class FilesArguments {
     private static final String ALL = "all";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());

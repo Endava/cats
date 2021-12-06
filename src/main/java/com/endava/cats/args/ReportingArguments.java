@@ -3,12 +3,12 @@ package com.endava.cats.args;
 import lombok.Getter;
 import picocli.CommandLine;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@ApplicationScoped
+@Singleton
 @Getter
 public class ReportingArguments {
     private static final String EMPTY = "empty";

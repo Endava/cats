@@ -14,7 +14,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +25,7 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -35,12 +35,10 @@ class TestCaseListenerTest {
 
     TestCaseListener testCaseListener;
 
-    @InjectSpy
-    private ExecutionStatisticsListener executionStatisticsListener;
-    @InjectSpy
-    private IgnoreArguments ignoreArguments;
-    @InjectSpy
-    private ReportingArguments reportingArguments;
+    ExecutionStatisticsListener executionStatisticsListener;
+    IgnoreArguments ignoreArguments;
+    @Inject
+    ReportingArguments reportingArguments;
 
     private PrettyLogger logger;
     private Fuzzer fuzzer;
@@ -52,6 +50,8 @@ class TestCaseListenerTest {
         logger = Mockito.mock(PrettyLogger.class);
         fuzzer = Mockito.mock(Fuzzer.class);
         testCaseExporter = Mockito.mock(TestCaseExporterHtmlJs.class);
+        executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
+        ignoreArguments = Mockito.mock(IgnoreArguments.class);
         testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, testCaseExporter, ignoreArguments, reportingArguments);
     }
 
@@ -63,7 +63,6 @@ class TestCaseListenerTest {
     @Test
     void shouldNotCallInitPathWhenReplayTests() {
         ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
-        // Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
         testCaseListener.startSession();
 
         Mockito.verifyNoInteractions(testCaseExporter);
@@ -158,7 +157,6 @@ class TestCaseListenerTest {
 
     @Test
     void shouldCallInfoInsteadOfErrorWhenIgnoreCodeSupplied() {
-        //  Mockito.when(filterArguments.areTestCasesSupplied()).thenReturn(true);
         Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {

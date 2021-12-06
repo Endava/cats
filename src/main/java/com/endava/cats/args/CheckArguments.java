@@ -3,12 +3,12 @@ package com.endava.cats.args;
 import lombok.Getter;
 import picocli.CommandLine;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 
 /**
  * Holds all args related to category of Fuzzers to run.
  */
-@ApplicationScoped
+@Singleton
 @Getter
 public class CheckArguments {
     @CommandLine.Option(names = {"--checkHeaders"},

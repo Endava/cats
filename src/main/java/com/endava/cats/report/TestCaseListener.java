@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.aop.DryRun;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.CatsCommand;
@@ -43,6 +44,7 @@ import static org.fusesource.jansi.Ansi.ansi;
  * This class exposes methods to record the progress of a test case
  */
 @ApplicationScoped
+@DryRun
 public class TestCaseListener {
 
     public static final String ID = "id";

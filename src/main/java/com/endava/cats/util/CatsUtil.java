@@ -131,10 +131,6 @@ public class CatsUtil {
         return "ca" + input + "ts";
     }
 
-    public static boolean isArgumentValid(List<String> argument) {
-        return argument != null && !argument.isEmpty();
-    }
-
     public static List<FuzzingStrategy> getLargeValuesStrategy(int largeStringsSize) {
         String generatedValue = StringGenerator.generateRandomUnicode();
         int payloadSize = largeStringsSize / generatedValue.length();

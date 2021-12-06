@@ -1,5 +1,6 @@
 package com.endava.cats.io;
 
+import com.endava.cats.aop.DryRun;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
@@ -199,6 +200,12 @@ public abstract class TestCaseExporter {
         }
     }
 
+    /**
+     * We mark is as DryRun in order to avoid writing test cases when in dryRun mode.
+     *
+     * @param testCase the current test case
+     */
+    @DryRun
     public void writeTestCase(CatsTestCase testCase) {
         writeHtmlTestCase(testCase);
         writeJsonTestCase(testCase);

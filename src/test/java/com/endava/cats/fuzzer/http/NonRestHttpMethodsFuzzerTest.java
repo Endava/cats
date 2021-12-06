@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.PathItem;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -35,41 +36,41 @@ class NonRestHttpMethodsFuzzerTest {
     @Test
     void shouldCallServiceAndReportErrorWhenServiceRespondsWith200() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportError(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405), Mockito.eq(200));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
     }
 
     @Test
     void shouldCallServiceAndReportInfoWhenServiceRespondsWith405() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportInfo(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportInfo(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
     }
 
     @Test
     void shouldCallServiceAndReportWarnWhenServiceRespondsWith400() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportWarn(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405), Mockito.eq(400));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportWarn(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 400}));
     }
 
     @Test
     void shouldRunOncePerPath() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).path("/test").build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportInfo(Mockito.any(), Mockito.anyString(), Mockito.any(), Mockito.eq(405));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportInfo(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
         Mockito.clearInvocations(testCaseListener);
         nonRestHttpMethodsFuzzer.fuzz(data);
         Mockito.verifyNoMoreInteractions(testCaseListener);
