@@ -23,7 +23,7 @@ public class IgnoreArguments {
             description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will return the test result as SUCCESS instead of WARN")
     private boolean ignoreResponseBodyCheck;
 
-    @CommandLine.Option(names = {"--ignoreResponseCodes"},
+    @CommandLine.Option(names = {"-i", "--ignoreResponseCodes"},
             description = "A comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. If provided, all Contract Fuzzers will be skipped", split = ",")
     private List<String> ignoreResponseCodes;
 
@@ -31,7 +31,7 @@ public class IgnoreArguments {
             description = "A comma separated list of of fields that will be skipped by replacement Fuzzers like EmptyStringsInFields, NullValuesInFields, etc.", split = ",")
     private List<String> skipFields;
 
-    @CommandLine.Option(names = {"--blackbox"},
+    @CommandLine.Option(names = {"-b", "--blackbox"},
             description = "Ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes=\"2xx,4xx\"`")
     private boolean blackbox;
 

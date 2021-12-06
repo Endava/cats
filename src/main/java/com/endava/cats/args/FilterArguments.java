@@ -45,10 +45,10 @@ public class FilterArguments {
     @Inject
     ProcessingArguments processingArguments;
 
-    @CommandLine.Option(names = {"--fuzzers"},
+    @CommandLine.Option(names = {"-f", "--fuzzers"},
             description = "A comma separated list of fuzzers you want to run. You can use full or partial Fuzzer names. To list all available fuzzers run: `./cats.jar list -f`", split = ",")
     private List<String> suppliedFuzzers;
-    @CommandLine.Option(names = {"--paths"},
+    @CommandLine.Option(names = {"-p", "--paths"},
             description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. To list all available paths run: `./cats.jar list -p -c api.yml`", split = ",")
     private List<String> paths;
     @CommandLine.Option(names = {"--skipPaths"},
@@ -60,7 +60,7 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--httpMethods"},
             description = "A comma separated list of HTTP methods. When supplied, only these methods will be considered for each contract path. Default: ${DEFAULT-VALUE}", split = ",")
     private List<HttpMethod> httpMethods = HttpMethod.restMethods();
-    @CommandLine.Option(names = {"--dryRun"},
+    @CommandLine.Option(names = {"-d", "--dryRun"},
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
     private boolean dryRun;
 
