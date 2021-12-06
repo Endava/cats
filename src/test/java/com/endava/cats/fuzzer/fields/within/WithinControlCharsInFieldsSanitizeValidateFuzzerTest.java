@@ -22,17 +22,14 @@ import java.util.Map;
 @QuarkusTest
 class WithinControlCharsInFieldsSanitizeValidateFuzzerTest {
     private final CatsUtil catsUtil = new CatsUtil(null);
-    private ServiceCaller serviceCaller;
-    private TestCaseListener testCaseListener;
-    private FilesArguments filesArguments;
 
     private WithinControlCharsInFieldsSanitizeValidateFuzzer withinControlCharsInFieldsSanitizeValidateFuzzer;
 
     @BeforeEach
     void setup() {
-        serviceCaller = Mockito.mock(ServiceCaller.class);
-        testCaseListener = Mockito.mock(TestCaseListener.class);
-        filesArguments = Mockito.mock(FilesArguments.class);
+        ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
+        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
+        FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
         withinControlCharsInFieldsSanitizeValidateFuzzer = new WithinControlCharsInFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
     }
 
