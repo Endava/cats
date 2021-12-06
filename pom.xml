@@ -5,7 +5,7 @@
 
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
-    <description>Contract Auto-Generated Tests for Swagger</description>
+    <description>OpenAPI Fuzzer and Negative Testing Tool</description>
     <version>6.1.1-SNAPSHOT</version>
 
     <properties>
