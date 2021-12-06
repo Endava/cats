@@ -7,6 +7,7 @@ import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.AopTestUtils;
@@ -26,10 +27,10 @@ class CatsCommandTest {
     ReportingArguments reportingArguments;
     @Inject
     ApiArguments apiArguments;
+    @InjectSpy
+    FuzzingDataFactory fuzzingDataFactory;
     @InjectMock
     private TestCaseListener testCaseListener;
-    @InjectMock
-    private FuzzingDataFactory fuzzingDataFactory;
 
     @Test
     void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() throws Exception {
@@ -41,6 +42,8 @@ class CatsCommandTest {
         spyMain.run();
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
+        Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
+        Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
