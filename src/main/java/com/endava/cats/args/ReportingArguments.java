@@ -13,12 +13,12 @@ import java.util.Optional;
 public class ReportingArguments {
     private static final String EMPTY = "empty";
 
-    @CommandLine.Option(names = {"--log"},
+    @CommandLine.Option(names = {"-l", "--log"},
             description = "Set custom log level of a given package(s). You can provide a comma separated list of PACKAGE:LEVEL pairs", split = ",")
     private List<String> logData;
 
     @CommandLine.Option(names = {"--printExecutionStatistics"},
-            description = "Print a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply --printExecutionStatistics=detailed")
+            description = "Print a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply --printDetailedExecutionStatistics")
     private boolean printExecutionStatistics;
 
     @CommandLine.Option(names = {"--printDetailedExecutionStatistics"},

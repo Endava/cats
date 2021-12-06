@@ -31,12 +31,12 @@ public class ApiArguments {
             defaultValue = "10")
     private int readTimeout = 10;
 
-    @CommandLine.Option(names = {"--contract"},
+    @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract",
             required = true)
     private String contract;
 
-    @CommandLine.Option(names = {"--server"},
+    @CommandLine.Option(names = {"-s", "--server"},
             description = "Base URL of the service",
             required = true)
     private String server;

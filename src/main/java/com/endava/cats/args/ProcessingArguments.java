@@ -25,9 +25,9 @@ public class ProcessingArguments {
             description = "This can be either sanitizeAndValidation or validateAndSanitize. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields. Default: ${DEFAULT-VALUE}")
     private SanitizationStrategy sanitizationStrategy = SanitizationStrategy.SANITIZE_AND_VALIDATE;
 
-    @CommandLine.Option(names = {"--useExamples"},
-            description = "Use examples from the OpenAPI contract or not")
-    private boolean useExamples;
+    @CommandLine.Option(names = {"--useExamples"}, negatable = true,
+            description = "Use examples from the OpenAPI contract or not. Default: ${DEFAULT-VALUE}")
+    private boolean useExamples = true;
 
     @CommandLine.Option(names = {"--largeStringsSize"},
             description = "The size of the strings used by the Fuzzers sending large values like VeryLargeStringsFuzzer. Default:  ${DEFAULT-VALUE}")
