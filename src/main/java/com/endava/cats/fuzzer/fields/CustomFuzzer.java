@@ -13,12 +13,18 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import javax.inject.Singleton;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Singleton
 @SpecialFuzzer
@@ -79,6 +85,25 @@ public class CustomFuzzer implements CustomFuzzerBase {
         }
         MDC.put("fuzzer", CatsUtil.FUZZER_KEY_DEFAULT);
         MDC.put("fuzzerKey", CatsUtil.FUZZER_KEY_DEFAULT);
+    }
+
+    public void replaceRefData() throws IOException {
+        if (filesArguments.getRefDataFile() != null) {
+            List<String> refDataLines = Files.readAllLines(filesArguments.getRefDataFile().toPath());
+            List<String> updatedLines = refDataLines.stream().map(this::replaceWithVariable).collect(Collectors.toList());
+            String currentFile = filesArguments.getRefDataFile().getAbsolutePath();
+            Path file = Paths.get(currentFile.substring(0, currentFile.lastIndexOf(".")) + "_replaced.yml");
+            Files.write(file, updatedLines, StandardCharsets.UTF_8);
+        }
+    }
+
+    private String replaceWithVariable(String line) {
+        String result = line;
+        for (Map.Entry<String, String> stringEntry : customFuzzerUtil.getVariables().entrySet()) {
+            result = result.replace("${" + stringEntry.getKey() + "}", stringEntry.getValue());
+        }
+
+        return result;
     }
 
     @Override
