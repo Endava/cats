@@ -38,19 +38,15 @@ public class DryRunAspect {
         return result;
     }
 
-    public Object dontInvokeService(InvocationContext context) {
+    public Object dontInvokeService() {
         return CatsResponse.empty();
     }
 
-    public Object dontWriteTestCase(InvocationContext context) {
+    public Object dontWriteTestCase() {
         return null;
     }
 
-    public Object getErrors(InvocationContext context) {
-        return 0;
-    }
-
-    public Object endSession(InvocationContext context) {
+    public Object endSession() {
         System.out.print("\n");
         CatsUtil.setCatsLogLevel("INFO");
         LOGGER.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
@@ -79,19 +75,19 @@ public class DryRunAspect {
                 return report(context);
             }
             if (context.getMethod().getName().startsWith("endSession")) {
-                return endSession(context);
+                return endSession();
             }
             if (context.getMethod().getName().startsWith("startSession")) {
                 return startSession(context);
             }
             if (context.getMethod().getName().startsWith("call")) {
-                return dontInvokeService(context);
+                return dontInvokeService();
             }
             if (context.getMethod().getName().startsWith("getErrors")) {
-                return getErrors(context);
+                return 0;
             }
             if (context.getMethod().getName().startsWith("writeTestCase")) {
-                return dontWriteTestCase(context);
+                return dontWriteTestCase();
             }
         }
         return context.proceed();

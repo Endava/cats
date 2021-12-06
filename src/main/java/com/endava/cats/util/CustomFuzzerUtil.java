@@ -16,7 +16,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Singleton;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
