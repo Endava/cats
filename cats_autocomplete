@@ -357,13 +357,3 @@ function _picocli_cats_replay() {
 # The `-o default` option means that if the function generated no matches, the
 # default Bash completions and the Readline default filename completions are performed.
 complete -F _complete_cats -o default cats cats.sh cats.bash
-
-             _____   ___ _____ _____
-            /  __ \ / _ \_   _/  ___|
-            | /  \// /_\ \| | \ `--.
-            | |    |  _  || |  `--. \
-            | \__/\| | | || | /\__/ /
-             \____/\_| |_/\_/ \____/
-           .. ...    -.-. --- --- .-..
-
-        Powered by Quarkus 2.5.1.Final
