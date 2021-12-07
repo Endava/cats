@@ -56,7 +56,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         if (getExactMethod().apply(schema) == null) {
             return null;
         }
-        String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC;
+        String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         String generated = StringGenerator.generate(pattern, getExactMethod().apply(schema).intValue(), getExactMethod().apply(schema).intValue());
         if (schema instanceof ByteArraySchema) {
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));

@@ -5,6 +5,10 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import java.util.regex.Pattern;
 
 @QuarkusTest
 class StringGeneratorTest {
@@ -24,14 +28,14 @@ class StringGeneratorTest {
     }
 
     @Test
-    void givenAPatternThatDoesNotHaveLength_whenGeneratingARandomString_thenTheLenghtIsProperlyAdded() {
-        String actual = StringGenerator.generate("[A-Z]", 3, 3);
+    void givenAPatternThatDoesNotHaveLength_whenGeneratingARandomString_thenTheLengthIsProperlyAdded() {
+        String actual = StringGenerator.generate("[A-Z]+", 3, 3);
         Assertions.assertThat(actual).hasSize(3);
     }
 
 
     @Test
-    void givenAPatternThatDoesHaveLength_whenGeneratingARandomString_thenTheLenghtIsProperlyAdded() {
+    void givenAPatternThatDoesHaveLength_whenGeneratingARandomString_thenTheLengthIsProperlyAdded() {
         String actual = StringGenerator.generate("[A-Z]{3}", 4, 4);
         Assertions.assertThat(actual).hasSize(3);
     }
@@ -82,5 +86,13 @@ class StringGeneratorTest {
         long actual = StringGenerator.getRightBoundaryLength(schema);
 
         Assertions.assertThat(actual).isEqualTo(maxExpected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"[A-Z]+", "^[^\\s]+(\\s+[^\\s]+)*$", "^[\\w\\u00C0-\\u02AF]+(\\s+[\\w\\u00C0-\\u02AF]+)*$"})
+    void shouldGenerateStringForSpecificRegexes(String regex) {
+        String generated = StringGenerator.generate(regex, 50, 60);
+
+        Assertions.assertThat(generated).matches(Pattern.compile(regex)).hasSizeBetween(50, 60);
     }
 }
