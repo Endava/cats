@@ -53,9 +53,12 @@ import static org.fusesource.jansi.Ansi.ansi;
 @CommandLine.Command(
         name = "cats",
         mixinStandardHelpOptions = true,
-        header = "%ncats - OpenAPI fuzzer and negative testing tool %n",
+        header = "%n@|green cats - OpenAPI fuzzer and negative testing tool; version ${app.version}|@ %n",
         usageHelpAutoWidth = true,
         versionProvider = VersionProvider.class,
+        commandListHeading = "%n@|bold,underline Commands:|@%n",
+        defaultValueProvider = CommandLine.PropertiesDefaultProvider.class,
+        resourceBundle = "version",
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
                 CommandLine.HelpCommand.class,
@@ -77,28 +80,28 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     /*API Arguments*/
     @Inject
-    @CommandLine.ArgGroup(heading = "API Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
     ApiArguments apiArguments;
     @Inject
-    @CommandLine.ArgGroup(heading = "Authentication Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
     AuthArguments authArgs;
     @Inject
-    @CommandLine.ArgGroup(heading = "Check Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Check Options:|@%n", exclusive = false)
     CheckArguments checkArgs;
     @Inject
-    @CommandLine.ArgGroup(heading = "Files Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Files Options:|@%n", exclusive = false)
     FilesArguments filesArguments;
     @Inject
-    @CommandLine.ArgGroup(heading = "Filter Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Filter Options:|@%n", exclusive = false)
     FilterArguments filterArguments;
     @Inject
-    @CommandLine.ArgGroup(heading = "Ignore Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
     IgnoreArguments ignoreArguments;
     @Inject
-    @CommandLine.ArgGroup(heading = "Processing Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Processing Options:|@%n", exclusive = false)
     ProcessingArguments processingArguments;
     @Inject
-    @CommandLine.ArgGroup(heading = "Reporting Options:%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
     ReportingArguments reportingArguments;
 
     @CommandLine.Spec
