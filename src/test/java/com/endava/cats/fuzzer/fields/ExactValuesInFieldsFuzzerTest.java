@@ -41,7 +41,7 @@ class ExactValuesInFieldsFuzzerTest {
         schema.setMaxLength(10);
         String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
-        Assertions.assertThat(generated).matches(StringGenerator.ALPHANUMERIC + "+");
+        Assertions.assertThat(generated).matches(StringGenerator.ALPHANUMERIC_PLUS);
     }
 
     @Test

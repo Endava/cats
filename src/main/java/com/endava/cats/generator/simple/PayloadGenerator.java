@@ -33,6 +33,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -79,7 +80,7 @@ public class PayloadGenerator {
         }
         int minLength = property.getMinLength() != null ? property.getMinLength() : 5;
         int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
-        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC;
+        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         if (maxLength < minLength) {
             maxLength = minLength;
         }
@@ -178,7 +179,7 @@ public class PayloadGenerator {
             return enumValues.get(0);
         }
         String format = property.getFormat();
-        if (isURI(format)) {
+        if (isURI(format, propertyName)) {
             return "http://example.com/aeiou";
         }
         if (isEmailAddress(property, propertyName)) {
@@ -198,11 +199,12 @@ public class PayloadGenerator {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
         LOGGER.trace("No values found, using property name {} as example", propertyName);
-        return StringGenerator.generate(StringGenerator.ALPHANUMERIC, propertyName.length(), propertyName.length() + 4);
+        return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
     }
 
-    private boolean isURI(String format) {
-        return URI.equals(format) || URL.equals(format);
+    public boolean isURI(String format, String propertyName) {
+        return URI.equals(format) || URL.equals(format) || propertyName.equalsIgnoreCase(URL) || propertyName.equalsIgnoreCase(URI)
+                || propertyName.toLowerCase(Locale.ROOT).endsWith(URL) || propertyName.toLowerCase(Locale.ROOT).endsWith(URI);
     }
 
     private Object getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
@@ -263,20 +265,20 @@ public class PayloadGenerator {
         return null;
     }
 
-    private boolean isEmailAddress(Schema<String> property, String propertyName) {
+    public boolean isEmailAddress(Schema<String> property, String propertyName) {
         return property != null && (propertyName.toLowerCase().endsWith("email") || propertyName.toLowerCase().endsWith("emailaddress") || "email".equalsIgnoreCase(property.getFormat()));
     }
 
-    private boolean isIPV4(Schema<String> property, String propertyName) {
+    public boolean isIPV4(Schema<String> property, String propertyName) {
         return property != null && (propertyName.toLowerCase().endsWith("ip") || propertyName.toLowerCase().endsWith("ipaddress") ||
                 "ip".equalsIgnoreCase(property.getFormat()) || "ipv4".equalsIgnoreCase(property.getFormat()));
     }
 
-    private boolean isIPV6(Schema<String> property, String propertyName) {
+    public boolean isIPV6(Schema<String> property, String propertyName) {
         return property != null && (propertyName.toLowerCase().endsWith("ipv6") || "ipv6".equalsIgnoreCase(property.getFormat()));
     }
 
-    private double randomNumber(Double min, Double max) {
+    public double randomNumber(Double min, Double max) {
         if (min != null && max != null) {
             double range = max - min;
             return random.nextDouble() * range + min;

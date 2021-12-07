@@ -5,10 +5,12 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.SecureRandom;
+import java.util.regex.Pattern;
 
 public class StringGenerator {
     public static final String FUZZ = "fuzz";
-    public static final int DEFAULT_MAX_LENGTH = 10000;
+    public static final int DEFAULT_MAX_LENGTH = Integer.MAX_VALUE / 10;
+    public static final String ALPHANUMERIC_PLUS = "[a-zA-Z0-9]+";
     public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String BAD_PAYLOAD = "퀜\uD80C\uDE1B\uD859\uDCBC\uD872\uDC4F璫骋\uD85B\uDC0F\uD842\uDF46\uD85D\uDC7C\uD85C\uDC71\uD884\uDC2E\uD854\uDCA4\uD861\uDE98ྶ\uD85E\uDCD4ᠰ\uD86F\uDC65榬\uD849\uDC0D" +
@@ -72,6 +74,16 @@ public class StringGenerator {
      * @return a random string corresponding to the given pattern and min, max restrictions
      */
     public static String generate(String pattern, int min, int max) {
+        String initialVersion = generateUsingRgxGenerator(pattern, min, max);
+
+        if (initialVersion.matches(pattern)) {
+            return initialVersion;
+        }
+
+        return RegexGenerator.generate(Pattern.compile(pattern), "", min, max);
+    }
+
+    private static String generateUsingRgxGenerator(String pattern, int min, int max) {
         String generatedValue = new RgxGen(pattern).generate();
         if (pattern.endsWith("}")) {
             return generatedValue;
@@ -94,7 +106,7 @@ public class StringGenerator {
     /**
      * Generates a random right boundary String value. If the maxLength of the associated schema is between {@code Integer.MAX_VALUE - 10}
      * and {@code Integer.MAX_VALUE} (including), the generated String length will be {@code Integer.MAX_VALUE - 2}, which is the maximum length
-     * allowed for an char array on most JVMs. If the maxLength is less than
+     * allowed for a char array on most JVMs. If the maxLength is less than
      * {@code Integer.MAX_VALUE - 10}, then the generated value will have maxLength + 10 length. If the Schema has no maxLength
      * defined, it will default to {@link DEFAULT_MAX_LENGTH}.
      *
