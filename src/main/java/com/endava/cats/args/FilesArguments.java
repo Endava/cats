@@ -28,7 +28,7 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
 
     @CommandLine.Option(names = {"--urlParams"},
-            description = "A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs", split = ",")
+            description = "A comma separated list of @|bold name:value|@ pairs of parameters to be replaced inside the URLs", split = ",")
     @Getter
     private List<String> params;
 
@@ -43,12 +43,12 @@ public class FilesArguments {
     private File refDataFile;
 
     @CommandLine.Option(names = {"--customFuzzerFile"},
-            description = "Specifies the file used by the `CustomFuzzer` that will be used to create user-supplied payloads")
+            description = "Specifies the file used by the @|bold CustomFuzzer|@ that will be used to create user-supplied payloads")
     @Getter
     private File customFuzzerFile;
 
     @CommandLine.Option(names = {"--securityFuzzerFile"},
-            description = "Specifies the file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities")
+            description = "Specifies the file used by the @|bold SecurityFuzzer|@ that will be used to inject special strings in order to exploit possible vulnerabilities")
     @Getter
     private File securityFuzzerFile;
 
