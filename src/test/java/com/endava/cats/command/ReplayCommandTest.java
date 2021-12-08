@@ -42,7 +42,7 @@ class ReplayCommandTest {
 
     @Test
     void shouldThrowExceptionWhenTestCasesInvalid() {
-        replayCommand.tests = List.of("Test12");
+        replayCommand.tests = List.of("Test1212121212121");
         replayCommand.run();
 
         Mockito.verifyNoInteractions(serviceCaller);
