@@ -221,12 +221,16 @@ components:
         petUri:
           type: string
           format: uri
+        url:
+          type: string
+        uri:
+          type: string
         isAlive:
           type: boolean
         size:
           type: number
         length:
-          type: numnber
+          type: number
           format: float
         age:
           type: integer

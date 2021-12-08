@@ -1,6 +1,7 @@
 package com.endava.cats.model.factory;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
@@ -20,7 +21,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.MimeTypeUtils;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -49,14 +49,13 @@ public class FuzzingDataFactory {
 
     private final CatsUtil catsUtil;
     private final FilesArguments filesArguments;
-
-    @Value("${useExamples:true}")
-    private String useExamples;
+    private final ProcessingArguments processingArguments;
 
     @Inject
-    public FuzzingDataFactory(CatsUtil catsUtil, FilesArguments filesArguments) {
+    public FuzzingDataFactory(CatsUtil catsUtil, FilesArguments filesArguments, ProcessingArguments processingArguments) {
         this.catsUtil = catsUtil;
         this.filesArguments = filesArguments;
+        this.processingArguments = processingArguments;
     }
 
     /**
@@ -282,7 +281,7 @@ public class FuzzingDataFactory {
     }
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName, Map<String, Schema> schemas) {
-        PayloadGenerator generator = new PayloadGenerator(schemas, this.getUseExamplesArgument());
+        PayloadGenerator generator = new PayloadGenerator(schemas, processingArguments.isUseExamples());
         List<String> result = this.generateSample(reqSchemaName, generator);
 
         if (mediaType != null && mediaType.getSchema() instanceof ArraySchema) {
@@ -454,7 +453,7 @@ public class FuzzingDataFactory {
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes, Map<String, Schema> schemas) {
         Map<String, List<String>> responses = new HashMap<>();
-        PayloadGenerator generator = new PayloadGenerator(schemas, this.getUseExamplesArgument());
+        PayloadGenerator generator = new PayloadGenerator(schemas, processingArguments.isUseExamples());
         for (String responseCode : responseCodes) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
@@ -467,10 +466,6 @@ public class FuzzingDataFactory {
             }
         }
         return responses;
-    }
-
-    private boolean getUseExamplesArgument() {
-        return StringUtils.isBlank(useExamples) || "true".equalsIgnoreCase(useExamples);
     }
 
     private String extractResponseSchemaRef(Operation operation, String responseCode) {

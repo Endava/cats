@@ -1,6 +1,7 @@
 package com.endava.cats.model.factory;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.command.CatsCommand;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
@@ -27,14 +28,16 @@ class FuzzingDataFactoryTest {
 
     private CatsUtil catsUtil;
     private FilesArguments filesArguments;
-
+    private ProcessingArguments processingArguments;
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
     void setup() {
         catsUtil = new CatsUtil(null);
         filesArguments = Mockito.mock(FilesArguments.class);
-        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, filesArguments);
+        processingArguments = Mockito.mock(ProcessingArguments.class);
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
+        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, filesArguments, processingArguments);
     }
 
     @Test

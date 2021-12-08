@@ -91,8 +91,8 @@ class StringGeneratorTest {
     @ParameterizedTest
     @CsvSource({"[A-Z]+", "^[^\\s]+(\\s+[^\\s]+)*$", "^[\\w\\u00C0-\\u02AF]+(\\s+[\\w\\u00C0-\\u02AF]+)*$"})
     void shouldGenerateStringForSpecificRegexes(String regex) {
-        String generated = StringGenerator.generate(regex, 50, 60);
+        String generated = StringGenerator.generate(regex, 2048, 2048);
 
-        Assertions.assertThat(generated).matches(Pattern.compile(regex)).hasSizeBetween(50, 60);
+        Assertions.assertThat(generated).matches(Pattern.compile(regex)).hasSizeBetween(2048, 2048);
     }
 }
