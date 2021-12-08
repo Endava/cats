@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public class StringGenerator {
     public static final String FUZZ = "fuzz";
-    public static final int DEFAULT_MAX_LENGTH = Integer.MAX_VALUE / 10;
+    public static final int DEFAULT_MAX_LENGTH = 10000;
     public static final String ALPHANUMERIC_PLUS = "[a-zA-Z0-9]+";
     public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -80,7 +80,8 @@ public class StringGenerator {
             return initialVersion;
         }
 
-        return RegexGenerator.generate(Pattern.compile(pattern), "", min, max);
+        String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", 10, 15);
+        return composeString(secondVersionBase, min, max);
     }
 
     private static String generateUsingRgxGenerator(String pattern, int min, int max) {

@@ -32,10 +32,12 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -53,6 +55,7 @@ public class PayloadGenerator {
     private static final String URL = "url";
     private static final String URI = "uri";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     /**
      * There is no need to re-compute this for each path, as the request data types are common across all requests
      */
@@ -124,7 +127,7 @@ public class PayloadGenerator {
 
     private <T> Object resolvePropertyToExample(String propertyName, String mediaType, Schema<T> property) {
         LOGGER.trace("Resolving example for property {}...", property);
-        if (property.getExample() != null && useExamples) {
+        if (property.getExample() != null && canUseExamples(property)) {
             LOGGER.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
         } else if (property instanceof StringSchema) {
@@ -155,6 +158,10 @@ public class PayloadGenerator {
         }
 
         return property.getExample();
+    }
+
+    private <T> boolean canUseExamples(Schema<T> property) {
+        return useExamples || catsGeneratedExamples.contains(property);
     }
 
     private <T> Object getExampleForByteArraySchema(Schema<T> property) {
@@ -327,6 +334,7 @@ public class PayloadGenerator {
         }
         currentProperty = previousPropertyValue;
         schema.setExample(values);
+        catsGeneratedExamples.add(schema);
     }
 
     private void parseFromInnerSchema(String name, String mediaType, Schema schema, Map<String, Object> values, Object propertyName) {
