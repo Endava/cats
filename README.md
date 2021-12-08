@@ -745,6 +745,46 @@ all:
   name: "cats_remove_field"
 ```
 
+## Creating a Ref Data file with the CustomFuzzer
+You can leverage the fact that the `CustomFuzzer` can run functional flows in order to create dynamic `--refData` files which won't need manual setting the reference data values. 
+The `--refData` file must be created with variables `${variable}` instead of fixed values and those variables must be output variables in the `--customFuzzer` file.
+In order for the `CustomFuzzer` to properly replace the variables names with their values you must supply the `--refData` file as an argument when the `CustomFuzzer` runs.
+
+```shell
+cats -c contract.yml -s http://localhost:8080 --customFuzzerFile=customFuzzer.yml --refData=refData.yml --fuzzers=CustomFuzzer
+```
+
+The `customFuzzer.yml` file:
+
+```yaml
+/pet:
+  test_1:
+    description: Create a Pet
+    httpMethod: POST
+    name: "My Pet"
+    expectedResponseCode: 200
+    output:
+      petId: pet#id
+```
+
+The `refData.yml` file:
+
+```yaml
+/pet-type:
+  id: ${petId}
+```
+
+After running CATS using the command and the 2 files above, you will get a `refData_replace.yml` file where the `id` will get the value returned into the `petId` variable.
+
+The `refData_replaced.yml`:
+
+```yaml
+/pet-type:
+  id: 123
+```
+
+You can now use the `refData_replaced.yml` as a `--refData` file for running CATS with the rest of the Fuzzers.
+
 # Headers File
 This can be used to send custom fixed headers with each payload. It is useful when you have authentication tokens you want to use to authenticate the API calls. You can use path specific headers or common headers that will be added to each call using an `all` element. Specific paths will take precedence over the `all` element.
 Sample headers file:
