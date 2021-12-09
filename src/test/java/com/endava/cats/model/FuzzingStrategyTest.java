@@ -132,4 +132,55 @@ class FuzzingStrategyTest {
         Assertions.assertThat(result).isEqualTo("caTTTTTTTTts");
     }
 
+    @ParameterizedTest
+    @CsvSource(value = {"'\u000B\u000B'", "null", "''", "' '"}, nullValues = "null")
+    void shouldGetReplaceFuzzStrategy(String value) {
+        FuzzingStrategy fuzzingStrategy = FuzzingStrategy.fromValue(value);
+
+        Assertions.assertThat(fuzzingStrategy).isInstanceOf(ReplaceFuzzingStrategy.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"'\u000Bmama'", "'\u1680mama'"})
+    void shouldGetPrefixFuzzStrategy(String value) {
+        FuzzingStrategy fuzzingStrategy = FuzzingStrategy.fromValue(value);
+
+        Assertions.assertThat(fuzzingStrategy).isInstanceOf(PrefixFuzzingStrategy.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"cart", "scats", "bunny"})
+    void shouldNotBeLargeString(String value) {
+        boolean isLarge = FuzzingStrategy.isLargeString(value);
+
+        Assertions.assertThat(isLarge).isFalse();
+    }
+
+    @Test
+    void shouldBeLargeString() {
+        boolean isLarge = FuzzingStrategy.isLargeString("ca_hey_ts");
+
+        Assertions.assertThat(isLarge).isTrue();
+    }
+
+    @Test
+    void shouldNotFormatWhenSimpleChars() {
+        String formatted = FuzzingStrategy.formatValue("cats");
+
+        Assertions.assertThat(formatted).isEqualTo("cats");
+    }
+
+    @Test
+    void shouldFormatWhenSpecialChars() {
+        String formatted = FuzzingStrategy.formatValue("\u000Bcats");
+
+        Assertions.assertThat(formatted).isEqualTo("\\u000bcats");
+    }
+
+    @Test
+    void shouldGetNullWhenFormatValueNull() {
+        String formatted = FuzzingStrategy.formatValue(null);
+
+        Assertions.assertThat(formatted).isNull();
+    }
 }

@@ -164,7 +164,7 @@ public class CustomFuzzerUtil {
     private Object getVariableFromJson(String body, String value) {
         DocumentContext jsonDoc = JsonPath.parse(body);
         try {
-            return jsonDoc.read(catsUtil.sanitizeToJsonPath(value));
+            return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
         } catch (PathNotFoundException e) {
             log.error("Expected variable {} was not found on response. Setting to NOT_SET", value);
             return NOT_SET;
@@ -231,7 +231,7 @@ public class CustomFuzzerUtil {
         String[] oneOfArray = oneOfSelection.replace("{", "").replace("}", "").split("=");
 
         String updatedJson = this.replaceElementWithCustomValue(new AbstractMap.SimpleEntry<>(oneOfArray[0], oneOfArray[1]), data.getPayload());
-        return catsUtil.equalAsJson(data.getPayload(), updatedJson);
+        return JsonUtils.equalAsJson(data.getPayload(), updatedJson);
     }
 
     private boolean entryIsValid(Map<String, Object> currentPathValues) {

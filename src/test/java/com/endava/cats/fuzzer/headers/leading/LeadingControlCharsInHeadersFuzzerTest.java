@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.headers.leading;
 
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +12,7 @@ class LeadingControlCharsInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        leadingControlCharsInHeadersFuzzer = new LeadingControlCharsInHeadersFuzzer(new CatsUtil(null), null, null);
+        leadingControlCharsInHeadersFuzzer = new LeadingControlCharsInHeadersFuzzer(null, null);
     }
 
     @Test

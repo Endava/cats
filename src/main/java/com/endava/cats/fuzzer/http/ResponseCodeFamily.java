@@ -164,6 +164,17 @@ public enum ResponseCodeFamily {
         return code == 501;
     }
 
+    public static Object[] getExpectedWordingBasedOnRequiredFields(boolean anyMandatory) {
+        return new Object[]{
+                getResultCodeBasedOnRequiredFieldsRemoved(anyMandatory).asString(),
+                anyMandatory ? "were" : "were not"
+        };
+    }
+
+    public static ResponseCodeFamily getResultCodeBasedOnRequiredFieldsRemoved(boolean required) {
+        return required ? ResponseCodeFamily.FOURXX : ResponseCodeFamily.TWOXX;
+    }
+
     public abstract String getStartingDigit();
 
     public abstract String asString();

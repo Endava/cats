@@ -16,6 +16,7 @@ import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -131,7 +132,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
-        Map<String, Schema> schemas = CatsUtil.getSchemas(openAPI, processingArguments.getContentType());
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
 
             if (suppliedPaths.contains(entry.getKey())) {
@@ -153,7 +154,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         customFuzzer.replaceRefData();
     }
 
-    private List<Fuzzer> sortFuzzersByName() {
+    protected List<Fuzzer> sortFuzzersByName() {
         return fuzzers.stream().sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName()))
                 .collect(Collectors.toList());
     }

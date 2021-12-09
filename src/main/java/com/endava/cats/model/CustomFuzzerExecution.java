@@ -22,8 +22,12 @@ public class CustomFuzzerExecution implements Comparable<CustomFuzzerExecution> 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         CustomFuzzerExecution that = (CustomFuzzerExecution) o;
         return Objects.equals(fuzzingData.getPath(), that.fuzzingData.getPath()) && Objects.equals(testId, that.testId);
     }

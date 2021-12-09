@@ -2,10 +2,9 @@ package com.endava.cats.model.factory;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.command.CatsCommand;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -25,20 +24,17 @@ import java.util.Map;
 
 @QuarkusTest
 class FuzzingDataFactoryTest {
-
-    private CatsUtil catsUtil;
     private FilesArguments filesArguments;
     private ProcessingArguments processingArguments;
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
     void setup() {
-        catsUtil = new CatsUtil(null);
         filesArguments = Mockito.mock(FilesArguments.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
         Mockito.when(processingArguments.getContentType()).thenReturn("application/json");
-        fuzzingDataFactory = new FuzzingDataFactory(catsUtil, filesArguments, processingArguments);
+        fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments);
     }
 
     @Test
@@ -57,7 +53,7 @@ class FuzzingDataFactoryTest {
         options.setResolve(true);
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
-        Map<String, Schema> schemas = CatsUtil.getSchemas(openAPI, "application/json");
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, "application/json");
         PathItem pathItem = openAPI.getPaths().get(path);
         return fuzzingDataFactory.fromPathItem(path, pathItem, schemas, openAPI);
     }

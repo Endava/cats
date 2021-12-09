@@ -7,7 +7,7 @@ import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.fuzzer.SpecialFuzzer;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -61,7 +61,7 @@ public class ListCommand implements Runnable {
 
     void listContractPaths() {
         try {
-            OpenAPI openAPI = CatsUtil.readOpenApi(listCommandGroups.listContractOptions.contract);
+            OpenAPI openAPI = OpenApiUtils.readOpenApi(listCommandGroups.listContractOptions.contract);
             LOGGER.star("Available paths:");
             openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(LOGGER::info);
         } catch (IOException e) {

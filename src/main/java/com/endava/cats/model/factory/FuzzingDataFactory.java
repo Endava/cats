@@ -6,7 +6,7 @@ import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.OpenApiUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -46,13 +46,11 @@ public class FuzzingDataFactory {
     private static final String ANY_OF = "ANY_OF";
     private static final String ONE_OF = "ONE_OF";
 
-    private final CatsUtil catsUtil;
     private final FilesArguments filesArguments;
     private final ProcessingArguments processingArguments;
 
     @Inject
-    public FuzzingDataFactory(CatsUtil catsUtil, FilesArguments filesArguments, ProcessingArguments processingArguments) {
-        this.catsUtil = catsUtil;
+    public FuzzingDataFactory(FilesArguments filesArguments, ProcessingArguments processingArguments) {
         this.filesArguments = filesArguments;
         this.processingArguments = processingArguments;
     }
@@ -129,7 +127,6 @@ public class FuzzingDataFactory {
                 .responseContentTypes(responsesContentTypes)
                 .requestPropertyTypes(PayloadGenerator.GlobalData.getRequestDataTypes())
                 .requestContentTypes(requestContentTypes)
-                .catsUtil(catsUtil)
                 .queryParams(queryParams)
                 .openApi(openAPI)
                 .tags(operation.getTags())
@@ -224,7 +221,6 @@ public class FuzzingDataFactory {
                             .requestContentTypes(requestContentTypes)
                             .schemaMap(schemas).responses(responses)
                             .requestPropertyTypes(PayloadGenerator.GlobalData.getRequestDataTypes())
-                            .catsUtil(catsUtil)
                             .openApi(openAPI)
                             .tags(operation.getTags())
                             .reqSchemaName(reqSchemaName)
@@ -270,9 +266,9 @@ public class FuzzingDataFactory {
     private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
         if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
             String reqBodyRef = operation.getRequestBody().get$ref();
-            return CatsUtil.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent(), processingArguments.getContentType());
-        } else if (operation.getRequestBody() != null && CatsUtil.isJsonContentType(operation.getRequestBody().getContent(), processingArguments.getContentType())) {
-            return CatsUtil.getMediaTypeFromContent(operation.getRequestBody().getContent(), processingArguments.getContentType());
+            return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent(), processingArguments.getContentType());
+        } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), processingArguments.getContentType())) {
+            return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), processingArguments.getContentType());
         } else if (operation.getRequestBody() != null) {
             return operation.getRequestBody().getContent().get("*/*");
         }
@@ -472,8 +468,8 @@ public class FuzzingDataFactory {
         if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
             return apiResponse.get$ref();
         }
-        if (CatsUtil.isJsonContentType(apiResponse.getContent(), processingArguments.getContentType())) {
-            Schema<?> respSchema = CatsUtil.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema();
+        if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
+            Schema<?> respSchema = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema();
             if (respSchema instanceof ArraySchema) {
                 return ((ArraySchema) respSchema).getItems().get$ref();
             } else {

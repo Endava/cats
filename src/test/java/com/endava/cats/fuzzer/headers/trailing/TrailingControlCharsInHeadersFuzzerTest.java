@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +12,7 @@ class TrailingControlCharsInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        trailingControlCharsInHeadersFuzzer = new TrailingControlCharsInHeadersFuzzer(new CatsUtil(null), null, null);
+        trailingControlCharsInHeadersFuzzer = new TrailingControlCharsInHeadersFuzzer(null, null);
     }
 
     @Test

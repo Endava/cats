@@ -13,6 +13,7 @@ import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
@@ -110,7 +111,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @return true if fuzzing is possible, false otherwise
      */
     private boolean isFuzzingPossible(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        return !fuzzingStrategy.isSkip() && catsUtil.isPrimitive(data.getPayload(), fuzzedField)
+        return !fuzzingStrategy.isSkip() && JsonUtils.isPrimitive(data.getPayload(), fuzzedField)
                 && isFuzzingPossibleSpecificToFuzzer(data, fuzzedField, fuzzingStrategy)
                 && !isSkippedField(fuzzedField);
     }

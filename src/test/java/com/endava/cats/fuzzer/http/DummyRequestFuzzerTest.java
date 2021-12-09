@@ -6,7 +6,6 @@ import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -18,7 +17,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 @QuarkusTest
 class DummyRequestFuzzerTest {
     private ServiceCaller serviceCaller;
-    private CatsUtil catsUtil;
     @InjectSpy
     private TestCaseListener testCaseListener;
 
@@ -26,9 +24,8 @@ class DummyRequestFuzzerTest {
 
     @BeforeEach
     void setup() {
-        catsUtil = new CatsUtil(null);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        dummyRequestFuzzer = new DummyRequestFuzzer(serviceCaller, testCaseListener, catsUtil);
+        dummyRequestFuzzer = new DummyRequestFuzzer(serviceCaller, testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

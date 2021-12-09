@@ -50,6 +50,22 @@ class CommonWithinMethodsTest {
     }
 
     @Test
+    void shouldInsertWitReplaceWhenMaintainSize() {
+        StringSchema schema = new StringSchema();
+        int length = 10;
+        schema.setMinLength(length);
+        schema.setMaxLength(length);
+        FuzzingData fuzzingData = Mockito.mock(FuzzingData.class);
+        Map<String, Schema> reqPropTypes = Map.of("test1", schema);
+        Mockito.when(fuzzingData.getRequestPropertyTypes()).thenReturn(reqPropTypes);
+
+        List<FuzzingStrategy> fuzzingStrategyList = CommonWithinMethods.getFuzzingStrategies(fuzzingData, "test1", List.of(YY), true);
+
+        Assertions.assertThat(fuzzingStrategyList).hasSize(1);
+        Assertions.assertThat(fuzzingStrategyList.get(0).getData()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length);
+    }
+
+    @Test
     void shouldInsertWithoutReplaceWhenEnums() {
         StringSchema schema = new StringSchema();
         schema.setEnum(List.of("ENUM"));
@@ -64,7 +80,7 @@ class CommonWithinMethodsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"false,strYYng", "true,strYYing"})
+    @CsvSource({"true,strYYing", "false,stYYng"})
     void shouldInsertInTheMiddleWithoutReplace(boolean insertWithoutReplace, String toCheck) {
         String finalString = CommonWithinMethods.insertInTheMiddle("string", YY, insertWithoutReplace);
 

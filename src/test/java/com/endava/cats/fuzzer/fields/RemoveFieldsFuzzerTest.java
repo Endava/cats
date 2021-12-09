@@ -9,7 +9,6 @@ import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -33,7 +32,6 @@ class RemoveFieldsFuzzerTest {
     private TestCaseListener testCaseListener;
     private IgnoreArguments ignoreArguments;
     private ProcessingArguments processingArguments;
-    private CatsUtil catsUtil;
     private RemoveFieldsFuzzer removeFieldsFuzzer;
 
     private FuzzingData data;
@@ -43,9 +41,8 @@ class RemoveFieldsFuzzerTest {
     void setup() {
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
-        catsUtil = new CatsUtil(null);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, ignoreArguments, processingArguments);
+        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, ignoreArguments, processingArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -94,7 +91,7 @@ class RemoveFieldsFuzzerTest {
         schema.setRequired(Collections.singletonList("field"));
         Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(FuzzingData.SetFuzzingStrategy.ONEBYONE);
         data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload(payload).
-                responses(responses).reqSchema(schema).catsUtil(catsUtil).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200")).build();
+                responses(responses).reqSchema(schema).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
     }
 

@@ -47,6 +47,28 @@ paths:
       x-tags:
         - tag: pet
       x-contentType: application/json
+    patch:
+      tags:
+        - pet
+      summary: Update an existing pet
+      operationId: updatePet
+      requestBody:
+        $ref: '#/components/requestBodies/Pet'
+      responses:
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Pet not found
+        '405':
+          description: Validation exception
+      security:
+        - petstore_auth:
+            - 'write:pets'
+            - 'read:pets'
+      x-accepts: application/json
+      x-tags:
+        - tag: pet
+      x-contentType: application/json
     post:
       tags:
         - pet

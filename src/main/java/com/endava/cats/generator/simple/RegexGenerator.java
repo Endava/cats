@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RegexGenerator {
-    private static final String DEFAULT = "DEFAULT_CATS";
+    public static final String DEFAULT = "DEFAULT_CATS";
     private static final int MAX_ITERATIONS = 10;
 
     private RegexGenerator() {

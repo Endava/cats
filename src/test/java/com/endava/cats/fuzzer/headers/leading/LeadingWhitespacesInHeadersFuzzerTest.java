@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.headers.leading;
 
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +12,7 @@ class LeadingWhitespacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        leadingWhitespacesInHeadersFuzzer = new LeadingWhitespacesInHeadersFuzzer(new CatsUtil(null), null, null);
+        leadingWhitespacesInHeadersFuzzer = new LeadingWhitespacesInHeadersFuzzer(null, null);
     }
 
     @Test

@@ -10,6 +10,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -36,7 +37,7 @@ public class WithinSingleCodePointEmojisInFieldsTrimValidateFuzzer extends Invis
 
     @Override
     public List<String> getInvisibleChars() {
-        return catsUtil.getSingleCodePointEmojis();
+        return PayloadUtils.getSingleCodePointEmojis();
     }
 
     @Override

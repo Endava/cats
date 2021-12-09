@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -9,7 +8,6 @@ import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -26,12 +24,10 @@ import java.util.Map;
 
 @QuarkusTest
 class NewFieldsFuzzerTest {
-    private IgnoreArguments ignoreArguments;
     @InjectSpy
     private TestCaseListener testCaseListener;
     private NullValuesInFieldsFuzzer nullValuesInFieldsFuzzer;
     private FilesArguments filesArguments;
-    private CatsUtil catsUtil;
     private ServiceCaller serviceCaller;
 
     private NewFieldsFuzzer newFieldsFuzzer;
@@ -41,10 +37,8 @@ class NewFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        ignoreArguments = Mockito.mock(IgnoreArguments.class);
-        catsUtil = new CatsUtil(null);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        newFieldsFuzzer = new NewFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
+        newFieldsFuzzer = new NewFieldsFuzzer(serviceCaller, testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

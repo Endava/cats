@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -16,8 +16,8 @@ import java.util.List;
 @ControlCharFuzzer
 public class OnlyControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
-    public OnlyControlCharsInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
-        super(cu, sc, lr);
+    public OnlyControlCharsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+        super(sc, lr);
     }
 
     @Override
@@ -27,7 +27,7 @@ public class OnlyControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        return catsUtil.getControlCharsHeaders();
+        return PayloadUtils.getControlCharsHeaders();
     }
 
     @Override
