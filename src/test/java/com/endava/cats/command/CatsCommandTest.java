@@ -12,7 +12,6 @@ import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.inject.Inject;
@@ -42,7 +41,7 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
 
 
-        CatsCommand spyMain = Mockito.spy(AopTestUtils.<CatsCommand>getTargetObject(catsMain));
+        CatsCommand spyMain = Mockito.spy(catsMain);
         spyMain.run();
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
@@ -69,7 +68,7 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         ReflectionTestUtils.setField(reportingArguments, "logData", List.of("org.apache.wire:debug", "com.endava.cats:warn"));
 
-        CatsCommand spyMain = Mockito.spy(AopTestUtils.<CatsCommand>getTargetObject(catsMain));
+        CatsCommand spyMain = Mockito.spy(catsMain);
         spyMain.run();
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
@@ -88,7 +87,7 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
-        CatsCommand spyMain = Mockito.spy(AopTestUtils.<CatsCommand>getTargetObject(catsMain));
+        CatsCommand spyMain = Mockito.spy(catsMain);
         spyMain.run();
         Mockito.verify(spyMain).createOpenAPI();
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
