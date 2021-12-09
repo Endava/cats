@@ -4,6 +4,7 @@ import com.endava.cats.aop.DryRun;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.command.CatsCommand;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
@@ -31,7 +32,6 @@ import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
-import org.springframework.util.MimeTypeUtils;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -76,18 +76,20 @@ public class ServiceCaller {
     private final CatsDSLParser catsDSLParser;
     private final AuthArguments authArguments;
     private final ApiArguments apiArguments;
+    private final ProcessingArguments processingArguments;
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
 
     @Inject
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments) {
+    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.filesArguments = filesArguments;
         this.catsDSLParser = cdsl;
         this.authArguments = authArguments;
         this.apiArguments = apiArguments;
+        this.processingArguments = processingArguments;
     }
 
     @PostConstruct
@@ -311,14 +313,14 @@ public class ServiceCaller {
 
     private void addMandatoryHeaders(ServiceData data, List<CatsRequest.Header> headers) {
         data.getHeaders().forEach(header -> headers.add(new CatsRequest.Header(header.getName(), header.getValue())));
-        addIfNotPresent("Accept", data, headers);
-        addIfNotPresent("Content-Type", data, headers);
+        addIfNotPresent("Accept", processingArguments.getContentType(), data, headers);
+        addIfNotPresent("Content-Type", "application/json", data, headers);
     }
 
-    private void addIfNotPresent(String header, ServiceData data, List<CatsRequest.Header> headers) {
-        boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(header));
+    private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<CatsRequest.Header> headers) {
+        boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(headerName));
         if (notAccept) {
-            headers.add(new CatsRequest.Header(header, MimeTypeUtils.APPLICATION_JSON_VALUE));
+            headers.add(new CatsRequest.Header(headerName, headerValue));
         }
     }
 

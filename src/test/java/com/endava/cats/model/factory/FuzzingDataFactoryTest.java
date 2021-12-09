@@ -37,6 +37,7 @@ class FuzzingDataFactoryTest {
         filesArguments = Mockito.mock(FilesArguments.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
+        Mockito.when(processingArguments.getContentType()).thenReturn("application/json");
         fuzzingDataFactory = new FuzzingDataFactory(catsUtil, filesArguments, processingArguments);
     }
 
@@ -56,7 +57,7 @@ class FuzzingDataFactoryTest {
         options.setResolve(true);
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
-        Map<String, Schema> schemas = CatsCommand.getSchemas(openAPI);
+        Map<String, Schema> schemas = CatsUtil.getSchemas(openAPI, "application/json");
         PathItem pathItem = openAPI.getPaths().get(path);
         return fuzzingDataFactory.fromPathItem(path, pathItem, schemas, openAPI);
     }

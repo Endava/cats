@@ -309,7 +309,7 @@ Other ways to get help from the CATS command are as follows:
 - `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
 - `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
 - `--blackbox` If supplied (not value needed) it will ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
-
+- `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
 
 `cats --contract=my.yml --server=https://locathost:8080 --checkHeaders`
 
@@ -799,6 +799,43 @@ all:
 ```
 
 This will add the `Accept` header to all calls and the `jwt` header to the specified paths. You can use environment (system) variables in a headers file using: `$$VARIABLE_NAME`. (notice double `$$`)
+
+# Content Negotiation
+Some APIs might use content negotiation versioning which implies formats like `application/v11+json` in the `Accept` header.
+
+You can handle this in CATS as follows:
+- if the OpenAPI contract defines its content as:
+
+```yaml
+ requestBody:
+        required: true
+        content:
+          application/v5+json:
+            schema:
+              $ref: '#/components/RequestV5'
+          application/v6+json:
+            schema:
+              $ref: '#/components/RequestV6'
+```
+
+by having clear separation between versions, you can pass the `--contentType` argument with the version you want to test: `cats ... --contentType="application/v6+json"`.
+
+If the OpenAPI contract is not version aware (you already exported it specific to a version) and the content looks as:
+
+```yaml
+ requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/RequestV5'
+```
+ and you still need to pass the `application/v5+json` `Accept` header, you can use the `--headers` file to add it:
+
+```yaml
+all:
+  Accept: "application/v5+json"
+```
 
 # Edge Spaces Strategy
 There isn't a consensus on how you should handle situations when you trail or prefix valid values with spaces.

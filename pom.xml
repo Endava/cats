@@ -35,7 +35,6 @@
         <pretty-logger.version>1.8</pretty-logger.version>
         <compiler.version>0.9.10</compiler.version>
         <json-path.version>2.5.0</json-path.version>
-        <picocli-spring-boot-starter.version>4.6.2</picocli-spring-boot-starter.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
         <quarkus.platform.version>2.5.1.Final</quarkus.platform.version>

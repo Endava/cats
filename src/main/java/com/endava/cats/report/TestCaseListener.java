@@ -388,8 +388,7 @@ public class TestCaseListener {
     }
 
     @Builder
-    static
-    class ResponseAssertions {
+    static class ResponseAssertions {
         private final boolean matchesResponseSchema;
         private final boolean responseCodeExpected;
         private final boolean responseCodeDocumented;
