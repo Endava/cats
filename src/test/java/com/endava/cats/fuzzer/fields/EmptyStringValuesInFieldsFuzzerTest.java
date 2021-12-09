@@ -49,6 +49,7 @@ class EmptyStringValuesInFieldsFuzzerTest {
         Assertions.assertThat(emptyStringValuesInFieldsFuzzer.skipForFields()).containsOnly("id");
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getAllFields()).thenReturn(Sets.newHashSet("id"));
+        Mockito.when(data.getPayload()).thenReturn("{}");
         emptyStringValuesInFieldsFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.any());

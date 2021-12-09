@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.ArrayList;
@@ -17,8 +17,8 @@ import java.util.List;
 @ControlCharFuzzer
 public class TrailingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
-    public TrailingControlCharsInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
-        super(cu, sc, lr);
+    public TrailingControlCharsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+        super(sc, lr);
     }
 
     @Override
@@ -28,7 +28,7 @@ public class TrailingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzze
 
     @Override
     public List<String> getInvisibleChars() {
-        List<String> controlChars = new ArrayList<>(catsUtil.getControlCharsHeaders());
+        List<String> controlChars = new ArrayList<>(PayloadUtils.getControlCharsHeaders());
         controlChars.remove("\r");
 
         return controlChars;

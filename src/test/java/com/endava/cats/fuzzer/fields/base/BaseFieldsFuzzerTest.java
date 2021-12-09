@@ -76,17 +76,15 @@ class BaseFieldsFuzzerTest {
         schemaMap.put("field", new StringSchema());
         Mockito.when(data.getAllFields()).thenReturn(fields);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
-        Mockito.when(data.getPayload()).thenReturn("{}");
+        Mockito.when(data.getPayload()).thenReturn("{\"field\": 2}");
 
         CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
-        Mockito.when(mockCatsUtil.isPrimitive(Mockito.eq("{}"), Mockito.anyString())).thenReturn(true);
-        Mockito.when(mockCatsUtil.replaceField(Mockito.eq("{}"), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
+        Mockito.when(mockCatsUtil.replaceField(Mockito.eq("{\"field\": 2}"), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, mockCatsUtil, filesArguments);
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(mockCatsUtil).isPrimitive(Mockito.eq("{}"), Mockito.anyString());
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
     }
 

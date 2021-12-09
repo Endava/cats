@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
@@ -28,9 +29,8 @@ class CatsUtilTest {
 
     @Test
     void givenASetAndMinSize_whenGettingAllSetsWithMinSize_thenAllSubsetsAreProperlyReturned() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         Set<String> data = new HashSet<>(Arrays.asList("a", "b", "c"));
-        Set<Set<String>> sets = catsUtil.getAllSetsWithMinSize(data, 2);
+        Set<Set<String>> sets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(data, 2);
 
         Assertions.assertThat(sets)
                 .isNotEmpty()
@@ -52,32 +52,6 @@ class CatsUtilTest {
 
         Assertions.assertThat(result.getFuzzedValue()).isEqualTo("fuzzed");
         Assertions.assertThat(result.getJson()).contains("fuzzed");
-    }
-
-    @Test
-    void givenAPayloadWithPrimitiveAndNonPrimitiveFields_whenCheckingIfPropertiesArePrimitive_thenTheCheckIsProperlyPerformed() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
-        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
-
-        Assertions.assertThat(catsUtil.isPrimitive(payload, "field")).isTrue();
-        Assertions.assertThat(catsUtil.isPrimitive(payload, "anotherField")).isFalse();
-        Assertions.assertThat(catsUtil.isPrimitive(payload, "anotherField#subfield")).isTrue();
-    }
-
-    @Test
-    void givenAnInvalidJson_whenCallingIsValidJson_thenTheMethodReturnsFalse() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
-        String payload = "\"field\":\"a";
-
-        Assertions.assertThat(catsUtil.isValidJson(payload)).isFalse();
-    }
-
-    @Test
-    void givenAValidJson_whenCallingIsValidJson_thenTheMethodReturnsTrue() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
-        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
-
-        Assertions.assertThat(catsUtil.isValidJson(payload)).isTrue();
     }
 
     @Test
@@ -112,7 +86,7 @@ class CatsUtilTest {
 
     @Test
     void shouldMarkText() {
-        String result = CatsUtil.markLargeString("test");
+        String result = PayloadUtils.markLargeString("test");
 
         Assertions.assertThat(result).isEqualTo("catestts");
     }

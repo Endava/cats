@@ -7,7 +7,6 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -27,13 +26,11 @@ class RemoveHeadersFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
     private RemoveHeadersFuzzer removeHeadersFuzzer;
-    private CatsUtil catsUtil;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsUtil = new CatsUtil(null);
-        removeHeadersFuzzer = new RemoveHeadersFuzzer(serviceCaller, testCaseListener, catsUtil);
+        removeHeadersFuzzer = new RemoveHeadersFuzzer(serviceCaller, testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

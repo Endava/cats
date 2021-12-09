@@ -8,7 +8,7 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -25,12 +25,10 @@ public class NewFieldsFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(NewFieldsFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    private final CatsUtil catsUtil;
 
-    public NewFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu) {
+    public NewFieldsFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
-        this.catsUtil = cu;
     }
 
     @Override
@@ -42,7 +40,7 @@ public class NewFieldsFuzzer implements Fuzzer {
         JsonElement fuzzedJson = this.addNewField(data);
 
         ResponseCodeFamily expectedResultCode = ResponseCodeFamily.TWOXX;
-        if (catsUtil.isHttpMethodWithPayload(data.getMethod())) {
+        if (JsonUtils.isHttpMethodWithPayload(data.getMethod())) {
             expectedResultCode = ResponseCodeFamily.FOURXX;
         }
         testCaseListener.addScenario(LOGGER, "Add new field inside the request: name [{}], value [{}]. All other details are similar to a happy flow", NEW_FIELD, NEW_FIELD);

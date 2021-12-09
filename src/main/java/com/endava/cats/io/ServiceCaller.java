@@ -14,6 +14,7 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import com.google.common.html.HtmlEscapers;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
@@ -291,7 +292,7 @@ public class ServiceCaller {
 
 
     private String replacePathParams(String path, String processedPayload, ServiceData data) {
-        JsonElement jsonElement = catsUtil.parseAsJsonElement(processedPayload);
+        JsonElement jsonElement = JsonUtils.parseAsJsonElement(processedPayload);
 
         String processedPath = path;
         if (processedPath.contains("{")) {
@@ -326,7 +327,7 @@ public class ServiceCaller {
 
     private List<NameValuePair> buildQueryParameters(String payload, ServiceData data) {
         List<NameValuePair> queryParams = new ArrayList<>();
-        JsonElement jsonElement = catsUtil.parseAsJsonElement(payload);
+        JsonElement jsonElement = JsonUtils.parseAsJsonElement(payload);
         for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
             if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
@@ -352,7 +353,7 @@ public class ServiceCaller {
 
         if (StringUtils.isBlank(responseAsString)) {
             return "";
-        } else if (catsUtil.isValidJson(responseAsString)) {
+        } else if (JsonUtils.isValidJson(responseAsString)) {
             return responseAsString;
         }
         return "{\"exception\":\"Received response is not a JSON\"}";
@@ -438,7 +439,7 @@ public class ServiceCaller {
 
                 try {
                     if (CATS_REMOVE_FIELD.equalsIgnoreCase(refDataValue)) {
-                        payload = catsUtil.deleteNode(payload, entry.getKey());
+                        payload = JsonUtils.deleteNode(payload, entry.getKey());
                     } else {
                         FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
                         boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());

@@ -4,10 +4,12 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.factory.FuzzingDataFactory;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.AopTestUtils;
@@ -21,6 +23,8 @@ class CatsCommandTest {
 
     @Inject
     CatsCommand catsMain;
+    @InjectSpy
+    ExecutionStatisticsListener executionStatisticsListener;
     @Inject
     CheckArguments checkArguments;
     @Inject
@@ -31,6 +35,23 @@ class CatsCommandTest {
     FuzzingDataFactory fuzzingDataFactory;
     @InjectMock
     private TestCaseListener testCaseListener;
+
+    @Test
+    void shouldNotRunWhenNotRecognizedContentType() throws Exception {
+        ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore-nonjson.yml");
+        ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
+
+
+        CatsCommand spyMain = Mockito.spy(AopTestUtils.<CatsCommand>getTargetObject(catsMain));
+        spyMain.run();
+        Mockito.verify(spyMain).createOpenAPI();
+        Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
+        Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
+        Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
+        Mockito.verify(spyMain, Mockito.times(0)).sortFuzzersByName();
+        ReflectionTestUtils.setField(apiArguments, "contract", "empty");
+        ReflectionTestUtils.setField(apiArguments, "server", "empty");
+    }
 
     @Test
     void shouldNotCallEndSessionWhenIOException() {
@@ -54,6 +75,8 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any(), Mockito.anyList());
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
+        Mockito.verify(spyMain, Mockito.times(3)).sortFuzzersByName();
+
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
@@ -73,5 +96,12 @@ class CatsCommandTest {
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.anyMap(), Mockito.any());
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
+    }
+
+    @Test
+    void shouldReturnErrorsExitCode() {
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(190);
+
+        Assertions.assertThat(catsMain.getExitCode()).isEqualTo(190);
     }
 }

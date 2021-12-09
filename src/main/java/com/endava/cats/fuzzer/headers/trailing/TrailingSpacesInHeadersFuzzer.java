@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.headers.base.SpacesCharsBaseFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -14,8 +14,8 @@ import java.util.List;
 @HeaderFuzzer
 public class TrailingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
-    protected TrailingSpacesInHeadersFuzzer(CatsUtil cu, ServiceCaller sc, TestCaseListener lr) {
-        super(cu, sc, lr);
+    protected TrailingSpacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+        super(sc, lr);
     }
 
     @Override
@@ -25,7 +25,7 @@ public class TrailingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        return catsUtil.getSpacesHeaders();
+        return PayloadUtils.getSpacesHeaders();
     }
 
     @Override

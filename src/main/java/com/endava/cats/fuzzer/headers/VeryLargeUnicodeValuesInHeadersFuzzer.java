@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -28,7 +28,7 @@ public class VeryLargeUnicodeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHead
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return CatsUtil.getLargeValuesStrategy(processingArguments.getLargeStringsSize());
+        return PayloadUtils.getLargeValuesStrategy(processingArguments.getLargeStringsSize());
     }
 
     @Override

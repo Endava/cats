@@ -8,6 +8,7 @@ import com.endava.cats.fuzzer.ValidateAndTrim;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -29,7 +30,7 @@ public class OnlyControlCharsInFieldsValidateTrimFuzzer extends InvisibleCharsOn
 
     @Override
     List<String> getInvisibleChars() {
-        return catsUtil.getControlCharsFields();
+        return PayloadUtils.getControlCharsFields();
     }
 
 }

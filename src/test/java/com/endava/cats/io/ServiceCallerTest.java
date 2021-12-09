@@ -209,7 +209,7 @@ class ServiceCallerTest {
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();
 
-        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.GET)
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1','limit':2,'no':null}").httpMethod(HttpMethod.GET)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");

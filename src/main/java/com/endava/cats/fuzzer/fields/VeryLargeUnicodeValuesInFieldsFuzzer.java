@@ -9,6 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -31,7 +32,7 @@ public class VeryLargeUnicodeValuesInFieldsFuzzer extends ExpectOnly4XXBaseField
 
     @Override
     protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return CatsUtil.getLargeValuesStrategy(processingArguments.getLargeStringsSize());
+        return PayloadUtils.getLargeValuesStrategy(processingArguments.getLargeStringsSize());
     }
 
     @Override

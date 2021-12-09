@@ -7,6 +7,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
@@ -50,6 +51,15 @@ class ExactValuesInFieldsFuzzerTest {
         String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
         Assertions.assertThat(generated).isNull();
+    }
+
+    @Test
+    void shouldGetBase64EncodeWhenByteArray() {
+        Schema<byte[]> schema = new ByteArraySchema();
+        schema.setMaxLength(10);
+        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).matches("^[A-Za-z0-9+/=]+\\Z");
     }
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {

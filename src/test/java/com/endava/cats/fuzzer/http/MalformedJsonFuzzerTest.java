@@ -6,7 +6,6 @@ import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -17,7 +16,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @QuarkusTest
 class MalformedJsonFuzzerTest {
-    private CatsUtil catsUtil;
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
@@ -26,8 +24,7 @@ class MalformedJsonFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsUtil = new CatsUtil(null);
-        malformedJsonFuzzer = new MalformedJsonFuzzer(serviceCaller, testCaseListener, catsUtil);
+        malformedJsonFuzzer = new MalformedJsonFuzzer(serviceCaller, testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

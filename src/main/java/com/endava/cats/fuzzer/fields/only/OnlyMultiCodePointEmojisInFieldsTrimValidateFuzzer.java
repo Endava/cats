@@ -8,6 +8,7 @@ import com.endava.cats.fuzzer.TrimAndValidate;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -29,6 +30,6 @@ public class OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzer extends Invisibl
 
     @Override
     List<String> getInvisibleChars() {
-        return catsUtil.getMultiCodePointEmojis();
+        return PayloadUtils.getMultiCodePointEmojis();
     }
 }

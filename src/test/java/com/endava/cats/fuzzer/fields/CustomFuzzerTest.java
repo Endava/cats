@@ -141,7 +141,6 @@ class CustomFuzzerTest {
 
         CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
         Mockito.when(mockCatsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
-        Mockito.when(mockCatsUtil.parseAsJsonElement(data.getPayload())).thenReturn(jsonObject);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         filesArguments = new FilesArguments(mockCatsUtil);

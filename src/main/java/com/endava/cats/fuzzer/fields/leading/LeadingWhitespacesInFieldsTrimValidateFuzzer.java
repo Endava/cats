@@ -10,6 +10,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -31,7 +32,7 @@ public class LeadingWhitespacesInFieldsTrimValidateFuzzer extends InvisibleChars
 
     @Override
     public List<String> getInvisibleChars() {
-        return catsUtil.getSeparatorsFields();
+        return PayloadUtils.getSeparatorsFields();
     }
 
     @Override

@@ -4,7 +4,6 @@ import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -14,8 +13,8 @@ import javax.inject.Singleton;
 public class MalformedJsonFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
     @Inject
-    public MalformedJsonFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
-        super(sc, lr, catsUtil);
+    public MalformedJsonFuzzer(ServiceCaller sc, TestCaseListener lr) {
+        super(sc, lr);
     }
 
     @Override

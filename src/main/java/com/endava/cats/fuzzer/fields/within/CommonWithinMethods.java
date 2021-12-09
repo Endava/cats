@@ -34,6 +34,6 @@ public final class CommonWithinMethods {
 
     public static String insertInTheMiddle(String value, String whatToInsert, boolean insertWithoutReplace) {
         int position = value.length() / 2;
-        return value.substring(0, position) + whatToInsert + value.substring(position + (insertWithoutReplace ? 0 : 1));
+        return value.substring(0, position - (insertWithoutReplace ? 0 : 1)) + whatToInsert + value.substring(position + (insertWithoutReplace ? 0 : 1));
     }
 }

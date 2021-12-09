@@ -6,7 +6,7 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -19,12 +19,10 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    private final CatsUtil catsUtil;
 
-    BaseHttpWithPayloadSimpleFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil catsUtil) {
+    BaseHttpWithPayloadSimpleFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
-        this.catsUtil = catsUtil;
     }
 
     @Override
@@ -39,7 +37,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
         ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(this.getPayload(data)).replaceRefData(false).httpMethod(data.getMethod()).build();
 
-        if (catsUtil.isHttpMethodWithPayload(data.getMethod())) {
+        if (JsonUtils.isHttpMethodWithPayload(data.getMethod())) {
             CatsResponse response = serviceCaller.call(serviceData);
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         } else {

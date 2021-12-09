@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
@@ -63,7 +63,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         for (ApiResponse apiResponse : operation.getResponses().values()) {
             String ref = apiResponse.get$ref();
             if (ref == null && apiResponse.getContent() != null) {
-                ref = CatsUtil.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema().get$ref();
+                ref = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema().get$ref();
             }
 
             if (ref != null) {
