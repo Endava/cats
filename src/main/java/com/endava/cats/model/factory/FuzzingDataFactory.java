@@ -21,7 +21,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.MimeTypeUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -271,9 +270,9 @@ public class FuzzingDataFactory {
     private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
         if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
             String reqBodyRef = operation.getRequestBody().get$ref();
-            return openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE);
-        } else if (operation.getRequestBody() != null && operation.getRequestBody().getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE) != null) {
-            return operation.getRequestBody().getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE);
+            return CatsUtil.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent(), processingArguments.getContentType());
+        } else if (operation.getRequestBody() != null && CatsUtil.isJsonContentType(operation.getRequestBody().getContent(), processingArguments.getContentType())) {
+            return CatsUtil.getMediaTypeFromContent(operation.getRequestBody().getContent(), processingArguments.getContentType());
         } else if (operation.getRequestBody() != null) {
             return operation.getRequestBody().getContent().get("*/*");
         }
@@ -292,7 +291,7 @@ public class FuzzingDataFactory {
     }
 
     private List<String> generateSample(String reqSchemaName, PayloadGenerator generator) {
-        List<Map<String, String>> examples = generator.generate(null, reqSchemaName);
+        List<Map<String, String>> examples = generator.generate(List.of(processingArguments.getContentType()), reqSchemaName);
         if (examples.isEmpty()) {
             throw new IllegalArgumentException("Scheme is not declared: " + reqSchemaName);
         }
@@ -427,7 +426,7 @@ public class FuzzingDataFactory {
 
     private Content buildDefaultContent() {
         Content defaultContent = new Content();
-        defaultContent.addMediaType(MimeTypeUtils.APPLICATION_JSON_VALUE, new MediaType());
+        defaultContent.addMediaType(processingArguments.getContentType(), new MediaType());
         return defaultContent;
     }
 
@@ -473,8 +472,8 @@ public class FuzzingDataFactory {
         if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
             return apiResponse.get$ref();
         }
-        if (apiResponse.getContent() != null && apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE) != null) {
-            Schema respSchema = apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema();
+        if (CatsUtil.isJsonContentType(apiResponse.getContent(), processingArguments.getContentType())) {
+            Schema<?> respSchema = CatsUtil.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema();
             if (respSchema instanceof ArraySchema) {
                 return ((ArraySchema) respSchema).getItems().get$ref();
             } else {

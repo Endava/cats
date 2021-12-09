@@ -1,15 +1,16 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.ContractInfoFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.MimeTypeUtils;
 
 import javax.inject.Singleton;
 import java.util.ArrayList;
@@ -28,9 +29,11 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_[0-9]*");
     private static final String PLURAL_END = "s";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
+    private final ProcessingArguments processingArguments;
 
-    public NamingsContractInfoFuzzer(TestCaseListener tcl) {
+    public NamingsContractInfoFuzzer(TestCaseListener tcl, ProcessingArguments proc) {
         super(tcl);
+        this.processingArguments = proc;
     }
 
     @Override
@@ -60,7 +63,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         for (ApiResponse apiResponse : operation.getResponses().values()) {
             String ref = apiResponse.get$ref();
             if (ref == null && apiResponse.getContent() != null) {
-                ref = apiResponse.getContent().get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema().get$ref();
+                ref = CatsUtil.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema().get$ref();
             }
 
             if (ref != null) {

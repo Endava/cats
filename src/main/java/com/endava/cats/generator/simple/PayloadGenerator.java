@@ -48,18 +48,13 @@ public class PayloadGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PayloadGenerator.class);
 
-
     private static final String MIME_TYPE_JSON = MimeTypeUtils.APPLICATION_JSON_VALUE;
     private static final String EXAMPLE = "example";
     private static final String CONTENT_TYPE = "contentType";
     private static final String URL = "url";
     private static final String URI = "uri";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
-    /**
-     * There is no need to re-compute this for each path, as the request data types are common across all requests
-     */
-
+    private final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     private final Random random;
     private final Map<String, Schema> schemaMap;
     private final DecimalFormat df = new DecimalFormat("#.00");
@@ -109,7 +104,7 @@ public class PayloadGenerator {
         for (String mediaType : mediaTypes) {
             Map<String, String> kv = new HashMap<>();
             kv.put(CONTENT_TYPE, mediaType);
-            if (modelName != null && mediaType.startsWith(MIME_TYPE_JSON)) {
+            if (modelName != null) {
                 final Schema schema = this.schemaMap.get(modelName);
                 if (schema != null) {
                     String example = Json.pretty(this.resolveModelToExample(modelName, mediaType, schema));

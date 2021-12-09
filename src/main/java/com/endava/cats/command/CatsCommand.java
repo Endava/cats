@@ -22,11 +22,8 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
-import org.springframework.util.MimeTypeUtils;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
@@ -38,13 +35,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -114,45 +108,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     ExecutionStatisticsListener executionStatisticsListener;
 
-    public static Map<String, Schema> getSchemas(OpenAPI openAPI) {
-        Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas())
-                .orElseGet(HashMap::new);
-
-        Optional.ofNullable(openAPI.getComponents().getRequestBodies())
-                .orElseGet(Collections::emptyMap)
-                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
-
-        Optional.ofNullable(openAPI.getComponents().getResponses())
-                .orElseGet(Collections::emptyMap)
-                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent()));
-
-        return schemas;
-    }
-
-    private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content) {
-        Schema<?> schemaToAdd = new Schema();
-        if (ref == null && isJsonContentType(content)) {
-            Schema<?> refSchema = content.get(MimeTypeUtils.APPLICATION_JSON_VALUE).getSchema();
-
-            if (refSchema instanceof ArraySchema) {
-                ref = ((ArraySchema) refSchema).getItems().get$ref();
-                refSchema.set$ref(ref);
-                schemaToAdd = refSchema;
-            } else if (refSchema.get$ref() != null) {
-                ref = refSchema.get$ref();
-                String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
-                schemaToAdd = schemas.get(schemaKey);
-            }
-        } else if (content != null) {
-            LOGGER.warn("CATS only supports application/json as content-type. Found: {} for {}", content.keySet(), schemaName);
-        }
-        schemas.put(schemaName, schemaToAdd);
-    }
-
-    private static boolean isJsonContentType(Content content) {
-        return content != null && content.get(MimeTypeUtils.APPLICATION_JSON_VALUE) != null;
-    }
-
     @Override
     public void run() {
         try {
@@ -176,7 +131,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
-        Map<String, Schema> schemas = getSchemas(openAPI);
+        Map<String, Schema> schemas = CatsUtil.getSchemas(openAPI, processingArguments.getContentType());
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
 
             if (suppliedPaths.contains(entry.getKey())) {

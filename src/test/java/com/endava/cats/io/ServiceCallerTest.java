@@ -3,6 +3,7 @@ package com.endava.cats.io;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
@@ -39,6 +40,8 @@ class ServiceCallerTest {
     CatsUtil catsUtil;
     @Inject
     ApiArguments apiArguments;
+    @Inject
+    ProcessingArguments processingArguments;
 
     private ServiceCaller serviceCaller;
 
@@ -64,7 +67,7 @@ class ServiceCallerTest {
     public void setupEach() throws Exception {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments);
+        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments, processingArguments);
 
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");

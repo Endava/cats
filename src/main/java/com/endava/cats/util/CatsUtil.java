@@ -23,6 +23,10 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
@@ -41,11 +45,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -125,6 +131,52 @@ public class CatsUtil {
         } else {
             return openAPIV3Parser.readContents(Files.readString(Paths.get(location)), null, options).getOpenAPI();
         }
+    }
+
+    public static MediaType getMediaTypeFromContent(Content content, String contentType) {
+        if (content.get(contentType) != null) {
+            return content.get(contentType);
+        }
+        return content.get("application/json");
+    }
+
+    public static Map<String, Schema> getSchemas(OpenAPI openAPI, String contentType) {
+        Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas())
+                .orElseGet(HashMap::new);
+
+        Optional.ofNullable(openAPI.getComponents().getRequestBodies())
+                .orElseGet(Collections::emptyMap)
+                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
+
+        Optional.ofNullable(openAPI.getComponents().getResponses())
+                .orElseGet(Collections::emptyMap)
+                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
+
+        return schemas;
+    }
+
+    private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content, String contentType) {
+        Schema<?> schemaToAdd = new Schema();
+        if (ref == null && isJsonContentType(content, contentType)) {
+            Schema<?> refSchema = CatsUtil.getMediaTypeFromContent(content, contentType).getSchema();
+
+            if (refSchema instanceof ArraySchema) {
+                ref = ((ArraySchema) refSchema).getItems().get$ref();
+                refSchema.set$ref(ref);
+                schemaToAdd = refSchema;
+            } else if (refSchema.get$ref() != null) {
+                ref = refSchema.get$ref();
+                String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
+                schemaToAdd = schemas.get(schemaKey);
+            }
+        } else if (content != null) {
+            LOGGER.warn("CATS only supports application/json as content-type. Found: {} for {}", content.keySet(), schemaName);
+        }
+        schemas.put(schemaName, schemaToAdd);
+    }
+
+    public static boolean isJsonContentType(Content content, String contentType) {
+        return content != null && content.get(contentType) != null;
     }
 
     public static String markLargeString(String input) {
