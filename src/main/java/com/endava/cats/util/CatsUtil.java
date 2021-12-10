@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import com.fasterxml.jackson.databind.JsonNode;

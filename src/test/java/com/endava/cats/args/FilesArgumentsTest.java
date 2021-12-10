@@ -1,6 +1,6 @@
 package com.endava.cats.args;
 
-import com.endava.cats.util.CatsDSLParser;
+import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;

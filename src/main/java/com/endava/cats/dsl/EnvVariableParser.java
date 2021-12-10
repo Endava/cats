@@ -1,4 +1,4 @@
-package com.endava.cats.util;
+package com.endava.cats.dsl;
 
 public class EnvVariableParser implements Parser {
     private static final String ENV_VARIABLE_NOT_FOUND = "not_found_";
