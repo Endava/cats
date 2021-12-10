@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -8,7 +9,6 @@ import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import com.google.gson.JsonObject;
@@ -184,7 +184,7 @@ class CustomFuzzerTest {
 
     @Test
     void shouldVerifyWithRequestVariables() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-req-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\", \"pet\":\"myPet\"}");
+        FuzzingData data = setContext("src/test/resources/customFuzzer-req-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\", \"code\":\"150\",\"petName\":\"myPet\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
         filesArguments.loadCustomFuzzerFile();
         spyCustomFuzzer.fuzz(data);
