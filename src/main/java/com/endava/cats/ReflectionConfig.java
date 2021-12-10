@@ -1,5 +1,66 @@
 package com.endava.cats;
 
+import com.endava.cats.dsl.CatsDSLParser;
+import com.jayway.jsonpath.*;
+import com.jayway.jsonpath.internal.CharacterIndex;
+import com.jayway.jsonpath.internal.DefaultsImpl;
+import com.jayway.jsonpath.internal.EvaluationAbortException;
+import com.jayway.jsonpath.internal.EvaluationContext;
+import com.jayway.jsonpath.internal.JsonContext;
+import com.jayway.jsonpath.internal.JsonFormatter;
+import com.jayway.jsonpath.internal.ParseContextImpl;
+import com.jayway.jsonpath.internal.Path;
+import com.jayway.jsonpath.internal.PathRef;
+import com.jayway.jsonpath.internal.Utils;
+import com.jayway.jsonpath.internal.filter.Evaluator;
+import com.jayway.jsonpath.internal.filter.EvaluatorFactory;
+import com.jayway.jsonpath.internal.filter.ExpressionNode;
+import com.jayway.jsonpath.internal.filter.FilterCompiler;
+import com.jayway.jsonpath.internal.filter.LogicalExpressionNode;
+import com.jayway.jsonpath.internal.filter.LogicalOperator;
+import com.jayway.jsonpath.internal.filter.PatternFlag;
+import com.jayway.jsonpath.internal.filter.RelationalExpressionNode;
+import com.jayway.jsonpath.internal.filter.RelationalOperator;
+import com.jayway.jsonpath.internal.filter.ValueNode;
+import com.jayway.jsonpath.internal.filter.ValueNodes;
+import com.jayway.jsonpath.internal.function.ParamType;
+import com.jayway.jsonpath.internal.function.PassthruPathFunction;
+import com.jayway.jsonpath.internal.function.PathFunction;
+import com.jayway.jsonpath.internal.function.PathFunctionFactory;
+import com.jayway.jsonpath.internal.function.json.Append;
+import com.jayway.jsonpath.internal.function.json.KeySetFunction;
+import com.jayway.jsonpath.internal.function.latebinding.ILateBindingValue;
+import com.jayway.jsonpath.internal.function.latebinding.JsonLateBindingValue;
+import com.jayway.jsonpath.internal.function.latebinding.PathLateBindingValue;
+import com.jayway.jsonpath.internal.function.numeric.AbstractAggregation;
+import com.jayway.jsonpath.internal.function.numeric.Average;
+import com.jayway.jsonpath.internal.function.numeric.Max;
+import com.jayway.jsonpath.internal.function.numeric.Min;
+import com.jayway.jsonpath.internal.function.numeric.StandardDeviation;
+import com.jayway.jsonpath.internal.function.numeric.Sum;
+import com.jayway.jsonpath.internal.function.text.Concatenate;
+import com.jayway.jsonpath.internal.function.text.Length;
+import com.jayway.jsonpath.internal.path.*;
+import com.jayway.jsonpath.spi.cache.Cache;
+import com.jayway.jsonpath.spi.cache.CacheProvider;
+import com.jayway.jsonpath.spi.cache.LRUCache;
+import com.jayway.jsonpath.spi.cache.NOOPCache;
+import com.jayway.jsonpath.spi.json.AbstractJsonProvider;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
+import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
+import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.JettisonProvider;
+import com.jayway.jsonpath.spi.json.JsonOrgJsonProvider;
+import com.jayway.jsonpath.spi.json.JsonProvider;
+import com.jayway.jsonpath.spi.json.JsonSmartJsonProvider;
+import com.jayway.jsonpath.spi.json.TapestryJsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import com.jayway.jsonpath.spi.mapper.JsonOrgMappingProvider;
+import com.jayway.jsonpath.spi.mapper.JsonSmartMappingProvider;
+import com.jayway.jsonpath.spi.mapper.MappingException;
+import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import com.jayway.jsonpath.spi.mapper.TapestryMappingProvider;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.v3.oas.annotations.links.Link;
 import io.swagger.v3.oas.annotations.links.LinkParameter;
@@ -32,6 +93,38 @@ import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.oas.models.servers.ServerVariables;
 import io.swagger.v3.oas.models.tags.Tag;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.time.DurationUtils;
+import org.springframework.expression.*;
+import org.springframework.expression.common.CompositeStringExpression;
+import org.springframework.expression.common.ExpressionUtils;
+import org.springframework.expression.common.LiteralExpression;
+import org.springframework.expression.common.TemplateAwareExpressionParser;
+import org.springframework.expression.common.TemplateParserContext;
+import org.springframework.expression.spel.CodeFlow;
+import org.springframework.expression.spel.CompilablePropertyAccessor;
+import org.springframework.expression.spel.CompiledExpression;
+import org.springframework.expression.spel.ExpressionState;
+import org.springframework.expression.spel.InternalParseException;
+import org.springframework.expression.spel.SpelCompilerMode;
+import org.springframework.expression.spel.SpelEvaluationException;
+import org.springframework.expression.spel.SpelMessage;
+import org.springframework.expression.spel.SpelNode;
+import org.springframework.expression.spel.SpelParseException;
+import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.ast.*;
+import org.springframework.expression.spel.standard.SpelCompiler;
+import org.springframework.expression.spel.standard.SpelExpression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.*;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.Base64;
 
 @RegisterForReflection(targets = {
         Components.class, ExternalDocumentation.class, Operation.class, PathItem.class,
@@ -43,7 +136,38 @@ import io.swagger.v3.oas.models.tags.Tag;
         PasswordSchema.class, Schema.class, StringSchema.class, UUIDSchema.class, XML.class,
         CookieParameter.class, HeaderParameter.class, Parameter.class, PathParameter.class, QueryParameter.class,
         RequestBody.class, ApiResponse.class, ApiResponses.class, OAuthFlow.class, OAuthFlows.class, Scopes.class, SecurityRequirement.class,
-        SecurityScheme.class, Server.class, ServerVariable.class, ServerVariables.class, Tag.class
+        SecurityScheme.class, Server.class, ServerVariable.class, ServerVariables.class, Tag.class, io.swagger.models.ParamType.class,
+        Configuration.class, Criteria.class, DocumentContext.class, EvaluationListener.class, Filter.class, InvalidCriteriaException.class, InvalidJsonException.class,
+        InvalidModificationException.class, InvalidPathException.class, JsonPath.class, JsonPathException.class, MapFunction.class, Option.class, ParseContext.class,
+        PathNotFoundException.class, Predicate.class, ReadContext.class, TypeRef.class, ValueCompareException.class,
+        WriteContext.class, CharacterIndex.class, DefaultsImpl.class, EvaluationAbortException.class,
+        EvaluationContext.class, JsonContext.class, JsonFormatter.class, ParseContextImpl.class, Path.class, PathRef.class, Utils.class, Evaluator.class, EvaluatorFactory.class,
+        ExpressionNode.class, FilterCompiler.class, LogicalExpressionNode.class, LogicalOperator.class, PatternFlag.class, RelationalExpressionNode.class, RelationalOperator.class,
+        ValueNode.class, ValueNodes.class, ParamType.class, com.jayway.jsonpath.internal.function.Parameter.class, PassthruPathFunction.class, PathFunction.class, PathFunctionFactory.class, Append.class, KeySetFunction.class,
+        ILateBindingValue.class, JsonLateBindingValue.class, PathLateBindingValue.class, AbstractAggregation.class, Average.class, Max.class, Min.class, StandardDeviation.class, Sum.class,
+        Concatenate.class, Length.class, ArrayIndexOperation.class, ArrayIndexToken.class, ArrayPathToken.class, ArraySliceOperation.class, ArraySliceToken.class, CompiledPath.class,
+        EvaluationContextImpl.class, FunctionPathToken.class, PathCompiler.class, PathToken.class, PathTokenAppender.class, PathTokenFactory.class, PredicateContextImpl.class,
+        PredicatePathToken.class, RootPathToken.class, ScanPathToken.class, WildcardPathToken.class, Cache.class, CacheProvider.class, LRUCache.class, NOOPCache.class,
+        AbstractJsonProvider.class, GsonJsonProvider.class, JacksonJsonNodeJsonProvider.class, JacksonJsonProvider.class, JettisonProvider.class, JsonOrgJsonProvider.class, JsonProvider.class,
+        JsonSmartJsonProvider.class, TapestryJsonProvider.class, GsonMappingProvider.class, JacksonMappingProvider.class, JsonOrgMappingProvider.class, JsonSmartMappingProvider.class,
+        MappingException.class, MappingProvider.class, TapestryMappingProvider.class,
+        ParserContext.class, SpelParserConfiguration.class, Identifier.class, OperatorBetween.class, RealLiteral.class, MethodReference.class, AstUtils.class, OpNE.class, OperatorNot.class,
+        Elvis.class, OpDivide.class, OpMinus.class, OpModulus.class, OpGT.class, OperatorMatches.class, Literal.class, SpelNodeImpl.class, OpAnd.class,
+        Assign.class, ConstructorReference.class, BeanReference.class, ValueRef.class, Operator.class, InlineMap.class, OpInc.class, FunctionReference.class, OpLT.class,
+        Ternary.class, OpEQ.class, CompoundExpression.class, OpOr.class, PropertyOrFieldReference.class, InlineList.class, Indexer.class, FloatLiteral.class,
+        StringLiteral.class, VariableReference.class, OperatorInstanceof.class, NullLiteral.class, OpGE.class, OpLE.class, Projection.class, TypeCode.class,
+        BooleanLiteral.class, QualifiedIdentifier.class, OpPlus.class, LongLiteral.class, OpMultiply.class, IntLiteral.class, OperatorPower.class, TypeReference.class,
+        OpDec.class, Selection.class, SpelEvaluationException.class, SpelCompilerMode.class, CodeFlow.class, SpelParseException.class, DataBindingMethodResolver.class,
+        StandardTypeLocator.class, ReflectiveConstructorResolver.class, BooleanTypedValue.class, ReflectiveMethodExecutor.class, ReflectiveMethodResolver.class,
+        StandardTypeComparator.class, SimpleEvaluationContext.class, ReflectivePropertyAccessor.class, DataBindingPropertyAccessor.class, ReflectionHelper.class, ReflectiveConstructorExecutor.class,
+        StandardTypeConverter.class, StandardEvaluationContext.class, StandardOperatorOverloader.class, CompiledExpression.class, ExpressionState.class, CompilablePropertyAccessor.class, SpelNode.class,
+        InternalParseException.class, SpelMessage.class, SpelExpression.class, SpelExpressionParser.class,
+        SpelCompiler.class, MethodExecutor.class, ExpressionParser.class, ExpressionInvocationTargetException.class, ConstructorResolver.class, OperatorOverloader.class,
+        ExpressionException.class, EvaluationException.class, Operation.class, Expression.class, MethodFilter.class, ParseException.class, TypeLocator.class, MethodResolver.class, ExpressionUtils.class,
+        CompositeStringExpression.class, TemplateAwareExpressionParser.class, LiteralExpression.class, TemplateParserContext.class, ConstructorExecutor.class, TypeComparator.class,
+        EvaluationContext.class, AccessException.class, PropertyAccessor.class, TypeConverter.class, BeanResolver.class, TypedValue.class, CatsDSLParser.class,
+        Base64.Encoder.class, Base64.Decoder.class, Base64.class, RandomUtils.class, RandomStringUtils.class, DateFormatUtils.class, DateUtils.class, DurationUtils.class, LocalDate.class, LocalDateTime.class,
+        OffsetDateTime.class, String.class
 })
 public class ReflectionConfig {
 }
