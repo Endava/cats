@@ -1,4 +1,4 @@
-package com.endava.cats.util;
+package com.endava.cats.dsl;
 
 public interface Parser {
 

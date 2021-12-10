@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -8,9 +9,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +42,6 @@ public class CustomFuzzerUtil {
     public static final String MAP_VALUES = "mapValues";
     private static final List<String> RESERVED_WORDS = Arrays.asList(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION,
             ADDITIONAL_PROPERTIES, ELEMENT, MAP_VALUES);
-    private static final String NOT_SET = "NOT_SET";
     private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
     private final Map<String, String> variables = new HashMap<>();
@@ -98,29 +95,22 @@ public class CustomFuzzerUtil {
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         log.info("Parameters to verify: {}", verifies);
         log.info("Parameters matched to response: {}", responseValues);
-        if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
+        if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(JsonUtils.NOT_SET))) {
             log.error("There are Verify parameters which were not present in the response!");
 
             testCaseListener.reportError(log, "The following Verify parameters were not present in the response: {}",
-                    responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))
+                    responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(JsonUtils.NOT_SET))
                             .map(Map.Entry::getKey).collect(Collectors.toList()));
         } else {
             StringBuilder errorMessages = new StringBuilder();
 
             verifies.forEach((key, value) -> {
                 String valueToCheck = responseValues.get(key);
-                value = catsDSLParser.parseAndGetResult(value, response.getBody());
+                String parsedVerifyValue = this.getVerifyValue(request, response, value);
 
-                /*this is a variable*/
-                if (value.startsWith("$request")) {
-                    value = String.valueOf(this.getVariableFromJson(request, value.replace("request", "").substring(2)));
-                } else if (value.startsWith("$")) {
-                    value = variables.get(value.substring(1));
-                }
-
-                Matcher verifyMatcher = Pattern.compile(value).matcher(valueToCheck);
+                Matcher verifyMatcher = Pattern.compile(parsedVerifyValue).matcher(valueToCheck);
                 if (!verifyMatcher.matches()) {
-                    errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, value));
+                    errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, parsedVerifyValue));
                 }
             });
 
@@ -135,7 +125,25 @@ public class CustomFuzzerUtil {
         }
     }
 
+    private String getVerifyValue(String request, CatsResponse response, String value) {
+        String parseContext = catsDSLParser.getParseContext(value, request, response.getBody());
+        value = catsDSLParser.parseAndGetResult(value, parseContext);
 
+        /* It means that it's 'just' a CATS variable */
+        if (value.startsWith("$")) {
+            value = variables.get(value.substring(1));
+        }
+        return value;
+    }
+
+
+    /**
+     * This will transform both {@code verify} and CATS variables in a format without {}.
+     * A variable like {@code ${request.name}} will become {@code $request.name}
+     *
+     * @param output the current YAML entry
+     * @return a key,value Map with all the sub-entries under the current YAML entry
+     */
     private Map<String, String> parseYmlEntryIntoMap(String output) {
         Map<String, String> result = new HashMap<>();
         if (StringUtils.isNotBlank(output)) {
@@ -155,21 +163,12 @@ public class CustomFuzzerUtil {
         result.putAll(variablesMap.entrySet().stream().collect(
                 Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> String.valueOf(this.getVariableFromJson(response.getBody(), mappingFunction.apply(entry))))
+                        entry -> String.valueOf(JsonUtils.getVariableFromJson(response.getBody(), mappingFunction.apply(entry))))
         ));
 
         return result;
     }
 
-    private Object getVariableFromJson(String body, String value) {
-        DocumentContext jsonDoc = JsonPath.parse(body);
-        try {
-            return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
-        } catch (PathNotFoundException e) {
-            log.error("Expected variable {} was not found on response. Setting to NOT_SET", value);
-            return NOT_SET;
-        }
-    }
 
     public String getTestScenario(String testName, Map<String, String> currentPathValues) {
         String description = currentPathValues.get(DESCRIPTION);
@@ -271,7 +270,7 @@ public class CustomFuzzerUtil {
         for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
             String valueToReplaceWith = entry.getValue();
             if (entry.getValue().startsWith("${") && entry.getValue().endsWith("}")) {
-                valueToReplaceWith = variables.get(entry.getValue().replace("${", "").replace("}", ""));
+                valueToReplaceWith = variables.getOrDefault(entry.getValue().replace("${", "").replace("}", ""), JsonUtils.NOT_SET);
             }
             newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
         }

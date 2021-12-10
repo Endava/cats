@@ -1,6 +1,5 @@
 package com.endava.cats.dsl;
 
-import com.endava.cats.util.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -12,19 +11,19 @@ import org.springframework.integration.json.JsonPropertyAccessor;
 import java.util.Collections;
 import java.util.Optional;
 
-public class SimpleParser implements Parser {
+public class SpringELParser implements Parser {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final SpelExpressionParser spelExpressionParser;
     private final ObjectMapper mapper;
 
-    public SimpleParser() {
+    public SpringELParser() {
         spelExpressionParser = new SpelExpressionParser();
         mapper = new ObjectMapper();
     }
 
     @Override
     public String parse(String expression, String payload) {
-
+        log.info("Parsing {}", expression);
         try {
             JsonNode jsonObject = mapper.readTree(Optional.ofNullable(payload).orElse(""));
             StandardEvaluationContext context = new StandardEvaluationContext(jsonObject);

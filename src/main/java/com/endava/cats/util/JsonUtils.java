@@ -6,21 +6,25 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.ParseContextImpl;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
 
 public abstract class JsonUtils {
+    public static final String NOT_SET = "NOT_SET";
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
-
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())
             .jsonProvider(new JacksonJsonNodeJsonProvider())
@@ -83,5 +87,15 @@ public abstract class JsonUtils {
             }
         }
         return payload;
+    }
+
+    public static Object getVariableFromJson(String jsonPayload, String value) {
+        DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
+        try {
+            return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
+        } catch (PathNotFoundException e) {
+            LOGGER.error("Expected variable {} was not found. Setting to NOT_SET", value);
+            return NOT_SET;
+        }
     }
 }

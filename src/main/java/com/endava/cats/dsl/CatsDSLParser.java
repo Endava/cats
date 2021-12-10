@@ -1,4 +1,4 @@
-package com.endava.cats.util;
+package com.endava.cats.dsl;
 
 import javax.inject.Singleton;
 import java.util.Map;
@@ -6,7 +6,8 @@ import java.util.Optional;
 
 @Singleton
 public class CatsDSLParser {
-    private static final Map<String, Parser> PARSERS = Map.of("T(", new SimpleParser(), "$$", new EnvVariableParser());
+    private static final Map<String, Parser> PARSERS = Map.of("T(", new SpringELParser(), "$$", new EnvVariableParser(),
+            "$request", new RequestVariableParser());
 
     public String parseAndGetResult(String valueFromFile, String jsonPayload) {
 
@@ -16,5 +17,12 @@ public class CatsDSLParser {
         }
 
         return valueFromFile;
+    }
+
+    public String getParseContext(String expression, String request, String response) {
+        if (expression.startsWith("$request")) {
+            return request;
+        }
+        return response;
     }
 }
