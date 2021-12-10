@@ -566,7 +566,7 @@ But this one won't (`pet#name` is missing):
 }
 ```
 
-You can also refer to request fields in the `verify` section by using the `request.` qualifier. Using the above example, by having the following `verify` section:
+You can also refer to request fields in the `verify` section by using the `${request#..}` qualifier. Using the above example, by having the following `verify` section:
 
 ```yaml
 /pet:
@@ -578,7 +578,7 @@ You can also refer to request fields in the `verify` section by using the `reque
     output:
       petId: pet#id
     verify:
-      pet#name: "request#name"
+      pet#name: "${request#name}"
       pet#id: "[0-9]+"
 ```
 
@@ -910,6 +910,17 @@ For two-way SSL you can specify a JKS file (Java Keystore) that holds the client
 For details on how to load the certificate and private key into a Java Keystore you can use this guide: [https://mrkandreev.name/blog/java-two-way-ssl/](https://mrkandreev.name/blog/java-two-way-ssl/).
 
 # Limitations
+
+## Native Binaries
+When using the native binaries (not the uberjar) there might be issues when using dynamic values in the CATS files. 
+This is due to the fact that GraalVM only bundles whatever can discover at compile time. 
+The following classes are currently supported:
+
+```java
+java.util.Base64.Encoder.class, java.util.Base64.Decoder.class, java.util.Base64.class, org.apache.commons.lang3.RandomUtils.class, org.apache.commons.lang3.RandomStringUtils.class, 
+org.apache.commons.lang3.DateFormatUtils.class, org.apache.commons.lang3.DateUtils.class, 
+org.apache.commons.lang3.DurationUtils.class, java.time.LocalDate.class, java.time.LocalDateTime.class, java.time.OffsetDateTime.class
+```
 
 ## API specs
 At this moment, CATS only works with OpenAPI spec.

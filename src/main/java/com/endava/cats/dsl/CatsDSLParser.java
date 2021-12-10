@@ -6,8 +6,7 @@ import java.util.Optional;
 
 @Singleton
 public class CatsDSLParser {
-    private static final Map<String, Parser> PARSERS = Map.of("T(java.time", new SimpleParser(), "T(org.apache.commons.lang3", new SimpleParser(),
-            "T(java.util", new SimpleParser(), "$$", new EnvVariableParser());
+    private static final Map<String, Parser> PARSERS = Map.of("T(", new SimpleParser(), "$$", new EnvVariableParser());
 
     public String parseAndGetResult(String valueFromFile, String jsonPayload) {
 
