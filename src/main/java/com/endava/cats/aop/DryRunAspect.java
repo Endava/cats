@@ -6,6 +6,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
@@ -26,7 +27,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @Interceptor
 public class DryRunAspect {
 
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(DryRunAspect.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getConsoleLogger();
     private final Map<String, Integer> paths = new TreeMap<>();
     @Inject
     FilterArguments filterArguments;
@@ -47,7 +48,7 @@ public class DryRunAspect {
     }
 
     public Object endSession() {
-        System.out.print("\n");
+        LOGGER.noFormat("\n");
         CatsUtil.setCatsLogLevel("INFO");
         LOGGER.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
         paths.forEach((s, integer) -> LOGGER.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
@@ -58,7 +59,7 @@ public class DryRunAspect {
         Object data = context.getParameters()[1];
         if (data instanceof FuzzingData) {
             if (counter % 10000 == 0) {
-                System.out.print(".");
+                LOGGER.noFormat(StringUtils.repeat("..", 1 + (counter / 10000)));
             }
             paths.merge(((FuzzingData) data).getPath(), 1, Integer::sum);
         } else {
