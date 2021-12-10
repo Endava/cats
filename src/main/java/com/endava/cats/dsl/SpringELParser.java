@@ -1,5 +1,6 @@
-package com.endava.cats.util;
+package com.endava.cats.dsl;
 
+import com.endava.cats.util.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
