@@ -72,6 +72,7 @@ public class CustomFuzzerUtil {
         this.setOutputVariables(currentPathValues, response);
 
         String verify = currentPathValues.get(CustomFuzzerUtil.VERIFY);
+
         if (verify != null) {
             this.checkVerifiesAndReport(payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
         } else {
@@ -269,8 +270,8 @@ public class CustomFuzzerUtil {
         String newPath = data.getPath();
         for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
             String valueToReplaceWith = entry.getValue();
-            if (entry.getValue().startsWith("${") && entry.getValue().endsWith("}")) {
-                valueToReplaceWith = variables.getOrDefault(entry.getValue().replace("${", "").replace("}", ""), JsonUtils.NOT_SET);
+            if (this.isVariable(entry.getValue())) {
+                valueToReplaceWith = variables.getOrDefault(this.getVariableName(entry.getValue()), JsonUtils.NOT_SET);
             }
             newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
         }
@@ -295,8 +296,8 @@ public class CustomFuzzerUtil {
     public String getPropertyValueToReplaceInBody(Map.Entry<String, String> keyValue) {
         String propertyValue = keyValue.getValue();
 
-        if (propertyValue.startsWith("${") && propertyValue.endsWith("}")) {
-            String variableValue = variables.get(propertyValue.replace("${", "").replace("}", ""));
+        if (this.isVariable(propertyValue)) {
+            String variableValue = variables.get(this.getVariableName(propertyValue));
 
             if (variableValue == null) {
                 log.error("Supplied variable was not found [{}]", propertyValue);
@@ -306,6 +307,14 @@ public class CustomFuzzerUtil {
             }
         }
         return propertyValue;
+    }
+
+    public String getVariableName(String catsVariable) {
+        return catsVariable.replace("${", "").replace("}", "");
+    }
+
+    public boolean isVariable(String candidate) {
+        return candidate.startsWith("${") && candidate.endsWith("}");
     }
 
     public Map<String, String> getVariables() {
