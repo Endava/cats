@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.AuthArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
@@ -39,6 +40,9 @@ public class ReplayCommand implements Runnable {
                     "otherwise it will look for that test in the cats-report folder",
             required = true, split = ",")
     List<String> tests;
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
+    AuthArguments authArgs;
 
     @Inject
     public ReplayCommand(ServiceCaller serviceCaller) {
