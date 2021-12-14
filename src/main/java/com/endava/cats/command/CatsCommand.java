@@ -125,11 +125,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
-        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
 
             if (suppliedPaths.contains(entry.getKey())) {
-                this.fuzzPath(entry, openAPI, schemas);
+                this.fuzzPath(entry, openAPI);
             } else {
                 LOGGER.skip("Skipping path {}", entry.getKey());
             }
@@ -203,13 +202,13 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
     }
 
-    public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI, Map<String, Schema> schemas) {
-        List<String> configuredFuzzers = filterArguments.getFuzzersForPath();
+    public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
+        Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
 
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info(" ");
         LOGGER.start("Start fuzzing path {}", pathItemEntry.getKey());
-        List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), schemas, openAPI);
+        List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), allSchemasFromOpenApi, openAPI);
 
         if (fuzzingDataList.isEmpty()) {
             LOGGER.warning("Skipping path {}. HTTP method not supported yet!", pathItemEntry.getKey());
@@ -224,13 +223,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .filter(method -> !filterArguments.getHttpMethods().contains(method))
                 .collect(Collectors.toList());
 
-        List<Fuzzer> sortedFuzzers = filterArguments.getAllRegisteredFuzzers();
+        List<Fuzzer> allFuzzersSorted = filterArguments.getAllRegisteredFuzzers();
+        List<String> configuredFuzzers = filterArguments.getFuzzersForPath();
 
         LOGGER.info("The following HTTP methods won't be executed for path {}: {}", pathItemEntry.getKey(), excludedHttpMethods);
-        LOGGER.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), (long) sortedFuzzers.size(), configuredFuzzers);
+        LOGGER.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), (long) allFuzzersSorted.size(), configuredFuzzers);
 
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
-        for (Fuzzer fuzzer : sortedFuzzers) {
+        for (Fuzzer fuzzer : allFuzzersSorted) {
             if (configuredFuzzers.contains(fuzzer.toString())) {
                 CatsUtil.filterAndPrintNotMatching(fuzzingDataListWithHttpMethodsFiltered, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
                                 LOGGER, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())

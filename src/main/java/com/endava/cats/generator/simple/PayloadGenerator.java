@@ -67,7 +67,6 @@ public class PayloadGenerator {
     }
 
     public PayloadGenerator(Map<String, Schema> schemas) {
-        // use a fixed seed to make the "random" numbers reproducible.
         this.random = new Random("PayloadGenerator".hashCode());
         this.schemaMap = schemas;
     }
