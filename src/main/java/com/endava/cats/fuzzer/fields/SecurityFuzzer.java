@@ -76,7 +76,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName();
+        return this.getClass().getSimpleName().replace("_Subclass", "");
     }
 
     @Override
