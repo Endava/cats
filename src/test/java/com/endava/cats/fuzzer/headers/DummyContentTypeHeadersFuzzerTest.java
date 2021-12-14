@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -43,5 +44,10 @@ class DummyContentTypeHeadersFuzzerTest {
 
         Assertions.assertThat(headers).hasSize(1);
         Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Content-Type").build());
+    }
+
+    @Test
+    void shouldReturnHttpMethodsSkipFor() {
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
     }
 }

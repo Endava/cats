@@ -1,5 +1,6 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
@@ -9,6 +10,7 @@ import io.swagger.v3.parser.core.models.ParseOptions;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,6 +20,8 @@ import java.util.Map;
 @QuarkusTest
 class PayloadGeneratorTest {
 
+    @Inject
+    CatsGlobalContext globalContext;
 
     @Test
     void givenASimpleOpenAPIContract_whenGeneratingAPayload_thenTheExampleIsProperlyGenerated() throws Exception {
@@ -60,7 +64,7 @@ class PayloadGeneratorTest {
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, "application/json");
-
-        return new PayloadGenerator(schemas);
+        globalContext.getSchemaMap().putAll(schemas);
+        return new PayloadGenerator(globalContext, true);
     }
 }

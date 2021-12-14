@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class BaseHeadersFuzzerTest {
@@ -63,6 +64,13 @@ class BaseHeadersFuzzerTest {
 
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
+    }
+
+    @Test
+    void shouldNotRunWhenNoHeaders() {
+        FuzzingData data = FuzzingData.builder().headers(Set.of(CatsHeader.builder().name("jwt").value("jwt").build())).build();
+        baseHeadersFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     static class MyBaseHeadersFuzzer extends BaseHeadersFuzzer {

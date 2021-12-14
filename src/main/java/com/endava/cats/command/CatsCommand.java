@@ -11,6 +11,7 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -102,6 +103,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     ExecutionStatisticsListener executionStatisticsListener;
 
+    @Inject
+    CatsGlobalContext globalContext;
+
     @Override
     public void run() {
         try {
@@ -117,14 +121,20 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public void doLogic() throws IOException {
         this.doEarlyOperations();
         OpenAPI openAPI = this.createOpenAPI();
-        List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
-
         testCaseListener.initReportingPath();
-        this.startFuzzing(openAPI, suppliedPaths);
+        this.initGlobalData(openAPI);
+        this.startFuzzing(openAPI);
         this.executeCustomFuzzer();
     }
 
-    public void startFuzzing(OpenAPI openAPI, List<String> suppliedPaths) {
+    private void initGlobalData(OpenAPI openAPI) {
+        Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
+        globalContext.getSchemaMap().putAll(allSchemasFromOpenApi);
+    }
+
+    public void startFuzzing(OpenAPI openAPI) {
+        List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
+
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
 
             if (suppliedPaths.contains(entry.getKey())) {
@@ -203,12 +213,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
-        Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
-
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         LOGGER.info(" ");
         LOGGER.start("Start fuzzing path {}", pathItemEntry.getKey());
-        List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), allSchemasFromOpenApi, openAPI);
+        List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), openAPI);
 
         if (fuzzingDataList.isEmpty()) {
             LOGGER.warning("Skipping path {}. HTTP method not supported yet!", pathItemEntry.getKey());

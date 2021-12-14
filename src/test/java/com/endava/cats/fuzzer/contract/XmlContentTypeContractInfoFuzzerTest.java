@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.io.TestCaseExporter;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
@@ -22,7 +23,7 @@ class XmlContentTypeContractInfoFuzzerTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         xmlContentTypeContractInfoFuzzer = new XmlContentTypeContractInfoFuzzer(testCaseListener);
     }

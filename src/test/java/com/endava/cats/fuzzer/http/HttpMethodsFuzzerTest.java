@@ -76,4 +76,16 @@ class HttpMethodsFuzzerTest {
         Assertions.assertThat(httpMethodsFuzzer).hasToString(httpMethodsFuzzer.getClass().getSimpleName());
         Assertions.assertThat(httpMethodsFuzzer.skipForHttpMethods()).isEmpty();
     }
+
+    @Test
+    void shouldNotFuzzSamePathTwice() {
+        FuzzingData data = FuzzingData.builder().path("/pet").pathItem(new PathItem()).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        httpMethodsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
+        httpMethodsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
+    }
 }

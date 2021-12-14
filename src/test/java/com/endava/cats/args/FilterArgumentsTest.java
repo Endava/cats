@@ -144,4 +144,9 @@ class FilterArgumentsTest {
 
         Assertions.assertThat(httpMethods).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
     }
+
+    @Test
+    void shouldReturnAllRegisteredFuzzers() {
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(78);
+    }
 }

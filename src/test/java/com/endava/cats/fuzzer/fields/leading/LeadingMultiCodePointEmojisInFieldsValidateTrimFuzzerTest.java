@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.fields.leading;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
-import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
@@ -11,7 +10,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 @QuarkusTest
@@ -20,7 +18,6 @@ class LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
     private ServiceCaller serviceCaller;
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;
-
     private LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzer leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer;
 
     @BeforeEach
@@ -29,6 +26,8 @@ class LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
         testCaseListener = Mockito.mock(TestCaseListener.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer = new LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        Mockito.when(testCaseListener.isFieldNotADiscriminator(Mockito.anyString())).thenReturn(true);
+        Mockito.when(testCaseListener.isFieldNotADiscriminator("pet#type")).thenReturn(false);
     }
 
     @Test
@@ -48,13 +47,11 @@ class LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
         Assertions.assertThat(leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
         Assertions.assertThat(leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
     }
 }

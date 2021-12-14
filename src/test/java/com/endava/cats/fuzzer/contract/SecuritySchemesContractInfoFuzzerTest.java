@@ -4,6 +4,7 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
@@ -27,7 +28,7 @@ class SecuritySchemesContractInfoFuzzerTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         securitySchemesContractInfoFuzzer = new SecuritySchemesContractInfoFuzzer(testCaseListener);
     }

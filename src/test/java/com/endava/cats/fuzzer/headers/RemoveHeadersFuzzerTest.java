@@ -82,4 +82,11 @@ class RemoveHeadersFuzzerTest {
         Assertions.assertThat(removeHeadersFuzzer).hasToString(removeHeadersFuzzer.getClass().getSimpleName());
         Assertions.assertThat(removeHeadersFuzzer.skipForHttpMethods()).isEmpty();
     }
+
+    @Test
+    void shouldNotRunWhenNoHeaders() {
+        FuzzingData data = FuzzingData.builder().headers(Collections.emptySet()).build();
+        removeHeadersFuzzer.fuzz(data);
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
 }

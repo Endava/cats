@@ -6,8 +6,8 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.CatsCommand;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
-import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.io.TestCaseExporter;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -57,7 +57,7 @@ public class TestCaseListener {
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
-
+    private final CatsGlobalContext globalContext;
     private final IgnoreArguments filterArguments;
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
@@ -67,10 +67,11 @@ public class TestCaseListener {
     @ConfigProperty(name = "app.timestamp", defaultValue = "1-1-1")
     String appBuildTime;
 
-    public TestCaseListener(ExecutionStatisticsListener er, @Named("htmlOnly") TestCaseExporter tcehtml, @Named("htmlJs") TestCaseExporter tcejs, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
+    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, @Named("htmlOnly") TestCaseExporter tcehtml, @Named("htmlJs") TestCaseExporter tcejs, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
         this.executionStatisticsListener = er;
         this.testCaseExporter = reportingArguments.getReportFormat() == ReportingArguments.ReportFormat.HTML_JS ? tcejs : tcehtml;
         this.filterArguments = filterArguments;
+        this.globalContext = catsGlobalContext;
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -297,6 +298,10 @@ public class TestCaseListener {
         this.addResponse(CatsResponse.empty());
     }
 
+    public boolean isFieldNotADiscriminator(String fuzzedField) {
+        return !globalContext.getDiscriminators().contains(fuzzedField);
+    }
+
     private void recordResult(String message, Object[] params, String success) {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         testCase.setResult(success);
@@ -375,7 +380,7 @@ public class TestCaseListener {
 
     private boolean matchesSingleElement(String responseSchema, JsonElement element, String name) {
         boolean result = true;
-        if (element.isJsonObject() && PayloadGenerator.GlobalData.getAdditionalProperties().contains(name)) {
+        if (element.isJsonObject() && globalContext.getAdditionalProperties().contains(name)) {
             return true;
         } else if (element.isJsonObject()) {
             for (Map.Entry<String, JsonElement> inner : element.getAsJsonObject().entrySet()) {

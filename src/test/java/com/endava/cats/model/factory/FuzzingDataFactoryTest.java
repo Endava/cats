@@ -3,6 +3,7 @@ package com.endava.cats.model.factory;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,6 +26,9 @@ import java.util.Map;
 
 @QuarkusTest
 class FuzzingDataFactoryTest {
+    @Inject
+    CatsGlobalContext catsGlobalContext;
+
     private FilesArguments filesArguments;
     private ProcessingArguments processingArguments;
     private FuzzingDataFactory fuzzingDataFactory;
@@ -34,7 +39,7 @@ class FuzzingDataFactoryTest {
         processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
         Mockito.when(processingArguments.getContentType()).thenReturn("application/json");
-        fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments);
+        fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext);
     }
 
     @Test
@@ -54,8 +59,10 @@ class FuzzingDataFactoryTest {
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, "application/json");
+        catsGlobalContext.getSchemaMap().clear();
+        catsGlobalContext.getSchemaMap().putAll(schemas);
         PathItem pathItem = openAPI.getPaths().get(path);
-        return fuzzingDataFactory.fromPathItem(path, pathItem, schemas, openAPI);
+        return fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);
     }
 
     @Test
