@@ -61,8 +61,8 @@ public class FuzzingDataFactory {
      *
      * @param path    the path from the contract
      * @param item    the PathItem containing the details about the interaction with the path
-     * @param schemas
-     * @return
+     * @param schemas the list with all schemes retrieved from the OpenAPI specs
+     * @return a list of FuzzingData items representing a template that will be used to apply the Fuzzers on
      */
     public List<FuzzingData> fromPathItem(String path, PathItem item, Map<String, Schema> schemas, OpenAPI openAPI) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
@@ -95,43 +95,6 @@ public class FuzzingDataFactory {
 
     private List<FuzzingData> getFuzzingDataForGet(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI) {
         return getFuzzDataForNonBodyMethods(path, item, schemas, operation, openAPI, HttpMethod.GET);
-    }
-
-    /**
-     * A similar FuzzingData object will be created for GET or DELETE requests. The "payload" will be a JSON with all the query or path params.
-     * In order to achieve this a synthetic object is created that will act as a root object holding all the query or path params as child schemas.
-     * The method returns a list of FuzzingData as you might have oneOf operations which will create multiple payloads.
-     *
-     * @param path      the current path
-     * @param item      the current path item
-     * @param schemas   the current extracted schemas from OpenAPI
-     * @param openAPI   the full OpenAPI object
-     * @param operation the OpenApi operation
-     * @return a list of FuzzingData objects
-     */
-    private List<FuzzingData> getFuzzDataForNonBodyMethods(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI, HttpMethod method) {
-        Set<CatsHeader> headers = this.extractHeaders(operation);
-        ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
-
-        schemas.put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
-        Set<String> queryParams = this.extractQueryParams(syntheticSchema);
-
-        List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId(), schemas);
-        Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
-        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
-        List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
-
-        return payloadSamples.stream().map(payload -> FuzzingData.builder().method(method).path(path).headers(headers).payload(payload)
-                .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
-                .schemaMap(schemas).responses(responses)
-                .responseContentTypes(responsesContentTypes)
-                .requestPropertyTypes(PayloadGenerator.GlobalData.getRequestDataTypes())
-                .requestContentTypes(requestContentTypes)
-                .queryParams(queryParams)
-                .openApi(openAPI)
-                .tags(operation.getTags())
-                .reqSchemaName(SYNTH_SCHEMA_NAME)
-                .build()).collect(Collectors.toList());
     }
 
     /**
@@ -231,6 +194,43 @@ public class FuzzingDataFactory {
     }
 
     /**
+     * A similar FuzzingData object will be created for GET or DELETE requests. The "payload" will be a JSON with all the query or path params.
+     * In order to achieve this a synthetic object is created that will act as a root object holding all the query or path params as child schemas.
+     * The method returns a list of FuzzingData as you might have oneOf operations which will create multiple payloads.
+     *
+     * @param path      the current path
+     * @param item      the current path item
+     * @param schemas   the current extracted schemas from OpenAPI
+     * @param openAPI   the full OpenAPI object
+     * @param operation the OpenApi operation
+     * @return a list of FuzzingData objects
+     */
+    private List<FuzzingData> getFuzzDataForNonBodyMethods(String path, PathItem item, Map<String, Schema> schemas, Operation operation, OpenAPI openAPI, HttpMethod method) {
+        ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
+
+        schemas.put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
+        Set<String> queryParams = this.extractQueryParams(syntheticSchema);
+
+        List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId(), schemas);
+        Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet(), schemas);
+        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
+        List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
+
+        return payloadSamples.stream().map(payload -> FuzzingData.builder().method(method).path(path).headers(this.extractHeaders(operation)).payload(payload)
+                .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
+                .schemaMap(schemas).responses(responses)
+                .responseContentTypes(responsesContentTypes)
+                .requestPropertyTypes(PayloadGenerator.GlobalData.getRequestDataTypes())
+                .requestContentTypes(requestContentTypes)
+                .queryParams(queryParams)
+                .openApi(openAPI)
+                .tags(operation.getTags())
+                .reqSchemaName(SYNTH_SCHEMA_NAME)
+                .build()).collect(Collectors.toList());
+    }
+
+
+    /**
      * We get the definition name for each request type. This also includes cases when we have AnyOf or OneOf schemas.
      *
      * @param mediaType the media type extracted from the Operation
@@ -266,7 +266,7 @@ public class FuzzingDataFactory {
     private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
         if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
             String reqBodyRef = operation.getRequestBody().get$ref();
-            return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent(), processingArguments.getContentType());
+            return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent(), processingArguments.getContentType());
         } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), processingArguments.getContentType())) {
             return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), processingArguments.getContentType());
         } else if (operation.getRequestBody() != null) {
@@ -294,23 +294,22 @@ public class FuzzingDataFactory {
         String payloadSample = examples.get(0).get("example");
 
         payloadSample = this.squashAllOfElements(payloadSample);
-        return this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample, PayloadGenerator.GlobalData.getDiscriminators());
+        return this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
     }
 
     /**
      * When we deal with AnyOf or OneOf data types, we need to create multiple payloads based on the number of sub-types defined within the contract. This method will return all these combinations
-     * based on the keywords 'ANY_OF' and 'ONE_OF' generated by the PayloadGenerator
+     * based on the keywords 'ANY_OF' and 'ONE_OF' generated by the PayloadGenerator.
      *
      * @param initialPayload initial Payload including ONE_OF and ANY_OF information
-     * @param discriminators the discriminators used to create multiple Payloads specific for each type
      * @return a list of Payload associated with each ANY_OF, ONE_OF combination
      */
-    private List<String> getPayloadCombinationsBasedOnOneOfAndAnyOf(String initialPayload, List<String> discriminators) {
+    private List<String> getPayloadCombinationsBasedOnOneOfAndAnyOf(String initialPayload) {
         List<String> result = new ArrayList<>();
         JsonElement jsonElement = JsonParser.parseString(initialPayload);
 
         if (jsonElement.isJsonObject()) {
-            result = this.addNewCombination(jsonElement, discriminators);
+            result = this.addNewCombination(jsonElement);
         }
         if (result.isEmpty()) {
             result.add(initialPayload);
@@ -319,20 +318,19 @@ public class FuzzingDataFactory {
         return result;
     }
 
-    private List<String> addNewCombination(JsonElement jsonElement, List<String> discriminators) {
+    private List<String> addNewCombination(JsonElement jsonElement) {
+        List<String> discriminators = PayloadGenerator.GlobalData.getDiscriminators();
         List<String> result = new ArrayList<>();
         Map<String, JsonElement> anyOfOrOneOf = this.getAnyOrOneOffElements(jsonElement);
         anyOfOrOneOf.forEach((key, value) -> jsonElement.getAsJsonObject().remove(key));
 
-        anyOfOrOneOf.forEach((key, value) ->
-        {
+        anyOfOrOneOf.forEach((key, value) -> {
             String newKey = key.substring(0, key.indexOf('#')).replace(ANY_OF, "").replace(ONE_OF, "");
             if (value.isJsonObject()) {
-                value.getAsJsonObject().entrySet().forEach(jsonElementEntry ->
-                        {
+                value.getAsJsonObject().entrySet().forEach(jsonElementEntry -> {
                             String dataTypeKey = newKey + "#" + jsonElementEntry.getKey();
                             if (discriminators.contains(dataTypeKey)) {
-                                value.getAsJsonObject().addProperty(jsonElementEntry.getKey(), key.substring(key.lastIndexOf('/') + 1));
+                                value.getAsJsonObject().addProperty(jsonElementEntry.getKey(), this.getSchemaName(key));
                             }
                         }
                 );
@@ -363,6 +361,7 @@ public class FuzzingDataFactory {
             }
         }
 
+        //TODO remove this?
         toRemove.forEach(entry -> jsonElement.getAsJsonObject().remove(entry));
         return anyOrOneOfs;
     }
@@ -412,7 +411,7 @@ public class FuzzingDataFactory {
             Content defaultContent = buildDefaultContent();
             String reqBodyRef = operation.getRequestBody().get$ref();
             if (reqBodyRef != null) {
-                operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(reqBodyRef.substring(reqBodyRef.lastIndexOf("/") + 1)).getContent());
+                operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent());
             }
             requests.addAll(new ArrayList<>(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent)
                     .keySet()));
