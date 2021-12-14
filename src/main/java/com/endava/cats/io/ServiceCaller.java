@@ -380,7 +380,6 @@ public class ServiceCaller {
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
-                headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
                 this.replaceHeaderIfNotFuzzed(headers, data, suppliedHeader);
             } else if (!data.isAddUserHeaders() && (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey()))) {
                 headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
@@ -399,11 +398,13 @@ public class ServiceCaller {
 
     private void replaceHeaderIfNotFuzzed(List<CatsRequest.Header> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {
         if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
+            headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
             headers.add(new CatsRequest.Header(suppliedHeader.getKey(), suppliedHeader.getValue()));
         } else {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behaviour on a valid header value */
             CatsRequest.Header existingHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey())).findFirst().orElse(new CatsRequest.Header("", ""));
             String finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
+            headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
             headers.add(new CatsRequest.Header(suppliedHeader.getKey(), finalHeaderValue));
             LOGGER.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }
