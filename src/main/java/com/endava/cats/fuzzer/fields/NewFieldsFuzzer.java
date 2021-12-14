@@ -66,7 +66,7 @@ public class NewFieldsFuzzer implements Fuzzer {
     }
 
     public String toString() {
-        return this.getClass().getSimpleName();
+        return this.getClass().getSimpleName().replace("_Subclass", "");
     }
 
     @Override
