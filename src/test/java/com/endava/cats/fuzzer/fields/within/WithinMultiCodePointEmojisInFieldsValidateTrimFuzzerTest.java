@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
-import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
@@ -25,7 +24,6 @@ class WithinMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
     private ServiceCaller serviceCaller;
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;
-
     private WithinMultiCodePointEmojisInFieldsValidateTrimFuzzer withinMultiCodePointEmojisInFieldsValidateTrimFuzzer;
 
     @BeforeEach
@@ -34,6 +32,8 @@ class WithinMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
         testCaseListener = Mockito.mock(TestCaseListener.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         withinMultiCodePointEmojisInFieldsValidateTrimFuzzer = new WithinMultiCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        Mockito.when(testCaseListener.isFieldNotADiscriminator(Mockito.anyString())).thenReturn(true);
+        Mockito.when(testCaseListener.isFieldNotADiscriminator("pet#type")).thenReturn(false);
     }
 
     @Test
@@ -55,13 +55,11 @@ class WithinMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        PayloadGenerator.GlobalData.getDiscriminators().add("pet#type");
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
     }
 }

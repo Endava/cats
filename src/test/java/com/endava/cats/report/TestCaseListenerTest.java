@@ -6,6 +6,7 @@ import com.endava.cats.command.CatsCommand;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.io.TestCaseExporterHtmlJs;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -39,6 +40,8 @@ class TestCaseListenerTest {
     IgnoreArguments ignoreArguments;
     @Inject
     ReportingArguments reportingArguments;
+    @Inject
+    CatsGlobalContext catsGlobalContext;
 
     private PrettyLogger logger;
     private Fuzzer fuzzer;
@@ -52,7 +55,8 @@ class TestCaseListenerTest {
         testCaseExporter = Mockito.mock(TestCaseExporterHtmlJs.class);
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
-        testCaseListener = new TestCaseListener(executionStatisticsListener, testCaseExporter, testCaseExporter, ignoreArguments, reportingArguments);
+        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testCaseExporter, testCaseExporter, ignoreArguments, reportingArguments);
+        catsGlobalContext.getDiscriminators().clear();
     }
 
     @AfterEach
@@ -421,5 +425,19 @@ class TestCaseListenerTest {
         Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected {}, actual [{}], documented response codes: {}", ResponseCodeFamily.FOURXX.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
     }
 
+    @Test
+    void shouldReturnIsDiscriminator() {
+        catsGlobalContext.getDiscriminators().clear();
+        catsGlobalContext.getDiscriminators().add("field");
 
+        Assertions.assertThat(testCaseListener.isFieldNotADiscriminator("field")).isFalse();
+    }
+
+    @Test
+    void shouldReturnIsNotDiscriminator() {
+        catsGlobalContext.getDiscriminators().clear();
+        catsGlobalContext.getDiscriminators().add("field");
+
+        Assertions.assertThat(testCaseListener.isFieldNotADiscriminator("additionalField")).isTrue();
+    }
 }

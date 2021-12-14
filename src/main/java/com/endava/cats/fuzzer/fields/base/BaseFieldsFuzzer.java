@@ -32,8 +32,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     protected final CatsUtil catsUtil;
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     final FilesArguments filesArguments;
+    final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
 
     protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         this.serviceCaller = sc;

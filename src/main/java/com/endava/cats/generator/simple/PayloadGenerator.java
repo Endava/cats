@@ -1,5 +1,6 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import io.swagger.v3.core.util.Json;
@@ -42,7 +43,9 @@ import java.util.UUID;
 
 /**
  * A modified version of @code{io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
- * setups including complex objects and array of objects
+ * setups including complex objects and array of objects.
+ * <p>
+ * This is a stateful object. Don't use it through dependency injection.
  */
 public class PayloadGenerator {
 
@@ -56,19 +59,15 @@ public class PayloadGenerator {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     private final Random random;
-    private final Map<String, Schema> schemaMap;
     private final DecimalFormat df = new DecimalFormat("#.00");
+    private final boolean useExamples;
+    private final CatsGlobalContext globalContext;
     private String currentProperty = "";
-    private boolean useExamples = true;
 
-    public PayloadGenerator(Map<String, Schema> schemas, boolean useExamplesArgument) {
-        this(schemas);
-        useExamples = useExamplesArgument;
-    }
-
-    public PayloadGenerator(Map<String, Schema> schemas) {
+    public PayloadGenerator(CatsGlobalContext catsGlobalContext, boolean useExamplesArgument) {
+        this.globalContext = catsGlobalContext;
         this.random = new Random("PayloadGenerator".hashCode());
-        this.schemaMap = schemas;
+        useExamples = useExamplesArgument;
     }
 
     public static String generateValueBasedOnMinMAx(Schema<?> property) {
@@ -104,7 +103,7 @@ public class PayloadGenerator {
             Map<String, String> kv = new HashMap<>();
             kv.put(CONTENT_TYPE, mediaType);
             if (modelName != null) {
-                final Schema schema = this.schemaMap.get(modelName);
+                final Schema schema = this.globalContext.getSchemaMap().get(modelName);
                 if (schema != null) {
                     String example = Json.pretty(this.resolveModelToExample(modelName, mediaType, schema));
 
@@ -210,13 +209,13 @@ public class PayloadGenerator {
 
     private Object getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
         Map<String, Object> mp = new HashMap<>();
-        GlobalData.additionalProperties.add(propertyName);
+        globalContext.getAdditionalProperties().add(propertyName);
         if (property.getName() != null) {
             mp.put(property.getName(),
                     resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
         } else if (((Schema) property.getAdditionalProperties()).get$ref() != null) {
             Schema innerSchema = (Schema) property.getAdditionalProperties();
-            Schema addPropSchema = this.schemaMap.get(innerSchema.get$ref().substring(innerSchema.get$ref().lastIndexOf('/') + 1));
+            Schema addPropSchema = this.globalContext.getSchemaMap().get(innerSchema.get$ref().substring(innerSchema.get$ref().lastIndexOf('/') + 1));
             mp.put("key", resolvePropertyToExample(propertyName, mediaType, addPropSchema));
         } else {
             mp.put("key",
@@ -252,7 +251,7 @@ public class PayloadGenerator {
     private Object getExampleFromArraySchema(String propertyName, String mediaType, Schema property) {
         Schema innerType = ((ArraySchema) property).getItems();
         if (innerType.get$ref() != null) {
-            innerType = this.schemaMap.get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
+            innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
         if (innerType != null) {
             int arrayLength = null == property.getMaxItems() ? 2 : property.getMaxItems();
@@ -303,7 +302,7 @@ public class PayloadGenerator {
         if (schema instanceof ComposedSchema) {
             this.populateWithComposedSchema(mediaType, values, name, (ComposedSchema) schema);
         } else {
-            GlobalData.requestDataTypes.put(currentProperty, schema);
+            globalContext.getRequestDataTypes().put(currentProperty, schema);
             return this.resolvePropertyToExample(name, mediaType, schema);
         }
         return values;
@@ -312,12 +311,12 @@ public class PayloadGenerator {
     private void processSchemaProperties(String name, String mediaType, Schema schema, Map<String, Object> values) {
         LOGGER.trace("Creating example from model values");
         if (schema.getDiscriminator() != null) {
-            GlobalData.discriminators.add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
+            globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
         }
         String previousPropertyValue = currentProperty;
         for (Object propertyName : schema.getProperties().keySet()) {
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
-            Schema innerSchema = schemaMap.get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
+            Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
             currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
 
             if (innerSchema == null) {
@@ -340,11 +339,11 @@ public class PayloadGenerator {
             this.populateWithComposedSchema(mediaType, values, propertyName.toString(), (ComposedSchema) innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
             values.put(propertyName.toString(), innerSchema.getEnum().stream().filter(value -> name.contains(value.toString())).findFirst().orElse(""));
-            GlobalData.requestDataTypes.put(currentProperty, innerSchema);
+            globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         } else {
             Object example = this.resolvePropertyToExample(propertyName.toString(), mediaType, innerSchema);
             values.put(propertyName.toString(), example);
-            GlobalData.requestDataTypes.put(currentProperty, innerSchema);
+            globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         }
     }
 
@@ -393,35 +392,13 @@ public class PayloadGenerator {
             Schema schemaToExample = allOfSchema;
             if (fullSchemaRef != null) {
                 schemaRef = fullSchemaRef.substring(fullSchemaRef.lastIndexOf('/') + 1);
-                schemaToExample = schemaMap.get(schemaRef);
+                schemaToExample = this.globalContext.getSchemaMap().get(schemaRef);
             } else {
                 schemaRef = StringGenerator.generate("[A-Z]{5,10}", 5, 10);
                 fullSchemaRef = "#" + schemaRef;
             }
             String propertyKey = propertyName.toString() + schemaRef;
             values.put(propertyName + of + fullSchemaRef, resolveModelToExample(propertyKey, mediaType, schemaToExample));
-        }
-    }
-
-    public static class GlobalData {
-        private static final Map<String, Schema> requestDataTypes = new HashMap<>();
-        private static final List<String> additionalProperties = new ArrayList<>();
-        private static final List<String> discriminators = new ArrayList<>();
-
-        private GlobalData() {
-            //ntd
-        }
-
-        public static Map<String, Schema> getRequestDataTypes() {
-            return requestDataTypes;
-        }
-
-        public static List<String> getAdditionalProperties() {
-            return additionalProperties;
-        }
-
-        public static List<String> getDiscriminators() {
-            return discriminators;
         }
     }
 }

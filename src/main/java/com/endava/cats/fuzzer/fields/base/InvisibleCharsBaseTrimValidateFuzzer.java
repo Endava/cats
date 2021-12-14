@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
@@ -26,7 +25,7 @@ public abstract class InvisibleCharsBaseTrimValidateFuzzer extends ExpectOnly2XX
 
     @Override
     public boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        return !PayloadGenerator.GlobalData.getDiscriminators().contains(fuzzedField);
+        return testCaseListener.isFieldNotADiscriminator(fuzzedField);
     }
 
     @Override

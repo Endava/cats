@@ -31,7 +31,7 @@ class ResponseCodeFamilyTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"100", "101", "200", "201", "300", "301", "400", "401", "500", "501"})
+    @CsvSource({"100", "101", "200", "201", "300", "301", "400", "401", "500", "501", "000"})
     void givenA3CharacterCode_whenParsingIt_thenTheCorrectResponseCodeFamilyIsReturned(String code) {
         ResponseCodeFamily responseCodeFamily = ResponseCodeFamily.from(code);
 
