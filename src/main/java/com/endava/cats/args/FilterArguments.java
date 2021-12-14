@@ -26,6 +26,7 @@ import javax.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 @Singleton
 @Getter
 public class FilterArguments {
+    static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
+    static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FilterArguments.class);
     protected List<CatsSkipped> skipFuzzersForPaths = new ArrayList<>();
 
@@ -82,19 +85,37 @@ public class FilterArguments {
     }
 
     public List<String> getFuzzersForPath() {
-        List<String> allowedFuzzers = processSuppliedFuzzers();
-        allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
-        allowedFuzzers = this.removeContractFuzzersIfNeeded(allowedFuzzers);
-        allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
-        allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
+        if (FUZZERS_TO_BE_RUN.isEmpty()) {
+            List<String> allowedFuzzers = processSuppliedFuzzers();
+            allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
+            allowedFuzzers = this.removeContractFuzzersIfNeeded(allowedFuzzers);
+            allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
+            allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
 
-        return allowedFuzzers;
+            FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
+        }
+        return FUZZERS_TO_BE_RUN;
+    }
+
+    public List<Fuzzer> getAllRegisteredFuzzers() {
+        if (ALL_CATS_FUZZERS.isEmpty()) {
+            List<String> interimFuzzersList = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
+            interimFuzzersList = this.removeBasedOnTrimStrategy(interimFuzzersList);
+
+            List<String> finalFuzzersList = this.removeBasedOnSanitizationStrategy(interimFuzzersList);
+
+            ALL_CATS_FUZZERS.addAll(fuzzers.stream().filter(fuzzer -> finalFuzzersList.contains(fuzzer.toString()))
+                    .sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName()))
+                    .collect(Collectors.toList()));
+        }
+
+        return ALL_CATS_FUZZERS;
     }
 
     public List<String> removeBasedOnSanitizationStrategy(List<String> currentFuzzers) {
         Class<? extends Annotation> filterAnnotation = processingArguments.getSanitizationStrategy() == ProcessingArguments.SanitizationStrategy.SANITIZE_AND_VALIDATE
                 ? ValidateAndSanitize.class : SanitizeAndValidate.class;
-        List<String> trimFuzzers = this.getFuzzersFromCheckArgument(true, filterAnnotation);
+        List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, filterAnnotation);
 
         return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer))
                 .collect(Collectors.toList());
@@ -103,7 +124,7 @@ public class FilterArguments {
     public List<String> removeBasedOnTrimStrategy(List<String> currentFuzzers) {
         Class<? extends Annotation> filterAnnotation = processingArguments.getEdgeSpacesStrategy() == ProcessingArguments.TrimmingStrategy.TRIM_AND_VALIDATE
                 ? ValidateAndTrim.class : TrimAndValidate.class;
-        List<String> trimFuzzers = this.getFuzzersFromCheckArgument(true, filterAnnotation);
+        List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, filterAnnotation);
 
         return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer))
                 .collect(Collectors.toList());
@@ -134,10 +155,10 @@ public class FilterArguments {
 
     private List<String> constructFuzzersListFromCheckArguments() {
         List<String> finalList = new ArrayList<>();
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckFields(), FieldFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckContract(), ContractInfoFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckHeaders(), HeaderFuzzer.class));
-        finalList.addAll(this.getFuzzersFromCheckArgument(checkArguments.isCheckHttp(), HttpFuzzer.class));
+        finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckFields(), FieldFuzzer.class));
+        finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckContract(), ContractInfoFuzzer.class));
+        finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckHeaders(), HeaderFuzzer.class));
+        finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckHttp(), HttpFuzzer.class));
 
         if (finalList.isEmpty()) {
             finalList = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
@@ -160,7 +181,7 @@ public class FilterArguments {
         }
     }
 
-    private List<String> getFuzzersFromCheckArgument(boolean checkArgument, Class<? extends Annotation> annotation) {
+    private List<String> filterFuzzersByAnnotationWhenCheckArgumentSupplied(boolean checkArgument, Class<? extends Annotation> annotation) {
         if (checkArgument) {
             return fuzzers.stream().filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
                     .map(Object::toString).collect(Collectors.toList());

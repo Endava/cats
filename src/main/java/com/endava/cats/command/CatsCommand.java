@@ -29,14 +29,11 @@ import picocli.AutoComplete;
 import picocli.CommandLine;
 
 import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -103,10 +100,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     CommandLine.Model.CommandSpec spec;
 
     @Inject
-    @Any
-    Instance<Fuzzer> fuzzers;
-
-    @Inject
     ExecutionStatisticsListener executionStatisticsListener;
 
     @Override
@@ -122,7 +115,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     public void doLogic() throws IOException {
-        this.processArgs();
+        this.doEarlyOperations();
         OpenAPI openAPI = this.createOpenAPI();
         List<String> suppliedPaths = this.matchSuppliedPathsWithContractPaths(openAPI);
 
@@ -152,11 +145,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private void executeCustomFuzzer() throws IOException {
         customFuzzer.executeCustomFuzzerTests();
         customFuzzer.replaceRefData();
-    }
-
-    protected List<Fuzzer> sortFuzzersByName() {
-        return fuzzers.stream().sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName()))
-                .collect(Collectors.toList());
     }
 
     /**
@@ -199,7 +187,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
     }
 
-    private void processArgs() throws IOException {
+    private void doEarlyOperations() throws IOException {
         this.processLogLevelArgument();
         filesArguments.loadConfig();
         if (apiArguments.getContract() == null) {
@@ -236,10 +224,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .filter(method -> !filterArguments.getHttpMethods().contains(method))
                 .collect(Collectors.toList());
 
-        LOGGER.info("The following HTTP methods won't be executed for path {}: {}", pathItemEntry.getKey(), excludedHttpMethods);
-        LOGGER.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), fuzzers.stream().count(), configuredFuzzers);
+        List<Fuzzer> sortedFuzzers = filterArguments.getAllRegisteredFuzzers();
 
-        List<Fuzzer> sortedFuzzers = this.sortFuzzersByName();
+        LOGGER.info("The following HTTP methods won't be executed for path {}: {}", pathItemEntry.getKey(), excludedHttpMethods);
+        LOGGER.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), (long) sortedFuzzers.size(), configuredFuzzers);
+
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
         for (Fuzzer fuzzer : sortedFuzzers) {
             if (configuredFuzzers.contains(fuzzer.toString())) {
