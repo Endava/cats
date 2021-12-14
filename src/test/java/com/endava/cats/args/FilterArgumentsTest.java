@@ -37,6 +37,8 @@ class FilterArgumentsTest {
 
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", Collections.emptyList());
+        FilterArguments.ALL_CATS_FUZZERS.clear();
+        FilterArguments.FUZZERS_TO_BE_RUN.clear();
     }
 
     @ParameterizedTest
