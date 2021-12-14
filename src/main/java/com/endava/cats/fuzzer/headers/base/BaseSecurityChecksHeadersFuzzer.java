@@ -29,7 +29,6 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
             "application/pdf",
             "application/xhtml+xml",
             "application/x-shockwave-flash",
-            "application/json",
             "application/ld+json",
             "application/xml",
             "application/zip",
