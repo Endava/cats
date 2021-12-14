@@ -20,7 +20,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 /**
  * Aspect used to suspend CATS logic when running in dryRun mode.
  * The aspect will suppress all calls to the service and any reporting.
- * As Quarkus does not support true AOP. To keep the code as clean as possible @DryRun was used to annotate
+ * As Quarkus does not support true AOP, to keep the code as clean as possible @DryRun was used to annotate
  * classes which are required to suspend their execution.
  */
 @DryRun
