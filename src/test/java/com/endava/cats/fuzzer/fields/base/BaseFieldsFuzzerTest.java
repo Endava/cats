@@ -13,8 +13,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -44,7 +47,7 @@ class BaseFieldsFuzzerTest {
     }
 
     @Test
-    void givenAFieldWithAReplaceFuzzingStrategyWithANonPrimitiveField_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
+    void givenAFieldWithAReplaceFuzzingStrategyWithANonPrimitiveField_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTestsAreSkipped() {
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
@@ -56,7 +59,7 @@ class BaseFieldsFuzzerTest {
     }
 
     @Test
-    void givenAFieldWithASkipFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
+    void givenAFieldWithASkipFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTestIsSkipped() {
         baseFieldsFuzzer = new MyBaseFieldsSkipFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
@@ -67,7 +70,15 @@ class BaseFieldsFuzzerTest {
     }
 
     @Test
-    void givenAJSonPrimitiveFieldWithAReplaceFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTheResultsAreRecordedCorrectly() {
+    void givenAJSonPrimitiveFieldWithAReplaceFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTestsAreExecuted() {
+        FuzzingData data = createFuzzingData();
+
+        baseFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+    }
+
+    @NotNull
+    private FuzzingData createFuzzingData() {
         FuzzingResult fuzzingResult = Mockito.mock(FuzzingResult.class);
         Mockito.when(fuzzingResult.getJson()).thenReturn("{}");
         FuzzingData data = Mockito.mock(FuzzingData.class);
@@ -83,9 +94,59 @@ class BaseFieldsFuzzerTest {
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, mockCatsUtil, filesArguments);
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+        return data;
+    }
+
+    @Test
+    void shouldNotRunWhenNoFields() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFields()).thenReturn(Collections.emptySet());
+        CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
+        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, mockCatsUtil, filesArguments);
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
+    void shouldSkipWhenFuzzingNotPossibleFromFuzzer() {
+        FuzzingData data = createFuzzingData();
+        BaseFieldsFuzzer spyFuzzer = Mockito.spy(baseFieldsFuzzer);
+        Mockito.when(spyFuzzer.isFuzzingPossibleSpecificToFuzzer(Mockito.eq(data), Mockito.anyString(), Mockito.any())).thenReturn(false);
+        spyFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas"));
+    }
+
+    @Test
+    void shouldSkipWhenSkippedField() {
+        FuzzingData data = createFuzzingData();
+        BaseFieldsFuzzer spyFuzzer = Mockito.spy(baseFieldsFuzzer);
+        Mockito.when(spyFuzzer.skipForFields()).thenReturn(List.of("field"));
+        spyFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas"));
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"null,[a-z]+,200", "cats,[a-z]+,200", "CATS,[a-z]+,400"}, nullValues = "null")
+    void shouldReport2xxWhenFuzzedValueNotMatchingPatternAndFieldValueIsNull(String fuzzedValue, String pattern, String responseCode) {
+        FuzzingResult fuzzingResult = new FuzzingResult("{\"field\":\"test\"}", fuzzedValue);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Set<String> fields = Collections.singleton("field");
+        Map<String, Schema> schemaMap = new HashMap<>();
+        StringSchema schema = new StringSchema();
+        schema.setPattern(pattern);
+        schemaMap.put("field", schema);
+        Mockito.when(data.getAllFields()).thenReturn(fields);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
+        Mockito.when(data.getPayload()).thenReturn("{\"field\": 2}");
+
+        CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
+        Mockito.when(mockCatsUtil.replaceField(Mockito.eq("{\"field\": 2}"), Mockito.eq("field"), Mockito.any())).thenReturn(fuzzingResult);
+        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, mockCatsUtil, filesArguments);
+        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+
+        baseFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.from(responseCode)));
     }
 
     static class MyBaseFieldsFuzzer extends BaseFieldsFuzzer {
