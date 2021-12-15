@@ -152,8 +152,7 @@ components:
               discriminator:
                 propertyName: breedType
           additionalProperties:
-            type: object
-            $ref: '#/components/schemas/MegaPet'
+            type: string
             maxLength: 10
     MegaPet:
       properties:

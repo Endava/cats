@@ -178,8 +178,7 @@ public class PayloadGenerator {
         if (!CollectionUtils.isEmpty(enumValues)) {
             return enumValues.get(0);
         }
-        String format = property.getFormat();
-        if (isURI(format, propertyName)) {
+        if (isURI(property, propertyName)) {
             return "http://example.com/aeiou";
         }
         if (isEmailAddress(property, propertyName)) {
@@ -202,24 +201,22 @@ public class PayloadGenerator {
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
     }
 
-    public boolean isURI(String format, String propertyName) {
-        return URI.equals(format) || URL.equals(format) || propertyName.equalsIgnoreCase(URL) || propertyName.equalsIgnoreCase(URI)
+    boolean isURI(Schema<String> property, String propertyName) {
+        return URI.equals(property.getFormat()) || URL.equals(property.getFormat()) || propertyName.equalsIgnoreCase(URL) || propertyName.equalsIgnoreCase(URI)
                 || propertyName.toLowerCase(Locale.ROOT).endsWith(URL) || propertyName.toLowerCase(Locale.ROOT).endsWith(URI);
     }
 
-    private Object getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
+    Map<String, Object> getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
         Map<String, Object> mp = new HashMap<>();
         globalContext.getAdditionalProperties().add(propertyName);
         if (property.getName() != null) {
-            mp.put(property.getName(),
-                    resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
+            mp.put(property.getName(), resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
         } else if (((Schema) property.getAdditionalProperties()).get$ref() != null) {
             Schema innerSchema = (Schema) property.getAdditionalProperties();
             Schema addPropSchema = this.globalContext.getSchemaMap().get(innerSchema.get$ref().substring(innerSchema.get$ref().lastIndexOf('/') + 1));
             mp.put("key", resolvePropertyToExample(propertyName, mediaType, addPropSchema));
         } else {
-            mp.put("key",
-                    resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
+            mp.put("key", resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
         }
         return mp;
     }
@@ -265,20 +262,19 @@ public class PayloadGenerator {
         return null;
     }
 
-    public boolean isEmailAddress(Schema<String> property, String propertyName) {
-        return property != null && (propertyName.toLowerCase().endsWith("email") || propertyName.toLowerCase().endsWith("emailaddress") || "email".equalsIgnoreCase(property.getFormat()));
+    boolean isEmailAddress(Schema<String> property, String propertyName) {
+        return propertyName.toLowerCase().endsWith("email") || propertyName.toLowerCase().endsWith("emailaddress") || "email".equalsIgnoreCase(property.getFormat());
     }
 
-    public boolean isIPV4(Schema<String> property, String propertyName) {
-        return property != null && (propertyName.toLowerCase().endsWith("ip") || propertyName.toLowerCase().endsWith("ipaddress") ||
-                "ip".equalsIgnoreCase(property.getFormat()) || "ipv4".equalsIgnoreCase(property.getFormat()));
+    boolean isIPV4(Schema<String> property, String propertyName) {
+        return propertyName.toLowerCase().endsWith("ip") || propertyName.toLowerCase().endsWith("ipaddress") || "ip".equalsIgnoreCase(property.getFormat()) || "ipv4".equalsIgnoreCase(property.getFormat());
     }
 
-    public boolean isIPV6(Schema<String> property, String propertyName) {
-        return property != null && (propertyName.toLowerCase().endsWith("ipv6") || "ipv6".equalsIgnoreCase(property.getFormat()));
+    boolean isIPV6(Schema<String> property, String propertyName) {
+        return propertyName.toLowerCase().endsWith("ipv6") || "ipv6".equalsIgnoreCase(property.getFormat());
     }
 
-    public double randomNumber(Double min, Double max) {
+    double randomNumber(Double min, Double max) {
         if (min != null && max != null) {
             double range = max - min;
             return random.nextDouble() * range + min;

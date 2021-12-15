@@ -21,19 +21,15 @@ import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.parser.core.models.ParseOptions;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -178,22 +174,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public OpenAPI createOpenAPI() throws IOException {
         String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
         long t0 = System.currentTimeMillis();
-        OpenAPI openAPI = this.getOpenAPI();
+        OpenAPI openAPI = OpenApiUtils.readOpenApi(apiArguments.getContract());
         LOGGER.complete(finishMessage, (System.currentTimeMillis() - t0));
         return openAPI;
-    }
-
-    private OpenAPI getOpenAPI() throws IOException {
-        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
-        ParseOptions options = new ParseOptions();
-        options.setResolve(true);
-        options.setFlatten(true);
-
-        if (apiArguments.isRemoteContract()) {
-            return openAPIV3Parser.readLocation(apiArguments.getContract(), null, options).getOpenAPI();
-        } else {
-            return openAPIV3Parser.readContents(Files.readString(Paths.get(apiArguments.getContract())), null, options).getOpenAPI();
-        }
     }
 
     private void doEarlyOperations() throws IOException {
