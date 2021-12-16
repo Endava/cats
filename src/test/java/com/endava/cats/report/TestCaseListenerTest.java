@@ -401,7 +401,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
-        Mockito.when(data.Fu()).thenReturn(Sets.newHashSet("200", "4xx"));
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "4xx"));
         Mockito.when(data.getResponses()).thenReturn(new TreeMap<>(ImmutableMap.of("4xx", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}"))));
         Mockito.when(response.responseCodeAsString()).thenReturn(responseCode);
         Mockito.when(response.getFuzzedField()).thenReturn("test");
