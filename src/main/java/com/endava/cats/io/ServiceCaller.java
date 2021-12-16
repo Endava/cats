@@ -6,13 +6,13 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.command.CatsCommand;
+import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import com.google.common.html.HtmlEscapers;
@@ -195,7 +195,7 @@ public class ServiceCaller {
         }
     }
 
-    private List<CatsRequest.Header> buildHeaders(ServiceData data) {
+    List<CatsRequest.Header> buildHeaders(ServiceData data) {
         List<CatsRequest.Header> headers = new ArrayList<>();
 
         this.addMandatoryHeaders(data, headers);

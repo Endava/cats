@@ -83,6 +83,19 @@ class BaseBoundaryFieldFuzzerTest {
         Assertions.assertThat(myBaseBoundaryFuzzer.typeOfDataSentToTheService()).startsWith("outside the boundary values");
     }
 
+    @Test
+    void shouldSkipWhenFormatNotRecognized() {
+        FuzzingData data = getMockFuzzingData();
+        StringSchema schema = new StringSchema();
+        schema.setFormat("cats");
+        data.getRequestPropertyTypes().put("emailAddress", schema);
+        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+
+        FuzzingStrategy fuzzingStrategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "emailAddress").get(0);
+        Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.skip().name());
+        Assertions.assertThat(fuzzingStrategy.getData()).startsWith("String format not supplied or not recognized!");
+    }
+
     private FuzzingData getMockFuzzingData() {
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
@@ -105,6 +118,33 @@ class BaseBoundaryFieldFuzzerTest {
         @Override
         public String getBoundaryValue(Schema schema) {
             return "test";
+        }
+
+        @Override
+        public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+            return true;
+        }
+
+        @Override
+        public String description() {
+            return "simple description";
+        }
+    }
+
+    static class MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer extends BaseBoundaryFieldFuzzer {
+
+        public MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+            super(sc, lr, cu, cp);
+        }
+
+        @Override
+        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
+            return Collections.singletonList(StringSchema.class);
+        }
+
+        @Override
+        public String getBoundaryValue(Schema schema) {
+            return null;
         }
 
         @Override
