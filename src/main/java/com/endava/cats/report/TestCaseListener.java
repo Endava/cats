@@ -26,6 +26,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
+import org.springframework.util.CollectionUtils;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Named;
@@ -35,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -288,7 +290,15 @@ public class TestCaseListener {
     }
 
     private boolean isResponseCodeDocumented(FuzzingData data, CatsResponse response) {
-        return data.getResponseCodes().contains(response.responseCodeAsString()) || isNotTypicalDocumentedResponseCode(response);
+        return data.getResponseCodes().contains(response.responseCodeAsString()) ||
+                isNotTypicalDocumentedResponseCode(response) ||
+                responseMatchesDocumentedRange(response.responseCodeAsString(), data.getResponseCodes());
+    }
+
+    private boolean responseMatchesDocumentedRange(String receivedResponseCode, Set<String> documentedResponseCodes) {
+        String responseRange = receivedResponseCode.charAt(0) + "XX";
+
+        return documentedResponseCodes.stream().anyMatch(code -> code.equalsIgnoreCase(responseRange));
     }
 
     public void skipTest(PrettyLogger logger, String skipReason) {
@@ -312,9 +322,9 @@ public class TestCaseListener {
      * The response code is expected if the response code received from the server matches the Cats test case expectations.
      * There is also a particular case when we fuzz GET requests, and we reach unimplemented endpoints. This is why we also test for 501
      *
-     * @param response
-     * @param expectedResultCode
-     * @return
+     * @param response           response received from the service
+     * @param expectedResultCode what is CATS expecting in this scenario
+     * @return {@code true} if the response matches CATS expectations and {@code false} otherwise
      */
     private boolean isResponseCodeExpected(CatsResponse response, ResponseCodeFamily expectedResultCode) {
         return expectedResultCode.allowedResponseCodes().contains(String.valueOf(response.responseCodeAsString())) || response.getResponseCode() == 501;
@@ -322,10 +332,20 @@ public class TestCaseListener {
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
         JsonElement jsonElement = JsonParser.parseString(response.getBody());
-        List<String> responses = data.getResponses().get(response.responseCodeAsString());
+        List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
         return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
                 || isResponseEmpty(response, responses)
                 || isNotTypicalDocumentedResponseCode(response);
+    }
+
+    private List<String> getExpectedResponsesByResponseCode(CatsResponse response, FuzzingData data) {
+        List<String> responses = data.getResponses().get(response.responseCodeAsString());
+
+        if (CollectionUtils.isEmpty(responses)) {
+            return data.getResponses().get(response.responseCodeAsString().charAt(0) + "xx");
+        }
+
+        return responses;
     }
 
     private boolean isActualResponseMatchingDocumentedResponses(CatsResponse response, JsonElement jsonElement, List<String> responses) {

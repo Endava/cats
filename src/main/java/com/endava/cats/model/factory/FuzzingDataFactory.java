@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -446,7 +447,7 @@ public class FuzzingDataFactory {
      * @return a list if response payloads associated to each response code
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes) {
-        Map<String, List<String>> responses = new HashMap<>();
+        Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         PayloadGenerator generator = new PayloadGenerator(globalContext, processingArguments.isUseExamples());
         for (String responseCode : responseCodes) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
