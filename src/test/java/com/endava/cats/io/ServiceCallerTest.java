@@ -7,6 +7,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
+import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -27,7 +28,9 @@ import java.io.File;
 import java.net.Proxy;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @QuarkusTest
 class ServiceCallerTest {
@@ -287,5 +290,52 @@ class ServiceCallerTest {
         Assertions.assertThat(serviceCaller.okHttpClient.readTimeoutMillis()).isEqualTo(49000);
         Assertions.assertThat(serviceCaller.okHttpClient.connectTimeoutMillis()).isEqualTo(50000);
         Assertions.assertThat(serviceCaller.okHttpClient.writeTimeoutMillis()).isEqualTo(48000);
+    }
+
+    @Test
+    void shouldRemoveSkippedHeaders() {
+        ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsHeader").build())).skippedHeaders(Set.of("catsHeader")).build();
+        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
+        Optional<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsHeader")).findFirst();
+
+        Assertions.assertThat(catsHeader.isEmpty()).isTrue();
+    }
+
+    @Test
+    void shouldMergeFuzzingForSuppliedHeaders() {
+        ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsFuzzedHeader").value("  anotherValue").build()))
+                .fuzzedHeader("catsFuzzedHeader").build();
+        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
+        List<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsFuzzedHeader")).collect(Collectors.toList());
+
+        Assertions.assertThat(catsHeader).hasSize(1);
+        Assertions.assertThat(catsHeader.get(0).getValue()).isEqualTo("  cats");
+    }
+
+    @Test
+    void shouldAddHeaderWhenAddUserHeadersOffButSuppliedInHeadersFile() {
+        ServiceData data = ServiceData.builder()
+                .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build(), CatsHeader.builder().name("catsFuzzedHeader").value("anotherValue").build()))
+                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).build();
+
+        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
+        List<String> headerNames = headers.stream().map(CatsRequest.Header::getName).collect(Collectors.toList());
+        Assertions.assertThat(headerNames).doesNotContain("header").contains("catsFuzzedHeader", "simpleHeader");
+
+        List<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsFuzzedHeader")).collect(Collectors.toList());
+        Assertions.assertThat(catsHeader).hasSize(1);
+        Assertions.assertThat(catsHeader.get(0).getValue()).isEqualTo("cats");
+    }
+
+    @Test
+    void shouldAddHeaderWhenAddUserHeadersOffButAuthenticationHeader() {
+        ServiceData data = ServiceData.builder()
+                .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build()))
+                .relativePath("auth-header")
+                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).build();
+
+        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
+        List<String> headerNames = headers.stream().map(CatsRequest.Header::getName).collect(Collectors.toList());
+        Assertions.assertThat(headerNames).doesNotContain("header", "catsFuzzedHeader").contains("simpleHeader", "jwt");
     }
 }

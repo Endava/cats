@@ -128,7 +128,7 @@ class BaseFieldsFuzzerTest {
 
     @ParameterizedTest
     @CsvSource(value = {"null,[a-z]+,200", "cats,[a-z]+,200", "CATS,[a-z]+,400"}, nullValues = "null")
-    void shouldReport2xxWhenFuzzedValueNotMatchingPatternAndFieldValueIsNull(String fuzzedValue, String pattern, String responseCode) {
+    void shouldExpectDifferentCodesBasedOnFuzzedFieldMatchingPattern(String fuzzedValue, String pattern, String responseCode) {
         FuzzingResult fuzzingResult = new FuzzingResult("{\"field\":\"test\"}", fuzzedValue);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
