@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 @QuarkusTest
 class TestCaseListenerTest {
@@ -394,18 +395,18 @@ class TestCaseListenerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"406", "415"})
-    void shouldReportWarnWhenResponseCodeNotNecessarilyDocumentedIsExpectedAndResponseBodyMatchesButFuzzedFieldNotPresent(String responseCode) {
+    @CsvSource({"406,FOURXX_MT", "415,FOURXX_MT", "400,FOURXX"})
+    void shouldReportInfoWhenResponseCodeNotNecessarilyDocumentedIsExpectedAndResponseBodyMatchesButFuzzedFieldNotPresent(String responseCode, ResponseCodeFamily family) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.Fu()).thenReturn(Sets.newHashSet("200", "4xx"));
+        Mockito.when(data.getResponses()).thenReturn(new TreeMap<>(ImmutableMap.of("4xx", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}"))));
         Mockito.when(response.responseCodeAsString()).thenReturn(responseCode);
-        Mockito.when(response.getFuzzedField()).thenReturn("someField");
+        Mockito.when(response.getFuzzedField()).thenReturn("test");
 
-        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX_MT));
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, family));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
     }
