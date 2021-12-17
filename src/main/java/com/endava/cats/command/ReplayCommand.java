@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -50,7 +51,7 @@ public class ReplayCommand implements Runnable {
     }
 
     public List<String> parseTestCases() {
-        return tests.stream()
+        return Optional.ofNullable(tests).orElse(Collections.emptyList()).stream()
                 .map(testCase -> testCase.trim().strip())
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
                 .collect(Collectors.toList());
