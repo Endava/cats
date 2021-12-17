@@ -9,6 +9,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ class HttpMethodsFuzzerTest {
 
     @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -62,7 +63,7 @@ class HttpMethodsFuzzerTest {
 
     @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWithA2xx_thenResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -79,7 +80,7 @@ class HttpMethodsFuzzerTest {
 
     @Test
     void shouldNotFuzzSamePathTwice() {
-        FuzzingData data = FuzzingData.builder().path("/pet").pathItem(new PathItem()).build();
+        FuzzingData data = FuzzingData.builder().path("/pet").pathItem(new PathItem()).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

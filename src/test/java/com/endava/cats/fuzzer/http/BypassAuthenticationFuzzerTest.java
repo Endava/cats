@@ -10,6 +10,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class BypassAuthenticationFuzzerTest {
 
     @Test
     void givenAPayloadWithoutAuthenticationHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerIsSkipped() {
-        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).build();
+        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).reqSchema(new StringSchema()).build();
         bypassAuthenticationFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.anyString());
@@ -62,7 +63,7 @@ class BypassAuthenticationFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
-                responses(responses).path("test1").build();
+                responses(responses).path("test1").reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
@@ -76,7 +77,7 @@ class BypassAuthenticationFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("authorization").value("auth").build())).
-                responses(responses).build();
+                responses(responses).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
@@ -96,7 +97,7 @@ class BypassAuthenticationFuzzerTest {
     void shouldProperlyIdentifyAuthHeadersFromContract() {
         List<CatsHeader> headers = Arrays.asList(CatsHeader.builder().name("jwt").build(), CatsHeader.builder().name("authorization").build(),
                 CatsHeader.builder().name("api-key").build(), CatsHeader.builder().name("api_key").build(), CatsHeader.builder().name("cats").build());
-        FuzzingData data = FuzzingData.builder().headers(new HashSet<>(headers)).build();
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>(headers)).reqSchema(new StringSchema()).build();
 
         Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
         Assertions.assertThat(authHeaders).containsExactlyInAnyOrder("jwt", "api-key", "authorization", "api_key");
@@ -107,7 +108,7 @@ class BypassAuthenticationFuzzerTest {
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("notEmpty"));
         Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
         Mockito.doCallRealMethod().when(catsUtil).loadFileToMap(Mockito.anyString(), Mockito.anyMap());
-        FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").build();
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").reqSchema(new StringSchema()).build();
 
         filesArguments.loadHeaders();
         Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);

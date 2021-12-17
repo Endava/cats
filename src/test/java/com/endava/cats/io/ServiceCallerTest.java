@@ -298,7 +298,7 @@ class ServiceCallerTest {
         List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
         Optional<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsHeader")).findFirst();
 
-        Assertions.assertThat(catsHeader.isEmpty()).isTrue();
+        Assertions.assertThat(catsHeader).isEmpty();
     }
 
     @Test

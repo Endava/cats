@@ -15,6 +15,7 @@ import com.google.gson.JsonObject;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -137,7 +138,7 @@ class CustomFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").
-                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
+                responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST).build();
 
         CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
         Mockito.when(mockCatsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
@@ -241,7 +242,7 @@ class CustomFuzzerTest {
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\"}").
-                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
+                responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         return data;

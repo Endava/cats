@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class FuzzingDataFactoryTest {
@@ -50,6 +51,17 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data.get(0).getMethod()).isEqualByComparingTo(HttpMethod.POST);
         Assertions.assertThat(data.get(1).getMethod()).isEqualByComparingTo(HttpMethod.POST);
         Assertions.assertThat(data.get(2).getMethod()).isEqualByComparingTo(HttpMethod.GET);
+    }
+
+    @Test
+    void shouldNotIncludeReadOnlyFields() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore-readonly.yml");
+        Assertions.assertThat(data).hasSize(2);
+        FuzzingData postData = data.get(0);
+        Assertions.assertThat(postData.getPayload()).doesNotContain("id", "details").contains("age", "data", "name");
+
+        Set<String> allFields = postData.getAllFieldsByHttpMethod();
+        Assertions.assertThat(allFields).containsOnly("data#name", "data", "age");
     }
 
     private List<FuzzingData> setupFuzzingData(String path, String contract) throws IOException {
