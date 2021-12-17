@@ -11,6 +11,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,7 +77,7 @@ class NewFieldsFuzzerTest {
     @Test
     void shouldAddANewFieldToFuzzToArray() {
         String payload = "[{ 'field': 'value1'}, {'field': 'value2'}]";
-        data = FuzzingData.builder().payload(payload).build();
+        data = FuzzingData.builder().payload(payload).reqSchema(new StringSchema()).build();
         JsonElement element = newFieldsFuzzer.addNewField(data);
 
         Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD)).isNotNull();
@@ -88,7 +89,7 @@ class NewFieldsFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         data = FuzzingData.builder().path("path1").method(method).payload("{'field':'oldValue'}").
-                responses(responses).responseCodes(Collections.singleton("200")).build();
+                responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).build();
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
     }

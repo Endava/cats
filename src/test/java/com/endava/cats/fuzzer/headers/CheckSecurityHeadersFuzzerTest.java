@@ -9,6 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,7 +57,7 @@ class CheckSecurityHeadersFuzzerTest {
     @Test
     void shouldReportMissingSecurityHeaders() {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
-                .requestContentTypes(Collections.singletonList("application/json")).build();
+                .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
@@ -73,7 +74,7 @@ class CheckSecurityHeadersFuzzerTest {
     @Test
     void shouldNotReportMissingSecurityHeaders() {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
-                .requestContentTypes(Collections.singletonList("application/json")).build();
+                .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());

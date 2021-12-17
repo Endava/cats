@@ -1,6 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -40,10 +41,40 @@ public class FuzzingData {
     private final OpenAPI openApi;
     private final List<String> tags;
     private final String reqSchemaName;
+
+    /*these are cached after the first computation*/
     private Set<String> allFields;
     private Set<Set<String>> allFieldsSetOfSets;
     private List<String> allRequiredFields;
     private Set<CatsField> allFieldsAsCatsFields;
+    private Set<String> allReadOnlyFields;
+    private Set<String> allWriteOnlyFields;
+    private String processedPayload;
+
+
+    public String getPayload() {
+        if (processedPayload == null) {
+            processedPayload = this.removeReadWrite();
+        }
+
+        return processedPayload;
+    }
+
+    private String removeReadWrite() {
+        if (HttpMethod.requiresBody(method)) {
+            return this.removeReadOnlyFields(this.getAllReadOnlyFields());
+        }
+        return this.removeReadOnlyFields(this.getAllWriteOnlyFields());
+    }
+
+    private String removeReadOnlyFields(Set<String> fieldsToRemove) {
+        String result = payload;
+        for (String readOnlyField : fieldsToRemove) {
+            result = JsonUtils.deleteNode(result, readOnlyField);
+        }
+
+        return result;
+    }
 
     private Set<CatsField> getFields(Schema schema, String prefix) {
         Set<CatsField> catsFields = new HashSet<>();
@@ -58,6 +89,8 @@ public class FuzzingData {
                         .name(prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey())
                         .schema(prop.getValue())
                         .required(required.contains(prop.getKey()))
+                        .readOnly(Optional.ofNullable(prop.getValue().getReadOnly()).orElse(false))
+                        .writeOnly(Optional.ofNullable(prop.getValue().getWriteOnly()).orElse(false))
                         .build());
                 catsFields.addAll(this.getFields(prop.getValue(), prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey()));
             }
@@ -76,6 +109,20 @@ public class FuzzingData {
         return ref.substring(ref.lastIndexOf('/') + 1);
     }
 
+    public Set<String> getAllReadOnlyFields() {
+        if (allReadOnlyFields == null) {
+            allReadOnlyFields = this.getAllFieldsAsCatsFields().stream().filter(CatsField::isReadOnly).map(CatsField::getName).collect(Collectors.toSet());
+        }
+        return allReadOnlyFields;
+    }
+
+    public Set<String> getAllWriteOnlyFields() {
+        if (allWriteOnlyFields == null) {
+            allWriteOnlyFields = this.getAllFieldsAsCatsFields().stream().filter(CatsField::isWriteOnly).map(CatsField::getName).collect(Collectors.toSet());
+        }
+        return allWriteOnlyFields;
+    }
+
     public List<String> getAllRequiredFields() {
         if (allRequiredFields == null) {
             allRequiredFields = this.getAllFieldsAsCatsFields().stream().filter(CatsField::isRequired).map(CatsField::getName).collect(Collectors.toList());
@@ -91,7 +138,15 @@ public class FuzzingData {
         return allFieldsAsCatsFields;
     }
 
-    public Set<String> getAllFields() {
+    public Set<String> getAllFieldsByHttpMethod() {
+        if (HttpMethod.requiresBody(method)) {
+            return getAllFields().stream().filter(field -> !this.getAllReadOnlyFields().contains(field)).collect(Collectors.toSet());
+        }
+
+        return getAllFields().stream().filter(field -> !this.getAllWriteOnlyFields().contains(field)).collect(Collectors.toSet());
+    }
+
+    private Set<String> getAllFields() {
         if (allFields == null) {
             allFields = this.getAllFieldsAsCatsFields().stream().map(CatsField::getName).collect(Collectors.toSet());
         }

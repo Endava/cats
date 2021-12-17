@@ -51,7 +51,7 @@ class BaseFieldsFuzzerTest {
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
-        Mockito.when(data.getAllFields()).thenReturn(fields);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
         Mockito.when(data.getPayload()).thenReturn("{}");
 
         baseFieldsFuzzer.fuzz(data);
@@ -63,7 +63,7 @@ class BaseFieldsFuzzerTest {
         baseFieldsFuzzer = new MyBaseFieldsSkipFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
-        Mockito.when(data.getAllFields()).thenReturn(fields);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
 
         baseFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq(null));
@@ -85,7 +85,7 @@ class BaseFieldsFuzzerTest {
         Set<String> fields = Collections.singleton("field");
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
-        Mockito.when(data.getAllFields()).thenReturn(fields);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
         Mockito.when(data.getPayload()).thenReturn("{\"field\": 2}");
 
@@ -100,7 +100,7 @@ class BaseFieldsFuzzerTest {
     @Test
     void shouldNotRunWhenNoFields() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getAllFields()).thenReturn(Collections.emptySet());
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.emptySet());
         CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
         baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, mockCatsUtil, filesArguments);
 
@@ -136,7 +136,7 @@ class BaseFieldsFuzzerTest {
         StringSchema schema = new StringSchema();
         schema.setPattern(pattern);
         schemaMap.put("field", schema);
-        Mockito.when(data.getAllFields()).thenReturn(fields);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
         Mockito.when(data.getPayload()).thenReturn("{\"field\": 2}");
 

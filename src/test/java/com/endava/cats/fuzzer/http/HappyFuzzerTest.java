@@ -8,6 +8,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class HappyFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").
-                responses(responses).responseCodes(Collections.singleton("200")).build();
+                responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).build();
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -53,7 +54,7 @@ class HappyFuzzerTest {
 
     @Test
     void givenARequest_whenCallingTheHappyFuzzerAndAnErrorOccurs_thenTestCasesAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").responseCodes(Collections.singleton("200")).build();
+        FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").reqSchema(new StringSchema()).responseCodes(Collections.singleton("200")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException());
 
         happyFuzzer.fuzz(data);

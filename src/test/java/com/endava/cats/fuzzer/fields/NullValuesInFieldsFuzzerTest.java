@@ -43,7 +43,7 @@ class NullValuesInFieldsFuzzerTest {
         Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
         Assertions.assertThat(nullValuesInFieldsFuzzer.skipForFields()).containsOnly("id");
         FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getAllFields()).thenReturn(Sets.newHashSet("id"));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Sets.newHashSet("id"));
         Mockito.when(data.getPayload()).thenReturn("{}");
         nullValuesInFieldsFuzzer.fuzz(data);
 

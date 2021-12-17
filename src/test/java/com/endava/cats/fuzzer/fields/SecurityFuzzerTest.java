@@ -13,6 +13,7 @@ import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.CustomFuzzerUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,7 +114,7 @@ class SecurityFuzzerTest {
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue'}").
-                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).build();
+                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(new StringSchema()).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         return data;

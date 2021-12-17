@@ -8,6 +8,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ class MalformedJsonFuzzerTest {
 
     @Test
     void givenAHttpMethodWithoutPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).build();
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
@@ -41,7 +42,7 @@ class MalformedJsonFuzzerTest {
 
     @Test
     void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).build();
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());

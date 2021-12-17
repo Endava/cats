@@ -64,7 +64,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         Set<Set<String>> sets = data.getAllFields(processingArguments.getFieldsFuzzingStrategy(), processingArguments.getMaxFieldsToRemove());
 
         LOGGER.info("Fuzzer will run with [{}] fields configuration possibilities out of [{}] maximum possible",
-                sets.size(), (int) Math.pow(2, data.getAllFields().size()));
+                sets.size(), (int) Math.pow(2, data.getAllFieldsByHttpMethod().size()));
 
         return sets;
     }

@@ -1,0 +1,199 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: http://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://petstore.swagger.io/api
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      operationId: listPets
+      tags:
+        - pets
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: A paged array of pets
+          headers:
+            x-next:
+              description: A link to the next page of responses
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pets"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimplePet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimplePet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  responses:
+    BadRequest:
+      description: Request rejected due to a structural or business validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Pets:
+      type: array
+      items:
+        $ref: "#/components/schemas/SimplePet"
+    SimplePet:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+              description: ID
+              readOnly: true
+            name:
+              type: string
+              description: pet name
+        details:
+          type: string
+          readOnly: true
+        age:
+          type: string
+          writeOnly: true
+    Pet:
+      required:
+        - id
+        - breedType
+      properties:
+        birthDate:
+          type: string
+          format: date-time
+        id:
+          type: integer
+          format: int64
+        breed:
+          description: Sensitive data that will be kept encrypted in the vault, associated with the Token
+          oneOf:
+            - $ref: '#/components/schemas/Husky'
+            - $ref: '#/components/schemas/Labrador'
+          discriminator:
+            propertyName: breedType
+      additionalProperties:
+        type: string
+        maxLength: 10
+    Color:
+      properties:
+        red:
+          type: string
+        green:
+          type: string
+        blue:
+          type: string
+    Husky:
+      required:
+        - breedType
+      properties:
+        breedType:
+          type: string
+    Labrador:
+      required:
+        - breedType
+      properties:
+        breedType:
+          type: string
+    NewPet:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 0
+          maxLength: 10
+        tag:
+          type: string
+        ip:
+          type: string
+        ipv6:
+          type: string
+          format: ipv6
+        email:
+          type: string
+        petUrl:
+          type: string
+          format: url
+        petUri:
+          type: string
+          format: uri
+        url:
+          type: string
+        uri:
+          type: string
+        isAlive:
+          type: boolean
+        size:
+          type: number
+        length:
+          type: number
+          format: float
+        age:
+          type: integer
+          minimum: 0
+          maximum: 100
+        birth:
+          type: string
+          format: date-time
+        identifier:
+          type: string
+          format: uuid
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+

@@ -8,6 +8,7 @@ import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldCallServiceAndReportErrorWhenServiceRespondsWith200() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -45,7 +46,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldCallServiceAndReportInfoWhenServiceRespondsWith405() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -55,7 +56,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldCallServiceAndReportWarnWhenServiceRespondsWith400() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -65,7 +66,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldRunOncePerPath() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).path("/test").build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).path("/test").build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

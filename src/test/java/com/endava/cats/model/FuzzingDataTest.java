@@ -24,7 +24,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesMap());
         FuzzingData data = FuzzingData.builder().reqSchema(baseSchema).build();
 
-        Set<String> allProperties = data.getAllFields();
+        Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties)
                 .isNotEmpty()
                 .containsExactly("firstName", "lastName");
@@ -36,7 +36,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
         FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).reqSchema(baseSchema).build();
 
-        Set<String> allProperties = data.getAllFields();
+        Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties)
                 .isNotEmpty()
                 .containsExactlyInAnyOrder("firstName", "address", "address#zipCode", "address#street");
@@ -51,7 +51,7 @@ class FuzzingDataTest {
 
         FuzzingData data = FuzzingData.builder().reqSchema(composedSchema).build();
 
-        Set<String> allProperties = data.getAllFields();
+        Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties).contains("firstName", "lastName");
     }
 
