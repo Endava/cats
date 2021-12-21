@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -59,6 +60,11 @@ public class CatsUtil {
 
     public static void setLogLevel(String pkg, String level) {
         LogContext.getLogContext().getLogger(pkg).setLevel(Level.parse(level.toUpperCase(Locale.ROOT)));
+    }
+
+    public void writeToYaml(String yaml, Map<String, Map<String, Object>> data) throws IOException {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        mapper.writeValue(new File(yaml), data);
     }
 
     public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {

@@ -8,6 +8,7 @@ import com.google.gson.stream.JsonReader;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.ParseContextImpl;
@@ -93,8 +94,8 @@ public abstract class JsonUtils {
         DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
         try {
             return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
-        } catch (PathNotFoundException e) {
-            LOGGER.error("Expected variable {} was not found. Setting to NOT_SET", value);
+        } catch (JsonPathException e) {
+            LOGGER.debug("Expected variable {} was not found. Setting to NOT_SET", value);
             return NOT_SET;
         }
     }

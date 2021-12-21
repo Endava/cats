@@ -1,6 +1,7 @@
 /pets/{id}/move:
   test_1:
     description: Simple Test Case
+    name: john
     pet:
       - stay
       - at
@@ -9,6 +10,7 @@
     httpMethod: POST
     output:
       resp: code
+      custId: ${request#name}
   test_2:
     description: Second Test Case
     httpMethod: POST

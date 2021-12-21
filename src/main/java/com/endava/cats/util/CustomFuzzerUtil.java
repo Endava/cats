@@ -14,6 +14,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.endava.cats.util.JsonUtils.NOT_SET;
 
 @ApplicationScoped
 public class CustomFuzzerUtil {
@@ -45,6 +48,7 @@ public class CustomFuzzerUtil {
     private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
     private final Map<String, String> variables = new HashMap<>();
+    private final Map<String, Map<String, Object>> pathsWithInputVariables = new HashMap<>();
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
@@ -69,7 +73,7 @@ public class CustomFuzzerUtil {
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
                 .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).build());
 
-        this.setOutputVariables(currentPathValues, response);
+        this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
 
         String verify = currentPathValues.get(CustomFuzzerUtil.VERIFY);
 
@@ -80,15 +84,28 @@ public class CustomFuzzerUtil {
         }
     }
 
-    private void setOutputVariables(Map<String, String> currentPathValues, CatsResponse response) {
+    private void setOutputVariables(Map<String, String> currentPathValues, CatsResponse response, String request) {
         String output = currentPathValues.get(CustomFuzzerUtil.OUTPUT);
 
+        /* add all variables first; resolve any variables requiring request access, resolve response variables and merge all in the end.*/
+        /* we merge request variables at the end, because otherwise the resolved values will try to be searched in response and result in NOT_SET*/
         if (output != null) {
             Map<String, String> variablesFromYaml = this.parseYmlEntryIntoMap(output);
             this.variables.putAll(variablesFromYaml);
+            Map<String, String> requestVariables = matchVariablesFromRequest(request);
             this.variables.putAll(matchVariablesWithTheResponse(response, variablesFromYaml, Map.Entry::getValue));
+            this.variables.putAll(requestVariables);
+
             log.info("The following OUTPUT variables were identified {}", variables);
         }
+    }
+
+    private Map<String, String> matchVariablesFromRequest(String request) {
+        return variables.entrySet().stream()
+                .filter(entry -> entry.getValue().startsWith("$request"))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> catsDSLParser.parseAndGetResult(entry.getValue(), request)));
     }
 
     private void checkVerifiesAndReport(String request, CatsResponse response, String verify, String expectedResponseCode) {
@@ -96,11 +113,11 @@ public class CustomFuzzerUtil {
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         log.info("Parameters to verify: {}", verifies);
         log.info("Parameters matched to response: {}", responseValues);
-        if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(JsonUtils.NOT_SET))) {
+        if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
             log.error("There are Verify parameters which were not present in the response!");
 
             testCaseListener.reportError(log, "The following Verify parameters were not present in the response: {}",
-                    responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(JsonUtils.NOT_SET))
+                    responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))
                             .map(Map.Entry::getKey).collect(Collectors.toList()));
         } else {
             StringBuilder errorMessages = new StringBuilder();
@@ -206,6 +223,7 @@ public class CustomFuzzerUtil {
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
 
         if (this.entryIsValid((Map<String, Object>) value) && isValidOneOf) {
+            this.pathsWithInputVariables.put(data.getPath(), (Map<String, Object>) value);
             List<Map<String, String>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
             for (Map<String, String> testCase : individualTestCases) {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
@@ -271,7 +289,7 @@ public class CustomFuzzerUtil {
         for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
             String valueToReplaceWith = entry.getValue();
             if (this.isVariable(entry.getValue())) {
-                valueToReplaceWith = variables.getOrDefault(this.getVariableName(entry.getValue()), JsonUtils.NOT_SET);
+                valueToReplaceWith = variables.getOrDefault(this.getVariableName(entry.getValue()), NOT_SET);
             }
             newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
         }
@@ -319,5 +337,22 @@ public class CustomFuzzerUtil {
 
     public Map<String, String> getVariables() {
         return variables;
+    }
+
+    public void writeRefDataFileWithOutputVariables() throws IOException {
+        Map<String, Map<String, Object>> possibleVariables = this.pathsWithInputVariables.entrySet().stream()
+                .filter(entry -> !RESERVED_WORDS.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        possibleVariables.values().forEach(value -> value.values().removeIf(innerValue -> !String.valueOf(innerValue).startsWith("${")));
+        possibleVariables.values().removeIf(Map::isEmpty);
+
+        Map<String, Map<String, Object>> finalPathsAndVariables = possibleVariables.entrySet()
+                .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().entrySet()
+                        .stream().collect(Collectors.toMap(Map.Entry::getKey, variableEntry ->
+                                variables.getOrDefault(this.getVariableName(String.valueOf(variableEntry.getValue())), NOT_SET)))));
+
+
+        catsUtil.writeToYaml("refData_custom.yml", finalPathsAndVariables);
+        log.complete("Finish writing refData_custom.yml");
     }
 }

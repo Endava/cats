@@ -94,13 +94,15 @@ public class CustomFuzzer implements CustomFuzzerBase {
             String currentFile = filesArguments.getRefDataFile().getAbsolutePath();
             Path file = Paths.get(currentFile.substring(0, currentFile.lastIndexOf(".")) + "_replaced.yml");
             Files.write(file, updatedLines, StandardCharsets.UTF_8);
+        } else if (filesArguments.isCreateRefData()) {
+            customFuzzerUtil.writeRefDataFileWithOutputVariables();
         }
     }
 
     private String replaceWithVariable(String line) {
         String result = line;
-        for (Map.Entry<String, String> stringEntry : customFuzzerUtil.getVariables().entrySet()) {
-            result = result.replace("${" + stringEntry.getKey() + "}", stringEntry.getValue());
+        for (Map.Entry<String, String> variable : customFuzzerUtil.getVariables().entrySet()) {
+            result = result.replace("${" + variable.getKey() + "}", variable.getValue());
         }
 
         return result;

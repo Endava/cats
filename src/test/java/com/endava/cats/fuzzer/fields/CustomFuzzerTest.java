@@ -164,6 +164,18 @@ class CustomFuzzerTest {
     }
 
     @Test
+    void shouldParseRequestFields() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
+
+        filesArguments.loadCustomFuzzerFile();
+        customFuzzer.fuzz(data);
+        customFuzzer.executeCustomFuzzerTests();
+        Map<String, String> variables = customFuzzerUtil.getVariables();
+        Assertions.assertThat(variables.get("resp")).isEqualTo("200");
+        Assertions.assertThat(variables.get("custId")).isEqualTo("john");
+    }
+
+    @Test
     void givenACustomFuzzerFileWithAdditionalProperties_whenTheFuzzerRuns_thenPropertiesAreProperlyAddedToThePayload() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-additional.yml", "{\"code\": \"200\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
@@ -241,7 +253,7 @@ class CustomFuzzerTest {
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
 
-        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\"}").
+        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\", \"name\":\"dodo\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
