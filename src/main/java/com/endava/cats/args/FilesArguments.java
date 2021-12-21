@@ -38,7 +38,8 @@ public class FilesArguments {
     private File headersFile;
 
     @CommandLine.Option(names = {"--refData"},
-            description = "Specifies the file with fields that must have a fixed value in order for requests to succeed")
+            description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
+                    "If this is supplied when @|bold CustomFuzzer|@ is also enabled, the @|bold CustomFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
     @Getter
     private File refDataFile;
 
@@ -51,6 +52,12 @@ public class FilesArguments {
             description = "Specifies the file used by the @|bold SecurityFuzzer|@ that will be used to inject special strings in order to exploit possible vulnerabilities")
     @Getter
     private File securityFuzzerFile;
+
+    @CommandLine.Option(names = {"--createRefData"},
+            description = "This is only applicable when enabling the @|bold CustomFuzzer |@. It will instruct the @|bold CustomFuzzer|@ to create a @|bold,underline --refData|@ file " +
+                    "with all the paths defined in the @|bold,underline customFuzzerFile|@ and the corresponding @|bold output|@ variables")
+    @Getter
+    private boolean createRefData;
 
     public FilesArguments(CatsUtil cu) {
         this.catsUtil = cu;
