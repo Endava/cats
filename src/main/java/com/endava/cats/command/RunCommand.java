@@ -28,7 +28,7 @@ import java.util.List;
         versionProvider = VersionProvider.class)
 @Dependent
 public class RunCommand implements Runnable {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ReplayCommand.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RunCommand.class);
 
     @CommandLine.Parameters(index = "0",
             paramLabel = "<file>",

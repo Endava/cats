@@ -2,9 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.FilterArguments;
-import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -22,12 +20,9 @@ class RunCommandTest {
     @Inject
     CatsCommand catsCommand;
     FilterArguments filterArguments;
-    @InjectSpy
-    private TestCaseListener testCaseListener;
 
     @BeforeEach
     void init() {
-//        catsCommand = Mockito.mock(CatsCommand.class);
         filterArguments = Mockito.mock(FilterArguments.class);
         ReflectionTestUtils.setField(apiArguments, "contract", "contract");
         ReflectionTestUtils.setField(apiArguments, "server", "server");
@@ -40,14 +35,14 @@ class RunCommandTest {
     void shouldRunCustomFuzzer() {
         ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/customFuzzer.yml"));
         runCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(1)).customFilter(Mockito.eq("CustomFuzzer"));
+        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("CustomFuzzer");
     }
 
     @Test
     void shouldRunSecurityFuzzer() {
         ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/securityFuzzer.yml"));
         runCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(1)).customFilter(Mockito.eq("SecurityFuzzer"));
+        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("SecurityFuzzer");
     }
 
     @Test
