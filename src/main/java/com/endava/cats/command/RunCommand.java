@@ -23,8 +23,8 @@ import java.util.List;
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
         description = "Run functional tests written in CATS YAML format",
-        helpCommand = true,
         abbreviateSynopsis = true,
+        synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Dependent
 public class RunCommand implements Runnable {
@@ -36,7 +36,7 @@ public class RunCommand implements Runnable {
     File file;
 
     @Inject
-    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false, multiplicity = "1")
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
     ApiArguments apiArguments;
 
     @Inject
@@ -67,12 +67,13 @@ public class RunCommand implements Runnable {
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String contentType = "application/json";
+
     @CommandLine.ParentCommand
     private CatsCommand catsCommand;
 
     @Override
     public void run() {
-        validateContractAndServer();
+        apiArguments.validateRequired(spec);
         try {
             if (this.isCustomFuzzerFile()) {
                 catsCommand.filterArguments.customFilter("CustomFuzzer");
@@ -88,15 +89,6 @@ public class RunCommand implements Runnable {
             catsCommand.run();
         } catch (IOException e) {
             LOGGER.error("Something went wrong while processing input file: {}", e.getMessage());
-        }
-    }
-
-    private void validateContractAndServer() {
-        if (apiArguments.getContract() == null) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option -c=<contract>");
-        }
-        if (apiArguments.getServer() == null) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option -s=<server>");
         }
     }
 

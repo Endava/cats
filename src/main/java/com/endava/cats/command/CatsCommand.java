@@ -70,7 +70,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     /*API Arguments*/
     @Inject
-    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false, multiplicity = "1")
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
     ApiArguments apiArguments;
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
@@ -183,9 +183,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     void doEarlyOperations() throws IOException {
         this.processLogLevelArgument();
         filesArguments.loadConfig();
-        if (apiArguments.getContract() == null) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
-        }
+       apiArguments.validateRequired(spec);
     }
 
     private void processLogLevelArgument() {
