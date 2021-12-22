@@ -171,8 +171,8 @@ class CustomFuzzerTest {
         customFuzzer.fuzz(data);
         customFuzzer.executeCustomFuzzerTests();
         Map<String, String> variables = customFuzzerUtil.getVariables();
-        Assertions.assertThat(variables.get("resp")).isEqualTo("200");
-        Assertions.assertThat(variables.get("custId")).isEqualTo("john");
+        Assertions.assertThat(variables).containsEntry("resp", "200");
+        Assertions.assertThat(variables).containsEntry("custId", "john");
     }
 
     @Test
