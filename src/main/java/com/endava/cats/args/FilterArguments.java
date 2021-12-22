@@ -198,4 +198,13 @@ public class FilterArguments {
                         fuzzersToExclude.stream().noneMatch(fuzzer::contains))
                 .collect(Collectors.toList());
     }
+
+    public void customFilter(String specialFuzzer) {
+        this.suppliedFuzzers = List.of(specialFuzzer);
+        this.paths = Collections.emptyList();
+        this.skipFuzzers = Collections.emptyList();
+        this.skipPaths = Collections.emptyList();
+        this.httpMethods = HttpMethod.restMethods();
+        this.dryRun = false;
+    }
 }

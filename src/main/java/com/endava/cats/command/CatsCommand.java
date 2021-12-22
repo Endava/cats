@@ -52,7 +52,8 @@ import static org.fusesource.jansi.Ansi.ansi;
                 AutoComplete.GenerateCompletion.class,
                 CommandLine.HelpCommand.class,
                 ListCommand.class,
-                ReplayCommand.class
+                ReplayCommand.class,
+                RunCommand.class
         })
 @Dependent
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
@@ -69,7 +70,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     /*API Arguments*/
     @Inject
-    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false, multiplicity = "1")
     ApiArguments apiArguments;
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
@@ -160,7 +161,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
      */
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
         List<String> suppliedPaths = new ArrayList<>(filterArguments.getPaths());
-        if (suppliedPaths.isEmpty() || filterArguments.getPaths().isEmpty()) {
+        if (suppliedPaths.isEmpty()) {
             suppliedPaths.addAll(openAPI.getPaths().keySet());
         }
         List<String> skipPaths = filterArguments.getSkipPaths();
@@ -179,7 +180,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         return openAPI;
     }
 
-    private void doEarlyOperations() throws IOException {
+    void doEarlyOperations() throws IOException {
         this.processLogLevelArgument();
         filesArguments.loadConfig();
         if (apiArguments.getContract() == null) {

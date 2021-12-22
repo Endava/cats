@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @CommandLine.Command(
         name = "replay",
         mixinStandardHelpOptions = true,
-        usageHelpWidth = 100,
+        usageHelpAutoWidth = true,
         description = "Replay previously executed CATS tests",
         helpCommand = true,
         versionProvider = VersionProvider.class)

@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
+import lombok.Setter;
 import picocli.CommandLine;
 
 import javax.inject.Singleton;
@@ -35,28 +36,33 @@ public class FilesArguments {
     @CommandLine.Option(names = {"--headers"},
             description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example")
     @Getter
+    @Setter
     private File headersFile;
 
     @CommandLine.Option(names = {"--refData"},
             description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
                     "If this is supplied when @|bold CustomFuzzer|@ is also enabled, the @|bold CustomFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
     @Getter
+    @Setter
     private File refDataFile;
 
     @CommandLine.Option(names = {"--customFuzzerFile"},
             description = "Specifies the file used by the @|bold CustomFuzzer|@ that will be used to create user-supplied payloads")
     @Getter
+    @Setter
     private File customFuzzerFile;
 
     @CommandLine.Option(names = {"--securityFuzzerFile"},
             description = "Specifies the file used by the @|bold SecurityFuzzer|@ that will be used to inject special strings in order to exploit possible vulnerabilities")
     @Getter
+    @Setter
     private File securityFuzzerFile;
 
     @CommandLine.Option(names = {"--createRefData"},
             description = "This is only applicable when enabling the @|bold CustomFuzzer |@. It will instruct the @|bold CustomFuzzer|@ to create a @|bold,underline --refData|@ file " +
                     "with all the paths defined in the @|bold,underline customFuzzerFile|@ and the corresponding @|bold output|@ variables")
     @Getter
+    @Setter
     private boolean createRefData;
 
     public FilesArguments(CatsUtil cu) {
