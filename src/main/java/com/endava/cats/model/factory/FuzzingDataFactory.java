@@ -363,7 +363,6 @@ public class FuzzingDataFactory {
             }
         }
 
-        //TODO remove this?
         toRemove.forEach(entry -> jsonElement.getAsJsonObject().remove(entry));
         return anyOrOneOfs;
     }
