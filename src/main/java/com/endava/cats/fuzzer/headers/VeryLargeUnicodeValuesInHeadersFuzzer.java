@@ -35,4 +35,9 @@ public class VeryLargeUnicodeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHead
     public String description() {
         return "iterate through each header and send requests with large unicode values in the targeted header";
     }
+
+    @Override
+    public boolean matchResponseSchema() {
+        return false;
+    }
 }
