@@ -32,7 +32,6 @@ import static org.fusesource.jansi.Ansi.ansi;
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
-        helpCommand = true,
         versionProvider = VersionProvider.class)
 @Dependent
 public class ListCommand implements Runnable {

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Collections;
-import java.util.List;
 
 @QuarkusTest
 class ReplayCommandTest {
@@ -26,7 +25,7 @@ class ReplayCommandTest {
 
     @Test
     void shouldNotExecuteIfTestCasesNotSupplied() {
-        replayCommand.tests = Collections.emptyList();
+        replayCommand.tests = new String[]{};
 
         replayCommand.run();
         Mockito.verifyNoInteractions(serviceCaller);
@@ -34,7 +33,7 @@ class ReplayCommandTest {
 
     @Test
     void shouldExecuteIfTestCasesSupplied() throws Exception {
-        replayCommand.tests = List.of("src/test/resources/Test12.json");
+        replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
         Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(Mockito.mock(CatsResponse.class));
         replayCommand.run();
         Mockito.verify(serviceCaller, Mockito.times(1)).callService(Mockito.any(), Mockito.eq(Collections.emptySet()));
@@ -42,7 +41,7 @@ class ReplayCommandTest {
 
     @Test
     void shouldThrowExceptionWhenTestCasesInvalid() {
-        replayCommand.tests = List.of("Test1212121212121");
+        replayCommand.tests = new String[]{"Test1212121212121"};
         replayCommand.run();
 
         Mockito.verifyNoInteractions(serviceCaller);

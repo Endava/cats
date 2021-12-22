@@ -149,4 +149,14 @@ class FilterArgumentsTest {
     void shouldReturnAllRegisteredFuzzers() {
         Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(78);
     }
+
+    @Test
+    void shouldSetAllFuzzersToCustomFuzzer() {
+        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
+        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
+        Assertions.assertThat(filterArguments.getFuzzersForPath()).contains("VeryLargeUnicodeValuesInFieldsFuzzer");
+        FilterArguments.FUZZERS_TO_BE_RUN.clear();
+        filterArguments.customFilter("CustomFuzzer");
+        Assertions.assertThat(filterArguments.getFuzzersForPath()).doesNotContain("VeryLargeUnicodeValuesInFieldsFuzzer");
+    }
 }

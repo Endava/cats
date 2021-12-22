@@ -176,6 +176,22 @@ class CustomFuzzerTest {
     }
 
     @Test
+    void shouldWriteRefData() throws Exception {
+        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
+        ReflectionTestUtils.setField(filesArguments, "createRefData", true);
+        ReflectionTestUtils.setField(filesArguments, "refDataFile", null);
+
+        filesArguments.loadCustomFuzzerFile();
+        customFuzzer.fuzz(data);
+        customFuzzer.executeCustomFuzzerTests();
+        customFuzzer.replaceRefData();
+        File refDataCustom = new File("refData_custom.yml");
+        List<String> lines = Files.readAllLines(refDataCustom.toPath());
+        Assertions.assertThat(lines).contains("/pets/{id}/move:", "  pet: \"200\"");
+        refDataCustom.deleteOnExit();
+    }
+
+    @Test
     void givenACustomFuzzerFileWithAdditionalProperties_whenTheFuzzerRuns_thenPropertiesAreProperlyAddedToThePayload() throws Exception {
         FuzzingData data = setContext("src/test/resources/customFuzzer-additional.yml", "{\"code\": \"200\"}");
         CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);

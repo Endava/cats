@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -28,19 +29,17 @@ import java.util.stream.Collectors;
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
         description = "Replay previously executed CATS tests",
-        helpCommand = true,
         versionProvider = VersionProvider.class)
 @Dependent
 public class ReplayCommand implements Runnable {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
 
-    @CommandLine.Option(
-            names = {"-t", "--tests"},
+    @CommandLine.Parameters(
             description = "The list of CATS tests. If you provide the .json extension it will be considered a path, " +
-                    "otherwise it will look for that test in the cats-report folder",
-            required = true, split = ",")
-    List<String> tests;
+                    "otherwise it will look for that test in the cats-report folder", split = ",", arity = "1..")
+    String[] tests;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
     AuthArguments authArgs;
@@ -51,7 +50,7 @@ public class ReplayCommand implements Runnable {
     }
 
     public List<String> parseTestCases() {
-        return Optional.ofNullable(tests).orElse(Collections.emptyList()).stream()
+        return Optional.of(Arrays.asList(tests)).orElse(Collections.emptyList()).stream()
                 .map(testCase -> testCase.trim().strip())
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
                 .collect(Collectors.toList());
@@ -61,9 +60,10 @@ public class ReplayCommand implements Runnable {
         String testCaseFile = Files.readString(Paths.get(testCaseFileName));
         LOGGER.note("Loaded content: \n" + testCaseFile);
         CatsTestCase testCase = TestCaseExporter.GSON.fromJson(testCaseFile, CatsTestCase.class);
+        LOGGER.info("Calling service...");
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
 
-        LOGGER.note("Response body: \n{}", TestCaseExporter.GSON.toJson(response.getJsonBody()));
+        LOGGER.complete("Response body: \n{}", TestCaseExporter.GSON.toJson(response.getJsonBody()));
     }
 
     @Override

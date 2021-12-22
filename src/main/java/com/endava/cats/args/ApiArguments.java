@@ -32,16 +32,23 @@ public class ApiArguments {
     private int readTimeout = 10;
 
     @CommandLine.Option(names = {"-c", "--contract"},
-            description = "The OpenAPI contract",
-            required = true)
+            description = "The OpenAPI contract")
     private String contract;
 
     @CommandLine.Option(names = {"-s", "--server"},
-            description = "Base URL of the service",
-            required = true)
+            description = "Base URL of the service")
     private String server;
 
     public boolean isRemoteContract() {
         return contract != null && contract.startsWith("http");
+    }
+
+    public void validateRequired(CommandLine.Model.CommandSpec spec) {
+        if (this.contract == null) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
+        } else if (this.server == null) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --server=<server>");
+
+        }
     }
 }
