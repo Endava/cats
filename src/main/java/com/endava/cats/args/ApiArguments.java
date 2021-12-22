@@ -37,7 +37,8 @@ public class ApiArguments {
     private String contract;
 
     @CommandLine.Option(names = {"-s", "--server"},
-            description = "Base URL of the service")
+            description = "Base URL of the service",
+            required = true)
     private String server;
 
     public boolean isRemoteContract() {

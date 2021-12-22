@@ -2,6 +2,7 @@ package com.endava.cats.args;
 
 import com.endava.cats.model.FuzzingData;
 import lombok.Getter;
+import lombok.Setter;
 import picocli.CommandLine;
 
 import javax.inject.Singleton;
@@ -33,6 +34,7 @@ public class ProcessingArguments {
             description = "The size of the strings used by the Fuzzers sending large values like @|bold VeryLargeStringsFuzzer|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int largeStringsSize = 40000;
 
+    @Setter
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String contentType = "application/json";

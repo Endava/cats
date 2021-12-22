@@ -30,7 +30,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @CommandLine.Command(
         name = "list",
         mixinStandardHelpOptions = true,
-        usageHelpWidth = 100,
+        usageHelpAutoWidth = true,
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
         helpCommand = true,
         versionProvider = VersionProvider.class)
