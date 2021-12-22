@@ -42,4 +42,9 @@ public class VeryLargeValuesInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzz
     public String description() {
         return "iterate through each header and send requests with large values in the targeted header";
     }
+
+    @Override
+    public boolean matchResponseSchema() {
+        return false;
+    }
 }

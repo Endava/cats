@@ -31,6 +31,7 @@ class VeryLargeUnicodeValuesInHeadersFuzzerTest {
         Assertions.assertThat(veryLargeUnicodeValuesInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(veryLargeUnicodeValuesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(veryLargeUnicodeValuesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(veryLargeUnicodeValuesInHeadersFuzzer.matchResponseSchema()).isFalse();
     }
 
     @Test
