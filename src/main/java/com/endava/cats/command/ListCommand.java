@@ -5,7 +5,10 @@ import com.endava.cats.fuzzer.FieldFuzzer;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.fuzzer.SanitizeAndValidate;
 import com.endava.cats.fuzzer.SpecialFuzzer;
+import com.endava.cats.fuzzer.TrimAndValidate;
+import com.endava.cats.fuzzer.ValidateAndTrim;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
@@ -22,6 +25,7 @@ import javax.enterprise.inject.Instance;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,13 +40,16 @@ import static org.fusesource.jansi.Ansi.ansi;
 @Dependent
 public class ListCommand implements Runnable {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ListCommand.class);
-    private final Instance<Fuzzer> fuzzersList;
+    private final List<Fuzzer> fuzzersList;
 
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
 
     public ListCommand(@Any Instance<Fuzzer> fuzzersList) {
-        this.fuzzersList = fuzzersList;
+        this.fuzzersList = fuzzersList.stream()
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), SanitizeAndValidate.class) == null)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -74,7 +81,7 @@ public class ListCommand implements Runnable {
 
     void listFuzzers() {
         String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
-        LOGGER.info(message, fuzzersList.stream().count());
+        LOGGER.info(message, fuzzersList.size());
         filterAndDisplay(FieldFuzzer.class);
         filterAndDisplay(HeaderFuzzer.class);
         filterAndDisplay(HttpFuzzer.class);
@@ -83,7 +90,10 @@ public class ListCommand implements Runnable {
     }
 
     void filterAndDisplay(Class<? extends Annotation> annotation) {
-        List<Fuzzer> fieldFuzzers = fuzzersList.stream().filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null).collect(Collectors.toList());
+        List<Fuzzer> fieldFuzzers = fuzzersList.stream()
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
+                .sorted(Comparator.comparing(Object::toString))
+                .collect(Collectors.toList());
         String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {} Fuzzers:").reset().toString();
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
         LOGGER.info(" ");

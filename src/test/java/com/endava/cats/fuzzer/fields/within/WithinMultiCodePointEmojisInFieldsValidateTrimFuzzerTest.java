@@ -51,6 +51,7 @@ class WithinMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 
     @Test

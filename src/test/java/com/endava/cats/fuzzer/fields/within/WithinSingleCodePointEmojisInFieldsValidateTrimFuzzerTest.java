@@ -51,6 +51,7 @@ class WithinSingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
         Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(withinSingleCodePointEmojisInFieldsValidateTrimFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 
     @Test

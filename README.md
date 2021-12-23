@@ -30,7 +30,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **78 Fuzzers**. 
+All tests are **generated, run and reported automatically** based on a pre-defined set of **84 Fuzzers**. 
 The Fuzzers cover a wide range of input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
 
@@ -190,7 +190,7 @@ And this is what you get when you click on a specific test:
 
 # Slicing Strategies for Running Cats
 
-CATS has a significant number of `Fuzzers`. Currently, **78** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+CATS has a significant number of `Fuzzers`. Currently, **84** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
 Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
@@ -375,7 +375,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 
 ## Header Fuzzers
-`CATS` has currently 20 registered Header `Fuzzers`: 
+`CATS` has currently 26 registered Header `Fuzzers`: 
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
 - `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
 - `DummyContentTypeHeadersFuzzer` - send a request with a dummy Content-Type header and expect to get 415 code
