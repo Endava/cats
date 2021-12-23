@@ -51,6 +51,8 @@ class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
 
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.description()).isNotNull();
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
+
     }
 
     @Test

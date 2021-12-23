@@ -183,7 +183,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     void doEarlyOperations() throws IOException {
         this.processLogLevelArgument();
         filesArguments.loadConfig();
-       apiArguments.validateRequired(spec);
+        apiArguments.validateRequired(spec);
     }
 
     private void processLogLevelArgument() {
