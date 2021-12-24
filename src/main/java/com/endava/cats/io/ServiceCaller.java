@@ -8,6 +8,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.command.CatsCommand;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -15,6 +16,7 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.common.html.HtmlEscapers;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
@@ -50,16 +52,21 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
+import static com.endava.cats.util.JsonUtils.NOT_SET;
 
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
@@ -78,12 +85,13 @@ public class ServiceCaller {
     private final AuthArguments authArguments;
     private final ApiArguments apiArguments;
     private final ProcessingArguments processingArguments;
+    private final CatsGlobalContext catsGlobalContext;
     OkHttpClient okHttpClient;
 
     private RateLimiter rateLimiter;
 
     @Inject
-    public ServiceCaller(TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
+    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.filesArguments = filesArguments;
@@ -91,6 +99,7 @@ public class ServiceCaller {
         this.authArguments = authArguments;
         this.apiArguments = apiArguments;
         this.processingArguments = processingArguments;
+        this.catsGlobalContext = context;
     }
 
     @PostConstruct
@@ -167,6 +176,7 @@ public class ServiceCaller {
         LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
         rateLimiter.acquire();
         String processedPayload = this.replacePayloadWithRefData(data);
+
         List<CatsRequest.Header> headers = this.buildHeaders(data);
         CatsRequest catsRequest = new CatsRequest();
         catsRequest.setHeaders(headers);
@@ -194,6 +204,53 @@ public class ServiceCaller {
             throw new CatsIOException(e);
         }
     }
+
+    Map<String, String> getPathParamFromCorrespondingPostIfDelete(ServiceData data) {
+        if (data.getHttpMethod() == HttpMethod.DELETE) {
+            String postPath = data.getRelativePath().substring(0, data.getRelativePath().lastIndexOf("/"));
+            LOGGER.info("Executing DELETE for path {}. Searching stored POST requests for corresponding POST path {}", data.getRelativePath(), postPath);
+            String postPayload = catsGlobalContext.getPostSuccessfulResponses().getOrDefault(postPath, new ArrayDeque<>()).peek();
+            if (postPayload != null) {
+                String deleteParam = data.getRelativePath().substring(data.getRelativePath().lastIndexOf("/") + 1).replace("{", "").replace("}", "");
+                LOGGER.info("Found corresponding POST payload. Matching DELETE path parameter {} with POST body...", deleteParam);
+                Optional<String> deleteParamValue = this.getParamValueFromPostPayload(deleteParam, postPayload);
+
+                if (deleteParamValue.isPresent()) {
+                    return Map.of(deleteParam, deleteParamValue.get());
+                }
+            } else {
+                LOGGER.info("No corresponding POST payload found or already consumed");
+            }
+        }
+
+        return Collections.emptyMap();
+    }
+
+    Optional<String> getParamValueFromPostPayload(String deleteParam, String postPayload) {
+        String[] camelCase = deleteParam.split("(?<!(^|[A-Z]))(?=[A-Z])|(?<!^)(?=[A-Z][a-z])");
+        String[] snakeCase = deleteParam.split("_");
+        String[] kebabCase = deleteParam.split("-");
+
+        Set<String> candidates = new TreeSet<>();
+        candidates.addAll(WordUtils.createWordCombinations(snakeCase));
+        candidates.addAll(WordUtils.createWordCombinations(camelCase));
+        candidates.addAll(WordUtils.createWordCombinations(kebabCase));
+
+        LOGGER.info("Params to search in POST payload {}", candidates);
+
+        for (String candidate : candidates) {
+            String value = String.valueOf(JsonUtils.getVariableFromJson(postPayload, candidate));
+
+            if (!value.equalsIgnoreCase(NOT_SET)) {
+                LOGGER.note("Found matching DELETE parameter in POST payload using key [{}]", candidate);
+                return Optional.of(value);
+            }
+        }
+        LOGGER.warn("Unable to correlate DELETE parameter {} with POST payload", deleteParam);
+
+        return Optional.empty();
+    }
+
 
     List<CatsRequest.Header> buildHeaders(ServiceData data) {
         List<CatsRequest.Header> headers = new ArrayList<>();
@@ -231,6 +288,7 @@ public class ServiceCaller {
 
         if (StringUtils.isNotEmpty(data.getPayload())) {
             String processedPayload = this.replacePayloadWithRefData(data);
+
             actualUrl = this.replacePathParams(actualUrl, processedPayload, data);
             actualUrl = this.replaceRemovedParams(actualUrl);
         } else {
@@ -241,7 +299,7 @@ public class ServiceCaller {
     }
 
     private String getPathWithRefDataReplacedForHttpEntityRequests(ServiceData data, String startingUrl) {
-        String actualUrl = filesArguments.replacePathWithUrlParams(startingUrl);
+        String actualUrl = this.filesArguments.replacePathWithUrlParams(startingUrl);
         return this.replacePathWithRefData(data, actualUrl);
     }
 
@@ -422,6 +480,13 @@ public class ServiceCaller {
         return currentUrl;
     }
 
+    /**
+     * Besides reading data from the {@code --refData} file, this method will aso try to
+     * correlate POST recorded data with DELETE endpoints in order to maximize success rate of DELETE requests.
+     *
+     * @param data the current ServiceData context
+     * @return the initial payload with reference data replaced and matching POST correlations for DELETE requests
+     */
     String replacePayloadWithRefData(ServiceData data) {
         if (!data.isReplaceRefData()) {
             LOGGER.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
@@ -435,6 +500,9 @@ public class ServiceCaller {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             String payload = data.getPayload();
 
+            /*this will override refData for DELETE requests in order to provide valid entities that will get deleted*/
+            refDataWithoutAdditionalProperties.putAll(this.getPathParamFromCorrespondingPostIfDelete(data));
+
             for (Map.Entry<String, String> entry : refDataWithoutAdditionalProperties.entrySet()) {
                 String refDataValue = catsDSLParser.parseAndGetResult(entry.getValue(), data.getPayload());
 
@@ -442,6 +510,7 @@ public class ServiceCaller {
                     if (CATS_REMOVE_FIELD.equalsIgnoreCase(refDataValue)) {
                         payload = JsonUtils.deleteNode(payload, entry.getKey());
                     } else {
+
                         FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
                         boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
                         payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();

@@ -235,7 +235,7 @@ This is useful when you want to see the exact behaviour of the specific test or 
 The syntax for replaying tests is the following:
 
 ```shell
-cats replay --tests="Test1,Test233,Test15.json,dir/Test19.json"
+cats replay "Test1,Test233,Test15.json,dir/Test19.json"
 ```
 
 Some notes on the above example:
@@ -260,7 +260,7 @@ Other ways to get help from the CATS command are as follows:
 
 - `cats list --paths --contract=CONTRACT` will list all the paths available within the contract
 
-- `cats replay --tests="test1,test2"` will replay the given tests `test1` and `test2`
+- `cats replay "test1,test2"` will replay the given tests `test1` and `test2`
 
 
 # Available arguments
@@ -799,6 +799,30 @@ all:
 ```
 
 This will add the `Accept` header to all calls and the `jwt` header to the specified paths. You can use environment (system) variables in a headers file using: `$$VARIABLE_NAME`. (notice double `$$`)
+
+# DELETE requests
+`DELETE` is the only HTTP verb that is intended to remove resources and executing the same `DELETE` request twice will result in the second one to fail as the resource is no longer available. 
+It will be pretty heavy to supply a large list of identifiers within the `--refData` file and this is why the recommendation was to skip the `DELETE` method when running CATS.
+
+But starting with version 7.0.2 CATS has some intelligence in dealing with `DELETE`. In order to have enough valid entities CATS will save the corresponding `POST` requests in an internal Queue, and
+everytime a `DELETE` request it will be executed it will poll data from there. In order to have this actually working, your contract must comply with common sense conventions:
+
+- the `DELETE` path is actually the `POST` path plus an identifier: if POST is `/pets`, then DELETE is expected to be `/pets/{petId}`. 
+- CATS will try to match the `{petId}` parameter within the body returned by the `POST` request while doing various combinations of the `petId` name. It will try to search for the following entries: `petId, id, pet-id, pet_id` with different cases.
+- If any of those entries is found within a stored `POST` result, it will replace the `{petId}` with that value
+
+For example, suppose that a POST to `/pets` responds with:
+
+```json
+{
+  "pet_id": 2,
+  "name": "Chuck"
+}
+```
+
+When doing a `DELETE` request, CATS will discover that `{petId}` and `pet_id` are used as identifiers for the `Pet` resource, and will do the `DELETE` at `/pets/2`. 
+
+If these conventions are followed (which also align to good REST naming practices), it is expected that `DELETE` and `POST`requests will be on-par for most of the entities.
 
 # Content Negotiation
 Some APIs might use content negotiation versioning which implies formats like `application/v11+json` in the `Accept` header.

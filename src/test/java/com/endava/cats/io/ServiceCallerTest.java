@@ -6,6 +6,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -26,8 +27,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 import javax.inject.Inject;
 import java.io.File;
 import java.net.Proxy;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,6 +50,8 @@ class ServiceCallerTest {
     ApiArguments apiArguments;
     @Inject
     ProcessingArguments processingArguments;
+    @Inject
+    CatsGlobalContext catsGlobalContext;
 
     private ServiceCaller serviceCaller;
 
@@ -72,7 +78,7 @@ class ServiceCallerTest {
     public void setupEach() throws Exception {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        serviceCaller = new ServiceCaller(testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments, processingArguments);
+        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments, processingArguments);
 
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
@@ -86,6 +92,7 @@ class ServiceCallerTest {
         filesArguments.loadHeaders();
         filesArguments.loadRefData();
         filesArguments.loadURLParams();
+        catsGlobalContext.getPostSuccessfulResponses().clear();
     }
 
     @Test
@@ -337,5 +344,44 @@ class ServiceCallerTest {
         List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
         List<String> headerNames = headers.stream().map(CatsRequest.Header::getName).collect(Collectors.toList());
         Assertions.assertThat(headerNames).doesNotContain("header", "catsFuzzedHeader").contains("simpleHeader", "jwt");
+    }
+
+    @Test
+    void shouldReturnEmptyMapWhenNoPostStored() {
+        ServiceData data = ServiceData.builder().relativePath("/test/{testId}").httpMethod(HttpMethod.DELETE).build();
+
+        Map<String, String> cachedPost = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
+        Assertions.assertThat(cachedPost).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmptyMapWhenNotDelete() {
+        ServiceData data = ServiceData.builder().relativePath("/test/{testId}").httpMethod(HttpMethod.GET).build();
+
+        Map<String, String> cachedPost = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
+        Assertions.assertThat(cachedPost).isEmpty();
+    }
+
+
+    @Test
+    void shouldReturnEmptyWhenPostStoredButNotMatchingElement() {
+        ServiceData data = ServiceData.builder().relativePath("/test/{testId}").httpMethod(HttpMethod.DELETE).build();
+        Deque<String> existingPost = new ArrayDeque<>();
+        existingPost.add("{\"field\": 23}");
+        catsGlobalContext.getPostSuccessfulResponses().put("/test", existingPost);
+
+        Map<String, String> cachedPost = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
+        Assertions.assertThat(cachedPost).isEmpty();
+    }
+
+    @Test
+    void shouldReturnPostParamWhenMatching() {
+        ServiceData data = ServiceData.builder().relativePath("/test/{testId}").httpMethod(HttpMethod.DELETE).build();
+        Deque<String> existingPost = new ArrayDeque<>();
+        existingPost.add("{\"testId\": 23}");
+        catsGlobalContext.getPostSuccessfulResponses().put("/test", existingPost);
+
+        Map<String, String> cachedPost = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
+        Assertions.assertThat(cachedPost).containsEntry("testId", "23");
     }
 }
