@@ -7,7 +7,6 @@ import com.endava.cats.fuzzer.HeaderFuzzer;
 import com.endava.cats.fuzzer.HttpFuzzer;
 import com.endava.cats.fuzzer.SanitizeAndValidate;
 import com.endava.cats.fuzzer.SpecialFuzzer;
-import com.endava.cats.fuzzer.TrimAndValidate;
 import com.endava.cats.fuzzer.ValidateAndTrim;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;

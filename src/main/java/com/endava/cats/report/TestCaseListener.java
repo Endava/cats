@@ -6,6 +6,7 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.CatsCommand;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
@@ -31,7 +32,9 @@ import org.springframework.util.CollectionUtils;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Named;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -265,6 +268,8 @@ public class TestCaseListener {
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
 
+        this.storeRequestOnPostOrRemoveOnDelete(data, response);
+
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
@@ -282,6 +287,18 @@ public class TestCaseListener {
             this.reportWarn(logger, CatsResult.NOT_IMPLEMENTED);
         } else {
             this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
+        }
+    }
+
+    private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
+        if (data.getMethod() == HttpMethod.POST && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
+            LOGGER.star("POST method for path {} returned successfully {}. Storing result for DELETE endpoints...", data.getPath(), response.responseCodeAsString());
+            Deque<String> existingPosts = globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath(), new ArrayDeque<>());
+            existingPosts.add(response.getBody());
+            globalContext.getPostSuccessfulResponses().put(data.getPath(), existingPosts);
+        } else if (data.getMethod() == HttpMethod.DELETE && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
+            LOGGER.star("Removing top POST request from the store...");
+            globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath().substring(0, data.getPath().lastIndexOf("/")), new ArrayDeque<>()).poll();
         }
     }
 

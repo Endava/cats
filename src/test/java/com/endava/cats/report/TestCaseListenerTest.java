@@ -5,6 +5,7 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.CatsCommand;
 import com.endava.cats.fuzzer.Fuzzer;
 import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.TestCaseExporterHtmlJs;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
@@ -158,6 +159,31 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
         MDC.remove(TestCaseListener.ID);
+    }
+
+    @Test
+    void shouldStorePostRequestAndRemoveAfterDelete() {
+        CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("300", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("300", Collections.emptyList()));
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(data.getPath()).thenReturn("/test");
+        MDC.put(TestCaseListener.ID, "Test 1");
+        testCaseListener.testCaseMap.put("Test 1", new CatsTestCase());
+
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses()).hasSize(1).containsKey("/test");
+        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses().get("/test")).isNotEmpty();
+
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.DELETE);
+        Mockito.when(data.getPath()).thenReturn("/test/{testId}");
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses()).hasSize(1).containsKey("/test");
+        Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses().get("/test")).isEmpty();
+
+        MDC.remove(TestCaseListener.ID);
+        testCaseListener.testCaseMap.clear();
     }
 
     @Test
