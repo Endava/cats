@@ -45,7 +45,7 @@ public class WithinSingleCodePointEmojisInFieldsValidateTrimFuzzer extends Invis
 
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return CommonWithinMethods.getFuzzingStrategies(data, fuzzedField, this.getInvisibleChars(), false);
+        return CommonWithinMethods.getFuzzingStrategies(data, fuzzedField, this.getInvisibleChars(), true);
     }
 
     @Override
