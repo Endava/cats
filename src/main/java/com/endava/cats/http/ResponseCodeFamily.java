@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.http;
+package com.endava.cats.http;
 
 import java.util.Arrays;
 import java.util.Collections;

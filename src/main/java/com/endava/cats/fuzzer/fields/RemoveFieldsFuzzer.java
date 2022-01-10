@@ -1,17 +1,17 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.Fuzzer;
+import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.fuzzer.FieldFuzzer;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.JsonUtils;
+import com.endava.cats.model.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -61,7 +61,8 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     }
 
     private Set<Set<String>> getAllFields(FuzzingData data) {
-        Set<Set<String>> sets = data.getAllFields(processingArguments.getFieldsFuzzingStrategy(), processingArguments.getMaxFieldsToRemove());
+        Set<Set<String>> sets = data.getAllFields(FuzzingData.SetFuzzingStrategy.valueOf(processingArguments.getFieldsFuzzingStrategy().name())
+                , processingArguments.getMaxFieldsToRemove());
 
         LOGGER.info("Fuzzer will run with [{}] fields configuration possibilities out of [{}] maximum possible",
                 sets.size(), (int) Math.pow(2, data.getAllFieldsByHttpMethod().size()));

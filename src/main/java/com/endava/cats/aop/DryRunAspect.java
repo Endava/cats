@@ -1,5 +1,6 @@
 package com.endava.cats.aop;
 
+import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;

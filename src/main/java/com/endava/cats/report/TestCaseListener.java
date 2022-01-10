@@ -1,13 +1,11 @@
 package com.endava.cats.report;
 
-import com.endava.cats.aop.DryRun;
+import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.command.CatsCommand;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.Fuzzer;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -40,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,11 +50,11 @@ import static org.fusesource.jansi.Ansi.ansi;
 @ApplicationScoped
 @DryRun
 public class TestCaseListener {
-
     public static final String ID = "id";
     public static final String FUZZER_KEY = "fuzzerKey";
     public static final String FUZZER = "fuzzer";
     protected static final String ID_ANSI = "id_ansi";
+    protected static final AtomicInteger TEST = new AtomicInteger(0);
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414");
@@ -99,7 +98,7 @@ public class TestCaseListener {
     }
 
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
-        String testId = "Test " + CatsCommand.TEST.incrementAndGet();
+        String testId = "Test " + TEST.incrementAndGet();
         MDC.put(ID, testId);
         MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 10, Ansi.Color.MAGENTA));
         this.startTestCase();

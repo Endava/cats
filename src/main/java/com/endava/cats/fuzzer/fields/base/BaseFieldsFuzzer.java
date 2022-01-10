@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.fields.base;
 
 
+import com.endava.cats.Fuzzer;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -11,9 +11,9 @@ import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.ByteArraySchema;

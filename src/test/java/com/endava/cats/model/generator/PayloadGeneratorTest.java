@@ -1,6 +1,7 @@
-package com.endava.cats.generator.simple;
+package com.endava.cats.model.generator;
 
 import com.endava.cats.model.CatsGlobalContext;
+import com.endava.cats.model.generator.PayloadGenerator;
 import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;

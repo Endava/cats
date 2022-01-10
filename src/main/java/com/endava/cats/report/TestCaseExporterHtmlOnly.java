@@ -1,4 +1,4 @@
-package com.endava.cats.io;
+package com.endava.cats.report;
 
 import com.endava.cats.model.report.CatsTestReport;
 

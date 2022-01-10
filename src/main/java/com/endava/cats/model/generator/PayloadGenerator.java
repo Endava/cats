@@ -1,5 +1,6 @@
-package com.endava.cats.generator.simple;
+package com.endava.cats.model.generator;
 
+import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;

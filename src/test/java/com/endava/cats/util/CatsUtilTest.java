@@ -4,6 +4,7 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.util.PayloadUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

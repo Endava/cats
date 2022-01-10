@@ -1,13 +1,13 @@
 package com.endava.cats.command;
 
-import com.endava.cats.fuzzer.ContractInfoFuzzer;
-import com.endava.cats.fuzzer.FieldFuzzer;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.HeaderFuzzer;
-import com.endava.cats.fuzzer.HttpFuzzer;
-import com.endava.cats.fuzzer.SanitizeAndValidate;
-import com.endava.cats.fuzzer.SpecialFuzzer;
-import com.endava.cats.fuzzer.ValidateAndTrim;
+import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.Fuzzer;
+import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.annotations.SanitizeAndValidate;
+import com.endava.cats.annotations.SpecialFuzzer;
+import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;

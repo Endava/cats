@@ -2,9 +2,9 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.report.CatsTestCase;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -59,11 +59,11 @@ public class ReplayCommand implements Runnable {
     public void executeTestCase(String testCaseFileName) throws IOException {
         String testCaseFile = Files.readString(Paths.get(testCaseFileName));
         LOGGER.note("Loaded content: \n" + testCaseFile);
-        CatsTestCase testCase = TestCaseExporter.GSON.fromJson(testCaseFile, CatsTestCase.class);
+        CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
         LOGGER.info("Calling service...");
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
 
-        LOGGER.complete("Response body: \n{}", TestCaseExporter.GSON.toJson(response.getJsonBody()));
+        LOGGER.complete("Response body: \n{}", JsonUtils.GSON.toJson(response.getJsonBody()));
     }
 
     @Override

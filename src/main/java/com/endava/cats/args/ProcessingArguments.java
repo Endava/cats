@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.model.FuzzingData;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
@@ -12,7 +11,7 @@ import javax.inject.Singleton;
 public class ProcessingArguments {
     @CommandLine.Option(names = {"--fieldsFuzzingStrategy"},
             description = "The strategy for the fields fuzzers. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private FuzzingData.SetFuzzingStrategy fieldsFuzzingStrategy = FuzzingData.SetFuzzingStrategy.ONEBYONE;
+    private SetFuzzingStrategy fieldsFuzzingStrategy = SetFuzzingStrategy.ONEBYONE;
 
     @CommandLine.Option(names = {"--maxFieldsToRemove"},
             description = "The maximum number of fields that will be removed from a request when using the @|bold,underline SIZE|@ fieldsFuzzingStrategy")
@@ -47,4 +46,7 @@ public class ProcessingArguments {
         VALIDATE_AND_SANITIZE, SANITIZE_AND_VALIDATE;
     }
 
+    public enum SetFuzzingStrategy {
+        POWERSET, SIZE, ONEBYONE;
+    }
 }

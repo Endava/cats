@@ -1,8 +1,6 @@
-package com.endava.cats.fuzzer.fields.within;
+package com.endava.cats.model;
 
-import com.endava.cats.generator.simple.PayloadGenerator;
-import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.generator.PayloadGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.springframework.util.CollectionUtils;

@@ -1,7 +1,10 @@
-package com.endava.cats.util;
+package com.endava.cats.model.util;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -25,6 +28,13 @@ public abstract class JsonUtils {
     public static final String NOT_SET = "NOT_SET";
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
+    public static final Gson GSON = new GsonBuilder()
+            .setLenient()
+            .setPrettyPrinting()
+            .disableHtmlEscaping()
+            .setExclusionStrategies(new ExcludeTestCaseStrategy())
+            .registerTypeAdapter(Long.class, new LongTypeSerializer())
+            .serializeNulls().create();
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())

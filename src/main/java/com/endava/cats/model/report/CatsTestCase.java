@@ -1,8 +1,8 @@
 package com.endava.cats.model.report;
 
-import com.endava.cats.io.TestCaseExporter;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.util.JsonUtils;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import lombok.Getter;
@@ -40,16 +40,16 @@ public class CatsTestCase {
     }
 
     public String getHeaders() {
-        return TestCaseExporter.GSON.toJson(request.getHeaders());
+        return JsonUtils.GSON.toJson(request.getHeaders());
     }
 
     public String getRequestJson() {
         JsonReader reader = new JsonReader(new StringReader(request.getPayload()));
         reader.setLenient(true);
-        return TestCaseExporter.GSON.toJson(JsonParser.parseReader(reader));
+        return JsonUtils.GSON.toJson(JsonParser.parseReader(reader));
     }
 
     public String getResponseJson() {
-        return TestCaseExporter.GSON.toJson(response);
+        return JsonUtils.GSON.toJson(response);
     }
 }

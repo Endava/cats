@@ -1,10 +1,11 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.SpecialFuzzer;
+import com.endava.cats.dsl.CatsDSLWords;
+import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CustomFuzzerUtil;
+import com.endava.cats.fuzzer.CustomFuzzerUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -15,8 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static com.endava.cats.util.CustomFuzzerUtil.*;
 
 @Singleton
 @SpecialFuzzer
@@ -50,22 +49,22 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     private void executeTestCases(FuzzingData data, String key, Object value) {
         log.info("Path [{}] has the following security configuration [{}]", data.getPath(), value);
         Map<String, Object> individualTestConfig = (Map<String, Object>) value;
-        String stringsFile = String.valueOf(individualTestConfig.get(STRINGS_FILE));
+        String stringsFile = String.valueOf(individualTestConfig.get(CatsDSLWords.STRINGS_FILE));
 
         try {
             List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile));
             log.start("Parsing stringsFile...");
             log.complete("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
-            String[] targetFields = String.valueOf(individualTestConfig.get(TARGET_FIELDS)).replace("[", "")
+            String[] targetFields = String.valueOf(individualTestConfig.get(CatsDSLWords.TARGET_FIELDS)).replace("[", "")
                     .replace(" ", "").replace("]", "").split(",");
 
             for (String targetField : targetFields) {
                 log.info("Fuzzing field [{}]", targetField);
                 Map<String, Object> individualTestConfigClone = individualTestConfig.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 individualTestConfigClone.put(targetField, nastyStrings);
-                individualTestConfigClone.put(DESCRIPTION, individualTestConfig.get(DESCRIPTION) + ", field [" + targetField + "]");
-                individualTestConfigClone.remove(TARGET_FIELDS);
-                individualTestConfigClone.remove(STRINGS_FILE);
+                individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, individualTestConfig.get(CatsDSLWords.DESCRIPTION) + ", field [" + targetField + "]");
+                individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS);
+                individualTestConfigClone.remove(CatsDSLWords.STRINGS_FILE);
                 customFuzzerUtil.executeTestCases(data, key, individualTestConfigClone, this);
             }
 
@@ -86,7 +85,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     @Override
     public List<String> reservedWords() {
-        return Arrays.asList(EXPECTED_RESPONSE_CODE, DESCRIPTION, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS,
-                MAP_VALUES, ONE_OF_SELECTION, ADDITIONAL_PROPERTIES, ELEMENT, HTTP_METHOD);
+        return Arrays.asList(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.STRINGS_FILE, CatsDSLWords.TARGET_FIELDS,
+                CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
     }
 }

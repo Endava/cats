@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.Fuzzer;
+import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
