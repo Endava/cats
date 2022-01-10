@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;

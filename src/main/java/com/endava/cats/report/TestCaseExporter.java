@@ -1,18 +1,15 @@
-package com.endava.cats.io;
+package com.endava.cats.report;
 
-import com.endava.cats.aop.DryRun;
+import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.TimeExecutionDetails;
-import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
-import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.model.util.JsonUtils;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -43,13 +40,6 @@ import static org.fusesource.jansi.Ansi.ansi;
  */
 
 public abstract class TestCaseExporter {
-    public static final Gson GSON = new GsonBuilder()
-            .setLenient()
-            .setPrettyPrinting()
-            .disableHtmlEscaping()
-            .setExclusionStrategies(new ExcludeTestCaseStrategy())
-            .registerTypeAdapter(Long.class, new LongTypeSerializer())
-            .serializeNulls().create();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
     private static final String REPORT_HTML = "index.html";
@@ -214,7 +204,7 @@ public abstract class TestCaseExporter {
     private void writeJsonTestCase(CatsTestCase testCase) {
         String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
         try {
-            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), testFileName), GSON.toJson(testCase));
+            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), testFileName), JsonUtils.GSON.toJson(testCase));
         } catch (IOException e) {
             LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
         }

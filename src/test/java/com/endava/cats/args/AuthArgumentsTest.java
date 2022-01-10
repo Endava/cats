@@ -24,8 +24,7 @@ class AuthArgumentsTest {
         AuthArguments args = new AuthArguments();
         ReflectionTestUtils.setField(args, "basicAuth", "user:pwd");
         Assertions.assertThat(args.isBasicAuthSupplied()).isTrue();
-        Assertions.assertThat(args.getBasicAuthHeader().getName()).isEqualTo("Authorization");
-        Assertions.assertThat(args.getBasicAuthHeader().getValue()).isEqualTo("Basic dXNlcjpwd2Q=");
+        Assertions.assertThat(args.getBasicAuthHeader()).isEqualTo("Basic dXNlcjpwd2Q=");
 
     }
 

@@ -1,6 +1,6 @@
 package com.endava.cats.report;
 
-import com.endava.cats.aop.DryRun;
+import com.endava.cats.annotations.DryRun;
 import lombok.Getter;
 
 import javax.enterprise.context.ApplicationScoped;

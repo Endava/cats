@@ -1,4 +1,4 @@
-package com.endava.cats.util;
+package com.endava.cats.model.util;
 
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.FuzzingStrategy;

@@ -1,16 +1,17 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.dsl.CatsDSLWords;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.TestCaseExporter;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.CustomFuzzerUtil;
+import com.endava.cats.fuzzer.CustomFuzzerUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -66,8 +67,8 @@ class SecurityFuzzerTest {
         Mockito.verifyNoInteractions(testCaseListener);
         Assertions.assertThat(securityFuzzer.description()).isNotNull();
         Assertions.assertThat(securityFuzzer).hasToString(securityFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(securityFuzzer.reservedWords()).containsOnly(CustomFuzzerUtil.EXPECTED_RESPONSE_CODE, CustomFuzzerUtil.DESCRIPTION, CustomFuzzerUtil.OUTPUT, CustomFuzzerUtil.VERIFY,
-                CustomFuzzerUtil.STRINGS_FILE, CustomFuzzerUtil.TARGET_FIELDS, CustomFuzzerUtil.MAP_VALUES, CustomFuzzerUtil.ONE_OF_SELECTION, CustomFuzzerUtil.ADDITIONAL_PROPERTIES, CustomFuzzerUtil.ELEMENT, CustomFuzzerUtil.HTTP_METHOD);
+        Assertions.assertThat(securityFuzzer.reservedWords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY,
+                CatsDSLWords.STRINGS_FILE, CatsDSLWords.TARGET_FIELDS, CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
     }
 
     @Test

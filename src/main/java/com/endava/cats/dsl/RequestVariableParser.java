@@ -1,6 +1,6 @@
 package com.endava.cats.dsl;
 
-import com.endava.cats.util.JsonUtils;
+import com.endava.cats.model.util.JsonUtils;
 
 public class RequestVariableParser implements Parser {
     @Override

@@ -1,10 +1,10 @@
 package com.endava.cats.fuzzer.fields.leading;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.EmojiFuzzer;
-import com.endava.cats.fuzzer.FieldFuzzer;
-import com.endava.cats.fuzzer.ValidateAndTrim;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.annotations.EmojiFuzzer;
+import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.annotations.ValidateAndTrim;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;

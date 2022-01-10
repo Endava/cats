@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.ExactValuesInFieldsFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;

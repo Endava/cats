@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields.within;
 
+import com.endava.cats.model.CommonWithinMethods;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;

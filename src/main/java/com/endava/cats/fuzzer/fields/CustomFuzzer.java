@@ -1,13 +1,14 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.SpecialFuzzer;
+import com.endava.cats.dsl.CatsDSLWords;
+import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.CustomFuzzerUtil;
+import com.endava.cats.fuzzer.CustomFuzzerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -61,7 +62,7 @@ public class CustomFuzzer implements CustomFuzzerBase {
 
     private boolean isMatchingHttpMethod(Object currentValues, HttpMethod httpMethod) {
         Map<String, Object> currentPathValues = (Map<String, Object>) currentValues;
-        Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CustomFuzzerUtil.HTTP_METHOD)));
+        Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CatsDSLWords.HTTP_METHOD)));
 
         return httpMethodFromYaml.isEmpty() || httpMethodFromYaml.get().equals(httpMethod);
     }
@@ -120,7 +121,7 @@ public class CustomFuzzer implements CustomFuzzerBase {
 
     @Override
     public List<String> reservedWords() {
-        return Arrays.asList(CustomFuzzerUtil.EXPECTED_RESPONSE_CODE, CustomFuzzerUtil.DESCRIPTION, CustomFuzzerUtil.OUTPUT, CustomFuzzerUtil.VERIFY, CustomFuzzerUtil.MAP_VALUES,
-                CustomFuzzerUtil.ONE_OF_SELECTION, CustomFuzzerUtil.ADDITIONAL_PROPERTIES, CustomFuzzerUtil.ELEMENT, CustomFuzzerUtil.HTTP_METHOD);
+        return Arrays.asList(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.MAP_VALUES,
+                CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
     }
 }

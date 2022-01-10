@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.fuzzer.FieldFuzzer;
+import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.ExpectOnly4XXBaseFieldsFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;

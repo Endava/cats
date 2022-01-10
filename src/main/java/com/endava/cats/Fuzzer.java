@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer;
+package com.endava.cats;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
@@ -14,7 +14,7 @@ public interface Fuzzer {
     /**
      * The actual business logic of the Fuzzer.
      *
-     * @param data the data constructed by the {@code com.endava.cats.model.factory.FuzzingDataFactory}
+     * @param data the data constructed by the {@code com.endava.cats.factory.FuzzingDataFactory}
      */
     void fuzz(FuzzingData data);
 

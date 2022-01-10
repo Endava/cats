@@ -2,11 +2,9 @@ package com.endava.cats.report;
 
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.command.CatsCommand;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.Fuzzer;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.TestCaseExporterHtmlJs;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -63,7 +61,7 @@ class TestCaseListenerTest {
 
     @AfterEach
     void tearDown() {
-        CatsCommand.TEST.set(0);
+        TestCaseListener.TEST.set(0);
     }
 
     @Test

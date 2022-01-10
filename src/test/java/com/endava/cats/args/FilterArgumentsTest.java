@@ -48,7 +48,6 @@ class FilterArgumentsTest {
             "checkContract,TopLevelElementsContractInfoFuzzer,CheckSecurityHeadersFuzzer"})
     void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
         ReflectionTestUtils.setField(checkArguments, argument, true);
-        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
 
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
@@ -61,7 +60,6 @@ class FilterArgumentsTest {
             "includeEmojis,LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
             "includeWhitespaces,LeadingWhitespacesInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer"})
     void shouldIncludeLengthyFuzzers(String argument, String matching, String notMatching) {
-        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         ReflectionTestUtils.setField(checkArguments, argument, true);
 
         List<String> fuzzers = filterArguments.getFuzzersForPath();
@@ -71,7 +69,6 @@ class FilterArgumentsTest {
 
     @Test
     void shouldIncludeAllFuzzers() {
-        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
@@ -83,7 +80,6 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllFuzzersWhenNoCheckSupplied() {
-        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
@@ -91,7 +87,6 @@ class FilterArgumentsTest {
 
     @Test
     void shouldNotReturnContractFuzzersWhenIgnoredSupplied() {
-        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", List.of("2xx"));
 
         List<String> fuzzers = filterArguments.getFuzzersForPath();
@@ -102,7 +97,6 @@ class FilterArgumentsTest {
 
     @Test
     void shouldNotReturnContractFuzzersWhenBlackbox() {
-        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForPaths", Collections.emptyList());
         ReflectionTestUtils.setField(ignoreArguments, "blackbox", true);
 
         List<String> fuzzers = filterArguments.getFuzzersForPath();

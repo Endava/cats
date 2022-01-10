@@ -1,5 +1,6 @@
 package com.endava.cats.io;
 
+import com.endava.cats.model.util.LongTypeSerializer;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;

@@ -1,6 +1,7 @@
 package com.endava.cats.util;
 
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

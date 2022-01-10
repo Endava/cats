@@ -3,6 +3,7 @@ package com.endava.cats.util;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.util.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -29,9 +30,9 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
-import static com.endava.cats.util.CustomFuzzerUtil.ELEMENT;
-import static com.endava.cats.util.CustomFuzzerUtil.MAP_VALUES;
+import static com.endava.cats.dsl.CatsDSLWords.ADDITIONAL_PROPERTIES;
+import static com.endava.cats.dsl.CatsDSLWords.ELEMENT;
+import static com.endava.cats.dsl.CatsDSLWords.MAP_VALUES;
 
 @ApplicationScoped
 public class CatsUtil {

@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;

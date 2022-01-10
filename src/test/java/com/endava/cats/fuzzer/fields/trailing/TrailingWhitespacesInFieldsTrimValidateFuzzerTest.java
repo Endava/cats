@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.trailing;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;

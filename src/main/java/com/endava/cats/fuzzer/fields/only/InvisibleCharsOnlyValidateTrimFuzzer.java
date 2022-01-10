@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;

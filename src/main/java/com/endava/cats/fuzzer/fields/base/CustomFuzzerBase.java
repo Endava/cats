@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.fields.base;
 
-import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.Fuzzer;
 
 import java.util.List;
 

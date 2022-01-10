@@ -1,14 +1,14 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.fuzzer.FieldFuzzer;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.Fuzzer;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.JsonUtils;
+import com.endava.cats.model.util.JsonUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

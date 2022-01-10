@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.model.CatsRequest;
 import lombok.Getter;
 import picocli.CommandLine;
 
@@ -66,9 +65,8 @@ public class AuthArguments {
         return proxy;
     }
 
-    public CatsRequest.Header getBasicAuthHeader() {
+    public String getBasicAuthHeader() {
         byte[] encodedAuth = Base64.getEncoder().encode(this.basicAuth.getBytes(StandardCharsets.UTF_8));
-        String authHeader = "Basic " + new String(encodedAuth, StandardCharsets.UTF_8);
-        return new CatsRequest.Header("Authorization", authHeader);
+        return "Basic " + new String(encodedAuth, StandardCharsets.UTF_8);
     }
 }

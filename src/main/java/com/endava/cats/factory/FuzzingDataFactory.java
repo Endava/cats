@@ -1,8 +1,8 @@
-package com.endava.cats.model.factory;
+package com.endava.cats.factory;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.model.generator.PayloadGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;

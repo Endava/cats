@@ -1,12 +1,12 @@
 package com.endava.cats.io;
 
-import com.endava.cats.aop.DryRun;
+import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.command.CatsCommand;
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
@@ -15,7 +15,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.JsonUtils;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import com.google.common.html.HtmlEscapers;
 import com.google.common.util.concurrent.RateLimiter;
@@ -65,8 +65,8 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.util.CustomFuzzerUtil.ADDITIONAL_PROPERTIES;
-import static com.endava.cats.util.JsonUtils.NOT_SET;
+import static com.endava.cats.dsl.CatsDSLWords.ADDITIONAL_PROPERTIES;
+import static com.endava.cats.model.util.JsonUtils.NOT_SET;
 
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
@@ -338,7 +338,7 @@ public class ServiceCaller {
 
     private void addBasicAuth(List<CatsRequest.Header> headers) {
         if (authArguments.isBasicAuthSupplied()) {
-            headers.add(authArguments.getBasicAuthHeader());
+            headers.add(new CatsRequest.Header("Authorization", authArguments.getBasicAuthHeader()));
         }
     }
 
@@ -426,10 +426,10 @@ public class ServiceCaller {
 
     private void addSuppliedHeaders(List<CatsRequest.Header> headers, String relativePath, ServiceData data) {
         LOGGER.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
-        LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsCommand.ALL));
+        LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsDSLWords.ALL));
 
         Map<String, String> suppliedHeadersFromFile = filesArguments.getHeaders().entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsCommand.ALL))
+                .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
 
         Map<String, String> suppliedHeaders = suppliedHeadersFromFile.entrySet().stream()

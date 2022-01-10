@@ -1,12 +1,12 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.PayloadUtils;
+import com.endava.cats.model.util.PayloadUtils;
 
 import javax.inject.Singleton;
 import java.util.List;

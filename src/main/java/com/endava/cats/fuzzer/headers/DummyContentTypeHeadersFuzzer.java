@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.fuzzer.HeaderFuzzer;
+import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.headers.base.BaseSecurityChecksHeadersFuzzer;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.HttpMethod;

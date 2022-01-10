@@ -1,14 +1,17 @@
-package com.endava.cats.util;
+package com.endava.cats.fuzzer;
 
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
-import com.endava.cats.fuzzer.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
+import com.endava.cats.model.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -28,23 +31,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.util.JsonUtils.NOT_SET;
+import static com.endava.cats.model.util.JsonUtils.NOT_SET;
 
 @ApplicationScoped
 public class CustomFuzzerUtil {
-    public static final String DESCRIPTION = "description";
-    public static final String HTTP_METHOD = "httpMethod";
-    public static final String EXPECTED_RESPONSE_CODE = "expectedResponseCode";
-    public static final String OUTPUT = "output";
-    public static final String VERIFY = "verify";
-    public static final String STRINGS_FILE = "stringsFile";
-    public static final String TARGET_FIELDS = "targetFields";
-    public static final String ONE_OF_SELECTION = "oneOfSelection";
-    public static final String ADDITIONAL_PROPERTIES = "additionalProperties";
-    public static final String ELEMENT = "topElement";
-    public static final String MAP_VALUES = "mapValues";
-    private static final List<String> RESERVED_WORDS = Arrays.asList(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION,
-            ADDITIONAL_PROPERTIES, ELEMENT, MAP_VALUES);
     private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
     private final Map<String, String> variables = new HashMap<>();
@@ -63,7 +53,7 @@ public class CustomFuzzerUtil {
 
 
     public void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
-        String expectedResponseCode = currentPathValues.get(EXPECTED_RESPONSE_CODE);
+        String expectedResponseCode = currentPathValues.get(CatsDSLWords.EXPECTED_RESPONSE_CODE);
         this.startCustomTest(testName, currentPathValues, expectedResponseCode);
 
         String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
@@ -75,7 +65,7 @@ public class CustomFuzzerUtil {
 
         this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
 
-        String verify = currentPathValues.get(CustomFuzzerUtil.VERIFY);
+        String verify = currentPathValues.get(CatsDSLWords.VERIFY);
 
         if (verify != null) {
             this.checkVerifiesAndReport(payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
@@ -85,7 +75,7 @@ public class CustomFuzzerUtil {
     }
 
     private void setOutputVariables(Map<String, String> currentPathValues, CatsResponse response, String request) {
-        String output = currentPathValues.get(CustomFuzzerUtil.OUTPUT);
+        String output = currentPathValues.get(CatsDSLWords.OUTPUT);
 
         /* add all variables first; resolve any variables requiring request access, resolve response variables and merge all in the end.*/
         /* we merge request variables at the end, because otherwise the resolved values will try to be searched in response and result in NOT_SET*/
@@ -189,7 +179,7 @@ public class CustomFuzzerUtil {
 
 
     public String getTestScenario(String testName, Map<String, String> currentPathValues) {
-        String description = currentPathValues.get(DESCRIPTION);
+        String description = currentPathValues.get(CatsDSLWords.DESCRIPTION);
         if (StringUtils.isNotBlank(description)) {
             return description;
         }
@@ -237,7 +227,7 @@ public class CustomFuzzerUtil {
     }
 
     private boolean isValidOneOf(FuzzingData data, Map<String, Object> currentPathValues) {
-        String oneOfSelection = String.valueOf(currentPathValues.get(ONE_OF_SELECTION));
+        String oneOfSelection = String.valueOf(currentPathValues.get(CatsDSLWords.ONE_OF_SELECTION));
 
         if (!"null".equalsIgnoreCase(oneOfSelection)) {
             return wasOneOfSelectionReplaced(oneOfSelection, data);
@@ -253,9 +243,9 @@ public class CustomFuzzerUtil {
     }
 
     private boolean entryIsValid(Map<String, Object> currentPathValues) {
-        boolean responseCodeValid = ResponseCodeFamily.isValidCode(String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE)));
+        boolean responseCodeValid = ResponseCodeFamily.isValidCode(String.valueOf(currentPathValues.get(CatsDSLWords.EXPECTED_RESPONSE_CODE)));
         boolean hasAtMostOneArrayOfData = currentPathValues.entrySet().stream().filter(entry -> entry.getValue() instanceof ArrayList).count() <= 1;
-        boolean hasHttpMethod = currentPathValues.get(HTTP_METHOD) != null;
+        boolean hasHttpMethod = currentPathValues.get(CatsDSLWords.HTTP_METHOD) != null;
 
         return responseCodeValid && hasAtMostOneArrayOfData && hasHttpMethod;
     }
@@ -297,7 +287,7 @@ public class CustomFuzzerUtil {
     }
 
     private boolean isNotAReservedWord(String key) {
-        return !RESERVED_WORDS.contains(key);
+        return !CatsDSLWords.RESERVED_WORDS.contains(key);
     }
 
     private String replaceElementWithCustomValue(Map.Entry<String, String> keyValue, String payload) {
@@ -341,7 +331,7 @@ public class CustomFuzzerUtil {
 
     public void writeRefDataFileWithOutputVariables() throws IOException {
         Map<String, Map<String, Object>> possibleVariables = this.pathsWithInputVariables.entrySet().stream()
-                .filter(entry -> !RESERVED_WORDS.contains(entry.getKey()))
+                .filter(entry -> !CatsDSLWords.RESERVED_WORDS.contains(entry.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         possibleVariables.values().forEach(value -> value.values().removeIf(innerValue -> !String.valueOf(innerValue).startsWith("${")));
         possibleVariables.values().removeIf(Map::isEmpty);

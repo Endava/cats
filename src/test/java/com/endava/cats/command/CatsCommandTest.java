@@ -6,7 +6,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.fuzzer.contract.PathTagsContractInfoFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.factory.FuzzingDataFactory;
+import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;

@@ -1,9 +1,10 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.command.CatsCommand;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.HttpFuzzer;
+import com.endava.cats.dsl.CatsDSLWords;
+import com.endava.cats.Fuzzer;
+import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
@@ -62,7 +63,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     protected Set<String> getAuthenticationHeaderProvided(FuzzingData data) {
         Set<String> authenticationHeadersInContract = data.getHeaders().stream().map(CatsHeader::getName)
                 .filter(this::isAuthenticationHeader).collect(Collectors.toSet());
-        Set<String> authenticationHeadersInFile = filesArguments.getHeaders().entrySet().stream().filter(path -> CatsCommand.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
+        Set<String> authenticationHeadersInFile = filesArguments.getHeaders().entrySet().stream().filter(path -> CatsDSLWords.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
                 .map(Map.Entry::getValue).collect(Collectors.toList())
                 .stream().flatMap(entry -> entry.keySet().stream())
                 .collect(Collectors.toSet())

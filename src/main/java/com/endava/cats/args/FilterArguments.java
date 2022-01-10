@@ -1,19 +1,18 @@
 package com.endava.cats.args;
 
-import com.endava.cats.fuzzer.ContractInfoFuzzer;
-import com.endava.cats.fuzzer.ControlCharFuzzer;
-import com.endava.cats.fuzzer.EmojiFuzzer;
-import com.endava.cats.fuzzer.FieldFuzzer;
-import com.endava.cats.fuzzer.Fuzzer;
-import com.endava.cats.fuzzer.HeaderFuzzer;
-import com.endava.cats.fuzzer.HttpFuzzer;
-import com.endava.cats.fuzzer.SanitizeAndValidate;
-import com.endava.cats.fuzzer.TrimAndValidate;
-import com.endava.cats.fuzzer.ValidateAndSanitize;
-import com.endava.cats.fuzzer.ValidateAndTrim;
-import com.endava.cats.fuzzer.WhitespaceFuzzer;
+import com.endava.cats.Fuzzer;
+import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.ControlCharFuzzer;
+import com.endava.cats.annotations.EmojiFuzzer;
+import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.annotations.SanitizeAndValidate;
+import com.endava.cats.annotations.TrimAndValidate;
+import com.endava.cats.annotations.ValidateAndSanitize;
+import com.endava.cats.annotations.ValidateAndTrim;
+import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsSkipped;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
@@ -38,7 +37,6 @@ public class FilterArguments {
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FilterArguments.class);
-    protected List<CatsSkipped> skipFuzzersForPaths = new ArrayList<>();
 
     @Inject
     Instance<Fuzzer> fuzzers;

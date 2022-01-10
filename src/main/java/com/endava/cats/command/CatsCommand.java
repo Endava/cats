@@ -8,12 +8,12 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.fuzzer.Fuzzer;
+import com.endava.cats.Fuzzer;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.factory.FuzzingDataFactory;
+import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -57,8 +56,6 @@ import static org.fusesource.jansi.Ansi.ansi;
         })
 @Dependent
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    public static final AtomicInteger TEST = new AtomicInteger(0);
-    public static final String ALL = "all";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsCommand.class);
 
     @Inject
