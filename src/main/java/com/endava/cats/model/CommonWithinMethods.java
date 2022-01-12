@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public final class CommonWithinMethods {
+    public static final String ZALGO_TEXT = "c̷̨̛̥̬͉̘̬̻̩͕͚̦̺̻͓̳͇̲̭̝̙̟̈́̉̐͂͒̆͂̿͌̑͐̌̇̈́̾̉̆̀̅̓͛͋̈̄͊̈̄̎̃̒͂̓̊̌̎̌̃́̅͊̏͘͘͘̕̕͘͠͝a̶͖̐͆͑́͆̓͗͆̏̑̈́̾͛̎̂̒̄̏̍͌͛̀́̄̓̍̐͂̀́̈́̂͐̕̕̕̚͘͠͝͠t̵̨̢̨͙̪̼͚͖̲̻̞̦̤̲̖͚̟̯͔̬̜̬͖̺͎̼̬̞̱̳͚͔͎̩̩̩̲̗̩̊̽̈́̔̀̍͒̓̂͐̾̆̐̒̄͂͒̽̾̔͊̒̀͗̿̈́͆͆̂͆̈́̋̏͊̉͌̒̏̓̑͛̉͘͜͜͜͝͝͠͠ş̶̨̢̧̛̛̱̜͈͓̗͍͈̰̱͔̥͙̺̤̠̩̮́̋̒͗̌̔̄̓̓͐̇̾̀́̓̆͗̂̐͊̓̓́̀͌̐̒̆̏̐͐̌̀́̈́̑̄͛̔̌͘̚̕͜͠ͅ ̸̡̡̧̡̨̧̧̯͚̥̙͉̲̠͚̼̤̹̹̳͕̙͔̺̥̼̙̙͚̳̰͕̤͕̀͒̈́̆̆̅̀̑̋̾͒̈́̅͌̀͑͋͋̎͂͂̄̑̆͒̃̓́̂̈́̑̄͝į̴̬͙͕̤͎͇̹̮̯̞̦̱̠̤̖̣̆͊̀̀̓͛͗͛̈͂̌̉̊͐̆̈̉͂͌̊́̉̋͘̚̚͜͝͝ș̷̡̛̛̮̲̥͙̞̤̘̉͛͗̿͂̏͛̾̂̂̄͗́̈́́̅̄̇̈́͗̀̂̈̉̐͑̏̒̈́͗̆͆̆̆͐̀͋̋͌̚̚͝͝ ̴̧̢̛̥̼̘̬̮͚͙̙̳͇̣̬̓̽̃̇̅͆͌̓̒̾͌̒͋͆́̓͛̔͛͒̉̔̏̔̂͐͛͗̾̎͂̏̋͘̚͝͝ç̵̡̧̛̛̟̩̲̲̲̫̺͎͎̘͎̘̱̭̬̗̎̾̏̂̏͑͊̾̎̂̉̊̉̐̓̾͒̓̓̒̔̽̄́͋̀̈́́̓̏͑͗̂̂̈́̒̚͘̕͘͝͠͝ͅͅͅơ̶̛̩̫̊̿̇͊͆́̅̈̽̆̓͛̌͐̍̀͒̐͑̀̎̀̀̉̑͛̔͋́̀͂̈̐̾̊̓͑̔͐̚̕͝͝͝͝͠ô̷̡̧̧̨̢̱͈̠̬̤̪̖̘͍̥̝͍̺̠̮̫̺̳͚͈͕̞̯̳̩̗̜̺̜̠͔̖̥͆͛͑́̆͛͐̓̒͊̊͑̽̄̐͊̓̃̚͜͜͝l";
 
     private CommonWithinMethods() {
         //ntd
@@ -33,5 +34,18 @@ public final class CommonWithinMethods {
     public static String insertInTheMiddle(String value, String whatToInsert, boolean insertWithoutReplace) {
         int position = value.length() / 2;
         return value.substring(0, position - (insertWithoutReplace ? 0 : 1)) + whatToInsert + value.substring(position + (insertWithoutReplace ? 0 : 1));
+    }
+
+    public static FuzzingStrategy getZalgoText(Schema<?> fuzzedFieldSchema) {
+        int max = getMax(fuzzedFieldSchema);
+
+        return FuzzingStrategy.replace().withData(ZALGO_TEXT.substring(0, max));
+    }
+
+    private static int getMax(Schema<?> fuzzedFieldSchema) {
+        if (fuzzedFieldSchema.getMaxLength() == null) {
+            return ZALGO_TEXT.length();
+        }
+        return fuzzedFieldSchema.getMaxLength() >= ZALGO_TEXT.length() ? ZALGO_TEXT.length() : fuzzedFieldSchema.getMaxLength();
     }
 }
