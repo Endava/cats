@@ -1,10 +1,10 @@
 package com.endava.cats.report;
 
+import com.endava.cats.Fuzzer;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.Fuzzer;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -25,11 +25,13 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class TestCaseListenerTest {
@@ -45,7 +47,7 @@ class TestCaseListenerTest {
 
     private PrettyLogger logger;
     private Fuzzer fuzzer;
-    private TestCaseExporterHtmlJs testCaseExporter;
+    private TestCaseExporter testCaseExporter;
 
 
     @BeforeEach
@@ -53,9 +55,12 @@ class TestCaseListenerTest {
         logger = Mockito.mock(PrettyLogger.class);
         fuzzer = Mockito.mock(Fuzzer.class);
         testCaseExporter = Mockito.mock(TestCaseExporterHtmlJs.class);
+        Mockito.when(testCaseExporter.reportFormat()).thenReturn(ReportingArguments.ReportFormat.HTML_JS);
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
-        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testCaseExporter, testCaseExporter, ignoreArguments, reportingArguments);
+        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
+        Mockito.when(exporters.stream()).thenReturn(Stream.of(testCaseExporter));
+        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, exporters, ignoreArguments, reportingArguments);
         catsGlobalContext.getDiscriminators().clear();
     }
 
@@ -69,7 +74,8 @@ class TestCaseListenerTest {
         ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
         testCaseListener.startSession();
 
-        Mockito.verifyNoInteractions(testCaseExporter);
+        Mockito.verify(testCaseExporter, Mockito.times(1)).reportFormat();
+        Mockito.verifyNoMoreInteractions(testCaseExporter);
     }
 
     @Test

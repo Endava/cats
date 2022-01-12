@@ -19,7 +19,7 @@ public interface Fuzzer {
     void fuzz(FuzzingData data);
 
     /**
-     * Simple description about the logic of the Fuzzer.
+     * Simple description about the logic of the Fuzzer. This is displayed in the console when using {@code --help}
      *
      * @return description
      */

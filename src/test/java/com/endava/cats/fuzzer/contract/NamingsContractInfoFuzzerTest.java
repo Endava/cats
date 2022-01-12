@@ -4,10 +4,10 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Operation;
@@ -20,6 +20,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
+import javax.enterprise.inject.Instance;
+import java.util.List;
+import java.util.stream.Stream;
+
 @QuarkusTest
 class NamingsContractInfoFuzzerTest {
 
@@ -28,7 +32,9 @@ class NamingsContractInfoFuzzerTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
+        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
+        Mockito.when(exporters.stream()).thenReturn(Stream.of(Mockito.mock(TestCaseExporter.class)));
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         namingsContractInfoFuzzer = new NamingsContractInfoFuzzer(testCaseListener, Mockito.mock(ProcessingArguments.class));
     }

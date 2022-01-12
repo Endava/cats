@@ -191,7 +191,7 @@ public abstract class TestCaseExporter {
     }
 
     /**
-     * We mark is as DryRun in order to avoid writing test cases when in dryRun mode.
+     * We mark it as DryRun in order to avoid writing test cases when in dryRun mode.
      *
      * @param testCase the current test case
      */
@@ -229,5 +229,7 @@ public abstract class TestCaseExporter {
     public abstract String[] getSpecificHelperFiles();
 
     public abstract Map<String, Object> getSpecificContext(CatsTestReport report);
+
+    public abstract ReportingArguments.ReportFormat reportFormat();
 
 }
