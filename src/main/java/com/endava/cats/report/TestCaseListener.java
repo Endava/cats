@@ -1,11 +1,11 @@
 package com.endava.cats.report;
 
+import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.Fuzzer;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
@@ -28,7 +28,7 @@ import org.slf4j.event.Level;
 import org.springframework.util.CollectionUtils;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Named;
+import javax.enterprise.inject.Instance;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -71,9 +71,12 @@ public class TestCaseListener {
     @ConfigProperty(name = "app.timestamp", defaultValue = "1-1-1")
     String appBuildTime;
 
-    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, @Named("htmlOnly") TestCaseExporter tcehtml, @Named("htmlJs") TestCaseExporter tcejs, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
+    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, Instance<TestCaseExporter> exporters, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
         this.executionStatisticsListener = er;
-        this.testCaseExporter = reportingArguments.getReportFormat() == ReportingArguments.ReportFormat.HTML_JS ? tcejs : tcehtml;
+        this.testCaseExporter = exporters.stream()
+                .filter(exporter -> exporter.reportFormat() == reportingArguments.getReportFormat())
+                .findFirst()
+                .orElseThrow();
         this.filterArguments = filterArguments;
         this.globalContext = catsGlobalContext;
     }

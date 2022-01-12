@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
 
@@ -26,5 +27,10 @@ public class TestCaseExporterHtmlJs extends TestCaseExporter {
         context.put("FUZZERS", fuzzers);
         context.put("JS", true);
         return context;
+    }
+
+    @Override
+    public ReportingArguments.ReportFormat reportFormat() {
+        return ReportingArguments.ReportFormat.HTML_JS;
     }
 }

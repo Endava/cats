@@ -3,11 +3,12 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.report.TestCaseExporter;
+import com.endava.cats.report.TestCaseExporterHtmlJs;
 import com.endava.cats.report.TestCaseListener;
 import com.google.common.collect.Sets;
 import io.quarkus.test.junit.QuarkusTest;
@@ -18,6 +19,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
+import javax.enterprise.inject.Instance;
+import java.util.stream.Stream;
+
 @QuarkusTest
 class RecommendedHeadersContractInfoFuzzerTest {
     private TestCaseListener testCaseListener;
@@ -25,8 +29,10 @@ class RecommendedHeadersContractInfoFuzzerTest {
 
     @BeforeEach
     void setup() {
-
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestCaseExporter.class), Mockito.mock(TestCaseExporter.class),
+        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
+        TestCaseExporter exporter = Mockito.mock(TestCaseExporterHtmlJs.class);
+        Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         recommendedHeadersContractInfoFuzzer = new RecommendedHeadersContractInfoFuzzer(testCaseListener);
     }
