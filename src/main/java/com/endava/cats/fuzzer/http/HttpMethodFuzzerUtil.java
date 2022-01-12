@@ -25,7 +25,7 @@ public class HttpMethodFuzzerUtil {
     }
 
     public void process(FuzzingData data, Function<ServiceData, CatsResponse> f, HttpMethod httpMethod) {
-        testCaseListener.addScenario(LOGGER, "Send a happy flow request with undocumented HTTP methods");
+        testCaseListener.addScenario(LOGGER, "Send a happy flow request with undocumented HTTP method: {}", httpMethod);
         testCaseListener.addExpectedResult(LOGGER, "Should get a 405 response code");
         String payload = HttpMethod.requiresBody(httpMethod) ? data.getPayload() : "";
         CatsResponse response = f.apply(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
