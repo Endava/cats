@@ -47,7 +47,6 @@ public abstract class TestCaseExporter {
     private static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     private static final String HTML = ".html";
     private static final String JSON = ".json";
-    private static final String TEST_CASES_FOLDER = "cats-report";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
     private static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
 
@@ -57,18 +56,18 @@ public abstract class TestCaseExporter {
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String version;
 
-    private Path path;
+    private Path reportingPath;
     private long t0;
 
     public void initPath() throws IOException {
         String subFolder = reportingArguments.isTimestampReports() ? String.valueOf(System.currentTimeMillis()) : "";
-        path = Paths.get(TEST_CASES_FOLDER, subFolder);
+        reportingPath = Paths.get(reportingArguments.getOutputReportFolder(), subFolder);
 
-        if (!reportingArguments.isTimestampReports() && path.toFile().exists()) {
-            deleteFiles(path);
+        if (!reportingArguments.isTimestampReports() && reportingPath.toFile().exists()) {
+            deleteFiles(reportingPath);
         }
-        if (!path.toFile().exists()) {
-            Files.createDirectories(path);
+        if (!reportingPath.toFile().exists()) {
+            Files.createDirectories(reportingPath);
         }
 
         t0 = System.currentTimeMillis();
@@ -138,7 +137,7 @@ public abstract class TestCaseExporter {
         String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
         String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
         String skipped = ansi().fgCyan().bold().a("❯ skipped: {}. ").toString();
-        String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", path.toUri() + REPORT_HTML)).reset().toString();
+        String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + REPORT_HTML)).reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
 
         LOGGER.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
@@ -162,8 +161,8 @@ public abstract class TestCaseExporter {
 
         try {
             writer.flush();
-            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML), writer.toString());
-            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_HTML), writer.toString());
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
         } catch (IOException e) {
             LOGGER.error("There was an error writing the report summary: {}", e.getMessage(), e);
         }
@@ -185,7 +184,7 @@ public abstract class TestCaseExporter {
     public void writeHelperFiles() {
         for (String file : this.getSpecificHelperFiles()) {
             try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
-                Files.copy(stream, Paths.get(path.toFile().getAbsolutePath(), file));
+                Files.copy(stream, Paths.get(reportingPath.toFile().getAbsolutePath(), file));
             } catch (IOException e) {
                 LOGGER.error("Unable to write reporting files!", e);
             }
@@ -206,7 +205,7 @@ public abstract class TestCaseExporter {
     private void writeJsonTestCase(CatsTestCase testCase) {
         String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
         try {
-            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), testFileName), JsonUtils.GSON.toJson(testCase));
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), JsonUtils.GSON.toJson(testCase));
         } catch (IOException e) {
             LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
         }
@@ -221,7 +220,7 @@ public abstract class TestCaseExporter {
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);
         try {
-            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), testFileName), writer.toString());
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), writer.toString());
         } catch (IOException e) {
             LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
         }

@@ -33,6 +33,10 @@ public class ReportingArguments {
             description = "The format of the CATS report. Default: @|bold,underline ${DEFAULT-VALUE}|@. You can use @|bold,underline HTML_ONLY|@ if you want the report to not contain any Javascript. This is useful for large number of tests, as the page will render faster and also in CI environments due to Javascript content security policies.")
     private ReportFormat reportFormat = ReportFormat.HTML_JS;
 
+    @CommandLine.Option(names = {"-o", "--output"},
+            description = "The output folder of the CATS report. Default: @|bold,underline cats-report|@ in the current directory.")
+    private String outputReportFolder = "cats-report";
+
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }
