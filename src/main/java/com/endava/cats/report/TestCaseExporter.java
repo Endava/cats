@@ -43,6 +43,7 @@ public abstract class TestCaseExporter {
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
     private static final String REPORT_HTML = "index.html";
+    private static final String REPORT_JS = "cats-summary-report.js";
     private static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     private static final String HTML = ".html";
     private static final String JSON = ".json";
@@ -153,7 +154,7 @@ public abstract class TestCaseExporter {
         context.put("ERRORS", report.getErrors());
         context.put("TOTAL", report.getTotalTests());
         context.put("TIMESTAMP", report.getTimestamp());
-        context.put("TEST_CASES", report.getSummaryList());
+        context.put("TEST_CASES", report.getTestCases());
         context.put("EXECUTION", report.getExecutionTime());
         context.put("VERSION", report.getCatsVersion());
         context.putAll(this.getSpecificContext(report));
@@ -162,6 +163,7 @@ public abstract class TestCaseExporter {
         try {
             writer.flush();
             Files.writeString(Paths.get(path.toFile().getAbsolutePath(), REPORT_HTML), writer.toString());
+            Files.writeString(Paths.get(path.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
         } catch (IOException e) {
             LOGGER.error("There was an error writing the report summary: {}", e.getMessage(), e);
         }
@@ -173,7 +175,7 @@ public abstract class TestCaseExporter {
                 .map(testCase -> CatsTestCaseSummary.fromCatsTestCase(testCase.getKey(), testCase.getValue())).sorted()
                 .collect(Collectors.toList());
 
-        return CatsTestReport.builder().summaryList(summaries).errors(executionStatisticsListener.getErrors())
+        return CatsTestReport.builder().testCases(summaries).errors(executionStatisticsListener.getErrors())
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
                 .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME))
                 .executionTime(((System.currentTimeMillis() - t0) / 1000))
