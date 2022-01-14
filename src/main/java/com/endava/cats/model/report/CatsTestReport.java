@@ -8,7 +8,7 @@ import java.util.List;
 @Getter
 @Builder
 public class CatsTestReport {
-    private final List<CatsTestCaseSummary> summaryList;
+    private final List<CatsTestCaseSummary> testCases;
     private final int totalTests;
     private final int success;
     private final int warnings;
