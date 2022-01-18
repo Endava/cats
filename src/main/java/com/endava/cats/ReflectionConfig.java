@@ -94,6 +94,7 @@ import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.oas.models.servers.ServerVariables;
 import io.swagger.v3.oas.models.tags.Tag;
 import io.swagger.v3.parser.converter.SwaggerConverter;
+import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -168,7 +169,7 @@ import java.util.Base64;
         CompositeStringExpression.class, TemplateAwareExpressionParser.class, LiteralExpression.class, TemplateParserContext.class, ConstructorExecutor.class, TypeComparator.class,
         EvaluationContext.class, AccessException.class, PropertyAccessor.class, TypeConverter.class, BeanResolver.class, TypedValue.class, CatsDSLParser.class,
         Base64.Encoder.class, Base64.Decoder.class, Base64.class, RandomUtils.class, RandomStringUtils.class, DateFormatUtils.class, DateUtils.class, DurationUtils.class, LocalDate.class, LocalDateTime.class,
-        OffsetDateTime.class, String.class, SwaggerConverter.class
+        OffsetDateTime.class, String.class, SwaggerConverter.class, SwaggerParserExtension.class
 })
 public class ReflectionConfig {
 }

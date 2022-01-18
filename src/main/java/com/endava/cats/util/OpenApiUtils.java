@@ -2,12 +2,14 @@ package com.endava.cats.util;
 
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.converter.SwaggerConverter;
+import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
 import io.swagger.v3.parser.core.models.ParseOptions;
 
 import java.io.IOException;
@@ -26,15 +28,23 @@ public abstract class OpenApiUtils {
     }
 
     public static OpenAPI readOpenApi(String location) throws IOException {
-        OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
         options.setFlatten(true);
 
+        OpenAPI openAPI = getOpenAPI(new OpenAPIV3Parser(), location, options);
+
+        if (openAPI == null) {
+            openAPI = getOpenAPI(new SwaggerConverter(), location, options);
+        }
+        return openAPI;
+    }
+
+    public static OpenAPI getOpenAPI(SwaggerParserExtension parserExtension, String location, ParseOptions options) throws IOException {
         if (location.startsWith("http")) {
-            return openAPIV3Parser.readLocation(location, null, options).getOpenAPI();
+            return parserExtension.readLocation(location, null, options).getOpenAPI();
         } else {
-            return openAPIV3Parser.readContents(Files.readString(Paths.get(location)), null, options).getOpenAPI();
+            return parserExtension.readContents(Files.readString(Paths.get(location)), null, options).getOpenAPI();
         }
     }
 
