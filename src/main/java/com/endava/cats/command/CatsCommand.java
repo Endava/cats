@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.Fuzzer;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
@@ -8,12 +9,11 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.Fuzzer;
+import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.fields.CustomFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;

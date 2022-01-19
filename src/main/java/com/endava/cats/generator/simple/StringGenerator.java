@@ -75,7 +75,6 @@ public class StringGenerator {
      */
     public static String generate(String pattern, int min, int max) {
         String initialVersion = generateUsingRgxGenerator(pattern, min, max);
-
         if (initialVersion.matches(pattern)) {
             return initialVersion;
         }
@@ -86,7 +85,7 @@ public class StringGenerator {
 
     private static String generateUsingRgxGenerator(String pattern, int min, int max) {
         String generatedValue = new RgxGen(pattern).generate();
-        if (pattern.endsWith("}")) {
+        if (pattern.endsWith("}") || pattern.endsWith("}$")) {
             return generatedValue;
         }
         return composeString(generatedValue, min, max);

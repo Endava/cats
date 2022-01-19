@@ -315,7 +315,6 @@ public class PayloadGenerator {
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
             currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
-
             if (innerSchema == null) {
                 this.parseFromInnerSchema(name, mediaType, schema, values, propertyName);
             } else {

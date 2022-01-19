@@ -313,6 +313,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.openapitools</groupId>
             <artifactId>openapi-generator</artifactId>
             <version>${openapi-generator.version}</version>
@@ -324,6 +328,10 @@
                 <exclusion>
                     <groupId>javax.mail</groupId>
                     <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.swagger</groupId>
+                    <artifactId>swagger-compat-spec-parser</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
