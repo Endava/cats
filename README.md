@@ -30,7 +30,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **84 Fuzzers**. 
+All tests are **generated, run and reported automatically** based on a pre-defined set of **85 Fuzzers**. 
 The Fuzzers cover a wide range of input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
 
@@ -190,7 +190,7 @@ And this is what you get when you click on a specific test:
 
 # Slicing Strategies for Running Cats
 
-CATS has a significant number of `Fuzzers`. Currently, **84** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+CATS has a significant number of `Fuzzers`. Currently, **85** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
 Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
@@ -310,6 +310,7 @@ Other ways to get help from the CATS command are as follows:
 - `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
 - `--blackbox` If supplied (not value needed) it will ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
 - `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
+- `--outoput` The path where the CATS report will be written. Default is `cats-report` in the current directory
 
 `cats --contract=my.yml --server=https://locathost:8080 --checkHeaders`
 
@@ -330,7 +331,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow or security testing
 
 ## Field Fuzzers
-`CATS` has currently 41 registered Field `Fuzzers`:
+`CATS` has currently 42 registered Field `Fuzzers`:
 - `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -371,6 +372,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `WithinControlCharsInFieldsSanitizeValidateFuzzer` - iterate through each field and send values containing unicode control chars
 - `WithinSingleCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values containing single code point emojis
 - `WithinMultiCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values containing multi code point emojis
+- `ZalgoTextInStringFieldsValidateSanitizeFuzzer` - iterate through each field and send values containing zalgo text
 
 You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 
