@@ -47,7 +47,7 @@ class ZalgoTextInStringFieldsSanitizeValidateFuzzerTest {
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
-
+        Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.getInvisibleChars()).isEmpty();
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
 
