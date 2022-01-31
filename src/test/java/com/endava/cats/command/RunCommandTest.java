@@ -46,6 +46,13 @@ class RunCommandTest {
     }
 
     @Test
+    void shouldRunSecurityFuzzerFieldTypes() {
+        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/securityFuzzer-fieldTypes.yml"));
+        runCommand.run();
+        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("SecurityFuzzer");
+    }
+
+    @Test
     void shouldThrowExceptionWhenInvalidFile() {
         ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/nonExistent.yml"));
         runCommand.run();

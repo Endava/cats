@@ -3,6 +3,7 @@ package com.endava.cats.command;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -95,6 +96,6 @@ public class RunCommand implements Runnable {
     private boolean isCustomFuzzerFile() throws IOException {
         List<String> lines = Files.readAllLines(file.toPath());
 
-        return lines.stream().noneMatch(line -> line.contains("targetFields"));
+        return lines.stream().noneMatch(line -> line.contains(CatsDSLWords.TARGET_FIELDS) || line.contains(CatsDSLWords.TARGET_FIELDS_TYPES));
     }
 }
