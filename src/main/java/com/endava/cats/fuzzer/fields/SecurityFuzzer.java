@@ -1,13 +1,16 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.dsl.CatsDSLWords;
-import com.endava.cats.annotations.SpecialFuzzer;
-import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
-import com.endava.cats.model.FuzzingData;
 import com.endava.cats.fuzzer.CustomFuzzerUtil;
+import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
+import com.endava.cats.model.CatsField;
+import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Singleton;
 import java.nio.file.Files;
@@ -55,8 +58,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
             List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile));
             log.start("Parsing stringsFile...");
             log.complete("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
-            String[] targetFields = String.valueOf(individualTestConfig.get(CatsDSLWords.TARGET_FIELDS)).replace("[", "")
-                    .replace(" ", "").replace("]", "").split(",");
+            List<String> targetFields = this.getTargetFields(individualTestConfig, data);
 
             for (String targetField : targetFields) {
                 log.info("Fuzzing field [{}]", targetField);
@@ -64,6 +66,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
                 individualTestConfigClone.put(targetField, nastyStrings);
                 individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, individualTestConfig.get(CatsDSLWords.DESCRIPTION) + ", field [" + targetField + "]");
                 individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS);
+                individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS_TYPES);
                 individualTestConfigClone.remove(CatsDSLWords.STRINGS_FILE);
                 customFuzzerUtil.executeTestCases(data, key, individualTestConfigClone, this);
             }
@@ -71,6 +74,28 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         } catch (Exception e) {
             log.error("Invalid stringsFile [{}]", stringsFile, e);
         }
+    }
+
+    private List<String> getTargetFields(Map<String, Object> individualTestConfig, FuzzingData data) {
+        String[] targetFields = this.extractListEntry(individualTestConfig, CatsDSLWords.TARGET_FIELDS);
+        String[] targetFieldsTypes = this.extractListEntry(individualTestConfig, CatsDSLWords.TARGET_FIELDS_TYPES);
+
+        List<String> catsFields = data.getAllFieldsAsCatsFields().stream()
+                .filter(catsField -> Arrays.asList(targetFieldsTypes).contains(StringUtils.toRootLowerCase(catsField.getSchema().getType()))
+                        || Arrays.asList(targetFieldsTypes).contains(StringUtils.toRootLowerCase(catsField.getSchema().getFormat())))
+                .map(CatsField::getName)
+                .filter(name -> !JsonUtils.getVariableFromJson(data.getPayload(), name).equals(JsonUtils.NOT_SET))
+                .collect(Collectors.toList());
+
+        catsFields.addAll(Arrays.asList(targetFields));
+        catsFields.remove("");
+
+        return catsFields;
+    }
+
+    private String[] extractListEntry(Map<String, Object> individualTestConfig, String key) {
+        return String.valueOf(individualTestConfig.getOrDefault(key, "")).replace("[", "")
+                .replace(" ", "").replace("]", "").split(",");
     }
 
     @Override
@@ -86,6 +111,6 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     @Override
     public List<String> reservedWords() {
         return Arrays.asList(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.STRINGS_FILE, CatsDSLWords.TARGET_FIELDS,
-                CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
+                CatsDSLWords.TARGET_FIELDS_TYPES, CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
     }
 }

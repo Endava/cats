@@ -1,19 +1,22 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.CatsDSLWords;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.fuzzer.CustomFuzzerUtil;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.fuzzer.CustomFuzzerUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +71,8 @@ class SecurityFuzzerTest {
         Assertions.assertThat(securityFuzzer.description()).isNotNull();
         Assertions.assertThat(securityFuzzer).hasToString(securityFuzzer.getClass().getSimpleName());
         Assertions.assertThat(securityFuzzer.reservedWords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY,
-                CatsDSLWords.STRINGS_FILE, CatsDSLWords.TARGET_FIELDS, CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
+                CatsDSLWords.STRINGS_FILE, CatsDSLWords.TARGET_FIELDS, CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES,
+                CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD, CatsDSLWords.TARGET_FIELDS_TYPES);
     }
 
     @Test
@@ -108,14 +112,32 @@ class SecurityFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.never()).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
+    @Test
+    void shouldConsiderFieldsWithTypeStringWhenRunningFuzzer() throws Exception {
+        FuzzingData data = setContext("src/test/resources/securityFuzzer-fieldTypes.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
+        filesArguments.loadSecurityFuzzerFile();
+        spySecurityFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(63)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
-
-        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue'}").
-                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(new StringSchema()).build();
+        Map<String, Schema> properties = new HashMap<>();
+        properties.put("firstName", new StringSchema());
+        properties.put("lastName", new StringSchema());
+        properties.put("age", new IntegerSchema());
+        properties.put("city", new StringSchema());
+        StringSchema email = new StringSchema();
+        email.setFormat("email");
+        properties.put("email", email);
+        ObjectSchema person = new ObjectSchema();
+        person.setProperties(properties);
+        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue', 'firstName':'John','lastName':'Cats','email':'john@yahoo.com'}").
+                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(person).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         return data;

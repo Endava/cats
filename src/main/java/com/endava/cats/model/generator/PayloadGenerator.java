@@ -18,6 +18,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,7 +184,7 @@ public class PayloadGenerator {
             return "http://example.com/aeiou";
         }
         if (isEmailAddress(property, propertyName)) {
-            return "cool.cats@cats.io";
+            return RandomStringUtils.randomAlphabetic(5) + "cool.cats@cats.io";
         }
         if (isIPV4(property, propertyName)) {
             return "10.10.10.20";
