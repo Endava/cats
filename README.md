@@ -30,7 +30,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **85 Fuzzers**. 
+All tests are **generated, run and reported automatically** based on a pre-defined set of **87 Fuzzers**. 
 The Fuzzers cover a wide range of input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
 
@@ -38,12 +38,8 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
   <img alt="CATS" width="100%" src="images/run_result.png"/>
 </div>
 
-<h3 align="center" style="color:orange"> 
-
-Starting with version 6.1.0, CATS does not include the `ControlChars, Emojis and Whitespaces` Fuzzers in a normal run. 
-In order to include them use the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments. 
-
-Please check the <a href="#slicing-strategies-for-running-cats">Slicing Strategies</a> section for making CATS running fast and comprehensive in the same time.
+<h3 align="center" style="color:orange">
+Please check the <a href="#slicing-strategies-for-running-cats">Slicing Strategies</a> section for making CATS run fast and comprehensive in the same time.
 
 </h3>
 
@@ -118,7 +114,7 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 Blackbox mode means that CATS doesn't need any specific context. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](#headers-file).
 
 ```shell
-> cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox`
+> cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox
 ```
 
 In blackbox mode CATS will only report `ERRORs` if the received HTTP response code is a `5XX`. 
@@ -136,7 +132,7 @@ Running CATS in context mode usually implies providing it a [--refData](#referen
 CATS cannot create data on its own (yet), so it's important that any request field or query param that requires pre-existence of those entities/resources to be created in advance and added to the reference data file.
 
 ```shell
-> cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml`
+> cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml
 ```
 
 ## Notes on skipped Tests
@@ -194,7 +190,7 @@ And this is what you get when you click on a specific test:
 
 # Slicing Strategies for Running Cats
 
-CATS has a significant number of `Fuzzers`. Currently, **85** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+CATS has a significant number of `Fuzzers`. Currently, **87** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
 Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
@@ -386,7 +382,8 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 
 ## Header Fuzzers
-`CATS` has currently 26 registered Header `Fuzzers`: 
+`CATS` has currently 28 registered Header `Fuzzers`: 
+- `AbugidasCharsInHeadersFuzzer` -  iterate through each header and send requests with abugidas chars in the targeted header
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
 - `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
 - `DummyContentTypeHeadersFuzzer` - send a request with a dummy Content-Type header and expect to get 415 code
@@ -406,6 +403,7 @@ You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 - `TrailingWhitespacesInHeadersFuzzer` - iterate through each header and trail values with unicode separators
 - `UnsupportedAcceptHeadersFuzzer` - send a request with an unsupported Accept header and expect to get 406 code
 - `UnsupportedContentTypesHeadersFuzzer` - send a request with an unsupported Content-Type header and expect to get 415 code
+- `ZalgoTextInHeadersFuzzer` - iterate through each header and send requests with zalgo text in the targeted header
 
 You can run only these `Fuzzers` by supplying the `--checkHeaders` argument.
 
