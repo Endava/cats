@@ -21,6 +21,8 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -93,15 +95,15 @@ class SecurityFuzzerTest {
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
-    @Test
-    void givenASecurityFuzzerFileAllDetailsIn_whenTheFuzzerRuns_thenOnlyInfoIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/securityFuzzer-all.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+    @ParameterizedTest
+    @CsvSource({"securityFuzzer-allPaths.yml", "securityFuzzer-all.yml"})
+    void shouldRunSecurityTestsWhenAllPathIsUsed(String securityFuzzerFile) throws Exception {
+        FuzzingData data = setContext("src/test/resources/" + securityFuzzerFile, "{'name': {'first': 'Cats'}, 'id': '25'}");
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(21)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
-
 
     @Test
     void givenAnInvalidSecurityFuzzerFile_whenTheFuzzerRuns_thenNoResultIsReport() throws Exception {

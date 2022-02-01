@@ -11,6 +11,7 @@ import com.endava.cats.model.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 import javax.inject.Singleton;
 import java.nio.file.Files;
@@ -41,12 +42,21 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     protected void processSecurityFuzzerFile(FuzzingData data) {
-        Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getPath());
+        Map<String, Object> currentPathValues = this.getCurrentPathValues(data);
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
         } else {
             log.skip("Skipping path [{}] as it was not configured in securityFuzzerFile", data.getPath());
         }
+    }
+
+    private Map<String, Object> getCurrentPathValues(FuzzingData data) {
+        Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getPath());
+        if (CollectionUtils.isEmpty(currentPathValues)) {
+            currentPathValues = filesArguments.getSecurityFuzzerDetails().get(CatsDSLWords.ALL);
+        }
+
+        return currentPathValues;
     }
 
     private void executeTestCases(FuzzingData data, String key, Object value) {
