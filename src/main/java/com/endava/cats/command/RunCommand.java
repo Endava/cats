@@ -56,13 +56,13 @@ public class RunCommand implements Runnable {
     private File headersFile;
 
     @CommandLine.Option(names = {"--createRefData"},
-            description = "This is only applicable when enabling the @|bold CustomFuzzer |@. It will instruct the @|bold CustomFuzzer|@ to create a @|bold,underline --refData|@ file " +
+            description = "This is only applicable when enabling the @|bold FunctionalFuzzer |@. It will instruct the @|bold FunctionalFuzzer|@ to create a @|bold,underline --refData|@ file " +
                     "with all the paths defined in the @|bold,underline customFuzzerFile|@ and the corresponding @|bold output|@ variables")
     private boolean createRefData;
 
     @CommandLine.Option(names = {"--refData"},
             description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
-                    "If this is supplied when @|bold CustomFuzzer|@ is also enabled, the @|bold CustomFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
+                    "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
     private File refDataFile;
 
     @CommandLine.Option(names = {"--contentType"},
@@ -77,7 +77,7 @@ public class RunCommand implements Runnable {
         apiArguments.validateRequired(spec);
         try {
             if (this.isCustomFuzzerFile()) {
-                catsCommand.filterArguments.customFilter("CustomFuzzer");
+                catsCommand.filterArguments.customFilter("FunctionalFuzzer");
                 catsCommand.filesArguments.setCustomFuzzerFile(file);
             } else {
                 catsCommand.filterArguments.customFilter("SecurityFuzzer");

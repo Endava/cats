@@ -29,14 +29,14 @@ import java.util.stream.Collectors;
 
 @Singleton
 @SpecialFuzzer
-public class CustomFuzzer implements CustomFuzzerBase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(CustomFuzzer.class);
+public class FunctionalFuzzer implements CustomFuzzerBase {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalFuzzer.class);
 
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();
 
-    public CustomFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
+    public FunctionalFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
         this.filesArguments = cp;
         this.customFuzzerUtil = cfu;
     }
@@ -75,7 +75,7 @@ public class CustomFuzzer implements CustomFuzzerBase {
      */
     public void executeCustomFuzzerTests() {
         MDC.put("fuzzer", "CF");
-        MDC.put("fuzzerKey", "CustomFuzzer");
+        MDC.put("fuzzerKey", "FunctionalFuzzer");
 
         Collections.sort(executions);
 
@@ -116,7 +116,7 @@ public class CustomFuzzer implements CustomFuzzerBase {
 
     @Override
     public String description() {
-        return "allows to configure user supplied values for specific fields withing payloads; this is useful when testing more complex functional scenarios";
+        return "leverage the self-healing and auto generation powers of CATS in order to write functional tests";
     }
 
     @Override

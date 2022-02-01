@@ -3,11 +3,13 @@ package com.endava.cats.fuzzer.headers;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+@QuarkusTest
 class AbugidasCharsInHeadersFuzzerTest {
     private AbugidasCharsInHeadersFuzzer abugidasCharsInHeadersFuzzer;
 

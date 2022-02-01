@@ -41,13 +41,13 @@ public class FilesArguments {
 
     @CommandLine.Option(names = {"--refData"},
             description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
-                    "If this is supplied when @|bold CustomFuzzer|@ is also enabled, the @|bold CustomFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
+                    "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
     @Getter
     @Setter
     private File refDataFile;
 
-    @CommandLine.Option(names = {"--customFuzzerFile"},
-            description = "Specifies the file used by the @|bold CustomFuzzer|@ that will be used to create user-supplied payloads")
+    @CommandLine.Option(names = {"--functionalFuzzerFile"},
+            description = "Specifies the file used by the @|bold FunctionalFuzzer|@ that will be used to create user-supplied payloads")
     @Getter
     @Setter
     private File customFuzzerFile;
@@ -59,7 +59,7 @@ public class FilesArguments {
     private File securityFuzzerFile;
 
     @CommandLine.Option(names = {"--createRefData"},
-            description = "This is only applicable when enabling the @|bold CustomFuzzer |@. It will instruct the @|bold CustomFuzzer|@ to create a @|bold,underline --refData|@ file " +
+            description = "This is only applicable when enabling the @|bold FunctionalFuzzer |@. It will instruct the @|bold FunctionalFuzzer|@ to create a @|bold,underline --refData|@ file " +
                     "with all the paths defined in the @|bold,underline customFuzzerFile|@ and the corresponding @|bold output|@ variables")
     @Getter
     @Setter
@@ -92,7 +92,7 @@ public class FilesArguments {
 
     public void loadCustomFuzzerFile() throws IOException {
         if (customFuzzerFile == null) {
-            log.info("No custom Fuzzer file. CustomFuzzer will be skipped!");
+            log.info("No custom Fuzzer file. FunctionalFuzzer will be skipped!");
         } else {
             customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile.getAbsolutePath());
         }
