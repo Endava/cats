@@ -150,7 +150,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         Assertions.assertThat(filterArguments.getFuzzersForPath()).contains("VeryLargeUnicodeValuesInFieldsFuzzer");
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
-        filterArguments.customFilter("CustomFuzzer");
+        filterArguments.customFilter("FunctionalFuzzer");
         Assertions.assertThat(filterArguments.getFuzzersForPath()).doesNotContain("VeryLargeUnicodeValuesInFieldsFuzzer");
     }
 }

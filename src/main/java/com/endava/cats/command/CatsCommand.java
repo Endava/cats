@@ -10,7 +10,7 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.factory.FuzzingDataFactory;
-import com.endava.cats.fuzzer.fields.CustomFuzzer;
+import com.endava.cats.fuzzer.fields.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
@@ -61,7 +61,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
     @Inject
-    CustomFuzzer customFuzzer;
+    FunctionalFuzzer functionalFuzzer;
     @Inject
     TestCaseListener testCaseListener;
 
@@ -146,8 +146,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void executeCustomFuzzer() throws IOException {
-        customFuzzer.executeCustomFuzzerTests();
-        customFuzzer.replaceRefData();
+        functionalFuzzer.executeCustomFuzzerTests();
+        functionalFuzzer.replaceRefData();
     }
 
     /**

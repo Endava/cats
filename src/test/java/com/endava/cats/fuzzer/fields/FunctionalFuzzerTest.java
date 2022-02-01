@@ -37,7 +37,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 
 @QuarkusTest
-class CustomFuzzerTest {
+class FunctionalFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
 
@@ -46,7 +46,7 @@ class CustomFuzzerTest {
     private CatsDSLParser catsDSLParser;
     private CatsUtil catsUtil;
     private CustomFuzzerUtil customFuzzerUtil;
-    private CustomFuzzer customFuzzer;
+    private FunctionalFuzzer functionalFuzzer;
 
     @BeforeEach
     void setup() {
@@ -55,24 +55,24 @@ class CustomFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments(catsUtil);
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener, catsDSLParser);
-        customFuzzer = new CustomFuzzer(filesArguments, customFuzzerUtil);
+        functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
         filesArguments.getCustomFuzzerDetails().clear();
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test
     void shouldReplaceRefData() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
         File refData = File.createTempFile("refData", ".yml");
         String line = "this/is/custom/${resp}";
         Files.write(refData.toPath(), line.getBytes());
         ReflectionTestUtils.setField(filesArguments, "refDataFile", refData);
 
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
-        spyCustomFuzzer.replaceRefData();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.replaceRefData();
 
         File refDataReplaced = new File(refData.getAbsolutePath().substring(0, refData.getAbsolutePath().lastIndexOf(".")) + "_replaced.yml");
         String replaced = Files.readString(refDataReplaced.toPath());
@@ -92,14 +92,14 @@ class CustomFuzzerTest {
     @Test
     void givenAnEmptyCustomFuzzerFile_whenTheFuzzerRuns_thenNothingHappens() {
         FuzzingData data = FuzzingData.builder().build();
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
 
-        Mockito.verify(spyCustomFuzzer, Mockito.never()).processCustomFuzzerFile(data);
-        Assertions.assertThat(customFuzzer.description()).isNotNull();
-        Assertions.assertThat(customFuzzer).hasToString(customFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(customFuzzer.reservedWords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.MAP_VALUES,
+        Mockito.verify(spyFunctionalFuzzer, Mockito.never()).processCustomFuzzerFile(data);
+        Assertions.assertThat(functionalFuzzer.description()).isNotNull();
+        Assertions.assertThat(functionalFuzzer).hasToString(functionalFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(functionalFuzzer.reservedWords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.MAP_VALUES,
                 CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
     }
 
@@ -110,12 +110,12 @@ class CustomFuzzerTest {
         jsonObject.addProperty("field", "oldValue");
 
         FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "newValue", "newValue2");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
 
-        Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
+        Mockito.verify(spyFunctionalFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
@@ -126,12 +126,12 @@ class CustomFuzzerTest {
         jsonObject.addProperty("field", "oldValue");
 
         FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "T(java.time.OffsetDateTime).now().plusDays(20)");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
 
-        Mockito.verify(spyCustomFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
+        Mockito.verify(spyFunctionalFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
@@ -147,7 +147,7 @@ class CustomFuzzerTest {
 
         filesArguments = new FilesArguments(mockCatsUtil);
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, mockCatsUtil, testCaseListener, catsDSLParser);
-        customFuzzer = new CustomFuzzer(filesArguments, customFuzzerUtil);
+        functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));
 
         return data;
@@ -155,36 +155,36 @@ class CustomFuzzerTest {
 
     @Test
     void givenACompleteCustomFuzzerFileWithDescriptionAndOutputVariables_whenTheFuzzerRuns_thenTheTestCasesAreCorrectlyExecuted() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
 
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     @Test
     void shouldParseRequestFields() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
 
         filesArguments.loadCustomFuzzerFile();
-        customFuzzer.fuzz(data);
-        customFuzzer.executeCustomFuzzerTests();
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
         Map<String, String> variables = customFuzzerUtil.getVariables();
         Assertions.assertThat(variables).containsEntry("resp", "200").containsEntry("custId", "john");
     }
 
     @Test
     void shouldWriteRefData() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer.yml", "{\"code\": \"200\"}");
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
         ReflectionTestUtils.setField(filesArguments, "createRefData", true);
         ReflectionTestUtils.setField(filesArguments, "refDataFile", null);
 
         filesArguments.loadCustomFuzzerFile();
-        customFuzzer.fuzz(data);
-        customFuzzer.executeCustomFuzzerTests();
-        customFuzzer.replaceRefData();
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
+        functionalFuzzer.replaceRefData();
         File refDataCustom = new File("refData_custom.yml");
         List<String> lines = Files.readAllLines(refDataCustom.toPath());
         Assertions.assertThat(lines).contains("/pets/{id}/move:", "  pet: \"200\"");
@@ -193,73 +193,73 @@ class CustomFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithAdditionalProperties_whenTheFuzzerRuns_thenPropertiesAreProperlyAddedToThePayload() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-additional.yml", "{\"code\": \"200\"}");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-additional.yml", "{\"code\": \"200\"}");
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     @Test
     void givenACustomFuzzerFileWithVerifyParameters_whenTheFuzzerRuns_thenVerifyParameterAreProperlyChecked() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(3)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     @Test
     void shouldVerifyWithRequestVariables() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-req-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\", \"code\":\"150\",\"petName\":\"myPet\"}");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-req-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\", \"code\":\"150\",\"petName\":\"myPet\"}");
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(PrettyLogger.class), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     @Test
     void givenACustomFuzzerFileWithVerifyParametersThatDoNotMatchTheResponseValues_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(3)).reportError(Mockito.any(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "), Mockito.any());
     }
 
     @Test
     void givenACustomFuzzerFile_whenCurrentPathDoesNotExistInFile_thenNoTestIsExecuted() throws Exception {
-        setContext("src/test/resources/customFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
+        setContext("src/test/resources/functionalFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
 
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(FuzzingData.builder().path("path1").build());
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(FuzzingData.builder().path("path1").build());
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test
     void givenACustomFuzzerFileWithVerifyParametersThatAreNotInResponse_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-verify-not-set.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-verify-not-set.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following Verify parameters were not present in the response: {}"),
                 AdditionalMatchers.aryEq(new Object[]{List.of("address")}));
     }
 
     @Test
     void givenACustomFuzzerFileWithHttpMethodThatIsNotInContract_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/customFuzzer-http-method.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
-        CustomFuzzer spyCustomFuzzer = Mockito.spy(customFuzzer);
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-http-method.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
-        spyCustomFuzzer.fuzz(data);
-        spyCustomFuzzer.executeCustomFuzzerTests();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verifyNoInteractions(testCaseListener);
     }
 

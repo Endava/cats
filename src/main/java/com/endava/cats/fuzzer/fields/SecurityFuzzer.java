@@ -115,7 +115,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     @Override
     public String description() {
-        return "send 'nasty' strings intended to crash the service";
+        return "use custom dictionaries of 'nasty' strings to target specific fields or data types";
     }
 
     @Override

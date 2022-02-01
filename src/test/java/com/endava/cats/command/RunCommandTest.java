@@ -5,6 +5,8 @@ import com.endava.cats.args.FilterArguments;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -33,29 +35,16 @@ class RunCommandTest {
 
     @Test
     void shouldRunCustomFuzzer() {
-        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/customFuzzer.yml"));
+        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/functionalFuzzer.yml"));
         runCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("CustomFuzzer");
+        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("FunctionalFuzzer");
     }
 
-    @Test
-    void shouldRunSecurityFuzzer() {
-        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/securityFuzzer.yml"));
+    @ParameterizedTest
+    @CsvSource({"securityFuzzer.yml,1", "securityFuzzer-fieldTypes.yml,1", "nonExistent.yml,0"})
+    void shouldRunSecurityFuzzer(String securityFuzzerFile, int times) {
+        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/" + securityFuzzerFile));
         runCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("SecurityFuzzer");
-    }
-
-    @Test
-    void shouldRunSecurityFuzzerFieldTypes() {
-        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/securityFuzzer-fieldTypes.yml"));
-        runCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("SecurityFuzzer");
-    }
-
-    @Test
-    void shouldThrowExceptionWhenInvalidFile() {
-        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/nonExistent.yml"));
-        runCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(0)).customFilter(Mockito.any());
+        Mockito.verify(filterArguments, Mockito.times(times)).customFilter("SecurityFuzzer");
     }
 }
