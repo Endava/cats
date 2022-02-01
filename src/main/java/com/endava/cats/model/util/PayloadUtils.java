@@ -33,8 +33,14 @@ public abstract class PayloadUtils {
     private static final List<String> singleCodePointEmojis = Arrays.asList("\uD83E\uDD76", "\uD83D\uDC80", "\uD83D\uDC7B", "\uD83D\uDC7E");
     private static final List<String> multiCodePointEmojis = Arrays.asList("\uD83D\uDC69\uD83C\uDFFE", "\uD83D\uDC68\u200D\uD83C\uDFED️", "\uD83D\uDC69\u200D\uD83D\uDE80");
 
+    private static final List<String> abugidasChars = List.of("జ్ఞ\u200Cా", "স্র\u200Cু");
+
     private PayloadUtils() {
         //ntd
+    }
+
+    public static List<String> getAbugidasChars() {
+        return abugidasChars;
     }
 
     public static List<String> getControlCharsFields() {
