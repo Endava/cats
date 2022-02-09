@@ -147,15 +147,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("300", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("300", Collections.emptyList()));
 
-        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
-            testCaseListener.addScenario(logger, "Given a {} field", "string");
-            testCaseListener.addRequest(new CatsRequest());
-            testCaseListener.addResponse(response);
-            testCaseListener.addFullRequestPath("fullPath");
-            testCaseListener.addPath("path");
-            testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
-        });
-        MDC.put(TestCaseListener.ID, "Test 1");
+        prepareTestCaseListenerSimpleSetup(response);
 
         testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
@@ -194,15 +186,7 @@ class TestCaseListenerTest {
     void shouldCallInfoInsteadOfErrorWhenIgnoreCodeSupplied() {
         Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
 
-        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
-            testCaseListener.addScenario(logger, "Given a {} field", "string");
-            testCaseListener.addRequest(new CatsRequest());
-            testCaseListener.addResponse(CatsResponse.builder().responseCode(200).build());
-            testCaseListener.addFullRequestPath("fullPath");
-            testCaseListener.addPath("path");
-            testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
-        });
-        MDC.put(TestCaseListener.ID, "Test 1");
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(200).build());
 
         testCaseListener.reportError(logger, "Warn");
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
@@ -211,6 +195,37 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
         MDC.remove(TestCaseListener.ID);
     }
+
+    @Test
+    void shouldSkipTestWhenErrorAndIgnoredCodeSuppliedAndSkipReportingEnabled() {
+        Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
+        Mockito.when(ignoreArguments.isSkipReportingForIgnoredCodes()).thenReturn(true);
+
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(200).build());
+
+        testCaseListener.reportError(logger, "Error");
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @Test
+    void shouldSkipTestWhenWarnAndIgnoredCodeSuppliedAndSkipReportingEnabled() {
+        Mockito.when(ignoreArguments.isIgnoredResponseCode("200")).thenReturn(true);
+        Mockito.when(ignoreArguments.isSkipReportingForIgnoredCodes()).thenReturn(true);
+
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(200).build());
+
+        testCaseListener.reportWarn(logger, "Warn");
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        MDC.remove(TestCaseListener.ID);
+    }
+
 
     @Test
     void givenATestCase_whenExecutingItAndAnErrorHappens_thenTheErrorIsCorrectlyReportedWithinTheTestCase() {
@@ -470,5 +485,17 @@ class TestCaseListenerTest {
         catsGlobalContext.getDiscriminators().add("field");
 
         Assertions.assertThat(testCaseListener.isFieldNotADiscriminator("additionalField")).isTrue();
+    }
+
+    private void prepareTestCaseListenerSimpleSetup(CatsResponse build) {
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addScenario(logger, "Given a {} field", "string");
+            testCaseListener.addRequest(new CatsRequest());
+            testCaseListener.addResponse(build);
+            testCaseListener.addFullRequestPath("fullPath");
+            testCaseListener.addPath("path");
+            testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
+        });
+        MDC.put(TestCaseListener.ID, "Test 1");
     }
 }

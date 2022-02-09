@@ -311,9 +311,10 @@ To list all available commands, run CATS with no arguments:
 - `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
 - `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
 - `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
-- `--blackbox` If supplied (not value needed) it will ignore all response codes expect for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
+- `--blackbox` If supplied (no value needed) it will ignore all response codes except for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
 - `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
 - `--outoput` The path where the CATS report will be written. Default is `cats-report` in the current directory
+- `--skipReportingForIgnoredCodes` Skip reporting entirely for the ignored response codes provided in `--ignoreResponseCodes`
 
 ```shell
 > cats --contract=my.yml --server=https://locathost:8080 --checkHeaders
