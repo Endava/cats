@@ -183,6 +183,7 @@ public class TestCaseListener {
     /**
      * If {@code --ignoreResponseCodes} is supplied and the response code received from the service
      * is in the ignored list, the method will actually report INFO instead of WARN.
+     * If {@code --skipReportingForIgnoredCodes} is also enabled, the reporting for these ignored codes will be skipped entirely.
      *
      * @param logger  the current logger
      * @param message message to be logged
@@ -193,7 +194,9 @@ public class TestCaseListener {
         if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))) {
             executionStatisticsListener.increaseWarns();
             logger.warning(message, params);
-            recordResult(message, params, Level.WARN.toString().toLowerCase());
+            this.recordResult(message, params, Level.WARN.toString().toLowerCase());
+        } else if (filterArguments.isSkipReportingForIgnoredCodes()) {
+            this.skipTest(logger, replaceBrackets("Response code {} was marked as ignored and --skipReportingForIgnoredCodes is enabled.", responseCode));
         } else {
             this.reportInfo(logger, message, params);
         }
@@ -227,6 +230,7 @@ public class TestCaseListener {
     /**
      * If {@code --ignoreResponseCodes} is supplied and the response code received from the service
      * is in the ignored list, the method will actually report INFO instead of ERROR.
+     * If {@code --skipReportingForIgnoredCodes} is also enabled, the reporting for these ignored codes will be skipped entirely.
      *
      * @param logger  the current logger
      * @param message message to be logged
@@ -240,6 +244,8 @@ public class TestCaseListener {
             executionStatisticsListener.increaseErrors();
             logger.error(message, params);
             this.recordResult(message, params, Level.ERROR.toString().toLowerCase());
+        } else if (filterArguments.isSkipReportingForIgnoredCodes()) {
+            this.skipTest(logger, replaceBrackets("Response code {} was marked as ignored and --skipReportingForIgnoredCodes is enabled.", responseCode));
         } else {
             this.reportInfo(logger, message, params);
         }
