@@ -55,6 +55,13 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldUseExamplesForPathParams() throws Exception{
+        List<FuzzingData> data = setupFuzzingData("/pets/{id}", "src/test/resources/petstore.yml");
+        Assertions.assertThat(data).hasSize(1);
+        Assertions.assertThat(data.get(0).getPayload()).contains("78").contains("test");
+    }
+
+    @Test
     void shouldNotIncludeReadOnlyFields() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore-readonly.yml");
         Assertions.assertThat(data).hasSize(2);
