@@ -36,16 +36,17 @@ public final class CommonWithinMethods {
         return value.substring(0, position - (insertWithoutReplace ? 0 : 1)) + whatToInsert + value.substring(position + (insertWithoutReplace ? 0 : 1));
     }
 
-    public static FuzzingStrategy getZalgoText(Schema<?> fuzzedFieldSchema) {
-        int max = getMax(fuzzedFieldSchema);
+    public static FuzzingStrategy getTextBasedOnMaxSize(Schema<?> fuzzedFieldSchema, String text) {
+        int max = getMax(fuzzedFieldSchema, text);
 
-        return FuzzingStrategy.replace().withData(ZALGO_TEXT.substring(0, max));
+        return FuzzingStrategy.replace().withData(text.substring(0, max));
     }
 
-    private static int getMax(Schema<?> fuzzedFieldSchema) {
+
+    private static int getMax(Schema<?> fuzzedFieldSchema, String text) {
         if (fuzzedFieldSchema.getMaxLength() == null) {
-            return ZALGO_TEXT.length();
+            return text.length();
         }
-        return fuzzedFieldSchema.getMaxLength() >= ZALGO_TEXT.length() ? ZALGO_TEXT.length() : fuzzedFieldSchema.getMaxLength();
+        return fuzzedFieldSchema.getMaxLength() >= text.length() ? text.length() : fuzzedFieldSchema.getMaxLength();
     }
 }

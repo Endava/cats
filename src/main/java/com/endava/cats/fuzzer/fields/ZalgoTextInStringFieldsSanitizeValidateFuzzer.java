@@ -43,6 +43,6 @@ public class ZalgoTextInStringFieldsSanitizeValidateFuzzer extends InvisibleChar
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        return List.of(CommonWithinMethods.getZalgoText(fuzzedFieldSchema));
+        return List.of(CommonWithinMethods.getTextBasedOnMaxSize(fuzzedFieldSchema, CommonWithinMethods.ZALGO_TEXT));
     }
 }
