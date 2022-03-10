@@ -1,3 +1,4 @@
+
 openapi: "3.0.0"
 info:
   version: 1.0.0
@@ -26,6 +27,14 @@ paths:
           schema:
             type: integer
             format: int64
+            example: 78
+        - name: page
+          in: query
+          description: Page number
+          required: true
+          schema:
+            type: string
+            example: test
       responses:
         '200':
           description: pet response
