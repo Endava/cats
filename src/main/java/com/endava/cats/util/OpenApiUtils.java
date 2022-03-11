@@ -49,23 +49,19 @@ public abstract class OpenApiUtils {
     }
 
     public static MediaType getMediaTypeFromContent(Content content, String contentType) {
-        if (content.get(contentType) != null) {
-            return content.get(contentType);
-        }
-        return content.get("application/json");
+        return content.entrySet().stream()
+                .filter(contentEntry -> contentEntry.getKey().startsWith(contentType))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElseGet(() -> content.get(contentType));
     }
 
     public static Map<String, Schema> getSchemas(OpenAPI openAPI, String contentType) {
-        Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas())
-                .orElseGet(HashMap::new);
+        Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas()).orElseGet(HashMap::new);
 
-        Optional.ofNullable(openAPI.getComponents().getRequestBodies())
-                .orElseGet(Collections::emptyMap)
-                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
+        Optional.ofNullable(openAPI.getComponents().getRequestBodies()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
 
-        Optional.ofNullable(openAPI.getComponents().getResponses())
-                .orElseGet(Collections::emptyMap)
-                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
+        Optional.ofNullable(openAPI.getComponents().getResponses()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
 
         return schemas;
     }
@@ -91,6 +87,6 @@ public abstract class OpenApiUtils {
     }
 
     public static boolean hasContentType(Content content, String contentType) {
-        return content != null && content.get(contentType) != null;
+        return content != null && content.keySet().stream().anyMatch(contentKey -> contentKey.startsWith(contentType));
     }
 }
