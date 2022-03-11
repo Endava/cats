@@ -9,6 +9,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.AbstractMap;
+import java.util.Set;
+
 @QuarkusTest
 class OpenApiUtilsTest {
 
@@ -38,5 +41,27 @@ class OpenApiUtilsTest {
 
         MediaType result = OpenApiUtils.getMediaTypeFromContent(content, "non-app/json");
         Assertions.assertThat(result).isNull();
+    }
+
+    @Test
+    void shouldReturnContentTypeWhenContainingCharset() {
+        Content content = Mockito.mock(Content.class);
+        MediaType mediaType = Mockito.mock(MediaType.class);
+        MediaType mediaTypeCharset = Mockito.mock(MediaType.class);
+
+        Mockito.when(content.get("app/json")).thenReturn(mediaType);
+        Mockito.when(content.entrySet()).thenReturn(Set.of(new AbstractMap.SimpleEntry<>("app/json2", mediaTypeCharset)));
+        MediaType actual = OpenApiUtils.getMediaTypeFromContent(content, "app/json2");
+        Assertions.assertThat(actual).isSameAs(mediaTypeCharset).isNotSameAs(mediaType);
+    }
+
+    @Test
+    void shouldReturnTrueWhenContentTypeWithCharset() {
+        Content content = Mockito.mock(Content.class);
+        MediaType mediaType = Mockito.mock(MediaType.class);
+        Mockito.when(content.keySet()).thenReturn(Set.of("application/json;charset=UTF-8"));
+
+        boolean actual = OpenApiUtils.hasContentType(content, "application/json");
+        Assertions.assertThat(actual).isTrue();
     }
 }
