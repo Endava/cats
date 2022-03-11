@@ -2,12 +2,12 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.collect.Sets;
@@ -20,6 +20,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
+import java.util.Set;
 
 @QuarkusTest
 class EmptyStringValuesInFieldsFuzzerTest {
@@ -58,12 +59,29 @@ class EmptyStringValuesInFieldsFuzzerTest {
     @Test
     void givenANewEmptyStringFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheEmptyStringFuzzer() {
         Assertions.assertThat(emptyStringValuesInFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(emptyStringValuesInFieldsFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
 
         FuzzingStrategy fuzzingStrategy = emptyStringValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEmpty();
         Assertions.assertThat(emptyStringValuesInFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(emptyStringValuesInFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
+    }
+
+    @Test
+    void shouldNotRunFuzzerWhenGetButNoQueryParam() {
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).queryParams(Set.of("query1")).build();
+        Assertions.assertThat(emptyStringValuesInFieldsFuzzer.isFuzzingPossibleSpecificToFuzzer(data, "notQuery", FuzzingStrategy.replace())).isFalse();
+    }
+
+    @Test
+    void shouldRunFuzzerWhenGetAndQueryParam() {
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).queryParams(Set.of("query1")).build();
+        Assertions.assertThat(emptyStringValuesInFieldsFuzzer.isFuzzingPossibleSpecificToFuzzer(data, "query1", FuzzingStrategy.replace())).isTrue();
+    }
+
+    @Test
+    void shouldRunFuzzerWhenPost() {
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).build();
+        Assertions.assertThat(emptyStringValuesInFieldsFuzzer.isFuzzingPossibleSpecificToFuzzer(data, "notQuery", FuzzingStrategy.replace())).isTrue();
     }
 }

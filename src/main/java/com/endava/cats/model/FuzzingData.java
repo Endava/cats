@@ -52,6 +52,10 @@ public class FuzzingData {
     private String processedPayload;
 
 
+    public boolean isQueryParam(String field) {
+        return this.queryParams.contains(field);
+    }
+
     public String getPayload() {
         if (processedPayload == null) {
             processedPayload = this.removeReadWrite();
