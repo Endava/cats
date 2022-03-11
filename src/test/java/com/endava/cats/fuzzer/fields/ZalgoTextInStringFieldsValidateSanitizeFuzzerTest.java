@@ -49,7 +49,6 @@ class ZalgoTextInStringFieldsValidateSanitizeFuzzerTest {
         Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.description()).isNotNull();
         Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
-
     }
 
     @Test
