@@ -1,5 +1,8 @@
 package com.endava.cats.dsl;
 
+/**
+ * Parser used to retrieve environment variables. The variables are in the {@code $$variable} format.
+ */
 public class EnvVariableParser implements Parser {
     private static final String ENV_VARIABLE_NOT_FOUND = "not_found_";
 

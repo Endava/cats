@@ -11,6 +11,11 @@ import org.springframework.integration.json.JsonPropertyAccessor;
 import java.util.Collections;
 import java.util.Optional;
 
+/**
+ * Parser used to evaluate expression using Spring EL.
+ * The format of these expressions usually start with {@code T{....}}.
+ * Expression can also have access to the JSON elements supplied in the payload.
+ */
 public class SpringELParser implements Parser {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final SpelExpressionParser spelExpressionParser;
