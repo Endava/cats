@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -112,12 +113,14 @@ public class CatsUtil {
         return object == null ? null : String.valueOf(object);
     }
 
-    public void loadFileToMap(String headersFile, Map<String, Map<String, String>> headers) throws IOException {
+    public Map<String, Map<String, String>> loadYamlFileToMap(String headersFile) throws IOException {
+        Map<String, Map<String, String>> result = new HashMap<>();
         Map<String, Map<String, Object>> headersAsObject = this.parseYaml(headersFile);
         for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
-            headers.put(entry.getKey(), entry.getValue().entrySet()
+            result.put(entry.getKey(), entry.getValue().entrySet()
                     .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
         }
+        return result;
     }
 
     /**

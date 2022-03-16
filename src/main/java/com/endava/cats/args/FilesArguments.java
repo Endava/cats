@@ -102,7 +102,7 @@ public class FilesArguments {
         if (refDataFile == null) {
             log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
-            catsUtil.loadFileToMap(refDataFile.getAbsolutePath(), refData);
+            refData.putAll(catsUtil.loadYamlFileToMap(refDataFile.getAbsolutePath()));
             log.info("Reference data file loaded successfully: {}", refData);
         }
     }
@@ -119,7 +119,7 @@ public class FilesArguments {
         if (headersFile == null) {
             log.info("No headers file was supplied! No additional header will be added!");
         } else {
-            catsUtil.loadFileToMap(headersFile.getAbsolutePath(), headers);
+            headers.putAll(catsUtil.loadYamlFileToMap(headersFile.getAbsolutePath()));
         }
     }
 
