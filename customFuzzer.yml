@@ -4,6 +4,7 @@
       - stay
       - at
       - home
+    httpMethod: POST
 /go:
   test1:
     homeId:
@@ -11,6 +12,7 @@
       - 124
       - 134
     home#country: "mumu"
+    httpMethod: POST
     additionalProperties:
       element: "metadata"
       mapValues:
@@ -29,4 +31,5 @@
       - 123
       - 124
     home#country: ${homeId}
+    httpMethod: POST
     expectedResponseCode: 200
