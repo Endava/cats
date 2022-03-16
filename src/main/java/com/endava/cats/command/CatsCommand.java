@@ -46,7 +46,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         versionProvider = VersionProvider.class,
         commandListHeading = "%n@|bold,underline Commands:|@%n",
         defaultValueProvider = CommandLine.PropertiesDefaultProvider.class,
-//        resourceBundle = "version",
+        resourceBundle = "version",
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
                 CommandLine.HelpCommand.class,
@@ -65,7 +65,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     TestCaseListener testCaseListener;
 
-    /*API Arguments*/
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
     ApiArguments apiArguments;
