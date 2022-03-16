@@ -1,5 +1,6 @@
-package com.endava.cats.dsl;
+package com.endava.cats.dsl.impl;
 
+import com.endava.cats.dsl.Parser;
 import com.endava.cats.model.util.JsonUtils;
 
 /**
