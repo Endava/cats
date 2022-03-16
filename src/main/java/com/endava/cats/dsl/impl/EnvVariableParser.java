@@ -1,4 +1,6 @@
-package com.endava.cats.dsl;
+package com.endava.cats.dsl.impl;
+
+import com.endava.cats.dsl.Parser;
 
 /**
  * Parser used to retrieve environment variables. The variables are in the {@code $$variable} format.
