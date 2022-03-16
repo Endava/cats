@@ -101,9 +101,6 @@ public class TestCaseListener {
     }
 
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
-        String testId = "Test " + TEST.incrementAndGet();
-        MDC.put(ID, testId);
-        MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 10, Ansi.Color.MAGENTA));
         this.startTestCase();
         try {
             s.run();
@@ -113,14 +110,15 @@ public class TestCaseListener {
         }
         this.endTestCase();
         LOGGER.info("{} {}", SEPARATOR, "\n");
-        MDC.remove(ID);
-        MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
-
     }
 
     private void startTestCase() {
-        testCaseMap.put(MDC.get(ID), new CatsTestCase());
-        testCaseMap.get(MDC.get(ID)).setTestId(MDC.get(ID));
+        String testId = "Test " + TEST.incrementAndGet();
+        MDC.put(ID, testId);
+        MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 10, Ansi.Color.MAGENTA));
+
+        testCaseMap.put(testId, new CatsTestCase());
+        testCaseMap.get(testId).setTestId(testId);
     }
 
     public void addScenario(PrettyLogger logger, String scenario, Object... params) {
@@ -158,6 +156,8 @@ public class TestCaseListener {
         if (testCaseMap.get(MDC.get(ID)).isNotSkipped()) {
             testCaseExporter.writeTestCase(testCaseMap.get(MDC.get(ID)));
         }
+        MDC.remove(ID);
+        MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
     }
 
     public void startSession() {
@@ -237,7 +237,7 @@ public class TestCaseListener {
      * @param params  params needed by the message
      */
     public void reportError(PrettyLogger logger, String message, Object... params) {
-        int responseCode = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty()).getResponseCode();
+        int responseCode = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty()).getResponseCode();
         this.addRequest(CatsRequest.empty());
         this.addResponse(CatsResponse.empty());
         if (!filterArguments.isIgnoredResponseCode(String.valueOf(responseCode))) {
