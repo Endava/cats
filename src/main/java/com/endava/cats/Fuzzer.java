@@ -7,6 +7,11 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * A Fuzzer is the main logical entity of CATS.
+ * Each Fuzzer will try to be run against each field from a given request payload or query params.
+ * There are certain conditions which may prevent a Fuzzer from running like data types for example.
+ * A Fuzzer targeting boolean fields should not be run against a date field.
+ *
  * Implement this in order to provide concrete fuzzing implementations.
  */
 public interface Fuzzer {
