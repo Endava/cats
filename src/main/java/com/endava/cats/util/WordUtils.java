@@ -16,6 +16,12 @@ public abstract class WordUtils {
         //ntd
     }
 
+    /**
+     * Starts from a list of words and creates all possible combinations matching all cases and delimiters.
+     *
+     * @param words the list of words making up a given field name based on the identified casing
+     * @return all possible combinations with different casing and delimiters
+     */
     public static Set<String> createWordCombinations(String[] words) {
         Set<String> result = new TreeSet<>();
 
