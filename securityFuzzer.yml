@@ -4,5 +4,6 @@
     targetFields:
       - id
       - name
+    httpMethod: POST
     stringsFile: xss.txt
     expectedResponseCode: 200
