@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.Fuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -40,7 +41,7 @@ public class NewFieldsFuzzer implements Fuzzer {
         JsonElement fuzzedJson = this.addNewField(data);
 
         ResponseCodeFamily expectedResultCode = ResponseCodeFamily.TWOXX;
-        if (JsonUtils.isHttpMethodWithPayload(data.getMethod())) {
+        if (HttpMethod.requiresBody(data.getMethod())) {
             expectedResultCode = ResponseCodeFamily.FOURXX;
         }
         testCaseListener.addScenario(LOGGER, "Add new field inside the request: name [{}], value [{}]. All other details are similar to a happy flow", NEW_FIELD, NEW_FIELD);

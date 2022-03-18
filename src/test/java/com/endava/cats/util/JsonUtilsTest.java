@@ -1,12 +1,9 @@
 package com.endava.cats.util;
 
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 @QuarkusTest
 class JsonUtilsTest {
@@ -39,14 +36,6 @@ class JsonUtilsTest {
         boolean result = JsonUtils.isValidJson("{no");
 
         Assertions.assertThat(result).isFalse();
-    }
-
-    @ParameterizedTest
-    @CsvSource({"POST,true", "PUT,true", "PATCH,true", "GET,false", "DELETE,false"})
-    void shouldCheckForHttpMethodWithPayload(HttpMethod method, boolean toBe) {
-        boolean result = JsonUtils.isHttpMethodWithPayload(method);
-
-        Assertions.assertThat(result).isEqualTo(toBe);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.Fuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -38,7 +39,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
         ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(this.getPayload(data)).replaceRefData(false).httpMethod(data.getMethod()).build();
 
-        if (JsonUtils.isHttpMethodWithPayload(data.getMethod())) {
+        if (HttpMethod.requiresBody(data.getMethod())) {
             CatsResponse response = serviceCaller.call(serviceData);
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         } else {
