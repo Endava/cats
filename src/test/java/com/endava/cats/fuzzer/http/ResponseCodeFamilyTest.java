@@ -120,4 +120,16 @@ class ResponseCodeFamilyTest {
     void shouldBeValid0xxAllowedCodes() {
         Assertions.assertThat(ResponseCodeFamily.ZEROXX.allowedResponseCodes()).containsOnly("000");
     }
+
+    @ParameterizedTest
+    @CsvSource({"100,100", "101,1XX", "2XX,200", "2XX,2XX"})
+    void shouldMatchAsResponseCodeOrRange(String code1, String code2) {
+        Assertions.assertThat(ResponseCodeFamily.matchAsCodeOrRange(code1, code2)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"100,101", "101,2XX", "2XX,100", "1XX,2XX"})
+    void shouldNotMatchAsResponseCodeOrRange(String code1, String code2) {
+        Assertions.assertThat(ResponseCodeFamily.matchAsCodeOrRange(code1, code2)).isFalse();
+    }
 }

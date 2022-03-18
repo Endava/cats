@@ -19,7 +19,7 @@ public class MalformedJsonFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
     @Override
     protected String getScenario() {
-        return "Send a malformed JSON which has the string 'bla' at the end (the report won't actually display it as all requests need to be actual JSONs, but please check the logs to see the actual request payload)";
+        return "Send a malformed JSON which has the string 'bla' at the end (the report won't actually display it as all requests need to be valid JSONs, but please check the logs to see the actual request payload)";
     }
 
     @Override
