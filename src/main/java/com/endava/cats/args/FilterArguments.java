@@ -144,8 +144,7 @@ public class FilterArguments {
         if (!this.getSuppliedFuzzers().isEmpty()) {
             List<String> suppliedFuzzerNames = suppliedFuzzers.stream().map(String::trim).collect(Collectors.toList());
             initialFuzzersList = initialFuzzersList.stream()
-                    .filter(fuzzer ->
-                            suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
+                    .filter(fuzzer -> suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
                     .collect(Collectors.toList());
         }
 

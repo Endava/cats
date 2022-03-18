@@ -47,7 +47,7 @@ public class FilesArguments {
     private File refDataFile;
 
     @CommandLine.Option(names = {"--functionalFuzzerFile"},
-            description = "Specifies the file used by the @|bold FunctionalFuzzer|@ that will be used to create user-supplied payloads")
+            description = "Specifies the file used by the @|bold FunctionalFuzzer|@ that will be used to create user-supplied payloads and tests")
     @Getter
     @Setter
     private File customFuzzerFile;
@@ -165,7 +165,7 @@ public class FilesArguments {
     /**
      * Returns the reference data from the --refData file supplied as argument.
      * <p>
-     * It return reference data for both the given path and under the {@code all} key.
+     * It returns the reference data for both the given path and the {@code all} key.
      *
      * @param currentPath the current API path
      * @return a Map with the supplied --refData
