@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.http.ResponseCodeFamily;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
@@ -51,8 +52,7 @@ public class IgnoreArguments {
 
     public boolean isIgnoredResponseCode(String receivedResponseCode) {
         return getIgnoreResponseCodes().stream()
-                .anyMatch(code -> code.equalsIgnoreCase(receivedResponseCode)
-                        || (code.substring(1, 3).equalsIgnoreCase("xx") && code.substring(0, 1).equalsIgnoreCase(receivedResponseCode.substring(0, 1))));
+                .anyMatch(code -> ResponseCodeFamily.matchAsCodeOrRange(code, receivedResponseCode));
 
     }
 
