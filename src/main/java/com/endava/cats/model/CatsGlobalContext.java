@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Holds global variables which should not be recomputed for each path.
+ */
 @Singleton
 @Getter
 public class CatsGlobalContext {

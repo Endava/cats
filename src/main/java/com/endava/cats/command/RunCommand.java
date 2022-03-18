@@ -76,7 +76,7 @@ public class RunCommand implements Runnable {
     public void run() {
         apiArguments.validateRequired(spec);
         try {
-            if (this.isCustomFuzzerFile()) {
+            if (this.isFunctionalFuzzerFile()) {
                 catsCommand.filterArguments.customFilter("FunctionalFuzzer");
                 catsCommand.filesArguments.setCustomFuzzerFile(file);
             } else {
@@ -93,7 +93,7 @@ public class RunCommand implements Runnable {
         }
     }
 
-    private boolean isCustomFuzzerFile() throws IOException {
+    private boolean isFunctionalFuzzerFile() throws IOException {
         List<String> lines = Files.readAllLines(file.toPath());
 
         return lines.stream().noneMatch(line -> line.contains(CatsDSLWords.TARGET_FIELDS) || line.contains(CatsDSLWords.TARGET_FIELDS_TYPES));

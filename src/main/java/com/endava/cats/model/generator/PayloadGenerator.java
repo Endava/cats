@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * A modified version of @code{io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -68,7 +69,7 @@ public class PayloadGenerator {
 
     public PayloadGenerator(CatsGlobalContext catsGlobalContext, boolean useExamplesArgument) {
         this.globalContext = catsGlobalContext;
-        this.random = new Random("PayloadGenerator".hashCode());
+        this.random = ThreadLocalRandom.current();
         useExamples = useExamplesArgument;
     }
 

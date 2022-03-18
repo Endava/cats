@@ -1,7 +1,10 @@
 package com.endava.cats.model.report;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@Getter
+@AllArgsConstructor
 public enum CatsResult {
     OK("Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", "All Good!"),
     NOT_MATCHING_RESPONSE_SCHEMA("Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", "Not Matching Response Schema"),
@@ -11,15 +14,7 @@ public enum CatsResult {
     NOT_FOUND("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", "Not Found"),
     UNEXPECTED_BEHAVIOUR("Unexpected behaviour: expected {}, actual [{}]", "Unexpected behaviour"),
     EXCEPTION("Fuzzer [{}] failed due to [{}]", "Unexpected Exception");
-
-    @Getter
+ 
     private final String message;
-    @Getter
     private final String reason;
-
-
-    CatsResult(String message, String reason) {
-        this.message = message;
-        this.reason = reason;
-    }
 }

@@ -11,6 +11,9 @@ import org.joda.time.DateTime;
 
 import java.util.UUID;
 
+/**
+ * This class represents the HTTP headers from the OpenAPI contract and use them as the data model across all layers.
+ */
 @Builder
 @AllArgsConstructor
 @Getter
@@ -45,8 +48,7 @@ public class CatsHeader {
 
 
     public CatsHeader copy() {
-        return CatsHeader.builder().name(this.name)
-                .required(this.required).value(this.value).build();
+        return CatsHeader.builder().name(this.name).required(this.required).value(this.value).build();
     }
 
     private String generateValue(Schema schema) {
@@ -85,9 +87,6 @@ public class CatsHeader {
 
     @Override
     public String toString() {
-        return "{" +
-                "required=" + required +
-                ", name='" + name + '\'' +
-                '}';
+        return "{" + "required=" + required + ", name='" + name + '\'' + '}';
     }
 }
