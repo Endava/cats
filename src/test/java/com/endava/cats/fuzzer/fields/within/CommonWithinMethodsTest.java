@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields.within;
 import com.endava.cats.model.CommonWithinMethods;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.util.PayloadUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -91,25 +92,25 @@ class CommonWithinMethodsTest {
     @Test
     void shouldReturnFullZalgoTextWhenMaxLengthNull() {
         StringSchema schema = new StringSchema();
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, CommonWithinMethods.ZALGO_TEXT);
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.ZALGO_TEXT);
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(CommonWithinMethods.ZALGO_TEXT);
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.ZALGO_TEXT);
     }
 
     @Test
     void shouldReturnFullZalgoTextWhenMaxLengthGreaterThenZalgoText() {
         StringSchema schema = new StringSchema();
         schema.setMaxLength(1000);
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, CommonWithinMethods.ZALGO_TEXT);
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.ZALGO_TEXT);
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(CommonWithinMethods.ZALGO_TEXT);
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.ZALGO_TEXT);
     }
 
     @Test
     void shouldReturnMaxLengthZalgoText() {
         StringSchema schema = new StringSchema();
         schema.setMaxLength(100);
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, CommonWithinMethods.ZALGO_TEXT);
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(CommonWithinMethods.ZALGO_TEXT.substring(0, 100));
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.ZALGO_TEXT);
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.ZALGO_TEXT.substring(0, 100));
     }
 }
