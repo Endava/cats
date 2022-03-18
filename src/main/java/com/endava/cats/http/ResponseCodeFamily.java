@@ -175,6 +175,12 @@ public enum ResponseCodeFamily {
         return required ? ResponseCodeFamily.FOURXX : ResponseCodeFamily.TWOXX;
     }
 
+    public static boolean matchAsCodeOrRange(String codeOne, String codeTwo) {
+        return codeOne.equalsIgnoreCase(codeTwo)
+                || (codeOne.substring(1, 3).equalsIgnoreCase("xx") && codeOne.substring(0, 1).equalsIgnoreCase(codeTwo.substring(0, 1)))
+                || (codeTwo.substring(1, 3).equalsIgnoreCase("xx") && codeTwo.substring(0, 1).equalsIgnoreCase(codeOne.substring(0, 1)));
+    }
+
     public abstract String getStartingDigit();
 
     public abstract String asString();
