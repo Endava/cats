@@ -1,6 +1,5 @@
 package com.endava.cats.model.util;
 
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
