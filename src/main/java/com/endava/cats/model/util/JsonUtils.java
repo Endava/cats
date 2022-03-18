@@ -35,6 +35,7 @@ public abstract class JsonUtils {
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
             .serializeNulls().create();
+
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())
@@ -52,10 +53,6 @@ public abstract class JsonUtils {
 
     public static boolean equalAsJson(String json1, String json2) {
         return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
-    }
-
-    public static boolean isHttpMethodWithPayload(HttpMethod method) {
-        return method == HttpMethod.POST || method == HttpMethod.PUT || method == HttpMethod.PATCH;
     }
 
     public static JsonElement parseAsJsonElement(String payload) {

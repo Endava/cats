@@ -3,8 +3,8 @@ package com.endava.cats.fuzzer.headers;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.CommonWithinMethods;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.util.PayloadUtils;
 import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
@@ -26,7 +26,7 @@ public class ZalgoTextInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return Collections.singletonList(FuzzingStrategy.replace().withData(CommonWithinMethods.ZALGO_TEXT));
+        return Collections.singletonList(FuzzingStrategy.replace().withData(PayloadUtils.ZALGO_TEXT));
     }
 
     @Override
