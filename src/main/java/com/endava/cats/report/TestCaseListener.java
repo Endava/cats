@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -317,13 +318,11 @@ public class TestCaseListener {
     private boolean isResponseCodeDocumented(FuzzingData data, CatsResponse response) {
         return data.getResponseCodes().contains(response.responseCodeAsString()) ||
                 isNotTypicalDocumentedResponseCode(response) ||
-                responseMatchesDocumentedRange(response.responseCodeAsString(), data.getResponseCodes());
+                responseMatchesDocumentedRange(response.responseCodeAsResponseRange(), data.getResponseCodes());
     }
 
     private boolean responseMatchesDocumentedRange(String receivedResponseCode, Set<String> documentedResponseCodes) {
-        String responseRange = receivedResponseCode.charAt(0) + "XX";
-
-        return documentedResponseCodes.stream().anyMatch(code -> code.equalsIgnoreCase(responseRange));
+        return documentedResponseCodes.stream().anyMatch(code -> code.equalsIgnoreCase(receivedResponseCode));
     }
 
     public void skipTest(PrettyLogger logger, String skipReason) {
@@ -367,7 +366,8 @@ public class TestCaseListener {
         List<String> responses = data.getResponses().get(response.responseCodeAsString());
 
         if (CollectionUtils.isEmpty(responses)) {
-            return data.getResponses().get(response.responseCodeAsString().charAt(0) + "xx");
+            return data.getResponses().getOrDefault(response.responseCodeAsResponseRange(),
+                    data.getResponses().get(response.responseCodeAsResponseRange().toLowerCase(Locale.ROOT)));
         }
 
         return responses;

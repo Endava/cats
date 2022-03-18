@@ -42,4 +42,8 @@ public class CatsResponse {
     public String responseCodeAsString() {
         return String.valueOf(this.responseCode);
     }
+
+    public String responseCodeAsResponseRange() {
+        return responseCodeAsString().charAt(0) + "XX";
+    }
 }
