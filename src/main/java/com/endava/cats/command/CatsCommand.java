@@ -52,7 +52,8 @@ import static org.fusesource.jansi.Ansi.ansi;
                 CommandLine.HelpCommand.class,
                 ListCommand.class,
                 ReplayCommand.class,
-                RunCommand.class
+                RunCommand.class,
+                TemplateFuzzCommand.class
         })
 @Dependent
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
