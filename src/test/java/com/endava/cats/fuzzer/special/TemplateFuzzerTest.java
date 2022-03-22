@@ -39,6 +39,7 @@ class TemplateFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, catsUtil, userArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        CatsUtil.setCatsLogLevel("SEVERE");//we do this in order to avoid surefire breaking due to \uFFFe
     }
 
     @Test
@@ -77,7 +78,7 @@ class TemplateFuzzerTest {
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("header"))
                 .processedPayload("{\"field\":\"value\"}")
-                .headers(Set.of(CatsHeader.builder().name("header").value("value").build()))
+                .headers(Set.of(CatsHeader.builder().name("header").value("value").build(), CatsHeader.builder().name("header2").value("value").build()))
                 .method(HttpMethod.POST)
                 .build();
         templateFuzzer.fuzz(data);
