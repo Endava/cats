@@ -1,16 +1,16 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.dsl.CatsDSLWords;
-import com.endava.cats.annotations.SpecialFuzzer;
+import com.endava.cats.fuzzer.CustomFuzzerUtil;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.fuzzer.CustomFuzzerUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.slf4j.MDC;
 
 import javax.inject.Singleton;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Singleton
 @SpecialFuzzer
 public class FunctionalFuzzer implements CustomFuzzerBase {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FunctionalFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FunctionalFuzzer.class);
 
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
