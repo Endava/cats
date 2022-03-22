@@ -20,9 +20,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -82,22 +80,22 @@ public class TemplateFuzzCommand implements Runnable {
 
     @CommandLine.Option(names = {"--headers", "-H"},
             description = "Specifies the headers that will be passed along with the request and/or fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
-    private Map<String, String> headers = Map.of("Accept", "application/json", "Content-Type", "application/json");
+    Map<String, String> headers = Map.of("Accept", "application/json", "Content-Type", "application/json");
 
     @CommandLine.Option(names = {"--data", "-d"},
             description = "Specifies the request body used for fuzzing. The request body must be a valid request for the supplied url." +
                     "If the value of the argument starts with @|bold @|@ it will be considered a file.")
-    private String data;
+    String data;
 
     @CommandLine.Option(names = {"--httpMethod", "-X"},
             description = "The HTTP method. For HTTP method requiring a body you must also supply a  @|bold,underline --template|@. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
-    private HttpMethod httpMethod = HttpMethod.POST;
+    HttpMethod httpMethod = HttpMethod.POST;
 
     @CommandLine.Option(names = {"--targetFields", "-t"},
             description = "A comma separated list of fully qualified request fields, HTTP headers, path and query parameters that the Fuzzers will apply to." +
                     "For HTTP requests with bodies fuzzing will only run on request fields and/or HTTP headers. For HTTP request without bodies fuzzing will run on path and query parameters " +
                     "and/or HTTP headers.", split = ",", required = true)
-    private Set<String> targetFields;
+    Set<String> targetFields;
 
     @Override
     public void run() {
@@ -131,8 +129,7 @@ public class TemplateFuzzCommand implements Runnable {
     }
 
     public Set<CatsHeader> getHeaders() {
-        return Optional.ofNullable(headers).orElse(Collections.emptyMap())
-                .entrySet()
+        return headers.entrySet()
                 .stream()
                 .map(entry -> CatsHeader.builder()
                         .name(entry.getKey().trim())
