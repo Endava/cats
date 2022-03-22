@@ -13,9 +13,9 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import com.google.common.html.HtmlEscapers;
 import com.google.common.util.concurrent.RateLimiter;
@@ -178,10 +178,10 @@ public class ServiceCaller {
         String processedPayload = this.replacePayloadWithRefData(data);
 
         List<CatsRequest.Header> headers = this.buildHeaders(data);
-        CatsRequest catsRequest = new CatsRequest();
-        catsRequest.setHeaders(headers);
-        catsRequest.setPayload(processedPayload);
-        catsRequest.setHttpMethod(data.getHttpMethod().name());
+        CatsRequest catsRequest = CatsRequest.builder()
+                .headers(headers).payload(processedPayload)
+                .httpMethod(data.getHttpMethod().name())
+                .build();
 
         try {
             String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());

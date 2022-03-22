@@ -94,7 +94,7 @@ class TestCaseListenerTest {
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addScenario(logger, "Given a {} field", "string");
-            testCaseListener.addRequest(new CatsRequest());
+            testCaseListener.addRequest(CatsRequest.builder().build());
             testCaseListener.addResponse(CatsResponse.builder().build());
             testCaseListener.addFullRequestPath("fullPath");
             testCaseListener.addPath("path");
@@ -494,7 +494,7 @@ class TestCaseListenerTest {
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build) {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addScenario(logger, "Given a {} field", "string");
-            testCaseListener.addRequest(new CatsRequest());
+            testCaseListener.addRequest(CatsRequest.builder().build());
             testCaseListener.addResponse(build);
             testCaseListener.addFullRequestPath("fullPath");
             testCaseListener.addPath("path");
