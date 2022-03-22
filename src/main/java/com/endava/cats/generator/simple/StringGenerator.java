@@ -5,7 +5,6 @@ import com.github.curiousoddman.rgxgen.RgxGen;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.validation.Payload;
 import java.security.SecureRandom;
 import java.util.regex.Pattern;
 

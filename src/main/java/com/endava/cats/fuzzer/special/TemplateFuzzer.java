@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Singleton
 @SpecialFuzzer
 public class TemplateFuzzer implements Fuzzer {
-    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TemplateFuzzer.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TemplateFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
