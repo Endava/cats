@@ -26,7 +26,7 @@ public class ZalgoTextInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return Collections.singletonList(FuzzingStrategy.replace().withData(PayloadUtils.ZALGO_TEXT));
+        return Collections.singletonList(FuzzingStrategy.replace().withData(PayloadUtils.getZalgoText()));
     }
 
     @Override

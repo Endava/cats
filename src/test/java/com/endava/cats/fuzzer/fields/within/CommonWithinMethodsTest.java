@@ -92,25 +92,25 @@ class CommonWithinMethodsTest {
     @Test
     void shouldReturnFullZalgoTextWhenMaxLengthNull() {
         StringSchema schema = new StringSchema();
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.ZALGO_TEXT);
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.getZalgoText());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.ZALGO_TEXT);
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.getZalgoText());
     }
 
     @Test
     void shouldReturnFullZalgoTextWhenMaxLengthGreaterThenZalgoText() {
         StringSchema schema = new StringSchema();
         schema.setMaxLength(1000);
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.ZALGO_TEXT);
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.getZalgoText());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.ZALGO_TEXT);
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.getZalgoText());
     }
 
     @Test
     void shouldReturnMaxLengthZalgoText() {
         StringSchema schema = new StringSchema();
         schema.setMaxLength(100);
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.ZALGO_TEXT);
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.ZALGO_TEXT.substring(0, 100));
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadUtils.getZalgoText());
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadUtils.getZalgoText().substring(0, 100));
     }
 }
