@@ -30,7 +30,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **87 Fuzzers**. 
+All tests are **generated, run and reported automatically** based on a pre-defined set of **89 Fuzzers**. 
 The Fuzzers cover a wide range of input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
 
@@ -95,7 +95,7 @@ You can use the following Maven command to build the project:
 
 `cp target/`
 
-You will end up with a `cats.jar` in the current folder. You can run it wih `java -jar cats.jar ...`. 
+You will end up with a `cats.jar` in the `target` folder. You can run it wih `java -jar cats.jar ...`. 
 
 You can also build native images using a GraalVM Java version. 
 
@@ -190,7 +190,7 @@ And this is what you get when you click on a specific test:
 
 # Slicing Strategies for Running Cats
 
-CATS has a significant number of `Fuzzers`. Currently, **87** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+CATS has a significant number of `Fuzzers`. Currently, **89** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
 Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
 
@@ -334,7 +334,7 @@ There are multiple categories of `Fuzzers` available:
 Additional checks which are not actually using any fuzzing, but leverage the CATS internal model of running the tests as `Fuzzers`:
 
 - `ContractInfo Fuzzers` which checks the contract for API good practices
-- `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow or security testing
+- `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow, security testing or supplying your own request templates, rather than OpenAPI specs
 
 ## Field Fuzzers
 `CATS` has currently 42 registered Field `Fuzzers`:
@@ -693,6 +693,44 @@ You can also set `additionalProperties` fields through the `functionalFuzzerFile
 
 #### SecurityFuzzer Reserved keywords
 The following keywords are reserved in `SecurityFuzzer` tests: `output`, `expectedResponseCode`, `httpMethod`, `description`, `verify`, `oneOfSelection`, `targetFields`, `targetFieldTypes`, `stringsFile`, `additionalProperties`, `topElement` and `mapValues`.
+
+## TemplateFuzzer
+The `TemplateFuzzer` can be used to fuzz non-OpenAPI endpoints. If the target API does not have an OpenAPI spec available, you can use a request template to run a limited set of fuzzers.
+The syntax for running the `TemplateFuzzer` is as follows (very similar to `curl`:
+
+```shell
+> cats fuzz -H header=value -X POST -d '{"field1":"value1","field2":"value2","field3":"value3"}' -t "field1,field2,header" -i "2XX,4XX" http://service-url 
+```
+
+The command will:
+- send a `POST` request to `http://service-url`
+- use the `{"field1":"value1","field2":"value2","field3":"value3"}` as a template
+- replace one by one `field1,field2,header` with fuzz data and send each request to the service endpoint
+- ignore `2XX,4XX` response codes and report an error when the received response code is not in this list
+
+It was a deliberate choice to limit the fields for which the `Fuzzer` will run by supplying them using the `-t` argument. For nested objects, supply fully qualified names: `field.subfield`. 
+
+Headers can also be fuzzed using the same mechanism as the fields.
+
+This `Fuzzer` will send the following type of data:
+- null values
+- empty values
+- zalgo text
+- abugidas characters
+- large random unicode data
+- very large strings (80k characters)
+- single and multi code point emojis
+- unicode control characters
+- unicode separators
+- unicode whitespaces
+
+For a full list of options run `> cats fuzz -h`.
+
+You can also supply your own dictionary of data using the `-w file` argument.
+
+HTTP methods with bodies will only be fuzzed at the request payload and headers level.
+
+HTTP methods without bodies will be fuzzed at path and query parameters and headers level. In this case you don't need to supply  a `-d` argument.
 
 # Reference Data File
 There are often cases where some fields need to contain relevant business values in order for a request to succeed. You can provide such values using a reference data file specified by the `--refData` argument. The reference data file is a YAML-format file that contains specific fixed values for different paths in the request document. The file structure is as follows:

@@ -50,6 +50,7 @@ public class FuzzingData {
     private Set<String> allReadOnlyFields;
     private Set<String> allWriteOnlyFields;
     private String processedPayload;
+    private Set<String> targetFields;
 
 
     public boolean isQueryParam(String field) {

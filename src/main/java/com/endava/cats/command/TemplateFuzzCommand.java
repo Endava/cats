@@ -1,0 +1,156 @@
+package com.endava.cats.command;
+
+import com.endava.cats.args.ApiArguments;
+import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.UserArguments;
+import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.fuzzer.special.TemplateFuzzer;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsHeader;
+import com.endava.cats.model.FuzzingData;
+import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.VersionProvider;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import picocli.CommandLine;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * This will run the TemplateFuzzer based on a supplied template request payload, rather than OpenAPI specs.
+ * The command expects a {@code --data} argument with the request payload for HTTP request with bodies or
+ * a path containing query or path parameters for non-body requests.
+ * The Fuzzers will only apply for fields supplied in the {@code --targetFields} argument.
+ */
+@CommandLine.Command(
+        name = "fuzz",
+        mixinStandardHelpOptions = true,
+        usageHelpAutoWidth = true,
+        description = "Run Fuzzers based on a supplied request template or query & path params",
+        abbreviateSynopsis = true,
+        synopsisHeading = "%nUsage: ",
+        versionProvider = VersionProvider.class)
+public class TemplateFuzzCommand implements Runnable {
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TemplateFuzzCommand.class);
+
+    @CommandLine.Parameters(index = "0",
+            paramLabel = "<url>",
+            description = "Full URL path of the service endpoint. This should include query params for non-body HTTP requests.")
+    String url;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
+    ApiArguments apiArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
+    AuthArguments authArgs;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
+    ReportingArguments reportingArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
+    IgnoreArguments ignoreArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline User Options:|@%n", exclusive = false)
+    UserArguments userArguments;
+
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
+
+    @Inject
+    TemplateFuzzer templateFuzzer;
+
+    @Inject
+    CatsDSLParser catsDSLParser;
+
+    @Inject
+    TestCaseListener testCaseListener;
+
+    @CommandLine.Option(names = {"--headers", "-H"},
+            description = "Specifies the headers that will be passed along with the request and/or fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+    private Map<String, String> headers = Map.of("Accept", "application/json", "Content-Type", "application/json");
+
+    @CommandLine.Option(names = {"--data", "-d"},
+            description = "Specifies the request body used for fuzzing. The request body must be a valid request for the supplied url." +
+                    "If the value of the argument starts with @|bold @|@ it will be considered a file.")
+    private String data;
+
+    @CommandLine.Option(names = {"--httpMethod", "-X"},
+            description = "The HTTP method. For HTTP method requiring a body you must also supply a  @|bold,underline --template|@. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+    private HttpMethod httpMethod = HttpMethod.POST;
+
+    @CommandLine.Option(names = {"--targetFields", "-t"},
+            description = "A comma separated list of fully qualified request fields, HTTP headers, path and query parameters that the Fuzzers will apply to." +
+                    "For HTTP requests with bodies fuzzing will only run on request fields and/or HTTP headers. For HTTP request without bodies fuzzing will run on path and query parameters " +
+                    "and/or HTTP headers.", split = ",", required = true)
+    private Set<String> targetFields;
+
+    @Override
+    public void run() {
+        try {
+            validateRequiredFields();
+            String payload = this.loadPayload();
+            FuzzingData fuzzingData = FuzzingData.builder().path(url)
+                    .processedPayload(payload)
+                    .method(httpMethod)
+                    .headers(this.getHeaders())
+                    .targetFields(targetFields)
+                    .build();
+
+            beforeFuzz();
+            templateFuzzer.fuzz(fuzzingData);
+            afterFuzz();
+        } catch (IOException e) {
+            LOGGER.error("Something went wrong while fuzzing: {}", e.getMessage());
+        }
+    }
+
+    private void afterFuzz() {
+        testCaseListener.afterFuzz();
+        testCaseListener.endSession();
+    }
+
+    private void beforeFuzz() throws IOException {
+        testCaseListener.startSession();
+        testCaseListener.initReportingPath();
+        testCaseListener.beforeFuzz(templateFuzzer.getClass());
+    }
+
+    public Set<CatsHeader> getHeaders() {
+        return Optional.ofNullable(headers).orElse(Collections.emptyMap())
+                .entrySet()
+                .stream()
+                .map(entry -> CatsHeader.builder()
+                        .name(entry.getKey().trim())
+                        .value(catsDSLParser.parseAndGetResult(entry.getValue().trim(), null))
+                        .build())
+                .collect(Collectors.toSet());
+    }
+
+    private void validateRequiredFields() throws CommandLine.ParameterException {
+        if (HttpMethod.requiresBody(httpMethod) && data == null) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --data=<data>");
+        }
+    }
+
+    private String loadPayload() throws IOException {
+        if (data != null && data.startsWith("@")) {
+            return Files.readString(Paths.get(data.substring(1)));
+        }
+        return data;
+    }
+}
