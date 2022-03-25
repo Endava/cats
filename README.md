@@ -732,6 +732,12 @@ HTTP methods with bodies will only be fuzzed at the request payload and headers 
 
 HTTP methods without bodies will be fuzzed at path and query parameters and headers level. In this case you don't need to supply  a `-d` argument.
 
+This is an example for a `GET` request:
+
+```shell
+> cats fuzz -X GET -t "path1,query1" -i "2XX,4XX" http://service-url/paths1?query1=test&query2
+```
+
 # Reference Data File
 There are often cases where some fields need to contain relevant business values in order for a request to succeed. You can provide such values using a reference data file specified by the `--refData` argument. The reference data file is a YAML-format file that contains specific fixed values for different paths in the request document. The file structure is as follows:
 
