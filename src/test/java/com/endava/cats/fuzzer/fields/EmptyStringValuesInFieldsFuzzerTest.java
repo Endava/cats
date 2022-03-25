@@ -46,7 +46,7 @@ class EmptyStringValuesInFieldsFuzzerTest {
 
     @Test
     void shouldNotRunForSkippedFields() {
-        Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
+        Mockito.when(ignoreArguments.getSkipFields()).thenReturn(Collections.singletonList("id"));
         Assertions.assertThat(emptyStringValuesInFieldsFuzzer.skipForFields()).containsOnly("id");
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Sets.newHashSet("id"));

@@ -49,7 +49,7 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
      */
     @Override
     public List<String> skipForFields() {
-        return ignoreArguments.getSkippedFields();
+        return ignoreArguments.getSkipFields();
     }
 
     @Override

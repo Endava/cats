@@ -145,6 +145,16 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldReturnEmptySkippedPaths() {
+        Assertions.assertThat(filterArguments.getSkipPaths()).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmptyPaths() {
+        Assertions.assertThat(filterArguments.getPaths()).isEmpty();
+    }
+
+    @Test
     void shouldSetAllFuzzersToCustomFuzzer() {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));

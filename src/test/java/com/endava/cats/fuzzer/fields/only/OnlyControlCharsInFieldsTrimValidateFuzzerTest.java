@@ -39,7 +39,7 @@ class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
         filesArguments = Mockito.mock(FilesArguments.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
         onlyControlCharsInFieldsTrimValidateFuzzer = new OnlyControlCharsInFieldsTrimValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, ignoreArguments);
-        Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("pet"));
+        Mockito.when(ignoreArguments.getSkipFields()).thenReturn(Collections.singletonList("pet"));
     }
 
     @Test

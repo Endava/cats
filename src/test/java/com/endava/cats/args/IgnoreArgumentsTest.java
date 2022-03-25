@@ -27,6 +27,19 @@ class IgnoreArgumentsTest {
     }
 
     @Test
+    void shouldReturnSkippedFields() {
+        ReflectionTestUtils.setField(ignoreArguments, "skipFields", List.of("field1", "field2"));
+
+        List<String> skipFields = ignoreArguments.getSkipFields();
+        Assertions.assertThat(skipFields).containsOnly("field1", "field2");
+    }
+
+    @Test
+    void shouldReturnEmptySkipFields() {
+        Assertions.assertThat(ignoreArguments.getSkipFields()).isEmpty();
+    }
+
+    @Test
     void shouldMatchIgnoredResponseCodes() {
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", List.of("2XX", "400"));
         Assertions.assertThat(ignoreArguments.isIgnoredResponseCode("200")).isTrue();
