@@ -48,7 +48,7 @@ public class EmptyStringValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFie
 
     @Override
     public List<String> skipForFields() {
-        return ignoreArguments.getSkippedFields();
+        return ignoreArguments.getSkipFields();
     }
 
     @Override

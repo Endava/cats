@@ -51,7 +51,7 @@ class RemoveFieldsFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(ProcessingArguments.SetFuzzingStrategy.ONEBYONE);
         Mockito.when(data.getAllFields(Mockito.any(), Mockito.anyInt())).thenReturn(Collections.singleton(Collections.singleton("id")));
-        Mockito.when(ignoreArguments.getSkippedFields()).thenReturn(Collections.singletonList("id"));
+        Mockito.when(ignoreArguments.getSkipFields()).thenReturn(Collections.singletonList("id"));
         removeFieldsFuzzer.fuzz(data);
 
         Mockito.verifyNoInteractions(testCaseListener);

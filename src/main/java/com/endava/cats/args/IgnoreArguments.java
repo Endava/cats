@@ -56,7 +56,7 @@ public class IgnoreArguments {
 
     }
 
-    public List<String> getSkippedFields() {
+    public List<String> getSkipFields() {
         return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList());
     }
 }

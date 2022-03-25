@@ -56,7 +56,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
     private Set<String> removeIfSkipped(Set<String> subset) {
         return subset.stream()
-                .filter(field -> !ignoreArguments.getSkippedFields().contains(field))
+                .filter(field -> !ignoreArguments.getSkipFields().contains(field))
                 .collect(Collectors.toSet());
     }
 

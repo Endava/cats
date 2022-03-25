@@ -48,7 +48,7 @@ public class NullValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzz
 
     @Override
     public List<String> skipForFields() {
-        return ignoreArguments.getSkippedFields();
+        return ignoreArguments.getSkipFields();
     }
 
     @Override
