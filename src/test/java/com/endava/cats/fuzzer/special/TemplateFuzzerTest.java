@@ -13,6 +13,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -56,6 +58,7 @@ class TemplateFuzzerTest {
                 .targetFields(Set.of("test"))
                 .processedPayload("{\"field\":\"value\"}")
                 .headers(Collections.emptySet())
+                .path("http://url")
                 .build();
         templateFuzzer.fuzz(data);
         Mockito.verifyNoInteractions(testCaseListener);
@@ -72,6 +75,21 @@ class TemplateFuzzerTest {
         templateFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(45)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
     }
+
+    @ParameterizedTest
+    @CsvSource({"http://localhost/field", "http://localhost/path?field&test=value"})
+    void shouldRunWhenPathParam(String url) {
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("field"))
+                .processedPayload("{\"anotherField\":\"value\"}")
+                .headers(Collections.emptySet())
+                .path(url)
+                .method(HttpMethod.POST)
+                .build();
+        templateFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(38)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
+    }
+
 
     @Test
     void shouldRunWhenTargetFieldInHeader() {

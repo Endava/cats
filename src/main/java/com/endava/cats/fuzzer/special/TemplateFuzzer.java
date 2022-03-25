@@ -17,13 +17,14 @@ import com.endava.cats.util.CatsUtil;
 import com.jayway.jsonpath.JsonPathException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -57,13 +58,14 @@ public class TemplateFuzzer implements Fuzzer {
                 LOGGER.info("Running {} payloads for field [{}]", payloads.size(), targetField);
 
                 for (String payload : payloads) {
-                    List<CatsRequest.Header> replacedHeaders = this.createHeaders(data, payload, targetField);
-                    String replacedPayload = this.createPayload(data, payload, targetField);
+                    List<CatsRequest.Header> replacedHeaders = this.replaceHeaders(data, payload, targetField);
+                    String replacedPayload = this.replacePayload(data, payload, targetField);
+                    String replacedPath = this.replacePath(data, payload, targetField);
                     CatsRequest catsRequest = CatsRequest.builder()
                             .payload(replacedPayload)
                             .headers(replacedHeaders)
                             .httpMethod(data.getMethod().name())
-                            .url(data.getPath())
+                            .url(replacedPath)
                             .build();
 
                     testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(catsRequest, targetField, payload));
@@ -72,7 +74,37 @@ public class TemplateFuzzer implements Fuzzer {
         }
     }
 
-    @NotNull
+    private String replacePath(FuzzingData data, String withData, String targetField) {
+        String finalPath = data.getPath();
+        try {
+            URL url = new URL(data.getPath());
+            String replacedPath = Arrays.stream(url.getPath().split("/"))
+                    .map(pathElement -> pathElement.equalsIgnoreCase(targetField) ? withData : pathElement)
+                    .collect(Collectors.joining("/"));
+
+            finalPath = finalPath.replace(url.getPath(), replacedPath);
+
+            String replacedQuery = Arrays.stream(url.getQuery().split("&"))
+                    .map(queryParam -> replaceQueryParam(targetField, queryParam, withData))
+                    .collect(Collectors.joining("&"));
+
+            finalPath = finalPath.replace(url.getQuery(), replacedQuery);
+
+        } catch (Exception e) {
+            LOGGER.warn("There was an issue parsing {}: {}", data.getPath(), e.getMessage());
+        }
+
+        return finalPath;
+    }
+
+    private String replaceQueryParam(String targetField, String queryPair, String withValue) {
+        if (queryPair.contains("=")) {
+            return queryPair.split("=")[0] + "=" + withValue;
+        }
+
+        return withValue;
+    }
+
     private List<String> getAllPayloads(int payloadSize) {
         try {
             if (userArguments.getWords() == null) {
@@ -92,14 +124,14 @@ public class TemplateFuzzer implements Fuzzer {
         return Collections.emptyList();
     }
 
-    private List<CatsRequest.Header> createHeaders(FuzzingData data, String withData, String targetField) {
+    private List<CatsRequest.Header> replaceHeaders(FuzzingData data, String withData, String targetField) {
         return data.getHeaders().stream()
                 .map(catsHeader -> new CatsRequest.Header(catsHeader.getName(),
                         catsHeader.getName().equalsIgnoreCase(targetField) ? withData : catsHeader.getValue()))
                 .collect(Collectors.toList());
     }
 
-    private String createPayload(FuzzingData data, String withData, String targetField) {
+    private String replacePayload(FuzzingData data, String withData, String targetField) {
         try {
             return catsUtil.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).getJson();
         } catch (JsonPathException e) {
@@ -118,6 +150,9 @@ public class TemplateFuzzer implements Fuzzer {
                     .orElse("");
         }
         // We also need to check the PATH and QUERY params
+        if (oldValue.isEmpty()) {
+            oldValue = data.getPath().contains(field) ? "CATS_FUZZ" : "";
+        }
 
         return oldValue.length();
     }
