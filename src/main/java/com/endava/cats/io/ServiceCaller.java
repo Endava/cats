@@ -121,6 +121,8 @@ public class ServiceCaller {
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
                     .hostnameVerifier((hostname, session) -> true).build();
+
+            LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
         } catch (GeneralSecurityException | IOException e) {
             LOGGER.warning("Failed to configure HTTP CLIENT", e);
         }
@@ -173,8 +175,6 @@ public class ServiceCaller {
      */
     @DryRun
     public CatsResponse call(ServiceData data) {
-        LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
-        rateLimiter.acquire();
         String processedPayload = this.replacePayloadWithRefData(data);
 
         List<CatsRequest.Header> headers = this.buildHeaders(data);
@@ -308,6 +308,7 @@ public class ServiceCaller {
     }
 
     public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields) throws IOException {
+        rateLimiter.acquire();
         long startTime = System.currentTimeMillis();
         RequestBody requestBody = null;
         Headers.Builder headers = new Headers.Builder();
