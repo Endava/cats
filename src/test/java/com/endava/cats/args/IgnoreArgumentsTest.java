@@ -108,6 +108,18 @@ class IgnoreArgumentsTest {
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseLength(200)).isTrue();
     }
 
+    @Test
+    void shouldNotIgnoreRegex() {
+        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseRegex", "error.*");
+        Assertions.assertThat(ignoreArguments.isNotIgnoredRegex("error 333")).isFalse();
+    }
+
+    @Test
+    void shouldIgnoreRegex() {
+        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseRegex", null);
+        Assertions.assertThat(ignoreArguments.isNotIgnoredRegex("error")).isTrue();
+    }
+
     @ParameterizedTest
     @CsvSource({"1,0,0,0,false", "0,1,0,0,false", "0,0,1,0,false", "0,0,0,1,false", "0,0,0,0,true"})
     void shouldReturnIgnoredArgumentSupplied(long words, long sizes, long lines, long code, boolean blackbox) {
@@ -122,7 +134,7 @@ class IgnoreArgumentsTest {
 
     @Test
     void shouldNotIgnoreCatsResponse() {
-        CatsResponse catsResponse = CatsResponse.builder().responseCode(200)
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("test")
                 .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
 
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isTrue();

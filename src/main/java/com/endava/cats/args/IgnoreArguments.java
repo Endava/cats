@@ -44,6 +44,9 @@ public class IgnoreArguments {
             description = "A comma separated list of number of line counts in the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped", split = ",")
     private List<Long> ignoreResponseLines;
 
+    @CommandLine.Option(names = {"--ignoreResponseRegex", "--ir"},
+            description = "A regex that will match against the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped")
+    private String ignoreResponseRegex;
 
     @CommandLine.Option(names = {"-k", "--skipReportingForIgnoredCodes", "--skipReportingForIgnored"},
             description = "Skip reporting entirely for the ignored response codes, sizes, words and lines provided in @|bold,underline --ignoreResponseXXX|@ arguments. Default: @|bold false|@ ")
@@ -87,11 +90,16 @@ public class IgnoreArguments {
         return !Optional.ofNullable(ignoreResponseLines).orElse(Collections.emptyList()).contains(lines);
     }
 
+    public boolean isNotIgnoredRegex(String body) {
+        return !body.matches(Optional.ofNullable(ignoreResponseRegex).orElse(""));
+    }
+
     public boolean isNotIgnoredResponse(CatsResponse catsResponse) {
         return !this.isIgnoredResponseCode(catsResponse.responseCodeAsString()) &&
                 this.isNotIgnoredResponseLength(catsResponse.getContentLengthInBytes()) &&
                 this.isNotIgnoredResponseLines(catsResponse.getNumberOfLinesInResponse()) &&
-                this.isNotIgnoredResponseWords(catsResponse.getNumberOfWordsInResponse());
+                this.isNotIgnoredResponseWords(catsResponse.getNumberOfWordsInResponse()) &&
+                this.isNotIgnoredRegex(catsResponse.getBody());
     }
 
     public List<String> getSkipFields() {
