@@ -98,11 +98,13 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     private String replaceQueryParam(String targetField, String queryPair, String withValue) {
-        if (queryPair.contains("=")) {
-            return queryPair.split("=")[0] + "=" + withValue;
+        String[] queryPairArr = queryPair.split("=");
+        if (queryPairArr[0].equalsIgnoreCase(targetField) && queryPairArr.length == 2) {
+            return queryPairArr[0] + "=" + withValue;
+        } else if (queryPair.equalsIgnoreCase(targetField)) {
+            return withValue;
         }
-
-        return withValue;
+        return queryPair;
     }
 
     private List<String> getAllPayloads(int payloadSize) {
