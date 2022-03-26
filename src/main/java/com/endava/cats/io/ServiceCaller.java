@@ -25,6 +25,7 @@ import com.google.gson.JsonParser;
 import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.quarkus.runtime.Startup;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -73,6 +74,7 @@ import static com.endava.cats.model.util.JsonUtils.NOT_SET;
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
  */
 @ApplicationScoped
+@Startup
 @SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
@@ -427,7 +429,7 @@ public class ServiceCaller {
         if (JsonUtils.isValidJson(rawResponse)) {
             return rawResponse;
         }
-        return "{\"responseText\": \"" + rawResponse + "\"}";
+        return "{\"exception\": \"not a JSON\"}";
     }
 
     public String getAsRawString(Response response) throws IOException {
