@@ -123,6 +123,7 @@ class TestCaseListenerTest {
 
     @Test
     void givenATestCase_whenExecutingItAndAWarnHappens_thenTheWarnIsCorrectlyReportedWithinTheTestCase() {
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportWarn(logger, "Warn {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
@@ -229,6 +230,8 @@ class TestCaseListenerTest {
 
     @Test
     void givenATestCase_whenExecutingItAndAnErrorHappens_thenTheErrorIsCorrectlyReportedWithinTheTestCase() {
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportError(logger, "Error {} happened", "1"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
@@ -290,6 +293,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponseCodes()).thenReturn(Collections.singleton("200"));
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("nomatch")));
         Mockito.when(response.responseCodeAsString()).thenReturn("200");
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
@@ -306,6 +310,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponseCodes()).thenReturn(Collections.singleton("400"));
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("test")));
         Mockito.when(response.responseCodeAsString()).thenReturn("200");
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
@@ -322,6 +327,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponseCodes()).thenReturn(Collections.singleton("400"));
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("test")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
@@ -337,6 +343,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("test")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
@@ -419,6 +426,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
@@ -435,6 +443,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.getFuzzedField()).thenReturn("someField");
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
@@ -464,6 +473,7 @@ class TestCaseListenerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
         Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "401"));
         Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("401", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
