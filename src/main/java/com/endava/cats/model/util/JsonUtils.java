@@ -97,8 +97,8 @@ public abstract class JsonUtils {
     }
 
     public static Object getVariableFromJson(String jsonPayload, String value) {
-        DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
         try {
+            DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
             return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
         } catch (JsonPathException e) {
             LOGGER.debug("Expected variable {} was not found. Setting to NOT_SET", value);
