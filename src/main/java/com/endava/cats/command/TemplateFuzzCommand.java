@@ -85,7 +85,7 @@ public class TemplateFuzzCommand implements Runnable {
     @CommandLine.Option(names = {"--data", "-d"},
             description = "Specifies the request body used for fuzzing. The request body must be a valid request for the supplied url." +
                     "If the value of the argument starts with @|bold @|@ it will be considered a file.")
-    String data;
+    String data = "{}";
 
     @CommandLine.Option(names = {"--httpMethod", "-X"},
             description = "The HTTP method. For HTTP method requiring a body you must also supply a  @|bold,underline --template|@. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
