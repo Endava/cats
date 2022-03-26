@@ -83,13 +83,13 @@ public class TemplateFuzzer implements Fuzzer {
                     .collect(Collectors.joining("/"));
 
             finalPath = finalPath.replace(url.getPath(), replacedPath);
+            if (url.getQuery() != null) {
+                String replacedQuery = Arrays.stream(url.getQuery().split("&"))
+                        .map(queryParam -> replaceQueryParam(targetField, queryParam, withData))
+                        .collect(Collectors.joining("&"));
 
-            String replacedQuery = Arrays.stream(url.getQuery().split("&"))
-                    .map(queryParam -> replaceQueryParam(targetField, queryParam, withData))
-                    .collect(Collectors.joining("&"));
-
-            finalPath = finalPath.replace(url.getQuery(), replacedQuery);
-
+                finalPath = finalPath.replace(url.getQuery(), replacedQuery);
+            }
         } catch (Exception e) {
             LOGGER.warn("There was an issue parsing {}: {}", data.getPath(), e.getMessage());
         }
