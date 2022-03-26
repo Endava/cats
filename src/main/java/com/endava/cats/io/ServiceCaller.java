@@ -21,6 +21,7 @@ import com.google.common.html.HtmlEscapers;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -31,7 +32,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -324,17 +325,37 @@ public class ServiceCaller {
                 .build()).execute();
         long endTime = System.currentTimeMillis();
 
+        CatsResponse.CatsResponseBuilder catsResponseBuilder = this.populateCatsResponseFromHttpResponse(response);
+        CatsResponse catsResponse = catsResponseBuilder.httpMethod(catsRequest.getHttpMethod())
+                .responseTimeInMs(endTime - startTime)
+                .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
+                .build();
 
-        LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}", response.protocol(),
-                catsRequest.getHttpMethod(), response.message(), response.code(), endTime - startTime);
+        LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
+                catsResponse.getHttpMethod(), response.message(), catsResponse.responseCodeAsString(), endTime - startTime, catsResponse.getContentLengthInBytes());
 
-        String responseBody = this.getAsJson(response);
+        return catsResponse;
+    }
+
+    private CatsResponse.CatsResponseBuilder populateCatsResponseFromHttpResponse(Response response) throws IOException {
         List<CatsHeader> responseHeaders = response.headers()
                 .toMultimap()
                 .entrySet().stream()
                 .map(header -> CatsHeader.builder().name(header.getKey()).value(header.getValue().get(0)).build()).collect(Collectors.toList());
 
-        return CatsResponse.from(response.code(), responseBody, catsRequest.getHttpMethod(), endTime - startTime, responseHeaders, fuzzedFields);
+        String rawResponse = this.getAsRawString(response);
+        String jsonResponse = this.getAsJsonString(rawResponse);
+        int numberOfWords = new StringTokenizer(rawResponse).countTokens();
+        int numberOfLines = rawResponse.split("[\r|\n]").length;
+
+        return CatsResponse.builder()
+                .responseCode(response.code())
+                .headers(responseHeaders)
+                .body(rawResponse)
+                .jsonBody(JsonParser.parseString(jsonResponse))
+                .numberOfLinesInResponse(numberOfLines)
+                .contentLengthInBytes(rawResponse.getBytes(StandardCharsets.UTF_8).length)
+                .numberOfWordsInResponse(numberOfWords);
     }
 
     private void addBasicAuth(List<CatsRequest.Header> headers) {
@@ -402,20 +423,19 @@ public class ServiceCaller {
         return queryParams;
     }
 
-    public String getAsJson(Response response) throws IOException {
-        String responseAsString = null;
-        ResponseBody responseBody = response.body();
+    public String getAsJsonString(String rawResponse) {
+        if (JsonUtils.isValidJson(rawResponse)) {
+            return rawResponse;
+        }
+        return "{\"responseText\": \"" + rawResponse + "\"}";
+    }
 
-        if (responseBody != null) {
-            responseAsString = responseBody.string();
+    public String getAsRawString(Response response) throws IOException {
+        if (response.body() != null) {
+            return response.body().string();
         }
 
-        if (StringUtils.isBlank(responseAsString)) {
-            return "";
-        } else if (JsonUtils.isValidJson(responseAsString)) {
-            return responseAsString;
-        }
-        return "{\"exception\":\"Received response is not a JSON\"}";
+        return "";
     }
 
     private void recordRequestAndResponse(CatsRequest catsRequest, CatsResponse catsResponse, ServiceData serviceData) {
