@@ -14,29 +14,35 @@ import java.util.Set;
 @Getter
 public class CatsResponse {
     private final int responseCode;
-    private final JsonElement jsonBody;
     private final String httpMethod;
+    private final JsonElement jsonBody;
+    private final long responseTimeInMs;
+    private final long numberOfWordsInResponse;
+    private final long numberOfLinesInResponse;
+    private final long contentLengthInBytes;
+
+    @Exclude
+    private final List<CatsHeader> headers;
     @Exclude
     private final String body;
     @Exclude
     private final String fuzzedField;
-    private final long responseTimeInMs;
-    @Exclude
-    private final List<CatsHeader> headers;
 
     public static CatsResponse from(int code, String body, String methodType, long ms, List<CatsHeader> responseHeaders, Set<String> fuzzedFields) {
         return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)
-                .jsonBody(JsonParser.parseString(body)).responseTimeInMs(ms).headers(responseHeaders)
+                .responseTimeInMs(ms).headers(responseHeaders)
+                .jsonBody(JsonParser.parseString(body))
                 .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null)).build();
     }
 
     public static CatsResponse from(int code, String body, String methodType, long ms) {
-        return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)
-                .jsonBody(JsonParser.parseString(body)).headers(Collections.emptyList()).responseTimeInMs(ms).build();
+        return CatsResponse.builder().responseCode(code).body(body)
+                .jsonBody(JsonParser.parseString(body)).httpMethod(methodType)
+                .headers(Collections.emptyList()).responseTimeInMs(ms).build();
     }
 
     public static CatsResponse empty() {
-        return CatsResponse.from(99, "{}", "", 0);
+        return CatsResponse.from(999, "{}", "", 0);
     }
 
     public String responseCodeAsString() {
