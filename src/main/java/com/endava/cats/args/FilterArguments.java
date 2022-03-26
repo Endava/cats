@@ -130,7 +130,7 @@ public class FilterArguments {
     }
 
     private List<String> removeContractFuzzersIfNeeded(List<String> currentFuzzers) {
-        if (!ignoreArguments.getIgnoreResponseCodes().isEmpty() || ignoreArguments.isBlackbox()) {
+        if (ignoreArguments.isAnyIgnoredArgumentSupplied()) {
             return currentFuzzers.stream().filter(fuzzer -> !fuzzer.contains("Contract"))
                     .collect(Collectors.toList());
         }
