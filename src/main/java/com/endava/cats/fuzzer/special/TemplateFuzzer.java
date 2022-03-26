@@ -142,8 +142,11 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     private int getPayloadSize(FuzzingData data, String field) {
-        String oldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), field));
+        String oldValue = data.getPath().contains(field) ? "CATS_FUZZ" : "";
 
+        if (oldValue.isEmpty()) {
+            oldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), field));
+        }
         if (oldValue.equalsIgnoreCase(JsonUtils.NOT_SET)) {
             oldValue = data.getHeaders().stream()
                     .filter(header -> header.getName().equalsIgnoreCase(field))
@@ -151,16 +154,12 @@ public class TemplateFuzzer implements Fuzzer {
                     .findFirst()
                     .orElse("");
         }
-        // We also need to check the PATH and QUERY params
-        if (oldValue.isEmpty()) {
-            oldValue = data.getPath().contains(field) ? "CATS_FUZZ" : "";
-        }
 
         return oldValue.length();
     }
 
     private void process(CatsRequest catsRequest, String targetField, String fuzzValued) {
-        testCaseListener.addScenario(LOGGER, "Replace request field, header [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzValued).truncatedValue());
+        testCaseListener.addScenario(LOGGER, "Replace request field, header or path/query param [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzValued).truncatedValue());
         testCaseListener.addExpectedResult(LOGGER, "Should get a valid response from the service");
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addPath(catsRequest.getUrl());
