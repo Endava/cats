@@ -44,9 +44,12 @@ public class CatsTestCase {
     }
 
     public String getRequestJson() {
-        JsonReader reader = new JsonReader(new StringReader(request.getPayload()));
-        reader.setLenient(true);
-        return JsonUtils.GSON.toJson(JsonParser.parseReader(reader));
+        if (JsonUtils.isValidJson(request.getPayload())) {
+            JsonReader reader = new JsonReader(new StringReader(request.getPayload()));
+            reader.setLenient(true);
+            return JsonUtils.GSON.toJson(JsonParser.parseReader(reader));
+        }
+        return request.getPayload();
     }
 
     public String getResponseJson() {
