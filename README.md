@@ -308,13 +308,17 @@ To list all available commands, run CATS with no arguments:
 - `--readTimeout` Maximum time of inactivity in seconds between two data packets when waiting for the server's response; default is 10 seconds
 - `--dryRun` If provided, it will simulate a run of the service with the supplied configuration. The run won't produce a report, but will show how many tests will be generated and run for each OpenAPI endpoint
 - `--ignoreResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR. You can use response code families as `2xx`, `4xx`, etc. **If provided, all Contract Fuzzers will be skipped**.
+- `--ignoreResponseSize` SIZE_LIST a comma separated list of response sizes that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
+- `--ignoreResponseWords` COUNT_LIST a comma separated list of words count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
+- `--ignoreResponseLines` LINES_COUNT a comma separated list of lines count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
+- `--ignoreResponseRegex` a REGEX that will match against the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
 - `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
 - `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
 - `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
 - `--blackbox` If supplied (no value needed) it will ignore all response codes except for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
 - `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
 - `--outoput` The path where the CATS report will be written. Default is `cats-report` in the current directory
-- `--skipReportingForIgnoredCodes` Skip reporting entirely for the ignored response codes provided in `--ignoreResponseCodes`
+- `--skipReportingForIgnoredCodes` Skip reporting entirely for the any ignored arguments provided in `--ignoreResponseXXX`
 
 ```shell
 > cats --contract=my.yml --server=https://locathost:8080 --checkHeaders
