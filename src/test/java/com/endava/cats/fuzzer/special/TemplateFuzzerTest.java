@@ -70,6 +70,7 @@ class TemplateFuzzerTest {
                 .targetFields(Set.of("field"))
                 .processedPayload("{\"field\":\"value\"}")
                 .headers(Collections.emptySet())
+                .path("http://url")
                 .method(HttpMethod.POST)
                 .build();
         templateFuzzer.fuzz(data);
@@ -98,6 +99,7 @@ class TemplateFuzzerTest {
                 .processedPayload("{\"field\":\"value\"}")
                 .headers(Set.of(CatsHeader.builder().name("header").value("value").build(), CatsHeader.builder().name("header2").value("value").build()))
                 .method(HttpMethod.POST)
+                .path("http://url")
                 .build();
         templateFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(45)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
@@ -111,6 +113,7 @@ class TemplateFuzzerTest {
                 .processedPayload("{\"field\":\"value\"}")
                 .headers(Set.of(CatsHeader.builder().name("header").value("value").build()))
                 .method(HttpMethod.POST)
+                .path("http://url")
                 .build();
         Mockito.when(userArguments.getWords()).thenReturn(new File("non_real"));
         templateFuzzer.fuzz(data);
@@ -124,6 +127,7 @@ class TemplateFuzzerTest {
                 .processedPayload("{\"field\":\"value\"}")
                 .headers(Set.of(CatsHeader.builder().name("header").value("value").build()))
                 .method(HttpMethod.POST)
+                .path("http://url")
                 .build();
         Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
         templateFuzzer.fuzz(data);
@@ -137,6 +141,7 @@ class TemplateFuzzerTest {
                 .processedPayload("{\"field\":\"value\"}")
                 .headers(Set.of(CatsHeader.builder().name("header").value("value").build()))
                 .method(HttpMethod.POST)
+                .path("http://url")
                 .build();
         Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenThrow(IOException.class);
         Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
