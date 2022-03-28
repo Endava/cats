@@ -58,6 +58,14 @@ This is a list of articles with step-by-step guides on how to use CATS:
 
 # Installation
 
+## Homebrew
+
+```shell
+> brew tap endava/tap
+> brew install cats
+```
+
+## Manual
 CATS is bundled both as an executable JAR or a native binary. The native binaries do not need Java installed. 
 
 After downloading your OS native binary, you can add it in classpath so that you can execute it as any other command line tool:
