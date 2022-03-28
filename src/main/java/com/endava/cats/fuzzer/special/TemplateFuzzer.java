@@ -74,7 +74,7 @@ public class TemplateFuzzer implements Fuzzer {
         }
     }
 
-    private String replacePath(FuzzingData data, String withData, String targetField) {
+    String replacePath(FuzzingData data, String withData, String targetField) {
         String finalPath = data.getPath();
         try {
             URL url = new URL(data.getPath());
@@ -97,7 +97,7 @@ public class TemplateFuzzer implements Fuzzer {
         return finalPath;
     }
 
-    private String replaceQueryParam(String targetField, String queryPair, String withValue) {
+    String replaceQueryParam(String targetField, String queryPair, String withValue) {
         String[] queryPairArr = queryPair.split("=");
         if (queryPairArr[0].equalsIgnoreCase(targetField) && queryPairArr.length == 2) {
             return queryPairArr[0] + "=" + withValue;

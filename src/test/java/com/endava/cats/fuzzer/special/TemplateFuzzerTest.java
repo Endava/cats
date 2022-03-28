@@ -11,6 +11,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -151,4 +152,43 @@ class TemplateFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(2)).reportError(Mockito.any(), Mockito.eq("Something went wrong {}"), Mockito.any());
     }
 
+    @Test
+    void shouldNotReplacePathWhenInvalid() {
+        FuzzingData data = FuzzingData.builder()
+                .path("htp:url")
+                .build();
+
+        String replaced = templateFuzzer.replacePath(data, "test", "test");
+        Assertions.assertThat(replaced).isEqualTo("htp:url");
+    }
+
+    @Test
+    void shouldNotReplaceQuery() {
+        FuzzingData data = FuzzingData.builder()
+                .path("http://url?myq")
+                .build();
+
+        String replaced = templateFuzzer.replacePath(data, "test", "test");
+        Assertions.assertThat(replaced).isEqualTo("http://url?myq");
+    }
+
+    @Test
+    void shouldReplaceSingleParam() {
+        FuzzingData data = FuzzingData.builder()
+                .path("http://url?test")
+                .build();
+
+        String replaced = templateFuzzer.replacePath(data, "replaced", "test");
+        Assertions.assertThat(replaced).isEqualTo("http://url?replaced");
+    }
+
+    @Test
+    void shouldReplaceParamWithValue() {
+        FuzzingData data = FuzzingData.builder()
+                .path("http://url?test&field=value")
+                .build();
+
+        String replaced = templateFuzzer.replacePath(data, "replaced", "field");
+        Assertions.assertThat(replaced).isEqualTo("http://url?test&field=replaced");
+    }
 }
