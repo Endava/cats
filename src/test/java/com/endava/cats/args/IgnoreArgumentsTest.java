@@ -74,50 +74,82 @@ class IgnoreArgumentsTest {
 
     @Test
     void shouldNotIgnoreLines() {
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseLines", List.of(200L));
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseLines(200)).isFalse();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isFalse();
     }
 
     @Test
     void shouldIgnoreLines() {
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseLines", null);
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseLines(200)).isTrue();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isTrue();
     }
 
     @Test
     void shouldNotIgnoreWords() {
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseWords", List.of(200L));
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseWords(200)).isFalse();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isFalse();
     }
 
     @Test
     void shouldIgnoreWords() {
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseWords", null);
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseWords(200)).isTrue();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isTrue();
     }
 
     @Test
     void shouldNotIgnoreSizes() {
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseSizes", List.of(200L));
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseLength(200)).isFalse();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isFalse();
     }
 
     @Test
     void shouldIgnoreSizes() {
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseSizes", null);
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseLength(200)).isTrue();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isTrue();
     }
 
     @Test
     void shouldNotIgnoreRegex() {
-        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseRegex", "error.*");
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{\"err\":\"error 333\"}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
+        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseRegex", ".*error.*");
         Assertions.assertThat(ignoreArguments.isNotIgnoredRegex("error 333")).isFalse();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isFalse();
     }
 
     @Test
     void shouldIgnoreRegex() {
+        CatsResponse catsResponse = CatsResponse.builder().responseCode(200).body("{\"error\":\"value\"}")
+                .numberOfLinesInResponse(200).numberOfWordsInResponse(200).contentLengthInBytes(200).build();
+
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseRegex", null);
         Assertions.assertThat(ignoreArguments.isNotIgnoredRegex("error")).isTrue();
+        Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isTrue();
     }
 
     @ParameterizedTest
