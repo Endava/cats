@@ -56,10 +56,12 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         fieldsToBeRemoved.forEach(allFields::remove);
 
         if (allFields.isEmpty()) {
+            logger.debug("Not fields to fuzz. Skip fuzzing!");
             logger.skip("Skipped due to: no fields to fuzz!");
         } else {
             for (String fuzzedField : allFields) {
                 for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)) {
+                    logger.debug("Running strategy {} for {}", fuzzingStrategy.name(), fuzzedField);
                     testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy));
                 }
             }
@@ -73,6 +75,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
                 this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
 
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
+            logger.debug("Fuzzing possible...");
             FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
 
@@ -87,6 +90,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
             testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints);
         } else {
+            logger.debug("Fuzzing not possible!");
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);
             testCaseListener.skipTest(logger, strategy.process(""));
         }

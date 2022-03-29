@@ -42,8 +42,10 @@ public abstract class OpenApiUtils {
 
     public static OpenAPI getOpenAPI(SwaggerParserExtension parserExtension, String location, ParseOptions options) throws IOException {
         if (location.startsWith("http")) {
+            LOGGER.debug("Load remote contract {}", location);
             return parserExtension.readLocation(location, null, options).getOpenAPI();
         } else {
+            LOGGER.debug("Load local contract {}", location);
             return parserExtension.readContents(Files.readString(Paths.get(location)), null, options).getOpenAPI();
         }
     }

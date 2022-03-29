@@ -179,6 +179,7 @@ public class ServiceCaller {
     @DryRun
     public CatsResponse call(ServiceData data) {
         String processedPayload = this.replacePayloadWithRefData(data);
+        LOGGER.debug("Payload replaced with ref data: {}", processedPayload);
 
         List<CatsRequest.Header> headers = this.buildHeaders(data);
         CatsRequest catsRequest = CatsRequest.builder()
@@ -197,6 +198,7 @@ public class ServiceCaller {
 
             LOGGER.note("Final list of request headers: {}", headers);
             LOGGER.note("Final payload: {}", processedPayload);
+            LOGGER.note("Final url: {}", url);
 
             CatsResponse response = this.callService(catsRequest, data.getFuzzedFields());
 

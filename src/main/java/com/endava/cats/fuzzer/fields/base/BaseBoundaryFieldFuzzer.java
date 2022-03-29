@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
  * The assumption is that expected response is a 4XX code when sending out of boundary values for the fuzzed fields.
  */
 public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
-
     protected BaseBoundaryFieldFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
@@ -33,18 +32,22 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
 
         if (this.fuzzedFieldHasAnAssociatedSchema(schema)) {
+            logger.debug("Field {} has an associated schema", fuzzedField);
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
-
             if (this.isFieldFuzzable(fuzzedField, data) && this.fuzzerGeneratedBoundaryValue(schema)) {
+                logger.debug("Field {} is fuzzable and has boundary value", fuzzedField);
                 logger.start("[{}]. Start fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
                 return Collections.singletonList(FuzzingStrategy.replace().withData(this.getBoundaryValue(schema)));
             } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
+                logger.debug("Field {} does not have a boundary defined", fuzzedField);
                 logger.skip("Boundaries not defined. Will skip fuzzing...");
                 return Collections.singletonList(FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!"));
             } else if (!this.isStringFormatRecognizable(schema) && isRequestSchemaMatchingFuzzerType(schema)) {
+                logger.debug("Field {} has format unrecognizable {}", fuzzedField, schema.getFormat());
                 logger.skip("String format not supplied or not recognized [{}]", schema.getFormat());
                 return Collections.singletonList(FuzzingStrategy.skip().withData("String format not supplied or not recognized!"));
             } else {
+                logger.debug("Data type not matching. Skipping fuzzing for {}", fuzzedField);
                 logger.skip("Not [{}]. Will skip fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
             }
         }

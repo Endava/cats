@@ -74,6 +74,7 @@ public class ReplayCommand implements Runnable {
                 this.executeTestCase(testCaseFileName);
                 LOGGER.complete("Finish executing {}", testCaseFileName);
             } catch (IOException e) {
+                LOGGER.debug("Exception while replaying test!", e);
                 LOGGER.error("Something went wrong while replaying {}: {}", testCaseFileName, e.toString());
             }
         }

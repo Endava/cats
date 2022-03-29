@@ -191,14 +191,18 @@ public class TestCaseListener {
      * @param params  params needed by the message
      */
     public void reportWarn(PrettyLogger logger, String message, Object... params) {
+        LOGGER.debug("Reporting warn with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
+            LOGGER.debug("Received response is not marked as ignored... reporting warn!");
             executionStatisticsListener.increaseWarns();
             logger.warning(message, params);
             this.recordResult(message, params, Level.WARN.toString().toLowerCase());
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
+            LOGGER.debug("Received response is marked as ignored... skipping!");
             this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
         } else {
+            LOGGER.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }
     }
@@ -238,16 +242,20 @@ public class TestCaseListener {
      * @param params  params needed by the message
      */
     public void reportError(PrettyLogger logger, String message, Object... params) {
+        LOGGER.debug("Reporting error with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
         this.addRequest(CatsRequest.empty());
         this.addResponse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
+            LOGGER.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors();
             logger.error(message, params);
             this.recordResult(message, params, Level.ERROR.toString().toLowerCase());
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
+            LOGGER.debug("Received response is marked as ignored... skipping!");
             this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
         } else {
+            LOGGER.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }
     }
@@ -277,24 +285,32 @@ public class TestCaseListener {
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
 
+        LOGGER.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}", matchesResponseSchema, responseCodeExpected, responseCodeDocumented);
         this.storeRequestOnPostOrRemoveOnDelete(data, response);
 
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
         if (isNotFound(response)) {
+            LOGGER.debug("NOT_FOUND response");
             this.reportError(logger, CatsResult.NOT_FOUND);
         } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
+            LOGGER.debug("Response code expected and documented and matches response schema");
             this.reportInfo(logger, CatsResult.OK, response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
+            LOGGER.debug("Response code expected and documented and but doesn't match response schema");
             this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA, ignoreArguments.isIgnoreResponseBodyCheck(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
+            LOGGER.debug("Response code expected but not documented");
             this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE, ignoreArguments.isIgnoreResponseCodeUndocumentedCheck(), expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
+            LOGGER.debug("Response code documented but not expected");
             this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeUnimplemented()) {
+            LOGGER.debug("Response code unimplemented");
             this.reportWarn(logger, CatsResult.NOT_IMPLEMENTED);
         } else {
+            LOGGER.debug("Unexpected behaviour");
             this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         }
     }
@@ -351,7 +367,7 @@ public class TestCaseListener {
      * @return {@code true} if the response matches CATS expectations and {@code false} otherwise
      */
     private boolean isResponseCodeExpected(CatsResponse response, ResponseCodeFamily expectedResultCode) {
-        return expectedResultCode.allowedResponseCodes().contains(String.valueOf(response.responseCodeAsString())) || response.getResponseCode() == 501;
+        return expectedResultCode.allowedResponseCodes().contains(String.valueOf(response.responseCodeAsString()));
     }
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {

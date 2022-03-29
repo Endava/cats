@@ -486,6 +486,43 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldReportNotFound() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        Mockito.when(response.getBody()).thenReturn("");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("401"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("401", Collections.singletonList("{'test':'4'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("404");
+        Mockito.when(response.getResponseCode()).thenReturn(404);
+        Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
+        Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "Response HTTP code 404: you might need to provide business context using --refData or --urlParams");
+    }
+
+    @Test
+    void shouldReportNotImplemented() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+        Mockito.when(response.getBody()).thenReturn("");
+        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("401"));
+        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("401", Collections.singletonList("{'test':'4'}")));
+        Mockito.when(response.responseCodeAsString()).thenReturn("501");
+        Mockito.when(response.getResponseCode()).thenReturn(501);
+        Mockito.when(response.responseCodeAsResponseRange()).thenReturn("501");
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response HTTP code 501: you forgot to implement this functionality!");
+    }
+
+
+    @Test
     void shouldReturnIsDiscriminator() {
         catsGlobalContext.getDiscriminators().clear();
         catsGlobalContext.getDiscriminators().add("field");

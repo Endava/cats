@@ -1,8 +1,8 @@
 package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.Fuzzer;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.generator.Cloner;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
@@ -38,6 +38,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
 
         for (CatsHeader header : clonedHeaders) {
             for (FuzzingStrategy fuzzingStrategy : fuzzStrategy()) {
+                logger.debug("Fuzzing strategy {} for header {}", fuzzingStrategy.name(), header);
                 testCaseListener.createAndExecuteTest(logger, this, () -> process(fuzzingData, clonedHeaders, header, fuzzingStrategy));
             }
         }

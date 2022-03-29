@@ -94,6 +94,7 @@ public class TemplateFuzzer implements Fuzzer {
                 finalPath = finalPath.replace(url.getQuery(), replacedQuery);
             }
         } catch (Exception e) {
+            LOGGER.debug("There was a problem parsing given path!", e);
             LOGGER.warn("There was an issue parsing {}: {}", data.getPath(), e.getMessage());
         }
 
@@ -124,6 +125,7 @@ public class TemplateFuzzer implements Fuzzer {
                 return Files.readAllLines(Path.of(userArguments.getWords().getAbsolutePath()), StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
+            LOGGER.debug("Something went wrong while fuzzing!", e);
             LOGGER.error("Something went wrong while reading user supplied dictionary: {}", e.getMessage());
         }
         return Collections.emptyList();

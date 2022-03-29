@@ -37,6 +37,7 @@ public class SpringELParser implements Parser {
 
             return String.valueOf(spelExpressionParser.parseExpression(expression).getValue(context));
         } catch (Exception e) {
+            log.debug("Something went wrong while parsing!", e);
             log.error("Failed to parse {} as invalid syntax: {}", expression, e.getMessage());
             return expression;
         }

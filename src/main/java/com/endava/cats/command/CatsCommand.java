@@ -124,6 +124,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private void initGlobalData(OpenAPI openAPI) {
         Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
         globalContext.getSchemaMap().putAll(allSchemasFromOpenApi);
+        LOGGER.debug("Schemas: {}", allSchemasFromOpenApi.keySet());
     }
 
     public void startFuzzing(OpenAPI openAPI) {
@@ -194,7 +195,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), openAPI);
 
         if (fuzzingDataList.isEmpty()) {
-            LOGGER.warning("Skipping path {}. HTTP method not supported yet!", pathItemEntry.getKey());
+            LOGGER.warning("There was a problem fuzzing path {}.", pathItemEntry.getKey());
             return;
         }
 
