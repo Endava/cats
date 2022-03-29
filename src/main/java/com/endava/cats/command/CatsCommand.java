@@ -184,11 +184,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void processLogLevelArgument() {
-        for (String logLine : reportingArguments.getLogData()) {
-            String[] log = logLine.strip().trim().split(":");
-            CatsUtil.setLogLevel(log[0], log[1]);
-            LOGGER.info("Setting log level to {} for package {}", log[1], log[0]);
-        }
+        reportingArguments.processLogData();
     }
 
     public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
