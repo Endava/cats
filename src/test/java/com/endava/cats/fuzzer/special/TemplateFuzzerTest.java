@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.special;
 
+import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
@@ -27,6 +28,7 @@ import java.util.Set;
 @QuarkusTest
 class TemplateFuzzerTest {
     private UserArguments userArguments;
+    private MatchArguments matchArguments;
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
@@ -36,11 +38,12 @@ class TemplateFuzzerTest {
 
     @BeforeEach
     void setup() {
+        matchArguments = Mockito.mock(MatchArguments.class);
         userArguments = Mockito.mock(UserArguments.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
         catsUtil = new CatsUtil(new CatsDSLParser());
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, catsUtil, userArguments);
+        templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, catsUtil, userArguments, matchArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
         CatsUtil.setCatsLogLevel("SEVERE");//we do this in order to avoid surefire breaking due to \uFFFe
     }
@@ -66,7 +69,25 @@ class TemplateFuzzerTest {
     }
 
     @Test
-    void shouldRunWhenTargetFieldInPayload() {
+    void shouldSkipWhenMatchArgumentsButNoMatch() {
+        Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
+        Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(false);
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("field"))
+                .processedPayload("{\"field\":\"value\"}")
+                .headers(Collections.emptySet())
+                .path("http://url")
+                .method(HttpMethod.POST)
+                .build();
+        templateFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(45)).skipTest(Mockito.any(), Mockito.eq("Skipping test as response does not match given matchers!"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,true", "false,false", "false,true"})
+    void shouldRunWhenMatchArgumentsAndResponseMatched(boolean isAnyMatch, boolean isResponseMatch) {
+        Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(isAnyMatch);
+        Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(isResponseMatch);
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("field"))
                 .processedPayload("{\"field\":\"value\"}")

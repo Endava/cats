@@ -3,6 +3,7 @@ package com.endava.cats.command;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.dsl.CatsDSLParser;
@@ -59,6 +60,10 @@ public class TemplateFuzzCommand implements Runnable {
     ReportingArguments reportingArguments;
 
     @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options:|@%n", exclusive = false)
+    MatchArguments matchArguments;
+
+    @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
     IgnoreArguments ignoreArguments;
 
@@ -100,6 +105,7 @@ public class TemplateFuzzCommand implements Runnable {
     @Override
     public void run() {
         try {
+            reportingArguments.processLogData();
             validateRequiredFields();
             String payload = this.loadPayload();
             FuzzingData fuzzingData = FuzzingData.builder().path(url)

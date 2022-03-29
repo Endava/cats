@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.SpecialFuzzer;
+import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
@@ -38,12 +39,14 @@ public class TemplateFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
     private final UserArguments userArguments;
+    private final MatchArguments matchArguments;
 
-    public TemplateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, UserArguments ua) {
+    public TemplateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, UserArguments ua, MatchArguments ma) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.userArguments = ua;
+        this.matchArguments = ma;
     }
 
     @Override
@@ -166,10 +169,14 @@ public class TemplateFuzzer implements Fuzzer {
         testCaseListener.addFullRequestPath(catsRequest.getUrl());
         try {
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
-            testCaseListener.addResponse(catsResponse);
-            testCaseListener.reportError(LOGGER, "Service call completed. Please check response details.");
+            if ((matchArguments.isAnyMatchArgumentSupplied() && matchArguments.isMatchResponse(catsResponse)) || !matchArguments.isAnyMatchArgumentSupplied()) {
+                testCaseListener.addResponse(catsResponse);
+                testCaseListener.reportError(LOGGER, "Service call completed. Please check response details.");
+            } else {
+                testCaseListener.skipTest(LOGGER, "Skipping test as response does not match given matchers!");
+            }
         } catch (Exception e) {
-            LOGGER.error("An error happened: {}", e.getMessage());
+            LOGGER.debug("Something unexpected happened: ", e);
             testCaseListener.reportError(LOGGER, "Something went wrong {}", e.getMessage());
         }
     }
