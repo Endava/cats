@@ -74,7 +74,8 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
      * rather than the order defined by the OpenAPI contract.
      */
     public void executeCustomFuzzerTests() {
-        MDC.put("fuzzer", "CF");
+        LOGGER.debug("Executing {} functional tests.", executions.size());
+        MDC.put("fuzzer", "FF");
         MDC.put("fuzzerKey", "FunctionalFuzzer");
 
         Collections.sort(executions);
@@ -90,12 +91,14 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
 
     public void replaceRefData() throws IOException {
         if (filesArguments.getRefDataFile() != null) {
+            LOGGER.debug("Replacing variables in refData file with output variables from FunctionaFuzzer!");
             List<String> refDataLines = Files.readAllLines(filesArguments.getRefDataFile().toPath());
             List<String> updatedLines = refDataLines.stream().map(this::replaceWithVariable).collect(Collectors.toList());
             String currentFile = filesArguments.getRefDataFile().getAbsolutePath();
             Path file = Paths.get(currentFile.substring(0, currentFile.lastIndexOf(".")) + "_replaced.yml");
             Files.write(file, updatedLines, StandardCharsets.UTF_8);
         } else if (filesArguments.isCreateRefData()) {
+            LOGGER.debug("Creating refData file with output variables from FuctionalFuzzer!");
             customFuzzerUtil.writeRefDataFileWithOutputVariables();
         }
     }

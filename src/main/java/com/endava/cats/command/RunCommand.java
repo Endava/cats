@@ -89,6 +89,7 @@ public class RunCommand implements Runnable {
             catsCommand.processingArguments.setContentType(this.contentType);
             catsCommand.run();
         } catch (IOException e) {
+            LOGGER.debug("Exception while processing file!", e);
             LOGGER.error("Something went wrong while processing input file: {}", e.getMessage());
         }
     }

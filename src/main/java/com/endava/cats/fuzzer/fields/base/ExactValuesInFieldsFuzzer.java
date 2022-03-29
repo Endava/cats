@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -54,6 +54,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     @Override
     public String getBoundaryValue(Schema schema) {
         if (getExactMethod().apply(schema) == null) {
+            logger.debug("Null value for applied boundary function!");
             return null;
         }
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;

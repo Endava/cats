@@ -296,6 +296,7 @@ public class CustomFuzzerUtil {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
             return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).getJson();
         } catch (Exception e) {
+            log.debug("Something went wrong while parsing!", e);
             log.warning("Property [{}] does not exist", keyValue.getKey());
             return payload;
         }

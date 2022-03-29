@@ -1,8 +1,8 @@
 package com.endava.cats.command;
 
+import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
-import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.SanitizeAndValidate;
@@ -70,6 +70,7 @@ public class ListCommand implements Runnable {
             LOGGER.star("Available paths:");
             openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(LOGGER::info);
         } catch (IOException e) {
+            LOGGER.debug("Exception while reading contract!", e);
             LOGGER.error("Error while reading contract: {}", e.getMessage());
         }
     }

@@ -119,6 +119,7 @@ public class TemplateFuzzCommand implements Runnable {
             templateFuzzer.fuzz(fuzzingData);
             afterFuzz();
         } catch (IOException e) {
+            LOGGER.debug("Exception while fuzzing given data!", e);
             LOGGER.error("Something went wrong while fuzzing: {}", e.getMessage());
         }
     }
