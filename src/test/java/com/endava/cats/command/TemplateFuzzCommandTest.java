@@ -2,6 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
+import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,14 @@ class TemplateFuzzCommandTest {
     @Test
     void shouldRunWithCommandLineData() {
         templateFuzzCommand.data = "{\"field\":\"value\"}";
+        templateFuzzCommand.run();
+        Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
+    }
+
+    @Test
+    void shouldRunWhenGetAndNoData() {
+        templateFuzzCommand.data = null;
+        templateFuzzCommand.httpMethod = HttpMethod.GET;
         templateFuzzCommand.run();
         Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
     }
