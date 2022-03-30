@@ -115,6 +115,7 @@ You can also build native images using a GraalVM Java version.
 
 You may see some `ERROR` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the `Fuzzers`.
 
+
 # Running CATS
 
 ## Blackbox mode
@@ -221,9 +222,9 @@ Please note that due to the fact that `ControlChars, Emojis and Whitespaces` gen
 You can enable them using the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments. 
 The recommendation is to run them in separate runs so that you get manageable reports and optimal running times.
 
-# Ignoring Specific HTTP Response Codes
+# Ignoring Specific HTTP Responses
 By default, CATS will report `WARNs` and `ERRORs` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.
-You can use the `--ignoreResponseCodes` argument to supply a list of result codes that should be ignored as issues (overriding the Fuzzer behaviour) and report those cases as success instead or `WARN` or `ERROR`.
+You can use the `--ignoreResponseXXX` arguments to supply a list of response codes, response sizes, word counts, line counts or response body regexes that should be ignored as issues (overriding the Fuzzer behaviour) and report those cases as success instead or `WARN` or `ERROR`.
 For example, if you want CATS to report `ERRORs` only when there is an Exception or the service returns a `500`, you can use this: `--ignoreResultCodes="2xx,4xx"`.
 
 # Ignoring Undocumented Response Code Checks
@@ -253,17 +254,15 @@ Some notes on the above example:
 
 # Available Commands
 
-To list all available commands, run CATS with no arguments:
+To list all available commands, run:
 
 ```shell
 > cats -h
 ```
 
-`Other ways to get help from the CATS command are as follows:
+All available subcommands are listed below:
 
 - `cats help` or `cats -h` will list all available options
-
-- `cats --version` will display the current CATS version
 
 - `cats list --fuzzers` will list all the existing fuzzers, grouped on categories
 
@@ -272,6 +271,10 @@ To list all available commands, run CATS with no arguments:
 - `cats list --paths --contract=CONTRACT` will list all the paths available within the contract
 
 - `cats replay "test1,test2"` will replay the given tests `test1` and `test2`
+
+- `cats fuzz` will fuzz based on a given request template, rather than an OpenAPI contract
+
+- `cats run` will run functional and targeted security tests written in the CATS YAML format
 
 
 # Available arguments
