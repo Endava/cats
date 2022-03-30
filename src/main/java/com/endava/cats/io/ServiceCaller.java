@@ -74,7 +74,6 @@ import static com.endava.cats.model.util.JsonUtils.NOT_SET;
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
  */
 @ApplicationScoped
-@Startup
 @SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
