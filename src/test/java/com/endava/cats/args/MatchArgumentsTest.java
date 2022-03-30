@@ -12,7 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 @QuarkusTest
-public class MatchArgumentsTest {
+class MatchArgumentsTest {
     private MatchArguments matchArguments;
 
     @BeforeEach
