@@ -44,8 +44,7 @@ class FilterArgumentsTest {
     @ParameterizedTest
     @CsvSource({"checkHeaders,CheckSecurityHeadersFuzzer,RemoveFieldsFuzzer",
             "checkFields,RemoveFieldsFuzzer,CheckSecurityHeadersFuzzer",
-            "checkHttp,HappyFuzzer,CheckSecurityHeadersFuzzer",
-            "checkContract,TopLevelElementsContractInfoFuzzer,CheckSecurityHeadersFuzzer"})
+            "checkHttp,HappyFuzzer,CheckSecurityHeadersFuzzer"})
     void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
         ReflectionTestUtils.setField(checkArguments, argument, true);
 
@@ -58,7 +57,8 @@ class FilterArgumentsTest {
     @ParameterizedTest
     @CsvSource({"includeControlChars,LeadingControlCharsInHeadersFuzzer,LeadingWhitespacesInHeadersFuzzer",
             "includeEmojis,LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
-            "includeWhitespaces,LeadingWhitespacesInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer"})
+            "includeWhitespaces,LeadingWhitespacesInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
+            "includeContract,TopLevelElementsContractInfoFuzzer,LeadingWhitespacesInHeadersFuzzer"})
     void shouldIncludeLengthyFuzzers(String argument, String matching, String notMatching) {
         ReflectionTestUtils.setField(checkArguments, argument, true);
 
@@ -72,6 +72,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         ReflectionTestUtils.setField(checkArguments, "includeEmojis", true);
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
+        ReflectionTestUtils.setField(checkArguments, "includeContract", true);
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
@@ -82,7 +83,7 @@ class FilterArgumentsTest {
     void shouldReturnAllFuzzersWhenNoCheckSupplied() {
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
+        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
     }
 
     @Test
@@ -110,7 +111,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).contains("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
+        Assertions.assertThat(fuzzers).contains("HappyFuzzer", "RemoveFieldsFuzzer")
                 .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeValuesInFieldsFuzzer", "Jumbo");
 
     }
