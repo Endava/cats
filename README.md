@@ -262,20 +262,20 @@ To list all available commands, run:
 
 All available subcommands are listed below:
 
-- `cats help` or `cats -h` will list all available options
+- `> cats help` or `cats -h` will list all available options
 
-- `cats list --fuzzers` will list all the existing fuzzers, grouped on categories
+- `> cats list --fuzzers` will list all the existing fuzzers, grouped on categories
 
-- `cats list --fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
+- `> cats list --fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
 
-- `cats list --paths --contract=CONTRACT` will list all the paths available within the contract
+- `> cats list --paths --contract=CONTRACT` will list all the paths available within the contract
 
-- `cats replay "test1,test2"` will replay the given tests `test1` and `test2`
+- `> cats replay "test1,test2"` will replay the given tests `test1` and `test2`
 
-- `cats fuzz` will fuzz based on a given request template, rather than an OpenAPI contract
+- `> cats fuzz` will fuzz based on a given request template, rather than an OpenAPI contract
 
-- `cats run` will run functional and targeted security tests written in the CATS YAML format
-
+- `> cats run` will run functional and targeted security tests written in the CATS YAML format
+- `> cats lint`  will run OpenAPI contract linters, also called `ContractInfoFuzzers`
 
 # Available arguments
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
@@ -304,10 +304,10 @@ All available subcommands are listed below:
 - `--checkFields` If supplied (no value needed), it will only run the Field Fuzzers
 - `--checkHeaders` If supplied (no value needed), it will only run the Header Fuzzers
 - `--checkHttp` If supplied (no value needed), it will only run the HTTP Fuzzers
-- `--checkContract` If supplied (no value needed), it will only run the ContractInfo Fuzzers 
 - `--includeWhitespaces` If supplied (no value needed), it will include the Whitespaces Fuzzers 
 - `--includeEmojis` If supplied (no value needed), it will include the Emojis Fuzzers 
 - `--includeControlChars` If supplied (no value needed), it will include the ControlChars Fuzzers 
+- `--includeContract` If supplied (no value needed), it will include `ContractInfoFuzzers`
 - `--sslKeystore` Location of the JKS keystore holding certificates used when authenticating calls using one-way or two-way SSL 
 - `--sslKeystorePwd` The password of the `sslKeystore`
 - `--sslKeyPwd` The password of the private key from the `sslKeystore`
@@ -434,7 +434,7 @@ You can run only these `Fuzzers` by supplying the `--checkHeaders` argument.
 
 You can run only these `Fuzzers` by supplying the `--checkHttp` argument.
 
-## ContractInfo Fuzzers
+## ContractInfo Fuzzers or OpenAPI Linters
 Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
 - follow good practices around naming the contract elements like paths, requests, responses
 - always use plural for the path names, separate paths words through hyphens/underscores, use camelCase or snake_case for any `json` types and properties
@@ -461,7 +461,7 @@ Usually a good OpenAPI contract must follow several good practices in order to m
 - `VersionsContractInfoFuzzer` - verifies that a given path doesn't contain versioning information
 - `XmlContentTypeContractInfoFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
 
-You can run only these `Fuzzers` by supplying the `--checkContract` argument.
+You can run only these `Fuzzers` using `> cats lint --contract=CONTRACT`.
 
 ## Special Fuzzers
 ### FunctionalFuzzer
