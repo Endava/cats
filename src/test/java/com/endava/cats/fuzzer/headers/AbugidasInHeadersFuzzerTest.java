@@ -10,27 +10,27 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 @QuarkusTest
-class AbugidasCharsInHeadersFuzzerTest {
-    private AbugidasCharsInHeadersFuzzer abugidasCharsInHeadersFuzzer;
+class AbugidasInHeadersFuzzerTest {
+    private AbugidasInHeadersFuzzer abugidasInHeadersFuzzer;
 
     @BeforeEach
     void setup() {
         ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        abugidasCharsInHeadersFuzzer = new AbugidasCharsInHeadersFuzzer(serviceCaller, testCaseListener);
+        abugidasInHeadersFuzzer = new AbugidasInHeadersFuzzer(serviceCaller, testCaseListener);
     }
 
     @Test
     void shouldHaveAllMethodsOverridden() {
-        Assertions.assertThat(abugidasCharsInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(abugidasCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(abugidasCharsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(abugidasCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
+        Assertions.assertThat(abugidasInHeadersFuzzer.description()).isNotNull();
+        Assertions.assertThat(abugidasInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(abugidasInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(abugidasInHeadersFuzzer.matchResponseSchema()).isFalse();
     }
 
     @Test
     void shouldGetZalgoTextAsPayload() {
-        Assertions.assertThat(abugidasCharsInHeadersFuzzer.fuzzStrategy()).hasSize(2);
-        Assertions.assertThat(abugidasCharsInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo("జ్ఞ\u200Cా");
+        Assertions.assertThat(abugidasInHeadersFuzzer.fuzzStrategy()).hasSize(2);
+        Assertions.assertThat(abugidasInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo("జ్ఞ\u200Cా");
     }
 }
