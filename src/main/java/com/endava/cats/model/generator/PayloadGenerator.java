@@ -122,7 +122,6 @@ public class PayloadGenerator {
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, String mediaType, Schema<T> property) {
-        LOGGER.trace("Resolving example for property {}...", property);
         if (property.getExample() != null && canUseExamples(property)) {
             LOGGER.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
@@ -170,7 +169,7 @@ public class PayloadGenerator {
     }
 
     private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {
-        LOGGER.trace("String property");
+        LOGGER.trace("String property {}", propertyName);
 
         String defaultValue = property.getDefault();
         if (StringUtils.isNotBlank(defaultValue)) {
@@ -296,6 +295,7 @@ public class PayloadGenerator {
         LOGGER.trace("Resolving model '{}' to example", name);
 
         if (schema.getProperties() != null) {
+            LOGGER.trace("Schema properties not null {}: {}", name, schema.getProperties().keySet());
             this.processSchemaProperties(name, mediaType, schema, values);
         }
         if (schema instanceof ComposedSchema) {
@@ -308,7 +308,7 @@ public class PayloadGenerator {
     }
 
     private void processSchemaProperties(String name, String mediaType, Schema schema, Map<String, Object> values) {
-        LOGGER.trace("Creating example from model values");
+        LOGGER.trace("Creating example from model values {}", name);
         if (schema.getDiscriminator() != null) {
             globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
         }
@@ -339,6 +339,7 @@ public class PayloadGenerator {
             values.put(propertyName.toString(), innerSchema.getEnum().stream().filter(value -> name.contains(value.toString())).findFirst().orElse(""));
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         } else {
+            LOGGER.trace("Resolving {}", propertyName);
             Object example = this.resolvePropertyToExample(propertyName.toString(), mediaType, innerSchema);
             values.put(propertyName.toString(), example);
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
