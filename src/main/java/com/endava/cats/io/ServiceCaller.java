@@ -430,7 +430,7 @@ public class ServiceCaller {
         if (JsonUtils.isValidJson(rawResponse)) {
             return rawResponse;
         }
-        return "{\"exception\": \"not a JSON\"}";
+        return "{\"notAJson\": \"" + rawResponse.substring(0, Math.min(500, rawResponse.length())) + "\"}";
     }
 
     public String getAsRawString(Response response) throws IOException {
