@@ -28,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -51,7 +52,7 @@ public class TemplateFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        for (String targetField : data.getTargetFields()) {
+        for (String targetField : Optional.ofNullable(data.getTargetFields()).orElse(Collections.emptySet())) {
             int payloadSize = this.getPayloadSize(data, targetField);
 
             if (payloadSize == 0) {
