@@ -25,7 +25,6 @@ import com.google.gson.JsonParser;
 import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.quarkus.runtime.Startup;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -122,6 +121,7 @@ public class ServiceCaller {
                     .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+                    .connectionPool(new ConnectionPool())
                     .hostnameVerifier((hostname, session) -> true).build();
 
             LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
