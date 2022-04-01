@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import lombok.Getter;
+import lombok.Setter;
 import picocli.CommandLine;
 
 import javax.inject.Singleton;
@@ -31,10 +32,12 @@ public class ApiArguments {
             defaultValue = "10")
     private int readTimeout = 10;
 
+    @Setter
     @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract")
     private String contract;
 
+    @Setter
     @CommandLine.Option(names = {"-s", "--server"},
             description = "Base URL of the service")
     private String server;

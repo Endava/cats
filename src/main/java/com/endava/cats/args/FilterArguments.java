@@ -154,7 +154,6 @@ public class FilterArguments {
     private List<String> constructFuzzersListFromCheckArguments() {
         List<String> finalList = new ArrayList<>();
         finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckFields(), FieldFuzzer.class));
-        finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckContract(), ContractInfoFuzzer.class));
         finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckHeaders(), HeaderFuzzer.class));
         finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckHttp(), HttpFuzzer.class));
 
@@ -165,6 +164,7 @@ public class FilterArguments {
         this.removeIfNotSupplied(checkArguments.isIncludeControlChars(), ControlCharFuzzer.class, finalList);
         this.removeIfNotSupplied(checkArguments.isIncludeEmojis(), EmojiFuzzer.class, finalList);
         this.removeIfNotSupplied(checkArguments.isIncludeWhitespaces(), WhitespaceFuzzer.class, finalList);
+        this.removeIfNotSupplied(checkArguments.isIncludeContract(), ContractInfoFuzzer.class, finalList);
 
         return finalList;
     }
