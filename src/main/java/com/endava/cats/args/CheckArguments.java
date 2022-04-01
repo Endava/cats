@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import lombok.Getter;
+import lombok.Setter;
 import picocli.CommandLine;
 
 import javax.inject.Singleton;
@@ -10,6 +11,7 @@ import javax.inject.Singleton;
  */
 @Singleton
 @Getter
+@Setter
 public class CheckArguments {
     @CommandLine.Option(names = {"-H", "--checkHeaders"},
             description = "Run only Header Fuzzers")
@@ -23,9 +25,9 @@ public class CheckArguments {
             description = "Run only HTTP Fuzzers")
     private boolean checkHttp;
 
-    @CommandLine.Option(names = {"-C", "--checkContract"},
-            description = "Run only Contract Fuzzers")
-    private boolean checkContract;
+    @CommandLine.Option(names = {"-C", "--checkContract", "--includeContract"},
+            description = "Include Contract Fuzzers")
+    private boolean includeContract;
 
     @CommandLine.Option(names = {"-W", "--includeWhitespaces"},
             description = "Include Whitespaces Fuzzers")

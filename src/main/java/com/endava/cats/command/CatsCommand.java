@@ -53,7 +53,8 @@ import static org.fusesource.jansi.Ansi.ansi;
                 ListCommand.class,
                 ReplayCommand.class,
                 RunCommand.class,
-                TemplateFuzzCommand.class
+                TemplateFuzzCommand.class,
+                LintCommand.class
         })
 @Dependent
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
@@ -165,7 +166,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         List<String> skipPaths = filterArguments.getSkipPaths();
         suppliedPaths = suppliedPaths.stream().filter(path -> !skipPaths.contains(path)).collect(Collectors.toList());
 
+        LOGGER.debug("Supplied paths before filtering {}", suppliedPaths);
         suppliedPaths = CatsUtil.filterAndPrintNotMatching(suppliedPaths, path -> openAPI.getPaths().containsKey(path), LOGGER, "Supplied path is not matching the contract {}", Object::toString);
+        LOGGER.debug("Supplied paths after filtering {}", suppliedPaths);
 
         return suppliedPaths;
     }
