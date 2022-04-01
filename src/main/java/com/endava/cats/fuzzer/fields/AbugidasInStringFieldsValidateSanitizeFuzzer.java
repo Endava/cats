@@ -13,8 +13,8 @@ import javax.inject.Singleton;
 @Singleton
 @FieldFuzzer
 @ValidateAndSanitize
-public class AbugidasCharsInStringFieldsValidateSanitizeFuzzer extends AbugidasCharsInStringFieldsSanitizeValidateFuzzer {
-    protected AbugidasCharsInStringFieldsValidateSanitizeFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+public class AbugidasInStringFieldsValidateSanitizeFuzzer extends AbugidasInStringFieldsSanitizeValidateFuzzer {
+    protected AbugidasInStringFieldsValidateSanitizeFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 

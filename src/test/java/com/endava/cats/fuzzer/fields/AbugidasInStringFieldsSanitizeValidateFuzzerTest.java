@@ -19,17 +19,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 @QuarkusTest
-class AbugidasCharsInStringFieldsSanitizeValidateFuzzerTest {
+class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
 
     private final CatsUtil catsUtil = new CatsUtil(null);
-    private AbugidasCharsInStringFieldsSanitizeValidateFuzzer abugidasCharsInStringFieldsSanitizeValidateFuzzer;
+    private AbugidasInStringFieldsSanitizeValidateFuzzer abugidasCharsInStringFieldsSanitizeValidateFuzzer;
 
     @BeforeEach
     void setup() {
         ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
-        abugidasCharsInStringFieldsSanitizeValidateFuzzer = new AbugidasCharsInStringFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        abugidasCharsInStringFieldsSanitizeValidateFuzzer = new AbugidasInStringFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         Mockito.when(testCaseListener.isFieldNotADiscriminator(Mockito.anyString())).thenReturn(true);
         Mockito.when(testCaseListener.isFieldNotADiscriminator("pet#type")).thenReturn(false);
     }

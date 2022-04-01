@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 
 @HeaderFuzzer
 @Singleton
-public class AbugidasCharsInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
+public class AbugidasInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
-    public AbugidasCharsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
+    public AbugidasInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
         super(sc, lr);
     }
 

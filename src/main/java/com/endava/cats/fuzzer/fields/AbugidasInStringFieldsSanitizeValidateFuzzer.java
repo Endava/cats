@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 @Singleton
 @FieldFuzzer
 @SanitizeAndValidate
-public class AbugidasCharsInStringFieldsSanitizeValidateFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
+public class AbugidasInStringFieldsSanitizeValidateFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
 
-    protected AbugidasCharsInStringFieldsSanitizeValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    protected AbugidasInStringFieldsSanitizeValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
 
