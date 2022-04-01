@@ -177,7 +177,8 @@ public class FuzzingDataFactory {
         MediaType mediaType = this.getMediaType(operation, openAPI);
 
         if (mediaType == null) {
-            LOGGER.debug("Wasn't able to determine the media type for path {}, method {}", path, method);
+            LOGGER.info("Content type not supported for path {}, method {}. CATS only supports application/json. " +
+                    "You might try to supply the custom content type using --contentType argument", path, method);
             return Collections.emptyList();
         }
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
