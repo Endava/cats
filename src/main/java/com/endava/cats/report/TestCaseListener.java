@@ -17,6 +17,7 @@ import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Builder;
@@ -30,6 +31,7 @@ import org.springframework.util.CollectionUtils;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Instance;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -371,7 +373,9 @@ public class TestCaseListener {
     }
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
-        JsonElement jsonElement = JsonParser.parseString(response.getBody());
+        JsonReader reader = new JsonReader(new StringReader(response.getBody()));
+        reader.setLenient(true);
+        JsonElement jsonElement = JsonParser.parseReader(reader);
         List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
         return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
                 || isResponseEmpty(response, responses)
