@@ -4,6 +4,8 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BooleanSchema;
@@ -20,8 +22,6 @@ import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeTypeUtils;
 
@@ -52,7 +52,7 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 public class PayloadGenerator {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PayloadGenerator.class);
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(PayloadGenerator.class);
 
     private static final String MIME_TYPE_JSON = MimeTypeUtils.APPLICATION_JSON_VALUE;
     private static final String EXAMPLE = "example";
@@ -317,6 +317,9 @@ public class PayloadGenerator {
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
             currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
+            if (isCyclicReference(currentProperty)) {
+                return;
+            }
             if (innerSchema == null) {
                 this.parseFromInnerSchema(name, mediaType, schema, values, propertyName);
             } else {
@@ -326,6 +329,12 @@ public class PayloadGenerator {
         currentProperty = previousPropertyValue;
         schema.setExample(values);
         catsGeneratedExamples.add(schema);
+    }
+
+    public boolean isCyclicReference(String currentProperty) {
+        String[] properties = currentProperty.split("#");
+
+        return properties.length > 5 && properties[4].equalsIgnoreCase(properties[3]);
     }
 
     private void parseFromInnerSchema(String name, String mediaType, Schema schema, Map<String, Object> values, Object propertyName) {
