@@ -108,8 +108,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             this.doLogic();
             testCaseListener.endSession();
         } catch (IOException e) {
-            CatsUtil.setCatsLogLevel("info");
-            LOGGER.fatal("Something went wrong while running CATS!", e);
+            LOGGER.fatal("Something went wrong while running CATS: {}", e.getMessage());
+            LOGGER.debug("Stacktrace", e);
         }
     }
 
