@@ -63,7 +63,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         for (ApiResponse apiResponse : operation.getResponses().values()) {
             String ref = apiResponse.get$ref();
             if (ref == null && apiResponse.getContent() != null) {
-                ref = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema().get$ref();
+                ref = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType()).getSchema().get$ref();
             }
 
             if (ref != null) {

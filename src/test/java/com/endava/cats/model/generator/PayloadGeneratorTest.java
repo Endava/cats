@@ -17,6 +17,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -142,7 +143,7 @@ class PayloadGeneratorTest {
         options.setResolve(true);
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
-        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, "application/json");
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         globalContext.getSchemaMap().putAll(schemas);
         return new PayloadGenerator(globalContext, true);
     }

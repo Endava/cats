@@ -397,7 +397,7 @@ public class ServiceCaller {
 
     private void addMandatoryHeaders(ServiceData data, List<CatsRequest.Header> headers) {
         data.getHeaders().forEach(header -> headers.add(new CatsRequest.Header(header.getName(), header.getValue())));
-        addIfNotPresent("Accept", processingArguments.getContentType(), data, headers);
+        addIfNotPresent("Accept", processingArguments.getDefaultContentType(), data, headers);
         addIfNotPresent("Content-Type", "application/json", data, headers);
     }
 
