@@ -302,7 +302,7 @@ public class FuzzingDataFactory {
     }
 
     private List<String> generateSample(String reqSchemaName, PayloadGenerator generator) {
-        List<Map<String, String>> examples = generator.generate(List.of(processingArguments.getContentType()), reqSchemaName);
+        List<Map<String, String>> examples = generator.generate(reqSchemaName);
         if (examples.isEmpty()) {
             throw new IllegalArgumentException("Scheme is not declared: " + reqSchemaName);
         }

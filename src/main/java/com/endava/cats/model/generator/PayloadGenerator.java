@@ -33,7 +33,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,33 +94,28 @@ public class PayloadGenerator {
         return FuzzingStrategy.replace().withData(spaceValue);
     }
 
-    public List<Map<String, String>> generate(List<String> mediaTypes, String modelName) {
+    public List<Map<String, String>> generate(String modelName) {
         List<Map<String, String>> output = new ArrayList<>();
 
-        if (mediaTypes == null) {
-            // assume application/json for this
-            mediaTypes = Collections.singletonList(MIME_TYPE_JSON);
-        }
-        for (String mediaType : mediaTypes) {
-            Map<String, String> kv = new HashMap<>();
-            kv.put(CONTENT_TYPE, mediaType);
-            if (modelName != null) {
-                final Schema schema = this.globalContext.getSchemaMap().get(modelName);
-                if (schema != null) {
-                    String example = Json.pretty(this.resolveModelToExample(modelName, mediaType, schema));
 
-                    if (example != null) {
-                        kv.put(EXAMPLE, example);
-                        output.add(kv);
-                    }
+        Map<String, String> kv = new HashMap<>();
+        if (modelName != null) {
+            final Schema schema = this.globalContext.getSchemaMap().get(modelName);
+            if (schema != null) {
+                String example = Json.pretty(this.resolveModelToExample(modelName, schema));
+
+                if (example != null) {
+                    kv.put(EXAMPLE, example);
+                    output.add(kv);
                 }
             }
         }
 
+
         return output;
     }
 
-    private <T> Object resolvePropertyToExample(String propertyName, String mediaType, Schema<T> property) {
+    private <T> Object resolvePropertyToExample(String propertyName, Schema<T> property) {
         if (property.getExample() != null && canUseExamples(property)) {
             LOGGER.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
@@ -130,7 +124,7 @@ public class PayloadGenerator {
         } else if (property instanceof BooleanSchema) {
             return this.getExampleFromBooleanSchema((BooleanSchema) property);
         } else if (property instanceof ArraySchema) {
-            Object objectProperties = this.getExampleFromArraySchema(propertyName, mediaType, property);
+            Object objectProperties = this.getExampleFromArraySchema(propertyName, property);
             if (objectProperties != null) {
                 return objectProperties;
             }
@@ -143,7 +137,7 @@ public class PayloadGenerator {
         } else if (property instanceof IntegerSchema) {
             return this.getExampleFromIntegerSchema((IntegerSchema) property);
         } else if (property.getAdditionalProperties() instanceof Schema) {
-            return this.getExampleFromAdditionalPropertiesSchema(propertyName, mediaType, property);
+            return this.getExampleFromAdditionalPropertiesSchema(propertyName, property);
         } else if (property instanceof ObjectSchema) {
             return this.getExampleForObjectSchema(property);
         } else if (property instanceof UUIDSchema) {
@@ -204,21 +198,20 @@ public class PayloadGenerator {
     }
 
     boolean isURI(Schema<String> property, String propertyName) {
-        return URI.equals(property.getFormat()) || URL.equals(property.getFormat()) || propertyName.equalsIgnoreCase(URL) || propertyName.equalsIgnoreCase(URI)
-                || propertyName.toLowerCase(Locale.ROOT).endsWith(URL) || propertyName.toLowerCase(Locale.ROOT).endsWith(URI);
+        return URI.equals(property.getFormat()) || URL.equals(property.getFormat()) || propertyName.equalsIgnoreCase(URL) || propertyName.equalsIgnoreCase(URI) || propertyName.toLowerCase(Locale.ROOT).endsWith(URL) || propertyName.toLowerCase(Locale.ROOT).endsWith(URI);
     }
 
-    Map<String, Object> getExampleFromAdditionalPropertiesSchema(String propertyName, String mediaType, Schema property) {
+    Map<String, Object> getExampleFromAdditionalPropertiesSchema(String propertyName, Schema property) {
         Map<String, Object> mp = new HashMap<>();
         globalContext.getAdditionalProperties().add(propertyName);
         if (property.getName() != null) {
-            mp.put(property.getName(), resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
+            mp.put(property.getName(), resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties()));
         } else if (((Schema) property.getAdditionalProperties()).get$ref() != null) {
             Schema innerSchema = (Schema) property.getAdditionalProperties();
             Schema addPropSchema = this.globalContext.getSchemaMap().get(innerSchema.get$ref().substring(innerSchema.get$ref().lastIndexOf('/') + 1));
-            mp.put("key", resolvePropertyToExample(propertyName, mediaType, addPropSchema));
+            mp.put("key", resolvePropertyToExample(propertyName, addPropSchema));
         } else {
-            mp.put("key", resolvePropertyToExample(propertyName, mediaType, (Schema) property.getAdditionalProperties()));
+            mp.put("key", resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties()));
         }
         return mp;
     }
@@ -247,7 +240,7 @@ public class PayloadGenerator {
         return Boolean.TRUE;
     }
 
-    private Object getExampleFromArraySchema(String propertyName, String mediaType, Schema property) {
+    private Object getExampleFromArraySchema(String propertyName, Schema property) {
         Schema innerType = ((ArraySchema) property).getItems();
         if (innerType.get$ref() != null) {
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
@@ -255,7 +248,7 @@ public class PayloadGenerator {
         if (innerType != null) {
             int arrayLength = null == property.getMaxItems() ? 2 : property.getMaxItems();
             Object[] objectProperties = new Object[arrayLength];
-            Object objProperty = resolveModelToExample(propertyName, mediaType, innerType);
+            Object objProperty = resolveModelToExample(propertyName, innerType);
             for (int i = 0; i < arrayLength; i++) {
                 objectProperties[i] = objProperty;
             }
@@ -289,25 +282,25 @@ public class PayloadGenerator {
         }
     }
 
-    private Object resolveModelToExample(String name, String mediaType, Schema schema) {
+    private Object resolveModelToExample(String name, Schema schema) {
         Map<String, Object> values = new HashMap<>();
 
         LOGGER.trace("Resolving model '{}' to example", name);
 
         if (schema.getProperties() != null) {
             LOGGER.trace("Schema properties not null {}: {}", name, schema.getProperties().keySet());
-            this.processSchemaProperties(name, mediaType, schema, values);
+            this.processSchemaProperties(name, schema, values);
         }
         if (schema instanceof ComposedSchema) {
-            this.populateWithComposedSchema(mediaType, values, name, (ComposedSchema) schema);
+            this.populateWithComposedSchema(values, name, (ComposedSchema) schema);
         } else {
             globalContext.getRequestDataTypes().put(currentProperty, schema);
-            return this.resolvePropertyToExample(name, mediaType, schema);
+            return this.resolvePropertyToExample(name, schema);
         }
         return values;
     }
 
-    private void processSchemaProperties(String name, String mediaType, Schema schema, Map<String, Object> values) {
+    private void processSchemaProperties(String name, Schema schema, Map<String, Object> values) {
         LOGGER.trace("Creating example from model values {}", name);
         if (schema.getDiscriminator() != null) {
             globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
@@ -321,9 +314,9 @@ public class PayloadGenerator {
                 return;
             }
             if (innerSchema == null) {
-                this.parseFromInnerSchema(name, mediaType, schema, values, propertyName);
+                this.parseFromInnerSchema(name, schema, values, propertyName);
             } else {
-                values.put(propertyName.toString(), this.resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
+                values.put(propertyName.toString(), this.resolveModelToExample(propertyName.toString(), innerSchema));
             }
         }
         currentProperty = previousPropertyValue;
@@ -337,27 +330,27 @@ public class PayloadGenerator {
         return properties.length > 5 && properties[4].equalsIgnoreCase(properties[3]);
     }
 
-    private void parseFromInnerSchema(String name, String mediaType, Schema schema, Map<String, Object> values, Object propertyName) {
+    private void parseFromInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName) {
         Schema innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
         if (innerSchema instanceof ObjectSchema) {
-            values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), mediaType, innerSchema));
+            values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), innerSchema));
         }
         if (innerSchema instanceof ComposedSchema) {
-            this.populateWithComposedSchema(mediaType, values, propertyName.toString(), (ComposedSchema) innerSchema);
+            this.populateWithComposedSchema(values, propertyName.toString(), (ComposedSchema) innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
             values.put(propertyName.toString(), innerSchema.getEnum().stream().filter(value -> name.contains(value.toString())).findFirst().orElse(""));
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         } else {
             LOGGER.trace("Resolving {}", propertyName);
-            Object example = this.resolvePropertyToExample(propertyName.toString(), mediaType, innerSchema);
+            Object example = this.resolvePropertyToExample(propertyName.toString(), innerSchema);
             values.put(propertyName.toString(), example);
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         }
     }
 
-    private void populateWithComposedSchema(String mediaType, Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
+    private void populateWithComposedSchema(Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
         if (composedSchema.getAllOf() != null) {
-            addXXXOfExamples(mediaType, values, propertyName, composedSchema.getAllOf(), "ALL_OF");
+            addXXXOfExamples(values, propertyName, composedSchema.getAllOf(), "ALL_OF");
             String newKey = "ALL_OF";
             Map<String, Object> finalMap = new HashMap<>();
             boolean innerAllOff = false;
@@ -382,15 +375,15 @@ public class PayloadGenerator {
         }
 
         if (composedSchema.getAnyOf() != null) {
-            addXXXOfExamples(mediaType, values, propertyName, composedSchema.getAnyOf(), "ANY_OF");
+            addXXXOfExamples(values, propertyName, composedSchema.getAnyOf(), "ANY_OF");
         }
 
         if (composedSchema.getOneOf() != null) {
-            addXXXOfExamples(mediaType, values, propertyName, composedSchema.getOneOf(), "ONE_OF");
+            addXXXOfExamples(values, propertyName, composedSchema.getOneOf(), "ONE_OF");
         }
     }
 
-    private void addXXXOfExamples(String mediaType, Map<String, Object> values, Object propertyName, List<Schema> allOf, String of) {
+    private void addXXXOfExamples(Map<String, Object> values, Object propertyName, List<Schema> allOf, String of) {
         for (Schema allOfSchema : allOf) {
             String fullSchemaRef = allOfSchema.get$ref();
             String schemaRef;
@@ -406,7 +399,7 @@ public class PayloadGenerator {
                 fullSchemaRef = "#" + schemaRef;
             }
             String propertyKey = propertyName.toString() + schemaRef;
-            values.put(propertyName + of + fullSchemaRef, resolveModelToExample(propertyKey, mediaType, schemaToExample));
+            values.put(propertyName + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
         }
     }
 }

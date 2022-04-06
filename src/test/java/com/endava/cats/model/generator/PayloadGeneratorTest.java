@@ -1,7 +1,6 @@
 package com.endava.cats.model.generator;
 
 import com.endava.cats.model.CatsGlobalContext;
-import com.endava.cats.model.generator.PayloadGenerator;
 import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
@@ -108,7 +107,7 @@ class PayloadGeneratorTest {
     void givenASimpleOpenAPIContract_whenGeneratingAPayload_thenTheExampleIsProperlyGenerated() throws Exception {
         PayloadGenerator generator = setupPayloadGenerator();
 
-        List<Map<String, String>> example = generator.generate(null, "Pet");
+        List<Map<String, String>> example = generator.generate("Pet");
         String exampleJson = example.get(0).get("example");
 
         Assertions.assertThat(exampleJson)
@@ -121,7 +120,7 @@ class PayloadGeneratorTest {
     void shouldGenerateOneOfWhenOneOfInRoot() throws Exception {
         PayloadGenerator generator = setupPayloadGenerator();
 
-        List<Map<String, String>> example = generator.generate(null, "PetType");
+        List<Map<String, String>> example = generator.generate("PetType");
         String exampleJson = example.get(0).get("example");
 
         Assertions.assertThat(exampleJson)
@@ -132,7 +131,7 @@ class PayloadGeneratorTest {
     @Test
     void shouldGenerateFromAllOfAndPreserveRootElement() throws Exception {
         PayloadGenerator generator = setupPayloadGenerator();
-        List<Map<String, String>> example = generator.generate(null, "MiniPet");
+        List<Map<String, String>> example = generator.generate("MiniPet");
         String exampleJson = example.get(0).get("example");
 
         Assertions.assertThat(exampleJson).contains("color").contains("red").contains("green").contains("blue");
