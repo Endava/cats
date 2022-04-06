@@ -302,11 +302,11 @@ public class FuzzingDataFactory {
     }
 
     private List<String> generateSample(String reqSchemaName, PayloadGenerator generator) {
-        List<Map<String, String>> examples = generator.generate(reqSchemaName);
+        Map<String, String> examples = generator.generate(reqSchemaName);
         if (examples.isEmpty()) {
             throw new IllegalArgumentException("Scheme is not declared: " + reqSchemaName);
         }
-        String payloadSample = examples.get(0).get("example");
+        String payloadSample = examples.get("example");
 
         payloadSample = this.squashAllOfElements(payloadSample);
         return this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);

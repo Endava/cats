@@ -17,7 +17,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
@@ -107,8 +106,8 @@ class PayloadGeneratorTest {
     void givenASimpleOpenAPIContract_whenGeneratingAPayload_thenTheExampleIsProperlyGenerated() throws Exception {
         PayloadGenerator generator = setupPayloadGenerator();
 
-        List<Map<String, String>> example = generator.generate("Pet");
-        String exampleJson = example.get(0).get("example");
+        Map<String, String> example = generator.generate("Pet");
+        String exampleJson = example.get("example");
 
         Assertions.assertThat(exampleJson)
                 .contains("ALL_OF")
@@ -120,8 +119,8 @@ class PayloadGeneratorTest {
     void shouldGenerateOneOfWhenOneOfInRoot() throws Exception {
         PayloadGenerator generator = setupPayloadGenerator();
 
-        List<Map<String, String>> example = generator.generate("PetType");
-        String exampleJson = example.get(0).get("example");
+        Map<String, String> example = generator.generate("PetType");
+        String exampleJson = example.get("example");
 
         Assertions.assertThat(exampleJson)
                 .contains("PetTypeONE_OF#/components/schemas/Husky")
@@ -131,8 +130,8 @@ class PayloadGeneratorTest {
     @Test
     void shouldGenerateFromAllOfAndPreserveRootElement() throws Exception {
         PayloadGenerator generator = setupPayloadGenerator();
-        List<Map<String, String>> example = generator.generate("MiniPet");
-        String exampleJson = example.get(0).get("example");
+        Map<String, String> example = generator.generate("MiniPet");
+        String exampleJson = example.get("example");
 
         Assertions.assertThat(exampleJson).contains("color").contains("red").contains("green").contains("blue");
     }
