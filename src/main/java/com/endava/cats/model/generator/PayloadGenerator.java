@@ -31,8 +31,8 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -94,10 +94,7 @@ public class PayloadGenerator {
         return FuzzingStrategy.replace().withData(spaceValue);
     }
 
-    public List<Map<String, String>> generate(String modelName) {
-        List<Map<String, String>> output = new ArrayList<>();
-
-
+    public Map<String, String> generate(String modelName) {
         Map<String, String> kv = new HashMap<>();
         if (modelName != null) {
             final Schema schema = this.globalContext.getSchemaMap().get(modelName);
@@ -106,13 +103,13 @@ public class PayloadGenerator {
 
                 if (example != null) {
                     kv.put(EXAMPLE, example);
-                    output.add(kv);
+                    return kv;
                 }
             }
         }
 
 
-        return output;
+        return Collections.emptyMap();
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> property) {
