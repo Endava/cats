@@ -40,7 +40,7 @@ class FuzzingDataFactoryTest {
         filesArguments = Mockito.mock(FilesArguments.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
-        Mockito.when(processingArguments.getContentType()).thenReturn("application/json");
+        Mockito.when(processingArguments.getContentType()).thenReturn(List.of("application/json"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext);
     }
 
@@ -55,7 +55,7 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldUseExamplesForPathParams() throws Exception{
+    void shouldUseExamplesForPathParams() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets/{id}", "src/test/resources/petstore.yml");
         Assertions.assertThat(data).hasSize(1);
         Assertions.assertThat(data.get(0).getPayload()).contains("78").contains("test");
@@ -78,7 +78,7 @@ class FuzzingDataFactoryTest {
         options.setResolve(true);
         options.setFlatten(true);
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
-        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, "application/json");
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         catsGlobalContext.getSchemaMap().clear();
         catsGlobalContext.getSchemaMap().putAll(schemas);
         PathItem pathItem = openAPI.getPaths().get(path);

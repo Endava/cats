@@ -5,6 +5,7 @@ import lombok.Setter;
 import picocli.CommandLine;
 
 import javax.inject.Singleton;
+import java.util.List;
 
 @Singleton
 @Getter
@@ -36,7 +37,18 @@ public class ProcessingArguments {
     @Setter
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private String contentType = "application/json";
+    private String contentType;
+
+    public List<String> getContentType() {
+        if (contentType == null) {
+            return List.of("application/json", "application/x-www-form-urlencoded");
+        }
+        return List.of(contentType);
+    }
+
+    public String getDefaultContentType() {
+        return this.getContentType().get(0);
+    }
 
     public enum TrimmingStrategy {
         VALIDATE_AND_TRIM, TRIM_AND_VALIDATE;

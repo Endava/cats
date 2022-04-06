@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -58,19 +59,20 @@ public abstract class OpenApiUtils {
                 .orElseGet(() -> content.get(contentType));
     }
 
-    public static Map<String, Schema> getSchemas(OpenAPI openAPI, String contentType) {
+    public static Map<String, Schema> getSchemas(OpenAPI openAPI, List<String> contentTypeList) {
         Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas()).orElseGet(HashMap::new);
 
-        Optional.ofNullable(openAPI.getComponents().getRequestBodies()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
+        for (String contentType : contentTypeList) {
+            Optional.ofNullable(openAPI.getComponents().getRequestBodies()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
 
-        Optional.ofNullable(openAPI.getComponents().getResponses()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
-
+            Optional.ofNullable(openAPI.getComponents().getResponses()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
+        }
         return schemas;
     }
 
     private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content, String contentType) {
         Schema<?> schemaToAdd = new Schema();
-        if (ref == null && hasContentType(content, contentType)) {
+        if (ref == null && hasContentType(content, List.of(contentType))) {
             Schema<?> refSchema = getMediaTypeFromContent(content, contentType).getSchema();
 
             if (refSchema instanceof ArraySchema) {
@@ -88,7 +90,7 @@ public abstract class OpenApiUtils {
         schemas.put(schemaName, schemaToAdd);
     }
 
-    public static boolean hasContentType(Content content, String contentType) {
-        return content != null && content.keySet().stream().anyMatch(contentKey -> contentKey.startsWith(contentType));
+    public static boolean hasContentType(Content content, List<String> contentType) {
+        return content != null && content.keySet().stream().anyMatch(contentKey -> contentType.stream().anyMatch(contentKey::startsWith));
     }
 }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.AbstractMap;
+import java.util.List;
 import java.util.Set;
 
 @QuarkusTest
@@ -61,7 +62,7 @@ class OpenApiUtilsTest {
         MediaType mediaType = Mockito.mock(MediaType.class);
         Mockito.when(content.keySet()).thenReturn(Set.of("application/json;charset=UTF-8"));
 
-        boolean actual = OpenApiUtils.hasContentType(content, "application/json");
+        boolean actual = OpenApiUtils.hasContentType(content, List.of("application/json"));
         Assertions.assertThat(actual).isTrue();
     }
 }

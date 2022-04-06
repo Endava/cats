@@ -279,13 +279,15 @@ public class FuzzingDataFactory {
 
 
     private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
-        if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
-            String reqBodyRef = operation.getRequestBody().get$ref();
-            return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent(), processingArguments.getContentType());
-        } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), processingArguments.getContentType())) {
-            return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), processingArguments.getContentType());
-        } else if (operation.getRequestBody() != null) {
-            return operation.getRequestBody().getContent().get("*/*");
+        for (String contentType : processingArguments.getContentType()) {
+            if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
+                String reqBodyRef = operation.getRequestBody().get$ref();
+                return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent(), contentType);
+            } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), List.of(contentType))) {
+                return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), contentType);
+            } else if (operation.getRequestBody() != null) {
+                return operation.getRequestBody().getContent().get("*/*");
+            }
         }
         return null;
     }
@@ -435,7 +437,7 @@ public class FuzzingDataFactory {
 
     private Content buildDefaultContent() {
         Content defaultContent = new Content();
-        defaultContent.addMediaType(processingArguments.getContentType(), new MediaType());
+        defaultContent.addMediaType(processingArguments.getDefaultContentType(), new MediaType());
         return defaultContent;
     }
 
@@ -476,16 +478,18 @@ public class FuzzingDataFactory {
     }
 
     private String extractResponseSchemaRef(Operation operation, String responseCode) {
-        ApiResponse apiResponse = operation.getResponses().get(responseCode);
-        if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
-            return apiResponse.get$ref();
-        }
-        if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
-            Schema<?> respSchema = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getContentType()).getSchema();
-            if (respSchema instanceof ArraySchema) {
-                return ((ArraySchema) respSchema).getItems().get$ref();
-            } else {
-                return respSchema.get$ref();
+        for (String contentType : processingArguments.getContentType()) {
+            ApiResponse apiResponse = operation.getResponses().get(responseCode);
+            if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
+                return apiResponse.get$ref();
+            }
+            if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
+                Schema<?> respSchema = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema();
+                if (respSchema instanceof ArraySchema) {
+                    return ((ArraySchema) respSchema).getItems().get$ref();
+                } else {
+                    return respSchema.get$ref();
+                }
             }
         }
         return null;
