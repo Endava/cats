@@ -42,7 +42,8 @@ class HappyFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").
-                responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).build();
+                responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema())
+                .requestContentTypes(List.of("application/json")).build();
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

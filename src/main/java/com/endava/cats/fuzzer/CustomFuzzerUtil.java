@@ -61,7 +61,8 @@ public class CustomFuzzerUtil {
 
         String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
-                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).build());
+                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams())
+                .contentType(data.getFirstRequestContentType()).build());
 
         this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
 

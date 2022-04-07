@@ -85,7 +85,7 @@ public abstract class OpenApiUtils {
                 schemaToAdd = schemas.get(schemaKey);
             }
         } else if (content != null) {
-            LOGGER.warn("CATS only supports application/json as content-type. Found: {} for {}", content.keySet(), schemaName);
+            LOGGER.warn("Content-Type not supported. Found: {} for {}", content.keySet(), schemaName);
         }
         schemas.put(schemaName, schemaToAdd);
     }

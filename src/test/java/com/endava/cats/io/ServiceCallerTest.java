@@ -103,11 +103,11 @@ class ServiceCallerTest {
 
         long t0 = System.currentTimeMillis();
         serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
         serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
         serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
         long t1 = System.currentTimeMillis();
 
         Assertions.assertThat(t1 - t0).isGreaterThan(3900);
@@ -120,9 +120,9 @@ class ServiceCallerTest {
 
         long t0 = System.currentTimeMillis();
         serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
         serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
 
         long t1 = System.currentTimeMillis();
 
@@ -135,11 +135,36 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.DELETE)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
+    }
 
+    @Test
+    void shouldSendUrlFormEncoded() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{\"id\":\"1\",\"test\":2}").httpMethod(HttpMethod.POST)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/x-www-form-urlencoded").build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        Assertions.assertThat(catsResponse.getBody()).contains("OK");
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets")).withRequestBody(WireMock.equalTo("test=2&id=1")));
+    }
+
+    @Test
+    void shouldNotConvertToUrlFormEncodedWhenError() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'id':1}").httpMethod(HttpMethod.POST)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/x-www-form-urlencoded").build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        Assertions.assertThat(catsResponse.getBody()).contains("OK");
+        wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets")).withRequestBody(WireMock.equalTo("{'id':1}")));
     }
 
     @Test
@@ -148,7 +173,7 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.HEAD)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
@@ -161,7 +186,7 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'id':'1'}").httpMethod(HttpMethod.PATCH)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
@@ -173,7 +198,7 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}").httpMethod(HttpMethod.TRACE)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEmpty();
@@ -186,7 +211,7 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEqualTo("{'result':'OK'}");
@@ -200,7 +225,7 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         ServiceData data = ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build();
         Assertions.assertThatThrownBy(() -> serviceCaller.call(data)).isInstanceOf(CatsIOException.class);
     }
 
@@ -210,7 +235,7 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets").payload("{'field':'newValue'}").httpMethod(HttpMethod.PUT)
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build());
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEqualTo("{'result':'OK'}");
@@ -223,7 +248,7 @@ class ServiceCallerTest {
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1','limit':2,'no':null}").httpMethod(HttpMethod.GET)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
-                .queryParams(Set.of("limit", "no")).build());
+                .queryParams(Set.of("limit", "no")).contentType("application/json").build());
 
         wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/pets/1?limit=2&no")));
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
@@ -236,7 +261,7 @@ class ServiceCallerTest {
         serviceCaller.initRateLimiter();
 
         ServiceData data = ServiceData.builder().relativePath("/pets").payload("{\"id\":\"1\", \"field\":\"old_value\",\"name\":\"cats\"}")
-                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).build();
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build();
         String newPayload = serviceCaller.replacePayloadWithRefData(data);
         Assertions.assertThat(newPayload).contains("newValue", "id", "field").doesNotContain("cats", "name");
     }
@@ -311,7 +336,7 @@ class ServiceCallerTest {
     @Test
     void shouldMergeFuzzingForSuppliedHeaders() {
         ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsFuzzedHeader").value("  anotherValue").build()))
-                .fuzzedHeader("catsFuzzedHeader").build();
+                .fuzzedHeader("catsFuzzedHeader").contentType("application/json").build();
         List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
         List<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsFuzzedHeader")).collect(Collectors.toList());
 
@@ -323,7 +348,7 @@ class ServiceCallerTest {
     void shouldAddHeaderWhenAddUserHeadersOffButSuppliedInHeadersFile() {
         ServiceData data = ServiceData.builder()
                 .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build(), CatsHeader.builder().name("catsFuzzedHeader").value("anotherValue").build()))
-                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).build();
+                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
 
         List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
         List<String> headerNames = headers.stream().map(CatsRequest.Header::getName).collect(Collectors.toList());
@@ -339,7 +364,7 @@ class ServiceCallerTest {
         ServiceData data = ServiceData.builder()
                 .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build()))
                 .relativePath("auth-header")
-                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).build();
+                .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
 
         List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
         List<String> headerNames = headers.stream().map(CatsRequest.Header::getName).collect(Collectors.toList());

@@ -54,7 +54,8 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
             testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", this.getExpectedResultCode(isRequiredHeaderFuzzed).asString());
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(clonedHeaders)
-                    .payload(data.getPayload()).fuzzedHeader(header.getName()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build();
+                    .payload(data.getPayload()).fuzzedHeader(header.getName()).queryParams(data.getQueryParams()).httpMethod(data.getMethod())
+                    .contentType(data.getFirstRequestContentType()).build();
 
             CatsResponse response = serviceCaller.call(serviceData);
 

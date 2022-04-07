@@ -133,17 +133,28 @@ public class PayloadGenerator {
             return this.getExampleFromNumberSchema((NumberSchema) property);
         } else if (property instanceof IntegerSchema) {
             return this.getExampleFromIntegerSchema((IntegerSchema) property);
-        } else if (property.getAdditionalProperties() instanceof Schema) {
-            return this.getExampleFromAdditionalPropertiesSchema(propertyName, property);
         } else if (property instanceof ObjectSchema) {
             return this.getExampleForObjectSchema(property);
         } else if (property instanceof UUIDSchema) {
             return UUID.randomUUID().toString();
         } else if (property instanceof ByteArraySchema) {
             return this.getExampleForByteArraySchema(property);
+        } else if (property.getAdditionalProperties() instanceof Schema) {
+            return this.getExampleFromAdditionalPropertiesSchema(propertyName, property);
         }
 
-        return property.getExample();
+        return resolveProperties(property);
+    }
+
+    private Object resolveProperties(Schema<?> schema) {
+        if (schema.getProperties() != null) {
+            Map<String, Object> result = new HashMap<>();
+            for (Map.Entry<String, Schema> property : schema.getProperties().entrySet()) {
+                result.put(property.getKey(), this.resolvePropertyToExample(property.getKey(), property.getValue()));
+            }
+            return result;
+        }
+        return schema.getExample();
     }
 
     private <T> boolean canUseExamples(Schema<T> property) {

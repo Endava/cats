@@ -8,6 +8,7 @@ import lombok.Singular;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 @Builder
@@ -17,6 +18,7 @@ public class ServiceData {
     private final Collection<CatsHeader> headers;
     private final String payload;
     private final HttpMethod httpMethod;
+    private final String contentType;
     @Builder.Default
     private final boolean replaceRefData = true;
     @Builder.Default
@@ -31,4 +33,8 @@ public class ServiceData {
     private final Set<String> pathParams = new HashSet<>();
     @Builder.Default
     private final Set<String> queryParams = new HashSet<>();
+
+    public boolean isJsonContentType() {
+        return this.contentType.toLowerCase(Locale.ROOT).startsWith("application/json");
+    }
 }

@@ -380,6 +380,11 @@
             <groupId>info.picocli</groupId>
             <artifactId>picocli-codegen</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>20.112.0</version>
+        </dependency>
     </dependencies>
     <repositories>
         <repository>

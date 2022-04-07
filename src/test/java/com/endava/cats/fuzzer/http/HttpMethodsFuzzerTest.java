@@ -18,6 +18,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.inject.Inject;
+import java.util.List;
 
 @QuarkusTest
 class HttpMethodsFuzzerTest {
@@ -52,7 +53,7 @@ class HttpMethodsFuzzerTest {
 
     @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -63,7 +64,7 @@ class HttpMethodsFuzzerTest {
 
     @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWithA2xx_thenResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -80,7 +81,7 @@ class HttpMethodsFuzzerTest {
 
     @Test
     void shouldNotFuzzSamePathTwice() {
-        FuzzingData data = FuzzingData.builder().path("/pet").pathItem(new PathItem()).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().path("/pet").pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

@@ -90,8 +90,8 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
-        Mockito.verify(testCaseListener, Mockito.times(6)).afterFuzz();
-        Mockito.verify(testCaseListener, Mockito.times(6)).beforeFuzz(PathTagsContractInfoFuzzer.class);
+        Mockito.verify(testCaseListener, Mockito.times(8)).afterFuzz();
+        Mockito.verify(testCaseListener, Mockito.times(8)).beforeFuzz(PathTagsContractInfoFuzzer.class);
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
@@ -113,8 +113,8 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any());
         Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.any());
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(19)).afterFuzz();
-        Mockito.verify(testCaseListener, Mockito.times(19)).beforeFuzz(PathTagsContractInfoFuzzer.class);
+        Mockito.verify(testCaseListener, Mockito.times(20)).afterFuzz();
+        Mockito.verify(testCaseListener, Mockito.times(20)).beforeFuzz(PathTagsContractInfoFuzzer.class);
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");

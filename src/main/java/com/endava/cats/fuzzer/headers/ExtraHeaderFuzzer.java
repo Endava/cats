@@ -43,7 +43,7 @@ public class ExtraHeaderFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(LOGGER, "Should get a 2XX response code");
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).httpMethod(data.getMethod())
-                .headers(headerSet).payload(data.getPayload()).queryParams(data.getQueryParams()).build());
+                .headers(headerSet).payload(data.getPayload()).queryParams(data.getQueryParams()).contentType(data.getFirstRequestContentType()).build());
 
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);
     }

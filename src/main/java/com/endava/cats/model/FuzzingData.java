@@ -179,6 +179,9 @@ public class FuzzingData {
         return allFieldsSetOfSets;
     }
 
+    public String getFirstRequestContentType() {
+        return requestContentTypes.get(0);
+    }
 
     public enum SetFuzzingStrategy {
         POWERSET, SIZE, ONEBYONE;
@@ -276,6 +279,5 @@ public class FuzzingData {
             }
             return sets;
         }
-
     }
 }

@@ -127,6 +127,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /pet-types-rec:
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MegaPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   responses:
     BadRequest:
@@ -160,9 +184,6 @@ components:
                 - $ref: '#/components/schemas/Labrador'
               discriminator:
                 propertyName: breedType
-          additionalProperties:
-            type: string
-            maxLength: 10
     MegaPet:
       properties:
         id:
@@ -173,6 +194,49 @@ components:
           format: byte
         petType:
           $ref: '#/components/schemas/PetType'
+        metadata:
+          type: object
+          maxProperties: 10
+          additionalProperties:
+            type: string
+            maxLength: 256
+    AdditionalPet:
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          format: byte
+        metadata:
+          additionalProperties:
+            $ref: '#/components/schemas/Color'
+    ObjectPet:
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          format: byte
+        metadata:
+          additionalProperties:
+            type: object
+            properties:
+              cast:
+                type: string
+              rast:
+                type: integer
+    CyclicPet:
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          format: byte
+        parent:
+          $ref: '#/components/schemas/CyclicPet'
     MiniPet:
       properties:
         id:

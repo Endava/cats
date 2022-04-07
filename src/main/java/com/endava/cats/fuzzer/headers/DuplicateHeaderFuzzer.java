@@ -55,7 +55,7 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(LOGGER, "Should get a 4XX response code");
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(headers)
-                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
+                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build());
 
         testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
     }
