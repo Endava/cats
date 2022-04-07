@@ -36,7 +36,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(logger, "Should get a 4XX response code");
 
         ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(this.getPayload(data)).replaceRefData(false).httpMethod(data.getMethod()).build();
+                .payload(this.getPayload(data)).replaceRefData(false).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build();
 
         if (HttpMethod.requiresBody(data.getMethod())) {
             CatsResponse response = serviceCaller.call(serviceData);

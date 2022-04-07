@@ -94,7 +94,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
         testCaseListener.addScenario(log, "Send a happy flow request with a [{}] {} header, value [{}]", typeOfHeader(), targetHeaderName(), headerValue);
         testCaseListener.addExpectedResult(log, "Should get a {} response code", getExpectedResponseCode());
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(new ArrayList<>(headers))
-                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).build());
+                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build());
 
         testCaseListener.reportResult(log, data, response, ResponseCodeFamily.FOURXX_MT);
     }

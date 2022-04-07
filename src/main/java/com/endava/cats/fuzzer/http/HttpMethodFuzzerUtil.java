@@ -29,7 +29,7 @@ public class HttpMethodFuzzerUtil {
         testCaseListener.addExpectedResult(LOGGER, "Should get a 405 response code");
         String payload = HttpMethod.requiresBody(httpMethod) ? data.getPayload() : "";
         CatsResponse response = f.apply(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(payload).httpMethod(httpMethod).build());
+                .payload(payload).httpMethod(httpMethod).contentType(data.getFirstRequestContentType()).build());
         this.checkResponse(response);
     }
 

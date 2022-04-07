@@ -17,6 +17,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.inject.Inject;
+import java.util.List;
 
 @QuarkusTest
 class NonRestHttpMethodsFuzzerTest {
@@ -36,7 +37,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldCallServiceAndReportErrorWhenServiceRespondsWith200() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -46,7 +47,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldCallServiceAndReportInfoWhenServiceRespondsWith405() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -56,7 +57,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldCallServiceAndReportWarnWhenServiceRespondsWith400() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -66,7 +67,7 @@ class NonRestHttpMethodsFuzzerTest {
 
     @Test
     void shouldRunOncePerPath() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).path("/test").build();
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).path("/test").requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

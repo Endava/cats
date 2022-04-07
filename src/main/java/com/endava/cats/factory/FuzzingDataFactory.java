@@ -285,11 +285,9 @@ public class FuzzingDataFactory {
                 return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent(), contentType);
             } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), List.of(contentType))) {
                 return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), contentType);
-            } else if (operation.getRequestBody() != null) {
-                return operation.getRequestBody().getContent().get("*/*");
             }
         }
-        return null;
+        return operation.getRequestBody() != null ? operation.getRequestBody().getContent().get("*/*") : null;
     }
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {

@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
+
 @QuarkusTest
 class MalformedJsonFuzzerTest {
     private ServiceCaller serviceCaller;
@@ -32,7 +34,7 @@ class MalformedJsonFuzzerTest {
 
     @Test
     void givenAHttpMethodWithoutPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
@@ -43,7 +45,7 @@ class MalformedJsonFuzzerTest {
 
     @Test
     void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());

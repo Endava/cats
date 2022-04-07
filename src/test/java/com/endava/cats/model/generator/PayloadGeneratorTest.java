@@ -1,6 +1,7 @@
 package com.endava.cats.model.generator;
 
 import com.endava.cats.model.CatsGlobalContext;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
@@ -135,6 +136,43 @@ class PayloadGeneratorTest {
         String exampleJson = example.get("example");
 
         Assertions.assertThat(exampleJson).contains("color").contains("red").contains("green").contains("blue");
+    }
+
+    @Test
+    void shouldGenerateAdditionalPropertiesWhenInlineDef() throws Exception {
+        PayloadGenerator generator = setupPayloadGenerator();
+        Map<String, String> example = generator.generate("MegaPet");
+        String exampleJson = example.get("example");
+
+        Assertions.assertThat(exampleJson).contains("metadata");
+    }
+
+    @Test
+    void shouldGenerateAdditionalPropertiesWhenRef() throws Exception {
+        PayloadGenerator generator = setupPayloadGenerator();
+        Map<String, String> example = generator.generate("AdditionalPet");
+        String exampleJson = example.get("example");
+
+        Assertions.assertThat(exampleJson).contains("metadata");
+    }
+
+    @Test
+    void shouldGenerateAdditionalPropertiesWhenObject() throws Exception {
+        PayloadGenerator generator = setupPayloadGenerator();
+        Map<String, String> example = generator.generate("ObjectPet");
+        String exampleJson = example.get("example");
+
+        Assertions.assertThat(exampleJson).contains("metadata");
+    }
+
+    @Test
+    void shouldProperlyGenerateWhenCyclicReference() throws Exception {
+        PayloadGenerator generator = setupPayloadGenerator();
+        Map<String, String> example = generator.generate("CyclicPet");
+        String exampleJson = example.get("example");
+
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#parent#parent#parent#parent#parent#code")).isNotEqualTo("NOT_SET");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#parent#parent#parent#parent#parent#parent#code")).isEqualTo("NOT_SET");
     }
 
     private PayloadGenerator setupPayloadGenerator() throws IOException {

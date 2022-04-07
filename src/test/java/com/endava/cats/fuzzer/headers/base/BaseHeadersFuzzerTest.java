@@ -43,7 +43,8 @@ class BaseHeadersFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
-                responses(responses).responseCodes(Sets.newHashSet("200", "202")).reqSchema(new StringSchema()).build();
+                responses(responses).responseCodes(Sets.newHashSet("200", "202")).reqSchema(new StringSchema())
+                .requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -57,7 +58,7 @@ class BaseHeadersFuzzerTest {
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").required(true).build()))
                 .responseCodes(Sets.newHashSet("200", "202")).reqSchema(new StringSchema())
-                .responses(responses).build();
+                .responses(responses).requestContentTypes(List.of("application/json")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

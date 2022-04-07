@@ -17,12 +17,15 @@ import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.WordUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.html.HtmlEscapers;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jayway.jsonpath.PathNotFoundException;
+import com.stripe.net.FormEncoder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import okhttp3.ConnectionPool;
@@ -178,6 +181,7 @@ public class ServiceCaller {
     @DryRun
     public CatsResponse call(ServiceData data) {
         String processedPayload = this.replacePayloadWithRefData(data);
+        processedPayload = this.convertPayloadInSpecificContentType(processedPayload, data);
         LOGGER.debug("Payload replaced with ref data: {}", processedPayload);
 
         List<CatsRequest.Header> headers = this.buildHeaders(data);
@@ -207,6 +211,21 @@ public class ServiceCaller {
             this.recordRequestAndResponse(catsRequest, CatsResponse.empty(), data);
             throw new CatsIOException(e);
         }
+    }
+
+    String convertPayloadInSpecificContentType(String payload, ServiceData data) {
+        try {
+            if (data.isJsonContentType() || StringUtils.isBlank(payload)) {
+                return payload;
+            }
+            HashMap<String, Object> payloadAsMap = new ObjectMapper().readValue(payload, new TypeReference<>() {
+            });
+            return FormEncoder.createHttpContent(payloadAsMap).stringContent();
+        } catch (IOException e) {
+            LOGGER.warn("There was a problem converting the payload to the content-type: {}", e.getMessage());
+            LOGGER.debug("Stacktrace:", e);
+        }
+        return payload;
     }
 
     Map<String, String> getPathParamFromCorrespondingPostIfDelete(ServiceData data) {
@@ -398,7 +417,7 @@ public class ServiceCaller {
     private void addMandatoryHeaders(ServiceData data, List<CatsRequest.Header> headers) {
         data.getHeaders().forEach(header -> headers.add(new CatsRequest.Header(header.getName(), header.getValue())));
         addIfNotPresent("Accept", processingArguments.getDefaultContentType(), data, headers);
-        addIfNotPresent("Content-Type", "application/json", data, headers);
+        addIfNotPresent("Content-Type", data.getContentType(), data, headers);
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<CatsRequest.Header> headers) {
