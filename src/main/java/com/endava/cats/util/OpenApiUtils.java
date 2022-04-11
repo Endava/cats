@@ -52,6 +52,7 @@ public abstract class OpenApiUtils {
     }
 
     public static MediaType getMediaTypeFromContent(Content content, String contentType) {
+        content.forEach((key, value) -> LOGGER.debug("key {} contentType {}", key, contentType));
         return content.entrySet().stream()
                 .filter(contentEntry -> contentEntry.getKey().startsWith(contentType))
                 .map(Map.Entry::getValue)
@@ -73,6 +74,7 @@ public abstract class OpenApiUtils {
     private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content, String contentType) {
         Schema<?> schemaToAdd = new Schema();
         if (ref == null && hasContentType(content, List.of(contentType))) {
+            LOGGER.debug("Getting schema {} for content-type {}", schemaName, contentType);
             Schema<?> refSchema = getMediaTypeFromContent(content, contentType).getSchema();
 
             if (refSchema instanceof ArraySchema) {
@@ -84,7 +86,8 @@ public abstract class OpenApiUtils {
                 String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
                 schemaToAdd = schemas.get(schemaKey);
             }
-        } else if (content != null) {
+        } else if (content != null && schemas.get(schemaName) == null) {
+            /*it means it wasn't already added with another content type*/
             LOGGER.warn("Content-Type not supported. Found: {} for {}", content.keySet(), schemaName);
         }
         schemas.put(schemaName, schemaToAdd);
