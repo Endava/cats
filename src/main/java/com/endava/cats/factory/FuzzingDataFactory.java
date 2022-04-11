@@ -429,6 +429,8 @@ public class FuzzingDataFactory {
             }
             requests.addAll(new ArrayList<>(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent)
                     .keySet()));
+        } else {
+            requests.add(processingArguments.getDefaultContentType());
         }
         return requests;
     }
