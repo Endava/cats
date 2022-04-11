@@ -1064,12 +1064,12 @@ org.apache.commons.lang3.DurationUtils.class, java.time.LocalDate.class, java.ti
 ```
 
 ## API specs
-At this moment, CATS only works with OpenAPI spec.
+At this moment, CATS only works with OpenAPI specs and has limited functionality using template payloads through the `cats fuzz ...` subcommand.
 
 ## Media types and HTTP methods
 The `Fuzzers` has the following support for media types and HTTP methods:
-- `application/json` media type only
-- HTTP methods: `POST`, `PUT`, `PATCH` and `GET`
+- `application/json` and `application/x-www-form-urlencoded` media types only
+- HTTP methods: `POST`, `PUT`, `PATCH`, `GET` and `DELETE`
 
 ## Additional Parameters
 If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `WARN` level log message as it won't be able to validate that the response matches the schema.
