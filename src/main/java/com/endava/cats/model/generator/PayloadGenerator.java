@@ -13,6 +13,7 @@ import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.EmailSchema;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -23,7 +24,6 @@ import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.MimeTypeUtils;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -53,9 +53,7 @@ public class PayloadGenerator {
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(PayloadGenerator.class);
 
-    private static final String MIME_TYPE_JSON = MimeTypeUtils.APPLICATION_JSON_VALUE;
     private static final String EXAMPLE = "example";
-    private static final String CONTENT_TYPE = "contentType";
     private static final String URL = "url";
     private static final String URI = "uri";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -139,6 +137,8 @@ public class PayloadGenerator {
             return UUID.randomUUID().toString();
         } else if (property instanceof ByteArraySchema) {
             return this.getExampleForByteArraySchema(property);
+        } else if (property instanceof EmailSchema) {
+            return "cool.cats@cats.io";
         } else if (property.getAdditionalProperties() instanceof Schema) {
             return this.getExampleFromAdditionalPropertiesSchema(propertyName, property);
         }
