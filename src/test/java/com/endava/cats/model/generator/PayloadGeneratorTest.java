@@ -138,31 +138,15 @@ class PayloadGeneratorTest {
         Assertions.assertThat(exampleJson).contains("color").contains("red").contains("green").contains("blue");
     }
 
-    @Test
-    void shouldGenerateAdditionalPropertiesWhenInlineDef() throws Exception {
+    @ParameterizedTest
+    @CsvSource({"MegaPet", "AdditionalPet", "ObjectPet"})
+    void shouldGenerateAdditionalPropertiesWhenInlineDef(String modelName) throws Exception {
         PayloadGenerator generator = setupPayloadGenerator();
-        Map<String, String> example = generator.generate("MegaPet");
+        Map<String, String> example = generator.generate(modelName);
         String exampleJson = example.get("example");
 
         Assertions.assertThat(exampleJson).contains("metadata");
-    }
-
-    @Test
-    void shouldGenerateAdditionalPropertiesWhenRef() throws Exception {
-        PayloadGenerator generator = setupPayloadGenerator();
-        Map<String, String> example = generator.generate("AdditionalPet");
-        String exampleJson = example.get("example");
-
-        Assertions.assertThat(exampleJson).contains("metadata");
-    }
-
-    @Test
-    void shouldGenerateAdditionalPropertiesWhenObject() throws Exception {
-        PayloadGenerator generator = setupPayloadGenerator();
-        Map<String, String> example = generator.generate("ObjectPet");
-        String exampleJson = example.get("example");
-
-        Assertions.assertThat(exampleJson).contains("metadata");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "metadata#key")).isNotEqualTo("NOT_SET");
     }
 
     @Test
