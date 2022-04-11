@@ -26,6 +26,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.stripe.net.FormEncoder;
+import com.stripe.net.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONValue;
@@ -37,8 +38,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -291,9 +290,9 @@ public class ServiceCaller {
     private String addUriParams(String processedPayload, ServiceData data, String currentUrl) {
         if (StringUtils.isNotEmpty(processedPayload) && !"null".equalsIgnoreCase(processedPayload)) {
             HttpUrl.Builder httpUrl = HttpUrl.get(currentUrl).newBuilder();
-            List<NameValuePair> queryParams = this.buildQueryParameters(processedPayload, data);
-            for (NameValuePair param : queryParams) {
-                httpUrl.addEncodedQueryParameter(param.getName(), param.getValue());
+            List<KeyValuePair<String, String>> queryParams = this.buildQueryParameters(processedPayload, data);
+            for (KeyValuePair<String, String> param : queryParams) {
+                httpUrl.addEncodedQueryParameter(param.getKey(), param.getValue());
             }
             return httpUrl.build().toString();
         }
@@ -419,10 +418,6 @@ public class ServiceCaller {
         return processedPath;
     }
 
-    private String getEncodedUrl(String path) {
-        return path.replace(" ", "%20");
-    }
-
     private void addMandatoryHeaders(ServiceData data, List<CatsRequest.Header> headers) {
         data.getHeaders().forEach(header -> headers.add(new CatsRequest.Header(header.getName(), header.getValue())));
         addIfNotPresent("Accept", processingArguments.getDefaultContentType(), data, headers);
@@ -436,18 +431,18 @@ public class ServiceCaller {
         }
     }
 
-    private List<NameValuePair> buildQueryParameters(String payload, ServiceData data) {
-        List<NameValuePair> queryParams = new ArrayList<>();
+    private List<KeyValuePair<String, String>> buildQueryParameters(String payload, ServiceData data) {
+        List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
         JsonElement jsonElement = JsonUtils.parseAsJsonElement(payload);
         for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
-            if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey())) {
+            if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey()) || CatsDSLWords.isExtraField(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
-                    queryParams.add(new BasicNameValuePair(child.getKey(), null));
+                    queryParams.add(new KeyValuePair<>(child.getKey(), null));
                 } else if (child.getValue().isJsonArray()) {
-                    queryParams.add(new BasicNameValuePair(child.getKey(), child.getValue().toString().replace("[", "")
+                    queryParams.add(new KeyValuePair<>(child.getKey(), child.getValue().toString().replace("[", "")
                             .replace("]", "").replace("\"", "")));
                 } else {
-                    queryParams.add(new BasicNameValuePair(child.getKey(), child.getValue().getAsString()));
+                    queryParams.add(new KeyValuePair<>(child.getKey(), child.getValue().getAsString()));
                 }
             }
         }
