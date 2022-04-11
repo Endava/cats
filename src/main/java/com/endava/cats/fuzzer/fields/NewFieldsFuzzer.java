@@ -18,10 +18,11 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import javax.inject.Singleton;
 
+import static com.endava.cats.dsl.CatsDSLWords.NEW_FIELD;
+
 @Singleton
 @FieldFuzzer
 public class NewFieldsFuzzer implements Fuzzer {
-    protected static final String NEW_FIELD = "catsFuzzyField";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(NewFieldsFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
