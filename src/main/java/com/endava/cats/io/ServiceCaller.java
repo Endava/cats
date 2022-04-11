@@ -28,6 +28,7 @@ import com.jayway.jsonpath.PathNotFoundException;
 import com.stripe.net.FormEncoder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import net.minidev.json.JSONValue;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -50,6 +51,7 @@ import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -370,6 +372,9 @@ public class ServiceCaller {
         int numberOfWords = new StringTokenizer(rawResponse).countTokens();
         int numberOfLines = rawResponse.split("[\r|\n]").length;
 
+        LOGGER.debug("Raw response body: {}", rawResponse);
+        LOGGER.debug("Raw response headers: {}", response.headers());
+
         return CatsResponse.builder()
                 .responseCode(response.code())
                 .headers(responseHeaders)
@@ -399,11 +404,15 @@ public class ServiceCaller {
         String processedPath = path;
         if (processedPath.contains("{")) {
             for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
+                String toReplaceWith = "";
                 if (child.getValue().isJsonNull()) {
-                    processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", "");
+                    toReplaceWith = "";
+                } else if (child.getValue().isJsonArray()) {
+                    toReplaceWith = URLEncoder.encode(child.getValue().getAsJsonArray().get(0).getAsString(), StandardCharsets.UTF_8);
                 } else {
-                    processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", getEncodedUrl(child.getValue().getAsString()));
+                    toReplaceWith = URLEncoder.encode(child.getValue().getAsString(), StandardCharsets.UTF_8);
                 }
+                processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", toReplaceWith);
                 data.getPathParams().add(child.getKey());
             }
         }
@@ -449,7 +458,7 @@ public class ServiceCaller {
         if (JsonUtils.isValidJson(rawResponse)) {
             return rawResponse;
         }
-        return "{\"notAJson\": \"" + rawResponse.substring(0, Math.min(500, rawResponse.length())) + "\"}";
+        return "{\"notAJson\": \"" + JSONValue.escape(rawResponse.substring(0, Math.min(500, rawResponse.length()))) + "\"}";
     }
 
     public String getAsRawString(Response response) throws IOException {
