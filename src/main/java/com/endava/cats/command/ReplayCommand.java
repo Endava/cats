@@ -5,6 +5,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -44,6 +45,11 @@ public class ReplayCommand implements Runnable {
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
     AuthArguments authArgs;
 
+    @CommandLine.Option(names = {"-D", "--debug"},
+            description = "Set CATS log level to ALL. Useful for diagnose when raising bugs")
+    private boolean debug;
+
+
     @Inject
     public ReplayCommand(ServiceCaller serviceCaller) {
         this.serviceCaller = serviceCaller;
@@ -68,6 +74,10 @@ public class ReplayCommand implements Runnable {
 
     @Override
     public void run() {
+        if (debug) {
+            CatsUtil.setCatsLogLevel("ALL");
+            LOGGER.fav("Setting CATS log level to ALL!");
+        }
         for (String testCaseFileName : this.parseTestCases()) {
             try {
                 LOGGER.start("Executing {}", testCaseFileName);
