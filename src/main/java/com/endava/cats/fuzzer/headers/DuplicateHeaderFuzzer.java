@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -19,7 +20,6 @@ import java.util.List;
 @Singleton
 @HeaderFuzzer
 public class DuplicateHeaderFuzzer implements Fuzzer {
-    private static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(DuplicateHeaderFuzzer.class);
 
     private final ServiceCaller serviceCaller;
@@ -36,7 +36,7 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
             LOGGER.skip("No headers to fuzz");
         }
         List<CatsHeader> headers = new ArrayList<>(data.getHeaders());
-        CatsHeader header = CatsHeader.builder().name(CATS_FUZZY_HEADER).required(false).value(CATS_FUZZY_HEADER).build();
+        CatsHeader header = CatsHeader.builder().name(CatsDSLWords.CATS_FUZZY_HEADER).required(false).value(CatsDSLWords.CATS_FUZZY_HEADER).build();
 
         if (headers.isEmpty()) {
             headers.add(header);

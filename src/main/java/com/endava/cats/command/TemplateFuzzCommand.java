@@ -13,6 +13,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.VersionProvider;
+import com.google.common.net.HttpHeaders;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import picocli.CommandLine;
@@ -85,7 +86,7 @@ public class TemplateFuzzCommand implements Runnable {
 
     @CommandLine.Option(names = {"--headers", "-H"},
             description = "Specifies the headers that will be passed along with the request and/or fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
-    Map<String, String> headers = Map.of("Accept", "application/json", "Content-Type", "application/json");
+    Map<String, String> headers = Map.of(HttpHeaders.ACCEPT, "application/json", HttpHeaders.CONTENT_TYPE, "application/json");
 
     @CommandLine.Option(names = {"--data", "-d"},
             description = "Specifies the request body used for fuzzing. The request body must be a valid request for the supplied url." +
