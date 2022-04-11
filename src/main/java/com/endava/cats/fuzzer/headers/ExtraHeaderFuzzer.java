@@ -16,11 +16,12 @@ import javax.inject.Singleton;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.endava.cats.dsl.CatsDSLWords.CATS_FUZZY_HEADER;
+
 @Singleton
 @HeaderFuzzer
 public class ExtraHeaderFuzzer implements Fuzzer {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ExtraHeaderFuzzer.class);
-    private static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;

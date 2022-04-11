@@ -20,6 +20,7 @@ import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.html.HtmlEscapers;
+import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -420,8 +421,8 @@ public class ServiceCaller {
 
     private void addMandatoryHeaders(ServiceData data, List<CatsRequest.Header> headers) {
         data.getHeaders().forEach(header -> headers.add(new CatsRequest.Header(header.getName(), header.getValue())));
-        addIfNotPresent("Accept", processingArguments.getDefaultContentType(), data, headers);
-        addIfNotPresent("Content-Type", data.getContentType(), data, headers);
+        addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
+        addIfNotPresent(HttpHeaders.CONTENT_TYPE, data.getContentType(), data, headers);
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<CatsRequest.Header> headers) {

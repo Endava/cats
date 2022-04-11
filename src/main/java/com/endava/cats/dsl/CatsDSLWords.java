@@ -20,6 +20,7 @@ public abstract class CatsDSLWords {
 
     public static final List<String> RESERVED_WORDS = List.of(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION,
             ADDITIONAL_PROPERTIES, ELEMENT, MAP_VALUES, TARGET_FIELDS_TYPES);
+    public static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
 
     private CatsDSLWords() {
         //ntd

@@ -5,7 +5,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import org.apache.http.HttpHeaders;
+import com.google.common.net.HttpHeaders;
 
 import javax.inject.Singleton;
 import java.util.List;
