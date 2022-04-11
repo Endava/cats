@@ -1,12 +1,12 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.endava.cats.dsl.CatsDSLWords.NEW_FIELD;
 
 @QuarkusTest
 class NewFieldsFuzzerTest {
@@ -70,8 +72,8 @@ class NewFieldsFuzzerTest {
         setup(HttpMethod.POST);
         JsonElement element = newFieldsFuzzer.addNewField(data);
 
-        Assertions.assertThat(element.getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD)).isNotNull();
-        Assertions.assertThat(element.getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD + "random")).isNull();
+        Assertions.assertThat(element.getAsJsonObject().get(NEW_FIELD)).isNotNull();
+        Assertions.assertThat(element.getAsJsonObject().get(NEW_FIELD + "random")).isNull();
     }
 
     @Test
@@ -80,8 +82,8 @@ class NewFieldsFuzzerTest {
         data = FuzzingData.builder().payload(payload).reqSchema(new StringSchema()).build();
         JsonElement element = newFieldsFuzzer.addNewField(data);
 
-        Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD)).isNotNull();
-        Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NewFieldsFuzzer.NEW_FIELD + "random")).isNull();
+        Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NEW_FIELD)).isNotNull();
+        Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NEW_FIELD + "random")).isNull();
     }
 
     private void setup(HttpMethod method) {
