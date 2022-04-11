@@ -31,7 +31,7 @@ public class DummyAcceptHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
     }
 
     public String targetHeaderName() {
-        return "Accept";
+        return HttpHeaders.ACCEPT;
     }
 
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
