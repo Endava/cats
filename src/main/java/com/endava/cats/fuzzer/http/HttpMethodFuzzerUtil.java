@@ -8,7 +8,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.apache.http.HttpStatus;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -34,15 +33,15 @@ public class HttpMethodFuzzerUtil {
     }
 
     public void checkResponse(CatsResponse response) {
-        if (response.getResponseCode() == HttpStatus.SC_METHOD_NOT_ALLOWED) {
+        if (response.getResponseCode() == 405) {
             testCaseListener.reportInfo(LOGGER, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else if (ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             testCaseListener.reportError(LOGGER, "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
-                    response.getHttpMethod(), HttpStatus.SC_METHOD_NOT_ALLOWED, response.getResponseCode());
+                    response.getHttpMethod(), 405, response.getResponseCode());
         } else {
             testCaseListener.reportWarn(LOGGER, "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
-                    response.getHttpMethod(), HttpStatus.SC_METHOD_NOT_ALLOWED, response.getResponseCode());
+                    response.getHttpMethod(), 405, response.getResponseCode());
         }
     }
 }

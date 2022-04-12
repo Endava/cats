@@ -59,6 +59,7 @@ class ServiceCallerTest {
     public static void setup() {
         wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort());
         wireMockServer.start();
+        wireMockServer.stubFor(WireMock.get("/not-json").willReturn(WireMock.ok("<html>test</html>")));
         wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.ok("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.put("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
@@ -152,6 +153,19 @@ class ServiceCallerTest {
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).contains("OK");
         wireMockServer.verify(WireMock.postRequestedFor(WireMock.urlEqualTo("/pets")).withRequestBody(WireMock.equalTo("test=2&id=1")));
+    }
+
+    @Test
+    void shouldNotReturnJson() {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/not-json").httpMethod(HttpMethod.GET)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
+        Assertions.assertThat(catsResponse.getBody()).contains("html");
+        Assertions.assertThat(catsResponse.getJsonBody().toString()).contains("notAJson");
     }
 
     @Test
