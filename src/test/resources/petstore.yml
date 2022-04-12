@@ -287,6 +287,9 @@ components:
           format: ipv6
         email:
           type: string
+        emailAddress:
+          type: string
+          format: email
         petUrl:
           type: string
           format: url

@@ -6,7 +6,10 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 
@@ -31,9 +34,11 @@ class ReplayCommandTest {
         Mockito.verifyNoInteractions(serviceCaller);
     }
 
-    @Test
-    void shouldExecuteIfTestCasesSupplied() throws Exception {
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void shouldExecuteIfTestCasesSupplied(boolean debug) throws Exception {
         replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
+        ReflectionTestUtils.setField(replayCommand, "debug", debug);
         Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(Mockito.mock(CatsResponse.class));
         replayCommand.run();
         Mockito.verify(serviceCaller, Mockito.times(1)).callService(Mockito.any(), Mockito.eq(Collections.emptySet()));
