@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.args.FilesArguments;
-import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.args.FilesArguments;
+import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -26,8 +26,7 @@ import java.util.stream.Stream;
 @Singleton
 @HttpFuzzer
 public class BypassAuthenticationFuzzer implements Fuzzer {
-    private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
-            "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
+    private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
 
     private final ServiceCaller serviceCaller;
@@ -75,7 +74,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     }
 
     private boolean isAuthenticationHeader(String header) {
-        return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().contains(authHeader));
+        return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().replaceAll("[-_]", "").contains(authHeader));
     }
 
     @Override
