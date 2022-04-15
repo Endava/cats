@@ -51,10 +51,10 @@ This is a list of articles with step-by-step guides on how to use CATS:
 
 # Some bugs found by CATS
 
-- https://github.com/hashicorp/vault/issues/13274
-- https://github.com/hashicorp/vault/issues/13273
-- https://github.com/hashicorp/vault/issues/13225
-- https://github.com/hashicorp/vault/issues/13232
+- https://github.com/hashicorp/vault/issues/13274 | https://github.com/hashicorp/vault/issues/13273
+- https://github.com/hashicorp/vault/issues/13225 | https://github.com/hashicorp/vault/issues/13232
+- https://github.com/go-gitea/gitea/issues/19397  | https://github.com/go-gitea/gitea/issues/19398
+- https://github.com/go-gitea/gitea/issues/19399
 
 # Installation
 
@@ -71,7 +71,7 @@ CATS is bundled both as an executable JAR or a native binary. The native binarie
 After downloading your OS native binary, you can add it in classpath so that you can execute it as any other command line tool:
 
 ```shell
-sudo cp cats-macos /usr/local/bin/cats
+sudo cp cats /usr/local/bin/cats
 ```
 
 You can also get autocomplete by downloading the [cats_autocomplete](cats_autocomplete) script and do:
