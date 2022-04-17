@@ -91,7 +91,7 @@ public class IgnoreArguments {
     }
 
     public boolean isNotIgnoredRegex(String body) {
-        return !body.matches(Optional.ofNullable(ignoreResponseRegex).orElse(""));
+        return !body.matches(Optional.ofNullable(ignoreResponseRegex).orElse("cats_body"));
     }
 
     public boolean isNotIgnoredResponse(CatsResponse catsResponse) {
