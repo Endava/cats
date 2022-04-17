@@ -50,6 +50,18 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         }
     }
 
+    public List<String> getMissingRequiredKeywords(Map<String, Object> currentTestCase) {
+        List<String> missing = getRequiredKeywords().stream().filter(keyword -> currentTestCase.get(keyword) == null).collect(Collectors.toList());
+        if (currentTestCase.get(CatsDSLWords.TARGET_FIELDS_TYPES) == null && currentTestCase.get(CatsDSLWords.TARGET_FIELDS) == null) {
+            missing.add(CatsDSLWords.TARGET_FIELDS + " or " + CatsDSLWords.TARGET_FIELDS_TYPES);
+        }
+        return missing;
+    }
+
+    private List<String> getRequiredKeywords() {
+        return List.of(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.STRINGS_FILE, CatsDSLWords.HTTP_METHOD);
+    }
+
     private Map<String, Object> getCurrentPathValues(FuzzingData data) {
         Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getPath());
         if (CollectionUtils.isEmpty(currentPathValues)) {
@@ -62,14 +74,22 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     private void executeTestCases(FuzzingData data, String key, Object value) {
         log.info("Path [{}] has the following security configuration [{}]", data.getPath(), value);
         Map<String, Object> individualTestConfig = (Map<String, Object>) value;
+
+        List<String> missingRequiredKeywords = this.getMissingRequiredKeywords(individualTestConfig);
+        if (!missingRequiredKeywords.isEmpty()) {
+            log.error("Path [{}] is missing the following mandatory entries: {}", data.getPath(), missingRequiredKeywords);
+            return;
+        }
+
         String stringsFile = String.valueOf(individualTestConfig.get(CatsDSLWords.STRINGS_FILE));
 
         try {
-            List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile));
             log.start("Parsing stringsFile...");
+            List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile));
             log.complete("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
             List<String> targetFields = this.getTargetFields(individualTestConfig, data);
 
+            log.debug("Target fields {}", targetFields);
             for (String targetField : targetFields) {
                 log.info("Fuzzing field [{}]", targetField);
                 Map<String, Object> individualTestConfigClone = individualTestConfig.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
