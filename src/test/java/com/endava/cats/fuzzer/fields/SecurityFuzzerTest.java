@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.CustomFuzzerUtil;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
@@ -30,6 +31,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -117,10 +119,11 @@ class SecurityFuzzerTest {
     @Test
     void shouldConsiderFieldsWithTypeStringWhenRunningFuzzer() throws Exception {
         FuzzingData data = setContext("src/test/resources/securityFuzzer-fieldTypes.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        data.getHeaders().add(CatsHeader.builder().name("header").value("value").build());
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(63)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(84)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
@@ -139,7 +142,7 @@ class SecurityFuzzerTest {
         ObjectSchema person = new ObjectSchema();
         person.setProperties(properties);
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue', 'firstName':'John','lastName':'Cats','email':'john@yahoo.com'}").
-                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(person)
+                responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(person).headers(new HashSet<>())
                 .requestContentTypes(List.of("application/json")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

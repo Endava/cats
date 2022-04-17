@@ -46,7 +46,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
         } else {
-            log.skip("Skipping path [{}] as it was not configured in securityFuzzerFile", data.getPath());
+            log.skip("Skipping path [{}] for method [{}] as it was not configured in securityFuzzerFile", data.getPath(), data.getMethod());
         }
     }
 
@@ -88,21 +88,23 @@ public class SecurityFuzzer implements CustomFuzzerBase {
             List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile));
             log.complete("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
             List<String> targetFields = this.getTargetFields(individualTestConfig, data);
-
-            log.debug("Target fields {}", targetFields);
-            for (String targetField : targetFields) {
-                log.info("Fuzzing field [{}]", targetField);
-                Map<String, Object> individualTestConfigClone = individualTestConfig.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                individualTestConfigClone.put(targetField, nastyStrings);
-                individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, individualTestConfig.get(CatsDSLWords.DESCRIPTION) + ", field [" + targetField + "]");
-                individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS);
-                individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS_TYPES);
-                individualTestConfigClone.remove(CatsDSLWords.STRINGS_FILE);
-                customFuzzerUtil.executeTestCases(data, key, individualTestConfigClone, this);
-            }
-
+            this.fuzzFields(data, key, individualTestConfig, nastyStrings, targetFields);
         } catch (Exception e) {
             log.error("Invalid stringsFile [{}]", stringsFile, e);
+        }
+    }
+
+    private void fuzzFields(FuzzingData data, String key, Map<String, Object> individualTestConfig, List<String> nastyStrings, List<String> targetFields) {
+        log.debug("Target fields {}", targetFields);
+        for (String targetField : targetFields) {
+            log.info("Fuzzing field [{}]", targetField);
+            Map<String, Object> individualTestConfigClone = individualTestConfig.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            individualTestConfigClone.put(targetField, nastyStrings);
+            individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, individualTestConfig.get(CatsDSLWords.DESCRIPTION) + ", field [" + targetField + "]");
+            individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS);
+            individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS_TYPES);
+            individualTestConfigClone.remove(CatsDSLWords.STRINGS_FILE);
+            customFuzzerUtil.executeTestCases(data, key, individualTestConfigClone, this);
         }
     }
 
@@ -117,8 +119,10 @@ public class SecurityFuzzer implements CustomFuzzerBase {
                 .filter(name -> !JsonUtils.getVariableFromJson(data.getPayload(), name).equals(JsonUtils.NOT_SET))
                 .collect(Collectors.toList());
 
+        /*we also add the HTTP headers in this list. the actual split logic will be handled in CustomFuzzerUtil*/
+        catsFields.add(Arrays.stream(targetFieldsTypes).filter(type -> type.equalsIgnoreCase(CatsDSLWords.CATS_HEADERS)).findFirst().orElse(""));
         catsFields.addAll(Arrays.asList(targetFields));
-        catsFields.remove("");
+        catsFields.removeIf(StringUtils::isBlank);
 
         return catsFields;
     }
