@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -140,7 +141,7 @@ class FunctionalFuzzerTest {
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST)
-                .requestContentTypes(List.of("application/json")).build();
+                .headers(new HashSet<>()).requestContentTypes(List.of("application/json")).build();
 
         CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
         Mockito.when(mockCatsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
@@ -272,6 +273,7 @@ class FunctionalFuzzerTest {
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\", \"name\":\"dodo\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST)
+                .headers(new HashSet<>())
                 .requestContentTypes(List.of("application/json")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

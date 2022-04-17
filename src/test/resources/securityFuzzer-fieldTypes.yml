@@ -3,6 +3,7 @@
     description: XSS strings
     targetFieldTypes:
       - string
+      - http_headers
       - email
     stringsFile: xss.txt
     httpMethod: POST

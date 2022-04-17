@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,26 +55,54 @@ public class CustomFuzzerUtil {
 
 
     public void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
-        String expectedResponseCode = currentPathValues.get(CatsDSLWords.EXPECTED_RESPONSE_CODE);
-        this.startCustomTest(testName, currentPathValues, expectedResponseCode);
+        int howManyTests = this.getNumberOfIterationsBasedOnHeaders(data, currentPathValues);
+        boolean isHeadersFuzzing = currentPathValues.get(CatsDSLWords.CATS_HEADERS) != null;
+        CatsHeader[] arrayOfHeaders = data.getHeaders().toArray(new CatsHeader[0]);
 
-        String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
-        catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
+        for (int i = 0; i < howManyTests; i++) {
+            String expectedResponseCode = currentPathValues.get(CatsDSLWords.EXPECTED_RESPONSE_CODE);
+            this.startCustomTest(testName, currentPathValues, expectedResponseCode);
 
-        String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
-                .headers(data.getHeaders()).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams())
-                .contentType(data.getFirstRequestContentType()).build());
+            String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
+            catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
+            Set<CatsHeader> headers = this.getHeaders(arrayOfHeaders, currentPathValues, isHeadersFuzzing, i);
 
-        this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
+            String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
+            CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
+                    .headers(headers).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams())
+                    .contentType(data.getFirstRequestContentType()).build());
 
-        String verify = currentPathValues.get(CatsDSLWords.VERIFY);
+            this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
 
-        if (verify != null) {
-            this.checkVerifiesAndReport(payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
-        } else {
-            testCaseListener.reportResult(log, data, response, ResponseCodeFamily.from(expectedResponseCode));
+            String verify = currentPathValues.get(CatsDSLWords.VERIFY);
+
+            if (verify != null) {
+                this.checkVerifiesAndReport(payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
+            } else {
+                testCaseListener.reportResult(log, data, response, ResponseCodeFamily.from(expectedResponseCode));
+            }
         }
+    }
+
+    private Set<CatsHeader> getHeaders(CatsHeader[] existingHeaders, Map<String, String> currentPathValues, boolean isHeadersFuzzing, int i) {
+        Set<CatsHeader> headers = new java.util.HashSet<>(Set.of(existingHeaders));
+        if (!headers.isEmpty() && isHeadersFuzzing) {
+            CatsHeader headerToReplace = existingHeaders[i];
+            String toReplaceWith = currentPathValues.get(headerToReplace.getName());
+            headerToReplace.withValue(toReplaceWith);
+            headers.add(headerToReplace);
+        }
+        return headers;
+    }
+
+    private int getNumberOfIterationsBasedOnHeaders(FuzzingData data, Map<String, String> currentPathValues) {
+        boolean isHeadersFuzzing = currentPathValues.get(CatsDSLWords.CATS_HEADERS) != null;
+        if (isHeadersFuzzing) {
+            log.info("Fuzzing headers! Total numb of headers: {}", data.getHeaders().size());
+            return data.getHeaders().size();
+        }
+
+        return 1;
     }
 
     private void setOutputVariables(Map<String, String> currentPathValues, CatsResponse response, String request) {
