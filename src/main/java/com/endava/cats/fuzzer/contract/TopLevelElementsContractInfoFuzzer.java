@@ -39,7 +39,6 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         Set<String> missingFieldsSet = this.checkInfo(data.getOpenApi().getInfo());
 
-
         errorString.append(this.checkElement("servers", this.inspectServers(data.getOpenApi().getServers())));
 
         if (CollectionUtils.isEmpty(data.getOpenApi().getTags())) {
@@ -49,7 +48,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
         }
 
         if (!missingFieldsSet.isEmpty()) {
-            errorString.append(String.format("The following elements are missing: %s. <br/>", this.bold(missingFieldsSet.toString())));
+            errorString.append(String.format("The following elements are missing: %s. ", missingFieldsSet.toString()));
         }
 
         if (errorString.toString().isEmpty()) {
@@ -61,7 +60,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     private String checkElement(String element, String errors) {
         if (!errors.isEmpty()) {
-            return String.format("%s is misconfigured: %s %s", this.bold(element), errors, this.newLine(2));
+            return String.format("%s is misconfigured: %s. ", element, errors);
         }
 
         return EMPTY;
@@ -74,7 +73,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
             String serverString = this.emptyOrShort(server::getDescription, DESCRIPTION);
 
             if (!serverString.isEmpty()) {
-                builder.append(" , server[").append(server.getUrl()).append("]= ").append(StringUtils.stripStart(serverString, ","));
+                builder.append(" , server[").append(server.getUrl()).append("].").append(StringUtils.stripStart(serverString, ",").trim());
             }
         }
         return StringUtils.stripStart(builder.toString().trim(), ",");
@@ -91,10 +90,10 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
             tagString += this.emptyOrShort(tag::getDescription, DESCRIPTION);
 
             if (!tagString.isEmpty()) {
-                builder.append(" , tag[").append(tag.getName()).append("] = ").append(StringUtils.stripStart(tagString.trim(), ","));
+                builder.append(" , tag[").append(tag.getName()).append("] = ").append(StringUtils.stripStart(tagString.trim(), ",").trim());
             }
         }
-        return StringUtils.stripStart(builder.toString().trim(), ",");
+        return StringUtils.stripStart(builder.toString().trim(), ",").trim();
     }
 
     private String emptyOrShort(Supplier<String> supplier, String field) {

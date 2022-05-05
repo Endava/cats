@@ -25,7 +25,7 @@ public class XmlContentTypeContractInfoFuzzer extends BaseContractInfoFuzzer {
 
 
         if (data.getRequestContentTypes().contains(APPLICATION_XML)) {
-            testCaseListener.reportError(log, "Path accepts [application/xml] as Content-Type]");
+            testCaseListener.reportError(log, "Path accepts [application/xml] as Content-Type");
         } else {
             testCaseListener.reportInfo(log, "Path does not accept [application/xml] as Content-Type");
         }

@@ -73,7 +73,7 @@ class NamingsContractInfoFuzzerTest {
         namingsContractInfoFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow RESTful API naming good practices: {}"),
-                Mockito.contains(String.format("The following request/response objects are not matching CamelCase, snake_case or hyphen-case: <strong>%s</strong><br /><br />", schemaName)));
+                Mockito.contains(String.format("The following request/response objects are not matching CamelCase, snake_case or hyphen-case: %s", schemaName)));
     }
 
     @ParameterizedTest

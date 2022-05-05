@@ -7,7 +7,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,31 +59,6 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
             return toReturn;
         }
         return EMPTY;
-    }
-
-    /**
-     * HTML bold the text.
-     *
-     * @param text the text
-     * @return the text enclosed in <strong></strong>
-     */
-    protected String bold(String text) {
-        return "<strong>" + text + "</strong>";
-    }
-
-    /**
-     * Adds a new HTML line break.
-     *
-     * @param times how many line breaks
-     * @return line breaks according to the given times
-     */
-    protected String newLine(int times) {
-        return StringUtils.repeat("<br />", times);
-    }
-
-
-    protected String trailNewLines(String text, int newLines) {
-        return text + newLine(newLines);
     }
 
     /**

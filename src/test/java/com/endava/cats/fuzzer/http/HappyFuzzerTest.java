@@ -56,7 +56,9 @@ class HappyFuzzerTest {
 
     @Test
     void givenARequest_whenCallingTheHappyFuzzerAndAnErrorOccurs_thenTestCasesAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}").reqSchema(new StringSchema()).responseCodes(Collections.singleton("200")).build();
+        FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}")
+                .reqSchema(new StringSchema()).responseCodes(Collections.singleton("200"))
+                .requestContentTypes(List.of("application/json")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException());
 
         happyFuzzer.fuzz(data);
