@@ -70,7 +70,9 @@ class BaseHeadersFuzzerTest {
 
     @Test
     void shouldNotRunWhenNoHeaders() {
-        FuzzingData data = FuzzingData.builder().headers(Set.of(CatsHeader.builder().name("jwt").value("jwt").build())).reqSchema(new StringSchema()).build();
+        FuzzingData data = FuzzingData.builder().headers(Set.of(CatsHeader.builder().name("jwt").value("jwt").build())).reqSchema(new StringSchema())
+                .requestContentTypes(List.of("application/json")).build();
+        Mockito.doCallRealMethod().when(serviceCaller).isAuthenticationHeader(Mockito.any());
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }

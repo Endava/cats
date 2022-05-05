@@ -9,6 +9,7 @@ import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
 
@@ -38,7 +39,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Check if the current path follows RESTful API naming good practices for HTTP method {}", data.getMethod());
+        testCaseListener.addScenario(log, "Check if the path {} follows RESTful API naming good practices for HTTP method {}", data.getPath(), data.getMethod());
         testCaseListener.addExpectedResult(log, "Path should follow the RESTful API naming good practices. Must use: nouns, plurals, lowercase hyphen-case/snake_case for endpoints, camelCase/snake_case for JSON properties");
 
         StringBuilder errorString = new StringBuilder();
@@ -63,7 +64,10 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         for (ApiResponse apiResponse : operation.getResponses().values()) {
             String ref = apiResponse.get$ref();
             if (ref == null && apiResponse.getContent() != null) {
-                ref = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType()).getSchema().get$ref();
+                MediaType mediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType());
+                if (mediaType != null) {
+                    ref = mediaType.getSchema().get$ref();
+                }
             }
 
             if (ref != null) {
@@ -102,12 +106,12 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         for (String pathElement : pathElements) {
             if (checkFunction.test(pathElement)) {
-                result.append(COMMA).append(bold(pathElement));
+                result.append(COMMA).append(pathElement);
             }
         }
 
         if (!result.toString().isEmpty()) {
-            return String.format(this.trailNewLines(errorMessage, 2), StringUtils.stripStart(result.toString().trim(), ", "));
+            return String.format(errorMessage, StringUtils.stripStart(result.toString().trim(), ", "));
         }
 
         return EMPTY;

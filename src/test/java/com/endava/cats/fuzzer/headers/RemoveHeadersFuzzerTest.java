@@ -68,7 +68,8 @@ class RemoveHeadersFuzzerTest {
 
     @Test
     void givenASetOfHeaders_whenAnErrorOccursCallingTheService_thenTheErrorIsProperlyReported() {
-        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).build();
+        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build()))
+                .reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException());
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
