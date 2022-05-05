@@ -2,6 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.util.VersionProvider;
@@ -68,6 +69,10 @@ public class RunCommand implements Runnable {
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String contentType = "application/json";
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
+    IgnoreArguments ignoreArguments;
 
     @CommandLine.ParentCommand
     private CatsCommand catsCommand;
