@@ -46,7 +46,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         versionProvider = VersionProvider.class,
         commandListHeading = "%n@|bold,underline Commands:|@%n",
         defaultValueProvider = CommandLine.PropertiesDefaultProvider.class,
-//        resourceBundle = "version",
+        resourceBundle = "version",
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
                 CommandLine.HelpCommand.class,
