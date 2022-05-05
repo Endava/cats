@@ -13,9 +13,9 @@
         <maven.compiler.target>11</maven.compiler.target>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <jansi.version>2.4.0</jansi.version>
-        <lombok.version>1.18.22</lombok.version>
+        <lombok.version>1.18.24</lombok.version>
         <rgxgen.version>1.3</rgxgen.version>
-        <wiremock-jre8.version>2.32.0</wiremock-jre8.version>
+        <wiremock-jre8.version>2.33.1</wiremock-jre8.version>
         <pitest-maven.version>1.6.4</pitest-maven.version>
         <pitest-junit5-plugin.version>0.15</pitest-junit5-plugin.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
@@ -35,15 +35,16 @@
         <json-path.version>2.7.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.8.0.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.8.2.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>5.3.17</spring.version>
+        <spring.version>5.3.19</spring.version>
         <assertj-core.version>3.22.0</assertj-core.version>
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
         <spring-integration-core.version>5.5.10</spring-integration-core.version>
+        <stripe-java.version>20.116.0</stripe-java.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -377,7 +378,7 @@
         <dependency>
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
-            <version>20.112.0</version>
+            <version>${stripe-java.version}</version>
         </dependency>
     </dependencies>
     <repositories>
