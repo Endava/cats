@@ -5,8 +5,8 @@ import com.endava.cats.fuzzer.headers.base.SpacesCharsBaseFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
 import java.util.List;

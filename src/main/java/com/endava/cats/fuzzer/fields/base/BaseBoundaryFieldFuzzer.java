@@ -102,7 +102,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      * @param schema used to extract boundary information
      * @return a value to be used for fuzzing
      */
-    public abstract String getBoundaryValue(Schema schema);
+    public abstract Object getBoundaryValue(Schema schema);
 
     /**
      * Override this to provide information about whether the current field has boundaries defined or not. For example a String

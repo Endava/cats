@@ -4,8 +4,8 @@ import com.endava.cats.model.FuzzingStrategy;
 
 public class TrailFuzzingStrategy extends FuzzingStrategy {
     @Override
-    public String process(String value) {
-        return value + data;
+    public Object process(Object value) {
+        return String.valueOf(value) + String.valueOf(data);
     }
 
     @Override

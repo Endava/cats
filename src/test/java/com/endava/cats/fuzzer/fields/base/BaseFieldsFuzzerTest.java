@@ -3,11 +3,10 @@ package com.endava.cats.fuzzer.fields.base;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.util.JsonUtils;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
@@ -67,7 +66,7 @@ class BaseFieldsFuzzerTest {
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq(null));
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq(""));
     }
 
     @Test
@@ -215,7 +214,7 @@ class BaseFieldsFuzzerTest {
 
         @Override
         protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-            return Collections.singletonList(FuzzingStrategy.skip());
+            return Collections.singletonList(FuzzingStrategy.skip().withData(""));
         }
 
         @Override

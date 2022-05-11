@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.NumberGenerator;
 import com.endava.cats.io.ServiceCaller;
@@ -35,7 +35,7 @@ public class DecimalValuesInIntegerFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     }
 
     @Override
-    public String getBoundaryValue(Schema schema) {
+    public Number getBoundaryValue(Schema schema) {
         return NumberGenerator.generateDecimalValue(schema);
     }
 

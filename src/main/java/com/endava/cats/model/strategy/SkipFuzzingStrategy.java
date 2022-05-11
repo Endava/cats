@@ -4,7 +4,7 @@ import com.endava.cats.model.FuzzingStrategy;
 
 public class SkipFuzzingStrategy extends FuzzingStrategy {
     @Override
-    public String process(String value) {
+    public Object process(Object value) {
         return data;
     }
 

@@ -4,8 +4,8 @@ import com.endava.cats.model.FuzzingStrategy;
 
 public class PrefixFuzzingStrategy extends FuzzingStrategy {
     @Override
-    public String process(String value) {
-        return data + value;
+    public Object process(Object value) {
+        return String.valueOf(data) + String.valueOf(value);
     }
 
     @Override

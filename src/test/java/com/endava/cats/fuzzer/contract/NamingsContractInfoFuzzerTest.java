@@ -21,7 +21,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import javax.enterprise.inject.Instance;
-import java.util.List;
 import java.util.stream.Stream;
 
 @QuarkusTest

@@ -25,7 +25,7 @@ public abstract class FuzzingStrategy {
     private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]*$");
     private static final Pattern WITHIN = Pattern.compile("[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+");
 
-    protected String data;
+    protected Object data;
 
     public static FuzzingStrategy prefix() {
         return new PrefixFuzzingStrategy();
@@ -51,31 +51,32 @@ public abstract class FuzzingStrategy {
         return new InsertFuzzingStrategy();
     }
 
-    public static String mergeFuzzing(String fuzzedValue, String suppliedValue) {
+    public static Object mergeFuzzing(Object fuzzedValue, Object suppliedValue) {
         FuzzingStrategy currentStrategy = fromValue(fuzzedValue);
 
         return currentStrategy.process(suppliedValue);
     }
 
-    public static FuzzingStrategy fromValue(String value) {
-        if (StringUtils.isBlank(value) || ALL.matcher(value).matches()) {
-            return replace().withData(value);
+    public static FuzzingStrategy fromValue(Object valueObject) {
+        String valueAsString = String.valueOf(valueObject);
+        if (StringUtils.isBlank(valueAsString) || ALL.matcher(valueAsString).matches()) {
+            return replace().withData(valueObject);
         }
-        if (isUnicodeControlChar(value.charAt(0)) || isUnicodeWhitespace(value.charAt(0)) || isUnicodeOtherSymbol(value.charAt(0))) {
-            return prefix().withData(replaceSpecialCharsWithEmpty(value));
+        if (isUnicodeControlChar(valueAsString.charAt(0)) || isUnicodeWhitespace(valueAsString.charAt(0)) || isUnicodeOtherSymbol(valueAsString.charAt(0))) {
+            return prefix().withData(replaceSpecialCharsWithEmpty(valueAsString));
         }
-        if (isUnicodeControlChar(value.charAt(value.length() - 1)) || isUnicodeWhitespace(value.charAt(value.length() - 1)) || isUnicodeOtherSymbol(value.charAt(value.length() - 1))) {
-            return trail().withData(replaceSpecialCharsWithEmpty(value));
+        if (isUnicodeControlChar(valueAsString.charAt(valueAsString.length() - 1)) || isUnicodeWhitespace(valueAsString.charAt(valueAsString.length() - 1)) || isUnicodeOtherSymbol(valueAsString.charAt(valueAsString.length() - 1))) {
+            return trail().withData(replaceSpecialCharsWithEmpty(valueAsString));
         }
-        if (isLargeString(value)) {
-            return replace().withData(value);
+        if (isLargeString(valueAsString)) {
+            return replace().withData(valueObject);
         }
-        Matcher withinMatcher = WITHIN.matcher(value);
+        Matcher withinMatcher = WITHIN.matcher(valueAsString);
         if (withinMatcher.find()) {
             return insert().withData(withinMatcher.group());
         }
 
-        return replace().withData(value);
+        return replace().withData(valueObject);
     }
 
     private static String replaceSpecialCharsWithEmpty(String value) {
@@ -115,12 +116,12 @@ public abstract class FuzzingStrategy {
         return data.startsWith("ca") && data.endsWith("ts");
     }
 
-    public FuzzingStrategy withData(String inner) {
+    public FuzzingStrategy withData(Object inner) {
         this.data = inner;
         return this;
     }
 
-    public String getData() {
+    public Object getData() {
         return this.data;
     }
 
@@ -138,20 +139,16 @@ public abstract class FuzzingStrategy {
 
     public String truncatedValue() {
         if (data != null) {
-            String toPrint = data;
-            if (data.length() > 30) {
-                toPrint = data.substring(0, 30) + "...";
+            String toPrint = String.valueOf(data);
+            if (toPrint.length() > 30) {
+                toPrint = toPrint.substring(0, 30) + "...";
             }
             return this.name() + " with " + formatValue(toPrint);
         }
         return this.name();
     }
 
-    public String process(Object value) {
-        return this.process(String.valueOf(value));
-    }
-
-    public abstract String process(String value);
+    public abstract Object process(Object value);
 
     public abstract String name();
 }

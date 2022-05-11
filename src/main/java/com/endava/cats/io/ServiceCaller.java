@@ -337,7 +337,7 @@ public class ServiceCaller {
         long startTime = System.currentTimeMillis();
         RequestBody requestBody = null;
         Headers.Builder headers = new Headers.Builder();
-        catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getName(), header.getValue()));
+        catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getName(), String.valueOf(header.getValue())));
 
         if (HttpMethod.requiresBody(catsRequest.getHttpMethod())) {
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8));
@@ -509,7 +509,7 @@ public class ServiceCaller {
         } else {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behaviour on a valid header value */
             CatsRequest.Header existingHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey())).findFirst().orElse(new CatsRequest.Header("", ""));
-            String finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
+            Object finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
             headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
             headers.add(new CatsRequest.Header(suppliedHeader.getKey(), finalHeaderValue));
             LOGGER.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);

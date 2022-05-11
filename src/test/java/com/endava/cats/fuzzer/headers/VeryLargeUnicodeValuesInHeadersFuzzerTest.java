@@ -37,6 +37,6 @@ class VeryLargeUnicodeValuesInHeadersFuzzerTest {
     @Test
     void shouldGetPayloadSize() {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20);
-        Assertions.assertThat(veryLargeUnicodeValuesInHeadersFuzzer.fuzzStrategy().get(0).getData()).hasSize(20 + "cats".length());
+        Assertions.assertThat(veryLargeUnicodeValuesInHeadersFuzzer.fuzzStrategy().get(0).getData().toString()).hasSize(20 + "cats".length());
     }
 }

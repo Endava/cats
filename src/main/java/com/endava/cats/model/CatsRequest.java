@@ -32,6 +32,6 @@ public class CatsRequest {
     @ToString
     public static class Header {
         private final String name;
-        private final String value;
+        private final Object value;
     }
 }

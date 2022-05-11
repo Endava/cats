@@ -27,7 +27,7 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenANullString_whenMergingTheFuzzingWithAnotherString_thenTheReplaceFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing(String.valueOf(space), "air");
+        Object result = FuzzingStrategy.mergeFuzzing(String.valueOf(space), "air");
 
         Assertions.assertThat(result).isEqualTo(String.valueOf(space));
     }
@@ -35,7 +35,7 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenASpacedPrefixedString_whenMergingTheFuzzingWithAnotherString_thenThePrefixFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing(space + space + "test", "air");
+        Object result = FuzzingStrategy.mergeFuzzing(space + space + "test", "air");
 
         Assertions.assertThat(result).isEqualTo(space + space + "air");
     }
@@ -43,7 +43,7 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenASpaceTrailingString_whenMergingTheFuzzingWithAnotherString_thenTheTrailFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing("test" + space + space, "air");
+        Object result = FuzzingStrategy.mergeFuzzing("test" + space + space, "air");
 
         Assertions.assertThat(result).isEqualTo("air" + space + space);
     }
@@ -51,14 +51,14 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"' '", "'\t'"})
     void givenAnEmptyString_whenMergingTheFuzzingWithAnotherString_thenTheReplaceFuzzingStrategyIsApplied(String space) {
-        String result = FuzzingStrategy.mergeFuzzing("replaced", "air");
+        Object result = FuzzingStrategy.mergeFuzzing("replaced", "air");
 
         Assertions.assertThat(result).isEqualTo("replaced");
     }
 
     @Test
     void givenAStringWithNoSpaces_whenMergingTheFuzzingWithAnotherString_thenTheSuppliedValueIsUnchanged() {
-        String result = FuzzingStrategy.mergeFuzzing("test", "air");
+        Object result = FuzzingStrategy.mergeFuzzing("test", "air");
 
         Assertions.assertThat(result).isEqualTo("test");
     }
@@ -109,26 +109,26 @@ class FuzzingStrategyTest {
     @ParameterizedTest
     @CsvSource({"'\u2001'", "'\u0001'"})
     void shouldMatchUnicodeWhitespaceAndPrefix(char c) {
-        String result = FuzzingStrategy.mergeFuzzing(c + "test", "air");
+        Object result = FuzzingStrategy.mergeFuzzing(c + "test", "air");
         Assertions.assertThat(result).isEqualTo(c + "air");
     }
 
     @ParameterizedTest
     @CsvSource({"'\u2001'", "'\u0001'"})
     void shouldMatchUnicodeWhitespaceAndTrail(char c) {
-        String result = FuzzingStrategy.mergeFuzzing("test" + c, "air");
+        Object result = FuzzingStrategy.mergeFuzzing("test" + c, "air");
         Assertions.assertThat(result).isEqualTo("air" + c);
     }
 
     @Test
     void shouldInsertInSuppliedValue() {
-        String result = FuzzingStrategy.mergeFuzzing("te\uD83E\uDD76st", "air");
+        Object result = FuzzingStrategy.mergeFuzzing("te\uD83E\uDD76st", "air");
         Assertions.assertThat(result).isEqualTo("a\uD83E\uDD76ir");
     }
 
     @Test
     void shouldReplaceWhenLargeString() {
-        String result = FuzzingStrategy.mergeFuzzing("caTTTTTTTTts", "air");
+        Object result = FuzzingStrategy.mergeFuzzing("caTTTTTTTTts", "air");
         Assertions.assertThat(result).isEqualTo("caTTTTTTTTts");
     }
 

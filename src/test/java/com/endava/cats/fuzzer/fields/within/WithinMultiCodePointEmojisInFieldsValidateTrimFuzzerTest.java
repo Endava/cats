@@ -44,7 +44,7 @@ class WithinMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
         FuzzingStrategy fuzzingStrategy = withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
 
-        Assertions.assertThat(fuzzingStrategy.getData()).contains("\uD83D\uDC68\u200D\uD83C\uDFED️");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\uD83D\uDC68\u200D\uD83C\uDFED️");
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);

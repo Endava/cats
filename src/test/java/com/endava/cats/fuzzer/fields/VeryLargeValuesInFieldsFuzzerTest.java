@@ -29,6 +29,6 @@ class VeryLargeValuesInFieldsFuzzerTest {
     void shouldGetPayloadSize() {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20000);
 
-        Assertions.assertThat(veryLargeValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData()).hasSize(20000);
+        Assertions.assertThat(veryLargeValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData().toString()).hasSize(20000);
     }
 }
