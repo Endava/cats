@@ -57,7 +57,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
-        Assertions.assertThat(strategy.getData()).startsWith("No LEFT or RIGHT boundary");
+        Assertions.assertThat(strategy.getData().toString()).startsWith("No LEFT or RIGHT boundary");
     }
 
     @Test
@@ -68,7 +68,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
-        Assertions.assertThat(strategy.getData()).startsWith("Data type not matching [IntegerSchema]");
+        Assertions.assertThat(strategy.getData().toString()).startsWith("Data type not matching [IntegerSchema]");
     }
 
     @Test
@@ -79,7 +79,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
-        Assertions.assertThat(strategy.getData()).startsWith("Data type not matching");
+        Assertions.assertThat(strategy.getData().toString()).startsWith("Data type not matching");
         Assertions.assertThat(myBaseBoundaryFuzzer.typeOfDataSentToTheService()).startsWith("outside the boundary values");
     }
 
@@ -93,7 +93,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "emailAddress").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.skip().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).startsWith("String format not supplied or not recognized!");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).startsWith("String format not supplied or not recognized!");
     }
 
     private FuzzingData getMockFuzzingData() {

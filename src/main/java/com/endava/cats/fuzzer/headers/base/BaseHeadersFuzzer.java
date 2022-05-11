@@ -46,7 +46,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
 
     private void process(FuzzingData data, Set<CatsHeader> clonedHeaders, CatsHeader header, FuzzingStrategy fuzzingStrategy) {
         String previousHeaderValue = header.getValue();
-        header.withValue(fuzzingStrategy.process(previousHeaderValue));
+        header.withValue(String.valueOf(fuzzingStrategy.process(previousHeaderValue)));
         try {
             boolean isRequiredHeaderFuzzed = clonedHeaders.stream().filter(CatsHeader::isRequired).collect(Collectors.toList()).contains(header);
 

@@ -4,7 +4,6 @@ import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,6 @@ class ExtremePositiveValueInIntegerFieldsFuzzerTest {
     void givenANewExtremePositiveValueIntegerFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheIntegerFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
         Assertions.assertThat(extremePositiveValueInIntegerFields.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(IntegerSchema.class))).isTrue();
-        Assertions.assertThat(NumberUtils.isCreatable(extremePositiveValueInIntegerFields.getBoundaryValue(nrSchema))).isTrue();
         Assertions.assertThat(extremePositiveValueInIntegerFields.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(extremePositiveValueInIntegerFields.description()).isNotNull();
         Assertions.assertThat(extremePositiveValueInIntegerFields.typeOfDataSentToTheService()).isNotNull();

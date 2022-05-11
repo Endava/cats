@@ -98,13 +98,13 @@ public class CatsUtil {
             }
             DocumentContext context = JsonPath.parse(payload);
             Object oldValue = context.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
-            String valueToSet = fuzzingStrategyToApply.process(oldValue);
+            Object valueToSet = fuzzingStrategyToApply.process(oldValue);
             if (mergeFuzzing) {
                 valueToSet = FuzzingStrategy.mergeFuzzing(this.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
             }
             context.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
 
-            return new FuzzingResult(context.jsonString(), valueToSet);
+            return new FuzzingResult(context.jsonString(), String.valueOf(valueToSet));
         }
         return FuzzingResult.empty();
     }

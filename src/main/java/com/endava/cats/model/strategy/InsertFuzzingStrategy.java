@@ -5,8 +5,8 @@ import com.endava.cats.model.FuzzingStrategy;
 
 public class InsertFuzzingStrategy extends FuzzingStrategy {
     @Override
-    public String process(String value) {
-        return CommonWithinMethods.insertInTheMiddle(value, data, true);
+    public Object process(Object value) {
+        return CommonWithinMethods.insertInTheMiddle(String.valueOf(value), String.valueOf(data), true);
     }
 
     @Override

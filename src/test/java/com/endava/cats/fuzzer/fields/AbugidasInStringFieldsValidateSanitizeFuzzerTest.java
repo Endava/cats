@@ -41,7 +41,7 @@ class AbugidasInStringFieldsValidateSanitizeFuzzerTest {
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
         FuzzingStrategy fuzzingStrategy = abugidasInStringFieldsValidateSanitizeFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
 
-        Assertions.assertThat(fuzzingStrategy.getData()).contains("్ఞ\u200Cా");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("్ఞ\u200Cా");
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);

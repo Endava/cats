@@ -39,6 +39,6 @@ class VeryLargeValuesInHeadersFuzzerTest {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20000);
 
         Assertions.assertThat(veryLargeValuesInHeadersFuzzer.fuzzStrategy()).hasSize(1);
-        Assertions.assertThat(veryLargeValuesInHeadersFuzzer.fuzzStrategy().get(0).getData()).hasSize(20000);
+        Assertions.assertThat(veryLargeValuesInHeadersFuzzer.fuzzStrategy().get(0).getData().toString()).hasSize(20000);
     }
 }

@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;

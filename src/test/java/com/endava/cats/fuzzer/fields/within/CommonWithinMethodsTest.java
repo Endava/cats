@@ -48,7 +48,7 @@ class CommonWithinMethodsTest {
         List<FuzzingStrategy> fuzzingStrategyList = CommonWithinMethods.getFuzzingStrategies(fuzzingData, "test1", List.of(YY), false);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);
-        Assertions.assertThat(fuzzingStrategyList.get(0).getData()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length + YY.length());
+        Assertions.assertThat(fuzzingStrategyList.get(0).getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length + YY.length());
     }
 
     @Test
@@ -64,7 +64,7 @@ class CommonWithinMethodsTest {
         List<FuzzingStrategy> fuzzingStrategyList = CommonWithinMethods.getFuzzingStrategies(fuzzingData, "test1", List.of(YY), true);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);
-        Assertions.assertThat(fuzzingStrategyList.get(0).getData()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length);
+        Assertions.assertThat(fuzzingStrategyList.get(0).getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length);
     }
 
     @Test

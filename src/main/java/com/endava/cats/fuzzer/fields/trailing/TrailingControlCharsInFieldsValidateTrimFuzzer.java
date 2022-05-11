@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.fields.trailing;
 
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.annotations.ControlCharFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.ValidateAndTrim;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;

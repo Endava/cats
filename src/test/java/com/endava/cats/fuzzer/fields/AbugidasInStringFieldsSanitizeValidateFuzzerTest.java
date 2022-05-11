@@ -43,7 +43,7 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
         FuzzingStrategy fuzzingStrategy = abugidasCharsInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).contains("జ్ఞ\u200Cా");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("జ్ఞ\u200Cా");
         Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());

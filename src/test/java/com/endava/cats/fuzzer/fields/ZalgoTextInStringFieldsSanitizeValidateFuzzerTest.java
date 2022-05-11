@@ -43,7 +43,7 @@ class ZalgoTextInStringFieldsSanitizeValidateFuzzerTest {
         FuzzingStrategy fuzzingStrategy = zalgoTextInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).contains("c̷̨̛̥̬͉̘̬̻̩͕͚̦̺̻͓̳͇̲̭̝̙̟̈́̉̐͂͒̆͂̿͌̑͐̌̇̈́̾̉̆̀̅̓͛͋̈̄͊̈̄̎̃̒͂̓̊̌̎̌̃́̅͊̏͘͘͘̕̕͘͠͝a");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("c̷̨̛̥̬͉̘̬̻̩͕͚̦̺̻͓̳͇̲̭̝̙̟̈́̉̐͂͒̆͂̿͌̑͐̌̇̈́̾̉̆̀̅̓͛͋̈̄͊̈̄̎̃̒͂̓̊̌̎̌̃́̅͊̏͘͘͘̕̕͘͠͝a");
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());

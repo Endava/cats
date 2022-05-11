@@ -2,8 +2,8 @@ package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
@@ -53,7 +53,7 @@ class OnlyWhitespacesInFieldsValidateTrimFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = onlyWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).contains(" ");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains(" ");
 
         stringSchema.setMinLength(5);
 

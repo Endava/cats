@@ -77,7 +77,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
             logger.debug("Fuzzing possible...");
             FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
-            boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
+            boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(String.valueOf(fuzzingResult.getFuzzedValue()), data, fuzzedField);
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
                     .headers(data.getHeaders()).payload(fuzzingResult.getJson()).httpMethod(data.getMethod())
@@ -92,7 +92,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         } else {
             logger.debug("Fuzzing not possible!");
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);
-            testCaseListener.skipTest(logger, strategy.process(""));
+            testCaseListener.skipTest(logger, (String) strategy.process(""));
         }
     }
 

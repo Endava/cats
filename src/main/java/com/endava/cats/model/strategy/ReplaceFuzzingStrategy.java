@@ -5,7 +5,7 @@ import com.endava.cats.model.FuzzingStrategy;
 public class ReplaceFuzzingStrategy extends FuzzingStrategy {
 
     @Override
-    public String process(String value) {
+    public Object process(Object value) {
         return data;
     }
 

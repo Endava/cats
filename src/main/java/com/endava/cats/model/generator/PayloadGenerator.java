@@ -237,7 +237,7 @@ public class PayloadGenerator {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
 
-        return df.format(randomNumber(min, max));
+        return randomNumber(min, max);
     }
 
     private Object getExampleFromBooleanSchema(Schema<Boolean> property) {

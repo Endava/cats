@@ -31,12 +31,12 @@ class VeryLargeUnicodeValuesInFieldsFuzzerTest {
     void shouldGetPayloadSize() {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20000);
 
-        Assertions.assertThat(veryLargeUnicodeValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData()).hasSizeGreaterThan(20000);
+        Assertions.assertThat(veryLargeUnicodeValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData().toString()).hasSizeGreaterThan(20000);
     }
 
     @Test
     void shouldGenerateLessThan500() {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20);
-        Assertions.assertThat(veryLargeUnicodeValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData()).hasSize(20 + "cats".length());
+        Assertions.assertThat(veryLargeUnicodeValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData().toString()).hasSize(20 + "cats".length());
     }
 }

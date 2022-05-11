@@ -45,7 +45,7 @@ class WithinMultiCodePointEmojisInFieldsTrimValidateFuzzerTest {
         FuzzingStrategy fuzzingStrategy = withinMultiCodePointEmojisInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).contains("\uD83D\uDC68\u200D\uD83C\uDFED️");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\uD83D\uDC68\u200D\uD83C\uDFED️");
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(withinMultiCodePointEmojisInFieldsTrimValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());

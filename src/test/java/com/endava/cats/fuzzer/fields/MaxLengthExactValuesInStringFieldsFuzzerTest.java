@@ -1,8 +1,8 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.StringSchema;

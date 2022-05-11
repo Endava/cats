@@ -62,7 +62,7 @@ class EmptyStringValuesInFieldsFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = emptyStringValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEmpty();
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).isEmpty();
         Assertions.assertThat(emptyStringValuesInFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(emptyStringValuesInFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
     }

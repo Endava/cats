@@ -1,8 +1,8 @@
 package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.Fuzzer;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.generator.Cloner;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
