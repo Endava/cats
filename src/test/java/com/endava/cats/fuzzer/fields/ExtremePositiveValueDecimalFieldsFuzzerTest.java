@@ -7,6 +7,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 @QuarkusTest
 class ExtremePositiveValueDecimalFieldsFuzzerTest {
 
@@ -24,5 +26,6 @@ class ExtremePositiveValueDecimalFieldsFuzzerTest {
         Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(extremePositiveValueDecimalFieldsFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(BigDecimal.class);
     }
 }

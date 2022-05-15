@@ -27,7 +27,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -59,7 +58,6 @@ public class PayloadGenerator {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     private final Random random;
-    private final DecimalFormat df = new DecimalFormat("#.00");
     private final boolean useExamples;
     private final CatsGlobalContext globalContext;
     private String currentProperty = "";
