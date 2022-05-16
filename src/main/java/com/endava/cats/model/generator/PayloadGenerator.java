@@ -47,6 +47,20 @@ import java.util.concurrent.ThreadLocalRandom;
  * setups including complex objects and array of objects.
  * <p>
  * This is a stateful object. Don't use it through dependency injection.
+ *
+ * Supported String formats:
+ * <ul>
+ *     <li>uuid</li>
+ *     <li>date</li>
+ *     <li>date-time</li>
+ *     <li>email</li>
+ *     <li>ip</li>
+ *     <li>ipv4</li>
+ *     <li>ipv6</li>
+ *     <li>password</li>
+ *     <li>byte</li>
+ *     <li>uri/url</li>
+ * </ul>
  */
 public class PayloadGenerator {
 

@@ -15,6 +15,7 @@ import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.model.util.PayloadUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.ConsoleUtils;
 import com.jayway.jsonpath.JsonPathException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -191,7 +192,6 @@ public class TemplateFuzzer implements Fuzzer {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName().replace("_Subclass", "");
+        return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }
-
 }

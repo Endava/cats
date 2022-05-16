@@ -20,6 +20,4 @@ public abstract class Expect2XXBaseHeadersFuzzer extends BaseHeadersFuzzer {
     public ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
-
-
 }

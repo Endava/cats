@@ -93,9 +93,9 @@ public class TestCaseListener {
     }
 
     public void beforeFuzz(Class<?> fuzzer) {
-        String clazz = fuzzer.getSimpleName().replaceAll("[a-z]", "");
+        String clazz = ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()).replaceAll("[a-z]", "");
         MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, CatsUtil.FUZZER_KEY_DEFAULT.length(), Ansi.Color.MAGENTA));
-        MDC.put(FUZZER_KEY, fuzzer.getSimpleName());
+        MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
     }
 
     public void afterFuzz() {

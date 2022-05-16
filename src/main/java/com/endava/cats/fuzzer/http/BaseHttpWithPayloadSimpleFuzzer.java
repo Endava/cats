@@ -8,6 +8,7 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -48,7 +49,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName().replace("_Subclass", "");
+        return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }
 
     /**

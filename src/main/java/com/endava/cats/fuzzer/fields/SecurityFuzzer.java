@@ -8,6 +8,7 @@ import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -134,7 +135,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName().replace("_Subclass", "");
+        return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }
 
     @Override
