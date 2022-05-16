@@ -6,6 +6,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -46,6 +47,6 @@ public class NonRestHttpMethodsFuzzer implements Fuzzer {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName().replace("_Subclass", "");
+        return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }
 }

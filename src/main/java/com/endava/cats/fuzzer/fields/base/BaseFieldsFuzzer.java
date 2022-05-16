@@ -14,6 +14,7 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
@@ -229,6 +230,6 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName().replace("_Subclass", "");
+        return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }
 }

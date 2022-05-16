@@ -14,4 +14,12 @@ public final class ConsoleUtils {
         int paddingLength = strAnsi.length() - str.length() + padding;
         return StringUtils.center(strAnsi, paddingLength, "*");
     }
+
+    public static String sanitizeFuzzerName(String currentName) {
+        return currentName.replaceAll("_Subclass", "");
+    }
+
+    public static String removeTrimSanitize(String currentName) {
+        return currentName.replaceAll("TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize", "");
+    }
 }

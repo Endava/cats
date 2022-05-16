@@ -19,5 +19,4 @@ public abstract class SpacesCharsBaseFuzzer extends InvisibleCharsBaseFuzzer {
     public ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
         return ResponseCodeFamily.TWOXX;
     }
-
 }

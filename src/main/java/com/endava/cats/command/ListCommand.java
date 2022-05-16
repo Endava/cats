@@ -7,8 +7,10 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.SanitizeAndValidate;
 import com.endava.cats.annotations.SpecialFuzzer;
+import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -47,7 +49,7 @@ public class ListCommand implements Runnable {
     public ListCommand(@Any Instance<Fuzzer> fuzzersList) {
         this.fuzzersList = fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
-                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), SanitizeAndValidate.class) == null)
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndSanitize.class) == null)
                 .collect(Collectors.toList());
     }
 
@@ -98,7 +100,7 @@ public class ListCommand implements Runnable {
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
         LOGGER.info(" ");
         LOGGER.info(message, fieldFuzzers.size(), typeOfFuzzers);
-        fieldFuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(fuzzer.toString()).reset().a(" - " + fuzzer.description()).reset()).forEach(LOGGER::info);
+        fieldFuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(LOGGER::info);
     }
 
     static class ListCommandGroups {
