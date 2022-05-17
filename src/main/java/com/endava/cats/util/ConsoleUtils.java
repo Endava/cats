@@ -16,7 +16,7 @@ public final class ConsoleUtils {
     }
 
     public static String sanitizeFuzzerName(String currentName) {
-        return currentName.replaceAll("_Subclass", "");
+        return currentName.replace("_Subclass", "");
     }
 
     public static String removeTrimSanitize(String currentName) {

@@ -5,7 +5,6 @@ import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.annotations.SanitizeAndValidate;
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
