@@ -72,13 +72,13 @@
                             <goal>install-file</goal>
                         </goals>
                         <configuration>
-                            <file>lib/okhttp-4.9.1-CATS.jar</file>
+                            <file>lib/okhttp-4.9.3-CATS.jar</file>
                             <groupId>com.squareup.okhttp3</groupId>
                             <artifactId>okhttp</artifactId>
-                            <version>4.9.1-CATS</version>
-                            <sources>lib/okhttp-4.9.1-CATS-sources.jar</sources>
-                            <javadoc>lib/okhttp-4.9.1-CATS-sources.jar</javadoc>
-                            <pomFile>lib/okhttp-4.9.1-CATS.pom</pomFile>
+                            <version>4.9.3-CATS</version>
+                            <sources>lib/okhttp-4.9.3-CATS-sources.jar</sources>
+                            <javadoc>lib/okhttp-4.9.3-CATS-javadoc.jar</javadoc>
+                            <pomFile>lib/okhttp-4.9.3-CATS.pom</pomFile>
                             <packaging>jar</packaging>
                         </configuration>
                     </execution>
@@ -277,7 +277,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.9.1-CATS</version>
+            <version>4.9.3-CATS</version>
         </dependency>
         <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
