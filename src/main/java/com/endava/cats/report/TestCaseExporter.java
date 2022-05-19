@@ -41,14 +41,17 @@ import static org.fusesource.jansi.Ansi.ansi;
 
 public abstract class TestCaseExporter {
 
+    protected static final String REPORT_HTML = "index.html";
+    protected static final String JUNIT_XML = "junit.xml";
+    protected static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
+    protected static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
+    protected static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
+
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
-    private static final String REPORT_HTML = "index.html";
     private static final String REPORT_JS = "cats-summary-report.js";
-    private static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
-    private static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
 
     @Inject
     ReportingArguments reportingArguments;
@@ -157,11 +160,11 @@ public abstract class TestCaseExporter {
         context.put("EXECUTION", report.getExecutionTime());
         context.put("VERSION", report.getCatsVersion());
         context.putAll(this.getSpecificContext(report));
-        Writer writer = SUMMARY_MUSTACHE.execute(new StringWriter(), context);
+        Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
 
         try {
             writer.flush();
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_HTML), writer.toString());
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString());
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
         } catch (IOException e) {
             LOGGER.error("There was an error writing the report summary: {}", e.getMessage(), e);
@@ -233,4 +236,7 @@ public abstract class TestCaseExporter {
 
     public abstract ReportingArguments.ReportFormat reportFormat();
 
+    public abstract Mustache getSummaryTemplate();
+
+    public abstract String getSummaryReportTitle();
 }

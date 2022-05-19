@@ -3,6 +3,7 @@ package com.endava.cats.report;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.report.CatsTestCaseSummary;
 import com.endava.cats.model.report.CatsTestReport;
+import com.github.mustachejava.Mustache;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Named;
@@ -32,5 +33,15 @@ public class TestCaseExporterHtmlJs extends TestCaseExporter {
     @Override
     public ReportingArguments.ReportFormat reportFormat() {
         return ReportingArguments.ReportFormat.HTML_JS;
+    }
+
+    @Override
+    public Mustache getSummaryTemplate() {
+        return SUMMARY_MUSTACHE;
+    }
+
+    @Override
+    public String getSummaryReportTitle() {
+        return REPORT_HTML;
     }
 }

@@ -12,6 +12,8 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private String id;
     private String fuzzer;
     private String path;
+    private String resultDetails;
+    private double timeToExecuteInSec;
 
     public static CatsTestCaseSummary fromCatsTestCase(String id, CatsTestCase testCase) {
         CatsTestCaseSummary summary = new CatsTestCaseSummary();
@@ -21,6 +23,8 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.fuzzer = testCase.getFuzzer();
         summary.path = testCase.getPath();
         summary.resultReason = testCase.getResultReason();
+        summary.resultDetails = testCase.getResultDetails();
+        summary.timeToExecuteInSec = testCase.getResponse().getResponseTimeInMs() / 1000d;
 
         return summary;
     }
@@ -43,5 +47,13 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
 
     public String getKey() {
         return id.replace(" ", "");
+    }
+
+    public boolean getError() {
+        return this.result.equalsIgnoreCase("error");
+    }
+
+    public boolean getWarning() {
+        return this.result.equalsIgnoreCase("warning");
     }
 }

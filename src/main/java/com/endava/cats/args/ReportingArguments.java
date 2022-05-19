@@ -62,7 +62,7 @@ public class ReportingArguments {
     }
 
     public enum ReportFormat {
-        HTML_ONLY, HTML_JS
+        HTML_ONLY, HTML_JS, JUNIT
     }
 
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<testsuites disabled="{{SKIPPED}}" skipped="{{WARNINGS}}" errors="{{ERRORS}}" failures="" tests="{{TOTAL}}" time="{{TIMESTAMP}}">
+    <testsuite skipped="{{WARNINGS}}" errors="{{ERRORS}}" failures="" name="CATS {{VERSION}}" disabled="{{SKIPPED}}" tests="{{TOTAL}}" time="{{EXECUTION}}" timestamp="{{TIMESTAMP}}">
+        {{#TEST_CASES}}
+                <testcase name="{{key}} <-> {{path}}" classname="{{fuzzer}}" time="{{timeToExecuteInSec}}">
+                    {{#warning}}
+                        <skipped type="{{result}}" message="{{resultReason}} - {{resultDetails}}"/>
+                    {{/warning}}
+                </testcase>
+                <testcase name="{{key}} <-> {{path}}" classname="{{fuzzer}}" time="{{timeToExecuteInSec}}">
+                    {{#error}}
+                        <error type="{{result}}" message="{{resultReason}} - {{resultDetails}}"/>
+                    {{/error}}
+                </testcase>
+        {{/TEST_CASES}}
+    </testsuite>
+</testsuites>

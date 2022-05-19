@@ -16,7 +16,7 @@
 
 <h1></h1>
 
-**REST APIs fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
+**REST API fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
 
 - **Comprehensive**: tests are generated automatically based on a large number scenarios and cover **every** field and header
 - **Intelligent**: tests are generated based on data types and constraints; each Fuzzer have specific expectations depending on the scenario under test
@@ -173,13 +173,16 @@ This means that for methods with request bodies (`POST,PUT`) that have also URL/
 
 # Interpreting Results
 
-CATS produces an execution report in a folder called `cats-report/TIMESTAMP` or `cats-report` depending on the `--timestampReports` argument. The folder will be created inside the current folder (if it doesn't exist) and for each run a new subfolder will be
+## HTML_JS
+`HTML_JS` is the default report produced by CATS. The execution report in placed a folder called `cats-report/TIMESTAMP` or `cats-report` depending on the `--timestampReports` argument. The folder will be created inside the current folder (if it doesn't exist) and for each run a new subfolder will be
 created with the `TIMESTAMP` value when the run started. This allows you to have a history of the runs. The report itself is in the `index.html` file, where you can:
 
 - filter test runs based on the result: `All`, `Success`, `Warn` and `Error`
 - filter based on the `Fuzzer` so that you can only see the runs for that specific `Fuzzer`
 - see summary with all the tests with their corresponding path against they were run, and the result
 - have ability to click on any tests and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
+
+Along with the summary from `index.html` each individual test will have a specific `TestXXX.html` page with more details, as well as a json version of the test which can be latter replayed using `> cats replay TestXXX.json`.
 
 Understanding the `Result Reason` values:
 - `Unexpected Exception` - reported as `error`; this might indicate a possible bug in the service or a corner case that is not handled correctly by CATS
@@ -196,6 +199,19 @@ And this is what you get when you click on a specific test:
 ![test details](images/test_details_1.png)
 ![test details](images/test_details_2.png)
 
+## HTML_ONLY
+This format is similar with `HTML_JS`, but you cannot do any filtering or sorting.
+
+## JUNIT
+CATS also supports [JUNIT](https://llg.cubic.org/docs/junit/) output. The output will be a single `testsuite` that will incorporate all tests grouped by `Fuzzer` name. 
+As the JUNIT format does not have the concept of `warning` the following mapping is used:
+
+- CATS `error` is reported as JUNIT `error`
+- JUNIT `failure` is not used at all
+- CATS `warn` is reported as JUNIT `skipped`
+- CATS `skipped` is reported as JUNIT `disabled`
+
+The JUNIT report is written as `junit.xml` in the `cats-report` folder. Individual tests, both as `.html` and `.json` will also be created.
 
 # Slicing Strategies for Running Cats
 
@@ -299,7 +315,7 @@ All available subcommands are listed below:
 - `--securityFuzzerFile` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply `--printExecutionStatistics=detailed`
 - `--timestampReports` If supplied (no value needed), it will output the report still inside the `cats-report` folder, but in a sub-folder with the current timestamp
-- `--reportFormat=FORMAT` Specifies the format of the CATS report. You can use `htmlOnly` if you want the report to not contain any Javascript. This is useful in CI environments due to Javascript content security policies. Default is `htmlJs` which is the original CATS single page report format.
+- `--reportFormat=FORMAT` Specifies the format of the CATS report. Supported formats: `HTML_ONLY`, `HTML_JS` or `JUNIT`. You can use `HTML_ONLY` if you want the report to not contain any Javascript. This is useful in CI environments due to Javascript content security policies. Default is `HTML_JS` which includes some sorting and filtering capabilities.
 - `--useExamples` If `true` (default value when not supplied) then CATS will use examples supplied in the OpenAPI contact. If `false` CATS will rely only on generated values
 - `--checkFields` If supplied (no value needed), it will only run the Field Fuzzers
 - `--checkHeaders` If supplied (no value needed), it will only run the Header Fuzzers

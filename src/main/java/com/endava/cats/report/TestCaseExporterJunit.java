@@ -10,12 +10,12 @@ import java.util.Collections;
 import java.util.Map;
 
 @ApplicationScoped
-@Named("htmlOnly")
-public class TestCaseExporterHtmlOnly extends TestCaseExporter {
+@Named("junit")
+public class TestCaseExporterJunit extends TestCaseExporter {
 
     @Override
     public String[] getSpecificHelperFiles() {
-        return new String[]{"cats.png", "styles.css"};
+        return new String[0];
     }
 
     @Override
@@ -25,17 +25,16 @@ public class TestCaseExporterHtmlOnly extends TestCaseExporter {
 
     @Override
     public ReportingArguments.ReportFormat reportFormat() {
-        return ReportingArguments.ReportFormat.HTML_ONLY;
+        return ReportingArguments.ReportFormat.JUNIT;
     }
 
     @Override
     public Mustache getSummaryTemplate() {
-        return SUMMARY_MUSTACHE;
+        return JUNIT_SUMMARY_MUSTACHE;
     }
 
     @Override
     public String getSummaryReportTitle() {
-        return REPORT_HTML;
+        return JUNIT_XML;
     }
-
 }
