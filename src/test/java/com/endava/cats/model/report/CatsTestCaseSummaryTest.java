@@ -1,5 +1,6 @@
 package com.endava.cats.model.report;
 
+import com.endava.cats.model.CatsResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ class CatsTestCaseSummaryTest {
     @Test
     void givenTwoTestCaseSummaryInstancesWithNoIntPart_whenComparingThem_thenTheyAreNotEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
+        testCase1.setResponse(CatsResponse.empty());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("ID", testCase1);
 
@@ -20,6 +22,7 @@ class CatsTestCaseSummaryTest {
     @Test
     void givenTwoTestCaseSummaryInstancesWithTheDifferentStringParts_whenComparingThem_thenTheyAreNotEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
+        testCase1.setResponse(CatsResponse.empty());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("JD1", testCase1);
 
@@ -29,6 +32,7 @@ class CatsTestCaseSummaryTest {
     @Test
     void givenTwoTestCaseSummaryInstancesWithTheSameDetails_whenComparingThem_thenTheyAreEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
+        testCase1.setResponse(CatsResponse.empty());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
 
@@ -38,6 +42,7 @@ class CatsTestCaseSummaryTest {
     @Test
     void givenTwoTestCaseSummaryInstancesWithTheDifferentDetails_whenComparingThem_thenTheyAreNotEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
+        testCase1.setResponse(CatsResponse.empty());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("ID2", testCase1);
 
