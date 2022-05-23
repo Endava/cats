@@ -7,7 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class FuzzingResult {
     private final String json;
-    private final String fuzzedValue;
+    private final Object fuzzedValue;
 
     public static FuzzingResult empty() {
         return new FuzzingResult("", "");

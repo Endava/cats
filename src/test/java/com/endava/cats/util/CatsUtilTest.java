@@ -82,7 +82,7 @@ class CatsUtilTest {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField("", "test", strategy);
 
-        Assertions.assertThat(result.getFuzzedValue()).isEmpty();
+        Assertions.assertThat(result.getFuzzedValue()).asString().isEmpty();
         Assertions.assertThat(result.getJson()).isEmpty();
     }
 
