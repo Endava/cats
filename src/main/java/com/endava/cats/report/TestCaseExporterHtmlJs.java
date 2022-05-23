@@ -24,7 +24,11 @@ public class TestCaseExporterHtmlJs extends TestCaseExporter {
     @Override
     public Map<String, Object> getSpecificContext(CatsTestReport report) {
         Map<String, Object> context = new HashMap<>();
-        List<String> fuzzers = report.getTestCases().stream().map(CatsTestCaseSummary::getFuzzer).distinct().collect(Collectors.toList());
+        List<String> fuzzers = report.getTestCases().stream()
+                .map(CatsTestCaseSummary::getFuzzer)
+                .distinct().sorted()
+                .collect(Collectors.toList());
+
         context.put("FUZZERS", fuzzers);
         context.put("JS", true);
         return context;
