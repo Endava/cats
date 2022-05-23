@@ -124,7 +124,7 @@ public class CatsUtil {
             }
             context.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
 
-            return new FuzzingResult(context.jsonString(), String.valueOf(valueToSet));
+            return new FuzzingResult(context.jsonString(), valueToSet);
         }
         return FuzzingResult.empty();
     }

@@ -78,7 +78,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
             logger.debug("Fuzzing possible...");
             FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
-            boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(String.valueOf(fuzzingResult.getFuzzedValue()), data, fuzzedField);
+            boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
                     .headers(data.getHeaders()).payload(fuzzingResult.getJson()).httpMethod(data.getMethod())
@@ -159,14 +159,14 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @param fuzzedField the name of the field being fuzzed
      * @return true if the fuzzed value matches the pattern, false otherwise
      */
-    private boolean isFuzzedValueMatchingPattern(String fieldValue, FuzzingData data, String fuzzedField) {
+    private boolean isFuzzedValueMatchingPattern(Object fieldValue, FuzzingData data, String fuzzedField) {
         Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         if (fieldSchema.getPattern() == null || fieldSchema instanceof ByteArraySchema) {
             return true;
         }
         Pattern pattern = Pattern.compile(fieldSchema.getPattern());
 
-        return fieldValue == null || pattern.matcher(fieldValue).matches();
+        return fieldValue == null || pattern.matcher(String.valueOf(fieldValue)).matches();
     }
 
     private boolean hasMinValue(FuzzingData data, String fuzzedField) {
