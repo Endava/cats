@@ -4,6 +4,7 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -47,7 +48,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * setups including complex objects and array of objects.
  * <p>
  * This is a stateful object. Don't use it through dependency injection.
- *
+ * <p>
  * Supported String formats:
  * <ul>
  *     <li>uuid</li>
@@ -75,11 +76,13 @@ public class PayloadGenerator {
     private final boolean useExamples;
     private final CatsGlobalContext globalContext;
     private String currentProperty = "";
+    private final int selfReferenceDepth;
 
-    public PayloadGenerator(CatsGlobalContext catsGlobalContext, boolean useExamplesArgument) {
+    public PayloadGenerator(CatsGlobalContext catsGlobalContext, boolean useExamplesArgument, int selfReferenceDepth) {
         this.globalContext = catsGlobalContext;
         this.random = ThreadLocalRandom.current();
         useExamples = useExamplesArgument;
+        this.selfReferenceDepth = selfReferenceDepth;
     }
 
     public static String generateValueBasedOnMinMAx(Schema<?> property) {
@@ -304,8 +307,11 @@ public class PayloadGenerator {
 
     private Object resolveModelToExample(String name, Schema schema) {
         Map<String, Object> values = new HashMap<>();
-
         LOGGER.trace("Resolving model '{}' to example", name);
+
+        if (CatsUtil.isCyclicReference(currentProperty, selfReferenceDepth)) {
+            return values;
+        }
 
         if (schema.getProperties() != null) {
             LOGGER.trace("Schema properties not null {}: {}", name, schema.getProperties().keySet());
@@ -322,17 +328,16 @@ public class PayloadGenerator {
 
     private void processSchemaProperties(String name, Schema schema, Map<String, Object> values) {
         LOGGER.trace("Creating example from model values {}", name);
+
         if (schema.getDiscriminator() != null) {
             globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
         }
         String previousPropertyValue = currentProperty;
         for (Object propertyName : schema.getProperties().keySet()) {
-            String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
+             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
             currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
-            if (isCyclicReference(currentProperty)) {
-                return;
-            }
+
             if (innerSchema == null) {
                 this.parseFromInnerSchema(name, schema, values, propertyName);
             } else {
@@ -342,12 +347,6 @@ public class PayloadGenerator {
         currentProperty = previousPropertyValue;
         schema.setExample(values);
         catsGeneratedExamples.add(schema);
-    }
-
-    public boolean isCyclicReference(String currentProperty) {
-        String[] properties = currentProperty.split("#");
-
-        return properties.length > 5 && properties[4].equalsIgnoreCase(properties[3]);
     }
 
     private void parseFromInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName) {

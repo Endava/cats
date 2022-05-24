@@ -10,6 +10,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
 
@@ -39,7 +40,7 @@ import static com.endava.cats.dsl.CatsDSLWords.MAP_VALUES;
 public class CatsUtil {
     public static final String FUZZER_KEY_DEFAULT = "*******";
     public static final String TEST_KEY_DEFAULT = "**********";
-
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsUtil.class);
     private final CatsDSLParser catsDSLParser;
 
     public CatsUtil(CatsDSLParser parser) {
@@ -62,6 +63,25 @@ public class CatsUtil {
 
     public static void setLogLevel(String pkg, String level) {
         LogContext.getLogContext().getLogger(pkg).setLevel(Level.parse(level.toUpperCase(Locale.ROOT)));
+    }
+
+    public static boolean isCyclicReference(String currentProperty, int depth) {
+        String[] properties = currentProperty.split("#");
+
+        if (properties.length < depth) {
+            return false;
+        }
+
+        for (int i = 0; i < properties.length - 1; i++) {
+            for (int j = i + 1; j <= properties.length - 1; j++) {
+                if (properties[i].equalsIgnoreCase(properties[j])) {
+                    LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public void writeToYaml(String yaml, Map<String, Map<String, Object>> data) throws IOException {

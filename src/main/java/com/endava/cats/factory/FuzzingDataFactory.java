@@ -201,6 +201,7 @@ public class FuzzingDataFactory {
                             .openApi(openAPI)
                             .tags(operation.getTags())
                             .reqSchemaName(reqSchemaName)
+                            .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
                             .build()).collect(Collectors.toList()));
         }
 
@@ -241,6 +242,7 @@ public class FuzzingDataFactory {
                 .openApi(openAPI)
                 .tags(operation.getTags())
                 .reqSchemaName(SYNTH_SCHEMA_NAME)
+                .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
                 .build()).collect(Collectors.toList());
     }
 
@@ -291,7 +293,7 @@ public class FuzzingDataFactory {
     }
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
-        PayloadGenerator generator = new PayloadGenerator(globalContext, processingArguments.isUseExamples());
+        PayloadGenerator generator = new PayloadGenerator(globalContext, processingArguments.isUseExamples(), processingArguments.getSelfReferenceDepth());
         List<String> result = this.generateSample(reqSchemaName, generator);
 
         if (mediaType != null && mediaType.getSchema() instanceof ArraySchema) {
@@ -462,7 +464,7 @@ public class FuzzingDataFactory {
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes) {
         Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        PayloadGenerator generator = new PayloadGenerator(globalContext, processingArguments.isUseExamples());
+        PayloadGenerator generator = new PayloadGenerator(globalContext, processingArguments.isUseExamples(), processingArguments.getSelfReferenceDepth());
         for (String responseCode : responseCodes) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {

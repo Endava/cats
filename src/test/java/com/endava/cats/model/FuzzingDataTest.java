@@ -22,7 +22,7 @@ class FuzzingDataTest {
     void givenASchema_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMap());
-        FuzzingData data = FuzzingData.builder().reqSchema(baseSchema).build();
+        FuzzingData data = FuzzingData.builder().reqSchema(baseSchema).requestPropertyTypes(this.getBasePropertiesMap()).build();
 
         Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties)
@@ -34,7 +34,7 @@ class FuzzingDataTest {
     void givenASchemaWithSubfields_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).reqSchema(baseSchema).build();
+        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
 
         Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties)
@@ -49,7 +49,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesMap());
         composedSchema.allOf(Collections.singletonList(baseSchema));
 
-        FuzzingData data = FuzzingData.builder().reqSchema(composedSchema).build();
+        FuzzingData data = FuzzingData.builder().reqSchema(composedSchema).requestPropertyTypes(this.getBasePropertiesMap()).build();
 
         Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties).contains("firstName", "lastName");
@@ -62,7 +62,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesRequired());
         composedSchema.allOf(Collections.singletonList(baseSchema));
         baseSchema.setRequired(Collections.singletonList("phone"));
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesRequired()).reqSchema(composedSchema).build();
+        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesRequired()).requestPropertyTypes(this.getBasePropertiesRequired()).reqSchema(composedSchema).build();
 
         List<String> allProperties = data.getAllRequiredFields();
         Assertions.assertThat(allProperties)
@@ -77,7 +77,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
         composedSchema.allOf(Collections.singletonList(baseSchema));
         baseSchema.setRequired(Collections.singletonList("firstName"));
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).reqSchema(composedSchema).build();
+        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(composedSchema).build();
 
         List<String> allProperties = data.getAllRequiredFields();
         Assertions.assertThat(allProperties)
@@ -89,6 +89,17 @@ class FuzzingDataTest {
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("address", new StringSchema());
         schemaMap.put("phone", new StringSchema());
+
+        return schemaMap;
+    }
+
+    public Map<String, Schema> buildRequestPropertyTypes() {
+        Map<String, Schema> schemaMap = new HashMap<>();
+        schemaMap.put("firstName", new StringSchema());
+        schemaMap.put("lastName", new StringSchema());
+        schemaMap.put("address#street", new StringSchema());
+        schemaMap.put("address#zipCode", new StringSchema());
+        schemaMap.put("address", new ObjectSchema());
 
         return schemaMap;
     }

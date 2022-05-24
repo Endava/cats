@@ -92,4 +92,16 @@ class CatsUtilTest {
 
         Assertions.assertThat(result).isEqualTo("catestts");
     }
+
+    @ParameterizedTest
+    @CsvSource({"prop1#prop2", "prop1#prop2#prop3", "prop1#prop2#prop3#prop4"})
+    void shouldNotReturnCyclic(String properties) {
+        Assertions.assertThat(CatsUtil.isCyclicReference(properties, 2)).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"prop1#prop1#prop1", "prop1#prop2#prop3#prop1#prop2", "prop1#prop2#prop3#prop2#prop3", "prop1#prop2#prop1"})
+    void shouldReturnCyclic(String properties) {
+        Assertions.assertThat(CatsUtil.isCyclicReference(properties, 3)).isTrue();
+    }
 }
