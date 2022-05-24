@@ -44,7 +44,7 @@ class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
     void shouldOverrideDefaultMethods() {
         Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.skipForHttpMethods()).isEmpty();
         Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(onlySingleCodePointEmojisInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\uD83D\uDC7E");

@@ -43,7 +43,7 @@ class OnlySingleCodePointEmojisInFieldsTrimValidateFuzzerTest {
     @Test
     void shouldProperlyOverrideMethods() {
         Assertions.assertThat(onlySingleCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlySingleCodePointEmojisInFieldsTrimValidateFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlySingleCodePointEmojisInFieldsTrimValidateFuzzer.skipForHttpMethods()).isEmpty();
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();

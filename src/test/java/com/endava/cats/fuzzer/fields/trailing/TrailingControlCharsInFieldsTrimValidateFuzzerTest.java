@@ -35,7 +35,7 @@ class TrailingControlCharsInFieldsTrimValidateFuzzerTest {
         FuzzingStrategy fuzzingStrategy = trailingControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(null, null).get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.trail().name());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0007");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0000");
         Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(trailingControlCharsInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
