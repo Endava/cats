@@ -35,6 +35,6 @@ public class ServiceData {
     private final Set<String> queryParams = new HashSet<>();
 
     public boolean isJsonContentType() {
-        return this.contentType.toLowerCase(Locale.ROOT).startsWith("application/json");
+        return this.contentType.toLowerCase(Locale.ROOT).matches("application/.*[+]?json");
     }
 }
