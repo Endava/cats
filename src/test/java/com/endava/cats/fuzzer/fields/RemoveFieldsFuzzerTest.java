@@ -92,7 +92,7 @@ class RemoveFieldsFuzzerTest {
         Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(ProcessingArguments.SetFuzzingStrategy.ONEBYONE);
         data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload(payload).
                 responses(responses).reqSchema(schema).schemaMap(this.createPropertiesMap()).responseCodes(Collections.singleton("200"))
-                .requestContentTypes(List.of("application/json")).build();
+                .requestContentTypes(List.of("application/json")).requestPropertyTypes(this.createPropertiesMap()).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
     }
 

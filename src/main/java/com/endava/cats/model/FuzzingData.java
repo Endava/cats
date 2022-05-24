@@ -2,6 +2,7 @@ package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 @Getter
 @ToString
 public class FuzzingData {
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FuzzingData.class);
     private final HttpMethod method;
     private final String path;
     private final Set<CatsHeader> headers;
@@ -41,7 +43,6 @@ public class FuzzingData {
     private final OpenAPI openApi;
     private final List<String> tags;
     private final String reqSchemaName;
-
     /*these are cached after the first computation*/
     private Set<String> allFields;
     private Set<Set<String>> allFieldsSetOfSets;
@@ -51,7 +52,7 @@ public class FuzzingData {
     private Set<String> allWriteOnlyFields;
     private String processedPayload;
     private Set<String> targetFields;
-
+    private int selfReferenceDepth;
 
     public boolean isQueryParam(String field) {
         return this.queryParams.contains(field);
@@ -82,6 +83,10 @@ public class FuzzingData {
     }
 
     private Set<CatsField> getFields(Schema schema, String prefix) {
+        LOGGER.trace("Getting fields for prefix: {}", prefix);
+        if (CatsUtil.isCyclicReference(prefix, selfReferenceDepth)) {
+            return Collections.emptySet();
+        }
         Set<CatsField> catsFields = new HashSet<>();
         if (schema.get$ref() != null) {
             schema = schemaMap.get(this.getDefinitionNameFromRef(schema.get$ref()));
@@ -106,7 +111,9 @@ public class FuzzingData {
             Optional.ofNullable(composedSchema.getOneOf()).ifPresent(oneOf -> oneOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
         }
 
-        return catsFields;
+        return catsFields.stream()
+                .filter(catsField -> this.getRequestPropertyTypes().get(catsField.getName()) != null)
+                .collect(Collectors.toSet());
     }
 
 

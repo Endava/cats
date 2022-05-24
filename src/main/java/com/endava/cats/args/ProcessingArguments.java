@@ -33,6 +33,9 @@ public class ProcessingArguments {
     @CommandLine.Option(names = {"--largeStringsSize"},
             description = "The size of the strings used by the Fuzzers sending large values like @|bold VeryLargeStringsFuzzer|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int largeStringsSize = 40000;
+    @CommandLine.Option(names = {"--selfReferenceDepth", "-L"},
+            description = "Max depth for objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private int selfReferenceDepth = 3;
 
     @Setter
     @CommandLine.Option(names = {"--contentType"},

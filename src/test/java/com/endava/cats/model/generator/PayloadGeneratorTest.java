@@ -31,7 +31,7 @@ class PayloadGeneratorTest {
     @CsvSource({"email,true", "emailAddress,true", "notEmail,true", "myEmailAddress,true", "randomField,false"})
     void shouldRecognizeEmail(String property, boolean expected) {
         StringSchema schema = new StringSchema();
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
         boolean isEmail = generator.isEmailAddress(schema, property);
         Assertions.assertThat(isEmail).isEqualTo(expected);
     }
@@ -40,7 +40,7 @@ class PayloadGeneratorTest {
     @CsvSource({"ip,true", "ipaddress,true", "hostIp,true", "something,false"})
     void shouldRecognizeIpAddressFromPropertyName(String property, boolean expected) {
         StringSchema schema = new StringSchema();
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
 
         boolean isIp = generator.isIPV4(schema, property);
         Assertions.assertThat(isIp).isEqualTo(expected);
@@ -51,7 +51,7 @@ class PayloadGeneratorTest {
     void shouldRecognizeIpAddressFromFormat(String format, boolean expected) {
         StringSchema schema = new StringSchema();
         schema.setFormat(format);
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true,3);
 
         boolean isIp = generator.isIPV4(schema, "field");
         Assertions.assertThat(isIp).isEqualTo(expected);
@@ -61,7 +61,7 @@ class PayloadGeneratorTest {
     @CsvSource({"url,true", "uri,true", "addressurl,true", "addressuri,true", "not,false"})
     void shouldRecognizeUrlFromPropertyName(String property, boolean expected) {
         StringSchema schema = new StringSchema();
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true,3);
 
         boolean isIp = generator.isURI(schema, property);
         Assertions.assertThat(isIp).isEqualTo(expected);
@@ -72,7 +72,7 @@ class PayloadGeneratorTest {
     void shouldRecognizeUrlFromPropertyFormat(String property, boolean expected) {
         StringSchema schema = new StringSchema();
         schema.setFormat(property);
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
 
         boolean isIp = generator.isURI(schema, "other");
         Assertions.assertThat(isIp).isEqualTo(expected);
@@ -81,7 +81,7 @@ class PayloadGeneratorTest {
     @Test
     void shouldRecognizeIpV6AddressFromPropertyName() {
         StringSchema schema = new StringSchema();
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
 
         boolean isIp = generator.isIPV6(schema, "ipv6");
         Assertions.assertThat(isIp).isTrue();
@@ -91,7 +91,7 @@ class PayloadGeneratorTest {
     void shouldRecognizeIpV6AddressFromPropertyFormat() {
         StringSchema schema = new StringSchema();
         schema.setFormat("ipv6");
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
 
         boolean isIp = generator.isIPV6(schema, "something");
         Assertions.assertThat(isIp).isTrue();
@@ -99,7 +99,7 @@ class PayloadGeneratorTest {
 
     @Test
     void shouldReturnNotEmailWhenSchemaNull() {
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
 
         Assertions.assertThat(generator.isEmailAddress(new Schema<>(), "field")).isFalse();
     }
@@ -155,7 +155,7 @@ class PayloadGeneratorTest {
         Map<String, String> example = generator.generate("CyclicPet");
         String exampleJson = example.get("example");
 
-        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#parent#parent#parent#parent#parent#code")).isNotEqualTo("NOT_SET");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#parent#parent#code")).isNotEqualTo("NOT_SET");
         Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#parent#parent#parent#parent#parent#parent#code")).isEqualTo("NOT_SET");
     }
 
@@ -167,6 +167,6 @@ class PayloadGeneratorTest {
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         globalContext.getSchemaMap().putAll(schemas);
-        return new PayloadGenerator(globalContext, true);
+        return new PayloadGenerator(globalContext, true, 3);
     }
 }
