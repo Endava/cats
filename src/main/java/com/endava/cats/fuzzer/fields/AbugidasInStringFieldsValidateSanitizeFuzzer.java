@@ -19,11 +19,6 @@ public class AbugidasInStringFieldsValidateSanitizeFuzzer extends AbugidasInStri
     }
 
     @Override
-    public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
-        return ResponseCodeFamily.FOURXX;
-    }
-
-    @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
@@ -32,5 +27,5 @@ public class AbugidasInStringFieldsValidateSanitizeFuzzer extends AbugidasInStri
     public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
         return ResponseCodeFamily.FOURXX;
     }
-    
+
 }

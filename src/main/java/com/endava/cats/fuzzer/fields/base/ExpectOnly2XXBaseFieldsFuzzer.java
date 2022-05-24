@@ -26,6 +26,4 @@ public abstract class ExpectOnly2XXBaseFieldsFuzzer extends BaseFieldsFuzzer {
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
         return ResponseCodeFamily.TWOXX;
     }
-
-
 }

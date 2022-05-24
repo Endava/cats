@@ -149,7 +149,7 @@ public abstract class PayloadUtils {
     }
 
     public static String getZalgoText() {
-        return ZALGO_TEXT.replace(" ","");
+        return ZALGO_TEXT.replace(" ", "");
     }
 
     public static List<FuzzingStrategy> getLargeValuesStrategy(int largeStringsSize) {
@@ -160,6 +160,4 @@ public abstract class PayloadUtils {
         }
         return Collections.singletonList(FuzzingStrategy.replace().withData(markLargeString(StringUtils.repeat(generatedValue, payloadSize + 1))));
     }
-
-
 }

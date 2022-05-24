@@ -45,20 +45,7 @@ class AbugidasInStringFieldsValidateSanitizeFuzzerTest {
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getInvisibleChars()).isEmpty();
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.description()).isNotNull();
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.typeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
-
-    }
-
-    @Test
-    void shouldNotFuzzIfDiscriminatorField() {
-        Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
-    }
-
-    @Test
-    void shouldFuzzIfNotDiscriminatorField() {
-        Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
     }
 }
