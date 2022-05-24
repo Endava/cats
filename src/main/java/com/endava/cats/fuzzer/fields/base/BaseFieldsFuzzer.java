@@ -32,8 +32,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
     protected final CatsUtil catsUtil;
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
-    final FilesArguments filesArguments;
-    final TestCaseListener testCaseListener;
+    protected final TestCaseListener testCaseListener;
+    protected final FilesArguments filesArguments;
     private final ServiceCaller serviceCaller;
 
     protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
@@ -166,7 +166,18 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         }
         Pattern pattern = Pattern.compile(fieldSchema.getPattern());
 
-        return fieldValue == null || pattern.matcher(String.valueOf(fieldValue)).matches();
+        return fieldValue == null || pattern.matcher(this.sanitizeString(fieldValue)).matches();
+    }
+
+    /**
+     * We need to sanitize the fuzzed value before matching it to the pattern as APIs are expected to
+     * also sanitize data before validating it.
+     *
+     * @param fieldValue the initial fuzzed value
+     * @return the initial value with unicode control chars removed
+     */
+    private String sanitizeString(Object fieldValue) {
+        return String.valueOf(fieldValue).replaceAll("\\p{C}", "");
     }
 
     private boolean hasMinValue(FuzzingData data, String fuzzedField) {

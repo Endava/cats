@@ -41,13 +41,11 @@ class ZalgoTextInStringFieldsSanitizeValidateFuzzerTest {
         reqTypes.put("field", new StringSchema());
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
         FuzzingStrategy fuzzingStrategy = zalgoTextInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
-        Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
-        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("c̷̨̛̥̬͉̘̬̻̩͕͚̦̺̻͓̳͇̲̭̝̙̟̈́̉̐͂͒̆͂̿͌̑͐̌̇̈́̾̉̆̀̅̓͛͋̈̄͊̈̄̎̃̒͂̓̊̌̎̌̃́̅͊̏͘͘͘̕̕͘͠͝a");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains(" ̵̡̡̢̡̨̨̢͚̬̱̤̰̗͉͚̖͙͎͔͔̺̳͕̫̬͚̹͖̬̭̖̪̗͕̜̣̥̣̼͍͉̖͍̪͈̖͚̙͛͒͂̎̊̿̀̅̈͌͋̃̾̈̾̇͛͌͘͜͜͠͝ͅͅͅ ̷͕̗̇͛̅̀̑̇̈͗͌͛̐̀͆̐̊̅̋̈́̂̈́̈́͑̓͂͂̌̈́̽͌͐̐͂͐̈́̍̂͗̂͘͠͝͝͝ͅ ".replace(" ", ""));
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.description()).isNotNull();
-        Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.getInvisibleChars()).isEmpty();
         Assertions.assertThat(zalgoTextInStringFieldsSanitizeValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
 

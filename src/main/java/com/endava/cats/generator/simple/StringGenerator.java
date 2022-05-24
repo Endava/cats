@@ -54,7 +54,7 @@ public class StringGenerator {
     }
 
     public static String composeString(String initial, int min, int max) {
-        String trimmed = initial.trim().replaceAll("[\\p{Z}]+", "") + "A";
+        String trimmed = initial.trim().replaceAll("[\\p{Z}]+", "") + initial.charAt(0);
         if (trimmed.length() < min) {
             return composeString(trimmed + trimmed, min, max);
         } else if (trimmed.length() > max) {
