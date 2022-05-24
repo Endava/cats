@@ -126,7 +126,6 @@ public class ServiceCaller {
                     .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
-                    .connectionPool(new ConnectionPool())
                     .hostnameVerifier((hostname, session) -> true).build();
 
             LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
@@ -293,7 +292,7 @@ public class ServiceCaller {
             HttpUrl.Builder httpUrl = HttpUrl.get(currentUrl).newBuilder();
             List<KeyValuePair<String, String>> queryParams = this.buildQueryParameters(processedPayload, data);
             for (KeyValuePair<String, String> param : queryParams) {
-                httpUrl.addEncodedQueryParameter(param.getKey(), param.getValue());
+                httpUrl.addQueryParameter(param.getKey(), param.getValue());
             }
             return httpUrl.build().toString();
         }
