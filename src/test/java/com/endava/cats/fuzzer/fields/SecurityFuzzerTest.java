@@ -143,7 +143,7 @@ class SecurityFuzzerTest {
         person.setProperties(properties);
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue', 'firstName':'John','lastName':'Cats','email':'john@yahoo.com'}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(person).headers(new HashSet<>())
-                .requestContentTypes(List.of("application/json")).build();
+                .requestContentTypes(List.of("application/json")).requestPropertyTypes(properties).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         return data;

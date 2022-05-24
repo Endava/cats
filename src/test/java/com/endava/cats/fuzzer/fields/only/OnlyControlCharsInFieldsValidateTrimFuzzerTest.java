@@ -44,7 +44,7 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
     void shouldOverrideDefaultMethods() {
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.skipForHttpMethods()).isEmpty();
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(onlyControlCharsInFieldsValidateTrimFuzzer.getInvisibleChars()).contains("\t");
@@ -60,7 +60,7 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0007");
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\u0000");
     }
 
     @Test
@@ -75,7 +75,7 @@ class OnlyControlCharsInFieldsValidateTrimFuzzerTest {
 
         FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(1);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\u0007", stringSchema.getMinLength() + 1));
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat("\u0000", stringSchema.getMinLength() + 1));
 
     }
 }

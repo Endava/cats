@@ -48,7 +48,7 @@ class OnlyWhitespacesInFieldsTrimValidateFuzzerTest {
         Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.getInvisibleChars()).contains(" ");
-        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyWhitespacesInFieldsTrimValidateFuzzer.skipForHttpMethods()).isEmpty();
     }
 
     @Test

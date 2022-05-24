@@ -44,7 +44,7 @@ class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
         FuzzingStrategy fuzzingStrategy = controlCharsWithinFieldsValidateSanitizeFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
 
-        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\u0007");
+        Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\u0000");
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
@@ -52,7 +52,6 @@ class WithinControlCharsInFieldsValidateSanitizeFuzzerTest {
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.description()).isNotNull();
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.typeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(controlCharsWithinFieldsValidateSanitizeFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
-
     }
 
     @Test

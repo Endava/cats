@@ -44,7 +44,7 @@ class OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzerTest {
     @Test
     void shouldProperlyOverrideMethods() {
         Assertions.assertThat(onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer.skipForHttpMethods()).containsExactly(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer.skipForHttpMethods()).isEmpty();
 
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
