@@ -228,7 +228,7 @@ You can use the `--paths=PATH` argument to run CATS sequentially for each path.
 You can use the `--checkXXX` arguments to run CATS only with specific `Fuzzers` like: `--checkHttp`, `-checkFields`, etc.
 
 ## Split by Fuzzer Type
-You can use various arguments like `--fuzers=Fuzzer1,Fuzzer2` or `-skipFuzzers=Fuzzer1,Fuzzer2` to either include or exclude specific `Fuzzers`. 
+You can use various arguments like `--fuzzers=Fuzzer1,Fuzzer2` or `-skipFuzzers=Fuzzer1,Fuzzer2` to either include or exclude specific `Fuzzers`. 
 For example, you can run all `Fuzzers` except for the `ControlChars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
 After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
 
