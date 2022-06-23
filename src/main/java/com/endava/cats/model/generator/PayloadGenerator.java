@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -31,17 +32,21 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * A modified version of @code{io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -75,8 +80,8 @@ public class PayloadGenerator {
     private final Random random;
     private final boolean useExamples;
     private final CatsGlobalContext globalContext;
-    private String currentProperty = "";
     private final int selfReferenceDepth;
+    private String currentProperty = "";
 
     public PayloadGenerator(CatsGlobalContext catsGlobalContext, boolean useExamplesArgument, int selfReferenceDepth) {
         this.globalContext = catsGlobalContext;
@@ -308,6 +313,7 @@ public class PayloadGenerator {
     private Object resolveModelToExample(String name, Schema schema) {
         Map<String, Object> values = new HashMap<>();
         LOGGER.trace("Resolving model '{}' to example", name);
+        schema = normalizeDiscriminatorMappingsToOneOf(name, schema);
 
         if (CatsUtil.isCyclicReference(currentProperty, selfReferenceDepth)) {
             return values;
@@ -334,7 +340,7 @@ public class PayloadGenerator {
         }
         String previousPropertyValue = currentProperty;
         for (Object propertyName : schema.getProperties().keySet()) {
-             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
+            String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
             currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
 
@@ -349,6 +355,31 @@ public class PayloadGenerator {
         catsGeneratedExamples.add(schema);
     }
 
+    private Schema normalizeDiscriminatorMappingsToOneOf(String name, Schema<?> schema) {
+        if (schema.getDiscriminator() != null && !CollectionUtils.isEmpty(schema.getDiscriminator().getMapping()) && !(schema instanceof ComposedSchema)) {
+            ComposedSchema composedSchema = new ComposedSchema();
+            composedSchema.setOneOf(schema.getDiscriminator().getMapping().values()
+                    .stream().map(schemaName -> new Schema<>().$ref(schemaName))
+                    .collect(Collectors.toList()));
+            composedSchema.setDiscriminator(schema.getDiscriminator());
+            schema.getProperties().get(schema.getDiscriminator().getPropertyName()).setEnum(new ArrayList<>(schema.getDiscriminator().getMapping().keySet()));
+            globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
+            Schema<?> newSchema = new ObjectMapper().convertValue(schema, Schema.class);
+            newSchema.setName("CatsChanged" + name);
+            newSchema.getDiscriminator().setMapping(null);
+            globalContext.getSchemaMap().put(newSchema.getName(), newSchema);
+            for (String oneOfSchema : schema.getDiscriminator().getMapping().keySet()) {
+                ComposedSchema currentOneOfSchema = (ComposedSchema) globalContext.getSchemaMap().get(oneOfSchema);
+                currentOneOfSchema.getAllOf()
+                        .stream()
+                        .filter(innerAllOfSchema -> innerAllOfSchema.get$ref() != null)
+                        .forEach(innerAllOfSchema -> innerAllOfSchema.set$ref(newSchema.getName()));
+            }
+            return composedSchema;
+        }
+        return schema;
+    }
+
     private void parseFromInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName) {
         Schema innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
         if (innerSchema instanceof ObjectSchema) {
@@ -357,14 +388,18 @@ public class PayloadGenerator {
         if (innerSchema instanceof ComposedSchema) {
             this.populateWithComposedSchema(values, propertyName.toString(), (ComposedSchema) innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
-            values.put(propertyName.toString(), innerSchema.getEnum().stream().filter(value -> name.contains(value.toString())).findFirst().orElse(""));
+            values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema));
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
-        } else {
+        } else {//maybe here a check for array schema
             LOGGER.trace("Resolving {}", propertyName);
             Object example = this.resolvePropertyToExample(propertyName.toString(), innerSchema);
             values.put(propertyName.toString(), example);
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         }
+    }
+
+    private Object matchToEnumOrEmpty(String name, Schema innerSchema) {
+        return Optional.ofNullable(innerSchema.getEnum()).orElse(List.of("")).stream().filter(value -> name.contains(value.toString())).findFirst().orElse("");
     }
 
     private void populateWithComposedSchema(Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
@@ -402,7 +437,7 @@ public class PayloadGenerator {
         }
     }
 
-    private void addXXXOfExamples(Map<String, Object> values, Object propertyName, List<Schema> allOf, String of) {
+    private void addXXXOfExamples(Map<String, Object> values, Object propertyName, Collection<Schema> allOf, String of) {
         for (Schema allOfSchema : allOf) {
             String fullSchemaRef = allOfSchema.get$ref();
             String schemaRef;

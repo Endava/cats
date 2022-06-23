@@ -1,0 +1,6780 @@
+{
+  "x-generator": "NSwag v13.16.0.0 (NJsonSchema v10.7.1.0 (Newtonsoft.Json v13.0.0.0))",
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Groopit API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/connect/authorize": {
+      "get": {
+        "tags": [
+          "Authorization"
+        ],
+        "operationId": "Authorization_AuthorizeGET",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Authorization"
+        ],
+        "operationId": "Authorization_AuthorizePOST",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/connect/logout": {
+      "get": {
+        "tags": [
+          "Authorization"
+        ],
+        "operationId": "Authorization_LogoutGET",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Authorization"
+        ],
+        "operationId": "Authorization_LogoutPOST",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/connect/token": {
+      "post": {
+        "tags": [
+          "Authorization"
+        ],
+        "operationId": "Authorization_Exchange",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/token": {
+      "post": {
+        "tags": [
+          "Authorization"
+        ],
+        "operationId": "Authorization_Exchange2",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/assignments/{assignmentId}": {
+      "get": {
+        "tags": [
+          "AssignmentApi"
+        ],
+        "operationId": "AssignmentApi_GetAssignment",
+        "parameters": [
+          {
+            "name": "assignmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "AssignmentApi"
+        ],
+        "operationId": "AssignmentApi_DeleteAssignmentModel",
+        "parameters": [
+          {
+            "name": "assignmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/assignments/{id}": {
+      "put": {
+        "tags": [
+          "AssignmentApi"
+        ],
+        "operationId": "AssignmentApi_PutAssignmentModel",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "assignmentModel",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/assignments": {
+      "post": {
+        "tags": [
+          "AssignmentApi"
+        ],
+        "operationId": "AssignmentApi_CreateAssignmentModel",
+        "requestBody": {
+          "x-name": "assignmentModel",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/assignments/{assignmentId}/ComponentOptions/{componentId}": {
+      "get": {
+        "tags": [
+          "AssignmentApi"
+        ],
+        "operationId": "AssignmentApi_GetComponentOptions",
+        "parameters": [
+          {
+            "name": "assignmentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "componentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "groupToken",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 4
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 2147483647
+            },
+            "x-position": 5
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/all": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetAllGroops",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserGroopsDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetGroops",
+        "parameters": [
+          {
+            "name": "groupToken",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "nullable": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroopDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_PostGroop",
+        "requestBody": {
+          "x-name": "groopEditViewModel",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroopEditDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{id}": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetGroop",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_PutGroop",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "groopEditViewModel",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroopEditDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_DeleteGroop",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{id}/Avatar": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopAvatar"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_SetAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopAvatar"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_DeleteAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopAvatar"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/StartGroopitPaging": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_StartGroopitPaging",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "nullable": true,
+              "items": {
+                "type": "string",
+                "format": "guid"
+              }
+            },
+            "x-position": 2
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 4
+          },
+          {
+            "name": "creator",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 5
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            },
+            "x-position": 6
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopitPagedResults"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/GetGroopitPage": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetGroopitPage",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "Token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "nullable": true,
+              "items": {
+                "type": "string",
+                "format": "guid"
+              }
+            },
+            "x-position": 3
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 4
+          },
+          {
+            "name": "count",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            },
+            "x-position": 5
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 6
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 7
+          },
+          {
+            "name": "creator",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 8
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroopItModel_V1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Users": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetUsers",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Owners": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetOwners",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Members": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetMembers",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_AddMember",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/People": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetPeople",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipInfo"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Invites/{inviteId}": {
+      "delete": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_DeleteInvite",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "inviteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/InviteRequests/{requestId}": {
+      "delete": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_DeleteInviteRequest",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Requests/Accept/{requestId}": {
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_AcceptRequest",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Requests/Ignore/{requestId}": {
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_IgnoreRequest",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Invites/Resend/{inviteId}": {
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_ResendInvite",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "inviteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Members2": {
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_AddMember2",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteModel"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Members/{userId}": {
+      "delete": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_DeleteMember",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Owners/{userId}": {
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_AddOwner",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_DeleteOwner",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{groopId}/Views": {
+      "get": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_GetViews",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VizDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groops/{id}/CoverPhoto": {
+      "post": {
+        "tags": [
+          "GroopApi"
+        ],
+        "operationId": "GroopApi_SetCoverPhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopCoverPhoto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/register": {
+      "post": {
+        "tags": [
+          "Register"
+        ],
+        "operationId": "Register_Post",
+        "parameters": [
+          {
+            "name": "handle",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/register/{id}": {
+      "put": {
+        "tags": [
+          "Register"
+        ],
+        "operationId": "Register_Put",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "deviceUpdate",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceRegistration"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Register"
+        ],
+        "operationId": "Register_Delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/responses/{componentDataId}": {
+      "get": {
+        "tags": [
+          "ResponsesApi"
+        ],
+        "operationId": "ResponsesApi_GetResponses",
+        "parameters": [
+          {
+            "name": "componentDataId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseOptionsDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/responses/v2": {
+      "put": {
+        "tags": [
+          "ResponsesApi"
+        ],
+        "operationId": "ResponsesApi_PutResponse",
+        "requestBody": {
+          "x-name": "response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Api_response"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ResponsesApi"
+        ],
+        "operationId": "ResponsesApi_DeleteResponse",
+        "requestBody": {
+          "x-name": "response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Api_response"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/responses/{componentDataId}/{response}": {
+      "put": {
+        "tags": [
+          "ResponsesApi"
+        ],
+        "operationId": "ResponsesApi_PutResponse2",
+        "parameters": [
+          {
+            "name": "componentDataId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "response",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ResponsesApi"
+        ],
+        "operationId": "ResponsesApi_DeleteResponse2",
+        "parameters": [
+          {
+            "name": "componentDataId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "response",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/responses/{componentDataId}/id/{responseId}": {
+      "delete": {
+        "tags": [
+          "ResponsesApi"
+        ],
+        "operationId": "ResponsesApi_DeleteResponse3",
+        "parameters": [
+          {
+            "name": "componentDataId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "responseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/responses/Comment/{responseId}": {
+      "post": {
+        "tags": [
+          "ResponsesApi"
+        ],
+        "operationId": "ResponsesApi_AddComment",
+        "parameters": [
+          {
+            "name": "responseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "comment",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Api_comment"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users": {
+      "put": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_CreateUser",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/ForgotPassword": {
+      "post": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_ForgotPassword",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordViewModel"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/ConfirmEmail": {
+      "get": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_ConfirmEmail",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "",
+              "nullable": true
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/GetConfirmUrl/{userID}": {
+      "get": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_GetConfirmUrl",
+        "parameters": [
+          {
+            "name": "userID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/Self": {
+      "get": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_GetSelf",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_PutSelf",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditUserDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_DeleteSelf",
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/Self/Password": {
+      "post": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_PutPassword",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordModel"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/Self/Avatar": {
+      "get": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_GetAvatar",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAvatar"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_SetAvatar",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAvatar"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_DeleteAvatar",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAvatar"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/{id}/Avatar": {
+      "get": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_GetAvatar2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserAvatar"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/Self/Groop/{groopId}": {
+      "post": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_JoinGroop",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_LeaveGroop",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/v4/users/Self/Groop/{groopId}": {
+      "post": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_JoinGroopV4",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/users/Self/EmailSettings": {
+      "get": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_GetEmailSettings",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailSettingsModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "UserApi"
+        ],
+        "operationId": "UserApi_SetEmailSettings",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailSettingsModel"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/viz": {
+      "post": {
+        "tags": [
+          "VizApi"
+        ],
+        "operationId": "VizApi_PublishView",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VizDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/viz/Data/{id}": {
+      "get": {
+        "tags": [
+          "VizApi"
+        ],
+        "operationId": "VizApi_GetDataGET",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/viz/Data": {
+      "post": {
+        "tags": [
+          "VizApi"
+        ],
+        "operationId": "VizApi_GetDataPOST",
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VizDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/viz/id:int": {
+      "get": {
+        "tags": [
+          "VizApi"
+        ],
+        "operationId": "VizApi_GetView",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VizDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "VizApi"
+        ],
+        "operationId": "VizApi_UpdateView",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "model",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VizDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VizDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/link-group": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_LinkGroup",
+        "requestBody": {
+          "x-name": "linkGroup",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGroupDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/unlink-group": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_UnlinkGroup",
+        "requestBody": {
+          "x-name": "unlinkGroup",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlinkGroupDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/map-field": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_MapField",
+        "requestBody": {
+          "x-name": "mapField",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapFieldDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/get-linked-groups": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_GetGroups",
+        "requestBody": {
+          "x-name": "getGroups",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGroupsDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/get-owned-groups": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_GetOwnedGroups",
+        "requestBody": {
+          "x-name": "getGroups",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetGroupsDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/create-groopit": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_CreateGroopIt",
+        "requestBody": {
+          "x-name": "newGroopit",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGroopitDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopitDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/get-component-options": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_GetComponentOptions",
+        "requestBody": {
+          "x-name": "getComponentOptions",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetComponentOptionsDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/salesforce/set-linked-objects": {
+      "post": {
+        "tags": [
+          "SalesforceApi"
+        ],
+        "operationId": "SalesforceApi_SetLinkedObjects",
+        "requestBody": {
+          "x-name": "setLinkedObjects",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetLinkedObjectsDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups": {
+      "get": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_GetGroups",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroopDataExportDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/forms": {
+      "get": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_GetForms",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AssignmentDataExportDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/forms/{formId}/reports": {
+      "get": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_GetReports",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "formId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 3
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            },
+            "x-position": 4
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroopItDataExportDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/reports": {
+      "get": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_GetReports2",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 2
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            },
+            "x-position": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroopItDataExportDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/forms/{formId}/reports/subscribe": {
+      "post": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_SubscribeToReports",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "formId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          }
+        ],
+        "requestBody": {
+          "x-name": "subscribe",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroopItWebhookSubscribe"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 3
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItWebhookDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/reports/subscribe": {
+      "post": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_SubscribeToReports2",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "subscribe",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroopItWebhookSubscribe"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItWebhookDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/forms/{formId}/reports/unsubscribe/{webhookId}": {
+      "delete": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_UnsubscribeFromReports",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "formId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 3
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/reports/unsubscribe/{webhookId}": {
+      "delete": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_UnsubscribeFromReports2",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/linked-members": {
+      "get": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_GetLinkedMembers",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 2
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 25
+            },
+            "x-position": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LinkedGroupMembershipDataExportDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/linked-members/subscribe": {
+      "post": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_SubscribeToLinkedMembers",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "subscribe",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroopItWebhookSubscribe"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItWebhookDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/data/groups/{groupId}/linked-members/unsubscribe/{webhookId}": {
+      "delete": {
+        "tags": [
+          "DataExportApi"
+        ],
+        "operationId": "DataExportApi_UnsubscribeFromLinkedMembers",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "webhookId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}": {
+      "get": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_GetGroopIt",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItModel_V1"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_UpdateGroopItLegacy",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "components",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ComponentData"
+                }
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItModel_V1"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_DeleteGroopIt",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/create": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_CreateGroopIt",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "assignmentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "groupToken",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 4
+          }
+        ],
+        "requestBody": {
+          "x-name": "newGroopIt",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGroopitDTO2"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 3
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItModel_V1"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/createasdataexport": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_CreateGroopItAsDataExport",
+        "parameters": [
+          {
+            "name": "groopId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "assignmentId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 2
+          },
+          {
+            "name": "groupToken",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 4
+          }
+        ],
+        "requestBody": {
+          "x-name": "newGroopIt",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGroopitDTO2"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 3
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItDataExportDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/uploads": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_CreatePendingUpload",
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingUploadDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/v2/{groopItId}": {
+      "put": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_UpdateGroopIt",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "groopit",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGroopitDTO2"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItModel_V1"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}/Flag": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_FlagGroopIt",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "flag",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroopItFlag"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}/Like": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_LikeGroopIt",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "like",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroopItLike"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}/Likes": {
+      "get": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_GetLikes",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}/Pin": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_Pin",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}/UnPin": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_UnPin",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}/Comments": {
+      "get": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_GetComments",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 3
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            },
+            "x-position": 4
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentMeta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_CommentCreate",
+        "parameters": [
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          }
+        ],
+        "requestBody": {
+          "x-name": "comment",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/{groopItId}/Comments/{commentId}": {
+      "put": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_CommentEdit",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 3
+          }
+        ],
+        "requestBody": {
+          "x-name": "comment",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentDTO"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 2
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentDTO"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_CommentDelete",
+        "parameters": [
+          {
+            "name": "commentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "groopItId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "x-position": 2
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/ExternalServiceRelatedObjects": {
+      "get": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_GetExternalServiceRelatedObjects",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDTO"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SFTargetDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits/ExternalServiceRelatedRecords": {
+      "get": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_GetExternalServiceRelatedRecords",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 1
+          },
+          {
+            "name": "objectName",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 2
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "x-position": 3
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 2147483647
+            },
+            "x-position": 4
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SelectListDTO"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    },
+    "/api/groopits": {
+      "post": {
+        "tags": [
+          "GroopItApi"
+        ],
+        "operationId": "GroopItApi_SetFlagField",
+        "parameters": [
+          {
+            "name": "groopitId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            },
+            "x-position": 1
+          },
+          {
+            "name": "fieldId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "x-position": 2
+          }
+        ],
+        "requestBody": {
+          "x-name": "value",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": true,
+          "x-position": 3
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroopItModel_V1"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT token": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssignmentDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id",
+          "Groop",
+          "Components"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Groop": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "Hidden": {
+            "type": "boolean"
+          },
+          "Sequence": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentModel"
+            }
+          },
+          "IsActive": {
+            "type": "boolean"
+          },
+          "AllowsContributors": {
+            "type": "boolean"
+          },
+          "AllowsPublishers": {
+            "type": "boolean"
+          },
+          "Title": {
+            "type": "string",
+            "nullable": true
+          },
+          "AssignmentPhotoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ComponentModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ComponentModel_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Type": {
+            "$ref": "#/components/schemas/ComponentType"
+          },
+          "Sequence": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "Required": {
+            "type": "boolean"
+          },
+          "FormId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "Options": {
+            "type": "string",
+            "nullable": true
+          },
+          "Multiple": {
+            "type": "boolean"
+          },
+          "HiddenFromMembers": {
+            "type": "boolean"
+          },
+          "IsFlagField": {
+            "type": "boolean"
+          },
+          "DateOnly": {
+            "type": "boolean"
+          },
+          "OptionsAssignmentId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "OptionsComponentId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "UserEditable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ComponentType": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "Picture",
+          "Location",
+          "Note",
+          "MultipleChoice",
+          "Integer",
+          "DateTime",
+          "MultipleChoiceExtended",
+          "Response",
+          "FixedDecimal",
+          "PictureSet"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "UserGroopsDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Owned": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/GroopDTO"
+            }
+          },
+          "Member": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/GroopDTO"
+            }
+          },
+          "Invited": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/GroopDTO"
+            }
+          },
+          "Requested": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/GroopDTO"
+            }
+          }
+        }
+      },
+      "GroopDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "By": {
+            "type": "string",
+            "nullable": true
+          },
+          "Email": {
+            "type": "string",
+            "nullable": true
+          },
+          "AvatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "CreationTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "MemberCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "GroopitCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "NewGroopitCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "NewsCount": {
+            "type": "integer",
+            "format": "int32",
+            "deprecated": true,
+            "x-deprecatedMessage": "News is obsolete"
+          },
+          "VizCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "Assignments": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/AssignmentDTO"
+            }
+          },
+          "IsPublic": {
+            "type": "boolean"
+          },
+          "Link": {
+            "type": "string",
+            "nullable": true
+          },
+          "LinkText": {
+            "type": "string",
+            "nullable": true
+          },
+          "GroopItFlagChoices": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsShareable": {
+            "type": "boolean"
+          },
+          "FriendlyUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "JoinUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "Owners": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/UserDTO"
+            }
+          },
+          "Role": {
+            "$ref": "#/components/schemas/UserRole"
+          },
+          "CoverPhotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "WhyItMatters": {
+            "type": "string",
+            "nullable": true
+          },
+          "HowToContribute": {
+            "type": "string",
+            "nullable": true
+          },
+          "SubscriptionLevel": {
+            "$ref": "#/components/schemas/SubscriptionLevel"
+          },
+          "SubscriptionOwner": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDTO"
+              }
+            ]
+          },
+          "SubscriptionExpiration": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Parent": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GroopDTO"
+              }
+            ]
+          },
+          "MemberForm": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MemberFormDTO"
+              }
+            ]
+          },
+          "SalesforceConnection": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/SFConnectionDTO"
+              }
+            ]
+          }
+        }
+      },
+      "UserDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id",
+          "FriendlyName",
+          "AvatarUrl"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "FriendlyName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "Email": {
+            "type": "string",
+            "nullable": true
+          },
+          "AvatarUrl": {
+            "type": "string",
+            "minLength": 1
+          },
+          "SupportsChangePassword": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UserRole": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "None",
+          "Member",
+          "Moderator",
+          "Organizer",
+          "Administrator",
+          "Invited",
+          "JoinRequested",
+          "Publisher"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "SubscriptionLevel": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "Free",
+          "Essential",
+          "Professional",
+          "Enterprise"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "MemberFormDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id",
+          "Groop"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Groop": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Consent": {
+            "type": "string",
+            "nullable": true
+          },
+          "Components": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ComponentModel"
+            }
+          }
+        }
+      },
+      "SFConnectionDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "BaseEndpoint": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        }
+      },
+      "GroopEditDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "By": {
+            "type": "string",
+            "nullable": true
+          },
+          "Email": {
+            "type": "string",
+            "nullable": true
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsPublic": {
+            "type": "boolean"
+          },
+          "Link": {
+            "type": "string",
+            "nullable": true
+          },
+          "LinkText": {
+            "type": "string",
+            "nullable": true
+          },
+          "GroopItFlagChoices": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsShareable": {
+            "type": "boolean"
+          },
+          "FriendlyUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "WhyItMatters": {
+            "type": "string",
+            "nullable": true
+          },
+          "HowToContribute": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GroopAvatar": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "AvatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GroopitPagedResults": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "TotalCount",
+          "IsLimitedBySubscription",
+          "Groopits",
+          "Assignments"
+        ],
+        "properties": {
+          "Token": {
+            "type": "string",
+            "nullable": true
+          },
+          "TotalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "StarterImage": {
+            "type": "string",
+            "nullable": true
+          },
+          "StarterLink": {
+            "type": "string",
+            "nullable": true
+          },
+          "IsLimitedBySubscription": {
+            "type": "boolean"
+          },
+          "IsPinnedLimitedBySubscription": {
+            "type": "boolean"
+          },
+          "Groopits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroopItModel_V1"
+            }
+          },
+          "Assignments": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AssignmentDTO"
+            }
+          }
+        }
+      },
+      "GroopItModel_V1": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id",
+          "Creator",
+          "Timestamp",
+          "AssignmentId",
+          "Components",
+          "LikeCount",
+          "LikedByUser",
+          "CanComment",
+          "CommentCount",
+          "ParentGroop",
+          "SalesforceLinks"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Creator": {
+            "$ref": "#/components/schemas/UserDTO"
+          },
+          "Timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "minLength": 1
+          },
+          "EditTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Editor": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDTO"
+              }
+            ]
+          },
+          "Flag": {
+            "type": "string",
+            "nullable": true
+          },
+          "Pinned": {
+            "type": "boolean"
+          },
+          "AssignmentId": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComponentData"
+            }
+          },
+          "LikeCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "LikedByUser": {
+            "type": "boolean"
+          },
+          "CanComment": {
+            "type": "boolean"
+          },
+          "CommentCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Tagged": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/UserDTO"
+            }
+          },
+          "ParentGroop": {
+            "$ref": "#/components/schemas/DisplayGroopDTO"
+          },
+          "SalesforceLinks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SFTargetDTO"
+            }
+          }
+        }
+      },
+      "ComponentData": {
+        "type": "object",
+        "discriminator": {
+          "propertyName": "discriminator",
+          "mapping": {
+            "PictureData": "#/components/schemas/PictureData",
+            "LocationData": "#/components/schemas/LocationData",
+            "NoteData": "#/components/schemas/NoteData",
+            "MultipleChoiceData": "#/components/schemas/MultipleChoiceData",
+            "DateTimeData": "#/components/schemas/DateTimeData",
+            "MultipleChoiceExtendedData": "#/components/schemas/MultipleChoiceExtendedData",
+            "ResponseData": "#/components/schemas/ResponseData",
+            "DecimalData": "#/components/schemas/DecimalData",
+            "PictureSetData": "#/components/schemas/PictureSetData"
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "ComponentData_Id",
+          "Model",
+          "discriminator"
+        ],
+        "properties": {
+          "ComponentData_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Model": {
+            "$ref": "#/components/schemas/ComponentModel"
+          },
+          "discriminator": {
+            "type": "string"
+          }
+        }
+      },
+      "PictureData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Image": {
+                "type": "string",
+                "format": "guid",
+                "nullable": true
+              },
+              "Width": {
+                "type": "integer",
+                "format": "int32",
+                "nullable": true
+              },
+              "Height": {
+                "type": "integer",
+                "format": "int32",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "LocationData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Location": {
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/Point"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "Point": {
+        "type": "object",
+        "properties": {
+          "Geography": {
+            "$ref": "#/components/schemas/Point/definitions/Geography"
+          }
+        },
+        "definitions": {
+          "Geography": {
+            "type": "object",
+            "properties": {
+              "CoordinateSystemId": {
+                "type": "integer"
+              },
+              "WellKnownText": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "NoteData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Notes": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "MultipleChoiceData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Options": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "DateTimeData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "MultipleChoiceExtendedData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Choice": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "ResponseData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MultipleChoiceData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "Prompt",
+              "ResponseCount",
+              "UserResponses"
+            ],
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Prompt": {
+                "type": "string",
+                "minLength": 1
+              },
+              "ResponseCount": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "UserResponses": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "DecimalData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Number": {
+                "type": "number",
+                "format": "decimal"
+              },
+              "FormattedNumber": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        ]
+      },
+      "PictureSetData": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComponentData"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Type": {
+                "$ref": "#/components/schemas/ComponentType"
+              },
+              "Pictures": {
+                "type": "array",
+                "nullable": true,
+                "items": {
+                  "$ref": "#/components/schemas/PictureModel"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "PictureModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Image",
+          "Sequence"
+        ],
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Image": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Width": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Height": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Sequence": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ComponentId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        }
+      },
+      "DisplayGroopDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id"
+        ],
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "AvatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "Email": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SFTargetDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Label",
+          "Name"
+        ],
+        "properties": {
+          "IsEditable": {
+            "type": "boolean"
+          },
+          "SalesforceType": {
+            "type": "string",
+            "nullable": true
+          },
+          "FieldName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "Name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "SelectedObjectId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MembershipInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Administrators",
+          "Owners",
+          "MembersAndOwners"
+        ],
+        "properties": {
+          "Administrators": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDTO"
+            }
+          },
+          "Owners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDTO"
+            }
+          },
+          "MembersAndOwners": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserDTO"
+            }
+          },
+          "Requests": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ClientInviteRequest"
+            }
+          },
+          "Invitations": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ClientInvite"
+            }
+          },
+          "LastViewed": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      },
+      "ClientInviteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "From": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDTO"
+              }
+            ]
+          },
+          "Sent": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ClientInvite": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "From": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDTO"
+              }
+            ]
+          },
+          "ToEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "Sent": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "Seen": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "InviteModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Message": {
+            "type": "string",
+            "nullable": true
+          },
+          "Emails": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "VizDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "GroopId",
+          "AssignmentId",
+          "VizType",
+          "Operation",
+          "Title",
+          "Grouping"
+        ],
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "GroopId": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "AssignmentId": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1
+          },
+          "PrimaryId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "FilterId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "VizType": {
+            "$ref": "#/components/schemas/VizType"
+          },
+          "StartDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "EndDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Operation": {
+            "$ref": "#/components/schemas/OperationType"
+          },
+          "Title": {
+            "type": "string"
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "Label": {
+            "type": "string",
+            "nullable": true
+          },
+          "StartCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "GoalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Access": {
+            "$ref": "#/components/schemas/Visibility"
+          },
+          "Grouping": {
+            "$ref": "#/components/schemas/GroupingType"
+          }
+        }
+      },
+      "VizType": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "Map",
+          "Counter",
+          "Goal",
+          "Timeline",
+          "TagCount",
+          "Leaderboard",
+          "ChoiceCount"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ]
+      },
+      "OperationType": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "Count",
+          "Sum",
+          "Mean",
+          "Median",
+          "Map",
+          "CountTags"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "Visibility": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "Members",
+          "Public"
+        ],
+        "enum": [
+          0,
+          1
+        ]
+      },
+      "GroupingType": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "None",
+          "Daily",
+          "Weekly",
+          "Monthly",
+          "Annually"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "GroopCoverPhoto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "CoverPhotoUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "DeviceRegistration": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Platform": {
+            "type": "string",
+            "nullable": true
+          },
+          "Handle": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ResponseOptionsDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "IsOwner",
+          "ComponentId",
+          "UserResponses",
+          "Options",
+          "Responses"
+        ],
+        "properties": {
+          "IsOwner": {
+            "type": "boolean"
+          },
+          "ComponentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "UserResponses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "Options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponseOptionView"
+            }
+          },
+          "Responses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeyValuePairOfStringAndIEnumerableOfGroopItDataResponseDTO"
+            }
+          }
+        }
+      },
+      "ResponseOptionView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Option",
+          "Max",
+          "Responded"
+        ],
+        "properties": {
+          "Option": {
+            "type": "string",
+            "minLength": 1
+          },
+          "Max": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Responded": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "KeyValuePairOfStringAndIEnumerableOfGroopItDataResponseDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Key": {
+            "type": "string"
+          },
+          "Value": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GroopItDataResponseDTO"
+            }
+          }
+        }
+      },
+      "GroopItDataResponseDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Id",
+          "User"
+        ],
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Response": {
+            "type": "string",
+            "nullable": true
+          },
+          "ResponseTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "Component": {
+            "deprecated": true,
+            "x-deprecatedMessage": "Used by Android until 1.0.18",
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ComponentData"
+              }
+            ]
+          },
+          "ComponentData_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "User": {
+            "$ref": "#/components/schemas/UserDTO"
+          },
+          "Comment": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Api_response": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "componentDataId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "option": {
+            "type": "string",
+            "nullable": true
+          },
+          "userId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Api_comment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CreateUserDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "UserName",
+          "Email",
+          "Password"
+        ],
+        "properties": {
+          "UserName": {
+            "title": "User Name",
+            "type": "string",
+            "minLength": 1
+          },
+          "Email": {
+            "title": "Email",
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          },
+          "Password": {
+            "title": "Password",
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 6
+          }
+        }
+      },
+      "ForgotPasswordViewModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "Email"
+        ],
+        "properties": {
+          "Email": {
+            "title": "Email",
+            "type": "string",
+            "format": "email",
+            "minLength": 1
+          }
+        }
+      },
+      "EditUserDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "UserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "Password": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 6,
+            "nullable": true
+          }
+        }
+      },
+      "ChangePasswordModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "new_password": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UserAvatar": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "AvatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "EmailSettingsModel": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "EmailAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "GroopAnnouncements": {
+            "title": "Subscribed to emails sent by group organizers",
+            "type": "boolean"
+          },
+          "WeeklyDigest": {
+            "title": "Subscribed to weekly digests sent by Groopit",
+            "type": "boolean"
+          },
+          "Mentions": {
+            "title": "Subscribed to notifications when I am specifically mentioned",
+            "type": "boolean"
+          },
+          "GlobalOptOut": {
+            "title": "Do not allow email to be sent to me.",
+            "type": "boolean"
+          }
+        }
+      },
+      "LinkGroupDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "orgId": {
+            "type": "string",
+            "nullable": true
+          },
+          "orgName": {
+            "type": "string",
+            "nullable": true
+          },
+          "orgUrl": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        }
+      },
+      "UnlinkGroupDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "orgId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "MapFieldDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "orgId": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "assignmentId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fieldName": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GroupDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          },
+          "AvatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "Assignments": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/AssignmentDTO2"
+            }
+          }
+        }
+      },
+      "AssignmentDTO2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "Title": {
+            "type": "string",
+            "nullable": true
+          },
+          "AssignmentPhotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "Components": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ComponentModelDTO"
+            }
+          }
+        }
+      },
+      "ComponentModelDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ComponentModel_Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Type": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Description": {
+            "type": "string",
+            "nullable": true
+          },
+          "HiddenFromMembers": {
+            "type": "boolean"
+          },
+          "Options": {
+            "type": "string",
+            "nullable": true
+          },
+          "Multiple": {
+            "type": "boolean"
+          },
+          "UserEditable": {
+            "type": "boolean"
+          },
+          "DateOnly": {
+            "type": "boolean"
+          },
+          "MappedField": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GetGroupsDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "orgId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GroopitDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "FormId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "FormName": {
+            "type": "string",
+            "nullable": true
+          },
+          "GroupId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "ReportUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "DataBlob": {
+            "type": "string",
+            "nullable": true
+          },
+          "FilteredDataBlob": {
+            "type": "string",
+            "nullable": true
+          },
+          "ComponentData": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ComponentDataDTO"
+            }
+          }
+        }
+      },
+      "ComponentDataDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "model": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ComponentModelDTO"
+              }
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "value": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CreateGroopitDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "assignmentId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "orgId": {
+            "type": "string",
+            "nullable": true
+          },
+          "components": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ComponentData"
+            }
+          }
+        }
+      },
+      "GetComponentOptionsDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "assignmentId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "componentId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "query": {
+            "type": "string",
+            "nullable": true
+          },
+          "orgId": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "SetLinkedObjectsDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "orgId": {
+            "type": "string",
+            "nullable": true
+          },
+          "groopitId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "externalId": {
+            "type": "string",
+            "nullable": true
+          },
+          "linkedObjects": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/LinkedObjectDTO"
+            }
+          }
+        }
+      },
+      "LinkedObjectDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fieldType": {
+            "type": "string",
+            "nullable": true
+          },
+          "fieldName": {
+            "type": "string",
+            "nullable": true
+          },
+          "fieldLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "objectId": {
+            "type": "string",
+            "nullable": true
+          },
+          "objectName": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GroopDataExportDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "AssignmentDataExportDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "fields": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ComponentModelDataExportDTO"
+            }
+          }
+        }
+      },
+      "ComponentModelDataExportDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ComponentType2"
+          },
+          "hiddenFromMembers": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ComponentType2": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Picture",
+          "Location",
+          "Note",
+          "MultipleChoice",
+          "Integer",
+          "DateTime",
+          "MultipleChoiceExtended",
+          "Response",
+          "FixedDecimal",
+          "PictureSet"
+        ],
+        "enum": [
+          "Picture",
+          "Location",
+          "Note",
+          "MultipleChoice",
+          "Integer",
+          "DateTime",
+          "MultipleChoiceExtended",
+          "Response",
+          "FixedDecimal",
+          "PictureSet"
+        ]
+      },
+      "GroopItDataExportDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "baseUri": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "formId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "formName": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "reportUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "formUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "creator": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDataExportDTO"
+              }
+            ]
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastEditTime": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastEditor": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDataExportDTO"
+              }
+            ]
+          },
+          "flag": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ComponentDataDataExportDTO"
+            }
+          },
+          "dataBlob": {
+            "type": "string",
+            "nullable": true
+          },
+          "filteredDataBlob": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "UserDataExportDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ComponentDataDataExportDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ComponentModelDataExportDTO"
+              }
+            ]
+          },
+          "stringValue": {
+            "nullable": true
+          }
+        }
+      },
+      "GroopItWebhookDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "CreatorId": {
+            "type": "string",
+            "nullable": true
+          },
+          "GroupId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "FormId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "Callback": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "EventType": {
+            "$ref": "#/components/schemas/EventType"
+          }
+        }
+      },
+      "EventType": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "CREATE_REPORT",
+          "UPDATE_REPORT",
+          "NEW_MEMBER"
+        ],
+        "enum": [
+          0,
+          1,
+          2
+        ]
+      },
+      "GroopItWebhookSubscribe": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Callback": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "EventType": {
+            "$ref": "#/components/schemas/EventType"
+          }
+        }
+      },
+      "LinkedGroupMembershipDataExportDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "member": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDataExportDTO"
+              }
+            ]
+          },
+          "group": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/GroopDataExportDTO"
+              }
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole2"
+          }
+        }
+      },
+      "UserRole2": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "None",
+          "Member",
+          "Moderator",
+          "Organizer",
+          "Administrator",
+          "Invited",
+          "JoinRequested",
+          "Publisher"
+        ],
+        "enum": [
+          "None",
+          "Member",
+          "Moderator",
+          "Organizer",
+          "Administrator",
+          "Invited",
+          "JoinRequested",
+          "Publisher"
+        ]
+      },
+      "CreateGroopitDTO2": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Components": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/ComponentData"
+            }
+          },
+          "Targets": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/SFTargetDTO"
+            }
+          }
+        }
+      },
+      "PendingUploadDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "upload"
+        ],
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "guid"
+          },
+          "upload": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "ErrorDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "string",
+            "nullable": true
+          },
+          "error_description": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GroopItFlag": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Flag": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "GroopItLike": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Like": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CommentMeta": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Comments": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/CommentDTO"
+            }
+          },
+          "TopLevelCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "Count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "CanManage": {
+            "type": "boolean"
+          },
+          "Tagged": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/UserDTO"
+            }
+          },
+          "NextToken": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CommentDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "Content": {
+            "type": "string",
+            "nullable": true
+          },
+          "Creator": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/UserDTO"
+              }
+            ]
+          },
+          "Created": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "Edited": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "Parent": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "TopLevelCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "SelectListDTO": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Id": {
+            "type": "string",
+            "nullable": true
+          },
+          "Name": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "JWT token": {
+        "type": "apiKey",
+        "description": "Copy 'Bearer ' + valid JWT token into field",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  }
+}
