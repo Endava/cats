@@ -7,6 +7,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.OpenApiUtils;
+import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -91,6 +92,17 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(2);
         Assertions.assertThat(dataList.get(0).getPayload()).contains("\"petType\":{\"breedType\"");
         Assertions.assertThat(dataList.get(1).getPayload()).contains("\"petType\":{\"breedType\"");
+    }
+
+    @Test
+    void shouldGenerateMultiplePayloadsWhenContractGeneratedFromNSwagAndMultipleOneOf() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/api/groopits/create", "src/test/resources/nswag_gen_oneof.json");
+
+        Assertions.assertThat(dataList).hasSize(9);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getPayload()).contains("\"discriminator\":\"ResponseData\"");
+        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
+        Assertions.assertThat(JsonParser.parseString(firstData.getPayload()).getAsJsonObject().get("Components").isJsonArray()).isTrue();
     }
 
     @Test

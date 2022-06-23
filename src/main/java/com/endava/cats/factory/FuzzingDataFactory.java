@@ -8,6 +8,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.PayloadGenerator;
 import com.endava.cats.util.OpenApiUtils;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -24,6 +25,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -325,6 +327,9 @@ public class FuzzingDataFactory {
         List<String> result = new ArrayList<>();
         JsonElement jsonElement = JsonParser.parseString(initialPayload);
 
+        if (jsonElement.isJsonArray()) {
+            result = this.addNewCombination(jsonElement.getAsJsonArray().get(0));
+        }
         if (jsonElement.isJsonObject()) {
             result = this.addNewCombination(jsonElement);
         }
@@ -340,9 +345,13 @@ public class FuzzingDataFactory {
         List<String> result = new ArrayList<>();
         Map<String, JsonElement> anyOfOrOneOf = this.getAnyOrOneOffElements(jsonElement);
         anyOfOrOneOf.forEach((key, value) -> jsonElement.getAsJsonObject().remove(key));
+        /*before creating all possible combinations, we simplify objects that have only oneOf/anyOf type*/
+        final JsonElement jsonElementSimplified = this.squashSingleOneOfAnyOf(jsonElement, anyOfOrOneOf);
 
         anyOfOrOneOf.forEach((key, value) -> {
-            String newKey = key.substring(0, key.indexOf('#')).replace(ANY_OF, "").replace(ONE_OF, "");
+            String newKey = this.removeAnyOfOneOfFromKey(key);
+            JsonElement jsonElementClone = jsonElementSimplified.deepCopy();
+
             if (value.isJsonObject()) {
                 value.getAsJsonObject().entrySet().forEach(jsonElementEntry -> {
                             String dataTypeKey = newKey + "#" + jsonElementEntry.getKey();
@@ -352,25 +361,65 @@ public class FuzzingDataFactory {
                         }
                 );
             }
-
             //when a request has only oneOf or anyOf fields, there is no additional key to create this
             if (newKey.toLowerCase().contains("body")) {
                 result.add(value.toString());
+            } else if (this.isKeyAJsonArray(jsonElementSimplified, newKey)) {
+                JsonArray valueArray = new JsonArray();
+                valueArray.add(value);
+                valueArray.add(value);
+                jsonElementClone.getAsJsonObject().add(newKey, valueArray);
+                result.add(jsonElementClone.toString());
             } else {
-                jsonElement.getAsJsonObject().add(newKey, value);
-                result.add(jsonElement.toString());
+                jsonElementClone.getAsJsonObject().add(newKey, value);
+                result.add(jsonElementClone.toString());
             }
             jsonElement.getAsJsonObject().remove(key);
-
         });
         return result;
+    }
+
+    @NotNull
+    private String removeAnyOfOneOfFromKey(String key) {
+        return key.substring(0, key.indexOf('#')).replace(ANY_OF, "").replace(ONE_OF, "");
+    }
+
+    private boolean isKeyAJsonArray(JsonElement jsonElementSimplified, String newKey) {
+        return jsonElementSimplified.getAsJsonObject().get(newKey) != null && jsonElementSimplified.getAsJsonObject().get(newKey).isJsonArray();
+    }
+
+    private JsonElement squashSingleOneOfAnyOf(JsonElement jsonElement, Map<String, JsonElement> anyOfOrOneOf) {
+        List<String> distinctEntries = anyOfOrOneOf.keySet()
+                .stream()
+                .map(key -> key.substring(0, key.indexOf("#")))
+                .distinct()
+                .collect(Collectors.toList());
+
+        distinctEntries.removeIf(entry -> anyOfOrOneOf.keySet()
+                .stream()
+                .filter(anyOfKey -> anyOfKey.startsWith(entry)).count() > 1);
+
+        List<String> distinctJsonKeys = anyOfOrOneOf.keySet()
+                .stream()
+                .filter(key -> distinctEntries.contains(key.substring(0, key.lastIndexOf("#"))))
+                .collect(Collectors.toList());
+
+        for (String schemaKey : distinctJsonKeys) {
+            jsonElement.getAsJsonObject().remove(schemaKey);
+            jsonElement.getAsJsonObject().add(this.removeAnyOfOneOfFromKey(schemaKey), anyOfOrOneOf.get(schemaKey));
+            anyOfOrOneOf.remove(schemaKey);
+        }
+
+        return jsonElement;
     }
 
     private Map<String, JsonElement> getAnyOrOneOffElements(JsonElement jsonElement) {
         Map<String, JsonElement> anyOrOneOfs = new HashMap<>();
         List<String> toRemove = new ArrayList<>();
         for (Map.Entry<String, JsonElement> elementEntry : jsonElement.getAsJsonObject().entrySet()) {
-            if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
+            if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive()) {
+                anyOrOneOfs.putAll(this.getAnyOrOneOffElements(elementEntry.getValue().getAsJsonArray().get(0)));
+            } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
                 anyOrOneOfs.put(elementEntry.getKey(), elementEntry.getValue());
             } else if (isJsonValueOf(elementEntry.getValue(), ONE_OF) || isJsonValueOf(elementEntry.getValue(), ANY_OF)) {
                 elementEntry.getValue().getAsJsonObject().entrySet().forEach(innerValueEntry -> anyOrOneOfs.put(innerValueEntry.getKey(), innerValueEntry.getValue()));
