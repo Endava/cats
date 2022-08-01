@@ -81,7 +81,7 @@ import static com.endava.cats.model.util.JsonUtils.NOT_SET;
 @SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
-    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
     private final FilesArguments filesArguments;
@@ -128,9 +128,9 @@ public class ServiceCaller {
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
                     .hostnameVerifier((hostname, session) -> true).build();
 
-            LOGGER.note("Proxy configuration to be used: {}", authArguments.getProxy());
+            logger.note("Proxy configuration to be used: {}", authArguments.getProxy());
         } catch (GeneralSecurityException | IOException e) {
-            LOGGER.warning("Failed to configure HTTP CLIENT", e);
+            logger.warning("Failed to configure HTTP CLIENT", e);
         }
     }
 
@@ -183,7 +183,7 @@ public class ServiceCaller {
     public CatsResponse call(ServiceData data) {
         String processedPayload = this.replacePayloadWithRefData(data);
         processedPayload = this.convertPayloadInSpecificContentType(processedPayload, data);
-        LOGGER.debug("Payload replaced with ref data: {}", processedPayload);
+        logger.debug("Payload replaced with ref data: {}", processedPayload);
 
         List<CatsRequest.Header> headers = this.buildHeaders(data);
         CatsRequest catsRequest = CatsRequest.builder()
@@ -200,9 +200,9 @@ public class ServiceCaller {
             }
             catsRequest.setUrl(url);
 
-            LOGGER.note("Final list of request headers: {}", headers);
-            LOGGER.note("Final payload: {}", processedPayload);
-            LOGGER.note("Final url: {}", url);
+            logger.note("Final list of request headers: {}", headers);
+            logger.note("Final payload: {}", processedPayload);
+            logger.note("Final url: {}", url);
 
             CatsResponse response = this.callService(catsRequest, data.getFuzzedFields());
 
@@ -223,8 +223,8 @@ public class ServiceCaller {
             });
             return FormEncoder.createHttpContent(payloadAsMap).stringContent();
         } catch (IOException e) {
-            LOGGER.warn("There was a problem converting the payload to the content-type: {}", e.getMessage());
-            LOGGER.debug("Stacktrace:", e);
+            logger.warn("There was a problem converting the payload to the content-type: {}", e.getMessage());
+            logger.debug("Stacktrace:", e);
         }
         return payload;
     }
@@ -232,18 +232,18 @@ public class ServiceCaller {
     Map<String, String> getPathParamFromCorrespondingPostIfDelete(ServiceData data) {
         if (data.getHttpMethod() == HttpMethod.DELETE) {
             String postPath = data.getRelativePath().substring(0, data.getRelativePath().lastIndexOf("/"));
-            LOGGER.info("Executing DELETE for path {}. Searching stored POST requests for corresponding POST path {}", data.getRelativePath(), postPath);
+            logger.info("Executing DELETE for path {}. Searching stored POST requests for corresponding POST path {}", data.getRelativePath(), postPath);
             String postPayload = catsGlobalContext.getPostSuccessfulResponses().getOrDefault(postPath, new ArrayDeque<>()).peek();
             if (postPayload != null) {
                 String deleteParam = data.getRelativePath().substring(data.getRelativePath().lastIndexOf("/") + 1).replace("{", "").replace("}", "");
-                LOGGER.info("Found corresponding POST payload. Matching DELETE path parameter {} with POST body...", deleteParam);
+                logger.info("Found corresponding POST payload. Matching DELETE path parameter {} with POST body...", deleteParam);
                 Optional<String> deleteParamValue = this.getParamValueFromPostPayload(deleteParam, postPayload);
 
                 if (deleteParamValue.isPresent()) {
                     return Map.of(deleteParam, deleteParamValue.get());
                 }
             } else {
-                LOGGER.info("No corresponding POST payload found or already consumed");
+                logger.info("No corresponding POST payload found or already consumed");
             }
         }
 
@@ -260,17 +260,17 @@ public class ServiceCaller {
         candidates.addAll(WordUtils.createWordCombinations(camelCase));
         candidates.addAll(WordUtils.createWordCombinations(kebabCase));
 
-        LOGGER.info("Params to search in POST payload {}", candidates);
+        logger.info("Params to search in POST payload {}", candidates);
 
         for (String candidate : candidates) {
             String value = String.valueOf(JsonUtils.getVariableFromJson(postPayload, candidate));
 
             if (!value.equalsIgnoreCase(NOT_SET)) {
-                LOGGER.note("Found matching DELETE parameter in POST payload using key [{}]", candidate);
+                logger.note("Found matching DELETE parameter in POST payload using key [{}]", candidate);
                 return Optional.of(value);
             }
         }
-        LOGGER.warn("Unable to correlate DELETE parameter {} with POST payload", deleteParam);
+        logger.warn("Unable to correlate DELETE parameter {} with POST payload", deleteParam);
 
         return Optional.empty();
     }
@@ -354,7 +354,7 @@ public class ServiceCaller {
                 .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                 .build();
 
-        LOGGER.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
+        logger.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
                 catsResponse.getHttpMethod(), response.message(), catsResponse.responseCodeAsString(), endTime - startTime, catsResponse.getContentLengthInBytes());
 
         return catsResponse;
@@ -371,8 +371,8 @@ public class ServiceCaller {
         int numberOfWords = new StringTokenizer(rawResponse).countTokens();
         int numberOfLines = rawResponse.split("[\r|\n]").length;
 
-        LOGGER.debug("Raw response body: {}", rawResponse);
-        LOGGER.debug("Raw response headers: {}", response.headers());
+        logger.debug("Raw response body: {}", rawResponse);
+        logger.debug("Raw response headers: {}", response.headers());
 
         return CatsResponse.builder()
                 .responseCode(response.code())
@@ -472,8 +472,8 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(List<CatsRequest.Header> headers, String relativePath, ServiceData data) {
-        LOGGER.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
-        LOGGER.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsDSLWords.ALL));
+        logger.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
+        logger.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsDSLWords.ALL));
 
         Map<String, String> suppliedHeadersFromFile = filesArguments.getHeaders().entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
@@ -511,13 +511,13 @@ public class ServiceCaller {
             Object finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
             headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
             headers.add(new CatsRequest.Header(suppliedHeader.getKey(), finalHeaderValue));
-            LOGGER.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
+            logger.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }
     }
 
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
         Map<String, String> currentPathRefData = filesArguments.getRefData(data.getRelativePath());
-        LOGGER.note("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
+        logger.note("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, String> entry : currentPathRefData.entrySet()) {
             currentUrl = currentUrl.replace("{" + entry.getKey() + "}", entry.getValue());
@@ -536,11 +536,11 @@ public class ServiceCaller {
      */
     String replacePayloadWithRefData(ServiceData data) {
         if (!data.isReplaceRefData()) {
-            LOGGER.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
+            logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return data.getPayload();
         } else {
             Map<String, String> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
-            LOGGER.note("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+            logger.note("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
 
             Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
@@ -563,13 +563,13 @@ public class ServiceCaller {
                         payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();
                     }
                 } catch (PathNotFoundException e) {
-                    LOGGER.warning("Ref data key {} was not found within the payload!", entry.getKey());
+                    logger.warning("Ref data key {} was not found within the payload!", entry.getKey());
                 }
             }
 
             payload = catsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
 
-            LOGGER.note("Final payload after reference data replacement: {}", payload);
+            logger.note("Final payload after reference data replacement: {}", payload);
 
             return payload;
         }

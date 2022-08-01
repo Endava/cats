@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Getter
 @ToString
 public class FuzzingData {
-    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FuzzingData.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingData.class);
     private final HttpMethod method;
     private final String path;
     private final Set<CatsHeader> headers;
@@ -83,7 +83,7 @@ public class FuzzingData {
     }
 
     private Set<CatsField> getFields(Schema schema, String prefix) {
-        LOGGER.trace("Getting fields for prefix: {}", prefix);
+        logger.trace("Getting fields for prefix: {}", prefix);
         if (CatsUtil.isCyclicReference(prefix, selfReferenceDepth)) {
             return Collections.emptySet();
         }

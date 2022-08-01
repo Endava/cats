@@ -27,7 +27,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
     private static final Pattern SNAKE_CASE = Pattern.compile("^[a-z]+((_)?[a-z])*+$");
     private static final Pattern CAMEL_CASE = Pattern.compile("^[a-z]+[A-Za-z]+$");
     private static final Pattern CAMEL_CASE_CAPITAL_START = Pattern.compile("^[A-Z][A-Za-z]+$");
-    private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_[0-9]*");
+    private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_\\d*");
     private static final String PLURAL_END = "s";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;
