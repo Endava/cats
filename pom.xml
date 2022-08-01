@@ -15,8 +15,6 @@
         <lombok.version>1.18.24</lombok.version>
         <rgxgen.version>1.3</rgxgen.version>
         <wiremock-jre8.version>2.33.2</wiremock-jre8.version>
-        <pitest-maven.version>1.6.4</pitest-maven.version>
-        <pitest-junit5-plugin.version>0.15</pitest-junit5-plugin.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <guava.version>31.1-jre</guava.version>
         <openapi-generator.version>6.0.0</openapi-generator.version>
@@ -29,12 +27,12 @@
         <maven-project-info-reports-plugin.version>3.1.1</maven-project-info-reports-plugin.version>
         <spotbugs-maven-plugin.version>4.2.2</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.8.0.2131</sonar-maven-plugin.version>
-        <pretty-logger.version>1.9</pretty-logger.version>
+        <pretty-logger.version>1.10</pretty-logger.version>
         <compiler.version>0.9.10</compiler.version>
         <json-path.version>2.7.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.10.0.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.10.3.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -74,13 +72,13 @@
                             <goal>install-file</goal>
                         </goals>
                         <configuration>
-                            <file>lib/okhttp-4.9.3-CATS.jar</file>
+                            <file>lib/okhttp-4.10.0-CATS.jar</file>
                             <groupId>com.squareup.okhttp3</groupId>
                             <artifactId>okhttp</artifactId>
-                            <version>4.9.3-CATS</version>
-                            <sources>lib/okhttp-4.9.3-CATS-sources.jar</sources>
-                            <javadoc>lib/okhttp-4.9.3-CATS-javadoc.jar</javadoc>
-                            <pomFile>lib/okhttp-4.9.3-CATS.pom</pomFile>
+                            <version>4.10.0-CATS</version>
+                            <sources>lib/okhttp-4.10.0-CATS-sources.jar</sources>
+                            <javadoc>lib/okhttp-4.10.0-CATS-javadoc.jar</javadoc>
+                            <pomFile>lib/okhttp-4.10.0-CATS.pom</pomFile>
                             <packaging>jar</packaging>
                         </configuration>
                     </execution>
@@ -130,26 +128,6 @@
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.pitest</groupId>
-                <artifactId>pitest-maven</artifactId>
-                <version>${pitest-maven.version}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.pitest</groupId>
-                        <artifactId>pitest-junit5-plugin</artifactId>
-                        <version>${pitest-junit5-plugin.version}</version>
-                    </dependency>
-                </dependencies>
-                <configuration>
-                    <targetClasses>
-                        <param>com.endava.cats.*</param>
-                    </targetClasses>
-                    <targetTests>
-                        <param>com.endava.cats.*</param>
-                    </targetTests>
                 </configuration>
             </plugin>
             <plugin>
@@ -279,7 +257,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.9.3-CATS</version>
+            <version>4.10.0-CATS</version>
         </dependency>
         <dependency>
             <groupId>com.github.spullara.mustache.java</groupId>
