@@ -69,12 +69,11 @@ import java.util.stream.Collectors;
  * </ul>
  */
 public class PayloadGenerator {
-
-    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(PayloadGenerator.class);
     private static final String EXAMPLE = "example";
     private static final String URL = "url";
     private static final String URI = "uri";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(PayloadGenerator.class);
     private final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     private final Random random;
     private final boolean useExamples;
@@ -131,7 +130,7 @@ public class PayloadGenerator {
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> property) {
         if (property.getExample() != null && canUseExamples(property)) {
-            LOGGER.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
+            logger.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
         } else if (property instanceof StringSchema) {
             return this.getExampleFromStringSchema(propertyName, (StringSchema) property);
@@ -190,11 +189,11 @@ public class PayloadGenerator {
     }
 
     private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {
-        LOGGER.trace("String property {}", propertyName);
+        logger.trace("String property {}", propertyName);
 
         String defaultValue = property.getDefault();
         if (StringUtils.isNotBlank(defaultValue)) {
-            LOGGER.trace("Default value found: '{}'", defaultValue);
+            logger.trace("Default value found: '{}'", defaultValue);
             return defaultValue;
         }
         List<String> enumValues = property.getEnum();
@@ -220,7 +219,7 @@ public class PayloadGenerator {
         if (property.getPattern() != null) {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
-        LOGGER.trace("No values found, using property name {} as example", propertyName);
+        logger.trace("No values found, using property name {} as example", propertyName);
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
     }
 
@@ -311,7 +310,7 @@ public class PayloadGenerator {
 
     private Object resolveModelToExample(String name, Schema schema) {
         Map<String, Object> values = new HashMap<>();
-        LOGGER.trace("Resolving model '{}' to example", name);
+        logger.trace("Resolving model '{}' to example", name);
         schema = normalizeDiscriminatorMappingsToOneOf(name, schema);
 
         if (CatsUtil.isCyclicReference(currentProperty, selfReferenceDepth)) {
@@ -319,7 +318,7 @@ public class PayloadGenerator {
         }
 
         if (schema.getProperties() != null) {
-            LOGGER.trace("Schema properties not null {}: {}", name, schema.getProperties().keySet());
+            logger.trace("Schema properties not null {}: {}", name, schema.getProperties().keySet());
             this.processSchemaProperties(name, schema, values);
         }
         if (schema instanceof ComposedSchema) {
@@ -332,7 +331,7 @@ public class PayloadGenerator {
     }
 
     private void processSchemaProperties(String name, Schema schema, Map<String, Object> values) {
-        LOGGER.trace("Creating example from model values {}", name);
+        logger.trace("Creating example from model values {}", name);
 
         if (schema.getDiscriminator() != null) {
             globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
@@ -390,7 +389,7 @@ public class PayloadGenerator {
             values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema));
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         } else {//maybe here a check for array schema
-            LOGGER.trace("Resolving {}", propertyName);
+            logger.trace("Resolving {}", propertyName);
             Object example = this.resolvePropertyToExample(propertyName.toString(), innerSchema);
             values.put(propertyName.toString(), example);
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);

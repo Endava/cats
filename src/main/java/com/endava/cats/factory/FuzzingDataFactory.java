@@ -417,7 +417,7 @@ public class FuzzingDataFactory {
         Map<String, JsonElement> anyOrOneOfs = new HashMap<>();
         List<String> toRemove = new ArrayList<>();
         for (Map.Entry<String, JsonElement> elementEntry : jsonElement.getAsJsonObject().entrySet()) {
-            if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive()) {
+            if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive()) {
                 anyOrOneOfs.putAll(this.getAnyOrOneOffElements(elementEntry.getValue().getAsJsonArray().get(0)));
             } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
                 anyOrOneOfs.put(elementEntry.getKey(), elementEntry.getValue());
