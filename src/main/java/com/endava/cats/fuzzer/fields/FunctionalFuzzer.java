@@ -31,8 +31,7 @@ import java.util.stream.Collectors;
 @Singleton
 @SpecialFuzzer
 public class FunctionalFuzzer implements CustomFuzzerBase {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FunctionalFuzzer.class);
-
+    private  final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFuzzer.class);
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();
@@ -57,7 +56,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
                     .forEach(entry -> executions.add(CustomFuzzerExecution.builder()
                             .fuzzingData(data).testId(entry.getKey()).testEntry(entry.getValue()).build()));
         } else {
-            LOGGER.info("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getPath(), data.getMethod());
+            logger.info("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getPath(), data.getMethod());
         }
     }
 
@@ -75,7 +74,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
      * rather than the order defined by the OpenAPI contract.
      */
     public void executeCustomFuzzerTests() {
-        LOGGER.debug("Executing {} functional tests.", executions.size());
+        logger.debug("Executing {} functional tests.", executions.size());
         MDC.put("fuzzer", "FF");
         MDC.put("fuzzerKey", "FunctionalFuzzer");
 
@@ -92,14 +91,14 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
 
     public void replaceRefData() throws IOException {
         if (filesArguments.getRefDataFile() != null) {
-            LOGGER.debug("Replacing variables in refData file with output variables from FunctionaFuzzer!");
+            logger.debug("Replacing variables in refData file with output variables from FunctionalFuzzer!");
             List<String> refDataLines = Files.readAllLines(filesArguments.getRefDataFile().toPath());
             List<String> updatedLines = refDataLines.stream().map(this::replaceWithVariable).collect(Collectors.toList());
             String currentFile = filesArguments.getRefDataFile().getAbsolutePath();
             Path file = Paths.get(currentFile.substring(0, currentFile.lastIndexOf(".")) + "_replaced.yml");
             Files.write(file, updatedLines, StandardCharsets.UTF_8);
         } else if (filesArguments.isCreateRefData()) {
-            LOGGER.debug("Creating refData file with output variables from FuctionalFuzzer!");
+            logger.debug("Creating refData file with output variables from FuctionalFuzzer!");
             customFuzzerUtil.writeRefDataFileWithOutputVariables();
         }
     }

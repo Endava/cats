@@ -12,11 +12,12 @@ import java.util.Optional;
 
 @Singleton
 public class CatsDSLParser {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsDSLParser.class);
     private static final Map<String, Parser> PARSERS = Map.of(
             "T(", new SpringELParser(),
             "$$", new EnvVariableParser(),
             "$request", new RequestVariableParser());
+
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsDSLParser.class);
 
     /**
      * Gets the appropriate parser based on the {@code valueFromFile} and runs it against the given payload.
@@ -28,7 +29,7 @@ public class CatsDSLParser {
     public String parseAndGetResult(String valueFromFile, String jsonPayload) {
         Optional<Map.Entry<String, Parser>> parserEntry = PARSERS.entrySet().stream().filter(entry -> valueFromFile.startsWith(entry.getKey())).findAny();
         if (parserEntry.isPresent()) {
-            LOGGER.debug("Identified parser {}", parserEntry.get().getValue().getClass().getSimpleName());
+            logger.debug("Identified parser {}", parserEntry.get().getValue().getClass().getSimpleName());
             return parserEntry.get().getValue().parse(valueFromFile, jsonPayload);
         }
 

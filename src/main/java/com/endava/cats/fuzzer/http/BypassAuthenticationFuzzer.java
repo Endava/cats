@@ -28,8 +28,7 @@ import java.util.stream.Stream;
 @HttpFuzzer
 public class BypassAuthenticationFuzzer implements Fuzzer {
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
-
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final FilesArguments filesArguments;
@@ -42,12 +41,12 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
+        testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {
-        testCaseListener.addScenario(LOGGER, "Send a happy flow bypassing authentication");
-        testCaseListener.addExpectedResult(LOGGER, "Should get a 403 or 401 response code");
+        testCaseListener.addScenario(logger, "Send a happy flow bypassing authentication");
+        testCaseListener.addExpectedResult(logger, "Should get a 403 or 401 response code");
         Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
         if (!authenticationHeaders.isEmpty()) {
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).httpMethod(data.getMethod())
@@ -55,9 +54,9 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
                     .contentType(data.getFirstRequestContentType()).build();
 
             CatsResponse response = serviceCaller.call(serviceData);
-            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX_AA);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX_AA);
         } else {
-            testCaseListener.skipTest(LOGGER, "No authentication header provided.");
+            testCaseListener.skipTest(logger, "No authentication header provided.");
         }
     }
 

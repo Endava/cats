@@ -21,8 +21,7 @@ import javax.inject.Singleton;
 @Singleton
 @HttpFuzzer
 public class HappyFuzzer implements Fuzzer {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
-
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
@@ -33,16 +32,16 @@ public class HappyFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
+        testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {
-        testCaseListener.addScenario(LOGGER, "Send a 'happy' flow request with all fields and all headers in: {}", data.getMethod());
-        testCaseListener.addExpectedResult(LOGGER, "Should get a 2XX response code");
+        testCaseListener.addScenario(logger, "Send a 'happy' flow request with all fields and all headers in: {}", data.getMethod());
+        testCaseListener.addExpectedResult(logger, "Should get a 2XX response code");
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build());
 
-        testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
     }
 
     public String toString() {

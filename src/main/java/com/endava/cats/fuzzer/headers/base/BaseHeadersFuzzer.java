@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 public abstract class BaseHeadersFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(this.getClass());
-
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 

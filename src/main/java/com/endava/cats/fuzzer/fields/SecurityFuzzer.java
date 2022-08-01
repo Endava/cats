@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 @SpecialFuzzer
 public class SecurityFuzzer implements CustomFuzzerBase {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
 

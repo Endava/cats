@@ -22,8 +22,7 @@ import static com.endava.cats.dsl.CatsDSLWords.CATS_FUZZY_HEADER;
 @Singleton
 @HeaderFuzzer
 public class ExtraHeaderFuzzer implements Fuzzer {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ExtraHeaderFuzzer.class);
-
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ExtraHeaderFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
@@ -34,20 +33,20 @@ public class ExtraHeaderFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data));
+        testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
     }
 
     private void process(FuzzingData data) {
         Set<CatsHeader> headerSet = new HashSet<>(data.getHeaders());
         headerSet.add(CatsHeader.builder().name(CATS_FUZZY_HEADER).required(false).value(CATS_FUZZY_HEADER).build());
 
-        testCaseListener.addScenario(LOGGER, "Add extra header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", CATS_FUZZY_HEADER, CATS_FUZZY_HEADER);
-        testCaseListener.addExpectedResult(LOGGER, "Should get a 2XX response code");
+        testCaseListener.addScenario(logger, "Add extra header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", CATS_FUZZY_HEADER, CATS_FUZZY_HEADER);
+        testCaseListener.addExpectedResult(logger, "Should get a 2XX response code");
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).httpMethod(data.getMethod())
                 .headers(headerSet).payload(data.getPayload()).queryParams(data.getQueryParams()).contentType(data.getFirstRequestContentType()).build());
 
-        testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.TWOXX);
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
     }
 
 

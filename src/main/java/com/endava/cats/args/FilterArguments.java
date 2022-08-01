@@ -36,7 +36,7 @@ public class FilterArguments {
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
 
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FilterArguments.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FilterArguments.class);
 
     @Inject
     Instance<Fuzzer> fuzzers;

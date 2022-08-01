@@ -23,7 +23,7 @@ import java.util.function.Function;
 @Singleton
 @HttpFuzzer
 public class HttpMethodsFuzzer implements Fuzzer {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HttpMethodsFuzzer.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -50,13 +50,13 @@ public class HttpMethodsFuzzer implements Fuzzer {
             }
             fuzzedPaths.add(data.getPath());
         } else {
-            LOGGER.skip("Skip path {} as already fuzzed!", data.getPath());
+            logger.skip("Skip path {} as already fuzzed!", data.getPath());
         }
     }
 
     private void executeForOperation(FuzzingData data, Function<PathItem, Operation> operation, Function<ServiceData, CatsResponse> serviceCall, HttpMethod httpMethod) {
         if (operation.apply(data.getPathItem()) == null) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> httpMethodFuzzerUtil.process(data, serviceCall, httpMethod));
+            testCaseListener.createAndExecuteTest(logger, this, () -> httpMethodFuzzerUtil.process(data, serviceCall, httpMethod));
         }
     }
 

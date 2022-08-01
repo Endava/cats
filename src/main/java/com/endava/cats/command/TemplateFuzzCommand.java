@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 public class TemplateFuzzCommand implements Runnable {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TemplateFuzzCommand.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzCommand.class);
 
     @CommandLine.Parameters(index = "0",
             paramLabel = "<url>",
@@ -120,8 +120,8 @@ public class TemplateFuzzCommand implements Runnable {
             templateFuzzer.fuzz(fuzzingData);
             afterFuzz();
         } catch (IOException e) {
-            LOGGER.debug("Exception while fuzzing given data!", e);
-            LOGGER.error("Something went wrong while fuzzing: {}", e.getMessage());
+            logger.debug("Exception while fuzzing given data!", e);
+            logger.error("Something went wrong while fuzzing: {}", e.getMessage());
         }
     }
 

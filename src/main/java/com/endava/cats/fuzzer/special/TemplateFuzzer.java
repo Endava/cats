@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @Singleton
 @SpecialFuzzer
 public class TemplateFuzzer implements Fuzzer {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TemplateFuzzer.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
@@ -57,10 +57,10 @@ public class TemplateFuzzer implements Fuzzer {
             int payloadSize = this.getPayloadSize(data, targetField);
 
             if (payloadSize == 0) {
-                LOGGER.skip("Field {} was NOT found in request payload, HTTP headers or path/query parameters!", targetField);
+                logger.skip("Field {} was NOT found in request payload, HTTP headers or path/query parameters!", targetField);
             } else {
                 List<String> payloads = this.getAllPayloads(payloadSize);
-                LOGGER.info("Running {} payloads for field [{}]", payloads.size(), targetField);
+                logger.info("Running {} payloads for field [{}]", payloads.size(), targetField);
 
                 for (String payload : payloads) {
                     List<CatsRequest.Header> replacedHeaders = this.replaceHeaders(data, payload, targetField);
@@ -73,7 +73,7 @@ public class TemplateFuzzer implements Fuzzer {
                             .url(replacedPath)
                             .build();
 
-                    testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(catsRequest, targetField, payload));
+                    testCaseListener.createAndExecuteTest(logger, this, () -> process(catsRequest, targetField, payload));
                 }
             }
         }
@@ -96,8 +96,8 @@ public class TemplateFuzzer implements Fuzzer {
                 finalPath = finalPath.replace(url.getQuery(), replacedQuery);
             }
         } catch (Exception e) {
-            LOGGER.debug("There was a problem parsing given path!", e);
-            LOGGER.warn("There was an issue parsing {}: {}", data.getPath(), e.getMessage());
+            logger.debug("There was a problem parsing given path!", e);
+            logger.warn("There was an issue parsing {}: {}", data.getPath(), e.getMessage());
         }
 
         return finalPath;
@@ -127,8 +127,8 @@ public class TemplateFuzzer implements Fuzzer {
                 return Files.readAllLines(Path.of(userArguments.getWords().getAbsolutePath()), StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
-            LOGGER.debug("Something went wrong while fuzzing!", e);
-            LOGGER.error("Something went wrong while reading user supplied dictionary: {}", e.getMessage());
+            logger.debug("Something went wrong while fuzzing!", e);
+            logger.error("Something went wrong while reading user supplied dictionary: {}", e.getMessage());
         }
         return Collections.emptyList();
     }
@@ -166,8 +166,8 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     private void process(CatsRequest catsRequest, String targetField, String fuzzValued) {
-        testCaseListener.addScenario(LOGGER, "Replace request field, header or path/query param [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzValued).truncatedValue());
-        testCaseListener.addExpectedResult(LOGGER, "Should get a valid response from the service");
+        testCaseListener.addScenario(logger, "Replace request field, header or path/query param [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzValued).truncatedValue());
+        testCaseListener.addExpectedResult(logger, "Should get a valid response from the service");
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addPath(catsRequest.getUrl());
         testCaseListener.addFullRequestPath(catsRequest.getUrl());
@@ -175,13 +175,13 @@ public class TemplateFuzzer implements Fuzzer {
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
             if ((matchArguments.isAnyMatchArgumentSupplied() && matchArguments.isMatchResponse(catsResponse)) || !matchArguments.isAnyMatchArgumentSupplied()) {
                 testCaseListener.addResponse(catsResponse);
-                testCaseListener.reportError(LOGGER, "Service call completed. Please check response details.");
+                testCaseListener.reportError(logger, "Service call completed. Please check response details.");
             } else {
-                testCaseListener.skipTest(LOGGER, "Skipping test as response does not match given matchers!");
+                testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
             }
         } catch (Exception e) {
-            LOGGER.debug("Something unexpected happened: ", e);
-            testCaseListener.reportError(LOGGER, "Something went wrong {}", e.getMessage());
+            logger.debug("Something unexpected happened: ", e);
+            testCaseListener.reportError(logger, "Something went wrong {}", e.getMessage());
         }
     }
 

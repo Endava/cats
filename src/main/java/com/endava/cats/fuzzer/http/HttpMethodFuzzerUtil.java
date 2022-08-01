@@ -15,7 +15,7 @@ import java.util.function.Function;
 
 @Singleton
 public class HttpMethodFuzzerUtil {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(HttpMethodFuzzerUtil.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HttpMethodFuzzerUtil.class);
     private final TestCaseListener testCaseListener;
 
     @Inject
@@ -24,8 +24,8 @@ public class HttpMethodFuzzerUtil {
     }
 
     public void process(FuzzingData data, Function<ServiceData, CatsResponse> f, HttpMethod httpMethod) {
-        testCaseListener.addScenario(LOGGER, "Send a happy flow request with undocumented HTTP method: {}", httpMethod);
-        testCaseListener.addExpectedResult(LOGGER, "Should get a 405 response code");
+        testCaseListener.addScenario(logger, "Send a happy flow request with undocumented HTTP method: {}", httpMethod);
+        testCaseListener.addExpectedResult(logger, "Should get a 405 response code");
         String payload = HttpMethod.requiresBody(httpMethod) ? data.getPayload() : "";
         CatsResponse response = f.apply(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(payload).httpMethod(httpMethod).contentType(data.getFirstRequestContentType()).build());
@@ -34,13 +34,13 @@ public class HttpMethodFuzzerUtil {
 
     public void checkResponse(CatsResponse response) {
         if (response.getResponseCode() == 405) {
-            testCaseListener.reportInfo(LOGGER, "Request failed as expected for http method [{}] with response code [{}]",
+            testCaseListener.reportInfo(logger, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else if (ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            testCaseListener.reportError(LOGGER, "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
+            testCaseListener.reportError(logger, "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
         } else {
-            testCaseListener.reportWarn(LOGGER, "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
+            testCaseListener.reportWarn(logger, "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
         }
     }

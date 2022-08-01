@@ -30,7 +30,7 @@ import java.util.List;
         versionProvider = VersionProvider.class)
 @Dependent
 public class RunCommand implements Runnable {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RunCommand.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RunCommand.class);
 
     @CommandLine.Parameters(index = "0",
             paramLabel = "<file>",
@@ -94,8 +94,8 @@ public class RunCommand implements Runnable {
             catsCommand.processingArguments.setContentType(this.contentType);
             catsCommand.run();
         } catch (IOException e) {
-            LOGGER.debug("Exception while processing file!", e);
-            LOGGER.error("Something went wrong while processing input file: {}", e.getMessage());
+            logger.debug("Exception while processing file!", e);
+            logger.error("Something went wrong while processing input file: {}", e.getMessage());
         }
     }
 

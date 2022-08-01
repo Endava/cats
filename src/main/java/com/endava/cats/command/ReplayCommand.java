@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
         versionProvider = VersionProvider.class)
 @Dependent
 public class ReplayCommand implements Runnable {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ReplayCommand.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
 
     @CommandLine.Parameters(
@@ -64,28 +64,28 @@ public class ReplayCommand implements Runnable {
 
     public void executeTestCase(String testCaseFileName) throws IOException {
         String testCaseFile = Files.readString(Paths.get(testCaseFileName));
-        LOGGER.note("Loaded content: \n" + testCaseFile);
+        logger.note("Loaded content: \n" + testCaseFile);
         CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
-        LOGGER.info("Calling service...");
+        logger.info("Calling service endpoints: {}", testCase.getRequest().getUrl());
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
 
-        LOGGER.complete("Response body: \n{}", JsonUtils.GSON.toJson(response.getJsonBody()));
+        logger.complete("Response body: \n{}", JsonUtils.GSON.toJson(response.getJsonBody()));
     }
 
     @Override
     public void run() {
         if (debug) {
             CatsUtil.setCatsLogLevel("ALL");
-            LOGGER.fav("Setting CATS log level to ALL!");
+            logger.fav("Setting CATS log level to ALL!");
         }
         for (String testCaseFileName : this.parseTestCases()) {
             try {
-                LOGGER.start("Executing {}", testCaseFileName);
+                logger.start("Executing {}", testCaseFileName);
                 this.executeTestCase(testCaseFileName);
-                LOGGER.complete("Finish executing {}", testCaseFileName);
+                logger.complete("Finish executing {}", testCaseFileName);
             } catch (IOException e) {
-                LOGGER.debug("Exception while replaying test!", e);
-                LOGGER.error("Something went wrong while replaying {}: {}", testCaseFileName, e.toString());
+                logger.debug("Exception while replaying test!", e);
+                logger.error("Something went wrong while replaying {}: {}", testCaseFileName, e.toString());
             }
         }
     }

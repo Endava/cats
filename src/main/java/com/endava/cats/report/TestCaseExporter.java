@@ -46,12 +46,12 @@ public abstract class TestCaseExporter {
     protected static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     protected static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
     protected static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
-
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
     private static final String REPORT_JS = "cats-summary-report.js";
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
+
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
     @Inject
     ReportingArguments reportingArguments;
@@ -77,7 +77,7 @@ public abstract class TestCaseExporter {
     }
 
     private void deleteFiles(Path path) throws IOException {
-        LOGGER.start("Start cleaning up cats-report folder ...");
+        logger.start("Start cleaning up cats-report folder ...");
         File[] files = path.toFile().listFiles();
         if (files != null) {
             for (File file : files) {
@@ -86,20 +86,20 @@ public abstract class TestCaseExporter {
                 }
             }
         }
-        LOGGER.complete("Cleanup complete!");
+        logger.complete("Cleanup complete!");
     }
 
     public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
         if (reportingArguments.isPrintExecutionStatistics()) {
             Map<String, List<CatsTestCase>> executionDetails = extractExecutionDetails(testCaseMap);
 
-            LOGGER.info(" ");
-            LOGGER.info(" ---------------------------- Execution time details ---------------------------- ");
-            LOGGER.info(" ");
+            logger.noFormat(" ");
+            logger.info("---------------------------- Execution time details ----------------------------");
+            logger.noFormat(" ");
             executionDetails.forEach(this::writeExecutionTimesForPathAndHttpMethod);
-            LOGGER.info(" ");
+            logger.noFormat(" ");
         } else {
-            LOGGER.skip("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
+            logger.skip("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
         }
     }
 
@@ -123,14 +123,14 @@ public abstract class TestCaseExporter {
                 executions(executions).build();
 
 
-        LOGGER.info("Details for path {} ", ansi().fg(Ansi.Color.GREEN).a(timeExecutionDetails.getPath()).reset());
-        LOGGER.note(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
-        LOGGER.note(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
-        LOGGER.note(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
+        logger.info("Details for path {} ", ansi().fg(Ansi.Color.GREEN).a(timeExecutionDetails.getPath()).reset());
+        logger.note(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
+        logger.note(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
+        logger.note(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
 
         if (reportingArguments.isPrintDetailedExecutionStatistics()) {
-            LOGGER.note("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
-            LOGGER.info(" ");
+            logger.note("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
+            logger.noFormat(" ");
         }
     }
 
@@ -143,7 +143,7 @@ public abstract class TestCaseExporter {
         String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + REPORT_HTML)).reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
 
-        LOGGER.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+        logger.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
     }
 
 
@@ -167,7 +167,7 @@ public abstract class TestCaseExporter {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString());
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
         } catch (IOException e) {
-            LOGGER.error("There was an error writing the report summary: {}", e.getMessage(), e);
+            logger.error("There was an error writing the report summary: {}", e.getMessage(), e);
         }
     }
 
@@ -189,7 +189,7 @@ public abstract class TestCaseExporter {
             try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
                 Files.copy(stream, Paths.get(reportingPath.toFile().getAbsolutePath(), file));
             } catch (IOException e) {
-                LOGGER.error("Unable to write reporting files!", e);
+                logger.error("Unable to write reporting files!", e);
             }
         }
     }
@@ -210,7 +210,7 @@ public abstract class TestCaseExporter {
         try {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), JsonUtils.GSON.toJson(testCase));
         } catch (IOException e) {
-            LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
+            logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
         }
     }
 
@@ -225,7 +225,7 @@ public abstract class TestCaseExporter {
         try {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), writer.toString());
         } catch (IOException e) {
-            LOGGER.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
+            logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
         }
     }
 

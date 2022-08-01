@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Getter
 @ToString
 public class FuzzingData {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FuzzingData.class);
+    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FuzzingData.class);
     private final HttpMethod method;
     private final String path;
     private final Set<CatsHeader> headers;

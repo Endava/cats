@@ -70,8 +70,7 @@ import java.util.stream.Collectors;
  */
 public class PayloadGenerator {
 
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(PayloadGenerator.class);
-
+    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(PayloadGenerator.class);
     private static final String EXAMPLE = "example";
     private static final String URL = "url";
     private static final String URI = "uri";

@@ -29,8 +29,7 @@ import java.util.stream.Collectors;
 @Singleton
 @FieldFuzzer
 public class RemoveFieldsFuzzer implements Fuzzer {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RemoveFieldsFuzzer.class);
-
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RemoveFieldsFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final IgnoreArguments ignoreArguments;
@@ -44,13 +43,13 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData data) {
-        LOGGER.info("All required fields, including subfields: {}", data.getAllRequiredFields());
+        logger.info("All required fields, including subfields: {}", data.getAllRequiredFields());
         Set<Set<String>> sets = this.getAllFields(data);
 
         for (Set<String> subset : sets) {
             Set<String> finalSubset = this.removeIfSkipped(subset);
             if (!finalSubset.isEmpty()) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, data.getAllRequiredFields(), finalSubset));
+                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, data.getAllRequiredFields(), finalSubset));
             }
         }
     }
@@ -65,7 +64,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         Set<Set<String>> sets = data.getAllFields(FuzzingData.SetFuzzingStrategy.valueOf(processingArguments.getFieldsFuzzingStrategy().name())
                 , processingArguments.getMaxFieldsToRemove());
 
-        LOGGER.info("Fuzzer will run with [{}] fields configuration possibilities out of [{}] maximum possible",
+        logger.info("Fuzzer will run with [{}] fields configuration possibilities out of [{}] maximum possible",
                 sets.size(), (int) Math.pow(2, data.getAllFieldsByHttpMethod().size()));
 
         return sets;
@@ -76,17 +75,17 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         String finalJsonPayload = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
 
         if (!JsonUtils.equalAsJson(finalJsonPayload, data.getPayload())) {
-            testCaseListener.addScenario(LOGGER, "Remove the following fields from request: {}", subset);
+            testCaseListener.addScenario(logger, "Remove the following fields from request: {}", subset);
 
             boolean hasRequiredFieldsRemove = this.hasRequiredFieldsRemove(required, subset);
-            testCaseListener.addExpectedResult(LOGGER, "Should return [{}] response code as required fields [{}] removed", ResponseCodeFamily.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
+            testCaseListener.addExpectedResult(logger, "Should return [{}] response code as required fields [{}] removed", ResponseCodeFamily.getExpectedWordingBasedOnRequiredFields(hasRequiredFieldsRemove));
 
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                     .payload(finalJsonPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod())
                     .contentType(data.getFirstRequestContentType()).build());
-            testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
         } else {
-            testCaseListener.skipTest(LOGGER, "Field is from a different ANY_OF or ONE_OF payload");
+            testCaseListener.skipTest(logger, "Field is from a different ANY_OF or ONE_OF payload");
         }
     }
 

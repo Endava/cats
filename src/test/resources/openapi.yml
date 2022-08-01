@@ -31,7 +31,7 @@ paths:
       summary: Update an existing pet
       operationId: updatePet
       requestBody:
-        $ref: '#/components/requestBodies/Pet'
+        $ref: '#/components/requestBodies/PetB'
       responses:
         '400':
           description: Invalid ID supplied
@@ -53,7 +53,7 @@ paths:
       summary: Update an existing pet
       operationId: updatePet
       requestBody:
-        $ref: '#/components/requestBodies/Pet'
+        $ref: '#/components/requestBodies/PetB'
       responses:
         '400':
           description: Invalid ID supplied
@@ -75,7 +75,7 @@ paths:
       summary: Add a new pet to the store
       operationId: addPet
       requestBody:
-        $ref: '#/components/requestBodies/Pet'
+        $ref: '#/components/requestBodies/PetB'
       responses:
         '405':
           description: Invalid input
@@ -824,7 +824,7 @@ components:
             items:
               $ref: '#/components/schemas/User'
       required: true
-    Pet:
+    PetB:
       description: Pet object that needs to be added to the store
       content:
         application/json:

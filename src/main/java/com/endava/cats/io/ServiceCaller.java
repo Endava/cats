@@ -81,7 +81,7 @@ import static com.endava.cats.model.util.JsonUtils.NOT_SET;
 @SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
+    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
     private final FilesArguments filesArguments;
