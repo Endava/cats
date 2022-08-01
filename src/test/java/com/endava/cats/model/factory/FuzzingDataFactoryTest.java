@@ -109,10 +109,4 @@ class FuzzingDataFactoryTest {
     void shouldThrowExceptionWhenSchemeDoesNotExist() {
         Assertions.assertThatThrownBy(() -> setupFuzzingData("/pet-types", "src/test/resources/petstore-no-schema.yml")).isInstanceOf(IllegalArgumentException.class);
     }
-
-    @Test
-    void shouldProcessCustomExtensions() throws Exception {
-        List<FuzzingData> dataList = setupFuzzingData("/v1/objects/hint/create", "wallarm.json");
-
-    }
 }
