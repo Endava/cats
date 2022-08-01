@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 @Singleton
 @Getter
 public class IgnoreArguments {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(IgnoreArguments.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(IgnoreArguments.class);
 
     @CommandLine.Option(names = {"--ignoreResponseCodeUndocumentedCheck", "--iu"},
             description = "Don't check if the response code received from the service matches the value expected by the fuzzer. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")

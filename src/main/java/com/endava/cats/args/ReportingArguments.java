@@ -14,8 +14,8 @@ import java.util.Optional;
 @Singleton
 @Getter
 public class ReportingArguments {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ReportingArguments.class);
     private static final String EMPTY = "empty";
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReportingArguments.class);
 
     @CommandLine.Option(names = {"-l", "--log"},
             description = "Set custom log level of a given package(s). You can provide a comma separated list of @|bold,underline package:level|@ pairs", split = ",")
@@ -53,11 +53,11 @@ public class ReportingArguments {
         for (String logLine : this.getLogData()) {
             String[] log = logLine.strip().trim().split(":");
             CatsUtil.setLogLevel(log[0], log[1]);
-            LOGGER.info("Setting log level to {} for package {}", log[1], log[0]);
+            logger.info("Setting log level to {} for package {}", log[1], log[0]);
         }
         if (debug) {
             CatsUtil.setCatsLogLevel("ALL");
-            LOGGER.fav("Setting CATS log level to ALL!");
+            logger.fav("Setting CATS log level to ALL!");
         }
     }
 

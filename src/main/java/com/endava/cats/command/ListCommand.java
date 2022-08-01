@@ -39,7 +39,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         versionProvider = VersionProvider.class)
 @Dependent
 public class ListCommand implements Runnable {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ListCommand.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ListCommand.class);
     private final List<Fuzzer> fuzzersList;
 
     @CommandLine.ArgGroup(multiplicity = "1")
@@ -68,21 +68,21 @@ public class ListCommand implements Runnable {
     void listContractPaths() {
         try {
             OpenAPI openAPI = OpenApiUtils.readOpenApi(listCommandGroups.listContractOptions.contract);
-            LOGGER.star("Available paths:");
-            openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(LOGGER::info);
+            logger.star("Available paths:");
+            openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(logger::info);
         } catch (IOException e) {
-            LOGGER.debug("Exception while reading contract!", e);
-            LOGGER.error("Error while reading contract: {}", e.getMessage());
+            logger.debug("Exception while reading contract!", e);
+            logger.error("Error while reading contract: {}", e.getMessage());
         }
     }
 
     void listFuzzerStrategies() {
-        LOGGER.info("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
+        logger.info("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
     }
 
     void listFuzzers() {
         String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
-        LOGGER.info(message, fuzzersList.size());
+        logger.info(message, fuzzersList.size());
         filterAndDisplay(FieldFuzzer.class);
         filterAndDisplay(HeaderFuzzer.class);
         filterAndDisplay(HttpFuzzer.class);
@@ -97,9 +97,9 @@ public class ListCommand implements Runnable {
                 .collect(Collectors.toList());
         String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {} Fuzzers:").reset().toString();
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
-        LOGGER.info(" ");
-        LOGGER.info(message, fieldFuzzers.size(), typeOfFuzzers);
-        fieldFuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(LOGGER::info);
+        logger.noFormat(" ");
+        logger.info(message, fieldFuzzers.size(), typeOfFuzzers);
+        fieldFuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::info);
     }
 
     static class ListCommandGroups {

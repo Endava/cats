@@ -18,7 +18,7 @@ import java.util.List;
 @HttpFuzzer
 public class NonRestHttpMethodsFuzzer implements Fuzzer {
 
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(NonRestHttpMethodsFuzzer.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(NonRestHttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -34,7 +34,7 @@ public class NonRestHttpMethodsFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         if (!fuzzedPaths.contains(data.getPath())) {
             for (HttpMethod httpMethod : HttpMethod.nonRestMethods()) {
-                testCaseListener.createAndExecuteTest(LOGGER, this, () -> httpMethodFuzzerUtil.process(data, serviceCaller::call, httpMethod));
+                testCaseListener.createAndExecuteTest(logger, this, () -> httpMethodFuzzerUtil.process(data, serviceCaller::call, httpMethod));
             }
             fuzzedPaths.add(data.getPath());
         }

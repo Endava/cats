@@ -47,11 +47,11 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class FuzzingDataFactory {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(FuzzingDataFactory.class);
     private static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
     private static final String ANY_OF = "ANY_OF";
     private static final String ONE_OF = "ONE_OF";
 
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingDataFactory.class);
     private final FilesArguments filesArguments;
     private final ProcessingArguments processingArguments;
     private final CatsGlobalContext globalContext;
@@ -74,27 +74,27 @@ public class FuzzingDataFactory {
     public List<FuzzingData> fromPathItem(String path, PathItem item, OpenAPI openAPI) {
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         if (item.getPost() != null) {
-            LOGGER.debug("Identified POST method for path {}", path);
+            logger.debug("Identified POST method for path {}", path);
             fuzzingDataList.addAll(this.getFuzzDataForPost(path, item, item.getPost(), openAPI));
         }
 
         if (item.getPut() != null) {
-            LOGGER.debug("Identified PUT method for path {}", path);
+            logger.debug("Identified PUT method for path {}", path);
             fuzzingDataList.addAll(this.getFuzzDataForPut(path, item, item.getPut(), openAPI));
         }
 
         if (item.getPatch() != null) {
-            LOGGER.debug("Identified PATCH method for path {}", path);
+            logger.debug("Identified PATCH method for path {}", path);
             fuzzingDataList.addAll(this.getFuzzDataForPatch(path, item, item.getPatch(), openAPI));
         }
 
         if (item.getGet() != null) {
-            LOGGER.debug("Identified GET method for path {}", path);
+            logger.debug("Identified GET method for path {}", path);
             fuzzingDataList.addAll(this.getFuzzingDataForGet(path, item, item.getGet(), openAPI));
         }
 
         if (item.getDelete() != null) {
-            LOGGER.debug("Identified DELETE method for path {}", path);
+            logger.debug("Identified DELETE method for path {}", path);
             fuzzingDataList.addAll(this.getFuzzingDataForDelete(path, item, item.getDelete(), openAPI));
         }
 
@@ -179,17 +179,17 @@ public class FuzzingDataFactory {
         MediaType mediaType = this.getMediaType(operation, openAPI);
 
         if (mediaType == null) {
-            LOGGER.info("Content type not supported for path {}, method {}. CATS only supports application/json. " +
+            logger.info("Content type not supported for path {}, method {}. CATS only supports application/json. " +
                     "You might try to supply the custom content type using --contentType argument", path, method);
             return Collections.emptyList();
         }
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
-        LOGGER.debug("Request schema names identified for path {}, method {}: {}", path, method, reqSchemaNames);
+        logger.debug("Request schema names identified for path {}, method {}: {}", path, method, reqSchemaNames);
 
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet());
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
-        LOGGER.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
+        logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
         for (String reqSchemaName : reqSchemaNames) {
             List<String> payloadSamples = this.getRequestPayloadsSamples(mediaType, reqSchemaName);
@@ -226,13 +226,13 @@ public class FuzzingDataFactory {
 
         globalContext.getSchemaMap().put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
         Set<String> queryParams = this.extractQueryParams(syntheticSchema);
-        LOGGER.debug("Query params for path {}, method {}: {}", path, method, queryParams);
+        logger.debug("Query params for path {}, method {}: {}", path, method, queryParams);
 
         List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId());
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet());
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
-        LOGGER.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
+        logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
         return payloadSamples.stream().map(payload -> FuzzingData.builder().method(method).path(path).headers(this.extractHeaders(operation)).payload(payload)
                 .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)

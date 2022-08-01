@@ -21,8 +21,7 @@ import java.util.List;
 @Singleton
 @HeaderFuzzer
 public class DuplicateHeaderFuzzer implements Fuzzer {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(DuplicateHeaderFuzzer.class);
-
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(DuplicateHeaderFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
@@ -34,7 +33,7 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         if (data.getHeaders().isEmpty()) {
-            LOGGER.skip("No headers to fuzz");
+            logger.skip("No headers to fuzz");
         }
         List<CatsHeader> headers = new ArrayList<>(data.getHeaders());
         CatsHeader header = CatsHeader.builder().name(CatsDSLWords.CATS_FUZZY_HEADER).required(false).value(CatsDSLWords.CATS_FUZZY_HEADER).build();
@@ -46,19 +45,19 @@ public class DuplicateHeaderFuzzer implements Fuzzer {
         for (CatsHeader catsHeader : headers) {
             List<CatsHeader> finalHeadersList = new ArrayList<>(headers);
             finalHeadersList.add(catsHeader.copy());
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, finalHeadersList, catsHeader));
+            testCaseListener.createAndExecuteTest(logger, this, () -> process(data, finalHeadersList, catsHeader));
         }
 
     }
 
     private void process(FuzzingData data, List<CatsHeader> headers, CatsHeader targetHeader) {
-        testCaseListener.addScenario(LOGGER, "Add a duplicate header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", targetHeader.getName(), targetHeader.getTruncatedValue());
-        testCaseListener.addExpectedResult(LOGGER, "Should get a 4XX response code");
+        testCaseListener.addScenario(logger, "Add a duplicate header inside the request: name [{}], value [{}]. All other details are similar to a happy flow", targetHeader.getName(), targetHeader.getTruncatedValue());
+        testCaseListener.addExpectedResult(logger, "Should get a 4XX response code");
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(headers)
                 .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build());
 
-        testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.FOURXX);
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
     }
 
 

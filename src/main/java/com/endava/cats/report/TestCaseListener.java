@@ -58,10 +58,10 @@ public class TestCaseListener {
     public static final String FUZZER = "fuzzer";
     protected static final String ID_ANSI = "id_ansi";
     protected static final AtomicInteger TEST = new AtomicInteger(0);
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414");
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
     private final CatsGlobalContext globalContext;
@@ -112,7 +112,7 @@ public class TestCaseListener {
             externalLogger.error("Exception while processing!", e);
         }
         this.endTestCase();
-        LOGGER.info("{} {}", SEPARATOR, "\n");
+        logger.info("{} {}", SEPARATOR, "\n");
     }
 
     private void startTestCase() {
@@ -168,8 +168,8 @@ public class TestCaseListener {
         MDC.put(FUZZER, CatsUtil.FUZZER_KEY_DEFAULT);
         MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
 
-        LOGGER.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(appName.toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(appVersion), ansi().fg(Ansi.Color.GREEN).a(appBuildTime).reset());
-        LOGGER.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
+        logger.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(appName.toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(appVersion), ansi().fg(Ansi.Color.GREEN).a(appBuildTime).reset());
+        logger.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }
 
     public void initReportingPath() throws IOException {
@@ -193,18 +193,18 @@ public class TestCaseListener {
      * @param params  params needed by the message
      */
     public void reportWarn(PrettyLogger logger, String message, Object... params) {
-        LOGGER.debug("Reporting warn with message: {}", replaceBrackets(message, params));
+        this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
-            LOGGER.debug("Received response is not marked as ignored... reporting warn!");
+            this.logger.debug("Received response is not marked as ignored... reporting warn!");
             executionStatisticsListener.increaseWarns();
             logger.warning(message, params);
             this.recordResult(message, params, Level.WARN.toString().toLowerCase());
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
-            LOGGER.debug("Received response is marked as ignored... skipping!");
+            this.logger.debug("Received response is marked as ignored... skipping!");
             this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
         } else {
-            LOGGER.debug("Received response is marked as ignored... reporting info!");
+            this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }
     }
@@ -244,20 +244,20 @@ public class TestCaseListener {
      * @param params  params needed by the message
      */
     public void reportError(PrettyLogger logger, String message, Object... params) {
-        LOGGER.debug("Reporting error with message: {}", replaceBrackets(message, params));
+        this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
         this.addRequest(CatsRequest.empty());
         this.addResponse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
-            LOGGER.debug("Received response is not marked as ignored... reporting error!");
+            this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors();
             logger.error(message, params);
             this.recordResult(message, params, Level.ERROR.toString().toLowerCase());
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
-            LOGGER.debug("Received response is marked as ignored... skipping!");
+            this.logger.debug("Received response is marked as ignored... skipping!");
             this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
         } else {
-            LOGGER.debug("Received response is marked as ignored... reporting info!");
+            this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }
     }
@@ -287,44 +287,44 @@ public class TestCaseListener {
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
 
-        LOGGER.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}", matchesResponseSchema, responseCodeExpected, responseCodeDocumented);
+        this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}", matchesResponseSchema, responseCodeExpected, responseCodeDocumented);
         this.storeRequestOnPostOrRemoveOnDelete(data, response);
 
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
         if (isNotFound(response)) {
-            LOGGER.debug("NOT_FOUND response");
+            this.logger.debug("NOT_FOUND response");
             this.reportError(logger, CatsResult.NOT_FOUND);
         } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
-            LOGGER.debug("Response code expected and documented and matches response schema");
+            this.logger.debug("Response code expected and documented and matches response schema");
             this.reportInfo(logger, CatsResult.OK, response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
-            LOGGER.debug("Response code expected and documented and but doesn't match response schema");
+            this.logger.debug("Response code expected and documented and but doesn't match response schema");
             this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA, ignoreArguments.isIgnoreResponseBodyCheck(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
-            LOGGER.debug("Response code expected but not documented");
+            this.logger.debug("Response code expected but not documented");
             this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE, ignoreArguments.isIgnoreResponseCodeUndocumentedCheck(), expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            LOGGER.debug("Response code documented but not expected");
+            this.logger.debug("Response code documented but not expected");
             this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         } else if (assertions.isResponseCodeUnimplemented()) {
-            LOGGER.debug("Response code unimplemented");
+            this.logger.debug("Response code unimplemented");
             this.reportWarn(logger, CatsResult.NOT_IMPLEMENTED);
         } else {
-            LOGGER.debug("Unexpected behaviour");
+            this.logger.debug("Unexpected behaviour");
             this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
         }
     }
 
     private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
         if (data.getMethod() == HttpMethod.POST && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            LOGGER.star("POST method for path {} returned successfully {}. Storing result for DELETE endpoints...", data.getPath(), response.responseCodeAsString());
+            logger.star("POST method for path {} returned successfully {}. Storing result for DELETE endpoints...", data.getPath(), response.responseCodeAsString());
             Deque<String> existingPosts = globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath(), new ArrayDeque<>());
             existingPosts.add(response.getBody());
             globalContext.getPostSuccessfulResponses().put(data.getPath(), existingPosts);
         } else if (data.getMethod() == HttpMethod.DELETE && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            LOGGER.star("Removing top POST request from the store...");
+            logger.star("Removing top POST request from the store...");
             globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath().substring(0, data.getPath().lastIndexOf("/")), new ArrayDeque<>()).poll();
         }
     }

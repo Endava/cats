@@ -28,7 +28,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @Interceptor
 public class DryRunAspect {
 
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getConsoleLogger();
+    private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     private final Map<String, Integer> paths = new TreeMap<>();
     @Inject
     FilterArguments filterArguments;
@@ -49,10 +49,10 @@ public class DryRunAspect {
     }
 
     public Object endSession() {
-        LOGGER.noFormat("\n");
+        logger.noFormat("\n");
         CatsUtil.setCatsLogLevel("INFO");
-        LOGGER.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
-        paths.forEach((s, integer) -> LOGGER.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
+        logger.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
+        paths.forEach((s, integer) -> logger.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
         return null;
     }
 
@@ -60,7 +60,7 @@ public class DryRunAspect {
         Object data = context.getParameters()[1];
         if (data instanceof FuzzingData) {
             if (counter % 10000 == 0) {
-                LOGGER.noFormat(StringUtils.repeat("..", 1 + (counter / 10000)));
+                logger.noFormat(StringUtils.repeat("..", 1 + (counter / 10000)));
             }
             paths.merge(((FuzzingData) data).getPath(), 1, Integer::sum);
         } else {

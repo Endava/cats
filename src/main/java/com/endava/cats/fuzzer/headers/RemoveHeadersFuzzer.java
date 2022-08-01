@@ -21,8 +21,7 @@ import java.util.stream.Collectors;
 @Singleton
 @HeaderFuzzer
 public class RemoveHeadersFuzzer implements Fuzzer {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(RemoveHeadersFuzzer.class);
-
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RemoveHeadersFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
@@ -33,7 +32,7 @@ public class RemoveHeadersFuzzer implements Fuzzer {
 
     public void fuzz(FuzzingData data) {
         if (data.getHeaders().isEmpty()) {
-            LOGGER.skip("No headers to fuzz");
+            logger.skip("No headers to fuzz");
             return;
         }
 
@@ -41,20 +40,20 @@ public class RemoveHeadersFuzzer implements Fuzzer {
         Set<CatsHeader> mandatoryHeaders = data.getHeaders().stream().filter(CatsHeader::isRequired).collect(Collectors.toSet());
 
         for (Set<CatsHeader> headersSubset : headersCombination) {
-            testCaseListener.createAndExecuteTest(LOGGER, this, () -> process(data, headersSubset, mandatoryHeaders));
+            testCaseListener.createAndExecuteTest(logger, this, () -> process(data, headersSubset, mandatoryHeaders));
         }
     }
 
     private void process(FuzzingData data, Set<CatsHeader> headersSubset, Set<CatsHeader> requiredHeaders) {
-        testCaseListener.addScenario(LOGGER, "Send only the following headers: {} plus any authentication headers.", headersSubset);
+        testCaseListener.addScenario(logger, "Send only the following headers: {} plus any authentication headers.", headersSubset);
         boolean anyMandatoryHeaderRemoved = this.isAnyMandatoryHeaderRemoved(headersSubset, requiredHeaders);
 
-        testCaseListener.addExpectedResult(LOGGER, "Should return [{}] response code as mandatory headers [{}] removed", ResponseCodeFamily.getExpectedWordingBasedOnRequiredFields(anyMandatoryHeaderRemoved));
+        testCaseListener.addExpectedResult(logger, "Should return [{}] response code as mandatory headers [{}] removed", ResponseCodeFamily.getExpectedWordingBasedOnRequiredFields(anyMandatoryHeaderRemoved));
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(headersSubset)
                 .payload(data.getPayload()).addUserHeaders(false).queryParams(data.getQueryParams()).httpMethod(data.getMethod())
                 .contentType(data.getFirstRequestContentType()).build());
-        testCaseListener.reportResult(LOGGER, data, response, ResponseCodeFamily.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved));
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved));
     }
 
     private boolean isAnyMandatoryHeaderRemoved(Set<CatsHeader> headersSubset, Set<CatsHeader> requiredHeaders) {
