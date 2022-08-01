@@ -3,7 +3,7 @@
   "component": {
     "group": "com.squareup.okhttp3",
     "module": "okhttp",
-    "version": "4.9.3-CATS",
+    "version": "4.10.0-CATS",
     "attributes": {
       "org.gradle.status": "release"
     }
@@ -19,10 +19,10 @@
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
         "org.gradle.jvm.version": 8,
         "org.gradle.libraryelements": "jar",
         "org.gradle.usage": "java-api",
-        "org.jetbrains.kotlin.localToProject": "public",
         "org.jetbrains.kotlin.platform.type": "jvm"
       },
       "dependencies": [
@@ -30,26 +30,26 @@
           "group": "com.squareup.okio",
           "module": "okio",
           "version": {
-            "requires": "2.8.0"
+            "requires": "3.0.0"
           }
         },
         {
           "group": "org.jetbrains.kotlin",
           "module": "kotlin-stdlib",
           "version": {
-            "requires": "1.4.10"
+            "requires": "1.6.20"
           }
         }
       ],
       "files": [
         {
-          "name": "okhttp-4.9.3-CATS.jar",
-          "url": "okhttp-4.9.3-CATS.jar",
-          "size": 792009,
-          "sha512": "589fb8b13d0bda076e4c6d61738069b37f9f4469b98ff9f176d603872613e41c9c64b6adbcc1e163beddd4c6841b7f68db9d031c29a6b431cf62d35e9b8f3265",
-          "sha256": "0df05bf97f44155277dece3162d70a13ec759bef9a3423003e191979b8f7158a",
-          "sha1": "4b2211b203baf5035bd84efed5f541f0b3c08baf",
-          "md5": "53530466bf4ce602fe2d970a0aaa766c"
+          "name": "okhttp-4.10.0-CATS.jar",
+          "url": "okhttp-4.10.0-CATS.jar",
+          "size": 782731,
+          "sha512": "c9fd0e56ccdbd946f271914d8666952d0b5188aa115305bb377b98156a8868314f71b9f6e0f06bf2b38beee446a4d87c0330ed0afe41c6c0b6a14f4825583efb",
+          "sha256": "58a106ab9520a24c30ef2cbc72d5499b12cceb90064ed3a560b3c44434cd843a",
+          "sha1": "f17c9b67517bea1168a08a3ac669f68c25bd57a9",
+          "md5": "ed1390448de16e0ff3f45f21da913822"
         }
       ]
     },
@@ -58,10 +58,10 @@
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
         "org.gradle.jvm.version": 8,
         "org.gradle.libraryelements": "jar",
         "org.gradle.usage": "java-runtime",
-        "org.jetbrains.kotlin.localToProject": "public",
         "org.jetbrains.kotlin.platform.type": "jvm"
       },
       "dependencies": [
@@ -69,26 +69,26 @@
           "group": "com.squareup.okio",
           "module": "okio",
           "version": {
-            "requires": "2.8.0"
+            "requires": "3.0.0"
           }
         },
         {
           "group": "org.jetbrains.kotlin",
           "module": "kotlin-stdlib",
           "version": {
-            "requires": "1.4.10"
+            "requires": "1.6.20"
           }
         }
       ],
       "files": [
         {
-          "name": "okhttp-4.9.3-CATS.jar",
-          "url": "okhttp-4.9.3-CATS.jar",
-          "size": 792009,
-          "sha512": "589fb8b13d0bda076e4c6d61738069b37f9f4469b98ff9f176d603872613e41c9c64b6adbcc1e163beddd4c6841b7f68db9d031c29a6b431cf62d35e9b8f3265",
-          "sha256": "0df05bf97f44155277dece3162d70a13ec759bef9a3423003e191979b8f7158a",
-          "sha1": "4b2211b203baf5035bd84efed5f541f0b3c08baf",
-          "md5": "53530466bf4ce602fe2d970a0aaa766c"
+          "name": "okhttp-4.10.0-CATS.jar",
+          "url": "okhttp-4.10.0-CATS.jar",
+          "size": 782731,
+          "sha512": "c9fd0e56ccdbd946f271914d8666952d0b5188aa115305bb377b98156a8868314f71b9f6e0f06bf2b38beee446a4d87c0330ed0afe41c6c0b6a14f4825583efb",
+          "sha256": "58a106ab9520a24c30ef2cbc72d5499b12cceb90064ed3a560b3c44434cd843a",
+          "sha1": "f17c9b67517bea1168a08a3ac669f68c25bd57a9",
+          "md5": "ed1390448de16e0ff3f45f21da913822"
         }
       ]
     },
@@ -102,13 +102,13 @@
       },
       "files": [
         {
-          "name": "okhttp-4.9.3-CATS-javadoc.jar",
-          "url": "okhttp-4.9.3-CATS-javadoc.jar",
+          "name": "okhttp-4.10.0-CATS-javadoc.jar",
+          "url": "okhttp-4.10.0-CATS-javadoc.jar",
           "size": 261,
-          "sha512": "8f449e80ef300aa10b1f70f3ff04c9d5e26c61203bc86a063af2f467dbe9337054348a30aff301d13e2391c7b6467d3e9dc29c683cdfa79967bc22544a53ac77",
-          "sha256": "32b8bcd6da91f9a20bc54361f987a73cf6ff0b06849971c4572fd7aba26ee341",
-          "sha1": "8ed85d5a0ab4ba549bd5613d2e2377fbf69489cb",
-          "md5": "17f7ac108096fdda8f3ba28cfc7ab63a"
+          "sha512": "c4ac698c8291c5fd775af935a906a3adb1fa8f53e7954edf0015c7078c0643cbe9be263194516dbaa37e656be66b638e381653e3c379ee2570dcb3f79d5d9899",
+          "sha256": "3af78893fd0dfb14d37bc3b2d105f87147cdeab62ce8a237fb801c766638d13a",
+          "sha1": "51ac13c3cc330e2b8eef4244cebed3bc93af8ced",
+          "md5": "2fc017f66ca048d829ed823f3ddafc33"
         }
       ]
     },
@@ -122,13 +122,13 @@
       },
       "files": [
         {
-          "name": "okhttp-4.9.3-CATS-sources.jar",
-          "url": "okhttp-4.9.3-CATS-sources.jar",
-          "size": 363904,
-          "sha512": "f8933831346dab64e05ff68adb627908bfa5ee0b221b074dc2c4c2180835cc5f20b60d1ca45ce1ea35bc385ae24f1a6c7e49c0bfafa60337a14de7b97db13183",
-          "sha256": "6bf0007020e07c870afa6d7a1a50042ad4685469fcabf4d46426a6f9588a2eac",
-          "sha1": "6fea3ff4e1f9b25dae81d0f925a1e5752ca7a1a6",
-          "md5": "7e45cbb1b9134dc291ee987448fd7afb"
+          "name": "okhttp-4.10.0-CATS-sources.jar",
+          "url": "okhttp-4.10.0-CATS-sources.jar",
+          "size": 364049,
+          "sha512": "4a3859287f1fe212422da5f90cb7ba934fa3821990d5d4a68c824c6cff2f57c693620104d18eb45a3af2a370f46ac675bbee0b99714150312c134d69a1d05221",
+          "sha256": "003ea65bc29c4d5d7fc5b310383a5978c10993a30118651c8e04d80d4014f889",
+          "sha1": "6ed1a5c924f71066ef8d5d68947b3d0b6f215429",
+          "md5": "2687cd13f8f17bdc08ec1b90c01b1bb6"
         }
       ]
     }
