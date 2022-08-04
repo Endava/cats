@@ -45,6 +45,11 @@ public class ReportingArguments {
             description = "The output folder of the CATS report. Default: @|bold,underline cats-report|@ in the current directory.")
     private String outputReportFolder = "cats-report";
 
+    @CommandLine.Option(names = {"-j", "--json"},
+            description = "Make selected commands output to console in JSON format.")
+    private boolean json;
+
+
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }

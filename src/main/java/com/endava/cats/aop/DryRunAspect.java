@@ -2,8 +2,10 @@ package com.endava.cats.aop;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -13,8 +15,10 @@ import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.Interceptor;
 import javax.interceptor.InvocationContext;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -32,9 +36,16 @@ public class DryRunAspect {
     private final Map<String, Integer> paths = new TreeMap<>();
     @Inject
     FilterArguments filterArguments;
+
+    @Inject
+    ReportingArguments reportingArguments;
+
     private int counter;
 
     public Object startSession(InvocationContext context) throws Exception {
+        if (reportingArguments.isJson()) {
+            CatsUtil.setCatsLogLevel("OFF");
+        }
         Object result = context.proceed();
         CatsUtil.setCatsLogLevel("OFF");
         return result;
@@ -49,21 +60,32 @@ public class DryRunAspect {
     }
 
     public Object endSession() {
-        logger.noFormat("\n");
-        CatsUtil.setCatsLogLevel("INFO");
-        logger.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
-        paths.forEach((s, integer) -> logger.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
+        if (reportingArguments.isJson()) {
+            List<DryRunEntry> pathTests = paths.entrySet().stream().map(entry ->
+                    DryRunEntry.builder()
+                            .path(entry.getKey().substring(0, entry.getKey().lastIndexOf("_")))
+                            .httpMethod(entry.getKey().substring(entry.getKey().lastIndexOf("_") + 1))
+                            .tests(String.valueOf(entry.getValue()))
+                            .build()
+            ).collect(Collectors.toList());
+            logger.noFormat(JsonUtils.GSON.toJson(pathTests));
+        } else {
+            logger.noFormat("\n");
+            CatsUtil.setCatsLogLevel("INFO");
+            logger.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
+            paths.forEach((s, integer) -> logger.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
+        }
         return null;
     }
 
     public Object report(InvocationContext context) {
         Object data = context.getParameters()[1];
         if (data instanceof FuzzingData) {
-            if (counter % 10000 == 0) {
+            if (counter % 10000 == 0 && !reportingArguments.isJson()) {
                 logger.noFormat(StringUtils.repeat("..", 1 + (counter / 10000)));
             }
-            paths.merge(((FuzzingData) data).getPath(), 1, Integer::sum);
-        } else {
+            paths.merge(((FuzzingData) data).getPath() + "_" + ((FuzzingData) data).getMethod(), 1, Integer::sum);
+        } else if (!reportingArguments.isJson()) {
             paths.merge("contract-level", 1, Integer::sum);
         }
         counter++;

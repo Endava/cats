@@ -1,6 +1,46 @@
 package com.endava.cats;
 
+import com.endava.cats.aop.DryRunEntry;
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.model.report.CatsTestCaseSummary;
+import com.google.gson.*;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.annotations.SerializedName;
+import com.google.gson.annotations.Since;
+import com.google.gson.annotations.Until;
+import com.google.gson.internal.ConstructorConstructor;
+import com.google.gson.internal.Excluder;
+import com.google.gson.internal.GsonBuildConfig;
+import com.google.gson.internal.JavaVersion;
+import com.google.gson.internal.JsonReaderInternalAccess;
+import com.google.gson.internal.LazilyParsedNumber;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.internal.ObjectConstructor;
+import com.google.gson.internal.PreJava9DateFormatProvider;
+import com.google.gson.internal.Primitives;
+import com.google.gson.internal.Streams;
+import com.google.gson.internal.UnsafeAllocator;
+import com.google.gson.internal.bind.ArrayTypeAdapter;
+import com.google.gson.internal.bind.CollectionTypeAdapterFactory;
+import com.google.gson.internal.bind.DateTypeAdapter;
+import com.google.gson.internal.bind.DefaultDateTypeAdapter;
+import com.google.gson.internal.bind.JsonAdapterAnnotationTypeAdapterFactory;
+import com.google.gson.internal.bind.JsonTreeReader;
+import com.google.gson.internal.bind.JsonTreeWriter;
+import com.google.gson.internal.bind.MapTypeAdapterFactory;
+import com.google.gson.internal.bind.NumberTypeAdapter;
+import com.google.gson.internal.bind.ObjectTypeAdapter;
+import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory;
+import com.google.gson.internal.bind.TreeTypeAdapter;
+import com.google.gson.internal.bind.TypeAdapters;
+import com.google.gson.internal.bind.util.ISO8601Utils;
+import com.google.gson.internal.sql.SqlTypesSupport;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import com.google.gson.stream.MalformedJsonException;
 import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.internal.CharacterIndex;
 import com.jayway.jsonpath.internal.DefaultsImpl;
@@ -132,6 +172,15 @@ import java.time.OffsetDateTime;
 import java.util.Base64;
 
 @RegisterForReflection(targets = {
+        JsonDeserializer.class, JsonStreamParser.class, Gson.class, FieldNamingStrategy.class, JsonSerializer.class, JsonNull.class, InstanceCreator.class, JsonSerializationContext.class,
+        JsonElement.class, JsonReader.class, JsonToken.class, MalformedJsonException.class, JsonWriter.class, JsonIOException.class, TypeToken.class, TypeAdapter.class, JsonPrimitive.class, ConstructorConstructor.class,
+        GsonBuildConfig.class, LazilyParsedNumber.class, JsonReaderInternalAccess.class, ReflectionHelper.class, ObjectConstructor.class, PreJava9DateFormatProvider.class, Streams.class,
+        UnsafeAllocator.class, LinkedTreeMap.class, Primitives.class, TreeTypeAdapter.class, ObjectTypeAdapter.class, JsonAdapterAnnotationTypeAdapterFactory.class, JsonTreeReader.class,
+         DateTypeAdapter.class, NumberTypeAdapter.class, ISO8601Utils.class, ReflectiveTypeAdapterFactory.class, DefaultDateTypeAdapter.class,
+        CollectionTypeAdapterFactory.class, MapTypeAdapterFactory.class, TypeAdapters.class, JsonTreeWriter.class, ArrayTypeAdapter.class, Excluder.class, JavaVersion.class,
+         SqlTypesSupport.class, ToNumberPolicy.class, SerializedName.class, Expose.class, NumberTypeAdapter.class, com.google.gson.internal.$Gson$Types.class, DryRunEntry.class, CatsTestCaseSummary.class,
+        JsonAdapter.class, Until.class, Since.class, TypeAdapterFactory.class, LongSerializationPolicy.class, FieldNamingPolicy.class, JsonSyntaxException.class,
+        JsonArray.class, ToNumberStrategy.class, JsonParseException.class, JsonParser.class, GsonBuilder.class, FieldAttributes.class, JsonDeserializationContext.class, JsonObject.class, ExclusionStrategy.class,
         Components.class, ExternalDocumentation.class, Operation.class, PathItem.class,
         Paths.class, Callback.class, Example.class, Header.class, Contact.class,
         Info.class, License.class, Link.class, LinkParameter.class, ArraySchema.class, BinarySchema.class,
