@@ -29,18 +29,18 @@ public class HttpMethodFuzzerUtil {
         String payload = HttpMethod.requiresBody(httpMethod) ? data.getPayload() : "";
         CatsResponse response = f.apply(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(payload).httpMethod(httpMethod).contentType(data.getFirstRequestContentType()).build());
-        this.checkResponse(response);
+        this.checkResponse(data, response);
     }
 
-    public void checkResponse(CatsResponse response) {
+    public void checkResponse(FuzzingData data, CatsResponse response) {
         if (response.getResponseCode() == 405) {
-            testCaseListener.reportInfo(logger, "Request failed as expected for http method [{}] with response code [{}]",
+            testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else if (ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            testCaseListener.reportError(logger, "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
+            testCaseListener.reportResultError(logger, data, "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
         } else {
-            testCaseListener.reportWarn(logger, "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
+            testCaseListener.reportResultWarn(logger, data, "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
         }
     }
