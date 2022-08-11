@@ -59,6 +59,7 @@ public class TestCaseListener {
     protected static final String ID_ANSI = "id_ansi";
     protected static final AtomicInteger TEST = new AtomicInteger(0);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
+    private static final String DEFAULT_ERROR = "####";
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414");
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
@@ -108,11 +109,19 @@ public class TestCaseListener {
         try {
             s.run();
         } catch (Exception e) {
-            this.reportError(externalLogger, CatsResult.EXCEPTION, fuzzer.getClass().getSimpleName(), e.getMessage());
+            setDefaultPathAndMethod();
+            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), CatsResult.EXCEPTION.getMessage(), fuzzer.getClass().getSimpleName(), e.getMessage());
+            setResultReason(CatsResult.EXCEPTION);
             externalLogger.error("Exception while processing!", e);
         }
         this.endTestCase();
         logger.info("{} {}", SEPARATOR, "\n");
+    }
+
+    private void setDefaultPathAndMethod() {
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        testCase.setPath(DEFAULT_ERROR);
+        testCase.setRequest(CatsRequest.builder().httpMethod(DEFAULT_ERROR).build());
     }
 
     private void startTestCase() {
@@ -199,7 +208,7 @@ public class TestCaseListener {
             this.logger.debug("Received response is not marked as ignored... reporting warn!");
             executionStatisticsListener.increaseWarns();
             logger.warning(message, params);
-            this.recordResult(message, params, Level.WARN.toString().toLowerCase());
+            this.recordResult(message, params, Level.WARN.toString().toLowerCase(), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug("Received response is marked as ignored... skipping!");
             this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
@@ -219,7 +228,7 @@ public class TestCaseListener {
         }
     }
 
-    public void reportWarn(PrettyLogger logger, CatsResult catsResult, Object... params) {
+    private void reportWarn(PrettyLogger logger, CatsResult catsResult, Object... params) {
         this.reportWarn(logger, catsResult.getMessage(), params);
         setResultReason(catsResult);
     }
@@ -252,7 +261,7 @@ public class TestCaseListener {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors();
             logger.error(message, params);
-            this.recordResult(message, params, Level.ERROR.toString().toLowerCase());
+            this.recordResult(message, params, Level.ERROR.toString().toLowerCase(), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug("Received response is marked as ignored... skipping!");
             this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
@@ -265,17 +274,29 @@ public class TestCaseListener {
     private void reportSkipped(PrettyLogger logger, Object... params) {
         executionStatisticsListener.increaseSkipped();
         logger.skip("Skipped due to: {}", params);
-        recordResult("Skipped due to: {}", params, "skipped");
+        recordResult("Skipped due to: {}", params, "skipped", logger);
     }
 
     public void reportInfo(PrettyLogger logger, String message, Object... params) {
         executionStatisticsListener.increaseSuccess();
         logger.success(message, params);
-        this.recordResult(message, params, "success");
+        this.recordResult(message, params, "success", logger);
     }
 
-    public void reportInfo(PrettyLogger logger, CatsResult catsResult, Object... params) {
+    private void reportInfo(PrettyLogger logger, CatsResult catsResult, Object... params) {
         this.reportInfo(logger, catsResult.getMessage(), params);
+    }
+
+    public void reportResultError(PrettyLogger logger, FuzzingData data, String message, Object... params) {
+        this.reportError(logger, message, params);
+    }
+
+    public void reportResultInfo(PrettyLogger logger, FuzzingData data, String message, Object... params) {
+        this.reportInfo(logger, message, params);
+    }
+
+    public void reportResultWarn(PrettyLogger logger, FuzzingData data, String message, Object... params) {
+        this.reportWarn(logger, message, params);
     }
 
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
@@ -345,19 +366,20 @@ public class TestCaseListener {
 
     public void skipTest(PrettyLogger logger, String skipReason) {
         this.addExpectedResult(logger, "Test will be skipped!");
-        this.reportSkipped(logger, skipReason);
         this.addRequest(CatsRequest.empty());
         this.addResponse(CatsResponse.empty());
+        this.reportSkipped(logger, skipReason);
     }
 
     public boolean isFieldNotADiscriminator(String fuzzedField) {
         return !globalContext.getDiscriminators().contains(fuzzedField);
     }
 
-    private void recordResult(String message, Object[] params, String success) {
+    public void recordResult(String message, Object[] params, String success, PrettyLogger logger) {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         testCase.setResult(success);
         testCase.setResultDetails(replaceBrackets(message, params));
+        logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), testCase.getRequest().getHttpMethod(), success);
     }
 
     /**
