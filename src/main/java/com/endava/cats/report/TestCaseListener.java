@@ -120,7 +120,9 @@ public class TestCaseListener {
 
     private void setDefaultPathAndMethod() {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
-        testCase.setPath(DEFAULT_ERROR);
+        if (testCase.getPath() == null) {
+            testCase.setPath(DEFAULT_ERROR);
+        }
         testCase.setRequest(CatsRequest.builder().httpMethod(DEFAULT_ERROR).build());
     }
 
