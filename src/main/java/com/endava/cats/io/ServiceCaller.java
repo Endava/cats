@@ -198,6 +198,8 @@ public class ServiceCaller {
                 url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
                 url = this.addUriParams(processedPayload, data, url);
             }
+            url = this.addAdditionalQueryParams(url, data.getRelativePath());
+
             catsRequest.setUrl(url);
 
             logger.note("Final list of request headers: {}", headers);
@@ -212,6 +214,16 @@ public class ServiceCaller {
             this.recordRequestAndResponse(catsRequest, CatsResponse.empty(), data);
             throw new CatsIOException(e);
         }
+    }
+
+    String addAdditionalQueryParams(String startingUrl, String currentPath) {
+        HttpUrl.Builder httpUrl = HttpUrl.get(startingUrl).newBuilder();
+
+        for (Map.Entry<String, String> queryParamEntry : filesArguments.getAdditionalQueryParamsForPath(currentPath).entrySet()) {
+            httpUrl.addQueryParameter(queryParamEntry.getKey(), queryParamEntry.getValue());
+        }
+
+        return httpUrl.build().toString();
     }
 
     String convertPayloadInSpecificContentType(String payload, ServiceData data) {

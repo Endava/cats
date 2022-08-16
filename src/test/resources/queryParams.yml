@@ -1,0 +1,4 @@
+all:
+  param: small
+/pets:
+  jwt: large
