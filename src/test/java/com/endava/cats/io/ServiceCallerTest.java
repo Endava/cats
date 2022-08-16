@@ -52,7 +52,7 @@ class ServiceCallerTest {
     ProcessingArguments processingArguments;
     @Inject
     CatsGlobalContext catsGlobalContext;
-
+    FilesArguments filesArguments;
     private ServiceCaller serviceCaller;
 
     @BeforeAll
@@ -77,10 +77,9 @@ class ServiceCallerTest {
 
     @BeforeEach
     public void setupEach() throws Exception {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        filesArguments = new FilesArguments(catsUtil);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments, processingArguments);
-
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("src/test/resources/refFields.yml"));
@@ -345,6 +344,15 @@ class ServiceCallerTest {
         Optional<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsHeader")).findFirst();
 
         Assertions.assertThat(catsHeader).isEmpty();
+    }
+
+    @Test
+    void shouldAddAdditionalQueryParams() throws Exception {
+        ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParams.yml"));
+        filesArguments.loadQueryParams();
+
+        String finalUrl = serviceCaller.addAdditionalQueryParams("http://localhost", "/pets");
+        Assertions.assertThat(finalUrl).contains("jwt", "small", "large", "param");
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -22,6 +23,7 @@ public class FilesArguments {
     private static final String ALL = "all";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final Map<String, Map<String, String>> headers = new HashMap<>();
+    private final Map<String, Map<String, String>> queryParams = new HashMap<>();
     private final Map<String, Map<String, String>> refData = new HashMap<>();
     private final CatsUtil catsUtil;
 
@@ -38,6 +40,13 @@ public class FilesArguments {
     @Getter
     @Setter
     private File headersFile;
+
+    @CommandLine.Option(names = {"--queryParams"},
+            description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params")
+    @Getter
+    @Setter
+    private File queryFile;
+
 
     @CommandLine.Option(names = {"--refData"},
             description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
@@ -80,6 +89,7 @@ public class FilesArguments {
         loadRefData();
         loadURLParams();
         loadHeaders();
+        loadQueryParams();
     }
 
     public void loadSecurityFuzzerFile() throws IOException {
@@ -104,6 +114,14 @@ public class FilesArguments {
         } else {
             refData.putAll(catsUtil.loadYamlFileToMap(refDataFile.getAbsolutePath()));
             log.info("Reference data file loaded successfully: {}", refData);
+        }
+    }
+
+    public void loadQueryParams() throws IOException {
+        if (queryFile == null) {
+            log.info("No queryParams file was supplied! No additional query parameters will be added!");
+        } else {
+            queryParams.putAll(catsUtil.loadYamlFileToMap(queryFile.getAbsolutePath()));
         }
     }
 
@@ -176,6 +194,19 @@ public class FilesArguments {
 
         currentPathRefData.putAll(allValues);
         return currentPathRefData;
+    }
+
+    /**
+     * Returns a map with key-value pairs for all additional query parameters corresponding
+     * to the given path as well as the ALL entry.
+     *
+     * @param path the given path
+     * @return a key-value map with all additional query params
+     */
+    public Map<String, String> getAdditionalQueryParamsForPath(String path) {
+        return queryParams.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
+                .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
     }
 
     /**

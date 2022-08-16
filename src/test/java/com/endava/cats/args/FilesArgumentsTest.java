@@ -68,6 +68,14 @@ class FilesArgumentsTest {
     }
 
     @Test
+    void shouldThrowExceptionOnMissingHeadersQueryParamsFile() {
+        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        ReflectionTestUtils.setField(filesArguments, "queryFile", new File("mumu"));
+
+        Assertions.assertThrows(IOException.class, filesArguments::loadQueryParams);
+    }
+
+    @Test
     void shouldReturnEmptyUrlParams() {
         FilesArguments filesArguments = new FilesArguments(catsUtil);
 
