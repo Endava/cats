@@ -5,10 +5,11 @@ import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
+import com.endava.cats.command.model.FuzzerListEntry;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
@@ -45,6 +46,11 @@ public class ListCommand implements Runnable {
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
 
+    @CommandLine.Option(names = {"-j", "--json"},
+            description = "Output to console in JSON format.")
+    private boolean json;
+
+
     public ListCommand(@Any Instance<Fuzzer> fuzzersList) {
         this.fuzzersList = fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
@@ -68,8 +74,12 @@ public class ListCommand implements Runnable {
     void listContractPaths() {
         try {
             OpenAPI openAPI = OpenApiUtils.readOpenApi(listCommandGroups.listContractOptions.contract);
-            logger.star("Available paths:");
-            openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(logger::info);
+            if (json) {
+                PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson((openAPI.getPaths().keySet())));
+            } else {
+                logger.star("Available paths:");
+                openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(logger::info);
+            }
         } catch (IOException e) {
             logger.debug("Exception while reading contract!", e);
             logger.error("Error while reading contract: {}", e.getMessage());
@@ -81,25 +91,41 @@ public class ListCommand implements Runnable {
     }
 
     void listFuzzers() {
-        String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
-        logger.info(message, fuzzersList.size());
-        filterAndDisplay(FieldFuzzer.class);
-        filterAndDisplay(HeaderFuzzer.class);
-        filterAndDisplay(HttpFuzzer.class);
-        filterAndDisplay(ContractInfoFuzzer.class);
-        filterAndDisplay(SpecialFuzzer.class);
+        List<Fuzzer> fieldFuzzers = filterFuzzers(FieldFuzzer.class);
+        List<Fuzzer> headerFuzzers = filterFuzzers(HeaderFuzzer.class);
+        List<Fuzzer> httpFuzzers = filterFuzzers(HttpFuzzer.class);
+        List<Fuzzer> contractInfo = filterFuzzers(ContractInfoFuzzer.class);
+
+        if (json) {
+            List<FuzzerListEntry> fuzzerEntries = List.of(
+                    new FuzzerListEntry().category("Field").fuzzers(fieldFuzzers),
+                    new FuzzerListEntry().category("Header").fuzzers(headerFuzzers),
+                    new FuzzerListEntry().category("HTTP").fuzzers(httpFuzzers),
+                    new FuzzerListEntry().category("Contract").fuzzers(contractInfo));
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(fuzzerEntries));
+        } else {
+            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
+            logger.info(message, fuzzersList.size());
+            displayFuzzers(fieldFuzzers, FieldFuzzer.class);
+            displayFuzzers(headerFuzzers, HeaderFuzzer.class);
+            displayFuzzers(httpFuzzers, HttpFuzzer.class);
+            displayFuzzers(contractInfo, ContractInfoFuzzer.class);
+        }
     }
 
-    void filterAndDisplay(Class<? extends Annotation> annotation) {
-        List<Fuzzer> fieldFuzzers = fuzzersList.stream()
+    List<Fuzzer> filterFuzzers(Class<? extends Annotation> annotation) {
+        return fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
                 .sorted(Comparator.comparing(Object::toString))
                 .collect(Collectors.toList());
+    }
+
+    void displayFuzzers(List<Fuzzer> fuzzers, Class<? extends Annotation> annotation) {
         String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {} Fuzzers:").reset().toString();
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
         logger.noFormat(" ");
-        logger.info(message, fieldFuzzers.size(), typeOfFuzzers);
-        fieldFuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::info);
+        logger.info(message, fuzzers.size(), typeOfFuzzers);
+        fuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::info);
     }
 
     static class ListCommandGroups {
