@@ -17,7 +17,7 @@
         <wiremock-jre8.version>2.33.2</wiremock-jre8.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <guava.version>31.1-jre</guava.version>
-        <openapi-generator.version>6.0.0</openapi-generator.version>
+        <openapi-generator.version>6.0.1</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*
@@ -32,7 +32,7 @@
         <json-path.version>2.7.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.11.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.11.2.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -40,9 +40,9 @@
         <assertj-core.version>3.23.1</assertj-core.version>
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
-        <spring-integration-core.version>5.5.12</spring-integration-core.version>
-        <stripe-java.version>20.135.0</stripe-java.version>
-        <kotlin-reflect.version>1.7.0</kotlin-reflect.version>
+        <spring-integration-core.version>5.5.14</spring-integration-core.version>
+        <stripe-java.version>20.136.0</stripe-java.version>
+        <kotlin-reflect.version>1.7.10</kotlin-reflect.version>
         <json.version>20220320</json.version>
         <tapestry-json.version>5.8.2</tapestry-json.version>
     </properties>
