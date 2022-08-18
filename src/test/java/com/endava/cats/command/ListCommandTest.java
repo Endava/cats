@@ -26,6 +26,23 @@ class ListCommandTest {
     }
 
     @Test
+    void shouldListFuzzersJson() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("-f", "-j");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listFuzzers();
+        Mockito.verify(spyListCommand, Mockito.times(0)).displayFuzzers(Mockito.anyList(), Mockito.any());
+    }
+
+    @Test
+    void shouldListPathsJson() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("-p", "-j", "-c", "src/test/resources/openapi.yml");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listContractPaths();
+    }
+
+    @Test
     void shouldListFuzzers() {
         ListCommand spyListCommand = Mockito.spy(listCommand);
         CommandLine commandLine = new CommandLine(spyListCommand);
