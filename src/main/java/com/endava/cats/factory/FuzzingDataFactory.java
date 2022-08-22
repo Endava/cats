@@ -7,8 +7,8 @@ import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.PayloadGenerator;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -30,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +41,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -109,10 +111,7 @@ public class FuzzingDataFactory {
      * @return a Set with all the query parameters
      */
     private Set<String> extractQueryParams(ObjectSchema schema) {
-        return schema.getProperties().entrySet().stream()
-                .filter(entry -> entry.getValue().getName().endsWith("query"))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+        return schema.getProperties().entrySet().stream().filter(entry -> entry.getValue().getName().endsWith("query")).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
     /**
@@ -179,8 +178,7 @@ public class FuzzingDataFactory {
         MediaType mediaType = this.getMediaType(operation, openAPI);
 
         if (mediaType == null) {
-            logger.info("Content type not supported for path {}, method {}. CATS only supports application/json. " +
-                    "You might try to supply the custom content type using --contentType argument", path, method);
+            logger.info("Content type not supported for path {}, method {}. CATS only supports application/json. " + "You might try to supply the custom content type using --contentType argument", path, method);
             return Collections.emptyList();
         }
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
@@ -193,18 +191,24 @@ public class FuzzingDataFactory {
 
         for (String reqSchemaName : reqSchemaNames) {
             List<String> payloadSamples = this.getRequestPayloadsSamples(mediaType, reqSchemaName);
-            fuzzingDataList.addAll(payloadSamples.stream().map(payload ->
-                    FuzzingData.builder().method(method).path(path).headers(this.extractHeaders(operation)).payload(payload)
-                            .responseCodes(operation.getResponses().keySet()).reqSchema(globalContext.getSchemaMap().get(reqSchemaName)).pathItem(item)
-                            .responseContentTypes(responsesContentTypes)
+            fuzzingDataList.addAll(payloadSamples.stream()
+                    .map(payload -> FuzzingData.builder()
+                            .method(method).path(path)
+                            .headers(this.extractHeaders(operation))
+                            .payload(payload)
+                            .responseCodes(operation.getResponses().keySet())
+                            .reqSchema(globalContext.getSchemaMap().get(reqSchemaName))
+                            .pathItem(item).responseContentTypes(responsesContentTypes)
                             .requestContentTypes(requestContentTypes)
-                            .schemaMap(globalContext.getSchemaMap()).responses(responses)
+                            .schemaMap(globalContext.getSchemaMap())
+                            .responses(responses)
                             .requestPropertyTypes(globalContext.getRequestDataTypes())
                             .openApi(openAPI)
                             .tags(operation.getTags())
                             .reqSchemaName(reqSchemaName)
                             .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
-                            .build()).collect(Collectors.toList()));
+                            .build())
+                    .collect(Collectors.toList()));
         }
 
         return fuzzingDataList;
@@ -234,18 +238,25 @@ public class FuzzingDataFactory {
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
         logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
-        return payloadSamples.stream().map(payload -> FuzzingData.builder().method(method).path(path).headers(this.extractHeaders(operation)).payload(payload)
-                .responseCodes(operation.getResponses().keySet()).reqSchema(syntheticSchema).pathItem(item)
-                .schemaMap(globalContext.getSchemaMap()).responses(responses)
-                .responseContentTypes(responsesContentTypes)
-                .requestPropertyTypes(globalContext.getRequestDataTypes())
-                .requestContentTypes(requestContentTypes)
-                .queryParams(queryParams)
-                .openApi(openAPI)
-                .tags(operation.getTags())
-                .reqSchemaName(SYNTH_SCHEMA_NAME)
-                .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
-                .build()).collect(Collectors.toList());
+        return payloadSamples.stream()
+                .map(payload -> FuzzingData.builder()
+                        .method(method).path(path)
+                        .headers(this.extractHeaders(operation))
+                        .payload(payload)
+                        .responseCodes(operation.getResponses().keySet())
+                        .reqSchema(syntheticSchema)
+                        .pathItem(item)
+                        .schemaMap(globalContext.getSchemaMap())
+                        .responses(responses)
+                        .responseContentTypes(responsesContentTypes)
+                        .requestPropertyTypes(globalContext.getRequestDataTypes())
+                        .requestContentTypes(requestContentTypes)
+                        .queryParams(queryParams)
+                        .openApi(openAPI)
+                        .tags(operation.getTags())
+                        .reqSchemaName(SYNTH_SCHEMA_NAME)
+                        .selfReferenceDepth(processingArguments.getSelfReferenceDepth()).build())
+                .collect(Collectors.toList());
     }
 
 
@@ -340,96 +351,109 @@ public class FuzzingDataFactory {
         return result;
     }
 
+    /**
+     * This gets all possible ONE_OF and ANY_OF combinations, including combinations between multiple ONE_OF/ANY_OF.
+     *
+     * @param jsonElement the initial JSON payload
+     * @return a list with all possible ONE_OF and ANY_OF combinations based on the initial JSON payload
+     */
     private List<String> addNewCombination(JsonElement jsonElement) {
-        List<String> discriminators = globalContext.getDiscriminators();
         List<String> result = new ArrayList<>();
-        Map<String, JsonElement> anyOfOrOneOf = this.getAnyOrOneOffElements(jsonElement);
-        anyOfOrOneOf.forEach((key, value) -> jsonElement.getAsJsonObject().remove(key));
-        /*before creating all possible combinations, we simplify objects that have only oneOf/anyOf type*/
-        final JsonElement jsonElementSimplified = this.squashSingleOneOfAnyOf(jsonElement, anyOfOrOneOf);
+        result.add(jsonElement.toString());
+        Map<String, Map<String, JsonElement>> anyOfOrOneOfElements = this.getAnyOrOneOffElements("$", jsonElement);
+        anyOfOrOneOfElements = this.joinCommonOneAndAnyOfs(anyOfOrOneOfElements);
 
-        anyOfOrOneOf.forEach((key, value) -> {
-            String newKey = this.removeAnyOfOneOfFromKey(key);
-            JsonElement jsonElementClone = jsonElementSimplified.deepCopy();
-
-            if (value.isJsonObject()) {
-                value.getAsJsonObject().entrySet().forEach(jsonElementEntry -> {
-                            String dataTypeKey = newKey + "#" + jsonElementEntry.getKey();
-                            if (discriminators.contains(dataTypeKey)) {
-                                value.getAsJsonObject().addProperty(jsonElementEntry.getKey(), this.getSchemaName(key));
-                            }
-                        }
-                );
-            }
-            //when a request has only oneOf or anyOf fields, there is no additional key to create this
-            if (newKey.toLowerCase().contains("body")) {
-                result.add(value.toString());
-            } else if (this.isKeyAJsonArray(jsonElementSimplified, newKey)) {
-                JsonArray valueArray = new JsonArray();
-                valueArray.add(value);
-                valueArray.add(value);
-                jsonElementClone.getAsJsonObject().add(newKey, valueArray);
-                result.add(jsonElementClone.toString());
-            } else {
-                jsonElementClone.getAsJsonObject().add(newKey, value);
-                result.add(jsonElementClone.toString());
-            }
-            jsonElement.getAsJsonObject().remove(key);
+        anyOfOrOneOfElements.forEach((pathKey, anyOfOrOneOf) -> {
+            List<String> interimCombinationList = new ArrayList<>(result);
+            result.clear();
+            anyOfOrOneOf.forEach((key, value) ->
+                    interimCombinationList.forEach(payload ->
+                            result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, value.toString(), anyOfOrOneOf.keySet()))));
         });
+
         return result;
     }
 
-    @NotNull
-    private String removeAnyOfOneOfFromKey(String key) {
-        return key.substring(0, key.indexOf('#')).replace(ANY_OF, "").replace(ONE_OF, "");
-    }
-
-    private boolean isKeyAJsonArray(JsonElement jsonElementSimplified, String newKey) {
-        return jsonElementSimplified.getAsJsonObject().get(newKey) != null && jsonElementSimplified.getAsJsonObject().get(newKey).isJsonArray();
-    }
-
-    private JsonElement squashSingleOneOfAnyOf(JsonElement jsonElement, Map<String, JsonElement> anyOfOrOneOf) {
-        List<String> distinctEntries = anyOfOrOneOf.keySet()
+    private Map<String, Map<String, JsonElement>> joinCommonOneAndAnyOfs(Map<String, Map<String, JsonElement>> startingOneAnyOfs) {
+        Set<String> keySet = startingOneAnyOfs.entrySet()
                 .stream()
-                .map(key -> key.substring(0, key.indexOf("#")))
-                .distinct()
+                .collect(Collectors.groupingBy(entry ->
+                        entry.getKey().contains("_OF") ? entry.getKey().substring(0, entry.getKey().indexOf("_OF") - 3) : entry.getKey()))
+                .keySet();
+
+        List<Map<String, Map<String, JsonElement>>> listOfMap = keySet.stream()
+                .map(key -> startingOneAnyOfs
+                        .entrySet()
+                        .stream()
+                        .filter(entry -> entry.getKey().startsWith(key))
+                        .collect(Collectors.toMap(stringMapEntry -> key, Map.Entry::getValue, (map1, map2) -> {
+                            Map<String, JsonElement> newMap = new HashMap<>();
+                            newMap.putAll(map1);
+                            newMap.putAll(map2);
+                            return newMap;
+                        })))
                 .collect(Collectors.toList());
 
-        distinctEntries.removeIf(entry -> anyOfOrOneOf.keySet()
-                .stream()
-                .filter(anyOfKey -> anyOfKey.startsWith(entry)).count() > 1);
-
-        List<String> distinctJsonKeys = anyOfOrOneOf.keySet()
-                .stream()
-                .filter(key -> distinctEntries.contains(key.substring(0, key.lastIndexOf("#"))))
-                .collect(Collectors.toList());
-
-        for (String schemaKey : distinctJsonKeys) {
-            jsonElement.getAsJsonObject().remove(schemaKey);
-            jsonElement.getAsJsonObject().add(this.removeAnyOfOneOfFromKey(schemaKey), anyOfOrOneOf.get(schemaKey));
-            anyOfOrOneOf.remove(schemaKey);
-        }
-
-        return jsonElement;
+        return listOfMap.stream().flatMap(m -> m.entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        Map.Entry::getValue));
     }
 
-    private Map<String, JsonElement> getAnyOrOneOffElements(JsonElement jsonElement) {
-        Map<String, JsonElement> anyOrOneOfs = new HashMap<>();
-        List<String> toRemove = new ArrayList<>();
+
+    private Map<String, Map<String, JsonElement>> getAnyOrOneOffElements(String jsonElementKey, JsonElement jsonElement) {
+        Map<String, Map<String, JsonElement>> anyOrOneOfs = new HashMap<>();
+
         for (Map.Entry<String, JsonElement> elementEntry : jsonElement.getAsJsonObject().entrySet()) {
-            if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive()
-            && !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull()) {
-                anyOrOneOfs.putAll(this.getAnyOrOneOffElements(elementEntry.getValue().getAsJsonArray().get(0)));
+            if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull()) {
+                anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
             } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
-                anyOrOneOfs.put(elementEntry.getKey(), elementEntry.getValue());
+                anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
+                        Map.of(elementEntry.getKey(), elementEntry.getValue()), this.mergeMapsBiFunction());
             } else if (isJsonValueOf(elementEntry.getValue(), ONE_OF) || isJsonValueOf(elementEntry.getValue(), ANY_OF)) {
-                elementEntry.getValue().getAsJsonObject().entrySet().forEach(innerValueEntry -> anyOrOneOfs.put(innerValueEntry.getKey(), innerValueEntry.getValue()));
-                toRemove.add(elementEntry.getKey());
+                anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
+                        elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this.mergeMapsBiFunction());
+            } else if (isAnyOrOneOfInChildren(elementEntry.getValue(), ANY_OF, ONE_OF)) {
+                anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
             }
         }
 
-        toRemove.forEach(entry -> jsonElement.getAsJsonObject().remove(entry));
         return anyOrOneOfs;
+    }
+
+    @NotNull
+    private BiFunction<Map<String, JsonElement>, Map<String, JsonElement>, Map<String, JsonElement>> mergeMapsBiFunction() {
+        return (firstMap, secondMap) -> {
+            Map<String, JsonElement> newMap = new HashMap<>();
+            newMap.putAll(firstMap);
+            newMap.putAll(secondMap);
+
+            return newMap;
+        };
+    }
+
+    /**
+     * Creates a fully qualified Json path.
+     *
+     * @param jsonElementKey the initial path
+     * @param elementEntry   the next element path
+     * @return if the initial path ends with an array, it won't add the elementEntry
+     */
+    private String createSimpleElementPath(String jsonElementKey, String elementEntry) {
+        if (jsonElementKey.contains("[*]")) {
+            return jsonElementKey;
+        }
+        return jsonElementKey + "." + elementEntry;
+    }
+
+    @NotNull
+    private String createArrayKey(String jsonElementKey, String nextKey) {
+        return jsonElementKey + "." + nextKey + "[*]";
+    }
+
+    private boolean isAnyOrOneOfInChildren(JsonElement element, String... toSearch) {
+        String elementAsString = element.toString();
+
+        return Arrays.stream(toSearch).anyMatch(elementAsString::contains);
     }
 
     private boolean isJsonValueOf(JsonElement element, String startKey) {
@@ -479,8 +503,7 @@ public class FuzzingDataFactory {
             if (reqBodyRef != null) {
                 operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent());
             }
-            requests.addAll(new ArrayList<>(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent)
-                    .keySet()));
+            requests.addAll(new ArrayList<>(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent).keySet()));
         } else {
             requests.add(processingArguments.getDefaultContentType());
         }
@@ -498,8 +521,7 @@ public class FuzzingDataFactory {
         for (String responseCode : responseCodes) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             Content defaultContent = buildDefaultContent();
-            responses.put(responseCode, new ArrayList<>(Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent)
-                    .keySet()));
+            responses.put(responseCode, new ArrayList<>(Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent).keySet()));
         }
 
         return responses;

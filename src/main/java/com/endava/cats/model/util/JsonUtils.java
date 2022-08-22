@@ -19,21 +19,27 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONArray;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
+import java.util.Set;
 
 public abstract class JsonUtils {
     public static final String NOT_SET = "NOT_SET";
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
+
+    public static final JSONParser GENERIC_PERMISSIVE_PARSER = new JSONParser(JSONParser.MODE_PERMISSIVE);
     public static final Gson GSON = new GsonBuilder()
             .setLenient()
             .setPrettyPrinting()
             .disableHtmlEscaping()
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
-            .serializeNulls().create();
+            .serializeNulls()
+            .create();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
@@ -94,6 +100,42 @@ public abstract class JsonUtils {
             }
         }
         return payload;
+    }
+
+    /**
+     * This will either replace the {@code nodeKey} with the {@code nodeValue} or, if the given key is not found,
+     * it will replace the {@code alternativeKey} with the {@code nodeValue} and eliminate all other keys
+     * supplied in the {@code toEliminate} list.
+     *
+     * @param payload        the initial JSON payload
+     * @param nodeKey        the key used to replace the {@code nodeValue}
+     * @param alternativeKey alternative key to search for payloads inline-ing ONE_OF and ANY_OF elements, rather than grouping them under a single element
+     * @param nodeValue      the value to be placed inside the {@code nodeKey}
+     * @param toEliminate    additional keys to eliminate after replacing the {@code nodeKey} with the {{@code nodeValue}
+     * @return a JSON payload with ONE_OF and ANY_OF elements eliminated and replaced with a single combination
+     */
+    public static String createValidOneOfAnyOfNode(String payload, String nodeKey, String alternativeKey, String nodeValue, Set<String> toEliminate) {
+        try {
+            return JsonPath.parse(payload).set(nodeKey, GENERIC_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
+        } catch (ParseException e) {
+            LOGGER.warn("Could not add node {}", nodeKey);
+            return payload;
+        } catch (PathNotFoundException e) {
+            String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
+            String replacementKey = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
+            String interimPayload = JsonPath.parse(payload).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
+
+            DocumentContext finalPayload = JsonPath.parse(interimPayload);
+            toEliminate.forEach(toEliminateKey -> {
+                try {
+                    finalPayload.delete(pathTowardsReplacement + "." + toEliminateKey);
+                } catch (PathNotFoundException ex) {
+                    LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
+                }
+            });
+
+            return finalPayload.jsonString();
+        }
     }
 
     public static Object getVariableFromJson(String jsonPayload, String value) {
