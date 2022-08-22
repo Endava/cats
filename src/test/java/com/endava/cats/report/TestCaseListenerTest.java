@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.Discriminator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -561,16 +562,20 @@ class TestCaseListenerTest {
 
     @Test
     void shouldReturnIsDiscriminator() {
+        Discriminator discriminator = new Discriminator();
+        discriminator.setPropertyName("field");
         catsGlobalContext.getDiscriminators().clear();
-        catsGlobalContext.getDiscriminators().add("field");
+        catsGlobalContext.getDiscriminators().add(discriminator);
 
         Assertions.assertThat(testCaseListener.isFieldNotADiscriminator("field")).isFalse();
     }
 
     @Test
     void shouldReturnIsNotDiscriminator() {
+        Discriminator discriminator = new Discriminator();
+        discriminator.setPropertyName("field");
         catsGlobalContext.getDiscriminators().clear();
-        catsGlobalContext.getDiscriminators().add("field");
+        catsGlobalContext.getDiscriminators().add(discriminator);
 
         Assertions.assertThat(testCaseListener.isFieldNotADiscriminator("additionalField")).isTrue();
     }

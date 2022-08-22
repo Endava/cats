@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.EmailSchema;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
@@ -334,7 +335,7 @@ public class PayloadGenerator {
         logger.trace("Creating example from model values {}", name);
 
         if (schema.getDiscriminator() != null) {
-            globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
+            globalContext.getDiscriminators().add(schema.getDiscriminator());
         }
         String previousPropertyValue = currentProperty;
         for (Object propertyName : schema.getProperties().keySet()) {
@@ -361,7 +362,7 @@ public class PayloadGenerator {
                     .collect(Collectors.toList()));
             composedSchema.setDiscriminator(schema.getDiscriminator());
             schema.getProperties().get(schema.getDiscriminator().getPropertyName()).setEnum(new ArrayList<>(schema.getDiscriminator().getMapping().keySet()));
-            globalContext.getDiscriminators().add(currentProperty + "#" + schema.getDiscriminator().getPropertyName());
+            globalContext.getDiscriminators().add(schema.getDiscriminator());
             Schema<?> newSchema = new ObjectMapper().convertValue(schema, Schema.class);
             newSchema.setName("CatsChanged" + name);
             newSchema.getDiscriminator().setMapping(null);
@@ -386,7 +387,7 @@ public class PayloadGenerator {
         if (innerSchema instanceof ComposedSchema) {
             this.populateWithComposedSchema(values, propertyName.toString(), (ComposedSchema) innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
-            values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema));
+            values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
         } else {//maybe here a check for array schema
             logger.trace("Resolving {}", propertyName);
@@ -396,8 +397,19 @@ public class PayloadGenerator {
         }
     }
 
-    private Object matchToEnumOrEmpty(String name, Schema innerSchema) {
-        return Optional.ofNullable(innerSchema.getEnum()).orElse(List.of("")).stream().filter(value -> name.contains(value.toString())).findFirst().orElse("");
+    private Object matchToEnumOrEmpty(String name, Schema innerSchema, String propertyName) {
+        String result = Optional.ofNullable(innerSchema.getEnum()).orElse(List.of("")).stream().filter(value -> name.contains(value.toString())).findFirst().orElse("").toString();
+        if (result.isEmpty()) {
+            return globalContext.getDiscriminators()
+                    .stream()
+                    .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
+                    .findFirst()
+                    .orElse(new Discriminator().mapping(Collections.emptyMap()))
+                    .getMapping().keySet().stream().filter(key -> name.toLowerCase().contains(key.toLowerCase()))
+                    .findFirst()
+                    .orElse("");
+        }
+        return result;
     }
 
     private void populateWithComposedSchema(Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
@@ -427,11 +439,28 @@ public class PayloadGenerator {
         }
 
         if (composedSchema.getAnyOf() != null) {
+            mapDiscriminator(propertyName, composedSchema, composedSchema.getAnyOf());
             addXXXOfExamples(values, propertyName, composedSchema.getAnyOf(), "ANY_OF");
         }
 
         if (composedSchema.getOneOf() != null) {
+            mapDiscriminator(propertyName, composedSchema, composedSchema.getOneOf());
             addXXXOfExamples(values, propertyName, composedSchema.getOneOf(), "ONE_OF");
+        }
+    }
+
+    private void mapDiscriminator(String propertyName, ComposedSchema composedSchema, List<Schema> anyOf) {
+        if (composedSchema.getDiscriminator() != null) {
+            globalContext.getDiscriminators().add(composedSchema.getDiscriminator());
+            for (Schema<?> anyOfSchema : anyOf) {
+                Discriminator discriminator = new Discriminator();
+                discriminator.setPropertyName(composedSchema.getDiscriminator().getPropertyName());
+                if (anyOfSchema.get$ref() != null) {
+                    globalContext.getSchemaMap().get(anyOfSchema.get$ref().substring(anyOfSchema.get$ref().lastIndexOf("/") + 1)).setDiscriminator(discriminator);
+                } else {
+                    anyOfSchema.setDiscriminator(discriminator);
+                }
+            }
         }
     }
 

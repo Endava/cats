@@ -31,7 +31,6 @@ import java.util.Set;
 class FuzzingDataFactoryTest {
     @Inject
     CatsGlobalContext catsGlobalContext;
-
     private FilesArguments filesArguments;
     private ProcessingArguments processingArguments;
     private FuzzingDataFactory fuzzingDataFactory;
@@ -53,6 +52,9 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data.get(0).getMethod()).isEqualByComparingTo(HttpMethod.POST);
         Assertions.assertThat(data.get(1).getMethod()).isEqualByComparingTo(HttpMethod.POST);
         Assertions.assertThat(data.get(2).getMethod()).isEqualByComparingTo(HttpMethod.GET);
+
+        Assertions.assertThat(data.get(0).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
+        Assertions.assertThat(data.get(1).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
     }
 
     @Test
@@ -78,6 +80,7 @@ class FuzzingDataFactoryTest {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
         options.setFlatten(true);
+
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         catsGlobalContext.getSchemaMap().clear();

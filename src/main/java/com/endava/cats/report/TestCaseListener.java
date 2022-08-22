@@ -374,7 +374,7 @@ public class TestCaseListener {
     }
 
     public boolean isFieldNotADiscriminator(String fuzzedField) {
-        return !globalContext.getDiscriminators().contains(fuzzedField);
+        return globalContext.getDiscriminators().stream().noneMatch(discriminator -> fuzzedField.endsWith(discriminator.getPropertyName()));
     }
 
     public void recordResult(String message, Object[] params, String success, PrettyLogger logger) {
