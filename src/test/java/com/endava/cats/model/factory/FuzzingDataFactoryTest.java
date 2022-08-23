@@ -82,7 +82,7 @@ class FuzzingDataFactoryTest {
         options.setFlatten(true);
 
         OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get(contract))), null, options).getOpenAPI();
-        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
+        Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json"));
         catsGlobalContext.getSchemaMap().clear();
         catsGlobalContext.getSchemaMap().putAll(schemas);
         PathItem pathItem = openAPI.getPaths().get(path);

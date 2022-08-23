@@ -59,10 +59,9 @@ class OpenApiUtilsTest {
     @Test
     void shouldReturnTrueWhenContentTypeWithCharset() {
         Content content = Mockito.mock(Content.class);
-        MediaType mediaType = Mockito.mock(MediaType.class);
-        Mockito.when(content.keySet()).thenReturn(Set.of("application/json;charset=UTF-8"));
+        Mockito.when(content.keySet()).thenReturn(Set.of("application/json;charset=UTF-8","application/json"));
 
-        boolean actual = OpenApiUtils.hasContentType(content, List.of("application/json"));
+        boolean actual = OpenApiUtils.hasContentType(content, List.of("application\\/.*\\+?json;?.*"));
         Assertions.assertThat(actual).isTrue();
     }
 }

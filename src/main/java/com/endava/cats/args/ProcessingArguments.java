@@ -6,6 +6,7 @@ import picocli.CommandLine;
 
 import javax.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
 
 @Singleton
 @Getter
@@ -44,13 +45,13 @@ public class ProcessingArguments {
 
     public List<String> getContentType() {
         if (contentType == null) {
-            return List.of("application/json", "application/x-www-form-urlencoded");
+            return List.of("application\\/.*\\+?json;?.*", "application/x-www-form-urlencoded");
         }
         return List.of(contentType);
     }
 
     public String getDefaultContentType() {
-        return this.getContentType().get(0);
+        return Optional.ofNullable(contentType).orElse("application/json");
     }
 
     public enum TrimmingStrategy {

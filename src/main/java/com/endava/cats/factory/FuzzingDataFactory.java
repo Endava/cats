@@ -433,10 +433,11 @@ public class FuzzingDataFactory {
 
     /**
      * Creates a fully qualified Json path.
+     * If the initial path ends with an array, it won't add the elementEntry.
      *
      * @param jsonElementKey the initial path
      * @param elementEntry   the next element path
-     * @return if the initial path ends with an array, it won't add the elementEntry
+     * @return a fully qualified JsonPath
      */
     private String createSimpleElementPath(String jsonElementKey, String elementEntry) {
         if (jsonElementKey.contains("[*]")) {
