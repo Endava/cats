@@ -381,7 +381,7 @@ public class TestCaseListener {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         testCase.setResult(success);
         testCase.setResultDetails(replaceBrackets(message, params));
-        logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), testCase.getRequest().getHttpMethod(), success);
+        logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), success);
     }
 
     /**

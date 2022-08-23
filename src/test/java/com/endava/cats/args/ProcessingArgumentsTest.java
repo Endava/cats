@@ -11,7 +11,7 @@ class ProcessingArgumentsTest {
     @Test
     void shouldReturnDefaultContentTypes() {
         ProcessingArguments processingArguments = new ProcessingArguments();
-        Assertions.assertThat(processingArguments.getContentType()).containsExactly("application/json", "application/x-www-form-urlencoded");
+        Assertions.assertThat(processingArguments.getContentType()).containsExactly("application\\/.*\\+?json;?.*", "application/x-www-form-urlencoded");
     }
 
     @Test

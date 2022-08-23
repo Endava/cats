@@ -24,7 +24,7 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
         StringSchema stringSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getBoundaryValue(stringSchema)).isEmpty();
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getBoundaryValue(stringSchema)).isNullOrEmpty();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
