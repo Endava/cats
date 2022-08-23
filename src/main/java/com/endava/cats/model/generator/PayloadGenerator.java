@@ -439,17 +439,17 @@ public class PayloadGenerator {
         }
 
         if (composedSchema.getAnyOf() != null) {
-            mapDiscriminator(propertyName, composedSchema, composedSchema.getAnyOf());
+            mapDiscriminator(composedSchema, composedSchema.getAnyOf());
             addXXXOfExamples(values, propertyName, composedSchema.getAnyOf(), "ANY_OF");
         }
 
         if (composedSchema.getOneOf() != null) {
-            mapDiscriminator(propertyName, composedSchema, composedSchema.getOneOf());
+            mapDiscriminator(composedSchema, composedSchema.getOneOf());
             addXXXOfExamples(values, propertyName, composedSchema.getOneOf(), "ONE_OF");
         }
     }
 
-    private void mapDiscriminator(String propertyName, ComposedSchema composedSchema, List<Schema> anyOf) {
+    private void mapDiscriminator(ComposedSchema composedSchema, List<Schema> anyOf) {
         if (composedSchema.getDiscriminator() != null) {
             globalContext.getDiscriminators().add(composedSchema.getDiscriminator());
             for (Schema<?> anyOfSchema : anyOf) {

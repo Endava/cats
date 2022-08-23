@@ -31,7 +31,7 @@ public abstract class OpenApiUtils {
     public static OpenAPI readOpenApi(String location) throws IOException {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
-//        options.setFlatten(true);
+        options.setFlatten(true);
 
         OpenAPI openAPI = getOpenAPI(new OpenAPIV3Parser(), location, options);
 
