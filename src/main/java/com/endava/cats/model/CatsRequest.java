@@ -29,9 +29,10 @@ public class CatsRequest {
 
     @AllArgsConstructor
     @Getter
+    @Setter
     @ToString
     public static class Header {
-        private final String name;
-        private final Object value;
+        private String name;
+        private Object value;
     }
 }

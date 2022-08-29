@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.args.AuthArguments;
+import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.report.CatsTestCase;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 public class ReplayCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
+    private final CatsDSLParser catsDSLParser;
 
     @CommandLine.Parameters(
             description = "The list of CATS tests. If you provide the .json extension it will be considered a path, " +
@@ -51,8 +53,9 @@ public class ReplayCommand implements Runnable {
 
 
     @Inject
-    public ReplayCommand(ServiceCaller serviceCaller) {
+    public ReplayCommand(ServiceCaller serviceCaller, CatsDSLParser catsDSLParser) {
         this.serviceCaller = serviceCaller;
+        this.catsDSLParser = catsDSLParser;
     }
 
     public List<String> parseTestCases() {
@@ -67,6 +70,8 @@ public class ReplayCommand implements Runnable {
         logger.note("Loaded content: \n" + testCaseFile);
         CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
         logger.info("Calling service endpoints: {}", testCase.getRequest().getUrl());
+        testCase.getRequest().getHeaders()
+                .forEach(header -> header.setValue(catsDSLParser.parseAndGetResult(header.getValue().toString(), null)));
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
 
         logger.complete("Response body: \n{}", JsonUtils.GSON.toJson(response.getJsonBody()));
