@@ -16,6 +16,8 @@ import javax.inject.Inject;
         usageHelpAutoWidth = true,
         description = "Run OpenAPI contract linters, also called ContractInfoFuzzers",
         abbreviateSynopsis = true,
+        exitCodeOnInvalidInput = 191,
+        exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Dependent

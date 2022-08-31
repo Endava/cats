@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
         usageHelpAutoWidth = true,
         description = "Run Fuzzers based on a supplied request template or query & path params",
         abbreviateSynopsis = true,
+        exitCodeOnInvalidInput = 191,
+        exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 public class TemplateFuzzCommand implements Runnable {

@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
         name = "replay",
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
+        exitCodeOnInvalidInput = 191,
+        exitCodeOnExecutionException = 192,
         description = "Replay previously executed CATS tests",
         versionProvider = VersionProvider.class)
 @Dependent
