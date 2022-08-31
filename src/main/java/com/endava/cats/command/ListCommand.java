@@ -36,6 +36,8 @@ import static org.fusesource.jansi.Ansi.ansi;
         name = "list",
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
+        exitCodeOnInvalidInput = 191,
+        exitCodeOnExecutionException = 192,
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
         versionProvider = VersionProvider.class)
 @Dependent

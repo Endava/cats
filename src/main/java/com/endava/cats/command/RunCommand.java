@@ -26,6 +26,8 @@ import java.util.List;
         usageHelpAutoWidth = true,
         description = "Run functional tests written in CATS YAML format",
         abbreviateSynopsis = true,
+        exitCodeOnInvalidInput = 191,
+        exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Dependent

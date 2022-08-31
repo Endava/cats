@@ -46,6 +46,8 @@ import static org.fusesource.jansi.Ansi.ansi;
         versionProvider = VersionProvider.class,
         commandListHeading = "%n@|bold,underline Commands:|@%n",
         defaultValueProvider = CommandLine.PropertiesDefaultProvider.class,
+        exitCodeOnInvalidInput = 191,
+        exitCodeOnExecutionException = 192,
         resourceBundle = "version",
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
@@ -101,6 +103,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     CatsGlobalContext globalContext;
 
+    private int exitCodeDueToErrors;
+
     @Override
     public void run() {
         try {
@@ -110,6 +114,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         } catch (IOException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.getMessage());
             logger.debug("Stacktrace", e);
+            exitCodeDueToErrors = 192;
         }
     }
 
@@ -235,6 +240,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Override
     public int getExitCode() {
-        return executionStatisticsListener.getErrors();
+        return exitCodeDueToErrors + executionStatisticsListener.getErrors();
     }
 }
