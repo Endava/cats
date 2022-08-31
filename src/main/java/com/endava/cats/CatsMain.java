@@ -1,6 +1,8 @@
 package com.endava.cats;
 
 import com.endava.cats.command.CatsCommand;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
 import picocli.CommandLine;
@@ -20,8 +22,14 @@ public class CatsMain implements QuarkusApplication {
     @Inject
     CommandLine.IFactory factory;
 
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsMain.class);
+
     @Override
     public int run(String... args) {
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            logger.fatal("Something unexpected happened!", e);
+        });
+
         return new CommandLine(catsCommand, factory)
                 .setCaseInsensitiveEnumValuesAllowed(true).setColorScheme(colorScheme())
                 .execute(args);
