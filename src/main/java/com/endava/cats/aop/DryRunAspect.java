@@ -110,6 +110,9 @@ public class DryRunAspect {
             if (context.getMethod().getName().startsWith("writeTestCase")) {
                 return dontWriteTestCase();
             }
+            if (context.getMethod().getName().startsWith("initReportingPath")) {
+                return 0;
+            }
         }
         return context.proceed();
     }
