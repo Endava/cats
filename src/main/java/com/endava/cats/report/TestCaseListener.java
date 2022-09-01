@@ -123,7 +123,9 @@ public class TestCaseListener {
         if (testCase.getPath() == null) {
             testCase.setPath(DEFAULT_ERROR);
         }
-        testCase.setRequest(CatsRequest.builder().httpMethod(DEFAULT_ERROR).build());
+        if (testCase.getRequest() == null) {
+            testCase.setRequest(CatsRequest.builder().httpMethod(DEFAULT_ERROR).build());
+        }
     }
 
     private void startTestCase() {
