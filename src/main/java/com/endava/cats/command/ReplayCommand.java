@@ -72,7 +72,7 @@ public class ReplayCommand implements Runnable {
         logger.note("Loaded content: \n" + testCaseFile);
         CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
         logger.info("Calling service endpoints: {}", testCase.getRequest().getUrl());
-        testCase.getRequest().getHeaders()
+        Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList())
                 .forEach(header -> header.setValue(catsDSLParser.parseAndGetResult(header.getValue().toString(), null)));
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
 
