@@ -27,10 +27,6 @@ public class CatsTestCase {
     private String fuzzer;
     private String fullRequestPath;
 
-    public String executionTimeString() {
-        return testId + " - " + response.getResponseTimeInMs() + "ms";
-    }
-
     public boolean isNotSkipped() {
         return !"skipped".equalsIgnoreCase(result);
     }
