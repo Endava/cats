@@ -2,6 +2,7 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.report.CatsTestCaseSummary;
@@ -47,6 +48,8 @@ public abstract class TestCaseExporter {
     protected static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
     protected static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
     private static final String REPORT_JS = "cats-summary-report.js";
+
+    private static final String EXECUTION_TIME_REPORT = "execution_times.js";
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
@@ -115,22 +118,40 @@ public abstract class TestCaseExporter {
     private void writeExecutionTimesForPathAndHttpMethod(String key, List<CatsTestCase> value) {
         double average = value.stream().mapToLong(testCase -> testCase.getResponse().getResponseTimeInMs()).average().orElse(0);
         List<CatsTestCase> sortedRuns = value.stream().sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs())).collect(Collectors.toList());
-        CatsTestCase bestCase = sortedRuns.get(0);
-        CatsTestCase worstCase = sortedRuns.get(sortedRuns.size() - 1);
-        List<String> executions = sortedRuns.stream().map(CatsTestCase::executionTimeString).collect(Collectors.toList());
-        TimeExecutionDetails timeExecutionDetails = TimeExecutionDetails.builder().average(average).
-                path(key).bestCase(bestCase.executionTimeString()).worstCase(worstCase.executionTimeString()).
-                executions(executions).build();
+        CatsTestCase bestCaseTestCase = sortedRuns.get(0);
+        CatsTestCase worstCaseTestCase = sortedRuns.get(sortedRuns.size() - 1);
+        List<TimeExecution> executions = sortedRuns.stream()
+                .map(tetCase -> TimeExecution.builder()
+                        .testId(tetCase.getTestId())
+                        .executionInMs(tetCase.getResponse().getResponseTimeInMs())
+                        .build())
+                .collect(Collectors.toList());
+
+        TimeExecutionDetails timeExecutionDetails = TimeExecutionDetails.builder().average(average)
+                .path(key).bestCase(TimeExecution.builder()
+                        .testId(bestCaseTestCase.getTestId())
+                        .executionInMs(bestCaseTestCase.getResponse().getResponseTimeInMs())
+                        .build())
+                .worstCase(TimeExecution.builder()
+                        .testId(worstCaseTestCase.getTestId())
+                        .executionInMs(worstCaseTestCase.getResponse().getResponseTimeInMs())
+                        .build())
+                .executions(executions).build();
 
 
         logger.info("Details for path {} ", ansi().fg(Ansi.Color.GREEN).a(timeExecutionDetails.getPath()).reset());
         logger.note(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
-        logger.note(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase()));
-        logger.note(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase()));
+        logger.note(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase().executionTimeString()));
+        logger.note(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase().executionTimeString()));
 
         if (reportingArguments.isPrintDetailedExecutionStatistics()) {
             logger.note("{} executed tests (sorted by response time):  {}", timeExecutionDetails.getExecutions().size(), timeExecutionDetails.getExecutions());
             logger.noFormat(" ");
+        }
+        try {
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), JsonUtils.GSON.toJson(timeExecutionDetails));
+        } catch (IOException e) {
+            logger.warning("There was an issue writing the execution_times.js", e);
         }
     }
 

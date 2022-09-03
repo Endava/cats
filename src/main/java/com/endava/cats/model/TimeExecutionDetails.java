@@ -11,8 +11,8 @@ import java.util.List;
 @ToString
 public class TimeExecutionDetails {
     private final String path;
-    private final List<String> executions;
-    private final String bestCase;
-    private final String worstCase;
+    private final List<TimeExecution> executions;
+    private final TimeExecution bestCase;
+    private final TimeExecution worstCase;
     private final double average;
 }
