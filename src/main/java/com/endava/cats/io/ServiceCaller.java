@@ -350,26 +350,31 @@ public class ServiceCaller {
         Headers.Builder headers = new Headers.Builder();
         catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getName(), String.valueOf(header.getValue())));
 
+        headers.add("Connection", "close");
         if (HttpMethod.requiresBody(catsRequest.getHttpMethod())) {
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8));
+        } else {
+            //for GET and HEAD we remove Content-Type as some servers don't like it
+            headers.removeAll("Content-Type");
         }
-        Response response = okHttpClient.newCall(new Request.Builder()
+        try (Response response = okHttpClient.newCall(new Request.Builder()
                 .url(catsRequest.getUrl())
                 .headers(headers.build())
                 .method(catsRequest.getHttpMethod(), requestBody)
-                .build()).execute();
-        long endTime = System.currentTimeMillis();
+                .build()).execute()) {
+            long endTime = System.currentTimeMillis();
 
-        CatsResponse.CatsResponseBuilder catsResponseBuilder = this.populateCatsResponseFromHttpResponse(response);
-        CatsResponse catsResponse = catsResponseBuilder.httpMethod(catsRequest.getHttpMethod())
-                .responseTimeInMs(endTime - startTime)
-                .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
-                .build();
+            CatsResponse.CatsResponseBuilder catsResponseBuilder = this.populateCatsResponseFromHttpResponse(response);
+            CatsResponse catsResponse = catsResponseBuilder.httpMethod(catsRequest.getHttpMethod())
+                    .responseTimeInMs(endTime - startTime)
+                    .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
+                    .build();
 
-        logger.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
-                catsResponse.getHttpMethod(), response.message(), catsResponse.responseCodeAsString(), endTime - startTime, catsResponse.getContentLengthInBytes());
+            logger.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
+                    catsResponse.getHttpMethod(), response.message(), catsResponse.responseCodeAsString(), endTime - startTime, catsResponse.getContentLengthInBytes());
 
-        return catsResponse;
+            return catsResponse;
+        }
     }
 
     private CatsResponse.CatsResponseBuilder populateCatsResponseFromHttpResponse(Response response) throws IOException {
