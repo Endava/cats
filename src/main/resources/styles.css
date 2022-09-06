@@ -197,7 +197,7 @@ background-color: green;
   text-align: center;
 }
 .rounded {
-  border-radius:20px;
+  border-radius:10px;
   padding:5px 10px;
 }
 .error {
@@ -327,3 +327,38 @@ display:block;
   margin-top: 10px;
 }
 .details .subWrapper {margin-left:20px;}
+
+.method {
+  min-width: 80px;
+  padding: 6px 0;
+  margin-right: 5px;
+}
+
+.POST {
+  background: #49cc90;
+}
+
+.PUT {
+  background: #fca130;
+}
+
+.DELETE {
+  background: #f93e3e;
+}
+
+.GET {
+  background: #61affe;
+}
+
+.PATCH {
+  background: #50e3c2;
+}
+
+.HEAD {
+  background: #9012fe;
+}
+
+.CONNECT, .COPY, .MOVE, .PROPPATCH, .PROPFIND, .MKCOL, .LOCK, .UNLOCK, .SEARCH, .BIND, .UNBIND, .REBIND, .MKREDIRECTREF, .UPDATEREDIRECTREF, .ORDERPATCH,
+.ACL, .REPORT {
+  background: steelblue;
+}
