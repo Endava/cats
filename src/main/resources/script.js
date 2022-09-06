@@ -42,6 +42,9 @@ function populateTable() {
 }
 
 $(document).ready(function () {
+    selectedFuzzer = $("#fuzzerSelect option:selected").text();
+    populateTable();
+
     //filter options
     $("#summary span, #summary span b").on("click", function (e) {
         e.preventDefault();
