@@ -1,10 +1,9 @@
 package com.endava.cats.model;
 
-import lombok.AllArgsConstructor;
+import com.endava.cats.model.KeyValuePair;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +12,7 @@ import java.util.List;
 @Setter
 @Builder
 public class CatsRequest {
-    List<Header> headers;
+    List<KeyValuePair<String, Object>> headers;
     String payload;
     String httpMethod;
     String url;
@@ -25,14 +24,5 @@ public class CatsRequest {
         request.url = "";
         request.headers = Collections.emptyList();
         return request;
-    }
-
-    @AllArgsConstructor
-    @Getter
-    @Setter
-    @ToString
-    public static class Header {
-        private String name;
-        private Object value;
     }
 }

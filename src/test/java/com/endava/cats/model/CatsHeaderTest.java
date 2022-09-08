@@ -161,7 +161,7 @@ class CatsHeaderTest {
         parameter.setSchema(schema);
         CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
 
-        Assertions.assertThat(header.nameAndValue()).contains("header", "{", "}", "=");
+        Assertions.assertThat(header.nameAndValue()).contains("header", "=");
         Assertions.assertThat(header.toString()).contains("header", "required", "{", "}", "=");
     }
 }

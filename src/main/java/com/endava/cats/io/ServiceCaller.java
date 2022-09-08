@@ -9,7 +9,6 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
-import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
@@ -27,7 +26,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.stripe.net.FormEncoder;
-import com.stripe.net.KeyValuePair;
+import com.endava.cats.model.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONValue;
@@ -126,6 +125,7 @@ public class ServiceCaller {
                     .writeTimeout(apiArguments.getWriteTimeout(), TimeUnit.SECONDS)
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+                    .retryOnConnectionFailure(true)
                     .hostnameVerifier((hostname, session) -> true).build();
 
             logger.note("Proxy configuration to be used: {}", authArguments.getProxy());
@@ -185,7 +185,7 @@ public class ServiceCaller {
         processedPayload = this.convertPayloadInSpecificContentType(processedPayload, data);
         logger.debug("Payload replaced with ref data: {}", processedPayload);
 
-        List<CatsRequest.Header> headers = this.buildHeaders(data);
+        List<KeyValuePair<String, Object>> headers = this.buildHeaders(data);
         CatsRequest catsRequest = CatsRequest.builder()
                 .headers(headers).payload(processedPayload)
                 .httpMethod(data.getHttpMethod().name())
@@ -288,8 +288,8 @@ public class ServiceCaller {
     }
 
 
-    List<CatsRequest.Header> buildHeaders(ServiceData data) {
-        List<CatsRequest.Header> headers = new ArrayList<>();
+    List<KeyValuePair<String, Object>> buildHeaders(ServiceData data) {
+        List<KeyValuePair<String, Object>> headers = new ArrayList<>();
 
         this.addMandatoryHeaders(data, headers);
         this.addSuppliedHeaders(headers, data.getRelativePath(), data);
@@ -348,9 +348,8 @@ public class ServiceCaller {
         long startTime = System.currentTimeMillis();
         RequestBody requestBody = null;
         Headers.Builder headers = new Headers.Builder();
-        catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getName(), String.valueOf(header.getValue())));
+        catsRequest.getHeaders().forEach(header -> headers.addUnsafeNonAscii(header.getKey(), String.valueOf(header.getValue())));
 
-        headers.add("Connection", "close");
         if (HttpMethod.requiresBody(catsRequest.getHttpMethod())) {
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8));
         } else {
@@ -378,10 +377,10 @@ public class ServiceCaller {
     }
 
     private CatsResponse.CatsResponseBuilder populateCatsResponseFromHttpResponse(Response response) throws IOException {
-        List<CatsHeader> responseHeaders = response.headers()
+        List<KeyValuePair<String, String>> responseHeaders = response.headers()
                 .toMultimap()
                 .entrySet().stream()
-                .map(header -> CatsHeader.builder().name(header.getKey()).value(header.getValue().get(0)).build()).collect(Collectors.toList());
+                .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().get(0))).collect(Collectors.toList());
 
         String rawResponse = this.getAsRawString(response);
         String jsonResponse = this.getAsJsonString(rawResponse);
@@ -401,15 +400,15 @@ public class ServiceCaller {
                 .numberOfWordsInResponse(numberOfWords);
     }
 
-    private void addBasicAuth(List<CatsRequest.Header> headers) {
+    private void addBasicAuth(List<KeyValuePair<String, Object>> headers) {
         if (authArguments.isBasicAuthSupplied()) {
-            headers.add(new CatsRequest.Header("Authorization", authArguments.getBasicAuthHeader()));
+            headers.add(new KeyValuePair<>("Authorization", authArguments.getBasicAuthHeader()));
         }
     }
 
-    private void removeSkippedHeaders(ServiceData data, List<CatsRequest.Header> headers) {
+    private void removeSkippedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
         for (String skippedHeader : data.getSkippedHeaders()) {
-            headers.removeIf(header -> header.getName().equalsIgnoreCase(skippedHeader));
+            headers.removeIf(header -> header.getKey().equalsIgnoreCase(skippedHeader));
         }
     }
 
@@ -435,16 +434,16 @@ public class ServiceCaller {
         return processedPath;
     }
 
-    private void addMandatoryHeaders(ServiceData data, List<CatsRequest.Header> headers) {
-        data.getHeaders().forEach(header -> headers.add(new CatsRequest.Header(header.getName(), header.getValue())));
+    private void addMandatoryHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
+        data.getHeaders().forEach(header -> headers.add(new KeyValuePair<>(header.getName(), header.getValue())));
         addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
         addIfNotPresent(HttpHeaders.CONTENT_TYPE, data.getContentType(), data, headers);
     }
 
-    private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<CatsRequest.Header> headers) {
+    private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<KeyValuePair<String, Object>> headers) {
         boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(headerName));
         if (notAccept) {
-            headers.add(new CatsRequest.Header(headerName, headerValue));
+            headers.add(new KeyValuePair<>(headerName, headerValue));
         }
     }
 
@@ -488,7 +487,7 @@ public class ServiceCaller {
         testCaseListener.addFullRequestPath(HtmlEscapers.htmlEscaper().escape(catsRequest.getUrl()));
     }
 
-    private void addSuppliedHeaders(List<CatsRequest.Header> headers, String relativePath, ServiceData data) {
+    private void addSuppliedHeaders(List<KeyValuePair<String, Object>> headers, String relativePath, ServiceData data) {
         logger.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
         logger.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsDSLWords.ALL));
 
@@ -504,8 +503,8 @@ public class ServiceCaller {
             if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(headers, data, suppliedHeader);
             } else if (!data.isAddUserHeaders() && (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey()))) {
-                headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
-                headers.add(new CatsRequest.Header(suppliedHeader.getKey(), suppliedHeader.getValue()));
+                headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
+                headers.add(new KeyValuePair<>(suppliedHeader.getKey(), suppliedHeader.getValue()));
             }
         }
     }
@@ -518,16 +517,16 @@ public class ServiceCaller {
         return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().contains(authHeader));
     }
 
-    private void replaceHeaderIfNotFuzzed(List<CatsRequest.Header> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {
+    private void replaceHeaderIfNotFuzzed(List<KeyValuePair<String, Object>> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {
         if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
-            headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
-            headers.add(new CatsRequest.Header(suppliedHeader.getKey(), suppliedHeader.getValue()));
+            headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
+            headers.add(new KeyValuePair<>(suppliedHeader.getKey(), suppliedHeader.getValue()));
         } else {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behaviour on a valid header value */
-            CatsRequest.Header existingHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey())).findFirst().orElse(new CatsRequest.Header("", ""));
+            KeyValuePair<String, Object> existingHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey())).findFirst().orElse(new KeyValuePair<>("", ""));
             Object finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
-            headers.removeIf(header -> header.getName().equalsIgnoreCase(suppliedHeader.getKey()));
-            headers.add(new CatsRequest.Header(suppliedHeader.getKey(), finalHeaderValue));
+            headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
+            headers.add(new KeyValuePair<>(suppliedHeader.getKey(), finalHeaderValue));
             logger.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }
     }

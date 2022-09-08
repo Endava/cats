@@ -17,6 +17,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.jayway.jsonpath.JsonPathException;
+import com.endava.cats.model.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -63,7 +64,7 @@ public class TemplateFuzzer implements Fuzzer {
                 logger.info("Running {} payloads for field [{}]", payloads.size(), targetField);
 
                 for (String payload : payloads) {
-                    List<CatsRequest.Header> replacedHeaders = this.replaceHeaders(data, payload, targetField);
+                    List<KeyValuePair<String, Object>> replacedHeaders = this.replaceHeaders(data, payload, targetField);
                     String replacedPayload = this.replacePayload(data, payload, targetField);
                     String replacedPath = this.replacePath(data, payload, targetField);
                     CatsRequest catsRequest = CatsRequest.builder()
@@ -133,9 +134,9 @@ public class TemplateFuzzer implements Fuzzer {
         return Collections.emptyList();
     }
 
-    private List<CatsRequest.Header> replaceHeaders(FuzzingData data, String withData, String targetField) {
+    private List<KeyValuePair<String, Object>> replaceHeaders(FuzzingData data, Object withData, String targetField) {
         return data.getHeaders().stream()
-                .map(catsHeader -> new CatsRequest.Header(catsHeader.getName(),
+                .map(catsHeader -> new KeyValuePair<>(catsHeader.getName(),
                         catsHeader.getName().equalsIgnoreCase(targetField) ? withData : catsHeader.getValue()))
                 .collect(Collectors.toList());
     }

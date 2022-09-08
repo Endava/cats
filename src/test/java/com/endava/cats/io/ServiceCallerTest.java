@@ -15,6 +15,7 @@ import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.endava.cats.model.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
@@ -340,8 +341,8 @@ class ServiceCallerTest {
     @Test
     void shouldRemoveSkippedHeaders() {
         ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsHeader").build())).skippedHeaders(Set.of("catsHeader")).build();
-        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
-        Optional<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsHeader")).findFirst();
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
+        Optional<KeyValuePair<String, Object>> catsHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsHeader")).findFirst();
 
         Assertions.assertThat(catsHeader).isEmpty();
     }
@@ -359,8 +360,8 @@ class ServiceCallerTest {
     void shouldMergeFuzzingForSuppliedHeaders() {
         ServiceData data = ServiceData.builder().headers(Set.of(CatsHeader.builder().name("catsFuzzedHeader").value("  anotherValue").build()))
                 .fuzzedHeader("catsFuzzedHeader").contentType("application/json").build();
-        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
-        List<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsFuzzedHeader")).collect(Collectors.toList());
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
+        List<KeyValuePair<String, Object>> catsHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).collect(Collectors.toList());
 
         Assertions.assertThat(catsHeader).hasSize(1);
         Assertions.assertThat(catsHeader.get(0).getValue()).isEqualTo("  cats");
@@ -372,11 +373,11 @@ class ServiceCallerTest {
                 .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build(), CatsHeader.builder().name("catsFuzzedHeader").value("anotherValue").build()))
                 .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
 
-        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
-        List<String> headerNames = headers.stream().map(CatsRequest.Header::getName).collect(Collectors.toList());
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
+        List<String> headerNames = headers.stream().map(KeyValuePair::getKey).collect(Collectors.toList());
         Assertions.assertThat(headerNames).doesNotContain("header").contains("catsFuzzedHeader", "simpleHeader");
 
-        List<CatsRequest.Header> catsHeader = headers.stream().filter(header -> header.getName().equalsIgnoreCase("catsFuzzedHeader")).collect(Collectors.toList());
+        List<KeyValuePair<String, Object>> catsHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).collect(Collectors.toList());
         Assertions.assertThat(catsHeader).hasSize(1);
         Assertions.assertThat(catsHeader.get(0).getValue()).isEqualTo("cats");
     }
@@ -388,8 +389,8 @@ class ServiceCallerTest {
                 .relativePath("auth-header")
                 .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
 
-        List<CatsRequest.Header> headers = serviceCaller.buildHeaders(data);
-        List<String> headerNames = headers.stream().map(CatsRequest.Header::getName).collect(Collectors.toList());
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
+        List<String> headerNames = headers.stream().map(KeyValuePair::getKey).collect(Collectors.toList());
         Assertions.assertThat(headerNames).doesNotContain("header", "catsFuzzedHeader").contains("simpleHeader", "jwt");
     }
 

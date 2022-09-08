@@ -2,11 +2,11 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.model.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -31,10 +31,10 @@ import static com.endava.cats.fuzzer.headers.UnsupportedAcceptHeadersFuzzerTest.
 @QuarkusTest
 class CheckSecurityHeadersFuzzerTest {
 
-    private static final List<CatsHeader> SOME_SECURITY_HEADERS = Arrays.asList(CatsHeader.builder().name("Cache-Control").value("no-store").build(),
-            CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build());
-    private static final List<CatsHeader> MISSING_HEADERS = Arrays.asList(CatsHeader.builder().name("X-Frame-Options").value("DENY").build(),
-            CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(), CatsHeader.builder().name("X-XSS-Protection").value("0").build());
+    private static final List<KeyValuePair<String, String>> SOME_SECURITY_HEADERS = Arrays.asList(new KeyValuePair<>("Cache-Control", "no-store"),
+            new KeyValuePair<>("X-Content-Type-Options", "nosniff"));
+    private static final List<KeyValuePair<String, String>> MISSING_HEADERS = Arrays.asList(new KeyValuePair<>("X-Frame-Options", "DENY"),
+            new KeyValuePair<>("X-XSS-Protection", "1; mode=block"), new KeyValuePair<>("X-XSS-Protection", "0"));
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
@@ -68,7 +68,7 @@ class CheckSecurityHeadersFuzzerTest {
         checkSecurityHeadersFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Missing recommended Security Headers: {}")
-                , AdditionalMatchers.aryEq(new Object[]{MISSING_HEADERS.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet())}));
+                , AdditionalMatchers.aryEq(new Object[]{MISSING_HEADERS.stream().map(Object::toString).collect(Collectors.toSet())}));
     }
 
     @Test
@@ -78,8 +78,8 @@ class CheckSecurityHeadersFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
-        List<CatsHeader> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
-        allHeaders.add(CatsHeader.builder().name("dummy").value("dummy").build());
+        List<KeyValuePair<String, String>> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
+        allHeaders.add(new KeyValuePair<>("dummy", "dummy"));
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Stream.concat(allHeaders.stream(), MISSING_HEADERS.stream())
                 .collect(Collectors.toList())).build();
