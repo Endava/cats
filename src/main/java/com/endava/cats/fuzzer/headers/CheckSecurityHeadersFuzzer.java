@@ -75,7 +75,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
         List<CatsHeader> notMatching = new ArrayList<>();
         for (Map.Entry<String, List<CatsHeader>> securityHeaders : SECURITY_HEADERS.entrySet()) {
             boolean noneMatch = catsResponse.getHeaders().stream()
-                    .noneMatch(catsHeader -> securityHeaders.getValue().stream().anyMatch(securityHeader -> catsHeader.getName().equalsIgnoreCase(securityHeader.getName())
+                    .noneMatch(catsHeader -> securityHeaders.getValue().stream().anyMatch(securityHeader -> catsHeader.getKey().equalsIgnoreCase(securityHeader.getName())
                             && catsHeader.getValue().toLowerCase().contains(securityHeader.getValue().toLowerCase())));
             if (noneMatch) {
                 notMatching.addAll(securityHeaders.getValue());

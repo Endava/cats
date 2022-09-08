@@ -1,5 +1,6 @@
 package com.endava.cats.model.report;
 
+import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -13,6 +14,7 @@ class CatsTestCaseSummaryTest {
     void givenTwoTestCaseSummaryInstancesWithNoIntPart_whenComparingThem_thenTheyAreNotEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
         testCase1.setResponse(CatsResponse.empty());
+        testCase1.setRequest(CatsRequest.builder().httpMethod("POST").build());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("ID", testCase1);
 
@@ -23,6 +25,7 @@ class CatsTestCaseSummaryTest {
     void givenTwoTestCaseSummaryInstancesWithTheDifferentStringParts_whenComparingThem_thenTheyAreNotEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
         testCase1.setResponse(CatsResponse.empty());
+        testCase1.setRequest(CatsRequest.builder().httpMethod("POST").build());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("JD1", testCase1);
 
@@ -33,6 +36,7 @@ class CatsTestCaseSummaryTest {
     void givenTwoTestCaseSummaryInstancesWithTheSameDetails_whenComparingThem_thenTheyAreEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
         testCase1.setResponse(CatsResponse.empty());
+        testCase1.setRequest(CatsRequest.builder().httpMethod("POST").build());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
 
@@ -43,6 +47,7 @@ class CatsTestCaseSummaryTest {
     void givenTwoTestCaseSummaryInstancesWithTheDifferentDetails_whenComparingThem_thenTheyAreNotEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
         testCase1.setResponse(CatsResponse.empty());
+        testCase1.setRequest(CatsRequest.builder().httpMethod("POST").build());
         CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase("ID1", testCase1);
         CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase("ID2", testCase1);
 

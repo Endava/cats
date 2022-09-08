@@ -3,37 +3,29 @@ package com.endava.cats.model;
 import com.endava.cats.model.ann.Exclude;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.endava.cats.model.KeyValuePair;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 @Builder
 @Getter
 public class CatsResponse {
     private final int responseCode;
     private final String httpMethod;
-    private final JsonElement jsonBody;
+    private final List<KeyValuePair<String, String>> headers;
     private final long responseTimeInMs;
     private final long numberOfWordsInResponse;
     private final long numberOfLinesInResponse;
     private final long contentLengthInBytes;
+    private final JsonElement jsonBody;
 
-    @Exclude
-    private final List<CatsHeader> headers;
     @Exclude
     private final String body;
     @Exclude
     private final String fuzzedField;
-
-    public static CatsResponse from(int code, String body, String methodType, long ms, List<CatsHeader> responseHeaders, Set<String> fuzzedFields) {
-        return CatsResponse.builder().responseCode(code).body(body).httpMethod(methodType)
-                .responseTimeInMs(ms).headers(responseHeaders)
-                .jsonBody(JsonParser.parseString(body))
-                .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null)).build();
-    }
 
     public static CatsResponse from(int code, String body, String methodType, long ms) {
         return CatsResponse.builder().responseCode(code).body(body)

@@ -5,11 +5,13 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.util.JsonUtils;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
+import com.endava.cats.model.KeyValuePair;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.io.StringReader;
+import java.util.List;
 
 @Getter
 @Setter
@@ -50,5 +52,11 @@ public class CatsTestCase {
 
     public String getResponseJson() {
         return JsonUtils.GSON.toJson(response);
+    }
+
+    public static void main(String[] args) {
+        List<KeyValuePair<String, Object>> headers = List.of(new KeyValuePair<>("test", "talue"));
+        CatsRequest request1 = CatsRequest.builder().headers(headers).build();
+        System.out.println(JsonUtils.GSON.toJson(request1));
     }
 }

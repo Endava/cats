@@ -82,7 +82,7 @@ public class CatsHeader {
     }
 
     public String nameAndValue() {
-        return "{" + "name=" + name + ", value=" + value + "}";
+        return name + "=" + value;
     }
 
     @Override
