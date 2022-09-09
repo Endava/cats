@@ -57,8 +57,16 @@ public class ReportingArguments {
     public void processLogData() {
         for (String logLine : this.getLogData()) {
             String[] log = logLine.strip().trim().split(":");
-            CatsUtil.setLogLevel(log[0], log[1]);
-            logger.info("Setting log level to {} for package {}", log[1], log[0]);
+            String level;
+            String pkg = "com.endava.cats";
+            if (log.length == 1) {
+                level = log[0];
+            } else {
+                level = log[1];
+                pkg = log[0];
+            }
+            CatsUtil.setLogLevel(pkg, level);
+            logger.info("Setting log level to {} for package {}", level, pkg);
         }
         if (debug) {
             CatsUtil.setCatsLogLevel("ALL");
