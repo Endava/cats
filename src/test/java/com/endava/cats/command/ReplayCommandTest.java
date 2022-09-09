@@ -44,7 +44,9 @@ class ReplayCommandTest {
     void shouldExecuteIfTestCasesSupplied(boolean debug) throws Exception {
         replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
         ReflectionTestUtils.setField(replayCommand, "debug", debug);
-        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(Mockito.mock(CatsResponse.class));
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        Mockito.when(response.getBody()).thenReturn("");
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenReturn(response);
         replayCommand.run();
         Mockito.verify(serviceCaller, Mockito.times(1)).callService(Mockito.any(), Mockito.eq(Collections.emptySet()));
     }
