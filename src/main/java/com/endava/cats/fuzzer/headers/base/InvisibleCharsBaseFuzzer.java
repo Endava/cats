@@ -19,8 +19,7 @@ public abstract class InvisibleCharsBaseFuzzer extends ExpectOnly4XXBaseHeadersF
     @Override
     public List<FuzzingStrategy> fuzzStrategy() {
         return this.getInvisibleChars()
-                .stream().map(value -> concreteFuzzStrategy().withData(value))
-                .collect(Collectors.toList());
+                .stream().map(value -> concreteFuzzStrategy().withData(value)).toList();
     }
 
     @Override

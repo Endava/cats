@@ -98,14 +98,13 @@ public class FilterArguments {
 
     public List<Fuzzer> getAllRegisteredFuzzers() {
         if (ALL_CATS_FUZZERS.isEmpty()) {
-            List<String> interimFuzzersList = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
+            List<String> interimFuzzersList = fuzzers.stream().map(Object::toString).toList();
             interimFuzzersList = this.removeBasedOnTrimStrategy(interimFuzzersList);
 
             List<String> finalFuzzersList = this.removeBasedOnSanitizationStrategy(interimFuzzersList);
 
             ALL_CATS_FUZZERS.addAll(fuzzers.stream().filter(fuzzer -> finalFuzzersList.contains(fuzzer.toString()))
-                    .sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName()))
-                    .collect(Collectors.toList()));
+                    .sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName())).toList());
         }
 
         return ALL_CATS_FUZZERS;
@@ -116,8 +115,7 @@ public class FilterArguments {
                 ? ValidateAndSanitize.class : SanitizeAndValidate.class;
         List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, filterAnnotation);
 
-        return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer))
-                .collect(Collectors.toList());
+        return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();
     }
 
     public List<String> removeBasedOnTrimStrategy(List<String> currentFuzzers) {
@@ -125,14 +123,12 @@ public class FilterArguments {
                 ? ValidateAndTrim.class : TrimAndValidate.class;
         List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, filterAnnotation);
 
-        return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer))
-                .collect(Collectors.toList());
+        return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();
     }
 
     private List<String> removeContractFuzzersIfNeeded(List<String> currentFuzzers) {
         if (ignoreArguments.isAnyIgnoredArgumentSupplied()) {
-            return currentFuzzers.stream().filter(fuzzer -> !fuzzer.contains("Contract"))
-                    .collect(Collectors.toList());
+            return currentFuzzers.stream().filter(fuzzer -> !fuzzer.contains("Contract")).toList();
         }
 
         return currentFuzzers;
@@ -142,10 +138,10 @@ public class FilterArguments {
         List<String> initialFuzzersList = this.constructFuzzersListFromCheckArguments();
 
         if (!this.getSuppliedFuzzers().isEmpty()) {
-            List<String> suppliedFuzzerNames = suppliedFuzzers.stream().map(String::trim).collect(Collectors.toList());
+            List<String> suppliedFuzzerNames = suppliedFuzzers.stream().map(String::trim).toList();
             initialFuzzersList = initialFuzzersList.stream()
                     .filter(fuzzer -> suppliedFuzzerNames.stream().anyMatch(fuzzer::contains))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         return initialFuzzersList;
@@ -182,7 +178,7 @@ public class FilterArguments {
     private List<String> filterFuzzersByAnnotationWhenCheckArgumentSupplied(boolean checkArgument, Class<? extends Annotation> annotation) {
         if (checkArgument) {
             return fuzzers.stream().filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
-                    .map(Object::toString).collect(Collectors.toList());
+                    .map(Object::toString).toList();
         }
         return Collections.emptyList();
     }
@@ -193,7 +189,7 @@ public class FilterArguments {
         return allowedFuzzers.stream()
                 .filter(fuzzer ->
                         fuzzersToExclude.stream().noneMatch(fuzzer::contains))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void customFilter(String specialFuzzer) {

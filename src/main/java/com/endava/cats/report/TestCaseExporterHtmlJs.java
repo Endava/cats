@@ -27,7 +27,7 @@ public class TestCaseExporterHtmlJs extends TestCaseExporter {
         List<String> fuzzers = report.getTestCases().stream()
                 .map(CatsTestCaseSummary::getFuzzer)
                 .distinct().sorted()
-                .collect(Collectors.toList());
+                .toList();
 
         context.put("FUZZERS", fuzzers);
         context.put("JS", true);

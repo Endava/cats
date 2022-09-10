@@ -270,18 +270,17 @@ public class FuzzingDataFactory {
         List<String> reqSchemas = new ArrayList<>();
         String currentRequestSchema = mediaType.getSchema().get$ref();
 
-        if (currentRequestSchema == null && mediaType.getSchema() instanceof ArraySchema) {
-            currentRequestSchema = ((ArraySchema) mediaType.getSchema()).getItems().get$ref();
+        if (currentRequestSchema == null && mediaType.getSchema() instanceof ArraySchema arraySchema) {
+            currentRequestSchema = arraySchema.getItems().get$ref();
         }
         if (currentRequestSchema != null) {
             reqSchemas.add(this.getSchemaName(currentRequestSchema));
-        } else if (mediaType.getSchema() instanceof ComposedSchema) {
-            ComposedSchema schema = (ComposedSchema) mediaType.getSchema();
-            if (schema.getAnyOf() != null) {
-                schema.getAnyOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+        } else if (mediaType.getSchema() instanceof ComposedSchema composedSchema) {
+            if (composedSchema.getAnyOf() != null) {
+                composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
             }
-            if (schema.getOneOf() != null) {
-                schema.getOneOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+            if (composedSchema.getOneOf() != null) {
+                composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
             }
         }
 
@@ -311,7 +310,7 @@ public class FuzzingDataFactory {
 
         if (mediaType != null && mediaType.getSchema() instanceof ArraySchema) {
             /*when dealing with ArraySchemas we make sure we have 2 elements in the array*/
-            result = result.stream().map(payload -> "[" + payload + "," + payload + "]").collect(Collectors.toList());
+            result = result.stream().map(payload -> "[" + payload + "," + payload + "]").toList();
         }
         return result;
     }
@@ -391,8 +390,7 @@ public class FuzzingDataFactory {
                             newMap.putAll(map1);
                             newMap.putAll(map2);
                             return newMap;
-                        })))
-                .collect(Collectors.toList());
+                        }))).toList();
 
         return listOfMap.stream().flatMap(m -> m.entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey,
@@ -560,8 +558,8 @@ public class FuzzingDataFactory {
             }
             if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
                 Schema<?> respSchema = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema();
-                if (respSchema instanceof ArraySchema) {
-                    return ((ArraySchema) respSchema).getItems().get$ref();
+                if (respSchema instanceof ArraySchema arraySchema) {
+                    return arraySchema.getItems().get$ref();
                 } else {
                     return respSchema.get$ref();
                 }

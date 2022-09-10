@@ -380,7 +380,7 @@ public class ServiceCaller {
         List<KeyValuePair<String, String>> responseHeaders = response.headers()
                 .toMultimap()
                 .entrySet().stream()
-                .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().get(0))).collect(Collectors.toList());
+                .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().get(0))).toList();
 
         String rawResponse = this.getAsRawString(response);
         String jsonResponse = this.getAsJsonString(rawResponse);

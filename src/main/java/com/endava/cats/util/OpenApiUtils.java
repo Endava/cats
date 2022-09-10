@@ -77,8 +77,8 @@ public abstract class OpenApiUtils {
             LOGGER.debug("Getting schema {} for content-type {}", schemaName, contentType);
             Schema<?> refSchema = getMediaTypeFromContent(content, contentType).getSchema();
 
-            if (refSchema instanceof ArraySchema) {
-                ref = ((ArraySchema) refSchema).getItems().get$ref();
+            if (refSchema instanceof ArraySchema arraySchema) {
+                ref = arraySchema.getItems().get$ref();
                 refSchema.set$ref(ref);
                 schemaToAdd = refSchema;
             } else if (refSchema.get$ref() != null) {

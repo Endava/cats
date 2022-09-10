@@ -28,8 +28,7 @@ public class RecommendedHttpCodesContractInfoFuzzer extends BaseContractInfoFuzz
 
         List<String> missingCodesWithOrLists = data.getMethod().getRecommendedCodes()
                 .stream()
-                .filter(code -> !data.getResponseCodes().contains(code))
-                .collect(Collectors.toList());
+                .filter(code -> !data.getResponseCodes().contains(code)).toList();
 
         List<String> missingCodes = missingCodesWithOrLists.stream()
                 .filter(code -> Arrays.stream(code.split(Pattern.quote("|"))).noneMatch(splitCode -> data.getResponseCodes().contains(splitCode)))

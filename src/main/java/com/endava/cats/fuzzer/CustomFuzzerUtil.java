@@ -139,7 +139,7 @@ public class CustomFuzzerUtil {
 
             testCaseListener.reportError(log, "The following Verify parameters were not present in the response: {}",
                     responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))
-                            .map(Map.Entry::getKey).collect(Collectors.toList()));
+                            .map(Map.Entry::getKey).toList());
         } else {
             StringBuilder errorMessages = new StringBuilder();
 

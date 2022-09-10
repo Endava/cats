@@ -169,7 +169,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             suppliedPaths.addAll(openAPI.getPaths().keySet());
         }
         List<String> skipPaths = filterArguments.getSkipPaths();
-        suppliedPaths = suppliedPaths.stream().filter(path -> !skipPaths.contains(path)).collect(Collectors.toList());
+        suppliedPaths = suppliedPaths.stream().filter(path -> !skipPaths.contains(path)).toList();
 
         logger.debug("Supplied paths before filtering {}", suppliedPaths);
         suppliedPaths = CatsUtil.filterAndPrintNotMatching(suppliedPaths, path -> openAPI.getPaths().containsKey(path), logger, "Supplied path is not matching the contract {}", Object::toString);

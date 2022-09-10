@@ -104,8 +104,7 @@ public class FuzzingData {
                         .build());
                 catsFields.addAll(this.getFields(prop.getValue(), prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey()));
             }
-        } else if (schema instanceof ComposedSchema) {
-            ComposedSchema composedSchema = (ComposedSchema) schema;
+        } else if (schema instanceof ComposedSchema composedSchema) {
             Optional.ofNullable(composedSchema.getAllOf()).ifPresent(allOf -> allOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
             Optional.ofNullable(composedSchema.getAnyOf()).ifPresent(anyOf -> anyOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
             Optional.ofNullable(composedSchema.getOneOf()).ifPresent(oneOf -> oneOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
@@ -137,7 +136,7 @@ public class FuzzingData {
 
     public List<String> getAllRequiredFields() {
         if (allRequiredFields == null) {
-            allRequiredFields = this.getAllFieldsAsCatsFields().stream().filter(CatsField::isRequired).map(CatsField::getName).collect(Collectors.toList());
+            allRequiredFields = this.getAllFieldsAsCatsFields().stream().filter(CatsField::isRequired).map(CatsField::getName).toList();
         }
         return allRequiredFields;
     }
