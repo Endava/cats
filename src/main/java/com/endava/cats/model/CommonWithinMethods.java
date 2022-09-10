@@ -18,7 +18,7 @@ public final class CommonWithinMethods {
     public static List<FuzzingStrategy> getFuzzingStrategies(FuzzingData data, String fuzzedField, List<String> invisibleChars, boolean maintainSize) {
         Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
         if (!StringSchema.class.isAssignableFrom(fuzzedFieldSchema.getClass())) {
-            return Collections.singletonList(FuzzingStrategy.skip());
+            return Collections.singletonList(FuzzingStrategy.skip().withData("Field does not match String schema"));
         }
         String initialValue = PayloadGenerator.generateValueBasedOnMinMAx(fuzzedFieldSchema);
 
