@@ -207,8 +207,7 @@ public class FuzzingDataFactory {
                             .tags(operation.getTags())
                             .reqSchemaName(reqSchemaName)
                             .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
-                            .build())
-                    .collect(Collectors.toList()));
+                            .build()).toList());
         }
 
         return fuzzingDataList;
@@ -256,7 +255,7 @@ public class FuzzingDataFactory {
                         .tags(operation.getTags())
                         .reqSchemaName(SYNTH_SCHEMA_NAME)
                         .selfReferenceDepth(processingArguments.getSelfReferenceDepth()).build())
-                .collect(Collectors.toList());
+                .toList();
     }
 
 

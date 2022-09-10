@@ -5,7 +5,6 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Base class for fuzzers sending Control Chars or Unicode Separators in headers.

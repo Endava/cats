@@ -11,13 +11,13 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.model.util.PayloadUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.jayway.jsonpath.JsonPathException;
-import com.endava.cats.model.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -138,7 +138,7 @@ public class TemplateFuzzer implements Fuzzer {
         return data.getHeaders().stream()
                 .map(catsHeader -> new KeyValuePair<>(catsHeader.getName(),
                         catsHeader.getName().equalsIgnoreCase(targetField) ? withData : catsHeader.getValue()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private String replacePayload(FuzzingData data, String withData, String targetField) {

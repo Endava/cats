@@ -8,7 +8,6 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 public abstract class InvisibleCharsBaseTrimValidateFuzzer extends ExpectOnly2XXBaseFieldsFuzzer {
 

@@ -209,11 +209,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered = fuzzingDataList.stream()
                 .filter(fuzzingData -> filterArguments.getHttpMethods().contains(fuzzingData.getMethod()))
-                .collect(Collectors.toList());
+                .toList();
         List<HttpMethod> excludedHttpMethods = fuzzingDataList.stream()
                 .map(FuzzingData::getMethod)
                 .filter(method -> !filterArguments.getHttpMethods().contains(method))
-                .collect(Collectors.toList());
+                .toList();
 
         List<Fuzzer> allFuzzersSorted = filterArguments.getAllRegisteredFuzzers();
         List<String> configuredFuzzers = filterArguments.getFuzzersForPath();

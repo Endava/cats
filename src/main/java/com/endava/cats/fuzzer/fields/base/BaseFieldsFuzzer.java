@@ -23,7 +23,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * This class performs the actual fuzzing. It can be extended to provide expected result codes based on different fuzzing scenarios.

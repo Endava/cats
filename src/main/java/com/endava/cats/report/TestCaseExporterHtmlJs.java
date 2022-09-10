@@ -10,7 +10,6 @@ import javax.inject.Named;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 @Named("htmlJs")
