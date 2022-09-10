@@ -64,7 +64,7 @@ public class ReplayCommand implements Runnable {
         return Optional.of(Arrays.asList(tests)).orElse(Collections.emptyList()).stream()
                 .map(testCase -> testCase.trim().strip())
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public void executeTestCase(String testCaseFileName) throws IOException {

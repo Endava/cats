@@ -117,7 +117,7 @@ public abstract class TestCaseExporter {
 
     private void writeExecutionTimesForPathAndHttpMethod(String key, List<CatsTestCase> value) {
         double average = value.stream().mapToLong(testCase -> testCase.getResponse().getResponseTimeInMs()).average().orElse(0);
-        List<CatsTestCase> sortedRuns = value.stream().sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs())).collect(Collectors.toList());
+        List<CatsTestCase> sortedRuns = value.stream().sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs())).toList();
         CatsTestCase bestCaseTestCase = sortedRuns.get(0);
         CatsTestCase worstCaseTestCase = sortedRuns.get(sortedRuns.size() - 1);
         List<TimeExecution> executions = sortedRuns.stream()
@@ -125,7 +125,7 @@ public abstract class TestCaseExporter {
                         .testId(tetCase.getTestId())
                         .executionInMs(tetCase.getResponse().getResponseTimeInMs())
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         TimeExecutionDetails timeExecutionDetails = TimeExecutionDetails.builder().average(average)
                 .path(key).bestCase(TimeExecution.builder()
@@ -196,7 +196,7 @@ public abstract class TestCaseExporter {
         List<CatsTestCaseSummary> summaries = testCaseMap.entrySet().stream()
                 .filter(entry -> entry.getValue().isNotSkipped())
                 .map(testCase -> CatsTestCaseSummary.fromCatsTestCase(testCase.getKey(), testCase.getValue())).sorted()
-                .collect(Collectors.toList());
+                .toList();
 
         return CatsTestReport.builder().testCases(summaries).errors(executionStatisticsListener.getErrors())
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())

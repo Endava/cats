@@ -93,12 +93,12 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
         if (filesArguments.getRefDataFile() != null) {
             logger.debug("Replacing variables in refData file with output variables from FunctionalFuzzer!");
             List<String> refDataLines = Files.readAllLines(filesArguments.getRefDataFile().toPath());
-            List<String> updatedLines = refDataLines.stream().map(this::replaceWithVariable).collect(Collectors.toList());
+            List<String> updatedLines = refDataLines.stream().map(this::replaceWithVariable).toList();
             String currentFile = filesArguments.getRefDataFile().getAbsolutePath();
             Path file = Paths.get(currentFile.substring(0, currentFile.lastIndexOf(".")) + "_replaced.yml");
             Files.write(file, updatedLines, StandardCharsets.UTF_8);
         } else if (filesArguments.isCreateRefData()) {
-            logger.debug("Creating refData file with output variables from FuctionalFuzzer!");
+            logger.debug("Creating refData file with output variables from FunctionalFuzzer!");
             customFuzzerUtil.writeRefDataFileWithOutputVariables();
         }
     }

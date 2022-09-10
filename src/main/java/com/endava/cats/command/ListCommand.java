@@ -57,7 +57,7 @@ public class ListCommand implements Runnable {
         this.fuzzersList = fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndSanitize.class) == null)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -119,7 +119,7 @@ public class ListCommand implements Runnable {
         return fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
                 .sorted(Comparator.comparing(Object::toString))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     void displayFuzzers(List<Fuzzer> fuzzers, Class<? extends Annotation> annotation) {

@@ -29,7 +29,7 @@ public abstract class PayloadUtils {
             "\u0016", "\u0017", "\u0018", "\u0019", "\u001A", "\u001B", "\u001C", "\u001D", "\u001E", "\u001F", "\u007F", "\u0080", "\u0081",
             "\u0082", "\u0083", "\u0085", "\u0086", "\u0087", "\u0088", "\u008A", "\u008B", "\u008C", "\u008D", "\u0090", "\u0091", "\u0093",
             "\u0094", "\u0095", "\u0096", "\u0097", "\u0098", "\u0099", "\u009A", "\u009B", "\u009C", "\u009D", "\u009E", "\u009F", "\uFEFF", "\uFFFE", "\u00AD");
-    private static final List<String> controlCharsFields = Stream.concat(controlCharsHeaders.stream(), Stream.of("\u0009")).collect(Collectors.toList());
+    private static final List<String> controlCharsFields = Stream.concat(controlCharsHeaders.stream(), Stream.of("\u0009")).toList();
 
     private static final String BAD_PAYLOAD = "퀜\uD80C\uDE1B\uD859\uDCBC\uD872\uDC4F璫骋\uD85B\uDC0F\uD842\uDF46\uD85D\uDC7C\uD85C\uDC71\uD884\uDC2E\uD854\uDCA4\uD861\uDE98ྶ\uD85E\uDCD4ᠰ\uD86F\uDC65榬\uD849\uDC0D" +
             "\uD863\uDE3B\uD869\uDD16뜍\uD83A\uDD20૰촩\uD84F\uDF32\uD86F\uDEFAẇ\uD842\uDEB0ў璵\uD854\uDF4Fい\uD85A\uDC86\uD861\uDECC帩쫲\uD822\uDFAC\uD876\uDC73\uD85D\uDEB9환\uD86B\uDC4C旳ᥛ\uD852\uDCD0ࣝ" +

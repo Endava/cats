@@ -48,7 +48,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
         String previousHeaderValue = header.getValue();
         header.withValue(String.valueOf(fuzzingStrategy.process(previousHeaderValue)));
         try {
-            boolean isRequiredHeaderFuzzed = clonedHeaders.stream().filter(CatsHeader::isRequired).collect(Collectors.toList()).contains(header);
+            boolean isRequiredHeaderFuzzed = clonedHeaders.stream().filter(CatsHeader::isRequired).toList().contains(header);
 
             testCaseListener.addScenario(logger, "Send [{}] in headers: header [{}] with value [{}]", this.typeOfDataSentToTheService(), header.getName(), fuzzingStrategy.truncatedValue());
             testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", this.getExpectedResultCode(isRequiredHeaderFuzzed).asString());

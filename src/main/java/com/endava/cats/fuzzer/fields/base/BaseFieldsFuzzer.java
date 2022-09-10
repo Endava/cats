@@ -51,7 +51,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         logger.info("All fields {}", allFields);
 
         List<String> fieldsToBeRemoved = filesArguments.getRefData(data.getPath()).keySet()
-                .stream().filter(CATS_REMOVE_FIELD::equalsIgnoreCase).collect(Collectors.toList());
+                .stream().filter(CATS_REMOVE_FIELD::equalsIgnoreCase).toList();
         logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
 
         fieldsToBeRemoved.forEach(allFields::remove);

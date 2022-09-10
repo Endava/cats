@@ -19,8 +19,7 @@ public abstract class InvisibleCharsBaseTrimValidateFuzzer extends ExpectOnly2XX
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         return this.getInvisibleChars()
-                .stream().map(value -> concreteFuzzStrategy().withData(value))
-                .collect(Collectors.toList());
+                .stream().map(value -> concreteFuzzStrategy().withData(value)).toList();
     }
 
     @Override

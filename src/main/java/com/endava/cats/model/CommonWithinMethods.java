@@ -26,8 +26,7 @@ public final class CommonWithinMethods {
         final boolean insertWithoutReplace = !maintainSize || !CollectionUtils.isEmpty(fuzzedFieldSchema.getEnum());
 
         return invisibleChars
-                .stream().map(value -> FuzzingStrategy.replace().withData(insertInTheMiddle(initialValue, value, insertWithoutReplace)))
-                .collect(Collectors.toList());
+                .stream().map(value -> FuzzingStrategy.replace().withData(insertInTheMiddle(initialValue, value, insertWithoutReplace))).toList();
     }
 
     public static String insertInTheMiddle(String value, String whatToInsert, boolean insertWithoutReplace) {

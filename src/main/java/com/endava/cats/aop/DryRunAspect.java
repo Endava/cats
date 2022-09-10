@@ -18,7 +18,6 @@ import javax.interceptor.InvocationContext;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -65,7 +64,7 @@ public class DryRunAspect {
                     .map(entry -> DryRunEntry.builder().path(entry.getKey().substring(0, entry.getKey().lastIndexOf("_")))
                             .httpMethod(entry.getKey().substring(entry.getKey().lastIndexOf("_") + 1))
                             .tests(String.valueOf(entry.getValue())).build())
-                    .collect(Collectors.toList());
+                    .toList();
             logger.noFormat(JsonUtils.GSON.toJson(pathTests));
         } else {
             logger.noFormat("\n");
@@ -79,11 +78,11 @@ public class DryRunAspect {
     public Object report(InvocationContext context) {
         Object data = context.getParameters()[1];
 
-        if (data instanceof FuzzingData) {
+        if (data instanceof FuzzingData fuzzingData) {
             if (counter % 10000 == 0 && !reportingArguments.isJson()) {
                 logger.noFormat(StringUtils.repeat("..", 1 + (counter / 10000)));
             }
-            paths.merge(((FuzzingData) data).getPath() + "_" + ((FuzzingData) data).getMethod(), 1, Integer::sum);
+            paths.merge(fuzzingData.getPath() + "_" + fuzzingData.getMethod(), 1, Integer::sum);
         }
         counter++;
         return null;

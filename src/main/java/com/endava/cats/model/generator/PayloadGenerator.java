@@ -133,12 +133,12 @@ public class PayloadGenerator {
         if (property.getExample() != null && canUseExamples(property)) {
             logger.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
             return property.getExample();
-        } else if (property instanceof StringSchema) {
-            return this.getExampleFromStringSchema(propertyName, (StringSchema) property);
-        } else if (property instanceof BooleanSchema) {
-            return this.getExampleFromBooleanSchema((BooleanSchema) property);
-        } else if (property instanceof ArraySchema) {
-            Object objectProperties = this.getExampleFromArraySchema(propertyName, property);
+        } else if (property instanceof StringSchema stringSchema) {
+            return this.getExampleFromStringSchema(propertyName, stringSchema);
+        } else if (property instanceof BooleanSchema booleanSchema) {
+            return this.getExampleFromBooleanSchema(booleanSchema);
+        } else if (property instanceof ArraySchema arraySchema) {
+            Object objectProperties = this.getExampleFromArraySchema(propertyName, arraySchema);
             if (objectProperties != null) {
                 return objectProperties;
             }
@@ -146,10 +146,10 @@ public class PayloadGenerator {
             return DATE_FORMATTER.format(LocalDateTime.now());
         } else if (property instanceof DateTimeSchema) {
             return ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        } else if (property instanceof NumberSchema) {
-            return this.getExampleFromNumberSchema((NumberSchema) property);
-        } else if (property instanceof IntegerSchema) {
-            return this.getExampleFromIntegerSchema((IntegerSchema) property);
+        } else if (property instanceof NumberSchema numberSchema) {
+            return this.getExampleFromNumberSchema(numberSchema);
+        } else if (property instanceof IntegerSchema integerSchema) {
+            return this.getExampleFromIntegerSchema(integerSchema);
         } else if (property instanceof ObjectSchema) {
             return this.getExampleForObjectSchema(property);
         } else if (property instanceof UUIDSchema) {
@@ -328,8 +328,8 @@ public class PayloadGenerator {
             logger.trace("Schema properties not null {}: {}", name, schema.getProperties().keySet());
             this.processSchemaProperties(name, schema, values);
         }
-        if (schema instanceof ComposedSchema) {
-            this.populateWithComposedSchema(values, name, (ComposedSchema) schema);
+        if (schema instanceof ComposedSchema composedSchema) {
+            this.populateWithComposedSchema(values, name, composedSchema);
         } else {
             globalContext.getRequestDataTypes().put(currentProperty, schema);
             return this.resolvePropertyToExample(name, schema);
@@ -390,8 +390,8 @@ public class PayloadGenerator {
         if (innerSchema instanceof ObjectSchema) {
             values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), innerSchema));
         }
-        if (innerSchema instanceof ComposedSchema) {
-            this.populateWithComposedSchema(values, propertyName.toString(), (ComposedSchema) innerSchema);
+        if (innerSchema instanceof ComposedSchema composedSchema) {
+            this.populateWithComposedSchema(values, propertyName.toString(), composedSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
             values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
@@ -428,8 +428,8 @@ public class PayloadGenerator {
             for (Map.Entry<String, Object> entry : values.entrySet()) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
-                if (value instanceof Map) {
-                    finalMap.putAll((Map) value);
+                if (value instanceof Map map) {
+                    finalMap.putAll(map);
                 } else {
                     values.put(key, value);
                     innerAllOff = true;
@@ -474,8 +474,8 @@ public class PayloadGenerator {
         for (Schema allOfSchema : allOf) {
             String fullSchemaRef = allOfSchema.get$ref();
             String schemaRef;
-            if (allOfSchema instanceof ArraySchema) {
-                fullSchemaRef = ((ArraySchema) allOfSchema).getItems().get$ref();
+            if (allOfSchema instanceof ArraySchema arraySchema) {
+                fullSchemaRef = arraySchema.getItems().get$ref();
             }
             Schema schemaToExample = allOfSchema;
             if (fullSchemaRef != null) {

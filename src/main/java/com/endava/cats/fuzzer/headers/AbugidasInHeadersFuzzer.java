@@ -26,7 +26,7 @@ public class AbugidasInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return PayloadUtils.getAbugidasChars().stream().map(value -> FuzzingStrategy.replace().withData(value)).collect(Collectors.toList());
+        return PayloadUtils.getAbugidasChars().stream().map(value -> FuzzingStrategy.replace().withData(value)).toList();
     }
 
     @Override
