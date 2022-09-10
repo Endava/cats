@@ -10,7 +10,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @ContractInfoFuzzer
 @Singleton

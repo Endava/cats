@@ -9,7 +9,6 @@ import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @HeaderFuzzer
 @Singleton

@@ -47,7 +47,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 /**
  * A modified version of @code{io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -365,7 +364,7 @@ public class PayloadGenerator {
             ComposedSchema composedSchema = new ComposedSchema();
             composedSchema.setOneOf(schema.getDiscriminator().getMapping().values()
                     .stream().map(schemaName -> new Schema<>().$ref(schemaName))
-                    .collect(Collectors.toList()));
+                    .toList());
             composedSchema.setDiscriminator(schema.getDiscriminator());
             schema.getProperties().get(schema.getDiscriminator().getPropertyName()).setEnum(new ArrayList<>(schema.getDiscriminator().getMapping().keySet()));
             globalContext.getDiscriminators().add(schema.getDiscriminator());

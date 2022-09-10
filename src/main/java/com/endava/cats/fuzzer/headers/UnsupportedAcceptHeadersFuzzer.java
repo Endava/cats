@@ -11,7 +11,6 @@ import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Singleton
 @HeaderFuzzer
@@ -29,6 +28,6 @@ public class UnsupportedAcceptHeadersFuzzer extends DummyAcceptHeadersFuzzer {
     @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
         return filterHeaders(data, HttpHeaders.ACCEPT, data.getResponseContentTypes().values().
-                stream().flatMap(Collection::stream).collect(Collectors.toList()));
+                stream().flatMap(Collection::stream).toList());
     }
 }
