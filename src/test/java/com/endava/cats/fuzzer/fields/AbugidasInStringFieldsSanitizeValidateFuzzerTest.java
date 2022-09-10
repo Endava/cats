@@ -8,6 +8,7 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
@@ -58,6 +59,7 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
         reqTypes.put("field", new StringSchema());
         reqTypes.put("pet#number", new StringSchema());
         reqTypes.put("pet#age", petAge);
+        reqTypes.put("pet#size", new IntegerSchema());
         Mockito.when(data.getPath()).thenReturn("/test");
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
         return data;
@@ -85,5 +87,11 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
         Map<String, String> refData = Map.of("field", "test");
         Mockito.when(filesArguments.getRefData("/test")).thenReturn(refData);
         Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(mockFuzzingData(), "pet#age", null)).isFalse();
+    }
+
+    @Test
+    void shouldNotFuzzWhenNotStringSchema() {
+        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(mockFuzzingData(), "pet#size").get(0).isSkip()).isTrue();
+
     }
 }

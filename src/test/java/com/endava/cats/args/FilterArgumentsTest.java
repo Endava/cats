@@ -112,7 +112,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("HappyFuzzer", "RemoveFieldsFuzzer")
-                .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeValuesInFieldsFuzzer", "Jumbo");
+                .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "Jumbo");
 
     }
 
@@ -122,7 +122,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer", "Jumbo")
-                .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeValuesInFieldsFuzzer", "VeryLargeUnicodeValuesInFieldsFuzzer", "VeryLargeUnicodeValuesInHeadersFuzzer", "VeryLargeValuesInHeadersFuzzer");
+                .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInHeadersFuzzer", "VeryLargeStringsInHeadersFuzzer");
     }
 
     @Test
@@ -159,9 +159,9 @@ class FilterArgumentsTest {
     void shouldSetAllFuzzersToCustomFuzzer() {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
-        Assertions.assertThat(filterArguments.getFuzzersForPath()).contains("VeryLargeUnicodeValuesInFieldsFuzzer");
+        Assertions.assertThat(filterArguments.getFuzzersForPath()).contains("VeryLargeUnicodeStringsInFieldsFuzzer");
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
         filterArguments.customFilter("FunctionalFuzzer");
-        Assertions.assertThat(filterArguments.getFuzzersForPath()).doesNotContain("VeryLargeUnicodeValuesInFieldsFuzzer");
+        Assertions.assertThat(filterArguments.getFuzzersForPath()).doesNotContain("VeryLargeUnicodeStringsInFieldsFuzzer");
     }
 }

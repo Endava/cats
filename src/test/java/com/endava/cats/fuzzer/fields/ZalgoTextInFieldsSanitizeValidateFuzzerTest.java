@@ -19,16 +19,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 @QuarkusTest
-class ZalgoTextInStringFieldsValidateSanitizeFuzzerTest {
+class ZalgoTextInFieldsSanitizeValidateFuzzerTest {
+
     private final CatsUtil catsUtil = new CatsUtil(null);
-    private ZalgoTextInFieldsValidateSanitizeFuzzer zalgoTextInStringFieldsValidateSanitizeFuzzer;
+    private ZalgoTextInFieldsSanitizeValidateFuzzer zalgoTextInFieldsSanitizeValidateFuzzer;
 
     @BeforeEach
     void setup() {
         ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
-        zalgoTextInStringFieldsValidateSanitizeFuzzer = new ZalgoTextInFieldsValidateSanitizeFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        zalgoTextInFieldsSanitizeValidateFuzzer = new ZalgoTextInFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         Mockito.when(testCaseListener.isFieldNotADiscriminator(Mockito.anyString())).thenReturn(true);
         Mockito.when(testCaseListener.isFieldNotADiscriminator("pet#type")).thenReturn(false);
     }
@@ -39,23 +40,22 @@ class ZalgoTextInStringFieldsValidateSanitizeFuzzerTest {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("field", new StringSchema());
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
-        FuzzingStrategy fuzzingStrategy = zalgoTextInStringFieldsValidateSanitizeFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
+        FuzzingStrategy fuzzingStrategy = zalgoTextInFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
+        Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains(" ̵̡̡̢̡̨̨̢͚̬̱̤̰̗͉͚̖͙͎͔͔̺̳͕̫̬͚̹͖̬̭̖̪̗͕̜̣̥̣̼͍͉̖͍̪͈̖͚̙͛͒͂̎̊̿̀̅̈͌͋̃̾̈̾̇͛͌͘͜͜͠͝ͅͅͅ ̷͕̗̇͛̅̀̑̇̈͗͌͛̐̀͆̐̊̅̋̈́̂̈́̈́͑̓͂͂̌̈́̽͌͐̐͂͐̈́̍̂͗̂͘͠͝͝͝ͅ ".replace(" ", ""));
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.description()).isNotNull();
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(zalgoTextInFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(zalgoTextInFieldsSanitizeValidateFuzzer.description()).isNotNull();
+        Assertions.assertThat(zalgoTextInFieldsSanitizeValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(zalgoTextInFieldsSanitizeValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(zalgoTextInFieldsSanitizeValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
     }
 }
