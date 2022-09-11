@@ -75,13 +75,26 @@ public abstract class JsonUtils {
         return true;
     }
 
-    public static boolean isPrimitive(String payload, String property) {
+    private static boolean testForPrimitiveOrThrow(String payload, String property) {
         if (isJsonArray(payload)) {
             property = FIRST_ELEMENT_FROM_ROOT_ARRAY + property;
         }
+
+        JsonNode jsonNode = PARSE_CONTEXT.parse(payload).read(JsonUtils.sanitizeToJsonPath(property));
+        return jsonNode.isValueNode();
+    }
+
+    public static boolean isPrimitive(String payload, String property) {
         try {
-            JsonNode jsonNode = PARSE_CONTEXT.parse(payload).read(JsonUtils.sanitizeToJsonPath(property));
-            return jsonNode.isValueNode();
+            return testForPrimitiveOrThrow(payload, property);
+        } catch (PathNotFoundException e) {
+            return false;
+        }
+    }
+
+    public static boolean isObject(String payload, String property) {
+        try {
+            return !testForPrimitiveOrThrow(payload, property);
         } catch (PathNotFoundException e) {
             return false;
         }
