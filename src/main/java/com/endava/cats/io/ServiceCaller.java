@@ -12,6 +12,7 @@ import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -24,9 +25,9 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.stripe.net.FormEncoder;
-import com.endava.cats.model.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONValue;
@@ -191,6 +192,7 @@ public class ServiceCaller {
                 .httpMethod(data.getHttpMethod().name())
                 .build();
 
+        long startTime = System.currentTimeMillis();
         try {
             String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
 
@@ -206,12 +208,20 @@ public class ServiceCaller {
             logger.note("Final payload: {}", processedPayload);
             logger.note("Final url: {}", url);
 
+            startTime = System.currentTimeMillis();
             CatsResponse response = this.callService(catsRequest, data.getFuzzedFields());
 
             this.recordRequestAndResponse(catsRequest, response, data);
             return response;
         } catch (IOException e) {
-            this.recordRequestAndResponse(catsRequest, CatsResponse.empty(), data);
+            long duration = System.currentTimeMillis() - startTime;
+            this.recordRequestAndResponse(catsRequest, CatsResponse.builder()
+                    .body("empty response").httpMethod(catsRequest.getHttpMethod())
+                    .responseTimeInMs(duration).responseCode(999)
+                    .jsonBody(new JsonPrimitive("empty response"))
+                    .fuzzedField(data.getFuzzedFields()
+                            .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
+                    .build(), data);
             throw new CatsIOException(e);
         }
     }
