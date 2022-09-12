@@ -41,6 +41,11 @@ class ReplaceObjectsWithPrimitivesFieldsFuzzerTest {
     }
 
     @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(replaceObjectsWithPrimitivesFieldsFuzzer.toString()).isEqualTo("ReplaceObjectsWithPrimitivesFieldsFuzzer");
+    }
+
+    @Test
     void shouldSkipForNonBodyMethods() {
         Assertions.assertThat(replaceObjectsWithPrimitivesFieldsFuzzer.skipForHttpMethods())
                 .contains(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD);
