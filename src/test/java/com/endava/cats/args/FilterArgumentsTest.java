@@ -76,7 +76,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(91);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(93);
     }
 
     @Test
@@ -122,7 +122,8 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer", "Jumbo")
-                .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInHeadersFuzzer", "VeryLargeStringsInHeadersFuzzer");
+                .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInHeadersFuzzer", "VeryLargeStringsInHeadersFuzzer",
+                        "VeryLargeDecimalsInNumericFieldsFuzzer", "VeryLargeIntegersInNumericFieldsFuzzer");
     }
 
     @Test
@@ -142,7 +143,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(91);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(93);
     }
 
     @Test
@@ -157,7 +158,6 @@ class FilterArgumentsTest {
 
     @Test
     void shouldSetAllFuzzersToCustomFuzzer() {
-        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         Assertions.assertThat(filterArguments.getFuzzersForPath()).contains("VeryLargeUnicodeStringsInFieldsFuzzer");
         FilterArguments.FUZZERS_TO_BE_RUN.clear();

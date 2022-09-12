@@ -194,6 +194,14 @@ components:
           format: byte
         petType:
           $ref: '#/components/schemas/PetType'
+        dateOfBirth:
+          type: string
+          format: date
+          example: "2000-12-12"
+        timeOfVaccination:
+          type: string
+          format: date-time
+          example: 2012-01-24T15:54:14.876Z
         metadata:
           type: object
           maxProperties: 10
