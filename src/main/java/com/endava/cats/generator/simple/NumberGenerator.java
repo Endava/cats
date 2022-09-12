@@ -1,6 +1,7 @@
 package com.endava.cats.generator.simple;
 
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -12,6 +13,8 @@ public class NumberGenerator {
     public static final BigInteger MOST_POSITIVE_INTEGER = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(Long.MAX_VALUE));
     public static final BigInteger MOST_NEGATIVE_INTEGER = BigInteger.valueOf(Long.MIN_VALUE).add(BigInteger.valueOf(Long.MIN_VALUE));
     public static final int TEN_THOUSANDS = 10000;
+
+    public static final String NINE_EIGHT_SEVEN_SIX = "9876";
     public static final BigDecimal DECIMAL_CONSTANT = new BigDecimal("455553333.543543543");
 
     private NumberGenerator() {
@@ -91,5 +94,13 @@ public class NumberGenerator {
 
         BigDecimal randomBigDecimal = minimum.add(BigDecimal.valueOf(Math.random()));
         return randomBigDecimal.doubleValue();
+    }
+
+    public static String generateVeryLargeInteger(int times) {
+        return StringUtils.repeat(NINE_EIGHT_SEVEN_SIX, times);
+    }
+
+    public static String generateVeryLargeDecimal(int times) {
+        return StringUtils.repeat(NINE_EIGHT_SEVEN_SIX, times) + "." + StringUtils.repeat(NINE_EIGHT_SEVEN_SIX, 10);
     }
 }
