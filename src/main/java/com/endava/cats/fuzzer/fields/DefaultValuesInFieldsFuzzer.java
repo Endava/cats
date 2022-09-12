@@ -3,68 +3,62 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.fields.base.CatsExecutor;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
-import java.util.List;
 import java.util.Set;
 
-@FieldFuzzer
 @Singleton
-public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
+@FieldFuzzer
+public class DefaultValuesInFieldsFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     protected final CatsUtil catsUtil;
 
-    public ReplaceObjectsWithPrimitivesFieldsFuzzer(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil) {
+
+    public DefaultValuesInFieldsFuzzer(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil) {
         this.serviceCaller = serviceCaller;
         this.testCaseListener = testCaseListener;
         this.catsUtil = catsUtil;
     }
 
-    @Override
     public void fuzz(FuzzingData data) {
         Set<String> allFields = data.getAllFieldsByHttpMethod();
         logger.info("All fields {}", allFields);
 
         for (String fuzzedField : allFields) {
-            if (JsonUtils.isObject(data.getPayload(), fuzzedField)) {
-                FuzzingStrategy replaceStrategy = FuzzingStrategy.replace().withData("cats_primitive_string");
-                logger.debug("Field [{}] is object. Applying [{}]", fuzzedField, replaceStrategy);
+            Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+            if (fuzzedFieldSchema.getEnum() == null && testCaseListener.isFieldNotADiscriminator(fuzzedField) && fuzzedFieldSchema.getDefault() != null) {
+                FuzzingStrategy replaceStrategy = FuzzingStrategy.replace().withData(fuzzedFieldSchema.getDefault());
+                logger.debug("Field [{}] has a default value defined. Applying [{}]", fuzzedField, replaceStrategy);
                 testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, replaceStrategy));
             } else {
-                logger.skip("Skipping primitive field [{}]. Fuzzer only runs for objects", fuzzedField);
+                logger.skip("Skipping field [{}]. It does not have a defined default value.", fuzzedField);
             }
         }
     }
 
     protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        CatsExecutor.builder().scenario("Replace non-primitive fields with primitive values. Replacing [{}]")
+        CatsExecutor.builder().scenario("Iterate through each field with default value defined and send happy flow requests. Current field [{}]")
                 .fuzzingData(data).fuzzedField(fuzzedField).fuzzingStrategy(fuzzingStrategy)
-                .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                .expectedResponseCode(ResponseCodeFamily.TWOXX)
                 .logger(logger).testCaseListener(testCaseListener).serviceCaller(serviceCaller).catsUtil(catsUtil)
                 .build().execute();
     }
 
     @Override
     public String description() {
-        return "iterate through each non-primitive field and replace it with primitive values";
-    }
-
-    @Override
-    public List<HttpMethod> skipForHttpMethods() {
-        return List.of(HttpMethod.HEAD, HttpMethod.GET, HttpMethod.DELETE);
+        return "iterate through each field with default values defined and send a happy flow request";
     }
 
     @Override

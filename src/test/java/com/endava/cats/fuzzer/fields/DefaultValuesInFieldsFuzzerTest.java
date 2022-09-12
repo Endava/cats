@@ -21,70 +21,70 @@ import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
-class IterateThroughEnumValuesFieldsFuzzerTest {
+class DefaultValuesInFieldsFuzzerTest {
     ServiceCaller serviceCaller;
     @InjectSpy
     TestCaseListener testCaseListener;
     @InjectSpy
     CatsUtil catsUtil;
-    private IterateThroughEnumValuesFieldsFuzzer iterateThroughEnumValuesFieldsFuzzer;
+    private DefaultValuesInFieldsFuzzer defaultValuesInFieldsFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        iterateThroughEnumValuesFieldsFuzzer = new IterateThroughEnumValuesFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
+        defaultValuesInFieldsFuzzer = new DefaultValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
     }
 
     @Test
     void shouldHaveDescription() {
-        Assertions.assertThat(iterateThroughEnumValuesFieldsFuzzer.description()).isNotBlank();
+        Assertions.assertThat(defaultValuesInFieldsFuzzer.description()).isNotBlank();
     }
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(iterateThroughEnumValuesFieldsFuzzer.toString()).isEqualTo("IterateThroughEnumValuesFieldsFuzzer");
+        Assertions.assertThat(defaultValuesInFieldsFuzzer.toString()).isEqualTo("DefaultValuesInFieldsFuzzer");
     }
 
     @Test
     void shouldSkipForNonBodyMethods() {
-        Assertions.assertThat(iterateThroughEnumValuesFieldsFuzzer.skipForHttpMethods()).isEmpty();
+        Assertions.assertThat(defaultValuesInFieldsFuzzer.skipForHttpMethods()).isEmpty();
     }
 
     @Test
-    void shouldSkipIfNotEnum() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("myField"));
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", new Schema<String>()));
-        Mockito.when(data.getPayload()).thenReturn("""
-                    {"myField": 3}
-                """);
-        iterateThroughEnumValuesFieldsFuzzer.fuzz(data);
-        Mockito.verifyNoInteractions(testCaseListener);
-    }
-
-    @Test
-    void shouldSkipIfEnumAndDiscriminator() {
+    void shouldSkipIfEnum() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("myField"));
         Schema<String> myEnumSchema = new Schema<>();
         myEnumSchema.setEnum(List.of("one", "two"));
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", myEnumSchema));
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {"myField": 3}
+                """);
+        defaultValuesInFieldsFuzzer.fuzz(data);
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
+    void shouldSkipIfDiscriminator() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("myField"));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", new Schema<String>()));
         Mockito.when(testCaseListener.isFieldNotADiscriminator("myField")).thenReturn(false);
         Mockito.when(data.getPayload()).thenReturn("""
                     {"myField": 3}
                 """);
-        iterateThroughEnumValuesFieldsFuzzer.fuzz(data);
+        defaultValuesInFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
     }
 
     @Test
-    void shouldReplaceIfFieldEnumAndNotDiscriminator() {
+    void shouldExecuteWhenHavingDefaultAndNoDiscriminatorOrEnum() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(200).build());
-        Schema<String> myEnumSchema = new Schema<>();
-        myEnumSchema.setEnum(List.of("one", "two", "three"));
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("objectField#myField", myEnumSchema));
+        Schema<String> mySchema = new Schema<>();
+        mySchema.setDefault("test");
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("objectField#myField", mySchema));
         Mockito.when(testCaseListener.isFieldNotADiscriminator("objectField#myField")).thenReturn(true);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("objectField#myField"));
         Mockito.when(data.getPayload()).thenReturn("""
@@ -93,7 +93,7 @@ class IterateThroughEnumValuesFieldsFuzzerTest {
                         }
                     }
                 """);
-        iterateThroughEnumValuesFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        defaultValuesInFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 }

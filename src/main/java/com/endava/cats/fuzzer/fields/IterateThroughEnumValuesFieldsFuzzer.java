@@ -2,12 +2,10 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.fuzzer.fields.base.CatsExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -53,15 +51,11 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
     }
 
     protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        testCaseListener.addScenario(logger, "Iterate through each possible enum values and send happy flow requests. Current enum field [{}]", fuzzedField);
-        testCaseListener.addExpectedResult(logger, "Should return [{}]", ResponseCodeFamily.TWOXX.asString());
-        FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
-
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzingResult.getJson()).queryParams(data.getQueryParams()).httpMethod(data.getMethod())
-                .contentType(data.getFirstRequestContentType()).build());
-
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+        CatsExecutor.builder().scenario("Iterate through each possible enum values and send happy flow requests. Current enum field [{}]")
+                .fuzzingData(data).fuzzedField(fuzzedField).fuzzingStrategy(fuzzingStrategy)
+                .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                .logger(logger).testCaseListener(testCaseListener).serviceCaller(serviceCaller).catsUtil(catsUtil)
+                .build().execute();
     }
 
     @Override
