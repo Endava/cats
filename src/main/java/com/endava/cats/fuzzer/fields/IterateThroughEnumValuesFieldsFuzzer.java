@@ -11,6 +11,7 @@ import com.endava.cats.model.FuzzingResult;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
@@ -59,12 +60,17 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(fuzzingResult.getJson()).queryParams(data.getQueryParams()).httpMethod(data.getMethod())
                 .contentType(data.getFirstRequestContentType()).build());
-        
+
         testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
     }
 
     @Override
     public String description() {
         return "iterate through each enum field and send happy flow requests iterating through each possible enum values";
+    }
+
+    @Override
+    public String toString() {
+        return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }
 }

@@ -13,6 +13,7 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -69,5 +70,10 @@ public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
     @Override
     public List<HttpMethod> skipForHttpMethods() {
         return List.of(HttpMethod.HEAD, HttpMethod.GET, HttpMethod.DELETE);
+    }
+
+    @Override
+    public String toString() {
+        return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }
 }

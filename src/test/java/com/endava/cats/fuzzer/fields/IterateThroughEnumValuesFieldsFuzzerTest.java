@@ -43,6 +43,11 @@ class IterateThroughEnumValuesFieldsFuzzerTest {
     }
 
     @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(iterateThroughEnumValuesFieldsFuzzer.toString()).isEqualTo("IterateThroughEnumValuesFieldsFuzzer");
+    }
+
+    @Test
     void shouldSkipForNonBodyMethods() {
         Assertions.assertThat(iterateThroughEnumValuesFieldsFuzzer.skipForHttpMethods()).isEmpty();
     }
