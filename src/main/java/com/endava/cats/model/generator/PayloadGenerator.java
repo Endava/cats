@@ -30,13 +30,17 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -131,7 +135,7 @@ public class PayloadGenerator {
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> property) {
         if (property.getExample() != null && canUseExamples(property)) {
             logger.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
-            return property.getExample();
+            return this.formatExampleIfNeeded(property);
         } else if (property instanceof StringSchema stringSchema) {
             return this.getExampleFromStringSchema(propertyName, stringSchema);
         } else if (property instanceof BooleanSchema booleanSchema) {
@@ -162,6 +166,16 @@ public class PayloadGenerator {
         }
 
         return resolveProperties(property);
+    }
+
+    private <T> Object formatExampleIfNeeded(Schema<T> property) {
+        if (property instanceof DateSchema) {
+            return DATE_FORMATTER.format(LocalDate.ofInstant(((Date) property.getExample()).toInstant(), ZoneId.systemDefault()));
+        }
+        if (property instanceof DateTimeSchema) {
+            return ((OffsetDateTime) property.getExample()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        }
+        return property.getExample();
     }
 
     private Object resolveProperties(Schema<?> schema) {

@@ -51,7 +51,7 @@ class PayloadGeneratorTest {
     void shouldRecognizeIpAddressFromFormat(String format, boolean expected) {
         StringSchema schema = new StringSchema();
         schema.setFormat(format);
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true,3);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
 
         boolean isIp = generator.isIPV4(schema, "field");
         Assertions.assertThat(isIp).isEqualTo(expected);
@@ -61,7 +61,7 @@ class PayloadGeneratorTest {
     @CsvSource({"url,true", "uri,true", "addressurl,true", "addressuri,true", "not,false"})
     void shouldRecognizeUrlFromPropertyName(String property, boolean expected) {
         StringSchema schema = new StringSchema();
-        PayloadGenerator generator = new PayloadGenerator(globalContext, true,3);
+        PayloadGenerator generator = new PayloadGenerator(globalContext, true, 3);
 
         boolean isIp = generator.isURI(schema, property);
         Assertions.assertThat(isIp).isEqualTo(expected);
@@ -157,6 +157,16 @@ class PayloadGeneratorTest {
 
         Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#parent#parent#code")).isNotEqualTo("NOT_SET");
         Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#parent#parent#parent#parent#parent#parent#code")).isEqualTo("NOT_SET");
+    }
+
+    @Test
+    void shouldProperlyFormatDateExamples() throws Exception {
+        PayloadGenerator generator = setupPayloadGenerator();
+        Map<String, String> example = generator.generate("MegaPet");
+        String exampleJson = example.get("example");
+
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#dateOfBirth")).isEqualTo("2000-12-12");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#timeOfVaccination")).isEqualTo("2012-01-24T15:54:14.876Z");
     }
 
     private PayloadGenerator setupPayloadGenerator() throws IOException {
