@@ -205,11 +205,6 @@ public class PayloadGenerator {
     private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {
         logger.trace("String property {}", propertyName);
 
-        String defaultValue = property.getDefault();
-        if (StringUtils.isNotBlank(defaultValue)) {
-            logger.trace("Default value found: '{}'", defaultValue);
-            return defaultValue;
-        }
         List<String> enumValues = property.getEnum();
         if (!CollectionUtils.isEmpty(enumValues)) {
             return enumValues.get(0);
