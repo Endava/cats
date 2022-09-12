@@ -19,8 +19,8 @@
 **REST API fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
 
 - **Comprehensive**: tests are generated automatically based on a large number scenarios and cover **every** field and header
-- **Intelligent**: tests are generated based on data types and constraints; each Fuzzer have specific expectations depending on the scenario under test
-- **Highly Configurable**: high amount of customization: you can exclude specific Fuzzers, HTTP response codes, provide business context and a lot more
+- **Intelligent**: tests are generated based on data types and constraints; each Fuzzer has specific expectations depending on the scenario under test
+- **Highly Configurable**: high amount of customization: you can filter specific Fuzzers, HTTP response codes, HTTP methods, request paths, provide business context and a lot more
 - **Self-Healing**: as tests are generated, any OpenAPI spec change is picked up automatically
 - **Simple to Learn**: flat learning curve, with intuitive configuration and syntax
 - **Fast**: automatic process for write, run and report tests which covers thousands of scenarios within minutes
@@ -30,8 +30,8 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **89 Fuzzers**. 
-The Fuzzers cover a wide range of input data from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
+All tests are **generated, run and reported automatically** based on a pre-defined set of **93 Fuzzers**. 
+The Fuzzers cover a wide range of boundary testing and negative scenarios from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
 
 <div align="center">
@@ -68,7 +68,7 @@ This is a list of articles with step-by-step guides on how to use CATS:
 ## Manual
 CATS is bundled both as an executable JAR or a native binary. The native binaries do not need Java installed. 
 
-After downloading your OS native binary, you can add it in classpath so that you can execute it as any other command line tool:
+After downloading your OS native binary, you can add it in PATH so that you can execute it as any other command line tool:
 
 ```shell
 sudo cp cats /usr/local/bin/cats
@@ -84,26 +84,25 @@ To get persistent autocomplete, add the above line in `~/.zshrc` or `./bashrc`, 
 
 You can also check the `cats_autocomplete` source for alternative setup.
 
-There is no native binary for Windows, but you can use the uberjar version. This requires Java 11+ to be installed.
+There is no native binary for Windows, but you can use the uberjar version. This requires Java 17+ to be installed.
 
 You can run it as `java -jar cats.jar`.
 
-Head to the releases page to download the latest versions: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
+Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
 
 ## Build
 
-You can build CATS from sources on you local box. You need Java 11+. Maven is already bundled.
+You can build CATS from sources on you local box. You need Java 17+. Maven is already bundled.
 
 **Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork ok `OKHttpClient` which will install locally
-under the `4.9.1-CATS` version, so don't worry about overriding the official versions.**
+under the `4.10.0-CATS` version, so don't worry about overriding the official versions.**
 
 You can use the following Maven command to build the project:
 
 `./mvnw package -Dquarkus.package.type=uber-jar`
 
-`cp target/`
 
-You will end up with a `cats.jar` in the `target` folder. You can run it wih `java -jar cats.jar ...`. 
+You will end up with a `cats-runner.jar` in the `target` folder. You can run it wih `java -jar cats-runner.jar ...`. 
 
 You can also build native images using a GraalVM Java version. 
 
@@ -115,7 +114,6 @@ You can also build native images using a GraalVM Java version.
 
 You may see some `ERROR` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the `Fuzzers`.
 
-
 # Running CATS
 
 ## Blackbox mode
@@ -123,11 +121,11 @@ You may see some `ERROR` log messages while running the Unit Tests. Those are ex
 Blackbox mode means that CATS doesn't need any specific context. You just need to provide the service URL, the OpenAPI spec and most probably [authentication headers](#headers-file).
 
 ```shell
-> cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox
+> cats --contract=openapi.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox
 ```
 
 In blackbox mode CATS will only report `ERRORs` if the received HTTP response code is a `5XX`. 
-Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and service returns `200`) will be ignored.
+Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and CATS expects `200`) will be ignored.
 
 The blackbox mode is similar to a smoke test. It will quickly tell you if the application has major bugs that must be addressed **immediately**.
 
@@ -141,13 +139,18 @@ Running CATS in context mode usually implies providing it a [--refData](#referen
 CATS cannot create data on its own (yet), so it's important that any request field or query param that requires pre-existence of those entities/resources to be created in advance and added to the reference data file.
 
 ```shell
-> cats --contract=openapy.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml
+> cats --contract=openapi.yaml --server=http://localhost:8080 --headers=headers.yml --refData=referenceData.yml
 ```
 
 ## Notes on skipped Tests
 You may notice a significant number of tests marked as `skipped`. CATS will try to apply all `Fuzzers` to all fields, but this is not always possible.
 For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will be marked as skipped.
 It was an intentional decision to also report the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
+
+## Notes on console output
+CATS produces a significant amount of logging. 
+If the output is redirected to a file please make sure you do proper cleanup when not needing it. 
+A simple run can produce tens of MB of data. You can control the logging level using `--log "error"` to only log errors.
 
 
 Additionally, CATS support a lot [more arguments](#available-arguments) that allows you to restrict the number of fuzzers, provide timeouts, limit the number of requests per minute and so on.
@@ -166,7 +169,7 @@ CATS will iterate through **all endpoints**, **all HTTP methods** and **all the 
 The actual fuzzing depends on the specific `Fuzzer` executed. Please see the list of fuzzers and their behaviour.
 There are also differences on how the fuzzing works depending on the HTTP method:
 
-- for methods with request bodies like **POST, PUT** the fuzzing will be applied at the **request body data models level**
+- for methods with request bodies like **POST, PUT, PATCH** the fuzzing will be applied at the **request body data models level**
 - for methods without request bodies like **GET, DELETE** the fuzzing will be applied at the **URL parameters level**
 
 This means that for methods with request bodies (`POST,PUT`) that have also URL/path parameters, you need to supply the `path` parameters via [`urlParams`](#url-parameters) or the [`referenceData`](#reference-data-file) file as failure to do so will result in `Illegal character in path at index ...` errors.
@@ -182,7 +185,7 @@ created with the `TIMESTAMP` value when the run started. This allows you to have
 - see summary with all the tests with their corresponding path against they were run, and the result
 - have ability to click on any tests and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
 
-Along with the summary from `index.html` each individual test will have a specific `TestXXX.html` page with more details, as well as a json version of the test which can be latter replayed using `> cats replay TestXXX.json`.
+Along with the summary from `index.html` each individual test will have a specific `TestXXX.html` page with more details, as well as a json version of the test which can be later replayed using `> cats replay TestXXX`.
 
 Understanding the `Result Reason` values:
 - `Unexpected Exception` - reported as `error`; this might indicate a possible bug in the service or a corner case that is not handled correctly by CATS
@@ -268,6 +271,8 @@ Some notes on the above example:
 - if you provide a json extension to a test name, that file will be search as a path i.e. it will search for `Test15.json` in the current folder and `Test19.json` in the `dir` folder
 - if you don't provide a json extension to a test name, it will search for that test in the `cats-report` folder i.e. `cats-report/Test1.json` and `cats-report/Test233.json`
 
+You can also use environment variables for headers when replaying tests using `$$varible`. This is useful for authentication headers.
+
 # Available Commands
 
 To list all available commands, run:
@@ -280,7 +285,7 @@ All available subcommands are listed below:
 
 - `> cats help` or `cats -h` will list all available options
 
-- `> cats list --fuzzers` will list all the existing fuzzers, grouped on categories
+- `> cats list --fuzzers` will list all the existing fuzzers, grouped by categories
 
 - `> cats list --fieldsFuzzingStrategy` will list all the available fields fuzzing strategies
 
@@ -291,6 +296,7 @@ All available subcommands are listed below:
 - `> cats fuzz` will fuzz based on a given request template, rather than an OpenAPI contract
 
 - `> cats run` will run functional and targeted security tests written in the CATS YAML format
+- 
 - `> cats lint`  will run OpenAPI contract linters, also called `ContractInfoFuzzers`
 
 # Available arguments
@@ -368,7 +374,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow, security testing or supplying your own request templates, rather than OpenAPI specs
 
 ## Field Fuzzers
-`CATS` has currently 42 registered Field `Fuzzers`:
+`CATS` has currently 47 registered Field `Fuzzers`:
 - `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -406,6 +412,11 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values trailed with single code point emojis
 - `TrailingMultiCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values trailed with multi code point emojis
 - `VeryLargeStringsFuzzer` - iterate through each String field and send requests with very large values (40000 characters) in the targeted field
+- `VeryLargeDecimalsInNumericFieldsFuzzer` - iterate through each numeric field and send requests with very large numbers (40000 characters) in the targeted field
+- `VeryLargeIntegersInNumericFieldsFuzzer` - iterate through each numeric field and send requests with very large numbers (40000 characters) in the targeted field
+- `VeryLargeUnicodeStringsInFieldsFuzzer` - iterate through each field and send requests with very large random unicode values in the targeted field
+- `IterateThroughEnumValuesFieldsFuzzer` - iterate through each enum field and send happy flow requests iterating through each possible enum values
+- `ReplaceObjectsWithPrimitivesFieldsFuzzer` - iterate through each non-primitive field and replace it with primitive values
 - `WithinControlCharsInFieldsSanitizeValidateFuzzer` - iterate through each field and send values containing unicode control chars
 - `WithinSingleCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values containing single code point emojis
 - `WithinMultiCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values containing multi code point emojis
@@ -568,7 +579,7 @@ Suppose the `test_1` execution outputs:
 When executing `test_1` the value of the pet id will be stored in the `petId` variable (value `2`).
 When executing `test_2` the `id` parameter will be replaced with the `petId` variable (value `2`) from the previous case.
 
-**Please note: variables are visible across all custom tests; please be careful with the naming as they will get overridden.**
+**Please note: variables are visible across all custom tests i.e. global variables; please be careful with the naming as they will get overridden.**
 
 #### Verifying responses
 The `FunctionalFuzzer` can verify more than just the `expectedResponseCode`. This is achieved using the `verify` element. This is an extended version of the above `functionalFuzzer.yml` file.  
@@ -711,7 +722,6 @@ all:
         - string
       stringsFile: xss.txt
 ```
-
 
 As an idea on how to create security tests, you can split the [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings) into multiple files of interest in your particular context.
 You can have a `sql_injection.txt`, a `xss.txt`, a `command_injection.txt` and so on. For each of these files, you can create a test entry in the `securityFuzzerFile` where you include the fields you think are meaningful for these types of tests.
