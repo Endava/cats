@@ -429,7 +429,7 @@ public class ServiceCaller {
         String processedPath = path;
         if (processedPath.contains("{")) {
             for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
-                String toReplaceWith = "";
+                String toReplaceWith;
                 if (child.getValue().isJsonNull()) {
                     toReplaceWith = "";
                 } else if (child.getValue().isJsonArray()) {

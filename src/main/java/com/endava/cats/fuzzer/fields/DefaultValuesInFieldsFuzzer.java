@@ -41,19 +41,16 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
             if (fuzzedFieldSchema.getEnum() == null && testCaseListener.isFieldNotADiscriminator(fuzzedField) && fuzzedFieldSchema.getDefault() != null) {
                 FuzzingStrategy replaceStrategy = FuzzingStrategy.replace().withData(fuzzedFieldSchema.getDefault());
                 logger.debug("Field [{}] has a default value defined. Applying [{}]", fuzzedField, replaceStrategy);
-                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, replaceStrategy));
+                testCaseListener.createAndExecuteTest(logger, this, () -> CatsExecutor.builder()
+                        .scenario("Iterate through each field with default value defined and send happy flow requests. Current field [{}]")
+                        .fuzzingData(data).fuzzedField(fuzzedField).fuzzingStrategy(replaceStrategy)
+                        .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                        .logger(logger).testCaseListener(testCaseListener).serviceCaller(serviceCaller).catsUtil(catsUtil)
+                        .build().execute());
             } else {
                 logger.skip("Skipping field [{}]. It does not have a defined default value.", fuzzedField);
             }
         }
-    }
-
-    protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        CatsExecutor.builder().scenario("Iterate through each field with default value defined and send happy flow requests. Current field [{}]")
-                .fuzzingData(data).fuzzedField(fuzzedField).fuzzingStrategy(fuzzingStrategy)
-                .expectedResponseCode(ResponseCodeFamily.TWOXX)
-                .logger(logger).testCaseListener(testCaseListener).serviceCaller(serviceCaller).catsUtil(catsUtil)
-                .build().execute();
     }
 
     @Override

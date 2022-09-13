@@ -42,7 +42,7 @@ class ReplaceObjectsWithPrimitivesFieldsFuzzerTest {
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(replaceObjectsWithPrimitivesFieldsFuzzer.toString()).isEqualTo("ReplaceObjectsWithPrimitivesFieldsFuzzer");
+        Assertions.assertThat(replaceObjectsWithPrimitivesFieldsFuzzer).hasToString("ReplaceObjectsWithPrimitivesFieldsFuzzer");
     }
 
     @Test

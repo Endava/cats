@@ -43,7 +43,7 @@ class IterateThroughEnumValuesFieldsFuzzerTest {
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(iterateThroughEnumValuesFieldsFuzzer.toString()).isEqualTo("IterateThroughEnumValuesFieldsFuzzer");
+        Assertions.assertThat(iterateThroughEnumValuesFieldsFuzzer).hasToString("IterateThroughEnumValuesFieldsFuzzer");
     }
 
     @Test

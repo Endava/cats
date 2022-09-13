@@ -43,7 +43,7 @@ class DefaultValuesInFieldsFuzzerTest {
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(defaultValuesInFieldsFuzzer.toString()).isEqualTo("DefaultValuesInFieldsFuzzer");
+        Assertions.assertThat(defaultValuesInFieldsFuzzer).hasToString("DefaultValuesInFieldsFuzzer");
     }
 
     @Test
