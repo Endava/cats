@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,7 +41,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
         SECURITY_HEADERS.put("X-XSS-Protection", Arrays.asList(CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(),
                 CatsHeader.builder().name("X-XSS-Protection").value("0").build()));
 
-        SECURITY_HEADERS_AS_STRING = SECURITY_HEADERS.entrySet().stream().map(Object::toString).collect(Collectors.toSet()).toString();
+        SECURITY_HEADERS_AS_STRING = new HashSet<>(SECURITY_HEADERS.keySet()).toString();
     }
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
