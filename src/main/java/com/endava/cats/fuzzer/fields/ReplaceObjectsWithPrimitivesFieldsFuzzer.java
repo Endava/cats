@@ -39,6 +39,7 @@ public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
         logger.info("All fields {}", allFields);
 
         for (String fuzzedField : allFields) {
+            logger.debug("Checking if [{}] is object", fuzzedField);
             if (JsonUtils.isObject(data.getPayload(), fuzzedField)) {
                 FuzzingStrategy replaceStrategy = FuzzingStrategy.replace().withData("cats_primitive_string");
                 logger.debug("Field [{}] is object. Applying [{}]", fuzzedField, replaceStrategy);

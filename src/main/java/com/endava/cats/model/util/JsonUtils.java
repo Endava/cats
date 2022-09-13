@@ -9,6 +9,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.ParseContext;
@@ -95,7 +96,7 @@ public abstract class JsonUtils {
     public static boolean isObject(String payload, String property) {
         try {
             return !testForPrimitiveOrThrow(payload, property);
-        } catch (PathNotFoundException e) {
+        } catch (InvalidPathException e) {
             return false;
         }
     }
