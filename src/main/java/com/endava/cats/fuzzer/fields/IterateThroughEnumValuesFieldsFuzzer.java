@@ -42,20 +42,17 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
                 for (int i = 1; i < fuzzedFieldSchema.getEnum().size(); i++) {
                     FuzzingStrategy replaceStrategy = FuzzingStrategy.replace().withData(fuzzedFieldSchema.getEnum().get(i));
                     logger.debug("Field [{}] is an enum. Applying [{}]", fuzzedField, replaceStrategy);
-                    testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, replaceStrategy));
+                    testCaseListener.createAndExecuteTest(logger, this, () -> CatsExecutor.builder()
+                            .scenario("Iterate through each possible enum values and send happy flow requests. Current enum field [{}]")
+                            .fuzzingData(data).fuzzedField(fuzzedField).fuzzingStrategy(replaceStrategy)
+                            .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                            .logger(logger).testCaseListener(testCaseListener).serviceCaller(serviceCaller).catsUtil(catsUtil)
+                            .build().execute());
                 }
             } else {
                 logger.skip("Skipping field [{}]. It's either not an enum or it's a discriminator.", fuzzedField);
             }
         }
-    }
-
-    protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        CatsExecutor.builder().scenario("Iterate through each possible enum values and send happy flow requests. Current enum field [{}]")
-                .fuzzingData(data).fuzzedField(fuzzedField).fuzzingStrategy(fuzzingStrategy)
-                .expectedResponseCode(ResponseCodeFamily.TWOXX)
-                .logger(logger).testCaseListener(testCaseListener).serviceCaller(serviceCaller).catsUtil(catsUtil)
-                .build().execute();
     }
 
     @Override
