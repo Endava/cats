@@ -89,7 +89,8 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
 
     @Override
     public String description() {
-        return String.format("iterate through each %s fields that have %s declared and send requests with values matching the %s size/value in the targeted field", getSchemasThatTheFuzzerWillApplyTo(), exactValueTypeString(), exactValueTypeString());
+        return String.format("iterate through each %s fields that have %s declared and send requests with values matching the %s size/value in the targeted field",
+                getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).toList(), exactValueTypeString(), exactValueTypeString());
     }
 
     /**
