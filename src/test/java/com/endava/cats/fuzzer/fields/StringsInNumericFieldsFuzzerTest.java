@@ -40,7 +40,7 @@ class StringsInNumericFieldsFuzzerTest {
 
     @Test
     void shouldGetDescription() {
-        Assertions.assertThat(stringsInNumericFieldsFuzzer.description()).isEqualTo("iterate through each Integer (int, long) and Number field (float, double) and send requests having the `fuzz` string value in the targeted field");
+        Assertions.assertThat(stringsInNumericFieldsFuzzer.description()).isEqualTo("iterate through each Integer (int, long) and Number field (float, double) and send requests having the `fuzz` string value");
     }
 
     @Test

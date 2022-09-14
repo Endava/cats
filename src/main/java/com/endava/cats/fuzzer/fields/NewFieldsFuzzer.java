@@ -74,6 +74,6 @@ public class NewFieldsFuzzer implements Fuzzer {
 
     @Override
     public String description() {
-        return "send a 'happy' flow request and add a new field inside the request called 'catsFuzzyField'";
+        return "send a happy flow request and add a new field inside the request called 'catsFuzzyField'";
     }
 }

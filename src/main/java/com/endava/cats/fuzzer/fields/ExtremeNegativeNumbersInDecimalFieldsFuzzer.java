@@ -45,6 +45,6 @@ public class ExtremeNegativeNumbersInDecimalFieldsFuzzer extends BaseBoundaryFie
 
     @Override
     public String description() {
-        return String.format("iterate through each Number field and send requests with the lowest value possible (%s for no format, %s for float and %s for double) in the targeted field", NumberGenerator.MOST_NEGATIVE_DECIMAL, -Float.MAX_VALUE, -Double.MAX_VALUE);
+        return String.format("iterate through each Number field and send %s for no format, %s for float and %s for double", NumberGenerator.MOST_NEGATIVE_DECIMAL, -Float.MAX_VALUE, -Double.MAX_VALUE);
     }
 }

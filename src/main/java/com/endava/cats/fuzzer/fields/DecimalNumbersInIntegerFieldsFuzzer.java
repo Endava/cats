@@ -46,6 +46,6 @@ public class DecimalNumbersInIntegerFieldsFuzzer extends BaseBoundaryFieldFuzzer
 
     @Override
     public String description() {
-        return "iterate through each Integer field and send requests with decimal values in the targeted field";
+        return "iterate through each Integer field and send decimal values";
     }
 }

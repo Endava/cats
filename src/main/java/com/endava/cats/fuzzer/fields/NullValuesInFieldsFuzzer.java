@@ -53,6 +53,6 @@ public class NullValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzz
 
     @Override
     public String description() {
-        return "iterate through each field and send requests with null values in the targeted field";
+        return "iterate through each field and send null values";
     }
 }

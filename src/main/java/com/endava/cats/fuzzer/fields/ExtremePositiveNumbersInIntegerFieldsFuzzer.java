@@ -45,6 +45,6 @@ public class ExtremePositiveNumbersInIntegerFieldsFuzzer extends BaseBoundaryFie
 
     @Override
     public String description() {
-        return String.format("iterate through each Integer field and send requests with the highest value possible (%s for int32 and %s for int64) in the targeted field", Long.MAX_VALUE, NumberGenerator.MOST_POSITIVE_INTEGER);
+        return String.format("iterate through each Integer field and send %s for int32 and %s for int64", Long.MAX_VALUE, NumberGenerator.MOST_POSITIVE_INTEGER);
     }
 }
