@@ -40,6 +40,6 @@ public class RandomStringsInBooleanFieldsFuzzer extends BaseBoundaryFieldFuzzer 
 
     @Override
     public String description() {
-        return "iterate through each Boolean field and send random strings in the targeted field";
+        return "iterate through each Boolean field and send random strings";
     }
 }

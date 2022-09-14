@@ -40,6 +40,6 @@ public class VeryLargeStringsInFieldsFuzzer extends ExpectOnly4XXBaseFieldsFuzze
 
     @Override
     public String description() {
-        return "iterate through each String field and send requests with very large values (40000 characters) in the targeted field";
+        return "iterate through each String field and send very large values (40000 characters)";
     }
 }

@@ -31,7 +31,7 @@ public class ZalgoTextInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Override
     public String description() {
-        return "iterate through each header and send requests with zalgo text in the targeted header";
+        return "iterate through each header and send zalgo text in the targeted header";
     }
 
     @Override

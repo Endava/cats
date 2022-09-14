@@ -37,6 +37,6 @@ public class VeryLargeUnicodeStringsInFieldsFuzzer extends ExpectOnly4XXBaseFiel
 
     @Override
     public String description() {
-        return "iterate through each field and send requests with very large random unicode values in the targeted field";
+        return "iterate through each field and send very large random unicode values";
     }
 }

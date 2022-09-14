@@ -40,6 +40,6 @@ public class DecimalFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Override
     public String description() {
-        return "iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field";
+        return "iterate through each Number field (either float or double) and send outside the range values on the right side in the targeted field";
     }
 }

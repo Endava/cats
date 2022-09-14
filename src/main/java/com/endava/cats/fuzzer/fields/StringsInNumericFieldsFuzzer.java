@@ -46,6 +46,6 @@ public class StringsInNumericFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Override
     public String description() {
-        return "iterate through each Integer (int, long) and Number field (float, double) and send requests having the `fuzz` string value in the targeted field";
+        return "iterate through each Integer (int, long) and Number field (float, double) and send requests having the `fuzz` string value";
     }
 }

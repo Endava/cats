@@ -30,6 +30,6 @@ public class EmptyStringsInHeadersFuzzer extends Expect4XXBaseHeadersFuzzer {
 
     @Override
     public String description() {
-        return "iterate through each header and send requests with empty String values in the targeted header";
+        return "iterate through each header and send empty String values in the targeted header";
     }
 }

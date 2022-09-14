@@ -50,6 +50,6 @@ public class VeryLargeIntegersInNumericFieldsFuzzer extends ExpectOnly4XXBaseFie
 
     @Override
     public String description() {
-        return "iterate through each numeric field and send requests with very large numbers (40000 characters) in the targeted field";
+        return "iterate through each numeric field and send very large numbers (40000 characters)";
     }
 }

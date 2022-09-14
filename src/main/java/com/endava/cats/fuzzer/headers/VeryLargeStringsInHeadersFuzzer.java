@@ -40,7 +40,7 @@ public class VeryLargeStringsInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuz
 
     @Override
     public String description() {
-        return "iterate through each header and send requests with large values in the targeted header";
+        return "iterate through each header and send large values in the targeted header";
     }
 
     @Override

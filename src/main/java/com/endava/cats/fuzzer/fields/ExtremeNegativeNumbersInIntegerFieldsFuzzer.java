@@ -45,6 +45,6 @@ public class ExtremeNegativeNumbersInIntegerFieldsFuzzer extends BaseBoundaryFie
 
     @Override
     public String description() {
-        return String.format("iterate through each Integer field and send requests with the lowest value possible (%s for int32 and %s for int64) in the targeted field", Long.MIN_VALUE, NumberGenerator.MOST_NEGATIVE_INTEGER);
+        return String.format("iterate through each Integer field and send %s for int32 and %s for int64", Long.MIN_VALUE, NumberGenerator.MOST_NEGATIVE_INTEGER);
     }
 }
