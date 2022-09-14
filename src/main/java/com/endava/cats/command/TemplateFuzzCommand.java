@@ -111,6 +111,7 @@ public class TemplateFuzzCommand implements Runnable {
             reportingArguments.processLogData();
             validateRequiredFields();
             String payload = this.loadPayload();
+            logger.debug("Resolved payload: {}", payload);
             FuzzingData fuzzingData = FuzzingData.builder().path(url)
                     .processedPayload(payload)
                     .method(httpMethod)
@@ -156,9 +157,10 @@ public class TemplateFuzzCommand implements Runnable {
 
     private String loadPayload() throws IOException {
         if (data != null && data.startsWith("@")) {
+            logger.debug("Resolving from file: {}", data);
             return Files.readString(Paths.get(data.substring(1)));
         } else if (data != null) {
-            return data;
+            return catsDSLParser.parseAndGetResult(data, null);
         }
         return "{}";
     }
