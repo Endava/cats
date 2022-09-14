@@ -110,7 +110,8 @@ public class TestCaseListener {
             s.run();
         } catch (Exception e) {
             setDefaultPathAndMethod();
-            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), CatsResult.EXCEPTION.getMessage(), fuzzer.getClass().getSimpleName(), e.getMessage());
+            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), CatsResult.EXCEPTION.
+                    withDocumentedResponseCodes(e.getMessage()).withExpectedResponseCodes(fuzzer.getClass().getSimpleName()).getMessage());
             setResultReason(CatsResult.EXCEPTION);
             externalLogger.error("Exception while processing!", e);
         }
@@ -268,7 +269,7 @@ public class TestCaseListener {
             this.recordResult(message, params, Level.ERROR.toString().toLowerCase(), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug("Received response is marked as ignored... skipping!");
-            this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
+            this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
         } else {
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
@@ -323,22 +324,25 @@ public class TestCaseListener {
             this.reportError(logger, CatsResult.NOT_FOUND);
         } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
             this.logger.debug("Response code expected and documented and matches response schema");
-            this.reportInfo(logger, CatsResult.OK, response.responseCodeAsString());
+            this.reportInfo(logger, CatsResult.OK.withResponseCode(response.responseCodeAsString()));
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.logger.debug("Response code expected and documented and but doesn't match response schema");
-            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA, ignoreArguments.isIgnoreResponseBodyCheck(), response.responseCodeAsString());
+            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA.withResponseCode(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
-            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE, ignoreArguments.isIgnoreResponseCodeUndocumentedCheck(), expectedResultCode.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
+            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE
+                    .withResponseCode(response.responseCodeAsString())
+                    .withDocumentedResponseCodes(data.getResponseCodes().toString())
+                    .withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()), ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
             this.logger.debug("Response code documented but not expected");
-            this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
+            this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
         } else if (assertions.isResponseCodeUnimplemented()) {
             this.logger.debug("Response code unimplemented");
             this.reportWarn(logger, CatsResult.NOT_IMPLEMENTED);
         } else {
             this.logger.debug("Unexpected behaviour");
-            this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR, expectedResultCode.allowedResponseCodes(), response.responseCodeAsString());
+            this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
         }
     }
 

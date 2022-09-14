@@ -59,7 +59,7 @@ class HappyFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}")
                 .reqSchema(new StringSchema()).responseCodes(Collections.singleton("200"))
                 .requestContentTypes(List.of("application/json")).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException("something went wrong"));
 
         happyFuzzer.fuzz(data);
 
