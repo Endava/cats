@@ -386,7 +386,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @ParameterizedTest
@@ -406,7 +406,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @Test
@@ -424,7 +424,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @ParameterizedTest
@@ -443,7 +443,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @Test
@@ -462,7 +462,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @Test
@@ -482,7 +482,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [{}] is documented, but response body does NOT matches the corresponding schema.", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @ParameterizedTest
@@ -503,7 +503,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, family);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [{}] is documented and response body matches the corresponding schema.", response.responseCodeAsString());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @Test
@@ -520,7 +520,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected {}, actual [{}], documented response codes: {}", ResponseCodeFamily.FOURXX.allowedResponseCodes(), response.responseCodeAsString(), data.getResponseCodes());
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [%s], documented response codes: %s".formatted(ResponseCodeFamily.FOURXX.allowedResponseCodes().toString(), response.responseCodeAsString(), data.getResponseCodes().toString()));
     }
 
     @Test

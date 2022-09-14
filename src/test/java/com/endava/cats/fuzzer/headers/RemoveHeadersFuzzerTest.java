@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class RemoveHeadersFuzzerTest {
@@ -69,8 +70,9 @@ class RemoveHeadersFuzzerTest {
     @Test
     void givenASetOfHeaders_whenAnErrorOccursCallingTheService_thenTheErrorIsProperlyReported() {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build()))
-                .reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException());
+                .reqSchema(new StringSchema()).requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200")).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException("something went wrong"));
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         removeHeadersFuzzer.fuzz(data);
