@@ -151,7 +151,8 @@ public abstract class TestCaseExporter {
         try {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), JsonUtils.GSON.toJson(timeExecutionDetails));
         } catch (IOException e) {
-            logger.warning("There was an issue writing the execution_times.js", e);
+            logger.warning("There was an issue writing the execution_times.js: {}", e.getMessage());
+            logger.debug("Stacktrace", e);
         }
     }
 
@@ -188,7 +189,8 @@ public abstract class TestCaseExporter {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString());
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
         } catch (IOException e) {
-            logger.error("There was an error writing the report summary: {}", e.getMessage(), e);
+            logger.error("There was an error writing the report summary: {}", e.getMessage());
+            logger.debug("Stacktrace", e);
         }
     }
 
@@ -210,7 +212,8 @@ public abstract class TestCaseExporter {
             try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
                 Files.copy(stream, Paths.get(reportingPath.toFile().getAbsolutePath(), file));
             } catch (IOException e) {
-                logger.error("Unable to write reporting files!", e);
+                logger.error("Unable to write reporting files: {}", e.getMessage());
+                logger.debug("Stacktrace", e);
             }
         }
     }
@@ -231,7 +234,8 @@ public abstract class TestCaseExporter {
         try {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), JsonUtils.GSON.toJson(testCase));
         } catch (IOException e) {
-            logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
+            logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage());
+            logger.debug("Stacktrace", e);
         }
     }
 
@@ -246,7 +250,8 @@ public abstract class TestCaseExporter {
         try {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), writer.toString());
         } catch (IOException e) {
-            logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage(), e);
+            logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage());
+            logger.debug("Stacktrace", e);
         }
     }
 

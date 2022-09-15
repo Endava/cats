@@ -203,7 +203,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), openAPI);
 
         if (fuzzingDataList.isEmpty()) {
-            logger.warning("There was a problem fuzzing path {}.", pathItemEntry.getKey());
+            logger.warning("There was a problem fuzzing path {}. You might want to enable debug mode for more details.", pathItemEntry.getKey());
             return;
         }
 
@@ -227,10 +227,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 CatsUtil.filterAndPrintNotMatching(fuzzingDataListWithHttpMethodsFiltered, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
                                 logger, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
                         .forEach(data -> {
-                            logger.info("Fuzzer {} and payload: {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getPayload());
+                            logger.start("Starting Fuzzer {} ", ansi().fgGreen().a(fuzzer.toString()).reset());
+                            logger.debug("Fuzzing payload: {}", data.getPayload());
                             testCaseListener.beforeFuzz(fuzzer.getClass());
                             fuzzer.fuzz(data);
                             testCaseListener.afterFuzz();
+                            logger.complete("Finish running Fuzzer {}", ansi().fgGreen().a(fuzzer.toString()).reset());
                         });
             } else {
                 logger.debug("Skipping fuzzer {} for path {} as configured!", fuzzer, pathItemEntry.getKey());

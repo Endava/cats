@@ -113,7 +113,8 @@ public class TestCaseListener {
             this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), CatsResult.EXCEPTION.
                     withDocumentedResponseCodes(e.getMessage()).withExpectedResponseCodes(fuzzer.getClass().getSimpleName()).getMessage());
             setResultReason(CatsResult.EXCEPTION);
-            externalLogger.error("Exception while processing!", e);
+            externalLogger.error("Exception while processing: {}", e.getMessage());
+            externalLogger.debug("Detailed stacktrace", e);
         }
         this.endTestCase();
         logger.info("{} {}", SEPARATOR, "\n");
@@ -353,7 +354,7 @@ public class TestCaseListener {
             existingPosts.add(response.getBody());
             globalContext.getPostSuccessfulResponses().put(data.getPath(), existingPosts);
         } else if (data.getMethod() == HttpMethod.DELETE && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            logger.star("Removing top POST request from the store...");
+            logger.star("Successful DELETE. Removing top POST request from the store...");
             globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath().substring(0, data.getPath().lastIndexOf("/")), new ArrayDeque<>()).poll();
         }
     }

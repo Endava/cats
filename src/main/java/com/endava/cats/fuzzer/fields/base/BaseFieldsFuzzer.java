@@ -46,8 +46,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         Set<String> allFields = data.getAllFieldsByHttpMethod();
-        logger.info("All required fields, including subfields: {}", data.getAllRequiredFields());
-        logger.info("All fields {}", allFields);
+        logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
+        logger.debug("All fields {}", allFields);
 
         List<String> fieldsToBeRemoved = filesArguments.getRefData(data.getPath()).keySet()
                 .stream().filter(CATS_REMOVE_FIELD::equalsIgnoreCase).toList();
@@ -56,7 +56,6 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         fieldsToBeRemoved.forEach(allFields::remove);
 
         if (allFields.isEmpty()) {
-            logger.debug("Not fields to fuzz. Skip fuzzing!");
             logger.skip("Skipped due to: no fields to fuzz!");
         } else {
             for (String fuzzedField : allFields) {

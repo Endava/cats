@@ -34,7 +34,7 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
 
     public void fuzz(FuzzingData data) {
         Set<String> allFields = data.getAllFieldsByHttpMethod();
-        logger.info("All fields {}", allFields);
+        logger.debug("All fields {}", allFields);
 
         for (String fuzzedField : allFields) {
             Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);

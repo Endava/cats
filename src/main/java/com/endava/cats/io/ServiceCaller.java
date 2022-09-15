@@ -131,7 +131,8 @@ public class ServiceCaller {
 
             logger.note("Proxy configuration to be used: {}", authArguments.getProxy());
         } catch (GeneralSecurityException | IOException e) {
-            logger.warning("Failed to configure HTTP CLIENT", e);
+            logger.warning("Failed to configure HTTP CLIENT: {}", e.getMessage());
+            logger.debug("Stacktrace", e);
         }
     }
 
@@ -282,7 +283,7 @@ public class ServiceCaller {
         candidates.addAll(WordUtils.createWordCombinations(camelCase));
         candidates.addAll(WordUtils.createWordCombinations(kebabCase));
 
-        logger.info("Params to search in POST payload {}", candidates);
+        logger.debug("Params to search in POST payload {}", candidates);
 
         for (String candidate : candidates) {
             String value = String.valueOf(JsonUtils.getVariableFromJson(postPayload, candidate));
@@ -498,8 +499,8 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(List<KeyValuePair<String, Object>> headers, String relativePath, ServiceData data) {
-        logger.note("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
-        logger.note("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsDSLWords.ALL));
+        logger.debug("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
+        logger.debug("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsDSLWords.ALL));
 
         Map<String, String> suppliedHeadersFromFile = filesArguments.getHeaders().entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
@@ -537,13 +538,13 @@ public class ServiceCaller {
             Object finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
             headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
             headers.add(new KeyValuePair<>(suppliedHeader.getKey(), finalHeaderValue));
-            logger.note("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
+            logger.debug("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }
     }
 
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
         Map<String, String> currentPathRefData = filesArguments.getRefData(data.getRelativePath());
-        logger.note("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
+        logger.debug("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, String> entry : currentPathRefData.entrySet()) {
             currentUrl = currentUrl.replace("{" + entry.getKey() + "}", entry.getValue());
@@ -566,7 +567,7 @@ public class ServiceCaller {
             return data.getPayload();
         } else {
             Map<String, String> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
-            logger.note("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+            logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
 
             Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
@@ -589,13 +590,13 @@ public class ServiceCaller {
                         payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).getJson();
                     }
                 } catch (PathNotFoundException e) {
-                    logger.warning("Ref data key {} was not found within the payload!", entry.getKey());
+                    logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
                 }
             }
 
             payload = catsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
 
-            logger.note("Final payload after reference data replacement: {}", payload);
+            logger.debug("Final payload after reference data replacement: {}", payload);
 
             return payload;
         }

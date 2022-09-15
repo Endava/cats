@@ -94,40 +94,45 @@ public class FilesArguments {
 
     public void loadSecurityFuzzerFile() throws IOException {
         if (securityFuzzerFile == null) {
-            log.info("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
+            log.debug("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
         } else {
+            log.info("Security Fuzzer file {}", securityFuzzerFile.getAbsolutePath());
             securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile.getAbsolutePath());
         }
     }
 
     public void loadCustomFuzzerFile() throws IOException {
         if (customFuzzerFile == null) {
-            log.info("No custom Fuzzer file. FunctionalFuzzer will be skipped!");
+            log.debug("No custom Fuzzer file. FunctionalFuzzer will be skipped!");
         } else {
+            log.info("Custom Fuzzer file supplied {}", customFuzzerFile.getAbsolutePath());
             customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile.getAbsolutePath());
         }
     }
 
     public void loadRefData() throws IOException {
         if (refDataFile == null) {
-            log.info("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
+            log.debug("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
+            log.info("Loading reference data from: {}", refDataFile.getAbsolutePath());
             refData.putAll(catsUtil.loadYamlFileToMap(refDataFile.getAbsolutePath()));
-            log.info("Reference data file loaded successfully: {}", refData);
+            log.debug("Reference data file loaded successfully: {}", refData);
         }
     }
 
     public void loadQueryParams() throws IOException {
         if (queryFile == null) {
-            log.info("No queryParams file was supplied! No additional query parameters will be added!");
+            log.debug("No queryParams file was supplied! No additional query parameters will be added!");
         } else {
+            log.info("Query params file supplied {}", queryFile.getAbsolutePath());
             queryParams.putAll(catsUtil.loadYamlFileToMap(queryFile.getAbsolutePath()));
+            log.debug("Query params file loaded successfully: {}", queryParams);
         }
     }
 
     public void loadURLParams() {
         if (params == null) {
-            log.info("No URL parameters supplied!");
+            log.debug("No URL parameters supplied!");
         } else {
             log.info("URL parameters: {}", params);
         }
@@ -135,9 +140,11 @@ public class FilesArguments {
 
     public void loadHeaders() throws IOException {
         if (headersFile == null) {
-            log.info("No headers file was supplied! No additional header will be added!");
+            log.debug("No headers file was supplied! No additional header will be added!");
         } else {
+            log.info("Headers file supplied {}", headersFile.getAbsolutePath());
             headers.putAll(catsUtil.loadYamlFileToMap(headersFile.getAbsolutePath()));
+            log.debug("Headers file loaded successfully: {}", headers);
         }
     }
 

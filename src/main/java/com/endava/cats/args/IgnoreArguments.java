@@ -2,8 +2,6 @@ package com.endava.cats.args;
 
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
-import io.github.ludovicianul.prettylogger.PrettyLogger;
-import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
@@ -17,7 +15,6 @@ import java.util.stream.Stream;
 @Singleton
 @Getter
 public class IgnoreArguments {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(IgnoreArguments.class);
 
     @CommandLine.Option(names = {"--ignoreResponseCodeUndocumentedCheck", "--iu"},
             description = "Don't check if the response code received from the service matches the value expected by the fuzzer. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")

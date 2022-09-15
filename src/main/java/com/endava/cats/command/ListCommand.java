@@ -43,10 +43,8 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class ListCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ListCommand.class);
     private final List<Fuzzer> fuzzersList;
-
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
-
     @CommandLine.Option(names = {"-j", "--json"},
             description = "Output to console in JSON format.")
     private boolean json;
