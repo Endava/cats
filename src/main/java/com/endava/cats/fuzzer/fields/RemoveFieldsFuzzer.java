@@ -43,7 +43,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     }
 
     public void fuzz(FuzzingData data) {
-        logger.info("All required fields, including subfields: {}", data.getAllRequiredFields());
+        logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         Set<Set<String>> sets = this.getAllFields(data);
 
         for (Set<String> subset : sets) {

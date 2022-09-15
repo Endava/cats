@@ -98,7 +98,7 @@ public class CustomFuzzerUtil {
     private int getNumberOfIterationsBasedOnHeaders(FuzzingData data, Map<String, String> currentPathValues) {
         boolean isHeadersFuzzing = currentPathValues.get(CatsDSLWords.CATS_HEADERS) != null;
         if (isHeadersFuzzing) {
-            log.info("Fuzzing headers! Total numb of headers: {}", data.getHeaders().size());
+            log.info("Fuzzing headers! Total number of headers: {}", data.getHeaders().size());
             return data.getHeaders().size();
         }
 
@@ -132,8 +132,8 @@ public class CustomFuzzerUtil {
     private void checkVerifiesAndReport(String request, CatsResponse response, String verify, String expectedResponseCode) {
         Map<String, String> verifies = this.parseYmlEntryIntoMap(verify);
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
-        log.info("Parameters to verify: {}", verifies);
-        log.info("Parameters matched to response: {}", responseValues);
+        log.debug("Parameters to verify: {}", verifies);
+        log.debug("Parameters matched to response: {}", responseValues);
         if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
             log.error("There are Verify parameters which were not present in the response!");
 
@@ -234,13 +234,13 @@ public class CustomFuzzerUtil {
             }
         }
 
-        log.info("Final payload after custom values replaced: [{}]", payload);
+        log.debug("Final payload after custom values replaced: [{}]", payload);
 
         return payload;
     }
 
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
-        log.info("Path [{}] for method [{}] has the following custom data [{}]", data.getPath(), data.getMethod(), value);
+        log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getPath(), data.getMethod(), value);
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
 
         if (this.entryIsValid((Map<String, Object>) value) && isValidOneOf) {
@@ -250,7 +250,8 @@ public class CustomFuzzerUtil {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
             }
         } else if (!isValidOneOf) {
-            log.skip("Skipping path [{}] with payload [{}] as it does not match oneOfSelection", data.getPath(), data.getPayload());
+            log.skip("Skipping path [{}] as it does not match oneOfSelection", data.getPath());
+            log.debug("Payload: {}", data.getPayload());
         } else {
             log.warning("Skipping path [{}] as missing [{}] specific fields. List of reserved words: [{}]",
                     data.getPath(), fuzzer.getClass().getSimpleName(), fuzzer.reservedWords());

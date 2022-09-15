@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
         versionProvider = VersionProvider.class)
 public class TemplateFuzzCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzCommand.class);
-
     @CommandLine.Parameters(index = "0",
             paramLabel = "<url>",
             description = "Full URL path of the service endpoint. This should include query params for non-body HTTP requests.")

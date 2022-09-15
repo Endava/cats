@@ -13,8 +13,6 @@ import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.http.HttpMethod;
-import io.github.ludovicianul.prettylogger.PrettyLogger;
-import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
@@ -35,8 +33,6 @@ import java.util.stream.Collectors;
 public class FilterArguments {
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
-
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FilterArguments.class);
 
     @Inject
     Instance<Fuzzer> fuzzers;

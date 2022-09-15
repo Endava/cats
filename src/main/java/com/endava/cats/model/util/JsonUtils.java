@@ -132,7 +132,7 @@ public abstract class JsonUtils {
         try {
             return JsonPath.parse(payload).set(nodeKey, GENERIC_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
         } catch (ParseException e) {
-            LOGGER.warn("Could not add node {}", nodeKey);
+            LOGGER.debug("Could not add node {}", nodeKey);
             return payload;
         } catch (PathNotFoundException e) {
             String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));

@@ -31,7 +31,6 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     @Override
     public void process(FuzzingData data) {
-        log.start("Analyzing contract top elements...");
         testCaseListener.addScenario(log, "Check if the OpenAPI contract defines elements such as tags, info, external docs and servers");
         testCaseListener.addExpectedResult(log, "Elements should be present and provide meaningful information");
         testCaseListener.addPath("NA");

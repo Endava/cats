@@ -26,7 +26,10 @@ public class CatsMain implements QuarkusApplication {
 
     @Override
     public int run(String... args) {
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> logger.fatal("Something unexpected happened!", e));
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            logger.fatal("Something unexpected happened: {}", e.getMessage());
+            logger.debug("Stacktrace", e);
+        });
 
         return new CommandLine(catsCommand, factory)
                 .setCaseInsensitiveEnumValuesAllowed(true).setColorScheme(colorScheme())

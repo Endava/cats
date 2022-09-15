@@ -36,10 +36,10 @@ public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         Set<String> allFields = data.getAllFieldsByHttpMethod();
-        logger.info("All fields {}", allFields);
+        logger.debug("All fields {}", allFields);
 
         for (String fuzzedField : allFields) {
-            logger.debug("Checking if [{}] is object", fuzzedField);
+            logger.trace("Checking if [{}] is object", fuzzedField);
             if (JsonUtils.isObject(data.getPayload(), fuzzedField)) {
                 FuzzingStrategy replaceStrategy = FuzzingStrategy.replace().withData("cats_primitive_string");
                 logger.debug("Field [{}] is object. Applying [{}]", fuzzedField, replaceStrategy);
