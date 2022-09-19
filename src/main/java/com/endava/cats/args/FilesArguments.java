@@ -41,6 +41,11 @@ public class FilesArguments {
     @Setter
     private File headersFile;
 
+    @CommandLine.Option(names = {"-H"},
+            description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control use the `--headers` arg that requires a file.")
+    Map<String, String> headersMap;
+
+
     @CommandLine.Option(names = {"--queryParams"},
             description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params")
     @Getter
@@ -145,6 +150,13 @@ public class FilesArguments {
             log.info("Headers file supplied {}", headersFile.getAbsolutePath());
             headers.putAll(catsUtil.loadYamlFileToMap(headersFile.getAbsolutePath()));
             log.debug("Headers file loaded successfully: {}", headers);
+        }
+        if (headersMap != null) {
+            headers.merge(ALL, headersMap, (stringStringMap, stringStringMap2) -> {
+                Map<String, String> mergedMap = new HashMap<>(stringStringMap);
+                mergedMap.putAll(stringStringMap2);
+                return mergedMap;
+            });
         }
     }
 
