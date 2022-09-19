@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
@@ -17,10 +18,11 @@
         <wiremock-jre8.version>2.33.2</wiremock-jre8.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <guava.version>31.1-jre</guava.version>
-        <openapi-generator.version>6.0.1</openapi-generator.version>
+        <openapi-generator.version>6.1.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
-            **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*
+            **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
+            **/*HttpContent*.*, **/*MultipartProcessor*.*
         </sonar.coverage.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <maven-site-plugin.version>3.10.0</maven-site-plugin.version>
@@ -41,10 +43,7 @@
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
         <spring-integration-core.version>5.5.14</spring-integration-core.version>
-        <stripe-java.version>21.5.0</stripe-java.version>
-        <kotlin-reflect.version>1.7.10</kotlin-reflect.version>
         <json.version>20220320</json.version>
-        <tapestry-json.version>5.8.2</tapestry-json.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -293,21 +292,9 @@
             <artifactId>log4j2-jboss-logmanager</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-reflect</artifactId>
-            <version>${kotlin-reflect.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>${json.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tapestry</groupId>
-            <artifactId>tapestry-json</artifactId>
-            <version>${tapestry-json.version}</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
@@ -383,11 +370,6 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli-codegen</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.stripe</groupId>
-            <artifactId>stripe-java</artifactId>
-            <version>${stripe-java.version}</version>
         </dependency>
     </dependencies>
     <repositories>
