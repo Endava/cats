@@ -156,7 +156,7 @@ public abstract class JsonUtils {
         try {
             DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
             return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
-        } catch (JsonPathException e) {
+        } catch (JsonPathException | IllegalArgumentException e) {
             LOGGER.debug("Expected variable {} was not found. Setting to NOT_SET", value);
             return NOT_SET;
         }
