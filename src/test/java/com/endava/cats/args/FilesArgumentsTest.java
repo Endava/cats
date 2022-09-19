@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @QuarkusTest
 class FilesArgumentsTest {
@@ -65,6 +66,18 @@ class FilesArgumentsTest {
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("mumu"));
 
         Assertions.assertThrows(IOException.class, filesArguments::loadHeaders);
+    }
+
+    @Test
+    void shouldMergeHeaders() throws Exception {
+        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
+        ReflectionTestUtils.setField(filesArguments, "headersMap", Map.of("auth", "secret"));
+        filesArguments.loadHeaders();
+        Map<String, Map<String, String>> headers = filesArguments.getHeaders();
+
+        org.assertj.core.api.Assertions.assertThat(headers.get("all")).hasSize(3);
+        org.assertj.core.api.Assertions.assertThat(headers.get("all")).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
     }
 
     @Test
