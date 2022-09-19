@@ -5,6 +5,7 @@ import com.endava.cats.command.model.FuzzerListEntry;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.report.CatsResult;
@@ -101,15 +102,12 @@ import com.jayway.jsonpath.spi.json.JettisonProvider;
 import com.jayway.jsonpath.spi.json.JsonOrgJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.json.JsonSmartJsonProvider;
-import com.jayway.jsonpath.spi.json.TapestryJsonProvider;
 import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.JsonOrgMappingProvider;
 import com.jayway.jsonpath.spi.mapper.JsonSmartMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingException;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import com.jayway.jsonpath.spi.mapper.TapestryMappingProvider;
-import com.endava.cats.model.KeyValuePair;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.parser.Swagger20Parser;
 import io.swagger.parser.SwaggerParser;
@@ -212,8 +210,8 @@ import java.util.Base64;
         EvaluationContextImpl.class, FunctionPathToken.class, PathCompiler.class, PathToken.class, PathTokenAppender.class, PathTokenFactory.class, PredicateContextImpl.class,
         PredicatePathToken.class, RootPathToken.class, ScanPathToken.class, WildcardPathToken.class, Cache.class, CacheProvider.class, LRUCache.class, NOOPCache.class,
         AbstractJsonProvider.class, GsonJsonProvider.class, JacksonJsonNodeJsonProvider.class, JacksonJsonProvider.class, JettisonProvider.class, JsonOrgJsonProvider.class, JsonProvider.class,
-        JsonSmartJsonProvider.class, TapestryJsonProvider.class, GsonMappingProvider.class, JacksonMappingProvider.class, JsonOrgMappingProvider.class, JsonSmartMappingProvider.class,
-        MappingException.class, MappingProvider.class, TapestryMappingProvider.class,
+        JsonSmartJsonProvider.class, GsonMappingProvider.class, JacksonMappingProvider.class, JsonOrgMappingProvider.class, JsonSmartMappingProvider.class,
+        MappingException.class, MappingProvider.class,
         ParserContext.class, SpelParserConfiguration.class, Identifier.class, OperatorBetween.class, RealLiteral.class, MethodReference.class, AstUtils.class, OpNE.class, OperatorNot.class,
         Elvis.class, OpDivide.class, OpMinus.class, OpModulus.class, OpGT.class, OperatorMatches.class, Literal.class, SpelNodeImpl.class, OpAnd.class,
         Assign.class, ConstructorReference.class, BeanReference.class, ValueRef.class, Operator.class, InlineMap.class, OpInc.class, FunctionReference.class, OpLT.class,
