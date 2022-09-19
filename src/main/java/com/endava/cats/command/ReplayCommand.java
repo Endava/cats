@@ -4,10 +4,12 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.report.CatsTestCase;
 import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
+import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import picocli.CommandLine;
@@ -20,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -52,6 +55,9 @@ public class ReplayCommand implements Runnable {
             description = "Set CATS log level to ALL. Useful for diagnose when raising bugs")
     private boolean debug;
 
+    @CommandLine.Option(names = {"-H"},
+            description = "Specifies the headers to be passed with all requests and will override values from the replay files for the same header name")
+    Map<String, Object> headersMap = Maps.newHashMap();
 
     @Inject
     public ReplayCommand(ServiceCaller serviceCaller, CatsDSLParser catsDSLParser) {
@@ -71,8 +77,11 @@ public class ReplayCommand implements Runnable {
         logger.note("Loaded content: \n" + testCaseFile);
         CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
-        Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList())
-                .forEach(header -> header.setValue(catsDSLParser.parseAndGetResult(header.getValue().toString(), null)));
+        List<KeyValuePair<String, Object>> headersFromFile = new java.util.ArrayList<>(Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList()));
+        headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));
+        headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
+
+        headersFromFile.forEach(header -> header.setValue(catsDSLParser.parseAndGetResult(header.getValue().toString(), null)));
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
         String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
 
