@@ -13,7 +13,7 @@ import javax.inject.Singleton;
 @Getter
 @Setter
 public class CheckArguments {
-    @CommandLine.Option(names = {"-H", "--checkHeaders"},
+    @CommandLine.Option(names = {"-A", "--checkHeaders"},
             description = "Run only Header Fuzzers")
     private boolean checkHeaders;
 
