@@ -217,7 +217,7 @@ public class TestCaseListener {
             this.recordResult(message, params, Level.WARN.toString().toLowerCase(), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug("Received response is marked as ignored... skipping!");
-            this.skipTest(logger, replaceBrackets("Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled."));
+            this.skipTest(logger, replaceBrackets("Some response elements were marked as ignored and --skipReportingForIgnoredCodes is enabled."));
         } else {
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
