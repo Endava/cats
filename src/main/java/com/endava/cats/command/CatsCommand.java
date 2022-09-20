@@ -9,6 +9,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.UserArguments;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.fields.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -93,6 +95,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
     ReportingArguments reportingArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline User Options:|@%n", exclusive = false)
+    UserArguments userArguments;
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
@@ -164,11 +170,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
      * @return the list of paths from the contract matching the supplied list
      */
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
-        List<String> suppliedPaths = new ArrayList<>(filterArguments.getPaths());
+        List<String> suppliedPaths = this.matchWildCardPaths(filterArguments.getPaths(), openAPI);
         if (suppliedPaths.isEmpty()) {
             suppliedPaths.addAll(openAPI.getPaths().keySet());
         }
-        List<String> skipPaths = filterArguments.getSkipPaths();
+        List<String> skipPaths = this.matchWildCardPaths(filterArguments.getSkipPaths(), openAPI);
         suppliedPaths = suppliedPaths.stream().filter(path -> !skipPaths.contains(path)).toList();
 
         logger.debug("Supplied paths before filtering {}", suppliedPaths);
@@ -176,6 +182,25 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         logger.debug("Supplied paths after filtering {}", suppliedPaths);
 
         return suppliedPaths;
+    }
+
+    private List<String> matchWildCardPaths(List<String> paths, OpenAPI openAPI) {
+        Set<String> allContractPaths = openAPI.getPaths().keySet();
+        Map<Boolean, List<String>> pathsByWildcard = paths.stream().collect(Collectors.partitioningBy(path -> path.contains("*")));
+
+        List<String> result = new ArrayList<>(pathsByWildcard.get(false));
+
+        for (String wildCardPath : pathsByWildcard.get(true)) {
+            result.addAll(allContractPaths
+                    .stream()
+                    .filter(path -> (wildCardPath.startsWith("*") && path.endsWith(wildCardPath.substring(1))) ||
+                            (wildCardPath.endsWith("*") && path.startsWith(wildCardPath.substring(0, wildCardPath.length() - 1)) ||
+                                    path.contains(wildCardPath.substring(1, wildCardPath.length() - 1))))
+                    .toList());
+        }
+
+        logger.debug("Final list of matching wildcard paths: {}", result);
+        return result;
     }
 
     public OpenAPI createOpenAPI() throws IOException {
@@ -232,7 +257,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                             testCaseListener.beforeFuzz(fuzzer.getClass());
                             fuzzer.fuzz(data);
                             testCaseListener.afterFuzz();
-                            logger.complete("Finish running Fuzzer {}", ansi().fgGreen().a(fuzzer.toString()).reset());
                         });
             } else {
                 logger.debug("Skipping fuzzer {} for path {} as configured!", fuzzer, pathItemEntry.getKey());
