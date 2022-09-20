@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.executor.CatsExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
@@ -27,13 +28,15 @@ class IterateThroughEnumValuesFieldsFuzzerTest {
     TestCaseListener testCaseListener;
     @InjectSpy
     CatsUtil catsUtil;
+    CatsExecutor catsExecutor;
     private IterateThroughEnumValuesFieldsFuzzer iterateThroughEnumValuesFieldsFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        iterateThroughEnumValuesFieldsFuzzer = new IterateThroughEnumValuesFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
+        catsExecutor = new CatsExecutor(serviceCaller, testCaseListener, catsUtil);
+        iterateThroughEnumValuesFieldsFuzzer = new IterateThroughEnumValuesFieldsFuzzer(catsExecutor);
     }
 
     @Test
@@ -94,6 +97,6 @@ class IterateThroughEnumValuesFieldsFuzzerTest {
                     }
                 """);
         iterateThroughEnumValuesFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 }
