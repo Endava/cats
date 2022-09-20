@@ -2,57 +2,48 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
-import com.endava.cats.fuzzer.fields.base.CatsExecutor;
+import com.endava.cats.fuzzer.executor.CatsExecutor;
+import com.endava.cats.fuzzer.executor.CatsExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
-import java.util.Set;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 @Singleton
 @FieldFuzzer
 public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
-    protected final CatsUtil catsUtil;
+    private final CatsExecutor catsExecutor;
 
 
-    public IterateThroughEnumValuesFieldsFuzzer(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil) {
-        this.serviceCaller = serviceCaller;
-        this.testCaseListener = testCaseListener;
-        this.catsUtil = catsUtil;
+    public IterateThroughEnumValuesFieldsFuzzer(CatsExecutor ce) {
+        this.catsExecutor = ce;
     }
 
     public void fuzz(FuzzingData data) {
-        Set<String> allFields = data.getAllFieldsByHttpMethod();
-        logger.debug("All fields {}", allFields);
+        Predicate<Schema<?>> schemaFilter = schema -> schema.getEnum() != null;
+        Predicate<String> fieldFilter = field -> catsExecutor.getTestCaseListener().isFieldNotADiscriminator(field);
+        Function<Schema<?>, List<String>> fuzzValueProducer = schema -> schema.getEnum().stream().map(String::valueOf).toList();
 
-        for (String fuzzedField : allFields) {
-            Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-            if (fuzzedFieldSchema.getEnum() != null && testCaseListener.isFieldNotADiscriminator(fuzzedField)) {
-                for (int i = 1; i < fuzzedFieldSchema.getEnum().size(); i++) {
-                    FuzzingStrategy replaceStrategy = FuzzingStrategy.replace().withData(fuzzedFieldSchema.getEnum().get(i));
-                    logger.debug("Field [{}] is an enum. Applying [{}]", fuzzedField, replaceStrategy);
-                    testCaseListener.createAndExecuteTest(logger, this, () -> CatsExecutor.builder()
-                            .scenario("Iterate through each possible enum values and send happy flow requests. Current enum field [{}]")
-                            .fuzzingData(data).fuzzedField(fuzzedField).fuzzingStrategy(replaceStrategy)
-                            .expectedResponseCode(ResponseCodeFamily.TWOXX)
-                            .logger(logger).testCaseListener(testCaseListener).serviceCaller(serviceCaller).catsUtil(catsUtil)
-                            .build().execute());
-                }
-            } else {
-                logger.skip("Skipping field [{}]. It's either not an enum or it's a discriminator.", fuzzedField);
-            }
-        }
+        catsExecutor.execute(
+                CatsExecutorContext.builder()
+                        .scenario("Iterate through each possible enum values and send happy flow requests.")
+                        .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
+                        .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                        .skipMessage("It's either not an enum or it's a discriminator.")
+                        .fieldFilter(fieldFilter)
+                        .schemaFilter(schemaFilter)
+                        .fuzzValueProducer(fuzzValueProducer)
+                        .logger(logger)
+                        .build());
     }
 
     @Override

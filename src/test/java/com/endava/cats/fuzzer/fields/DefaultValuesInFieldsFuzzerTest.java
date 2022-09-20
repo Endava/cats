@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.fuzzer.executor.CatsExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
@@ -27,13 +28,15 @@ class DefaultValuesInFieldsFuzzerTest {
     TestCaseListener testCaseListener;
     @InjectSpy
     CatsUtil catsUtil;
+    private CatsExecutor catsExecutor;
     private DefaultValuesInFieldsFuzzer defaultValuesInFieldsFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        defaultValuesInFieldsFuzzer = new DefaultValuesInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil);
+        catsExecutor = new CatsExecutor(serviceCaller, testCaseListener, catsUtil);
+        defaultValuesInFieldsFuzzer = new DefaultValuesInFieldsFuzzer(catsExecutor);
     }
 
     @Test
