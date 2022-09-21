@@ -70,7 +70,7 @@ public class TemplateFuzzCommand implements Runnable {
     IgnoreArguments ignoreArguments;
 
     @Inject
-    @CommandLine.ArgGroup(heading = "%n@|bold,underline User Options:|@%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Dictionary Options:|@%n", exclusive = false)
     UserArguments userArguments;
 
     @CommandLine.Spec
