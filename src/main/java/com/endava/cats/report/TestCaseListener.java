@@ -284,9 +284,16 @@ public class TestCaseListener {
     }
 
     public void reportInfo(PrettyLogger logger, String message, Object... params) {
-        executionStatisticsListener.increaseSuccess();
-        logger.success(message, params);
-        this.recordResult(message, params, "success", logger);
+        CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
+
+        if (ignoreArguments.isIgnoredResponse(catsResponse) && ignoreArguments.isSkipReportingForIgnoredCodes()) {
+            this.logger.debug("Received response is marked as ignored... skipping!");
+            this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
+        } else {
+            executionStatisticsListener.increaseSuccess();
+            logger.success(message, params);
+            this.recordResult(message, params, "success", logger);
+        }
     }
 
     private void reportInfo(PrettyLogger logger, CatsResult catsResult, Object... params) {
