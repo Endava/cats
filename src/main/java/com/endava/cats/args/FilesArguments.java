@@ -43,15 +43,15 @@ public class FilesArguments {
 
     @CommandLine.Option(names = {"-H"},
             description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control use the `--headers` arg that requires a file.")
+    @Setter
+    @Getter
     Map<String, String> headersMap;
-
 
     @CommandLine.Option(names = {"--queryParams"},
             description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params")
     @Getter
     @Setter
     private File queryFile;
-
 
     @CommandLine.Option(names = {"--refData"},
             description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
