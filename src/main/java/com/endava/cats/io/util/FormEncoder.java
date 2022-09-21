@@ -17,6 +17,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class FormEncoder {
+
+    private FormEncoder() {
+        //ntd
+    }
+
     public static HttpContent createHttpContent(Map<String, Object> params) throws IOException {
         // If params is null, we create an empty HttpContent because we still want to send the
         // Content-Type header.
@@ -34,7 +39,7 @@ public final class FormEncoder {
                     flatParams.stream()
                             .filter(kvp -> kvp.getValue() instanceof String)
                             .map(kvp -> new KeyValuePair<>(kvp.getKey(), (String) kvp.getValue()))
-                            .collect(Collectors.toList());
+                            .toList();
             return HttpContent.buildFormURLEncodedContent(flatParamsString);
         } else {
             return HttpContent.buildMultipartFormDataContent(flatParams);
@@ -56,7 +61,7 @@ public final class FormEncoder {
                 flattenParams(params).stream()
                         .filter(kvp -> kvp.getValue() instanceof String)
                         .map(kvp -> new KeyValuePair<>(kvp.getKey(), (String) kvp.getValue()))
-                        .collect(Collectors.toList());
+                        .toList();
         return createQueryString(flatParams);
     }
 
@@ -126,8 +131,8 @@ public final class FormEncoder {
         // characters back to their literals. This is fine by the server, and
         // makes these parameter strings easier to read.
         return URLEncoder.encode(value, StandardCharsets.UTF_8)
-                .replaceAll("%5B", "[")
-                .replaceAll("%5D", "]");
+                .replace("%5B", "[")
+                .replace("%5D", "]");
     }
 
     /**
@@ -164,11 +169,11 @@ public final class FormEncoder {
 
         } else if (value.getClass().isArray()) {
             Object[] array = getArrayForObject(value);
-            Collection<?> collection = Arrays.stream(array).collect(Collectors.toList());
+            Collection<?> collection = Arrays.stream(array).toList();
             flatParams = flattenParamsCollection(collection, keyPrefix);
 
         } else if (value.getClass().isEnum()) {
-            flatParams = singleParam(keyPrefix, JsonUtils.GSON.toJson(value).replaceAll("\"", ""));
+            flatParams = singleParam(keyPrefix, JsonUtils.GSON.toJson(value).replace("\"", ""));
 
         } else {
             flatParams = singleParam(keyPrefix, value.toString());
