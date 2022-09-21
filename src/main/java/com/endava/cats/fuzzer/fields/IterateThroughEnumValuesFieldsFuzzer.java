@@ -43,6 +43,7 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
                         .schemaFilter(schemaFilter)
                         .fuzzValueProducer(fuzzValueProducer)
                         .logger(logger)
+                        .fuzzer(this)
                         .build());
     }
 

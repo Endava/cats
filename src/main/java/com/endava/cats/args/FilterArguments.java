@@ -13,6 +13,8 @@ import com.endava.cats.annotations.TrimAndValidate;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
+import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
+import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
 import com.endava.cats.http.HttpMethod;
 import lombok.Getter;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -92,7 +94,10 @@ public class FilterArguments {
 
             FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
         }
-  
+        if (userArguments.getWords() != null) {
+            FUZZERS_TO_BE_RUN.clear();
+            FUZZERS_TO_BE_RUN.addAll(List.of(UserDictionaryFieldsFuzzer.class.getSimpleName(), UserDictionaryHeadersFuzzer.class.getSimpleName()));
+        }
         return FUZZERS_TO_BE_RUN;
     }
 

@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.MatchArguments;
 import com.endava.cats.fuzzer.executor.CatsExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -35,7 +36,7 @@ class IterateThroughEnumValuesFieldsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        catsExecutor = new CatsExecutor(serviceCaller, testCaseListener, catsUtil);
+        catsExecutor = new CatsExecutor(serviceCaller, testCaseListener, catsUtil, Mockito.mock(MatchArguments.class));
         iterateThroughEnumValuesFieldsFuzzer = new IterateThroughEnumValuesFieldsFuzzer(catsExecutor);
     }
 
