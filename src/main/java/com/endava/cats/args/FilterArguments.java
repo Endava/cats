@@ -8,10 +8,13 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.SanitizeAndValidate;
+import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.annotations.TrimAndValidate;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
+import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
+import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
 import com.endava.cats.http.HttpMethod;
 import lombok.Getter;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -33,7 +36,6 @@ import java.util.stream.Collectors;
 public class FilterArguments {
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
-
     @Inject
     Instance<Fuzzer> fuzzers;
     @Inject
@@ -42,6 +44,8 @@ public class FilterArguments {
     CheckArguments checkArguments;
     @Inject
     ProcessingArguments processingArguments;
+    @Inject
+    UserArguments userArguments;
 
     @CommandLine.Option(names = {"-f", "--fuzzers"},
             description = "A comma separated list of fuzzers you want to run. You can use full or partial Fuzzer names. To list all available fuzzers run: @|bold cats list -f|@", split = ",")
@@ -83,13 +87,21 @@ public class FilterArguments {
         if (FUZZERS_TO_BE_RUN.isEmpty()) {
             List<String> allowedFuzzers = processSuppliedFuzzers();
             allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
+            allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
             allowedFuzzers = this.removeContractFuzzersIfNeeded(allowedFuzzers);
             allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
             allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
 
             FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
         }
+      
         return FUZZERS_TO_BE_RUN;
+    }
+
+    private List<String> removeSpecialFuzzers(List<String> allowedFuzzers) {
+        List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SpecialFuzzer.class);
+
+        return allowedFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();
     }
 
     public List<Fuzzer> getAllRegisteredFuzzers() {
