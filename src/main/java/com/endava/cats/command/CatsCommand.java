@@ -7,6 +7,7 @@ import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
@@ -97,9 +98,13 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     ReportingArguments reportingArguments;
 
     @Inject
-    @CommandLine.ArgGroup(heading = "%n@|bold,underline User Options:|@%n", exclusive = false)
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Dictionary Options:|@%n", exclusive = false)
     UserArguments userArguments;
 
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options (they are only active when supplying a custom dictionary):|@%n", exclusive = false)
+    MatchArguments matchArguments;
+    
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -159,8 +164,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void executeCustomFuzzer() throws IOException {
-        functionalFuzzer.executeCustomFuzzerTests();
-        functionalFuzzer.replaceRefData();
+        if (filterArguments.getSuppliedFuzzers().contains(FunctionalFuzzer.class.getSimpleName())) {
+            functionalFuzzer.executeCustomFuzzerTests();
+            functionalFuzzer.replaceRefData();
+        }
     }
 
     /**
