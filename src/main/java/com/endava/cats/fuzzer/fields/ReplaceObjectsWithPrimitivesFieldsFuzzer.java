@@ -40,6 +40,7 @@ public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
                         .fieldFilter(fieldFilter)
                         .fuzzValueProducer(schema -> List.of("cats_primitive_string"))
                         .logger(logger)
+                        .fuzzer(this)
                         .build());
     }
 
