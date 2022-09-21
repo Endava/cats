@@ -26,12 +26,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Singleton
 @SpecialFuzzer
 public class FunctionalFuzzer implements CustomFuzzerBase {
-    private  final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFuzzer.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FunctionalFuzzer.class);
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();

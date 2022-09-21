@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -53,6 +54,7 @@ public abstract class TestCaseExporter {
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
+    public static final String STACKTRACE = "Stacktrace";
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
@@ -152,7 +154,7 @@ public abstract class TestCaseExporter {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), JsonUtils.GSON.toJson(timeExecutionDetails));
         } catch (IOException e) {
             logger.warning("There was an issue writing the execution_times.js: {}", e.getMessage());
-            logger.debug("Stacktrace", e);
+            logger.debug(STACKTRACE, e);
         }
     }
 
@@ -190,7 +192,7 @@ public abstract class TestCaseExporter {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
         } catch (IOException e) {
             logger.error("There was an error writing the report summary: {}", e.getMessage());
-            logger.debug("Stacktrace", e);
+            logger.debug(STACKTRACE, e);
         }
     }
 
@@ -210,10 +212,10 @@ public abstract class TestCaseExporter {
     public void writeHelperFiles() {
         for (String file : this.getSpecificHelperFiles()) {
             try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
-                Files.copy(stream, Paths.get(reportingPath.toFile().getAbsolutePath(), file));
+                Files.copy(Objects.requireNonNull(stream), Paths.get(reportingPath.toFile().getAbsolutePath(), file));
             } catch (IOException e) {
                 logger.error("Unable to write reporting files: {}", e.getMessage());
-                logger.debug("Stacktrace", e);
+                logger.debug(STACKTRACE, e);
             }
         }
     }
@@ -235,7 +237,7 @@ public abstract class TestCaseExporter {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), JsonUtils.GSON.toJson(testCase));
         } catch (IOException e) {
             logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage());
-            logger.debug("Stacktrace", e);
+            logger.debug(STACKTRACE, e);
         }
     }
 
@@ -251,7 +253,7 @@ public abstract class TestCaseExporter {
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), writer.toString());
         } catch (IOException e) {
             logger.error("There was a problem writing test case {}: {}", testCase.getTestId(), e.getMessage());
-            logger.debug("Stacktrace", e);
+            logger.debug(STACKTRACE, e);
         }
     }
 
