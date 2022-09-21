@@ -98,6 +98,10 @@ public class IgnoreArguments {
                 this.isNotIgnoredRegex(catsResponse.getBody());
     }
 
+    public boolean isIgnoredResponse(CatsResponse catsResponse) {
+        return !this.isNotIgnoredResponse(catsResponse);
+    }
+
     public List<String> getSkipFields() {
         return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList());
     }
