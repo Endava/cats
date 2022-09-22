@@ -1,5 +1,7 @@
 package com.endava.cats.args;
 
+import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
+import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
 import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -10,6 +12,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,6 +42,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", Collections.emptyList());
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
+        filterArguments.getUserArguments().words = null;
     }
 
     @ParameterizedTest
@@ -163,5 +167,13 @@ class FilterArgumentsTest {
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
         filterArguments.customFilter("FunctionalFuzzer");
         Assertions.assertThat(filterArguments.getFuzzersForPath()).doesNotContain("VeryLargeUnicodeStringsInFieldsFuzzer");
+    }
+
+    @Test
+    void shouldOnlyReturnUserDictionaryFuzzersWhenWordsSupplied() {
+        filterArguments.getUserArguments().setWords(new File("src/test/resources/headers/yml"));
+        List<String> fuzzerList = filterArguments.getFuzzersForPath();
+
+        Assertions.assertThat(fuzzerList).containsOnly(UserDictionaryFieldsFuzzer.class.getSimpleName(), UserDictionaryHeadersFuzzer.class.getSimpleName());
     }
 }

@@ -52,14 +52,25 @@ class NullValuesInFieldsFuzzerTest {
     }
 
     @Test
-    void givenANewNullValuesInFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheNullValuesInFieldsFuzzer() {
+    void shouldReturnExpectedResultCode2xx() {
         Assertions.assertThat(nullValuesInFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+    }
 
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(nullValuesInFieldsFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldHaveTypeOfData() {
+        Assertions.assertThat(nullValuesInFieldsFuzzer.typeOfDataSentToTheService()).isNotBlank();
+    }
+
+    @Test
+    void shouldReturnSkipStrategy() {
         FuzzingStrategy fuzzingStrategy = nullValuesInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isNull();
-        Assertions.assertThat(nullValuesInFieldsFuzzer.description()).isNotNull();
-        Assertions.assertThat(nullValuesInFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
 
     @Test
@@ -79,5 +90,4 @@ class NullValuesInFieldsFuzzerTest {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).build();
         Assertions.assertThat(nullValuesInFieldsFuzzer.isFuzzingPossibleSpecificToFuzzer(data, "notQuery", FuzzingStrategy.replace())).isTrue();
     }
-
 }

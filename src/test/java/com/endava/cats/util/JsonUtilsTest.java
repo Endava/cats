@@ -80,4 +80,18 @@ class JsonUtilsTest {
 
         Assertions.assertThat(result).isFalse();
     }
+
+    @Test
+    void shouldBeObject() {
+        boolean result = JsonUtils.isObject("[{\"test\":{\"inner\": 4}}]", "test");
+
+        Assertions.assertThat(result).isTrue();
+    }
+
+    @Test
+    void shouldNotBeObjectWhenInvalidPath() {
+        boolean result = JsonUtils.isObject("[{\"test\":{\"inner\": 4}}]", "test_bad");
+
+        Assertions.assertThat(result).isFalse();
+    }
 }
