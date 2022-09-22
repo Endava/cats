@@ -212,4 +212,9 @@ class TemplateFuzzerTest {
         String replaced = templateFuzzer.replacePath(data, "replaced", "field");
         Assertions.assertThat(replaced).isEqualTo("http://url?test&field=replaced");
     }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(templateFuzzer.description()).isNotBlank();
+    }
 }

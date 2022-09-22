@@ -57,14 +57,25 @@ class EmptyStringsInFieldsFuzzerTest {
     }
 
     @Test
-    void givenANewEmptyStringFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheEmptyStringFuzzer() {
+    void shouldReturnExpectedResultCode4xx() {
         Assertions.assertThat(emptyStringsInFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+    }
 
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(emptyStringsInFieldsFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldHaveTypeOfData() {
+        Assertions.assertThat(emptyStringsInFieldsFuzzer.typeOfDataSentToTheService()).isNotBlank();
+    }
+
+    @Test
+    void shouldReturnSkipStrategy() {
         FuzzingStrategy fuzzingStrategy = emptyStringsInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(fuzzingStrategy.getData().toString()).isEmpty();
-        Assertions.assertThat(emptyStringsInFieldsFuzzer.description()).isNotNull();
-        Assertions.assertThat(emptyStringsInFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("");
     }
 
     @Test

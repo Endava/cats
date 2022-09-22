@@ -53,10 +53,10 @@ public class CatsExecutor {
                                 CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(context.getFuzzingData().getPath()).headers(context.getFuzzingData().getHeaders())
                                         .payload(fuzzingResult.getJson()).queryParams(context.getFuzzingData().getQueryParams()).httpMethod(context.getFuzzingData().getMethod())
                                         .contentType(context.getFuzzingData().getFirstRequestContentType()).build());
-                                
+
                                 if (context.getExpectedResponseCode() != null) {
                                     testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
-                                } else if ((matchArguments.isAnyMatchArgumentSupplied() && matchArguments.isMatchResponse(response)) || !matchArguments.isAnyMatchArgumentSupplied()) {
+                                } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
                                     testCaseListener.reportError(context.getLogger(), "Service call completed. Please check response details");
                                 } else {
                                     testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");

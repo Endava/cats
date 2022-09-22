@@ -80,6 +80,7 @@ class IgnoreArgumentsTest {
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseLines", List.of(200L));
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponseLines(200)).isFalse();
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isFalse();
+        Assertions.assertThat(ignoreArguments.isIgnoredResponse(catsResponse)).isTrue();
     }
 
     @Test

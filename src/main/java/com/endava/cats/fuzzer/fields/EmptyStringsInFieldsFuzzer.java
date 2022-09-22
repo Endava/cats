@@ -43,7 +43,7 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
 
     @Override
     public boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
-        return HttpMethod.requiresBody(data.getMethod()) || (!HttpMethod.requiresBody(data.getMethod()) && data.isQueryParam(fuzzedField));
+        return HttpMethod.requiresBody(data.getMethod()) || data.isQueryParam(fuzzedField);
     }
 
     @Override
