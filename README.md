@@ -5,7 +5,10 @@
 </p>
 <p align="center">
 
-![CI](https://github.com/Endava/cats/workflows/CI/badge.svg)
+![CI](https://img.shields.io/github/workflow/status/Endava/cats/CI?logo=GitHub&style=for-the-badge)
+[![Commits](https://img.shields.io/github/commit-activity/m/Endava/cats?style=for-the-badge&logo=git&logoColor=white)](https://github.com/Endava/cats/pulse)
+
+
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=sqale_index)](https://sonarcloud.io/dashboard?id=cats)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=coverage)](https://sonarcloud.io/dashboard?id=cats)
