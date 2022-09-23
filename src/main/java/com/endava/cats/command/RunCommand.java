@@ -8,6 +8,8 @@ import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import lombok.Getter;
+import lombok.Setter;
 import picocli.CommandLine;
 
 import javax.enterprise.context.Dependent;
@@ -59,6 +61,10 @@ public class RunCommand implements Runnable {
             description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example")
     private File headersFile;
 
+    @CommandLine.Option(names = {"--queryParams"},
+            description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params")
+    private File queryFile;
+
     @CommandLine.Option(names = {"-H"},
             description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control use the `--headers` arg that requires a file.")
     Map<String, String> headersMap;
@@ -99,6 +105,7 @@ public class RunCommand implements Runnable {
             catsCommand.filesArguments.setHeadersMap(headersMap);
             catsCommand.filesArguments.setCreateRefData(createRefData);
             catsCommand.filesArguments.setRefDataFile(refDataFile);
+            catsCommand.filesArguments.setQueryFile(queryFile);
             catsCommand.processingArguments.setContentType(this.contentType);
             catsCommand.run();
         } catch (IOException e) {
