@@ -56,7 +56,7 @@ public class TemplateFuzzCommand implements Runnable {
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
     AuthArguments authArgs;
-    
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
     ReportingArguments reportingArguments;

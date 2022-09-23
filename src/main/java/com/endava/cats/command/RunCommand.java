@@ -8,8 +8,6 @@ import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import lombok.Getter;
-import lombok.Setter;
 import picocli.CommandLine;
 
 import javax.enterprise.context.Dependent;

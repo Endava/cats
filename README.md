@@ -377,11 +377,12 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow, security testing or supplying your own request templates, rather than OpenAPI specs
 
 ## Field Fuzzers
-`CATS` has currently 47 registered Field `Fuzzers`:
+`CATS` has currently 49 registered Field `Fuzzers`:
 - `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
 - `DecimalValuesInIntegerFieldsFuzzer` - iterate through each Integer field and send requests with decimal values in the targeted field
+- `DefaultValuesInFieldsFuzzer` - iterate through each field with default values defined and send a happy flow request
 - `EmptyStringValuesInFieldsFuzzer` - iterate through each field and send requests with empty String values in the targeted field
 - `ExtremeNegativeValueDecimalFieldsFuzzer` - iterate through each Number field and send requests with the lowest value possible (-999999999999999999999999999999999999999999.99999999999 for no format, -3.4028235E38 for float and -1.7976931348623157E308 for double) in the targeted field
 - `ExtremeNegativeValueIntegerFieldsFuzzer` - iterate through each Integer field and send requests with the lowest value possible (-9223372036854775808 for int32 and -18446744073709551616 for int64) in the targeted field
@@ -389,6 +390,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `ExtremePositiveValueInIntegerFieldsFuzzer` - iterate through each Integer field and send requests with the highest value possible (9223372036854775807 for int32 and 18446744073709551614 for int64) in the targeted field
 - `IntegerFieldsLeftBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the left side in the targeted field
 - `IntegerFieldsRightBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the right side in the targeted field
+- `InvalidValuesInEnumsFieldsFuzzer` - iterate through each ENUM field and send invalid values
 - `InvalidValuesInEnumsFieldsFuzzer` - iterate through each ENUM field and send invalid values
 - `LeadingWhitespacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode whitespaces and invisible separators prefixing the current value in the targeted field
 - `LeadingControlCharsInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode control chars prefixing the current value in the targeted field
@@ -405,6 +407,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `OnlySingleCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send  values with single code point emojis only
 - `OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send  values with multi code point emojis only
 - `RemoveFieldsFuzzer` - iterate through each request fields and remove certain fields according to the supplied 'fieldsFuzzingStrategy'
+- `ReplaceObjectsWithPrimitivesFieldsFuzzer` - iterate through each non-primitive field and replace it with primitive values
 - `StringFieldsLeftBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the left side in the targeted field
 - `StringFieldsRightBoundaryFuzzer` - iterate through each String field and send requests with outside the range values on the right side in the targeted field
 - `StringFormatAlmostValidValuesFuzzer` - iterate through each String field and get its 'format' value (i.e. email, ip, uuid, date, datetime, etc); send requests with values which are almost valid (i.e. email@yhoo. for email, 888.1.1. for ip, etc)  in the targeted field
@@ -414,6 +417,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `TrailingControlCharsInFieldsTrimValidateFuzzer` - iterate through each field and send requests with trailing with Unicode control chars in the targeted field
 - `TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values trailed with single code point emojis
 - `TrailingMultiCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values trailed with multi code point emojis
+- `UserDictionaryFieldsFuzzer` - iterates through each request fields and sends values from the user supplied dictionary
 - `VeryLargeStringsFuzzer` - iterate through each String field and send requests with very large values (40000 characters) in the targeted field
 - `VeryLargeDecimalsInNumericFieldsFuzzer` - iterate through each numeric field and send requests with very large numbers (40000 characters) in the targeted field
 - `VeryLargeIntegersInNumericFieldsFuzzer` - iterate through each numeric field and send requests with very large numbers (40000 characters) in the targeted field
@@ -428,7 +432,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 
 ## Header Fuzzers
-`CATS` has currently 28 registered Header `Fuzzers`: 
+`CATS` has currently 29 registered Header `Fuzzers`: 
 - `AbugidasCharsInHeadersFuzzer` -  iterate through each header and send requests with abugidas chars in the targeted header
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
 - `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
@@ -439,7 +443,10 @@ You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 - `LargeValuesInHeadersFuzzer` - iterate through each header and send requests with large values in the targeted header
 - `LeadingControlCharsInHeadersFuzzer` - iterate through each header and prefix values with control chars
 - `LeadingWhitespacesInHeadersFuzzer` - iterate through each header and prefix value with unicode separators
+- `LeadingMultiCodePointEmojisInHeadersFuzzer` - iterate through each header and prefix values with multi code point emojis
+- `LeadingSingleCodePointEmojisInHeadersFuzzer` - iterate through each header and prefix values with single code point emojis
 - `LeadingSpacesInHeadersFuzzer` - iterate through each header and send requests with spaces prefixing the value in the targeted header
+- `LeadingWhitespacesInHeadersFuzzer` - iterate through each header and prefix value with unicode separators
 - `RemoveHeadersFuzzer` - iterate through each header and remove different combinations of them
 - `OnlyControlCharsInHeadersFuzzer` - iterate through each header and replace value with control chars
 - `OnlySpacesInHeadersFuzzer` - iterate through each header and replace value with spaces
@@ -449,6 +456,9 @@ You can run only these `Fuzzers` by supplying the `--checkFields` argument.
 - `TrailingWhitespacesInHeadersFuzzer` - iterate through each header and trail values with unicode separators
 - `UnsupportedAcceptHeadersFuzzer` - send a request with an unsupported Accept header and expect to get 406 code
 - `UnsupportedContentTypesHeadersFuzzer` - send a request with an unsupported Content-Type header and expect to get 415 code
+- `UserDictionaryHeadersFuzzer` - iterates through each request headers and sends values from the user supplied dictionary
+- `VeryLargeStringsInHeadersFuzzer` - iterate through each header and send large values in the targeted header
+- `VeryLargeUnicodeStringsInHeadersFuzzer` - iterate through each header and send large unicode values in the targeted header
 - `ZalgoTextInHeadersFuzzer` - iterate through each header and send requests with zalgo text in the targeted header
 
 You can run only these `Fuzzers` by supplying the `--checkHeaders` argument.
