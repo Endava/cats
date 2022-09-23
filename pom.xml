@@ -4,7 +4,7 @@
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
     <description>OpenAPI Fuzzer and Negative Testing Tool</description>
-    <version>8.1.0</version>
+    <version>8.1.1-SNAPSHOT</version>
 
     <properties>
         <java.version>17</java.version>
@@ -174,7 +174,7 @@
         <url>https://en-milie@github.com/Endava/cats.git</url>
         <connection>scm:git:git@github.com:Endava/cats.git</connection>
         <developerConnection>scm:git:git@github.com:Endava/cats.git</developerConnection>
-        <tag>cats-8.1.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
