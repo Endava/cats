@@ -39,16 +39,28 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
     }
 
     @Test
-    void shouldProperlyOverrideSuperClassMethods() {
+    void shouldGetReplaceFuzzingStrategy() {
         FuzzingData data = mockFuzzingData();
         FuzzingStrategy fuzzingStrategy = abugidasCharsInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
-
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("జ్ఞ\u200Cా");
-        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.description()).isNotNull();
-        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }
+
+    @Test
+    void shouldReturnDescription() {
+        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldReturn2xxWhenFuzzValueNotMatchingPattern() {
+        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+    }
+
+    @Test
+    void shouldReturnTypeOfDataToSendToServices() {
+        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.typeOfDataSentToTheService()).isNotBlank();
+    }
+
 
     @NotNull
     private FuzzingData mockFuzzingData() {

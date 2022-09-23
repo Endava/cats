@@ -34,7 +34,6 @@ class UserDictionaryFieldsFuzzerTest {
 
         userDictionaryFieldsFuzzer = new UserDictionaryFieldsFuzzer(catsExecutor, userArguments, matchArguments);
         ReflectionTestUtils.setField(userDictionaryFieldsFuzzer, "logger", prettyLogger);
-
     }
 
     @Test

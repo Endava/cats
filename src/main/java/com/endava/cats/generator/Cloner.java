@@ -2,6 +2,7 @@ package com.endava.cats.generator;
 
 import com.endava.cats.model.CatsHeader;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -14,7 +15,7 @@ public class Cloner {
         //ntd
     }
 
-    public static Set<CatsHeader> cloneMe(Set<CatsHeader> items) {
+    public static Set<CatsHeader> cloneMe(Collection<CatsHeader> items) {
         Set<CatsHeader> clones = new HashSet<>();
 
         for (CatsHeader t : items) {
