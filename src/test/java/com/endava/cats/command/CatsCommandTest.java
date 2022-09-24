@@ -103,6 +103,8 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         ReflectionTestUtils.setField(reportingArguments, "logData", List.of("org.apache.wire:debug", "com.endava.cats:warn","error"));
+        ReflectionTestUtils.setField(reportingArguments, "skipLogs", List.of("complete", "notSkip"));
+
         ReflectionTestUtils.setField(reportingArguments, "debug", true);
         Mockito.when(filterArguments.getFuzzersForPath()).thenReturn(List.of("PathTagsContractInfoFuzzer"));
         Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));

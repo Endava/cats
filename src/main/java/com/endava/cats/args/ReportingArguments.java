@@ -3,10 +3,12 @@ package com.endava.cats.args;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.github.ludovicianul.prettylogger.config.level.PrettyLevel;
 import lombok.Getter;
 import picocli.CommandLine;
 
 import javax.inject.Singleton;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -17,8 +19,12 @@ public class ReportingArguments {
     private static final String EMPTY = "empty";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReportingArguments.class);
     @CommandLine.Option(names = {"-l", "--log"},
-            description = "Set custom log level of a given package(s). You can provide a comma separated list of @|bold,underline package:level|@ pairs", split = ",")
+            description = "Set custom log level of a given package(s). You can provide a comma separated list of @|bold,underline package:level|@ pairs or a global log level", split = ",")
     private List<String> logData;
+
+    @CommandLine.Option(names = {"-g", "--skipLog"},
+            description = "A list of log levels to skip. For example you can skip only @|bold,underline note|@ and @|bold,underline info|@ levels, but leave the rest", split = ",")
+    private List<String> skipLogs;
 
     @CommandLine.Option(names = {"-D", "--debug"},
             description = "Set CATS log level to ALL. Useful for diagnose when raising bugs")
@@ -53,6 +59,18 @@ public class ReportingArguments {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }
 
+    public List<PrettyLevel> getSkipLogs() {
+        return Optional.ofNullable(skipLogs).orElse(Collections.emptyList())
+                .stream()
+                .filter(entry -> Arrays.stream(PrettyLevel.values())
+                        .map(PrettyLevel::name)
+                        .anyMatch(level -> level.equalsIgnoreCase(entry)))
+                .map(String::toUpperCase)
+                .map(PrettyLevel::valueOf)
+                .toList();
+    }
+
+
     public void processLogData() {
         for (String logLine : this.getLogData()) {
             String[] log = logLine.strip().trim().split(":");
@@ -70,6 +88,7 @@ public class ReportingArguments {
             CatsUtil.setCatsLogLevel("ALL");
             logger.fav("Setting CATS log level to ALL!");
         }
+        PrettyLogger.disableLevels(getSkipLogs().toArray(new PrettyLevel[0]));
     }
 
     public enum ReportFormat {
