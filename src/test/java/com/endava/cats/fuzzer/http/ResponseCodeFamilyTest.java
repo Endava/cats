@@ -32,7 +32,7 @@ class ResponseCodeFamilyTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"100", "101", "200", "201", "300", "301", "400", "401", "500", "501", "000"})
+    @CsvSource({"100", "101", "200", "201", "300", "301", "400", "500", "501", "000"})
     void givenA3CharacterCode_whenParsingIt_thenTheCorrectResponseCodeFamilyIsReturned(String code) {
         ResponseCodeFamily responseCodeFamily = ResponseCodeFamily.from(code);
 
@@ -77,7 +77,7 @@ class ResponseCodeFamilyTest {
 
     @Test
     void shouldBeValid4xxAAAllowedCodes() {
-        Assertions.assertThat(ResponseCodeFamily.FOURXX_AA.asString()).isEqualTo("4XX");
+        Assertions.assertThat(ResponseCodeFamily.FOURXX_AA.asString()).isEqualTo("401, 403");
         Assertions.assertThat(ResponseCodeFamily.FOURXX_AA.getStartingDigit()).isEqualTo("4");
         Assertions.assertThat(ResponseCodeFamily.FOURXX_AA.allowedResponseCodes()).containsOnly("403", "401");
     }

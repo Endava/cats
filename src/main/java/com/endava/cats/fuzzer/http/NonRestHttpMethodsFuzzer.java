@@ -3,7 +3,6 @@ package com.endava.cats.fuzzer.http;
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -20,12 +19,10 @@ public class NonRestHttpMethodsFuzzer implements Fuzzer {
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(NonRestHttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();
-    private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
-    public NonRestHttpMethodsFuzzer(ServiceCaller sc, TestCaseListener lr, HttpMethodFuzzerUtil hmfu) {
-        this.serviceCaller = sc;
+    public NonRestHttpMethodsFuzzer(TestCaseListener lr, HttpMethodFuzzerUtil hmfu) {
         this.testCaseListener = lr;
         this.httpMethodFuzzerUtil = hmfu;
     }
@@ -34,7 +31,7 @@ public class NonRestHttpMethodsFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         if (!fuzzedPaths.contains(data.getPath())) {
             for (HttpMethod httpMethod : HttpMethod.nonRestMethods()) {
-                testCaseListener.createAndExecuteTest(logger, this, () -> httpMethodFuzzerUtil.process(data, serviceCaller::call, httpMethod));
+                testCaseListener.createAndExecuteTest(logger, this, () -> httpMethodFuzzerUtil.process(data, httpMethod));
             }
             fuzzedPaths.add(data.getPath());
         }

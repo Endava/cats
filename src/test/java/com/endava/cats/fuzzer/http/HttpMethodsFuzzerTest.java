@@ -32,8 +32,9 @@ class HttpMethodsFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        httpMethodsFuzzer = new HttpMethodsFuzzer(serviceCaller, testCaseListener, httpMethodFuzzerUtil);
+        httpMethodsFuzzer = new HttpMethodsFuzzer(testCaseListener, httpMethodFuzzerUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(httpMethodFuzzerUtil, "serviceCaller", serviceCaller);
     }
 
     @Test

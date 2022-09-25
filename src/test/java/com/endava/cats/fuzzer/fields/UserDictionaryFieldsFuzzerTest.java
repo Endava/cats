@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
-import com.endava.cats.fuzzer.executor.CatsExecutor;
+import com.endava.cats.fuzzer.executor.CatsFieldsExecutor;
 import com.endava.cats.model.FuzzingData;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -13,12 +13,11 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
-import java.util.List;
 
 @QuarkusTest
 class UserDictionaryFieldsFuzzerTest {
 
-    private CatsExecutor catsExecutor;
+    private CatsFieldsExecutor catsExecutor;
     private UserArguments userArguments;
     private MatchArguments matchArguments;
     private UserDictionaryFieldsFuzzer userDictionaryFieldsFuzzer;
@@ -27,7 +26,7 @@ class UserDictionaryFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        catsExecutor = Mockito.mock(CatsExecutor.class);
+        catsExecutor = Mockito.mock(CatsFieldsExecutor.class);
         userArguments = Mockito.mock(UserArguments.class);
         matchArguments = Mockito.mock(MatchArguments.class);
         prettyLogger = Mockito.mock(PrettyLogger.class);

@@ -31,8 +31,9 @@ class NonRestHttpMethodsFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        nonRestHttpMethodsFuzzer = new NonRestHttpMethodsFuzzer(serviceCaller, testCaseListener, httpMethodFuzzerUtil);
+        nonRestHttpMethodsFuzzer = new NonRestHttpMethodsFuzzer(testCaseListener, httpMethodFuzzerUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(httpMethodFuzzerUtil, "serviceCaller", serviceCaller);
     }
 
     @Test

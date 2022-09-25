@@ -43,7 +43,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public String asString() {
-            return "4XX";
+            return "401, 403";
         }
 
         @Override

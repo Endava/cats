@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -25,10 +26,13 @@ class MalformedJsonFuzzerTest {
     private TestCaseListener testCaseListener;
     private MalformedJsonFuzzer malformedJsonFuzzer;
 
+    private CatsHttpExecutor catsHttpExecutor;
+
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        malformedJsonFuzzer = new MalformedJsonFuzzer(serviceCaller, testCaseListener);
+        catsHttpExecutor = new CatsHttpExecutor(testCaseListener, serviceCaller);
+        malformedJsonFuzzer = new MalformedJsonFuzzer(catsHttpExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -55,9 +59,17 @@ class MalformedJsonFuzzerTest {
     }
 
     @Test
-    void givenAMalformedJsonFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
-        Assertions.assertThat(malformedJsonFuzzer.description()).isNotNull();
+    void shouldHaveToString() {
         Assertions.assertThat(malformedJsonFuzzer).hasToString(malformedJsonFuzzer.getClass().getSimpleName());
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(malformedJsonFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldNotSkipForAnyHttpMethod() {
         Assertions.assertThat(malformedJsonFuzzer.skipForHttpMethods()).isEmpty();
     }
 }

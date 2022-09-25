@@ -1,7 +1,8 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
-import com.endava.cats.fuzzer.executor.CatsExecutor;
+import com.endava.cats.fuzzer.executor.CatsFieldsExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -28,14 +29,14 @@ class ReplaceObjectsWithPrimitivesFieldsFuzzerTest {
     TestCaseListener testCaseListener;
     @InjectSpy
     CatsUtil catsUtil;
-    CatsExecutor catsExecutor;
+    CatsFieldsExecutor catsExecutor;
     private ReplaceObjectsWithPrimitivesFieldsFuzzer replaceObjectsWithPrimitivesFieldsFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        catsExecutor = new CatsExecutor(serviceCaller, testCaseListener, catsUtil, Mockito.mock(MatchArguments.class));
+        catsExecutor = new CatsFieldsExecutor(serviceCaller, testCaseListener, catsUtil, Mockito.mock(MatchArguments.class), Mockito.mock(FilesArguments.class));
         replaceObjectsWithPrimitivesFieldsFuzzer = new ReplaceObjectsWithPrimitivesFieldsFuzzer(catsExecutor);
     }
 
