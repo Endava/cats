@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
@@ -34,7 +35,7 @@ class BypassAuthenticationFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;
-
+    private CatsHttpExecutor catsHttpExecutor;
     private BypassAuthenticationFuzzer bypassAuthenticationFuzzer;
 
     @BeforeEach
@@ -42,7 +43,8 @@ class BypassAuthenticationFuzzerTest {
         catsUtil = Mockito.mock(CatsUtil.class);
         filesArguments = new FilesArguments(catsUtil);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(serviceCaller, testCaseListener, filesArguments);
+        catsHttpExecutor = new CatsHttpExecutor(testCaseListener, serviceCaller);
+        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(catsHttpExecutor, filesArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -51,7 +53,7 @@ class BypassAuthenticationFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).reqSchema(new StringSchema()).build();
         bypassAuthenticationFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.anyString());
+        Mockito.verifyNoInteractions(testCaseListener);
     }
 
 
@@ -88,10 +90,18 @@ class BypassAuthenticationFuzzerTest {
     }
 
     @Test
-    void givenABypassAuthenticationHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
-        Assertions.assertThat(bypassAuthenticationFuzzer.description()).isNotNull();
-        Assertions.assertThat(bypassAuthenticationFuzzer).hasToString(bypassAuthenticationFuzzer.getClass().getSimpleName());
+    void shouldNotSkipForAnyHttpMethod() {
         Assertions.assertThat(bypassAuthenticationFuzzer.skipForHttpMethods()).isEmpty();
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(bypassAuthenticationFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(bypassAuthenticationFuzzer).hasToString(bypassAuthenticationFuzzer.getClass().getSimpleName());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -29,10 +30,13 @@ class HappyFuzzerTest {
 
     private HappyFuzzer happyFuzzer;
 
+    private CatsHttpExecutor catsHttpExecutor;
+
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        happyFuzzer = new HappyFuzzer(serviceCaller, testCaseListener);
+        catsHttpExecutor = new CatsHttpExecutor(testCaseListener, serviceCaller);
+        happyFuzzer = new HappyFuzzer(catsHttpExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -50,8 +54,16 @@ class HappyFuzzerTest {
         happyFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
-        Assertions.assertThat(happyFuzzer.description()).isNotNull();
+    }
+
+    @Test
+    void shouldHaveToString() {
         Assertions.assertThat(happyFuzzer).hasToString(happyFuzzer.getClass().getSimpleName());
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(happyFuzzer.description()).isNotBlank();
     }
 
     @Test

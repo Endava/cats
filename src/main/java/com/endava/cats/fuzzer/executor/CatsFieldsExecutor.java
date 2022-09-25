@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.executor;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -13,9 +14,14 @@ import lombok.Getter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.endava.cats.io.ServiceCaller.CATS_REMOVE_FIELD;
 
 @Singleton
-public class CatsExecutor {
+public class CatsFieldsExecutor {
 
     private final ServiceCaller serviceCaller;
     @Getter
@@ -24,22 +30,30 @@ public class CatsExecutor {
 
     private final MatchArguments matchArguments;
 
+    private final FilesArguments filesArguments;
+
     @Inject
-    public CatsExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil, MatchArguments ma) {
+    public CatsFieldsExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil, MatchArguments ma, FilesArguments fa) {
         this.serviceCaller = serviceCaller;
         this.testCaseListener = testCaseListener;
         this.catsUtil = catsUtil;
         this.matchArguments = ma;
+        this.filesArguments = fa;
     }
 
-    public void execute(CatsExecutorContext context) {
-        for (String fuzzedField : context.getFuzzingData().getAllFieldsByHttpMethod()) {
+    public void execute(CatsFieldsExecutorContext context) {
+        Set<String> allFields = context.getFuzzingData().getAllFieldsByHttpMethod();
+        context.getLogger().debug("All fields: {}", allFields);
+        List<String> fieldsToBeRemoved = filesArguments.getRefData(context.getFuzzingData().getPath()).entrySet()
+                .stream().filter(entry -> entry.getValue().equalsIgnoreCase(CATS_REMOVE_FIELD)).map(Map.Entry::getKey).toList();
+        context.getLogger().note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
+
+        fieldsToBeRemoved.forEach(allFields::remove);
+
+        for (String fuzzedField : allFields) {
             Schema<?> fuzzedFieldSchema = context.getFuzzingData().getRequestPropertyTypes().get(fuzzedField);
-
             if (context.getSchemaFilter().test(fuzzedFieldSchema) && context.getFieldFilter().test(fuzzedField)) {
-
                 for (String currentValue : context.getFuzzValueProducer().apply(fuzzedFieldSchema)) {
-
                     testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> {
                                 FuzzingStrategy strategy = context.getFuzzingStrategy().withData(currentValue);
                                 context.getLogger().debug("Applying [{}] for field [{}]", strategy, fuzzedField);

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.executor;
 
 import com.endava.cats.Fuzzer;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -24,14 +25,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.inject.Inject;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
-class CatsExecutorTest {
+class CatsFieldsExecutorTest {
 
-    private CatsExecutor catsExecutor;
+    private CatsFieldsExecutor catsFieldsExecutor;
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
@@ -39,34 +41,37 @@ class CatsExecutorTest {
     CatsUtil catsUtil;
     private MatchArguments matchArguments;
 
+    private FilesArguments filesArguments;
+
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         matchArguments = Mockito.mock(MatchArguments.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
 
-        catsExecutor = new CatsExecutor(serviceCaller, testCaseListener, catsUtil, matchArguments);
+        catsFieldsExecutor = new CatsFieldsExecutor(serviceCaller, testCaseListener, catsUtil, matchArguments, filesArguments);
     }
 
     @Test
     void shouldSkipWhenFieldFilterNotPassing() {
-        catsExecutor.execute(setupContextBuilder().fieldFilter(string -> false).build());
+        catsFieldsExecutor.execute(setupContextBuilder().fieldFilter(string -> false).build());
 
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test
     void shouldSkipWhenSchemaFilterNotPassing() {
-        catsExecutor.execute(setupContextBuilder().schemaFilter(string -> false).build());
+        catsFieldsExecutor.execute(setupContextBuilder().schemaFilter(string -> false).build());
 
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test
     void shouldReportResult() {
-        catsExecutor.execute(setupContextBuilder().expectedResponseCode(ResponseCodeFamily.FOURXX).build());
+        catsFieldsExecutor.execute(setupContextBuilder().expectedResponseCode(ResponseCodeFamily.FOURXX).build());
 
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
+        Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
     }
 
     @ParameterizedTest
@@ -74,8 +79,8 @@ class CatsExecutorTest {
     void shouldReportError(boolean isMatch, boolean isSupplied) {
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(isMatch);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(isSupplied);
-        int times = !isSupplied || isMatch ? 2 : 0;
-        catsExecutor.execute(setupContextBuilder().build());
+        int times = !isSupplied || isMatch ? 4 : 0;
+        catsFieldsExecutor.execute(setupContextBuilder().build());
 
         Mockito.verify(testCaseListener, Mockito.times(times)).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
     }
@@ -84,16 +89,16 @@ class CatsExecutorTest {
     void shouldSkip() {
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(false);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
-        catsExecutor.execute(setupContextBuilder().build());
+        catsFieldsExecutor.execute(setupContextBuilder().build());
 
-        Mockito.verify(testCaseListener, Mockito.times(2)).skipTest(Mockito.any(), Mockito.anyString());
+        Mockito.verify(testCaseListener, Mockito.times(4)).skipTest(Mockito.any(), Mockito.anyString());
     }
 
-    private CatsExecutorContext.CatsExecutorContextBuilder setupContextBuilder() {
+    private CatsFieldsExecutorContext.CatsFieldsExecutorContextBuilder setupContextBuilder() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("field"));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(new HashSet<>(Set.of("field", "id")));
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
         Mockito.when(data.getPayload()).thenReturn("""
                  {
@@ -106,12 +111,19 @@ class CatsExecutorTest {
                 200, "{}", "POST", 20
         ));
 
-        return CatsExecutorContext.builder()
+        return CatsFieldsExecutorContext.builder()
                 .logger(Mockito.mock(PrettyLogger.class))
                 .scenario("Replacing value")
                 .fuzzValueProducer(schema -> List.of("value1", "value2"))
                 .fuzzer(Mockito.mock(Fuzzer.class))
                 .fuzzingStrategy(FuzzingStrategy.replace())
                 .fuzzingData(data);
+    }
+
+    @Test
+    void shouldNotRunForFieldsRemovedFromRefData() {
+        Mockito.when(filesArguments.getRefData(Mockito.any())).thenReturn(Map.of("id", ServiceCaller.CATS_REMOVE_FIELD));
+        catsFieldsExecutor.execute(setupContextBuilder().expectedResponseCode(ResponseCodeFamily.FOURXX).build());
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
     }
 }

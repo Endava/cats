@@ -2,12 +2,10 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.CatsHttpExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -22,26 +20,22 @@ import javax.inject.Singleton;
 @HttpFuzzer
 public class HappyFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
+    private final CatsHttpExecutor catsHttpExecutor;
 
     @Inject
-    public HappyFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    public HappyFuzzer(CatsHttpExecutor catsHttpExecutor) {
+        this.catsHttpExecutor = catsHttpExecutor;
     }
 
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
-    }
-
-    private void process(FuzzingData data) {
-        testCaseListener.addScenario(logger, "Send a 'happy' flow request with all fields and all headers in: {}", data.getMethod());
-        testCaseListener.addExpectedResult(logger, "Should get a 2XX response code");
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build());
-
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+        catsHttpExecutor.execute(CatsHttpExecutorContext.builder()
+                .fuzzingData(data)
+                .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                .fuzzer(this)
+                .payload(data.getPayload())
+                .scenario("Send a 'happy' flow request with all fields and all headers")
+                .logger(logger)
+                .build());
     }
 
     public String toString() {

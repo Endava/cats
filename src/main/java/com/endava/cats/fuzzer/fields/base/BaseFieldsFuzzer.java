@@ -21,6 +21,7 @@ import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -49,8 +50,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         logger.debug("All fields {}", allFields);
 
-        List<String> fieldsToBeRemoved = filesArguments.getRefData(data.getPath()).keySet()
-                .stream().filter(CATS_REMOVE_FIELD::equalsIgnoreCase).toList();
+        List<String> fieldsToBeRemoved = filesArguments.getRefData(data.getPath()).entrySet()
+                .stream().filter(entry -> entry.getValue().equalsIgnoreCase(CATS_REMOVE_FIELD)).map(Map.Entry::getKey).toList();
         logger.note("The following fields marked as [{}] in refData will not be fuzzed: {}", CATS_REMOVE_FIELD, fieldsToBeRemoved);
 
         fieldsToBeRemoved.forEach(allFields::remove);

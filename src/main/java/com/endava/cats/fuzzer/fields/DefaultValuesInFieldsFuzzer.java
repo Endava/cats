@@ -2,8 +2,8 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
-import com.endava.cats.fuzzer.executor.CatsExecutor;
-import com.endava.cats.fuzzer.executor.CatsExecutorContext;
+import com.endava.cats.fuzzer.executor.CatsFieldsExecutor;
+import com.endava.cats.fuzzer.executor.CatsFieldsExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
@@ -21,10 +21,10 @@ import java.util.function.Predicate;
 @FieldFuzzer
 public class DefaultValuesInFieldsFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
-    private final CatsExecutor catsExecutor;
+    private final CatsFieldsExecutor catsExecutor;
 
 
-    public DefaultValuesInFieldsFuzzer(CatsExecutor ce) {
+    public DefaultValuesInFieldsFuzzer(CatsFieldsExecutor ce) {
         this.catsExecutor = ce;
     }
 
@@ -35,7 +35,7 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
         Function<Schema<?>, List<String>> fuzzedValueProducer = schema -> List.of(String.valueOf(schema.getDefault()));
 
         catsExecutor.execute(
-                CatsExecutorContext.builder()
+                CatsFieldsExecutorContext.builder()
                         .scenario("Iterate through each field with default value defined and send happy flow requests.")
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(ResponseCodeFamily.TWOXX)

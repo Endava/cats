@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -25,10 +26,13 @@ class DummyRequestFuzzerTest {
 
     private DummyRequestFuzzer dummyRequestFuzzer;
 
+    private CatsHttpExecutor catsHttpExecutor;
+
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        dummyRequestFuzzer = new DummyRequestFuzzer(serviceCaller, testCaseListener);
+        catsHttpExecutor = new CatsHttpExecutor(testCaseListener, serviceCaller);
+        dummyRequestFuzzer = new DummyRequestFuzzer(catsHttpExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -55,10 +59,22 @@ class DummyRequestFuzzerTest {
     }
 
     @Test
-    void givenAMalformedJsonFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
-        Assertions.assertThat(dummyRequestFuzzer.description()).isNotNull();
-        Assertions.assertThat(dummyRequestFuzzer).hasToString(dummyRequestFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(dummyRequestFuzzer.skipForHttpMethods()).isEmpty();
+    void shouldHaveDummyPayload() {
         Assertions.assertThat(dummyRequestFuzzer.getPayload(FuzzingData.builder().build())).isEqualTo(DummyRequestFuzzer.DUMMY_JSON);
+    }
+
+    @Test
+    void shouldNotSkipForAnyHttpMethod() {
+        Assertions.assertThat(dummyRequestFuzzer.skipForHttpMethods()).isEmpty();
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(dummyRequestFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(dummyRequestFuzzer).hasToString(dummyRequestFuzzer.getClass().getSimpleName());
     }
 }

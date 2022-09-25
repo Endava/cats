@@ -4,13 +4,11 @@ import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.dsl.CatsDSLWords;
+import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.CatsHttpExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -29,34 +27,30 @@ import java.util.stream.Stream;
 public class BypassAuthenticationFuzzer implements Fuzzer {
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
     private final FilesArguments filesArguments;
+    private final CatsHttpExecutor catsHttpExecutor;
 
-    public BypassAuthenticationFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments filesArguments) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    public BypassAuthenticationFuzzer(CatsHttpExecutor ce, FilesArguments filesArguments) {
+        this.catsHttpExecutor = ce;
         this.filesArguments = filesArguments;
     }
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
-    }
-
-    private void process(FuzzingData data) {
-        testCaseListener.addScenario(logger, "Send a happy flow bypassing authentication");
-        testCaseListener.addExpectedResult(logger, "Should get a 403 or 401 response code");
         Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
         if (!authenticationHeaders.isEmpty()) {
-            ServiceData serviceData = ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders()).httpMethod(data.getMethod())
-                    .payload(data.getPayload()).skippedHeaders(authenticationHeaders).queryParams(data.getQueryParams())
-                    .contentType(data.getFirstRequestContentType()).build();
-
-            CatsResponse response = serviceCaller.call(serviceData);
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX_AA);
+            catsHttpExecutor.execute(
+                    CatsHttpExecutorContext.builder()
+                            .fuzzer(this)
+                            .logger(logger)
+                            .fuzzingData(data)
+                            .payload(data.getPayload())
+                            .scenario("Send a happy flow bypassing authentication")
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX_AA)
+                            .skippedHeaders(authenticationHeaders)
+                            .build());
         } else {
-            testCaseListener.skipTest(logger, "No authentication header provided.");
+            logger.skip("No authentication header provided.");
         }
     }
 

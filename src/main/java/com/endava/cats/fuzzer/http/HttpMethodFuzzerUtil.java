@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -11,23 +12,25 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.function.Function;
 
 @Singleton
 public class HttpMethodFuzzerUtil {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HttpMethodFuzzerUtil.class);
     private final TestCaseListener testCaseListener;
 
+    private final ServiceCaller serviceCaller;
+
     @Inject
-    public HttpMethodFuzzerUtil(TestCaseListener tcl) {
+    public HttpMethodFuzzerUtil(TestCaseListener tcl, ServiceCaller sc) {
         this.testCaseListener = tcl;
+        this.serviceCaller = sc;
     }
 
-    public void process(FuzzingData data, Function<ServiceData, CatsResponse> f, HttpMethod httpMethod) {
+    public void process(FuzzingData data, HttpMethod httpMethod) {
         testCaseListener.addScenario(logger, "Send a happy flow request with undocumented HTTP method: {}", httpMethod);
         testCaseListener.addExpectedResult(logger, "Should get a 405 response code");
         String payload = HttpMethod.requiresBody(httpMethod) ? data.getPayload() : "";
-        CatsResponse response = f.apply(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
+        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                 .payload(payload).httpMethod(httpMethod).contentType(data.getFirstRequestContentType()).build());
         this.checkResponse(data, response);
     }
