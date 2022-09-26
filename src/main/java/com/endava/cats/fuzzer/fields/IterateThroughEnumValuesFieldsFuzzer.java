@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -31,6 +32,8 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> schemaFilter = schema -> schema.getEnum() != null;
         Function<Schema<?>, List<String>> fuzzValueProducer = schema -> schema.getEnum().stream().map(String::valueOf).toList();
+        Predicate<String> notADiscriminator = catsExecutor::isFieldNotADiscriminator;
+        Predicate<String> fieldExists = field -> JsonUtils.isFieldInJson(data.getPayload(), field);
 
         catsExecutor.execute(
                 FieldsIteratorExecutorContext.builder()
@@ -38,7 +41,7 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(ResponseCodeFamily.TWOXX)
                         .skipMessage("It's either not an enum or it's a discriminator.")
-                        .fieldFilter(catsExecutor::isFieldNotADiscriminator)
+                        .fieldFilter(notADiscriminator.and(fieldExists))
                         .schemaFilter(schemaFilter)
                         .fuzzValueProducer(fuzzValueProducer)
                         .logger(logger)
