@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.io.CatsIOException;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
@@ -25,7 +24,7 @@ public class UserArguments {
         try {
             return Files.readAllLines(Path.of(words.getAbsolutePath()), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new CatsIOException(e);
+            throw new RuntimeException(e);
         }
     }
 }

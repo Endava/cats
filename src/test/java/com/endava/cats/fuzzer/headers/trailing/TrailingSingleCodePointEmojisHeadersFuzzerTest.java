@@ -12,17 +12,28 @@ class TrailingSingleCodePointEmojisHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        trailingSingleCodePointEmojisHeadersFuzzer = new TrailingSingleCodePointEmojisHeadersFuzzer(null, null);
+        trailingSingleCodePointEmojisHeadersFuzzer = new TrailingSingleCodePointEmojisHeadersFuzzer(null);
     }
 
     @Test
-    void givenANewTrailingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingSpacesInHeadersFuzzer() {
-        Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldReturnTrailFuzzingStrategy() {
         Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
         Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC80");
         Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.getInvisibleChars()).doesNotContain("\r");
+    }
 
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldNotMatchResponseSchema() {
         Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.matchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

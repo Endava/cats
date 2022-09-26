@@ -2,11 +2,10 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.util.PayloadUtils;
-import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -16,8 +15,8 @@ import java.util.List;
 public class VeryLargeUnicodeStringsInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
     private final ProcessingArguments processingArguments;
 
-    public VeryLargeUnicodeStringsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr, ProcessingArguments pa) {
-        super(sc, lr);
+    public VeryLargeUnicodeStringsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor, ProcessingArguments pa) {
+        super(headersIteratorExecutor);
         this.processingArguments = pa;
     }
 

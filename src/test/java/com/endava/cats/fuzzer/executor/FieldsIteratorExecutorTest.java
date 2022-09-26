@@ -31,9 +31,9 @@ import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
-class CatsFieldsExecutorTest {
+class FieldsIteratorExecutorTest {
 
-    private CatsFieldsExecutor catsFieldsExecutor;
+    private FieldsIteratorExecutor fieldsIteratorExecutor;
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
@@ -50,26 +50,26 @@ class CatsFieldsExecutorTest {
         filesArguments = Mockito.mock(FilesArguments.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
 
-        catsFieldsExecutor = new CatsFieldsExecutor(serviceCaller, testCaseListener, catsUtil, matchArguments, filesArguments);
+        fieldsIteratorExecutor = new FieldsIteratorExecutor(serviceCaller, testCaseListener, catsUtil, matchArguments, filesArguments);
     }
 
     @Test
     void shouldSkipWhenFieldFilterNotPassing() {
-        catsFieldsExecutor.execute(setupContextBuilder().fieldFilter(string -> false).build());
+        fieldsIteratorExecutor.execute(setupContextBuilder().fieldFilter(string -> false).build());
 
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test
     void shouldSkipWhenSchemaFilterNotPassing() {
-        catsFieldsExecutor.execute(setupContextBuilder().schemaFilter(string -> false).build());
+        fieldsIteratorExecutor.execute(setupContextBuilder().schemaFilter(string -> false).build());
 
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test
     void shouldReportResult() {
-        catsFieldsExecutor.execute(setupContextBuilder().expectedResponseCode(ResponseCodeFamily.FOURXX).build());
+        fieldsIteratorExecutor.execute(setupContextBuilder().expectedResponseCode(ResponseCodeFamily.FOURXX).build());
 
         Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
     }
@@ -80,7 +80,7 @@ class CatsFieldsExecutorTest {
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(isMatch);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(isSupplied);
         int times = !isSupplied || isMatch ? 4 : 0;
-        catsFieldsExecutor.execute(setupContextBuilder().build());
+        fieldsIteratorExecutor.execute(setupContextBuilder().build());
 
         Mockito.verify(testCaseListener, Mockito.times(times)).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
     }
@@ -89,12 +89,12 @@ class CatsFieldsExecutorTest {
     void shouldSkip() {
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(false);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
-        catsFieldsExecutor.execute(setupContextBuilder().build());
+        fieldsIteratorExecutor.execute(setupContextBuilder().build());
 
         Mockito.verify(testCaseListener, Mockito.times(4)).skipTest(Mockito.any(), Mockito.anyString());
     }
 
-    private CatsFieldsExecutorContext.CatsFieldsExecutorContextBuilder setupContextBuilder() {
+    private FieldsIteratorExecutorContext.FieldsIteratorExecutorContextBuilder setupContextBuilder() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
@@ -111,7 +111,7 @@ class CatsFieldsExecutorTest {
                 200, "{}", "POST", 20
         ));
 
-        return CatsFieldsExecutorContext.builder()
+        return FieldsIteratorExecutorContext.builder()
                 .logger(Mockito.mock(PrettyLogger.class))
                 .scenario("Replacing value")
                 .fuzzValueProducer(schema -> List.of("value1", "value2"))
@@ -123,7 +123,7 @@ class CatsFieldsExecutorTest {
     @Test
     void shouldNotRunForFieldsRemovedFromRefData() {
         Mockito.when(filesArguments.getRefData(Mockito.any())).thenReturn(Map.of("id", ServiceCaller.CATS_REMOVE_FIELD));
-        catsFieldsExecutor.execute(setupContextBuilder().expectedResponseCode(ResponseCodeFamily.FOURXX).build());
+        fieldsIteratorExecutor.execute(setupContextBuilder().expectedResponseCode(ResponseCodeFamily.FOURXX).build());
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX));
     }
 }

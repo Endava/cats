@@ -1,14 +1,12 @@
 package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -53,12 +51,11 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
             "text/plain",
             "text/xml");
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
 
-    protected BaseSecurityChecksHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    private final SimpleExecutor simpleExecutor;
+
+    protected BaseSecurityChecksHeadersFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     /**
@@ -85,19 +82,19 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
 
     public void fuzz(FuzzingData data) {
         for (Set<CatsHeader> headers : this.getHeaders(data)) {
-            testCaseListener.createAndExecuteTest(log, this, () -> process(data, headers));
+            String headerValue = headers.stream().filter(header -> header.getName().equalsIgnoreCase(targetHeaderName()))
+                    .findFirst().orElse(CatsHeader.builder().build()).getValue();
+            simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
+                            .scenario("Send a happy flow request with a [%s] %s header, value [%s]".formatted(typeOfHeader(), targetHeaderName(), headerValue))
+                            .logger(log)
+                            .fuzzingData(data)
+                            .fuzzer(this)
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX_MT)
+                            .expectedSpecificResponseCode(this.getExpectedResponseCode())
+                            .headers(headers)
+                            .build());
         }
-    }
-
-    private void process(FuzzingData data, Set<CatsHeader> headers) {
-        String headerValue = headers.stream().filter(header -> header.getName().equalsIgnoreCase(targetHeaderName()))
-                .findFirst().orElse(CatsHeader.builder().build()).getValue();
-        testCaseListener.addScenario(log, "Send a happy flow request with a [{}] {} header, value [{}]", typeOfHeader(), targetHeaderName(), headerValue);
-        testCaseListener.addExpectedResult(log, "Should get a {} response code", getExpectedResponseCode());
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(new ArrayList<>(headers))
-                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build());
-
-        testCaseListener.reportResult(log, data, response, ResponseCodeFamily.FOURXX_MT);
     }
 
     /**

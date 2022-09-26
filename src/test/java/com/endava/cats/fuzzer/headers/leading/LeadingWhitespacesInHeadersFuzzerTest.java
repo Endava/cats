@@ -12,14 +12,27 @@ class LeadingWhitespacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        leadingWhitespacesInHeadersFuzzer = new LeadingWhitespacesInHeadersFuzzer(null, null);
+        leadingWhitespacesInHeadersFuzzer = new LeadingWhitespacesInHeadersFuzzer(null);
     }
 
     @Test
-    void shouldProperlyOverrideMethods() {
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldHavePrefixFuzzingStrategy() {
         Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
         Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo("\u1680");
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldMatchResponseSchema() {
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

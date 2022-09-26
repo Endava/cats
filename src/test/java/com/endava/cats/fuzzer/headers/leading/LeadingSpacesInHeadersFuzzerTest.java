@@ -13,19 +13,36 @@ class LeadingSpacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        leadingSpacesInHeadersFuzzer = new LeadingSpacesInHeadersFuzzer(null, null);
+        leadingSpacesInHeadersFuzzer = new LeadingSpacesInHeadersFuzzer(null);
     }
 
     @Test
-    void shouldProperlyOverrideMethods() {
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldExpect2xxForOptionalAndRequiredHeaders() {
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+    }
+
+    @Test
+    void shouldMatchResponseSchema() {
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+    }
+
+    @Test
+    void shouldReturnPrefixFuzzingStrategy() {
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo(" ");
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0009");
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy()).hasSize(2);
 
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

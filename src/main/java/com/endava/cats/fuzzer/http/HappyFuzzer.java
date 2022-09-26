@@ -2,8 +2,8 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutorContext;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -20,15 +20,15 @@ import javax.inject.Singleton;
 @HttpFuzzer
 public class HappyFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
-    private final CatsHttpExecutor catsHttpExecutor;
+    private final SimpleExecutor simpleExecutor;
 
     @Inject
-    public HappyFuzzer(CatsHttpExecutor catsHttpExecutor) {
-        this.catsHttpExecutor = catsHttpExecutor;
+    public HappyFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     public void fuzz(FuzzingData data) {
-        catsHttpExecutor.execute(CatsHttpExecutorContext.builder()
+        simpleExecutor.execute(SimpleExecutorContext.builder()
                 .fuzzingData(data)
                 .expectedResponseCode(ResponseCodeFamily.TWOXX)
                 .fuzzer(this)

@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.io.CatsIOException;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +19,7 @@ class UserArgumentsTest {
     @Test
     void shouldThrowExceptionWhenFileNotFound() {
         userArguments.words = new File("muhaha");
-        Assertions.assertThrows(CatsIOException.class, () -> userArguments.getWordsAsList());
+        Assertions.assertThrows(RuntimeException.class, () -> userArguments.getWordsAsList());
     }
 
     @Test

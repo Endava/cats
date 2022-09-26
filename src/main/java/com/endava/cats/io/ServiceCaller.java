@@ -223,7 +223,7 @@ public class ServiceCaller {
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build(), data);
-            throw new CatsIOException(e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -1,9 +1,8 @@
 package com.endava.cats.fuzzer.headers.base;
 
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,20 +16,24 @@ class ExpectOnly4XXBaseHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        expectOnly4XXBaseHeadersFuzzer = new My4XXFuzzer(null, null);
+        expectOnly4XXBaseHeadersFuzzer = new My4XXFuzzer(null);
     }
 
     @Test
-    void givenANewExpectOnly4XXBaseHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheExpectOnly4XXBaseHeadersFuzzer() {
+    void shouldReturnResponseCode4xxForRequiredAndOptional() {
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+    }
+
+    @Test
+    void shouldHaveToString() {
         Assertions.assertThat(expectOnly4XXBaseHeadersFuzzer).hasToString(expectOnly4XXBaseHeadersFuzzer.getClass().getSimpleName());
     }
 
     static class My4XXFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
-        public My4XXFuzzer(ServiceCaller sc, TestCaseListener lr) {
-            super(sc, lr);
+        public My4XXFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
+            super(headersIteratorExecutor);
         }
 
         @Override

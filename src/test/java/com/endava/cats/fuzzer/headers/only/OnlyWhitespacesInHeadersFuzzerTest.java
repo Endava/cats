@@ -12,14 +12,27 @@ class OnlyWhitespacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        onlyWhitespacesInHeadersFuzzer = new OnlyWhitespacesInHeadersFuzzer(null, null);
+        onlyWhitespacesInHeadersFuzzer = new OnlyWhitespacesInHeadersFuzzer(null);
     }
 
     @Test
-    void shouldProperlyOverrideMethods() {
-        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldReturnReplaceFuzzingStrategy() {
         Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo("\u1680");
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldMatchResponseSchema() {
+        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

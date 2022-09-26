@@ -1,10 +1,9 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.annotations.HeaderFuzzer;
-import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.google.common.net.HttpHeaders;
 
 import javax.inject.Singleton;
@@ -16,8 +15,8 @@ import java.util.Set;
 @HeaderFuzzer
 public class UnsupportedAcceptHeadersFuzzer extends DummyAcceptHeadersFuzzer {
 
-    public UnsupportedAcceptHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    public UnsupportedAcceptHeadersFuzzer(SimpleExecutor simpleExecutor) {
+        super(simpleExecutor);
     }
 
     @Override

@@ -12,17 +12,28 @@ class TrailingControlCharsInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        trailingControlCharsInHeadersFuzzer = new TrailingControlCharsInHeadersFuzzer(null, null);
+        trailingControlCharsInHeadersFuzzer = new TrailingControlCharsInHeadersFuzzer(null);
     }
 
     @Test
-    void givenANewTrailingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingSpacesInHeadersFuzzer() {
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldReturnTrailFuzzingStrategy() {
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0000");
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getInvisibleChars()).doesNotContain("\r");
+    }
 
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldNotMatchResponseSchema() {
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

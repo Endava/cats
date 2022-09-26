@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -26,13 +26,13 @@ class DummyRequestFuzzerTest {
 
     private DummyRequestFuzzer dummyRequestFuzzer;
 
-    private CatsHttpExecutor catsHttpExecutor;
+    private SimpleExecutor simpleExecutor;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsHttpExecutor = new CatsHttpExecutor(testCaseListener, serviceCaller);
-        dummyRequestFuzzer = new DummyRequestFuzzer(catsHttpExecutor);
+        simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        dummyRequestFuzzer = new DummyRequestFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

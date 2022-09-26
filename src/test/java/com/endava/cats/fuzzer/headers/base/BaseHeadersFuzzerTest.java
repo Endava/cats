@@ -1,5 +1,7 @@
 package com.endava.cats.fuzzer.headers.base;
 
+import com.endava.cats.args.MatchArguments;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
@@ -34,7 +36,8 @@ class BaseHeadersFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        baseHeadersFuzzer = new MyBaseHeadersFuzzer(serviceCaller, testCaseListener);
+        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class));
+        baseHeadersFuzzer = new MyBaseHeadersFuzzer(headersIteratorExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -79,8 +82,8 @@ class BaseHeadersFuzzerTest {
 
     static class MyBaseHeadersFuzzer extends BaseHeadersFuzzer {
 
-        public MyBaseHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-            super(sc, lr);
+        public MyBaseHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
+            super(headersIteratorExecutor);
         }
 
         @Override

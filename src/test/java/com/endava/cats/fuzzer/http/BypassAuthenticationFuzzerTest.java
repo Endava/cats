@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
@@ -35,7 +35,7 @@ class BypassAuthenticationFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;
-    private CatsHttpExecutor catsHttpExecutor;
+    private SimpleExecutor simpleExecutor;
     private BypassAuthenticationFuzzer bypassAuthenticationFuzzer;
 
     @BeforeEach
@@ -43,8 +43,8 @@ class BypassAuthenticationFuzzerTest {
         catsUtil = Mockito.mock(CatsUtil.class);
         filesArguments = new FilesArguments(catsUtil);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsHttpExecutor = new CatsHttpExecutor(testCaseListener, serviceCaller);
-        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(catsHttpExecutor, filesArguments);
+        simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(simpleExecutor, filesArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

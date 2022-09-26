@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
@@ -32,7 +33,8 @@ class UnsupportedContentTypesHeadersFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        unsupportedContentTypeHeadersFuzzer = new UnsupportedContentTypesHeadersFuzzer(serviceCaller, testCaseListener);
+        SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        unsupportedContentTypeHeadersFuzzer = new UnsupportedContentTypesHeadersFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

@@ -1,9 +1,8 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +22,7 @@ class DummyAcceptHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        dummyAcceptHeadersFuzzer = new DummyAcceptHeadersFuzzer(Mockito.mock(ServiceCaller.class), Mockito.mock(TestCaseListener.class));
+        dummyAcceptHeadersFuzzer = new DummyAcceptHeadersFuzzer(Mockito.mock(SimpleExecutor.class));
     }
 
     @Test

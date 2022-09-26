@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.FuzzingData;
 
 import javax.inject.Inject;
@@ -12,7 +12,7 @@ import javax.inject.Singleton;
 public class MalformedJsonFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
     @Inject
-    public MalformedJsonFuzzer(CatsHttpExecutor executor) {
+    public MalformedJsonFuzzer(SimpleExecutor executor) {
         super(executor);
     }
 

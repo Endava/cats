@@ -1,5 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.args.MatchArguments;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
@@ -18,7 +20,8 @@ class ZalgoTextInHeadersFuzzerTest {
     void setup() {
         ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        zalgoTextInHeadersFuzzer = new ZalgoTextInHeadersFuzzer(serviceCaller, testCaseListener);
+        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class));
+        zalgoTextInHeadersFuzzer = new ZalgoTextInHeadersFuzzer(headersIteratorExecutor);
     }
 
     @Test

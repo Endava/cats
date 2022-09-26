@@ -4,8 +4,8 @@ import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.dsl.CatsDSLWords;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutorContext;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -28,10 +28,10 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
     private final FilesArguments filesArguments;
-    private final CatsHttpExecutor catsHttpExecutor;
+    private final SimpleExecutor simpleExecutor;
 
-    public BypassAuthenticationFuzzer(CatsHttpExecutor ce, FilesArguments filesArguments) {
-        this.catsHttpExecutor = ce;
+    public BypassAuthenticationFuzzer(SimpleExecutor ce, FilesArguments filesArguments) {
+        this.simpleExecutor = ce;
         this.filesArguments = filesArguments;
     }
 
@@ -39,8 +39,8 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
         if (!authenticationHeaders.isEmpty()) {
-            catsHttpExecutor.execute(
-                    CatsHttpExecutorContext.builder()
+            simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
                             .fuzzer(this)
                             .logger(logger)
                             .fuzzingData(data)

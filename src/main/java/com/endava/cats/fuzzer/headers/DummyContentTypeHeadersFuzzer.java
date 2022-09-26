@@ -1,13 +1,12 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.headers.base.BaseSecurityChecksHeadersFuzzer;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.google.common.net.HttpHeaders;
 
 import javax.inject.Singleton;
@@ -23,8 +22,8 @@ import java.util.Set;
 @HeaderFuzzer
 public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
 
-    public DummyContentTypeHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    public DummyContentTypeHeadersFuzzer(SimpleExecutor simpleExecutor) {
+        super(simpleExecutor);
     }
 
     public String getExpectedResponseCode() {

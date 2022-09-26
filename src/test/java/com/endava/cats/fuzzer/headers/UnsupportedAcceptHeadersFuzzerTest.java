@@ -22,7 +22,7 @@ class UnsupportedAcceptHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        unsupportedAcceptHeadersFuzzer = new UnsupportedAcceptHeadersFuzzer(null, null);
+        unsupportedAcceptHeadersFuzzer = new UnsupportedAcceptHeadersFuzzer(null);
     }
 
     @Test

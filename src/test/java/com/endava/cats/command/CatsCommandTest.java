@@ -6,10 +6,9 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.contract.PathTagsContractInfoFuzzer;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.http.HappyFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
@@ -87,7 +86,7 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         Mockito.when(filterArguments.getFuzzersForPath()).thenReturn(List.of("HappyFuzzer"));
         Mockito.when(filterArguments.getPaths()).thenReturn(List.of(path));
-        Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new HappyFuzzer(Mockito.mock(CatsHttpExecutor.class))));
+        Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new HappyFuzzer(Mockito.mock(SimpleExecutor.class))));
 
         CatsCommand spyMain = Mockito.spy(catsMain);
         spyMain.run();

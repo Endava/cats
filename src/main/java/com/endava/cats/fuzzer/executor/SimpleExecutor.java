@@ -9,24 +9,24 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class CatsHttpExecutor {
+public class SimpleExecutor {
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
 
     @Inject
-    public CatsHttpExecutor(TestCaseListener testCaseListener, ServiceCaller serviceCaller) {
+    public SimpleExecutor(TestCaseListener testCaseListener, ServiceCaller serviceCaller) {
         this.testCaseListener = testCaseListener;
         this.serviceCaller = serviceCaller;
     }
 
-    public void execute(CatsHttpExecutorContext context) {
+    public void execute(SimpleExecutorContext context) {
         testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> {
             testCaseListener.addScenario(context.getLogger(), context.getScenario());
-            testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]", context.getExpectedResponseCode().asString());
+            testCaseListener.addExpectedResult(context.getLogger(), "Should return {}", context.getExpectedSpecificResponseCode());
             CatsResponse response = serviceCaller.call(
                     ServiceData.builder()
                             .relativePath(context.getFuzzingData().getPath())
-                            .headers(context.getFuzzingData().getHeaders())
+                            .headers(context.getHeaders())
                             .payload(context.getPayload())
                             .queryParams(context.getFuzzingData().getQueryParams())
                             .httpMethod(context.getFuzzingData().getMethod())
