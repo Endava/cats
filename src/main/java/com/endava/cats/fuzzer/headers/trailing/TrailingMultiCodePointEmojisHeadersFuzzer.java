@@ -2,11 +2,10 @@ package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.annotations.EmojiFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.util.PayloadUtils;
-import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -16,8 +15,8 @@ import java.util.List;
 @EmojiFuzzer
 public class TrailingMultiCodePointEmojisHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
-    public TrailingMultiCodePointEmojisHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    public TrailingMultiCodePointEmojisHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
+        super(headersIteratorExecutor);
     }
 
     @Override
@@ -36,7 +35,7 @@ public class TrailingMultiCodePointEmojisHeadersFuzzer extends InvisibleCharsBas
     }
 
     @Override
-    protected boolean matchResponseSchema() {
+    public boolean matchResponseSchema() {
         return false;
     }
 }

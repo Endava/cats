@@ -12,15 +12,27 @@ class OnlyMultiCodePointEmojisInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        onlyMultiCodePointEmojisInHeadersFuzzer = new OnlyMultiCodePointEmojisInHeadersFuzzer(null, null);
+        onlyMultiCodePointEmojisInHeadersFuzzer = new OnlyMultiCodePointEmojisInHeadersFuzzer(null);
     }
 
     @Test
-    void givenANewSpacesOnlyInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheSpacesOnlyInHeadersFuzzer() {
-        Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldHaveReplaceFuzzingStrategy() {
         Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC68\u200D\uD83C\uDFED️");
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldNotMatchResponseSchema() {
         Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.matchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

@@ -15,17 +15,21 @@ import java.util.function.Predicate;
 
 @Builder
 @Value
-public class CatsFieldsExecutorContext {
+public class FieldsIteratorExecutorContext {
 
     PrettyLogger logger;
+
     FuzzingStrategy fuzzingStrategy;
+
     FuzzingData fuzzingData;
+
     String scenario;
     /**
      * If you provide an expected response code, it will be used and matched against what the service returns and report info, warn or error accordingly.
-     * If not supplied, CatsFieldsExecutor will test for Marching Arguments. If any match is found it will be reported as error, otherwise the test will be marked as skipped.
+     * If not supplied, FieldsIteratorExecutor will test for Marching Arguments. If any match is found it will be reported as error, otherwise the test will be marked as skipped.
      */
     ResponseCodeFamily expectedResponseCode;
+
     Fuzzer fuzzer;
     /**
      * This is one of the filters used to decide if the Fuzzer logic will get executed.
@@ -37,6 +41,8 @@ public class CatsFieldsExecutorContext {
      */
     @Builder.Default
     Predicate<String> fieldFilter = field -> true;
+
     String skipMessage;
+
     Function<Schema<?>, List<String>> fuzzValueProducer;
 }

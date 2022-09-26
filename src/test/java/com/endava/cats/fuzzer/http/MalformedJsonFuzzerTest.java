@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -26,13 +26,13 @@ class MalformedJsonFuzzerTest {
     private TestCaseListener testCaseListener;
     private MalformedJsonFuzzer malformedJsonFuzzer;
 
-    private CatsHttpExecutor catsHttpExecutor;
+    private SimpleExecutor simpleExecutor;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsHttpExecutor = new CatsHttpExecutor(testCaseListener, serviceCaller);
-        malformedJsonFuzzer = new MalformedJsonFuzzer(catsHttpExecutor);
+        simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        malformedJsonFuzzer = new MalformedJsonFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

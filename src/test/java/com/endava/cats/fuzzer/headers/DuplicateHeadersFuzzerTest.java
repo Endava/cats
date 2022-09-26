@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
@@ -31,7 +32,8 @@ class DuplicateHeadersFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        duplicateHeadersFuzzer = new DuplicateHeadersFuzzer(serviceCaller, testCaseListener);
+        SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        duplicateHeadersFuzzer = new DuplicateHeadersFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -67,9 +69,17 @@ class DuplicateHeadersFuzzerTest {
     }
 
     @Test
-    void givenADuplicateHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
-        Assertions.assertThat(duplicateHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(duplicateHeadersFuzzer).hasToString(duplicateHeadersFuzzer.getClass().getSimpleName());
+    void shouldNotSkipAnyHttpMethod() {
         Assertions.assertThat(duplicateHeadersFuzzer.skipForHttpMethods()).isEmpty();
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(duplicateHeadersFuzzer).hasToString(duplicateHeadersFuzzer.getClass().getSimpleName());
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(duplicateHeadersFuzzer.description()).isNotBlank();
     }
 }

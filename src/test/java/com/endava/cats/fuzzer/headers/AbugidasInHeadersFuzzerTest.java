@@ -1,5 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.args.MatchArguments;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
@@ -17,7 +19,8 @@ class AbugidasInHeadersFuzzerTest {
     void setup() {
         ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        abugidasInHeadersFuzzer = new AbugidasInHeadersFuzzer(serviceCaller, testCaseListener);
+        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class));
+        abugidasInHeadersFuzzer = new AbugidasInHeadersFuzzer(headersIteratorExecutor);
     }
 
     @Test

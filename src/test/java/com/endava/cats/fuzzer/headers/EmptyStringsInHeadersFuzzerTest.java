@@ -12,13 +12,26 @@ class EmptyStringsInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        emptyStringsInHeadersFuzzer = new EmptyStringsInHeadersFuzzer(null, null);
+        emptyStringsInHeadersFuzzer = new EmptyStringsInHeadersFuzzer(null);
     }
 
     @Test
-    void givenANewEmptyStringValuesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheEmptyStringValuesInHeadersFuzzer() {
-        Assertions.assertThat(emptyStringsInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(emptyStringsInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldReturnReplaceFuzzingStrategy() {
         Assertions.assertThat(emptyStringsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(emptyStringsInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldMatchResponseSchema() {
+        Assertions.assertThat(emptyStringsInHeadersFuzzer.matchResponseSchema()).isTrue();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(emptyStringsInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

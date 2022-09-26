@@ -12,15 +12,27 @@ class LeadingSingleCodePointEmojisInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        leadingSingleCodePointEmojisInHeadersFuzzer = new LeadingSingleCodePointEmojisInHeadersFuzzer(null, null);
+        leadingSingleCodePointEmojisInHeadersFuzzer = new LeadingSingleCodePointEmojisInHeadersFuzzer(null);
     }
 
     @Test
-    void givenANewLeadingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLeadingSpacesInHeadersFuzzer() {
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldNotMatchResponseSchema() {
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.matchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldReturnPrefixFuzzingStrategy() {
         Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
         Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC80");
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.matchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

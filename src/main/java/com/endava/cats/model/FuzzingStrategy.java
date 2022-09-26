@@ -131,10 +131,7 @@ public abstract class FuzzingStrategy {
 
     @Override
     public String toString() {
-        if (data != null) {
-            return this.name() + " with " + data;
-        }
-        return this.name();
+        return this.truncatedValue();
     }
 
     public String truncatedValue() {

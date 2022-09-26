@@ -1,10 +1,9 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.Expect4XXBaseHeadersFuzzer;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
 import java.util.Collections;
@@ -14,8 +13,8 @@ import java.util.List;
 @HeaderFuzzer
 public class EmptyStringsInHeadersFuzzer extends Expect4XXBaseHeadersFuzzer {
 
-    public EmptyStringsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    public EmptyStringsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
+        super(headersIteratorExecutor);
     }
 
     @Override

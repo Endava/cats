@@ -8,14 +8,13 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
-import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.endava.cats.model.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
@@ -240,7 +239,7 @@ class ServiceCallerTest {
 
         ServiceData data = ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build();
-        Assertions.assertThatThrownBy(() -> serviceCaller.call(data)).isInstanceOf(CatsIOException.class);
+        Assertions.assertThatThrownBy(() -> serviceCaller.call(data)).isInstanceOf(RuntimeException.class);
     }
 
     @Test

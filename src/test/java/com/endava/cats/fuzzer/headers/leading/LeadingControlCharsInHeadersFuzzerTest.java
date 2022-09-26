@@ -12,15 +12,27 @@ class LeadingControlCharsInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        leadingControlCharsInHeadersFuzzer = new LeadingControlCharsInHeadersFuzzer(null, null);
+        leadingControlCharsInHeadersFuzzer = new LeadingControlCharsInHeadersFuzzer(null);
     }
 
     @Test
-    void givenANewLeadingSpacesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLeadingSpacesInHeadersFuzzer() {
-        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldNOtMatchResponseSchema() {
+        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldReturnPrefixFuzzingStrategy() {
         Assertions.assertThat(leadingControlCharsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
         Assertions.assertThat(leadingControlCharsInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0000");
-        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.description()).isNotBlank();
     }
 }

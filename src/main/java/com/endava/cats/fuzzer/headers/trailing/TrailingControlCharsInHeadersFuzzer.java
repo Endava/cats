@@ -2,11 +2,10 @@ package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.annotations.ControlCharFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.util.PayloadUtils;
-import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
 import java.util.ArrayList;
@@ -17,8 +16,8 @@ import java.util.List;
 @ControlCharFuzzer
 public class TrailingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
 
-    public TrailingControlCharsInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    public TrailingControlCharsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
+        super(headersIteratorExecutor);
     }
 
     @Override
@@ -40,7 +39,7 @@ public class TrailingControlCharsInHeadersFuzzer extends InvisibleCharsBaseFuzze
     }
 
     @Override
-    protected boolean matchResponseSchema() {
+    public boolean matchResponseSchema() {
         return false;
     }
 }

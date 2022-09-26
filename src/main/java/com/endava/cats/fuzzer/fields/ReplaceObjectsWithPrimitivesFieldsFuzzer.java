@@ -2,8 +2,8 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
-import com.endava.cats.fuzzer.executor.CatsFieldsExecutor;
-import com.endava.cats.fuzzer.executor.CatsFieldsExecutorContext;
+import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
+import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
@@ -21,9 +21,9 @@ import java.util.function.Predicate;
 @Singleton
 public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
-    private final CatsFieldsExecutor catsExecutor;
+    private final FieldsIteratorExecutor catsExecutor;
 
-    public ReplaceObjectsWithPrimitivesFieldsFuzzer(CatsFieldsExecutor ce) {
+    public ReplaceObjectsWithPrimitivesFieldsFuzzer(FieldsIteratorExecutor ce) {
         this.catsExecutor = ce;
     }
 
@@ -32,7 +32,7 @@ public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
         Predicate<String> fieldFilter = field -> JsonUtils.isObject(data.getPayload(), field);
 
         catsExecutor.execute(
-                CatsFieldsExecutorContext.builder()
+                FieldsIteratorExecutorContext.builder()
                         .scenario("Replace non-primitive fields with primitive values. ")
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(ResponseCodeFamily.FOURXX)

@@ -12,14 +12,27 @@ class TrailingSpacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        trailingSpacesInHeadersFuzzer = new TrailingSpacesInHeadersFuzzer(null, null);
+        trailingSpacesInHeadersFuzzer = new TrailingSpacesInHeadersFuzzer(null);
     }
 
     @Test
-    void shouldProperlyOverrideMethods() {
-        Assertions.assertThat(trailingSpacesInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(trailingSpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldReturnTrailFuzzingStrategy() {
         Assertions.assertThat(trailingSpacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
         Assertions.assertThat(trailingSpacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo(" ");
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(trailingSpacesInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldMatchResponseSchema() {
+        Assertions.assertThat(trailingSpacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(trailingSpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

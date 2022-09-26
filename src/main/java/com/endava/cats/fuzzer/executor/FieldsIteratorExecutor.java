@@ -10,7 +10,6 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-import lombok.Getter;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -21,10 +20,9 @@ import java.util.Set;
 import static com.endava.cats.io.ServiceCaller.CATS_REMOVE_FIELD;
 
 @Singleton
-public class CatsFieldsExecutor {
+public class FieldsIteratorExecutor {
 
     private final ServiceCaller serviceCaller;
-    @Getter
     private final TestCaseListener testCaseListener;
     private final CatsUtil catsUtil;
 
@@ -33,7 +31,7 @@ public class CatsFieldsExecutor {
     private final FilesArguments filesArguments;
 
     @Inject
-    public CatsFieldsExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil, MatchArguments ma, FilesArguments fa) {
+    public FieldsIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil, MatchArguments ma, FilesArguments fa) {
         this.serviceCaller = serviceCaller;
         this.testCaseListener = testCaseListener;
         this.catsUtil = catsUtil;
@@ -41,7 +39,7 @@ public class CatsFieldsExecutor {
         this.filesArguments = fa;
     }
 
-    public void execute(CatsFieldsExecutorContext context) {
+    public void execute(FieldsIteratorExecutorContext context) {
         Set<String> allFields = context.getFuzzingData().getAllFieldsByHttpMethod();
         context.getLogger().debug("All fields: {}", allFields);
         List<String> fieldsToBeRemoved = filesArguments.getRefData(context.getFuzzingData().getPath()).entrySet()
@@ -82,5 +80,9 @@ public class CatsFieldsExecutor {
                 context.getLogger().skip("Skipping [{}]. " + context.getSkipMessage(), fuzzedField);
             }
         }
+    }
+
+    public boolean isFieldNotADiscriminator(String field) {
+        return this.testCaseListener.isFieldNotADiscriminator(field);
     }
 }

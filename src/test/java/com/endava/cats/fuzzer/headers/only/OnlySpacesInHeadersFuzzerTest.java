@@ -13,16 +13,33 @@ class OnlySpacesInHeadersFuzzerTest {
 
     @BeforeEach
     void setup() {
-        onlySpacesInHeadersFuzzer = new OnlySpacesInHeadersFuzzer(null, null);
+        onlySpacesInHeadersFuzzer = new OnlySpacesInHeadersFuzzer(null);
     }
 
     @Test
-    void shouldProperlyOverrideMethods() {
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.description()).isNotNull();
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotNull();
+    void shouldHaveReplaceFuzzingStrategy() {
         Assertions.assertThat(onlySpacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(onlySpacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo(" ");
+    }
+
+    @Test
+    void shouldReturn4xxForRequiredAnd2xxForOptionalResponseCodes() {
         Assertions.assertThat(onlySpacesInHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(onlySpacesInHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+    }
+
+    @Test
+    void shouldHaveToString() {
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldMatchResponseSchema() {
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+    }
+
+    @Test
+    void shouldHaveTypeOfDataToSend() {
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
     }
 }

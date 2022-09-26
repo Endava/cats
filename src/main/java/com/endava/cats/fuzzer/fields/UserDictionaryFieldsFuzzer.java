@@ -4,8 +4,8 @@ import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
-import com.endava.cats.fuzzer.executor.CatsFieldsExecutor;
-import com.endava.cats.fuzzer.executor.CatsFieldsExecutorContext;
+import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
+import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;
@@ -21,11 +21,11 @@ import java.util.function.Function;
 @FieldFuzzer
 public class UserDictionaryFieldsFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
-    private final CatsFieldsExecutor catsExecutor;
+    private final FieldsIteratorExecutor catsExecutor;
     private final UserArguments userArguments;
     private final MatchArguments matchArguments;
 
-    public UserDictionaryFieldsFuzzer(CatsFieldsExecutor ce, UserArguments ua, MatchArguments ma) {
+    public UserDictionaryFieldsFuzzer(FieldsIteratorExecutor ce, UserArguments ua, MatchArguments ma) {
         this.catsExecutor = ce;
         this.userArguments = ua;
         this.matchArguments = ma;
@@ -41,7 +41,7 @@ public class UserDictionaryFieldsFuzzer implements Fuzzer {
             Function<Schema<?>, List<String>> fuzzedValueProducer = schema -> userArguments.getWordsAsList();
 
             catsExecutor.execute(
-                    CatsFieldsExecutorContext.builder()
+                    FieldsIteratorExecutorContext.builder()
                             .scenario("Iterate through each field and send values from user dictionary.")
                             .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
                             .fuzzValueProducer(fuzzedValueProducer)

@@ -1,11 +1,10 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
 import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.SpacesCharsBaseFuzzer;
-import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.util.PayloadUtils;
-import com.endava.cats.report.TestCaseListener;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -14,8 +13,8 @@ import java.util.List;
 @HeaderFuzzer
 public class TrailingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
-    protected TrailingSpacesInHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        super(sc, lr);
+    protected TrailingSpacesInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
+        super(headersIteratorExecutor);
     }
 
     @Override

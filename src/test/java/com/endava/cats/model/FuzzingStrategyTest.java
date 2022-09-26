@@ -68,7 +68,7 @@ class FuzzingStrategyTest {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData(StringUtils.repeat("t", 50));
 
         Assertions.assertThat(strategy.truncatedValue()).isEqualTo(strategy.name() + " with " + StringUtils.repeat("t", 30) + "...");
-        Assertions.assertThat(strategy).hasToString(strategy.name() + " with " + StringUtils.repeat("t", 50));
+        Assertions.assertThat(strategy).hasToString(strategy.name() + " with " + StringUtils.repeat("t", 30) + "...");
     }
 
     @Test
@@ -141,7 +141,7 @@ class FuzzingStrategyTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"'\u000Bmama'", "'\u1680mama'","'\u0000mama'","'\u00ADmama'","'\u00A0mama'"})
+    @CsvSource(value = {"'\u000Bmama'", "'\u1680mama'", "'\u0000mama'", "'\u00ADmama'", "'\u00A0mama'"})
     void shouldGetPrefixFuzzStrategy(String value) {
         FuzzingStrategy fuzzingStrategy = FuzzingStrategy.fromValue(value);
 

@@ -1,8 +1,8 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.Fuzzer;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutorContext;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
@@ -16,16 +16,16 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
  */
 public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
-    private final CatsHttpExecutor catsHttpExecutor;
+    private final SimpleExecutor simpleExecutor;
 
-    BaseHttpWithPayloadSimpleFuzzer(CatsHttpExecutor ce) {
-        this.catsHttpExecutor = ce;
+    BaseHttpWithPayloadSimpleFuzzer(SimpleExecutor ce) {
+        this.simpleExecutor = ce;
     }
 
     @Override
     public void fuzz(FuzzingData data) {
-        catsHttpExecutor.execute(
-                CatsHttpExecutorContext.builder()
+        simpleExecutor.execute(
+                SimpleExecutorContext.builder()
                         .expectedResponseCode(ResponseCodeFamily.FOURXX)
                         .fuzzingData(data)
                         .logger(logger)

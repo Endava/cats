@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.fuzzer.executor.CatsHttpExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.FuzzingData;
 
 import javax.inject.Inject;
@@ -13,7 +13,7 @@ public class DummyRequestFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     protected static final String DUMMY_JSON = "{\"cats\":\"cats\"}";
 
     @Inject
-    public DummyRequestFuzzer(CatsHttpExecutor executor) {
+    public DummyRequestFuzzer(SimpleExecutor executor) {
         super(executor);
     }
 
