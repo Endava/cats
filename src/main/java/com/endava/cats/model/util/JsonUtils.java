@@ -161,4 +161,8 @@ public abstract class JsonUtils {
             return NOT_SET;
         }
     }
+
+    public static boolean isFieldInJson(String jsonPayload, String field) {
+        return !NOT_SET.equalsIgnoreCase(String.valueOf(getVariableFromJson(jsonPayload, field)));
+    }
 }
