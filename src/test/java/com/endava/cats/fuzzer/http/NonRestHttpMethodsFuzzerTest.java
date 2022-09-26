@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -31,9 +32,10 @@ class NonRestHttpMethodsFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        nonRestHttpMethodsFuzzer = new NonRestHttpMethodsFuzzer(testCaseListener, httpMethodFuzzerUtil);
+        nonRestHttpMethodsFuzzer = new NonRestHttpMethodsFuzzer(httpMethodFuzzerUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        ReflectionTestUtils.setField(httpMethodFuzzerUtil, "serviceCaller", serviceCaller);
+        SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        ReflectionTestUtils.setField(httpMethodFuzzerUtil, "simpleExecutor", simpleExecutor);
     }
 
     @Test
@@ -80,9 +82,17 @@ class NonRestHttpMethodsFuzzerTest {
     }
 
     @Test
-    void shouldOverrideMethods() {
-        Assertions.assertThat(nonRestHttpMethodsFuzzer.description()).isNotNull();
+    void shouldHaveToString() {
         Assertions.assertThat(nonRestHttpMethodsFuzzer).hasToString(nonRestHttpMethodsFuzzer.getClass().getSimpleName());
+    }
+
+    @Test
+    void shouldNotSkipForAnyHttpMethod() {
         Assertions.assertThat(nonRestHttpMethodsFuzzer.skipForHttpMethods()).isEmpty();
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(nonRestHttpMethodsFuzzer.description()).isNotBlank();
     }
 }

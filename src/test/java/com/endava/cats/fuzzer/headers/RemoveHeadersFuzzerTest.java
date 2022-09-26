@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
@@ -32,7 +33,8 @@ class RemoveHeadersFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        removeHeadersFuzzer = new RemoveHeadersFuzzer(serviceCaller, testCaseListener);
+        SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        removeHeadersFuzzer = new RemoveHeadersFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -81,9 +83,17 @@ class RemoveHeadersFuzzerTest {
     }
 
     @Test
-    void givenARemoveHeadersFuzzerInstance_whenCallingTheMethodInheritedFromTheBaseClass_thenTheMethodsAreProperlyOverridden() {
-        Assertions.assertThat(removeHeadersFuzzer.description()).isNotNull();
+    void shouldHaveToString() {
         Assertions.assertThat(removeHeadersFuzzer).hasToString(removeHeadersFuzzer.getClass().getSimpleName());
+    }
+
+    @Test
+    void shouldHaveDescription() {
+        Assertions.assertThat(removeHeadersFuzzer.description()).isNotBlank();
+    }
+
+    @Test
+    void shouldNotSkipForAnyHttpMethod() {
         Assertions.assertThat(removeHeadersFuzzer.skipForHttpMethods()).isEmpty();
     }
 

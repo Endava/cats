@@ -4,7 +4,6 @@ import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -22,12 +21,10 @@ import java.util.function.Function;
 public class HttpMethodsFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();
-    private final TestCaseListener testCaseListener;
     private final HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
     @Inject
-    public HttpMethodsFuzzer(TestCaseListener lr, HttpMethodFuzzerUtil hmfu) {
-        this.testCaseListener = lr;
+    public HttpMethodsFuzzer(HttpMethodFuzzerUtil hmfu) {
         this.httpMethodFuzzerUtil = hmfu;
     }
 
@@ -51,7 +48,7 @@ public class HttpMethodsFuzzer implements Fuzzer {
 
     private void executeForOperation(FuzzingData data, Function<PathItem, Operation> operation, HttpMethod httpMethod) {
         if (operation.apply(data.getPathItem()) == null) {
-            testCaseListener.createAndExecuteTest(logger, this, () -> httpMethodFuzzerUtil.process(data, httpMethod));
+            httpMethodFuzzerUtil.process(this, data, httpMethod);
         }
     }
 

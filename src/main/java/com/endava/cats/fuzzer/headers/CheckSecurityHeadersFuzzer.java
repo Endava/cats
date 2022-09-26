@@ -2,9 +2,9 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -45,25 +45,30 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     }
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
+    private final SimpleExecutor simpleExecutor;
 
-    public CheckSecurityHeadersFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        this.serviceCaller = sc;
+    public CheckSecurityHeadersFuzzer(TestCaseListener lr, SimpleExecutor simpleExecutor) {
         this.testCaseListener = lr;
+        this.simpleExecutor = simpleExecutor;
     }
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(log, this, () -> process(data));
+        simpleExecutor.execute(
+                SimpleExecutorContext.builder()
+                        .logger(log)
+                        .fuzzingData(data)
+                        .fuzzer(this)
+                        .scenario("Send a happy flow request and check the following Security Headers: %s".formatted(SECURITY_HEADERS_AS_STRING))
+                        .expectedResult(" and all the above security headers within the response")
+                        .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                        .responseProcessor(this::checkResponse)
+                        .build()
+        );
     }
 
-    private void process(FuzzingData data) {
-        testCaseListener.addScenario(log, "Send a happy flow request and check the following Security Headers: {}", SECURITY_HEADERS_AS_STRING);
-        testCaseListener.addExpectedResult(log, "Should get a 2XX response code and all the above security headers within the response");
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(data.getPayload()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contentType(data.getFirstRequestContentType()).build());
-
+    private void checkResponse(CatsResponse response, FuzzingData data) {
         List<CatsHeader> missingSecurityHeaders = getMissingSecurityHeaders(response);
         if (!missingSecurityHeaders.isEmpty()) {
             testCaseListener.reportResultError(log, data, "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet()));
