@@ -9,6 +9,20 @@ import org.junit.jupiter.api.Test;
 class JsonUtilsTest {
 
     @Test
+    void shouldFindField() {
+        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
+
+        Assertions.assertThat(JsonUtils.isFieldInJson(payload, "anotherField#subfield")).isTrue();
+    }
+
+    @Test
+    void shouldNotFindField() {
+        String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
+
+        Assertions.assertThat(JsonUtils.isFieldInJson(payload, "anotherField#subfield#sub")).isFalse();
+    }
+
+    @Test
     void givenAPayloadWithPrimitiveAndNonPrimitiveFields_whenCheckingIfPropertiesArePrimitive_thenTheCheckIsProperlyPerformed() {
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
