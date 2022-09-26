@@ -39,6 +39,7 @@ public class ReplaceObjectsWithPrimitivesFieldsFuzzer implements Fuzzer {
                         .skipMessage("Fuzzer only runs for objects")
                         .fieldFilter(fieldFilter)
                         .fuzzValueProducer(schema -> List.of("cats_primitive_string"))
+                        .replaceRefData(false)
                         .logger(logger)
                         .fuzzer(this)
                         .build());

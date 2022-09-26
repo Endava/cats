@@ -45,4 +45,7 @@ public class FieldsIteratorExecutorContext {
     String skipMessage;
 
     Function<Schema<?>, List<String>> fuzzValueProducer;
+
+    @Builder.Default
+    boolean replaceRefData = true;
 }
