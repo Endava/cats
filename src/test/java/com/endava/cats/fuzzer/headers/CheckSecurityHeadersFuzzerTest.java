@@ -1,12 +1,13 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.model.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -43,13 +44,18 @@ class CheckSecurityHeadersFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        checkSecurityHeadersFuzzer = new CheckSecurityHeadersFuzzer(serviceCaller, testCaseListener);
+        SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
+        checkSecurityHeadersFuzzer = new CheckSecurityHeadersFuzzer(testCaseListener, simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test
-    void shouldProperlyOverrideParentMethods() {
+    void shouldHaveDescription() {
         Assertions.assertThat(checkSecurityHeadersFuzzer.description()).isEqualTo("check all responses for good practices around Security related headers like: " + SECURITY_HEADERS_AS_STRING);
+    }
+
+    @Test
+    void shouldHaveToString() {
         Assertions.assertThat(checkSecurityHeadersFuzzer).hasToString(checkSecurityHeadersFuzzer.getClass().getSimpleName());
     }
 

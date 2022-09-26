@@ -1,9 +1,10 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -18,24 +19,30 @@ public class HttpMethodFuzzerUtil {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HttpMethodFuzzerUtil.class);
     private final TestCaseListener testCaseListener;
 
-    private final ServiceCaller serviceCaller;
+    private final SimpleExecutor simpleExecutor;
 
     @Inject
-    public HttpMethodFuzzerUtil(TestCaseListener tcl, ServiceCaller sc) {
+    public HttpMethodFuzzerUtil(TestCaseListener tcl, SimpleExecutor se) {
         this.testCaseListener = tcl;
-        this.serviceCaller = sc;
+        this.simpleExecutor = se;
     }
 
-    public void process(FuzzingData data, HttpMethod httpMethod) {
-        testCaseListener.addScenario(logger, "Send a happy flow request with undocumented HTTP method: {}", httpMethod);
-        testCaseListener.addExpectedResult(logger, "Should get a 405 response code");
-        String payload = HttpMethod.requiresBody(httpMethod) ? data.getPayload() : "";
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(payload).httpMethod(httpMethod).contentType(data.getFirstRequestContentType()).build());
-        this.checkResponse(data, response);
+    public void process(Fuzzer fuzzer, FuzzingData data, HttpMethod httpMethod) {
+        simpleExecutor.execute(
+                SimpleExecutorContext.builder()
+                        .logger(logger)
+                        .fuzzer(fuzzer)
+                        .expectedSpecificResponseCode("405")
+                        .payload(HttpMethod.requiresBody(httpMethod) ? data.getPayload() : "")
+                        .scenario("Send a happy flow request with undocumented HTTP method: %s".formatted(httpMethod))
+                        .responseProcessor(this::checkResponse)
+                        .fuzzingData(data)
+                        .httpMethod(httpMethod)
+                        .build()
+        );
     }
 
-    public void checkResponse(FuzzingData data, CatsResponse response) {
+    public void checkResponse(CatsResponse response, FuzzingData data) {
         if (response.getResponseCode() == 405) {
             testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
