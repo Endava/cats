@@ -5,8 +5,6 @@ import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
-import io.github.ludovicianul.prettylogger.PrettyLogger;
-import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import javax.inject.Singleton;
 import java.util.ArrayList;
@@ -15,8 +13,6 @@ import java.util.List;
 @Singleton
 @HttpFuzzer
 public class NonRestHttpMethodsFuzzer implements Fuzzer {
-
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(NonRestHttpMethodsFuzzer.class);
     private final List<String> fuzzedPaths = new ArrayList<>();
     private final HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
