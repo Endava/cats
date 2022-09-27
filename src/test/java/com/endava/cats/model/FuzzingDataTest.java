@@ -7,6 +7,8 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,6 +85,27 @@ class FuzzingDataTest {
         Assertions.assertThat(allProperties)
                 .isNotEmpty()
                 .containsExactlyInAnyOrder("firstName", "address#street", "address#zipCode");
+    }
+
+    @Test
+    void shouldGetPowerSet() {
+        ObjectSchema baseSchema = new ObjectSchema();
+        baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
+        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
+
+        Set<Set<String>> setOfFields = data.getAllFields(FuzzingData.SetFuzzingStrategy.POWERSET, 3);
+        Assertions.assertThat(setOfFields).hasSize(15);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1,4", "2,10", "3,14", "4,15"})
+    void shouldGetBasedOnSize(int maxSizeToRemove, int expected) {
+        ObjectSchema baseSchema = new ObjectSchema();
+        baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
+        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
+
+        Set<Set<String>> setOfFields = data.getAllFields(FuzzingData.SetFuzzingStrategy.SIZE, maxSizeToRemove);
+        Assertions.assertThat(setOfFields).hasSize(expected);
     }
 
     public Map<String, Schema> getBasePropertiesRequired() {

@@ -16,6 +16,7 @@ import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsException;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -223,7 +224,7 @@ public class ServiceCaller {
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build(), data);
-            throw new RuntimeException(e);
+            throw new CatsException(e);
         }
     }
 

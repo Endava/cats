@@ -83,7 +83,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         return schema != null;
     }
 
-    private boolean isRequestSchemaMatchingFuzzerType(Schema schema) {
+    boolean isRequestSchemaMatchingFuzzerType(Schema schema) {
         return getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(currentSchema1 -> currentSchema1.isAssignableFrom(schema.getClass())) ||
                 (schema.getType() != null && schema.getClass().equals(Schema.class) &&
                         getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(currentSchema2 -> currentSchema2.getSimpleName().toLowerCase().startsWith(schema.getType())));
