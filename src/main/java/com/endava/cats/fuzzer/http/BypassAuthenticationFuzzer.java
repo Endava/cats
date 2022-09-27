@@ -3,7 +3,6 @@ package com.endava.cats.fuzzer.http;
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -17,7 +16,6 @@ import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,10 +55,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     protected Set<String> getAuthenticationHeaderProvided(FuzzingData data) {
         Set<String> authenticationHeadersInContract = data.getHeaders().stream().map(CatsHeader::getName)
                 .filter(this::isAuthenticationHeader).collect(Collectors.toSet());
-        Set<String> authenticationHeadersInFile = filesArguments.getHeaders().entrySet().stream().filter(path -> CatsDSLWords.ALL.equalsIgnoreCase(path.getKey()) || data.getPath().equalsIgnoreCase(path.getKey()))
-                .map(Map.Entry::getValue).toList()
-                .stream().flatMap(entry -> entry.keySet().stream())
-                .collect(Collectors.toSet())
+        Set<String> authenticationHeadersInFile = filesArguments.getHeaders(data.getPath()).keySet()
                 .stream().filter(this::isAuthenticationHeader)
                 .collect(Collectors.toSet());
 

@@ -51,7 +51,6 @@ public class ApiArguments {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
         } else if (this.server == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --server=<server>");
-
         }
     }
 }

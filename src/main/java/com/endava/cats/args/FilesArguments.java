@@ -195,8 +195,8 @@ public class FilesArguments {
      *
      * @return a Map representation of the --headers file with paths being the Map keys
      */
-    public Map<String, Map<String, String>> getHeaders() {
-        return this.headers;
+    public Map<String, String> getHeaders(String path) {
+        return getPathAndAll(headers, path);
     }
 
     /**
@@ -208,11 +208,7 @@ public class FilesArguments {
      * @return a Map with the supplied --refData
      */
     public Map<String, String> getRefData(String currentPath) {
-        Map<String, String> currentPathRefData = Optional.ofNullable(this.refData.get(currentPath)).orElse(Maps.newHashMap());
-        Map<String, String> allValues = Optional.ofNullable(this.refData.get(ALL)).orElse(Collections.emptyMap());
-
-        currentPathRefData.putAll(allValues);
-        return currentPathRefData;
+        return getPathAndAll(refData, currentPath);
     }
 
     /**
@@ -223,9 +219,7 @@ public class FilesArguments {
      * @return a key-value map with all additional query params
      */
     public Map<String, String> getAdditionalQueryParamsForPath(String path) {
-        return queryParams.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
-                .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
+        return getPathAndAll(queryParams, path);
     }
 
     /**
@@ -246,4 +240,10 @@ public class FilesArguments {
         return this.securityFuzzerDetails;
     }
 
+
+    static Map<String, String> getPathAndAll(Map<String, Map<String, String>> collection, String path) {
+        return collection.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
+                .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
+    }
 }

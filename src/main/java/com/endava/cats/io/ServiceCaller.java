@@ -499,14 +499,9 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(List<KeyValuePair<String, Object>> headers, String relativePath, ServiceData data) {
-        logger.debug("Path {} has the following headers: {}", relativePath, filesArguments.getHeaders().get(relativePath));
-        logger.debug("Headers that should be added to all paths: {}", filesArguments.getHeaders().get(CatsDSLWords.ALL));
+        logger.debug("Path {} (including ALL headers) has the following headers: {}", relativePath, filesArguments.getHeaders(relativePath));
 
-        Map<String, String> suppliedHeadersFromFile = filesArguments.getHeaders().entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(relativePath) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
-                .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
-
-        Map<String, String> suppliedHeaders = suppliedHeadersFromFile.entrySet().stream()
+        Map<String, String> suppliedHeaders = filesArguments.getHeaders(relativePath).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         entry -> catsDSLParser.parseAndGetResult(entry.getValue(), null)));
 
