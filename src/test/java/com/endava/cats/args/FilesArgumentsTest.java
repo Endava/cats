@@ -74,10 +74,10 @@ class FilesArgumentsTest {
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
         ReflectionTestUtils.setField(filesArguments, "headersMap", Map.of("auth", "secret"));
         filesArguments.loadHeaders();
-        Map<String, Map<String, String>> headers = filesArguments.getHeaders();
+        Map<String, String> headers = filesArguments.getHeaders("all");
 
-        org.assertj.core.api.Assertions.assertThat(headers.get("all")).hasSize(3);
-        org.assertj.core.api.Assertions.assertThat(headers.get("all")).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
+        org.assertj.core.api.Assertions.assertThat(headers).hasSize(3);
+        org.assertj.core.api.Assertions.assertThat(headers).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
     }
 
     @Test
@@ -86,6 +86,34 @@ class FilesArgumentsTest {
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("mumu"));
 
         Assertions.assertThrows(IOException.class, filesArguments::loadQueryParams);
+    }
+
+    @Test
+    void shouldLoadPathAndAllQueryParamsForPath() throws Exception {
+        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParams.yml"));
+        filesArguments.loadQueryParams();
+
+        org.assertj.core.api.Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/pets"))
+                .containsOnlyKeys("param", "jwt");
+    }
+
+    @Test
+    void shouldLoadOnlyAllQueryParamsForPath() throws Exception {
+        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParams.yml"));
+        filesArguments.loadQueryParams();
+
+        org.assertj.core.api.Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/no-pets"))
+                .containsOnlyKeys("param");
+    }
+
+    @Test
+    void shouldNotLoadAnyQueryParam() throws Exception {
+        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/refFields.yml"));
+        filesArguments.loadQueryParams();
+        org.assertj.core.api.Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/no-pets")).isEmpty();
     }
 
     @Test
