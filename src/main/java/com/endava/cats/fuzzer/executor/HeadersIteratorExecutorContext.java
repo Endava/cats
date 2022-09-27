@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.executor;
 
 import com.endava.cats.Fuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingStrategy;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -10,7 +9,6 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 @Builder
@@ -32,17 +30,8 @@ public class HeadersIteratorExecutorContext {
     ResponseCodeFamily expectedResponseCodeForOptionalHeaders;
     Fuzzer fuzzer;
 
-    Set<CatsHeader> headers;
-
     Supplier<List<FuzzingStrategy>> fuzzValueProducer;
 
     @Builder.Default
     boolean matchResponseSchema = true;
-
-    public Set<CatsHeader> getHeaders() {
-        if (headers == null) {
-            return fuzzingData.getHeaders();
-        }
-        return headers;
-    }
 }

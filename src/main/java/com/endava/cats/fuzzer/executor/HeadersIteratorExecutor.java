@@ -29,7 +29,7 @@ public class HeadersIteratorExecutor {
     }
 
     public void execute(HeadersIteratorExecutorContext context) {
-        Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuthHeaders(context.getHeaders(), context);
+        Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuthHeaders(context.getFuzzingData().getHeaders(), context);
         if (headersWithoutAuth.isEmpty()) {
             context.getLogger().skip("No headers to fuzz");
         }
