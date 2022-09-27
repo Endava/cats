@@ -2,7 +2,6 @@ package com.endava.cats.args;
 
 import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
-import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
