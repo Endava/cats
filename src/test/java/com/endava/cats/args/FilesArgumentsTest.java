@@ -76,8 +76,7 @@ class FilesArgumentsTest {
         filesArguments.loadHeaders();
         Map<String, String> headers = filesArguments.getHeaders("all");
 
-        org.assertj.core.api.Assertions.assertThat(headers).hasSize(3);
-        org.assertj.core.api.Assertions.assertThat(headers).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
+        org.assertj.core.api.Assertions.assertThat(headers).hasSize(3).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
     }
 
     @Test

@@ -51,7 +51,7 @@ public class SimpleExecutorContext {
      * This filter will be used to decide if the test will be executed or not. If the Predicate is true, the test will be executed.
      */
     @Builder.Default
-    Predicate<HttpMethod> runFilter = httpMethod -> true;
+    Predicate<HttpMethod> runFilter = method -> true;
 
     /**
      * Any headers that will get removed before calling the service.
