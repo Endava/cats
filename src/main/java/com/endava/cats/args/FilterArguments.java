@@ -86,7 +86,6 @@ public class FilterArguments {
             List<String> allowedFuzzers = processSuppliedFuzzers();
             allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
             allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
-            allowedFuzzers = this.removeContractFuzzersIfNeeded(allowedFuzzers);
             allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
             allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
 
@@ -135,14 +134,6 @@ public class FilterArguments {
         return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();
     }
 
-    private List<String> removeContractFuzzersIfNeeded(List<String> currentFuzzers) {
-        if (ignoreArguments.isAnyIgnoredArgumentSupplied()) {
-            return currentFuzzers.stream().filter(fuzzer -> !fuzzer.contains("Contract")).toList();
-        }
-
-        return currentFuzzers;
-    }
-
     private List<String> processSuppliedFuzzers() {
         List<String> initialFuzzersList = this.constructFuzzersListFromCheckArguments();
 
@@ -186,7 +177,7 @@ public class FilterArguments {
 
     private List<String> filterFuzzersByAnnotationWhenCheckArgumentSupplied(boolean checkArgument, Class<? extends Annotation> annotation) {
         if (checkArgument) {
-            return fuzzers.stream().filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null)
+            return fuzzers.stream().filter(fuzzer -> AnnotationUtils.isAnnotationDeclaredLocally(annotation, fuzzer.getClass()))
                     .map(Object::toString).toList();
         }
         return Collections.emptyList();

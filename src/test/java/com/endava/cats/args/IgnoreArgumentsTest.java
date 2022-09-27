@@ -5,8 +5,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -151,18 +149,6 @@ class IgnoreArgumentsTest {
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseRegex", null);
         Assertions.assertThat(ignoreArguments.isNotIgnoredRegex("error")).isTrue();
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isTrue();
-    }
-
-    @ParameterizedTest
-    @CsvSource({"1,0,0,0,false", "0,1,0,0,false", "0,0,1,0,false", "0,0,0,1,false", "0,0,0,0,true"})
-    void shouldReturnIgnoredArgumentSupplied(long words, long sizes, long lines, long code, boolean blackbox) {
-        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseSizes", sizes != 0 ? List.of(sizes) : null);
-        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseWords", words != 0 ? List.of(words) : null);
-        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseLines", lines != 0 ? List.of(lines) : null);
-        ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", code != 0 ? List.of(String.valueOf(code)) : null);
-        ReflectionTestUtils.setField(ignoreArguments, "blackbox", blackbox);
-
-        Assertions.assertThat(ignoreArguments.isAnyIgnoredArgumentSupplied()).isTrue();
     }
 
     @Test

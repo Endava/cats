@@ -1,7 +1,9 @@
 package com.endava.cats.args;
 
+import com.endava.cats.Fuzzer;
 import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
 import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
+import com.endava.cats.fuzzer.http.HappyFuzzer;
 import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -11,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import java.io.File;
 import java.util.Collections;
@@ -27,6 +30,9 @@ class FilterArgumentsTest {
     CheckArguments checkArguments;
 
     ProcessingArguments processingArguments;
+
+    @Inject
+    Instance<Fuzzer> fuzzers;
 
 
     @BeforeEach
@@ -175,5 +181,48 @@ class FilterArgumentsTest {
         List<String> fuzzerList = filterArguments.getFuzzersForPath();
 
         Assertions.assertThat(fuzzerList).containsOnly(UserDictionaryFieldsFuzzer.class.getSimpleName(), UserDictionaryHeadersFuzzer.class.getSimpleName());
+    }
+
+    @Test
+    void shouldNotGetFuzzersWhenAllFuzzersPopulated() {
+        HappyFuzzer happyFuzzer = new HappyFuzzer(null);
+        FilterArguments.ALL_CATS_FUZZERS.add(happyFuzzer);
+
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).containsOnly(happyFuzzer);
+    }
+
+    @Test
+    void shouldNotGetFuzzersToBeRunWhenPopulated() {
+        FilterArguments.FUZZERS_TO_BE_RUN.add("HappyFuzzer");
+
+        Assertions.assertThat(filterArguments.getFuzzersForPath()).containsOnly("HappyFuzzer");
+    }
+
+    @Test
+    void shouldRemoveValidateAndSanitizeFuzzers() {
+        ReflectionTestUtils.setField(processingArguments, "sanitizationStrategy", ProcessingArguments.SanitizationStrategy.SANITIZE_AND_VALIDATE);
+        Assertions.assertThat(filterArguments.removeBasedOnSanitizationStrategy(List.of("AbugidasInStringFieldsSanitizeValidateFuzzer", "AbugidasInStringFieldsValidateSanitizeFuzzer")))
+                .containsOnly("AbugidasInStringFieldsSanitizeValidateFuzzer");
+    }
+
+    @Test
+    void shouldRemoveSanitizeAndValidateFuzzers() {
+        ReflectionTestUtils.setField(processingArguments, "sanitizationStrategy", ProcessingArguments.SanitizationStrategy.VALIDATE_AND_SANITIZE);
+        Assertions.assertThat(filterArguments.removeBasedOnSanitizationStrategy(List.of("AbugidasInStringFieldsSanitizeValidateFuzzer", "AbugidasInStringFieldsValidateSanitizeFuzzer")))
+                .containsOnly("AbugidasInStringFieldsValidateSanitizeFuzzer");
+    }
+
+    @Test
+    void shouldRemoveValidateAndTrimFuzzers() {
+        ReflectionTestUtils.setField(processingArguments, "edgeSpacesStrategy", ProcessingArguments.TrimmingStrategy.TRIM_AND_VALIDATE);
+        Assertions.assertThat(filterArguments.removeBasedOnTrimStrategy(List.of("LeadingControlCharsInFieldsTrimValidateFuzzer", "LeadingControlCharsInFieldsValidateTrimFuzzer")))
+                .containsOnly("LeadingControlCharsInFieldsTrimValidateFuzzer");
+    }
+
+    @Test
+    void shouldRemoveTrimAndValidateFuzzers() {
+        ReflectionTestUtils.setField(processingArguments, "edgeSpacesStrategy", ProcessingArguments.TrimmingStrategy.VALIDATE_AND_TRIM);
+        Assertions.assertThat(filterArguments.removeBasedOnTrimStrategy(List.of("LeadingControlCharsInFieldsTrimValidateFuzzer", "LeadingControlCharsInFieldsValidateTrimFuzzer")))
+                .containsOnly("LeadingControlCharsInFieldsValidateTrimFuzzer");
     }
 }
