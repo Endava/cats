@@ -57,11 +57,6 @@ public class IgnoreArguments {
 
     private boolean blackbox;
 
-    public boolean isAnyIgnoredArgumentSupplied() {
-        return blackbox || ignoreResponseCodes != null || ignoreResponseWords != null
-                || ignoreResponseSizes != null || ignoreResponseLines != null;
-    }
-
     public List<String> getIgnoreResponseCodes() {
         List<String> ignored = Optional.ofNullable(this.ignoreResponseCodes).orElse(Collections.emptyList());
         List<String> fromBlackbox = blackbox ? List.of("2xx", "4xx") : Collections.emptyList();
