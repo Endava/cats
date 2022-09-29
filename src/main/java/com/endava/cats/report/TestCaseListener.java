@@ -310,7 +310,7 @@ public class TestCaseListener {
         this.reportError(logger, message, params);
     }
 
-    public void reportResultError(String reason, PrettyLogger logger, FuzzingData data, String message, Object... params) {
+    public void reportResultError(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
         this.reportError(logger, message, params);
         setResultReason(reason);
     }
@@ -323,7 +323,7 @@ public class TestCaseListener {
         this.reportWarn(logger, message, params);
     }
 
-    public void reportResultWarn(String reason, PrettyLogger logger, FuzzingData data, String message, Object... params) {
+    public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
         this.reportWarn(logger, message, params);
         setResultReason(reason);
     }
