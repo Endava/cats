@@ -1,23 +1,40 @@
 package com.endava.cats.dsl;
 
+import com.endava.cats.args.AuthArguments;
+import com.endava.cats.dsl.impl.AuthScriptProviderParser;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.dsl.impl.RequestVariableParser;
 import com.endava.cats.dsl.impl.SpringELParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @Singleton
 public class CatsDSLParser {
-    private static final Map<String, Parser> PARSERS = Map.of(
-            "T(", new SpringELParser(),
-            "$$", new EnvVariableParser(),
-            "$request", new RequestVariableParser());
+    private final AuthArguments authArguments;
+
+    private final Map<String, Parser> parsers = new HashMap<>();
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsDSLParser.class);
+
+    @Inject
+    public CatsDSLParser(AuthArguments authArguments) {
+        this.authArguments = authArguments;
+        populateParsersMap();
+    }
+
+    private void populateParsersMap() {
+        parsers.putAll(Map.of(
+                "T(", new SpringELParser(),
+                "$$", new EnvVariableParser(),
+                "$request", new RequestVariableParser(),
+                "auth_script", new AuthScriptProviderParser(authArguments)));
+    }
 
     /**
      * Gets the appropriate parser based on the {@code valueFromFile} and runs it against the given payload.
@@ -27,7 +44,7 @@ public class CatsDSLParser {
      * @return the result after the appropriate parser runs
      */
     public String parseAndGetResult(String valueFromFile, String jsonPayload) {
-        Optional<Map.Entry<String, Parser>> parserEntry = PARSERS.entrySet().stream().filter(entry -> valueFromFile.startsWith(entry.getKey())).findAny();
+        Optional<Map.Entry<String, Parser>> parserEntry = parsers.entrySet().stream().filter(entry -> valueFromFile.startsWith(entry.getKey())).findAny();
         if (parserEntry.isPresent()) {
             logger.debug("Identified parser {}", parserEntry.get().getValue().getClass().getSimpleName());
             return parserEntry.get().getValue().parse(valueFromFile, jsonPayload);
