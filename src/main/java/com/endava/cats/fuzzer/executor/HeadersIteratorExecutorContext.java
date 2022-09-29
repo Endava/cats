@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 @Value
 public class HeadersIteratorExecutorContext {
     PrettyLogger logger;
+
     FuzzingData fuzzingData;
 
     String scenario;
@@ -34,4 +35,7 @@ public class HeadersIteratorExecutorContext {
 
     @Builder.Default
     boolean matchResponseSchema = true;
+
+    @Builder.Default
+    boolean skipAuthHeaders = true;
 }

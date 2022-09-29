@@ -245,6 +245,11 @@ public class TestCaseListener {
         testCase.setResultReason(catsResult.getReason());
     }
 
+    private void setResultReason(String reason) {
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        testCase.setResultReason(reason);
+    }
+
     public void reportError(PrettyLogger logger, CatsResult catsResult, Object... params) {
         this.reportError(logger, catsResult.getMessage(), params);
         setResultReason(catsResult);
@@ -305,12 +310,22 @@ public class TestCaseListener {
         this.reportError(logger, message, params);
     }
 
+    public void reportResultError(String reason, PrettyLogger logger, FuzzingData data, String message, Object... params) {
+        this.reportError(logger, message, params);
+        setResultReason(reason);
+    }
+
     public void reportResultInfo(PrettyLogger logger, FuzzingData data, String message, Object... params) {
         this.reportInfo(logger, message, params);
     }
 
     public void reportResultWarn(PrettyLogger logger, FuzzingData data, String message, Object... params) {
         this.reportWarn(logger, message, params);
+    }
+
+    public void reportResultWarn(String reason, PrettyLogger logger, FuzzingData data, String message, Object... params) {
+        this.reportWarn(logger, message, params);
+        setResultReason(reason);
     }
 
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {

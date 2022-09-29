@@ -19,7 +19,6 @@ public class HeadersIteratorExecutor {
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-
     private final MatchArguments matchArguments;
 
     public HeadersIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, MatchArguments ma) {
@@ -29,7 +28,7 @@ public class HeadersIteratorExecutor {
     }
 
     public void execute(HeadersIteratorExecutorContext context) {
-        Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuthHeaders(context.getFuzzingData().getHeaders(), context);
+        Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuthHeaders(context);
         if (headersWithoutAuth.isEmpty()) {
             context.getLogger().skip("No headers to fuzz");
         }
@@ -82,11 +81,14 @@ public class HeadersIteratorExecutor {
         return required ? context.getExpectedResponseCodeForRequiredHeaders() : context.getExpectedResponseCodeForOptionalHeaders();
     }
 
-    public Set<CatsHeader> getHeadersWithoutAuthHeaders(Set<CatsHeader> headers, HeadersIteratorExecutorContext context) {
-        Set<CatsHeader> headersWithoutAuth = headers.stream()
-                .filter(catsHeader -> !serviceCaller.isAuthenticationHeader(catsHeader.getName()))
-                .collect(Collectors.toSet());
-        context.getLogger().note("All headers excluding auth headers: {}", headersWithoutAuth);
-        return headersWithoutAuth;
+    public Set<CatsHeader> getHeadersWithoutAuthHeaders(HeadersIteratorExecutorContext context) {
+        if (context.isSkipAuthHeaders()) {
+            Set<CatsHeader> headersWithoutAuth = context.getFuzzingData().getHeaders().stream()
+                    .filter(catsHeader -> !serviceCaller.isAuthenticationHeader(catsHeader.getName()))
+                    .collect(Collectors.toSet());
+            context.getLogger().note("All headers excluding auth headers: {}", headersWithoutAuth);
+            return headersWithoutAuth;
+        }
+        return context.getFuzzingData().getHeaders();
     }
 }
