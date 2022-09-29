@@ -49,7 +49,7 @@ class SecurityFuzzerTest {
 
     @BeforeEach
     void setup() {
-        catsDSLParser = new CatsDSLParser();
+        catsDSLParser = new CatsDSLParser(null);
         catsUtil = new CatsUtil(catsDSLParser);
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments(catsUtil);

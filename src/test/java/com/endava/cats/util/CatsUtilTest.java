@@ -22,7 +22,7 @@ class CatsUtilTest {
 
     @Test
     void givenAYamlFile_whenParseYamlIsCalled_thenTheYamlFileIsProperlyParsed() throws Exception {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
         Map<String, Map<String, Object>> yaml = catsUtil.parseYaml("src/test/resources/test.yml");
 
         Assertions.assertThat(yaml.get("all")).isNotNull();
@@ -48,7 +48,7 @@ class CatsUtilTest {
             "{\"field\": {\"subField\":\"value\"}, \"anotherField\":\"otherValue\"}|field#subField",
             "{\"field\": [{\"subField\":\"value\"},{\"subField\":\"value\"}], \"anotherField\":\"otherValue\"}|field[*]#subField"}, delimiter = '|')
     void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed(String json, String path) {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField(json, path, strategy);
 
@@ -58,7 +58,7 @@ class CatsUtilTest {
 
     @Test
     void shouldAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
@@ -68,7 +68,7 @@ class CatsUtilTest {
 
     @Test
     void shouldNotAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
@@ -78,7 +78,7 @@ class CatsUtilTest {
 
     @Test
     void shouldReturnEmptyFuzzingResultWhenEmptyJson() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField("", "test", strategy);
 

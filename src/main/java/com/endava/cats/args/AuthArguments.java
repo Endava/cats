@@ -39,6 +39,17 @@ public class AuthArguments {
             description = "The proxy server's port number")
     private int proxyPort;
 
+    @CommandLine.Option(names = {"--authRefreshScript", "--ars"},
+            description = "Script to get executed after --authRefreshInterval in order to get new auth credentials. " +
+                    "The script will replace any headers that have @|bold,underline aut_script|@ as value. " +
+                    "If you don't supply a --authRefreshInterval, but you supply a script, the script " +
+                    "will be used to get the initial auth credentials.")
+    private String authRefreshScript;
+
+    @CommandLine.Option(names = {"--authRefreshInterval", "--ari"},
+            description = "Amount of time in seconds after which to get new auth credentials")
+    private int authRefreshInterval;
+
 
     public boolean isProxySupplied() {
         return proxyHost != null && proxyPort != 0;
