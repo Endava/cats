@@ -43,6 +43,7 @@ public class UserDictionaryHeadersFuzzer implements Fuzzer {
                             .fuzzer(this)
                             .logger(logger)
                             .fuzzingData(data)
+                            .skipAuthHeaders(false)
                             .fuzzValueProducer(() -> userArguments.getWordsAsList().stream().map(word -> FuzzingStrategy.replace().withData(word)).toList())
                             .scenario("Iterate through each header and send values from user dictionary.")
                             .build()
