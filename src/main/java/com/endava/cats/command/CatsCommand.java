@@ -12,6 +12,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.factory.FuzzingDataFactory;
+import com.endava.cats.factory.NoMediaType;
 import com.endava.cats.fuzzer.fields.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
@@ -141,6 +142,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private void initGlobalData(OpenAPI openAPI) {
         Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
         globalContext.getSchemaMap().putAll(allSchemasFromOpenApi);
+        globalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
         logger.debug("Schemas: {}", allSchemasFromOpenApi.keySet());
     }
 
