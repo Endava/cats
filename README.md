@@ -306,8 +306,11 @@ All available subcommands are listed below:
 - `--contract=LOCATION_OF_THE_CONTRACT` supplies the location of the OpenApi or Swagger contract.
 - `--server=URL` supplies the URL of the service implementing the contract.
 - `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth.
+- `--authRefreshInterval=value_in_seconds` Amount of time in seconds after which to get new auth credentials
+- `--authRefreshScript=script` Script to get executed after `--authRefreshInterval` in order to get new auth credentials. The script will replace any headers that have aut_script as value. If you don't supply a --authRefreshInterval, but you supply a script, the script will be used to get the initial auth credentials.
 - `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. The supplied list of Fuzzers can be partial names, not full Fuzzer names. CATS which check for all Fuzzers containing the supplied strings. If the argument is not supplied, all fuzzers will be run.
-- `--log=PACKAGE:LEVEL` can configure custom log level for a given package. You can provide a comma separated list of packages and levels. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug` or suppress CATS logging: `--log=com.endava.cats:warn`
+- `--log=PACKAGE:LEVEL` can configure custom log level for a given package. You can provide a comma separated list of packages and levels or a level to apply to everything. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug` or suppress CATS logging: `--log=com.endava.cats:warn`
+- `--skipLog=LEVELS`  A list of log levels to skip. For example you can skip only note and info levels, but leave the rest
 - `--paths=PATH_LIST` supplies a comma separated list of OpenApi paths to be tested. If no path is supplied, all paths will be considered.
 - `--skipPaths=PATH_LIST` a comma separated list of paths to ignore. If no path is supplied, no path will be ignored
 - `--fieldsFuzzingStrategy=STRATEGY` specifies which strategy will be used for field fuzzing. Available strategies are `ONEBYONE`, `SIZE` and `POWERSET`. More information on field fuzzing can be found in the sections below.
@@ -354,7 +357,7 @@ All available subcommands are listed below:
 - `--blackbox` If supplied (no value needed) it will ignore all response codes except for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
 - `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
 - `--outoput` The path where the CATS report will be written. Default is `cats-report` in the current directory
-- `--skipReportingForIgnoredCodes` Skip reporting entirely for the any ignored arguments provided in `--ignoreResponseXXX`
+- `--skipReportingForIgnoredCodes` Skip reporting entirely for any of the ignored arguments provided in `--ignoreResponseXXX`
 
 ```shell
 > cats --contract=my.yml --server=https://locathost:8080 --checkHeaders
@@ -1075,9 +1078,18 @@ A typical run with proxy settings on `localhost:8080` will look as follows:
 
 # Dealing with Authentication
 ## HTTP header(s) based authentication
-CATS supports any form of HTTP header(s) based authentication (basic auth, oauth, custom JWT, apiKey, etc) using the [headers](#headers-file) mechanism. You can supply the specific HTTP header name and value 
-and apply to `all` endpoints.
+CATS supports any form of HTTP header(s) based authentication (basic auth, oauth, custom JWT, apiKey, etc) using the [headers](#headers-file) mechanism or using `-H header=value` arguments.
+You can supply the specific HTTP header name and value and apply to `all` endpoints.
+
 Additionally, basic auth is also supported using the `--basicauth=USR:PWD` argument.
+
+If the authentication token needs periodical refresh, or if you want to provide it dynamically, you can encapsulate the provision of the authentication header in a script and user the following syntax:
+
+```shell
+>  cats --contract=api.yml --server=http://localhost:8000 -H "Authorization=auth_script" --authRefreshScript="./get_token.sh" --authRefreshInterval 300
+```
+
+This will use the `get_token.sh` script to get the value for the `Authorization` header and will refresh its value by calling the `get_tokne.sh` script every 5 minutes.
 
 ## One-Way or Two-Way SSL
 By default, CATS trusts all server certificates and doesn't perform hostname verification. 
