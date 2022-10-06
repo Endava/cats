@@ -119,7 +119,7 @@ public class CatsUtil {
             }
             DocumentContext context = JsonPath.parse(payload);
             Object oldValue = context.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
-            if (oldValue instanceof JSONArray) {
+            if (oldValue instanceof JSONArray && !jsonPropToGetValue.contains("[*]")) {
                 oldValue = context.read("$." + jsonPropToGetValue + "[0]");
                 jsonPropertyForReplacement = "$." + jsonPropertyForReplacement + "[*]";
             }
