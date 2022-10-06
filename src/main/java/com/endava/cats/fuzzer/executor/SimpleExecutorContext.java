@@ -92,6 +92,20 @@ public class SimpleExecutorContext {
     HttpMethod httpMethod;
 
     /**
+     * You can override this to provide your own path.
+     */
+    String path;
+
+
+    public String getPath() {
+        if (path == null) {
+            return fuzzingData.getPath();
+        }
+
+        return path;
+    }
+
+    /**
      * If {@code httpMethod} is null, it will return the {@code fuzzingData.getHttpMethod()}.
      *
      * @return the http method to be executed

@@ -45,7 +45,7 @@ public class SimpleExecutor {
             if (context.getRunFilter().test(context.getFuzzingData().getMethod())) {
                 CatsResponse response = serviceCaller.call(
                         ServiceData.builder()
-                                .relativePath(context.getFuzzingData().getPath())
+                                .relativePath(context.getPath())
                                 .headers(context.getHeaders())
                                 .payload(context.getPayload())
                                 .queryParams(context.getFuzzingData().getQueryParams())
