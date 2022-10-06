@@ -180,7 +180,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
      */
     private List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
         List<String> suppliedPaths = this.matchWildCardPaths(filterArguments.getPaths(), openAPI);
-        if (suppliedPaths.isEmpty()) {
+        if (filterArguments.getPaths().isEmpty()) {
             suppliedPaths.addAll(openAPI.getPaths().keySet());
         }
         List<String> skipPaths = this.matchWildCardPaths(filterArguments.getSkipPaths(), openAPI);
@@ -244,10 +244,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered = fuzzingDataList.stream()
                 .filter(fuzzingData -> filterArguments.getHttpMethods().contains(fuzzingData.getMethod()))
                 .toList();
-        List<HttpMethod> excludedHttpMethods = fuzzingDataList.stream()
+        Set<HttpMethod> excludedHttpMethods = fuzzingDataList.stream()
                 .map(FuzzingData::getMethod)
                 .filter(method -> !filterArguments.getHttpMethods().contains(method))
-                .toList();
+                .collect(Collectors.toSet());
 
         List<Fuzzer> allFuzzersSorted = filterArguments.getAllRegisteredFuzzers();
         List<String> configuredFuzzers = filterArguments.getFuzzersForPath();
