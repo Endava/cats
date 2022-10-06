@@ -11,6 +11,7 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
 
@@ -118,6 +119,10 @@ public class CatsUtil {
             }
             DocumentContext context = JsonPath.parse(payload);
             Object oldValue = context.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
+            if (oldValue instanceof JSONArray) {
+                oldValue = context.read("$." + jsonPropToGetValue + "[0]");
+                jsonPropertyForReplacement = "$." + jsonPropertyForReplacement + "[*]";
+            }
             Object valueToSet = fuzzingStrategyToApply.process(oldValue);
             if (mergeFuzzing) {
                 valueToSet = FuzzingStrategy.mergeFuzzing(this.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());

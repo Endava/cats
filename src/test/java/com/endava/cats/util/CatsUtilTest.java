@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.FuzzingResult;
@@ -103,5 +104,22 @@ class CatsUtilTest {
     @CsvSource({"prop1#prop1#prop1", "prop1#prop2#prop3#prop1#prop2", "prop1#prop2#prop3#prop2#prop3", "prop1#prop2#prop1"})
     void shouldReturnCyclic(String properties) {
         Assertions.assertThat(CatsUtil.isCyclicReference(properties, 3)).isTrue();
+    }
+
+    @Test
+    void shouldReplace() {
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(new AuthArguments()));
+        String payload = """
+                {
+                  "arrayOfData": [
+                    "FAoe22OkDDln6qHyqALVI1",
+                    "FAoe22OkDDln6qHyqALVI1"
+                  ],
+                  "country": "USA",
+                  "dateTime": "2016-05-24T15:54:14.876Z"
+                }
+                """;
+        FuzzingResult result = catsUtil.replaceField(payload, "arrayOfData", FuzzingStrategy.trail().withData("test"));
+        Assertions.assertThat(result.getJson()).contains("test").contains("FAoe22OkDDln6qHyqALVI1test").contains("USA");
     }
 }
