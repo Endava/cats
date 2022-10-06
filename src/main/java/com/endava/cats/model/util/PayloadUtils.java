@@ -14,6 +14,8 @@ import java.util.stream.Stream;
 
 public abstract class PayloadUtils {
 
+
+    private static final List<String> INVALID_REFERENCES = List.of("??", "/?/", "\u0000", "\u200B");
     private static final String ZALGO_TEXT = " ̵̡̡̢̡̨̨̢͚̬̱̤̰̗͉͚̖͙͎͔͔̺̳͕̫̬͚̹͖̬̭̖̪̗͕̜̣̥̣̼͍͉̖͍̪͈̖͚̙͛͒͂̎̊̿̀̅̈͌͋̃̾̈̾̇͛͌͘͜͜͠͝ͅͅͅ ̷͕̗̇͛̅̀̑̇̈͗͌͛̐̀͆̐̊̅̋̈́̂̈́̈́͑̓͂͂̌̈́̽͌͐̐͂͐̈́̍̂͗̂͘͠͝͝͝ͅ ̷̨̢̧̢̡̨̛͕̯̭̹͖̮̘̤̩̥̟̖͈̯̠̖͈̜͈̥̫͔̘̭͉͎͇̤̦̯͙̹̠̼̮͕̲̖̟̲̦̣͇̳͖̳̭͇͓̭͌̓̀̅̋̋̀̈́̎̄͛̾̊͐̎̉̏͊͐̑͊͒̐̔̏̔̋̑̌͆̏̀̉͆̆́̓̆̉̀̒̆̆̉̀̂̎̈̔͗̔̕̕͘̕̚̚̕͘͜͝͝͝͝͝͠ͅ ̷̧̡̥͈͓͙͈̫͙͎͈̻̔̊̎̏̑̒̐̐̆̉̍͠͝͝ ̴̡̛̛͓͎͇̘͈͇̱̟̠̳͇̬̺̲̭̪̬̼̝̠̙̹̩̱̪͔͉͎̱͚͍̬͈̤͈͙͖̝̲̦̞̺̟̟̺͇̳͈̠̘̺̪̱̮̉̀̍̏̐̃̅̐̊̾͆̐͋͊̿̉̆̾͊̀͊͒͌̀͛̎́́͂̐͂̎͛̆͜͜͜͠ͅ ̶̧̧͖̻̥̝̺̼̙̫̩̹̣̲̩̲͍̺̘͕̤͉̹̥͉̮̮̟̘̥̺̯̗̠͈̬͚̦̦͚̫̫̦̉́̾̀̅͋̋̇̕̕͜͜͝ͅͅ ̶̧̛̛̝̟̤̬̙͔̻͙͚̹̣̳̳͔̥̘̠̗̦̠͚͎̖̮̳̗̥̫͚̯̬̩̎́̽͒̋̓̀͂̈́̓́̎͐͊͒̎͒͌̿̿̔͐̈́͑̊̄̓̎͐̓̓̍͘̕̚̚͜͜ ̶̢̡̡̨̡̡̘̫̫̠̟̻̳̻͈̲̖͚͇̼̩̥̥͎̥̯͚̞̘̼̞͍̮̗͈̱͚͙̠͔̞̮̱̭͍͍̪̲̜͓͍̣̯̲̠̲̤̅͊̑̇̆́̈́̓̿̄̐̓̐͐́͛̆͜͝͝͝͠ͅ ̶̧̡̨̧̡̧̥̥̱̪͇̞̭͙͚͔̜̠͓͈̞͈̣̹̝̩̦̟̻̰͙̯̼̜̞̮̬̝͚̺̟͎̻̱̙̦̜̭̲̰͎̳̣̈͜͜͜ͅ ̸̹̟̯̝͚̪̼͓͕͕̹͖̣̠͓̫͇͚͔̼̊́͑̊̊̅͗͠ͅ";
     private static final List<String> spacesHeaders = Arrays.asList(" ", "\u0009", "\r");
     private static final List<String> whitespacesHeaders = Arrays.asList(
@@ -145,6 +147,10 @@ public abstract class PayloadUtils {
 
     public static String getBadPayload() {
         return BAD_PAYLOAD;
+    }
+
+    public static List<String> getInvalidReferences() {
+        return INVALID_REFERENCES;
     }
 
     public static String getZalgoText() {
