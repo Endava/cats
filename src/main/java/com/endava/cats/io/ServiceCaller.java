@@ -378,6 +378,7 @@ public class ServiceCaller {
             CatsResponse.CatsResponseBuilder catsResponseBuilder = this.populateCatsResponseFromHttpResponse(response);
             CatsResponse catsResponse = catsResponseBuilder.httpMethod(catsRequest.getHttpMethod())
                     .responseTimeInMs(endTime - startTime)
+                    .path(catsRequest.getUrl())
                     .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build();
 
