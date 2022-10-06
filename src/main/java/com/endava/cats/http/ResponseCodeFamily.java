@@ -160,6 +160,10 @@ public enum ResponseCodeFamily {
         return String.valueOf(code).startsWith("2");
     }
 
+    public static boolean is4xxCode(int code) {
+        return String.valueOf(code).startsWith("4");
+    }
+
     public static boolean isUnimplemented(int code) {
         return code == 501;
     }

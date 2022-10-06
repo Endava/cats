@@ -132,4 +132,14 @@ class ResponseCodeFamilyTest {
     void shouldNotMatchAsResponseCodeOrRange(String code1, String code2) {
         Assertions.assertThat(ResponseCodeFamily.matchAsCodeOrRange(code1, code2)).isFalse();
     }
+
+    @Test
+    void shouldReturnIs4xxTrue() {
+        Assertions.assertThat(ResponseCodeFamily.is4xxCode(432)).isTrue();
+    }
+
+    @Test
+    void shouldReturnIs4xxFalse() {
+        Assertions.assertThat(ResponseCodeFamily.is4xxCode(222)).isFalse();
+    }
 }
