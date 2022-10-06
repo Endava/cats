@@ -131,8 +131,11 @@ public class FuzzingDataFactory {
         for (Parameter parameter : Optional.ofNullable(operationParameters).orElseGet(Collections::emptyList)) {
             if (("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn()))
                     && filesArguments.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
-                parameter.getSchema().setName(parameter.getSchema().getName() + "|" + parameter.getIn());
+                parameter.getSchema().setName(parameter.getName() + "|" + parameter.getIn());
                 syntheticSchema.addProperties(parameter.getName(), parameter.getSchema());
+                if (parameter.getSchema().getExample() == null) {
+                    parameter.getSchema().setExample(parameter.getExample());
+                }
                 if (parameter.getRequired() != null && parameter.getRequired()) {
                     required.add(parameter.getName());
                 }
