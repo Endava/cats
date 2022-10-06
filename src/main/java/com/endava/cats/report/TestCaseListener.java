@@ -112,7 +112,7 @@ public class TestCaseListener {
         } catch (Exception e) {
             setDefaultPathAndMethod();
             this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), CatsResult.EXCEPTION.
-                    withDocumentedResponseCodes(e.getMessage()).withExpectedResponseCodes(fuzzer.getClass().getSimpleName()).getMessage());
+                    withDocumentedResponseCodes(Optional.ofNullable(e.getMessage()).orElse("")).withExpectedResponseCodes(fuzzer.getClass().getSimpleName()).getMessage());
             setResultReason(CatsResult.EXCEPTION);
             externalLogger.error("Exception while processing: {}", e.getMessage());
             externalLogger.debug("Detailed stacktrace", e);
