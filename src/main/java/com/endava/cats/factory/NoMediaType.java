@@ -13,6 +13,7 @@ public class NoMediaType extends MediaType {
         EMPTY_BODY_SCHEMA.setExample("{}");
     }
 
+    @Override
     public Schema<?> getSchema() {
         return EMPTY_BODY_SCHEMA;
     }
