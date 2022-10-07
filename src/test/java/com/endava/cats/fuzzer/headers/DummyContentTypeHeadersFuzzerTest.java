@@ -9,6 +9,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,9 +23,12 @@ class DummyContentTypeHeadersFuzzerTest {
 
     private DummyContentTypeHeadersFuzzer dummyContentTypeHeadersFuzzer;
 
+    private SimpleExecutor simpleExecutor;
+
     @BeforeEach
     void setup() {
-        dummyContentTypeHeadersFuzzer = new DummyContentTypeHeadersFuzzer(Mockito.mock(SimpleExecutor.class));
+        simpleExecutor = Mockito.mock(SimpleExecutor.class);
+        dummyContentTypeHeadersFuzzer = new DummyContentTypeHeadersFuzzer(simpleExecutor);
     }
 
     @Test
@@ -38,6 +42,7 @@ class DummyContentTypeHeadersFuzzerTest {
     void shouldReturnAValidHeadersList() {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .responseContentTypes(Collections.singletonMap("200", Collections.singletonList("application/json"))).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
 
         List<Set<CatsHeader>> headers = dummyContentTypeHeadersFuzzer.getHeaders(data);
 
@@ -48,5 +53,12 @@ class DummyContentTypeHeadersFuzzerTest {
     @Test
     void shouldReturnHttpMethodsSkipFor() {
         Assertions.assertThat(dummyContentTypeHeadersFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE);
+    }
+
+    @Test
+    void shouldNotRunWithEmptyPayload() {
+        dummyContentTypeHeadersFuzzer.fuzz(Mockito.mock(FuzzingData.class));
+
+        Mockito.verifyNoInteractions(simpleExecutor);
     }
 }

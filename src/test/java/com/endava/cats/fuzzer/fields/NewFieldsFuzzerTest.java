@@ -46,6 +46,13 @@ class NewFieldsFuzzerTest {
     }
 
     @Test
+    void shouldNotRunWithEmptyPayload() {
+        newFieldsFuzzer.fuzz(Mockito.mock(FuzzingData.class));
+
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
     void shouldHaveProperDescriptionAndToString() {
         Assertions.assertThat(newFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(newFieldsFuzzer).hasToString(newFieldsFuzzer.getClass().getSimpleName());

@@ -59,7 +59,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     }
 
     /**
-     * Removes content types defined in the contract from the {@link UNSUPPORTED_MEDIA_TYPES} list.
+     * Removes content types defined in the contract from the {@code UNSUPPORTED_MEDIA_TYPES} list.
      * Content Types not already defined in contract should be treated as invalid by the service.
      *
      * @param data         the current FuzzingData

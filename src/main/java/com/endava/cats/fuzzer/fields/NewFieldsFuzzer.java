@@ -8,6 +8,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
@@ -35,7 +36,11 @@ public class NewFieldsFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
+        if (!JsonUtils.isEmptyPayload(data.getPayload())) {
+            testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
+        } else {
+            logger.debug("Skip fuzzer as payload is empty");
+        }
     }
 
     private void process(FuzzingData data) {

@@ -37,8 +37,17 @@ class DummyRequestFuzzerTest {
     }
 
     @Test
+    void shouldNotRunForEmptyPayload() {
+        dummyRequestFuzzer.fuzz(Mockito.mock(FuzzingData.class));
+
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
     void givenAHttpMethodWithoutPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).requestContentTypes(List.of("application/json")).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
+
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
@@ -50,6 +59,8 @@ class DummyRequestFuzzerTest {
     @Test
     void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).requestContentTypes(List.of("application/json")).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
+
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());

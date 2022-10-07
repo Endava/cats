@@ -379,7 +379,6 @@ public class TestCaseListener {
         } else if (data.getMethod() == HttpMethod.DELETE && ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             logger.star("Successful DELETE. Removing top POST request from the store...");
             globalContext.getPostSuccessfulResponses().getOrDefault(data.getPath().substring(0, data.getPath().lastIndexOf("/")), new ArrayDeque<>()).poll();
-            logger.note("Storing DELETE request for next fuzzers {}", response.getPath());
         }
     }
 

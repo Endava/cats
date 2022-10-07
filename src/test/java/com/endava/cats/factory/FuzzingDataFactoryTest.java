@@ -1,4 +1,4 @@
-package com.endava.cats.model.factory;
+package com.endava.cats.factory;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
