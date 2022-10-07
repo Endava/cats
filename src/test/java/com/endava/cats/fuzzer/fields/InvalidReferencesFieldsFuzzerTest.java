@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.fields;
 
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
@@ -28,7 +27,6 @@ class InvalidReferencesFieldsFuzzerTest {
     private InvalidReferencesFieldsFuzzer invalidReferencesFieldsFuzzer;
     private FilesArguments filesArguments;
     private SimpleExecutor simpleExecutor;
-    private FieldsIteratorExecutor fieldsIteratorExecutor;
     @InjectSpy
     private TestCaseListener testCaseListener;
     private ServiceCaller serviceCaller;
@@ -38,12 +36,11 @@ class InvalidReferencesFieldsFuzzerTest {
     void setup() {
         filesArguments = Mockito.mock(FilesArguments.class);
         simpleExecutor = Mockito.mock(SimpleExecutor.class);
-        fieldsIteratorExecutor = Mockito.mock(FieldsIteratorExecutor.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(simpleExecutor, "serviceCaller", serviceCaller);
         ReflectionTestUtils.setField(simpleExecutor, "testCaseListener", testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        invalidReferencesFieldsFuzzer = new InvalidReferencesFieldsFuzzer(filesArguments, simpleExecutor, fieldsIteratorExecutor, testCaseListener);
+        invalidReferencesFieldsFuzzer = new InvalidReferencesFieldsFuzzer(filesArguments, simpleExecutor, testCaseListener);
     }
 
     @Test
@@ -71,7 +68,7 @@ class InvalidReferencesFieldsFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("/test").method(HttpMethod.POST).build();
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        Mockito.verifyNoInteractions(simpleExecutor, fieldsIteratorExecutor);
+        Mockito.verifyNoInteractions(simpleExecutor);
     }
 
     @Test
@@ -80,16 +77,14 @@ class InvalidReferencesFieldsFuzzerTest {
         invalidReferencesFieldsFuzzer.fuzz(data);
 
         Mockito.verify(simpleExecutor, Mockito.times(14)).execute(Mockito.any());
-        Mockito.verifyNoInteractions(fieldsIteratorExecutor);
     }
 
     @Test
     void shouldRunFieldsIteratorExecutorForMethodWithoutBody() {
-        FuzzingData data = FuzzingData.builder().path("/test").method(HttpMethod.GET).build();
+        FuzzingData data = FuzzingData.builder().path("/test/{test}").method(HttpMethod.GET).build();
         invalidReferencesFieldsFuzzer.fuzz(data);
 
-        Mockito.verifyNoInteractions(simpleExecutor);
-        Mockito.verify(fieldsIteratorExecutor, Mockito.times(1)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(7)).execute(Mockito.any());
     }
 
     @Test
