@@ -20,9 +20,9 @@ public class CatsResponse {
     private final long contentLengthInBytes;
     private final JsonElement jsonBody;
     private final List<KeyValuePair<String, String>> headers;
+
+    @Exclude
     private final String path;
-
-
     @Exclude
     private final String body;
     @Exclude
