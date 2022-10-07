@@ -7,6 +7,7 @@ import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.util.JsonUtils;
 import com.google.common.net.HttpHeaders;
 
 import javax.inject.Singleton;
@@ -40,6 +41,9 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
 
     @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
+        if (JsonUtils.isEmptyPayload(data.getPayload())) {
+            return Collections.emptyList();
+        }
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(data.getHeaders());
         clonedHeaders.add(CatsHeader.builder().name(HttpHeaders.CONTENT_TYPE).value(CATS_ACCEPT).build());
 

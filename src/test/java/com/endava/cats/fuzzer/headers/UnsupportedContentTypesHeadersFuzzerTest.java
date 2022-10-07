@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.Mock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -39,6 +40,13 @@ class UnsupportedContentTypesHeadersFuzzerTest {
     }
 
     @Test
+    void shouldNotRunWithPayloadEmpty() {
+        unsupportedContentTypeHeadersFuzzer.fuzz(Mockito.mock(FuzzingData.class));
+
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
     void shouldProperlyOverrideParentMethods() {
         Assertions.assertThat(unsupportedContentTypeHeadersFuzzer.typeOfHeader()).isEqualTo("unsupported");
         Assertions.assertThat(unsupportedContentTypeHeadersFuzzer.description()).isEqualTo("send a request with a unsupported Content-Type header and expect to get 415 code");
@@ -49,6 +57,7 @@ class UnsupportedContentTypesHeadersFuzzerTest {
     void shouldReturnAValidHeadersList() {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .requestContentTypes(Collections.singletonList("application/json")).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
 
         List<Set<CatsHeader>> headers = unsupportedContentTypeHeadersFuzzer.getHeaders(data);
 
@@ -60,6 +69,8 @@ class UnsupportedContentTypesHeadersFuzzerTest {
     void shouldRunFuzzerForEachSetOfHeaders() {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
+
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT));
         unsupportedContentTypeHeadersFuzzer.fuzz(data);

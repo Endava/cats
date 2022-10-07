@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -24,18 +25,22 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        simpleExecutor.execute(
-                SimpleExecutorContext.builder()
-                        .expectedResponseCode(ResponseCodeFamily.FOURXX)
-                        .fuzzingData(data)
-                        .logger(logger)
-                        .replaceRefData(false)
-                        .runFilter(HttpMethod::requiresBody)
-                        .scenario(this.getScenario())
-                        .fuzzer(this)
-                        .payload(this.getPayload(data))
-                        .build()
-        );
+        if (!JsonUtils.isEmptyPayload(data.getPayload())) {
+            simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                            .fuzzingData(data)
+                            .logger(logger)
+                            .replaceRefData(false)
+                            .runFilter(HttpMethod::requiresBody)
+                            .scenario(this.getScenario())
+                            .fuzzer(this)
+                            .payload(this.getPayload(data))
+                            .build()
+            );
+        } else {
+            logger.debug("Skipping fuzzer as payload is empty");
+        }
     }
 
     @Override

@@ -165,4 +165,8 @@ public abstract class JsonUtils {
     public static boolean isFieldInJson(String jsonPayload, String field) {
         return !NOT_SET.equalsIgnoreCase(String.valueOf(getVariableFromJson(jsonPayload, field)));
     }
+
+    public static boolean isEmptyPayload(String payload) {
+        return payload == null || payload.isBlank() || payload.trim().equals("{}") || payload.trim().equals("\"{}\"");
+    }
 }

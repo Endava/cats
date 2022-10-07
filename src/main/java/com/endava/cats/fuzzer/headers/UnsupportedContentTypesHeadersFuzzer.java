@@ -4,9 +4,11 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.util.JsonUtils;
 import com.google.common.net.HttpHeaders;
 
 import javax.inject.Singleton;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -28,6 +30,9 @@ public class UnsupportedContentTypesHeadersFuzzer extends DummyContentTypeHeader
 
     @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
+        if (JsonUtils.isEmptyPayload(data.getPayload())) {
+            return Collections.emptyList();
+        }
         return filterHeaders(data, HttpHeaders.CONTENT_TYPE, data.getRequestContentTypes());
     }
 

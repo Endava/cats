@@ -4,6 +4,8 @@ import com.endava.cats.model.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @QuarkusTest
 class JsonUtilsTest {
@@ -107,5 +109,16 @@ class JsonUtilsTest {
         boolean result = JsonUtils.isObject("[{\"test\":{\"inner\": 4}}]", "test_bad");
 
         Assertions.assertThat(result).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"null", "{}", "\"{}\""}, nullValues = "null")
+    void shouldReturnEmptyPayload(String payload) {
+        Assertions.assertThat(JsonUtils.isEmptyPayload(payload)).isTrue();
+    }
+
+    @Test
+    void shouldNotReturnEmptyPayload() {
+        Assertions.assertThat(JsonUtils.isEmptyPayload("{\"id\": 2}")).isFalse();
     }
 }
