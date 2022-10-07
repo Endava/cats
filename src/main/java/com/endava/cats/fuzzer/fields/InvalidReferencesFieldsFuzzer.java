@@ -3,15 +3,11 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
-import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.util.PayloadUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -35,20 +31,17 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
 
     private final FilesArguments filesArguments;
     private final SimpleExecutor simpleExecutor;
-    private final FieldsIteratorExecutor fieldsIteratorExecutor;
     private final TestCaseListener testCaseListener;
 
-    public InvalidReferencesFieldsFuzzer(FilesArguments filesArguments, SimpleExecutor simpleExecutor, FieldsIteratorExecutor fieldsIteratorExecutor, TestCaseListener testCaseListener) {
+    public InvalidReferencesFieldsFuzzer(FilesArguments filesArguments, SimpleExecutor simpleExecutor, TestCaseListener testCaseListener) {
         this.filesArguments = filesArguments;
         this.simpleExecutor = simpleExecutor;
-        this.fieldsIteratorExecutor = fieldsIteratorExecutor;
         this.testCaseListener = testCaseListener;
     }
 
-
     @Override
     public void fuzz(FuzzingData data) {
-        if (HttpMethod.requiresBody(data.getMethod()) && this.hasPathVariables(data.getPath())) {
+        if (this.hasPathVariables(data.getPath())) {
             List<String> pathCombinations = this.replacePathVariables(data.getPath());
             for (String pathCombination : pathCombinations) {
                 simpleExecutor.execute(
@@ -62,17 +55,6 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
                                 .responseProcessor(this::processResponse)
                                 .build());
             }
-        } else if (!HttpMethod.requiresBody(data.getMethod())) {
-            fieldsIteratorExecutor.execute(
-                    FieldsIteratorExecutorContext.builder()
-                            .fuzzer(this)
-                            .fuzzingData(data)
-                            .logger(logger)
-                            .scenario("Fuzz path parameters with invalid references. ")
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX)
-                            .fuzzingStrategy(FuzzingStrategy.trail())
-                            .fuzzValueProducer(schema -> PayloadUtils.getInvalidReferences())
-                            .build());
         }
     }
 
