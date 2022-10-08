@@ -21,9 +21,9 @@ public class CatsTestCase {
     private String result;
     private String resultReason;
     private String resultDetails;
-    private CatsRequest request;
-    private CatsResponse response;
-    private String path;
+    private CatsRequest request = CatsRequest.empty();
+    private CatsResponse response = CatsResponse.empty();
+    private String path = "####";
     private String fuzzer;
     private String fullRequestPath;
 
