@@ -24,8 +24,8 @@ public class CatsRequest {
     public static CatsRequest empty() {
         CatsRequest request = CatsRequest.builder().build();
         request.payload = "{}";
-        request.httpMethod = "";
-        request.url = "";
+        request.httpMethod = "####";
+        request.url = "####";
         request.headers = Collections.emptyList();
         return request;
     }

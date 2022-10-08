@@ -1,8 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.Fuzzer;
-import com.endava.cats.model.CatsRequest;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -49,8 +47,6 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     private void addDefaultsAndProcess(FuzzingData data) {
         testCaseListener.addPath(data.getPath());
         testCaseListener.addFullRequestPath("NA");
-        testCaseListener.addRequest(CatsRequest.empty());
-        testCaseListener.addResponse(CatsResponse.empty());
 
         this.process(data);
     }

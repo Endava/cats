@@ -110,7 +110,6 @@ public class TestCaseListener {
         try {
             s.run();
         } catch (Exception e) {
-            setDefaultPathAndMethod();
             this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), CatsResult.EXCEPTION.
                     withDocumentedResponseCodes(Optional.ofNullable(e.getMessage()).orElse("")).withExpectedResponseCodes(fuzzer.getClass().getSimpleName()).getMessage());
             setResultReason(CatsResult.EXCEPTION);
@@ -119,16 +118,6 @@ public class TestCaseListener {
         }
         this.endTestCase();
         logger.info("{} {}", SEPARATOR, "\n");
-    }
-
-    private void setDefaultPathAndMethod() {
-        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
-        if (testCase.getPath() == null) {
-            testCase.setPath(DEFAULT_ERROR);
-        }
-        if (testCase.getRequest() == null) {
-            testCase.setRequest(CatsRequest.builder().httpMethod(DEFAULT_ERROR).build());
-        }
     }
 
     private void startTestCase() {
@@ -155,15 +144,11 @@ public class TestCaseListener {
     }
 
     public void addRequest(CatsRequest request) {
-        if (testCaseMap.get(MDC.get(ID)).getRequest() == null) {
-            testCaseMap.get(MDC.get(ID)).setRequest(request);
-        }
+        testCaseMap.get(MDC.get(ID)).setRequest(request);
     }
 
     public void addResponse(CatsResponse response) {
-        if (testCaseMap.get(MDC.get(ID)).getResponse() == null) {
-            testCaseMap.get(MDC.get(ID)).setResponse(response);
-        }
+        testCaseMap.get(MDC.get(ID)).setResponse(response);
     }
 
     public void addFullRequestPath(String fullRequestPath) {
@@ -267,8 +252,6 @@ public class TestCaseListener {
     public void reportError(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
-        this.addRequest(CatsRequest.empty());
-        this.addResponse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors();
@@ -398,8 +381,6 @@ public class TestCaseListener {
 
     public void skipTest(PrettyLogger logger, String skipReason) {
         this.addExpectedResult(logger, "Test will be skipped!");
-        this.addRequest(CatsRequest.empty());
-        this.addResponse(CatsResponse.empty());
         this.reportSkipped(logger, skipReason);
     }
 
@@ -407,7 +388,7 @@ public class TestCaseListener {
         return globalContext.getDiscriminators().stream().noneMatch(discriminator -> fuzzedField.endsWith(discriminator.getPropertyName()));
     }
 
-    public void recordResult(String message, Object[] params, String success, PrettyLogger logger) {
+    private void recordResult(String message, Object[] params, String success, PrettyLogger logger) {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         testCase.setResult(success);
         testCase.setResultDetails(replaceBrackets(message, params));
