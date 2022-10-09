@@ -71,7 +71,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     private void checkResponse(CatsResponse response, FuzzingData data) {
         List<CatsHeader> missingSecurityHeaders = getMissingSecurityHeaders(response);
         if (!missingSecurityHeaders.isEmpty()) {
-            testCaseListener.reportResultError(log, data, "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet()));
+            testCaseListener.reportResultError(log, data, "Missing recommended security headers", "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet()));
         } else {
             testCaseListener.reportResult(log, data, response, ResponseCodeFamily.TWOXX);
         }

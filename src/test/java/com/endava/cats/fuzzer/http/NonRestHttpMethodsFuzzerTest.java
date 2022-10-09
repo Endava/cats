@@ -65,7 +65,7 @@ class NonRestHttpMethodsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportWarn(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 400}));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 400}));
     }
 
     @Test

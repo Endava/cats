@@ -77,7 +77,7 @@ public class CustomFuzzerUtil {
             String verify = currentPathValues.get(CatsDSLWords.VERIFY);
 
             if (verify != null) {
-                this.checkVerifiesAndReport(payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
+                this.checkVerifiesAndReport(data, payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
             } else {
                 testCaseListener.reportResult(log, data, response, ResponseCodeFamily.from(expectedResponseCode));
             }
@@ -129,7 +129,7 @@ public class CustomFuzzerUtil {
                         entry -> catsDSLParser.parseAndGetResult(entry.getValue(), request)));
     }
 
-    private void checkVerifiesAndReport(String request, CatsResponse response, String verify, String expectedResponseCode) {
+    private void checkVerifiesAndReport(FuzzingData data, String request, CatsResponse response, String verify, String expectedResponseCode) {
         Map<String, String> verifies = this.parseYmlEntryIntoMap(verify);
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         log.debug("Parameters to verify: {}", verifies);
@@ -156,7 +156,7 @@ public class CustomFuzzerUtil {
             if (errorMessages.length() == 0 && expectedResponseCode.equalsIgnoreCase(response.responseCodeAsString())) {
                 testCaseListener.reportInfo(log, "Response matches all 'verify' parameters");
             } else if (errorMessages.length() == 0) {
-                testCaseListener.reportWarn(log,
+                testCaseListener.reportResultWarn(log, data, "Returned response code not matching expected response code",
                         "Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]", expectedResponseCode, response.responseCodeAsString());
             } else {
                 testCaseListener.reportError(log, errorMessages.toString());

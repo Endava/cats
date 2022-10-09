@@ -110,9 +110,10 @@ public class TestCaseListener {
         try {
             s.run();
         } catch (Exception e) {
-            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), CatsResult.EXCEPTION.
-                    withDocumentedResponseCodes(Optional.ofNullable(e.getMessage()).orElse("")).withExpectedResponseCodes(fuzzer.getClass().getSimpleName()).getMessage());
-            setResultReason(CatsResult.EXCEPTION);
+            CatsResult catsResult = CatsResult.EXCEPTION
+                    .withDocumentedResponseCodes(Optional.ofNullable(e.getMessage()).orElse(""))
+                    .withExpectedResponseCodes(fuzzer.getClass().getSimpleName());
+            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), catsResult.getReason(), catsResult.getMessage());
             externalLogger.error("Exception while processing: {}", e.getMessage());
             externalLogger.debug("Detailed stacktrace", e);
         }
@@ -184,6 +185,16 @@ public class TestCaseListener {
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
     }
 
+    private void setResultReason(CatsResult catsResult) {
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        testCase.setResultReason(catsResult.getReason());
+    }
+
+    private void setResultReason(String reason) {
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        testCase.setResultReason(reason);
+    }
+
     /**
      * If {@code --ignoreResponseCodes} is supplied and the response code received from the service
      * is in the ignored list, the method will actually report INFO instead of WARN.
@@ -193,7 +204,7 @@ public class TestCaseListener {
      * @param message message to be logged
      * @param params  params needed by the message
      */
-    public void reportWarn(PrettyLogger logger, String message, Object... params) {
+    void reportWarn(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
@@ -210,32 +221,21 @@ public class TestCaseListener {
         }
     }
 
-
-    private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, CatsResult catsResult, boolean ignoreCheck, Object... params) {
+    private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, FuzzingData data, CatsResult catsResult, boolean ignoreCheck, Object... params) {
         if (ignoreCheck) {
             this.reportInfo(logger, catsResult, params);
             setResultReason(catsResult);
         } else {
-            this.reportWarn(logger, catsResult, params);
+            this.reportResultWarn(logger, data, catsResult.getReason(), catsResult.getMessage(), params);
         }
     }
 
-    private void reportWarn(PrettyLogger logger, CatsResult catsResult, Object... params) {
-        this.reportWarn(logger, catsResult.getMessage(), params);
-        setResultReason(catsResult);
+    public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
+        this.reportWarn(logger, message, params);
+        setResultReason(reason);
     }
 
-    private void setResultReason(CatsResult catsResult) {
-        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
-        testCase.setResultReason(catsResult.getReason());
-    }
-
-    private void setResultReason(String reason) {
-        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
-        testCase.setResultReason(reason);
-    }
-
-    public void reportError(PrettyLogger logger, CatsResult catsResult, Object... params) {
+    private void reportError(PrettyLogger logger, CatsResult catsResult, Object... params) {
         this.reportError(logger, catsResult.getMessage(), params);
         setResultReason(catsResult);
     }
@@ -266,6 +266,11 @@ public class TestCaseListener {
         }
     }
 
+    public void reportResultError(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
+        this.reportError(logger, message, params);
+        setResultReason(reason);
+    }
+
     private void reportSkipped(PrettyLogger logger, Object... params) {
         executionStatisticsListener.increaseSkipped();
         logger.skip("Skipped due to: {}", params);
@@ -289,27 +294,10 @@ public class TestCaseListener {
         this.reportInfo(logger, catsResult.getMessage(), params);
     }
 
-    public void reportResultError(PrettyLogger logger, FuzzingData data, String message, Object... params) {
-        this.reportError(logger, message, params);
-    }
-
-    public void reportResultError(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
-        this.reportError(logger, message, params);
-        setResultReason(reason);
-    }
-
     public void reportResultInfo(PrettyLogger logger, FuzzingData data, String message, Object... params) {
         this.reportInfo(logger, message, params);
     }
 
-    public void reportResultWarn(PrettyLogger logger, FuzzingData data, String message, Object... params) {
-        this.reportWarn(logger, message, params);
-    }
-
-    public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
-        this.reportWarn(logger, message, params);
-        setResultReason(reason);
-    }
 
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
         this.reportResult(logger, data, response, expectedResultCode, true);
@@ -334,10 +322,10 @@ public class TestCaseListener {
             this.reportInfo(logger, CatsResult.OK.withResponseCode(response.responseCodeAsString()));
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.logger.debug("Response code expected and documented and but doesn't match response schema");
-            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA.withResponseCode(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
+            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA.withResponseCode(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
-            this.reportWarnOrInfoBasedOnCheck(logger, CatsResult.UNDOCUMENTED_RESPONSE_CODE
+            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResult.UNDOCUMENTED_RESPONSE_CODE
                     .withResponseCode(response.responseCodeAsString())
                     .withDocumentedResponseCodes(data.getResponseCodes().toString())
                     .withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()), ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
@@ -346,7 +334,7 @@ public class TestCaseListener {
             this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
         } else if (assertions.isResponseCodeUnimplemented()) {
             this.logger.debug("Response code unimplemented");
-            this.reportWarn(logger, CatsResult.NOT_IMPLEMENTED);
+            this.reportResultWarn(logger, data, CatsResult.NOT_IMPLEMENTED.getReason(), CatsResult.NOT_IMPLEMENTED.getMessage());
         } else {
             this.logger.debug("Unexpected behaviour");
             this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
