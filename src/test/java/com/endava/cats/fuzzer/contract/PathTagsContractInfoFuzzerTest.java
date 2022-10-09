@@ -44,7 +44,7 @@ class PathTagsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.contains("The current path's [tags] are correctly defined at the top level [tags] element"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.contains("The current path's [tags] are correctly defined at the top level [tags] element"));
 
     }
 
@@ -54,7 +54,7 @@ class PathTagsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains("The current path does not contain any [tags] element"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.contains("The current path does not contain any [tags] element"));
     }
 
     @Test
@@ -63,7 +63,7 @@ class PathTagsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("petsCats")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains("The following [tags] are not present in the top level [tags] element: {}"), Mockito.eq(data.getTags()));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.contains("The following [tags] are not present in the top level [tags] element: {}"), Mockito.eq(data.getTags()));
     }
 
     @Test
@@ -72,11 +72,11 @@ class PathTagsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("The current path's [tags] are correctly defined at the top level [tags] element"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("The current path's [tags] are correctly defined at the top level [tags] element"));
 
         Mockito.reset(testCaseListener);
         pathTagsContractInfoFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportInfo(Mockito.any(), Mockito.eq("The current path's [tags] are correctly defined in the top level [tags] element"));
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("The current path's [tags] are correctly defined in the top level [tags] element"));
     }
 
     @Test

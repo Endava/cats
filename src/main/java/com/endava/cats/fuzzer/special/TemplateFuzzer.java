@@ -74,7 +74,7 @@ public class TemplateFuzzer implements Fuzzer {
                             .url(replacedPath)
                             .build();
 
-                    testCaseListener.createAndExecuteTest(logger, this, () -> process(catsRequest, targetField, payload));
+                    testCaseListener.createAndExecuteTest(logger, this, () -> process(data, catsRequest, targetField, payload));
                 }
             }
         }
@@ -166,7 +166,7 @@ public class TemplateFuzzer implements Fuzzer {
         return oldValue.length();
     }
 
-    private void process(CatsRequest catsRequest, String targetField, String fuzzValued) {
+    private void process(FuzzingData data, CatsRequest catsRequest, String targetField, String fuzzValued) {
         testCaseListener.addScenario(logger, "Replace request field, header or path/query param [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzValued).truncatedValue());
         testCaseListener.addExpectedResult(logger, "Should get a valid response from the service");
         testCaseListener.addRequest(catsRequest);
@@ -176,13 +176,13 @@ public class TemplateFuzzer implements Fuzzer {
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
             if ((matchArguments.isAnyMatchArgumentSupplied() && matchArguments.isMatchResponse(catsResponse)) || !matchArguments.isAnyMatchArgumentSupplied()) {
                 testCaseListener.addResponse(catsResponse);
-                testCaseListener.reportError(logger, "Service call completed. Please check response details.");
+                testCaseListener.reportResultError(logger, data, "Check response details", "Service call completed. Please check response details.");
             } else {
                 testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
             }
         } catch (Exception e) {
             logger.debug("Something unexpected happened: ", e);
-            testCaseListener.reportError(logger, "Something went wrong {}", e.getMessage());
+            testCaseListener.reportResultError(logger, data, "Check response details", "Something went wrong {}", e.getMessage());
         }
     }
 

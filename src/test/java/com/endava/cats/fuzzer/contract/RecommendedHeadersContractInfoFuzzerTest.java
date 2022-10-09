@@ -44,8 +44,7 @@ class RecommendedHeadersContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Sets.newHashSet(catsHeader)).method(HttpMethod.POST).build();
         recommendedHeadersContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(),
-                Mockito.eq("Path contains the recommended [TracedId/CorrelationId] headers for HTTP method {}"), Mockito.eq(HttpMethod.POST));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path contains the recommended [TracedId/CorrelationId] headers for HTTP method {}"), Mockito.eq(HttpMethod.POST));
     }
 
     @ParameterizedTest
@@ -55,7 +54,7 @@ class RecommendedHeadersContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(Sets.newHashSet(catsHeader)).method(HttpMethod.POST).build();
         recommendedHeadersContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(),
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
                 Mockito.eq("Path does not contain the recommended [TracedId/CorrelationId] headers for HTTP method {}"), Mockito.eq(HttpMethod.POST));
     }
 

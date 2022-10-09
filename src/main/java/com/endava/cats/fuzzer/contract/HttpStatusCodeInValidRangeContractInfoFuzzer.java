@@ -28,9 +28,9 @@ public class HttpStatusCodeInValidRangeContractInfoFuzzer extends BaseContractIn
                 .filter(code -> !code.equalsIgnoreCase("default") && (Integer.parseInt(code) < 100 || Integer.parseInt(code) > 599)).collect(Collectors.toSet());
 
         if (notMatchingResponseCodes.isEmpty()) {
-            testCaseListener.reportInfo(log, "All defined response codes are valid!");
+            testCaseListener.reportResultInfo(log, data, "All defined response codes are valid!");
         } else {
-            testCaseListener.reportError(log, "The following response codes are not valid: {}", notMatchingResponseCodes);
+            testCaseListener.reportResultError(log, data, "Invalid response codes", "The following response codes are not valid: {}", notMatchingResponseCodes);
         }
     }
 

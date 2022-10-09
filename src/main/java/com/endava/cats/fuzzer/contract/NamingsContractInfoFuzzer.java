@@ -51,9 +51,9 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         errorString.append(this.checkJsonObjects(data));
 
         if (!errorString.toString().isEmpty()) {
-            testCaseListener.reportError(log, "Path does not follow RESTful API naming good practices: {}", errorString.toString());
+            testCaseListener.reportResultError(log, data, "Paths not following recommended naming", "Path does not follow RESTful API naming good practices: {}", errorString.toString());
         } else {
-            testCaseListener.reportInfo(log, "Path follows the RESTful API naming good practices.");
+            testCaseListener.reportResultInfo(log, data, "Path follows the RESTful API naming good practices.");
         }
     }
 

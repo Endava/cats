@@ -51,9 +51,9 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
         }
 
         if (errorString.toString().isEmpty()) {
-            testCaseListener.reportInfo(log, "OpenAPI contract contains all top level relevant information!");
+            testCaseListener.reportResultInfo(log, data, "OpenAPI contract contains all top level relevant information!");
         } else {
-            testCaseListener.reportError(log, errorString.toString());
+            testCaseListener.reportResultError(log, data, "Missing top level elements", errorString.toString());
         }
     }
 

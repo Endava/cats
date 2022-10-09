@@ -249,7 +249,7 @@ public class TestCaseListener {
      * @param message message to be logged
      * @param params  params needed by the message
      */
-    public void reportError(PrettyLogger logger, String message, Object... params) {
+    void reportError(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
@@ -277,7 +277,7 @@ public class TestCaseListener {
         recordResult("Skipped due to: {}", params, "skipped", logger);
     }
 
-    public void reportInfo(PrettyLogger logger, String message, Object... params) {
+    void reportInfo(PrettyLogger logger, String message, Object... params) {
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
 
         if (ignoreArguments.isIgnoredResponse(catsResponse) && ignoreArguments.isSkipReportingForIgnoredCodes()) {

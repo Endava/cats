@@ -80,7 +80,7 @@ class UserDictionaryHeadersFuzzerTest {
         Mockito.when(data.getHeaders()).thenReturn(Set.of(CatsHeader.builder().name("header1").value("value").build()));
         userDictionaryHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details"), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Service call completed. Please check response details"), Mockito.any());
     }
 
     @Test

@@ -43,12 +43,12 @@ public class SecuritySchemesContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         if (hasTopLevelSecuritySchemes || hasSecuritySchemesAtTagLevel) {
             if (areGlobalSecuritySchemesDefined) {
-                testCaseListener.reportInfo(log, "The current path has security scheme(s) properly defined");
+                testCaseListener.reportResultInfo(log, data, "The current path has security scheme(s) properly defined");
             } else {
                 testCaseListener.reportResultWarn(log, data, "Security scheme not defined", "The current path has security scheme(s) defined, but they are not present in the [components->securitySchemes] contract element");
             }
         } else {
-            testCaseListener.reportError(log, "The current path does not have security scheme(s) defined and there are none defined globally");
+            testCaseListener.reportResultError(log, data, "No security scheme defined", "The current path does not have security scheme(s) defined and there are none defined globally");
         }
     }
 

@@ -43,7 +43,7 @@ class HttpStatusCodeInValidRangeContractInfoFuzzerTest {
 
         httpStatusCodeInValidRangeContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("All defined response codes are valid!"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All defined response codes are valid!"));
     }
 
     @ParameterizedTest
@@ -53,7 +53,7 @@ class HttpStatusCodeInValidRangeContractInfoFuzzerTest {
 
         httpStatusCodeInValidRangeContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following response codes are not valid: {}"), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("The following response codes are not valid: {}"), Mockito.any());
     }
 
 

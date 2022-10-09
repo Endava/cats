@@ -45,7 +45,7 @@ class SecuritySchemesContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).method(HttpMethod.POST).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
     }
 
     @Test
@@ -54,7 +54,8 @@ class SecuritySchemesContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).method(HttpMethod.PUT).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The current path does not have security scheme(s) defined and there are none defined globally"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
+                Mockito.eq("The current path does not have security scheme(s) defined and there are none defined globally"));
     }
 
     @Test
@@ -63,7 +64,7 @@ class SecuritySchemesContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.PUT).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
     }
 
     @Test
@@ -72,7 +73,7 @@ class SecuritySchemesContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.PUT).tags(Collections.singletonList("petsCats")).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
     }
 
     @Test
@@ -90,11 +91,11 @@ class SecuritySchemesContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.POST).tags(Collections.singletonList("pet")).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
 
         Mockito.reset(testCaseListener);
         securitySchemesContractInfoFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportInfo(Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("The current path has security scheme(s) properly defined"));
     }
 
     @Test

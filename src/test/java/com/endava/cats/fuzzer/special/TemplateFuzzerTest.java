@@ -96,7 +96,7 @@ class TemplateFuzzerTest {
                 .method(HttpMethod.POST)
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(45)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(45)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
     }
 
     @ParameterizedTest
@@ -110,7 +110,7 @@ class TemplateFuzzerTest {
                 .method(HttpMethod.POST)
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(38)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(38)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
     }
 
 
@@ -124,7 +124,7 @@ class TemplateFuzzerTest {
                 .path("http://url")
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(45)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(45)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
 
     }
 
@@ -153,7 +153,7 @@ class TemplateFuzzerTest {
                 .build();
         Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportError(Mockito.any(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Service call completed. Please check response details."), Mockito.any());
     }
 
     @Test
@@ -170,7 +170,7 @@ class TemplateFuzzerTest {
 
         templateFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportError(Mockito.any(), Mockito.eq("Something went wrong {}"), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Something went wrong {}"), Mockito.any());
     }
 
     @Test

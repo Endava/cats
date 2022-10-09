@@ -33,9 +33,9 @@ public class RecommendedHttpCodesContractInfoFuzzer extends BaseContractInfoFuzz
                 .filter(code -> Arrays.stream(code.split(Pattern.quote("|"))).noneMatch(splitCode -> data.getResponseCodes().contains(splitCode))).toList();
 
         if (missingCodes.isEmpty()) {
-            testCaseListener.reportInfo(log, "All recommended HTTP codes are defined!");
+            testCaseListener.reportResultInfo(log, data, "All recommended HTTP codes are defined!");
         } else {
-            testCaseListener.reportError(log, "The following recommended HTTP response codes are missing: {}", missingCodes);
+            testCaseListener.reportResultError(log, data, "Missing recommended HTTP response codes", "The following recommended HTTP response codes are missing: {}", missingCodes);
         }
     }
 

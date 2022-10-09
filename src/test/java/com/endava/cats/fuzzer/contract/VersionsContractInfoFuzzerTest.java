@@ -40,7 +40,7 @@ class VersionsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path(path).build();
         versionsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path contains versioning information"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Path contains versioning information"));
     }
 
     @Test
@@ -48,7 +48,7 @@ class VersionsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("/path/user").build();
         versionsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path does not contain versioning information"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path does not contain versioning information"));
     }
 
     @Test
@@ -56,11 +56,11 @@ class VersionsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("/path/user").build();
         versionsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path does not contain versioning information"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path does not contain versioning information"));
 
         Mockito.reset(testCaseListener);
         versionsContractInfoFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportInfo(Mockito.any(), Mockito.eq("Path does not contain versioning information"));
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path does not contain versioning information"));
     }
 
     @Test

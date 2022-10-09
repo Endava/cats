@@ -66,15 +66,15 @@ class CheckSecurityHeadersFuzzerTest {
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
-        Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
+        Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(SOME_SECURITY_HEADERS).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         checkSecurityHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Missing recommended Security Headers: {}")
-                , AdditionalMatchers.aryEq(new Object[]{MISSING_HEADERS.stream().map(Object::toString).collect(Collectors.toSet())}));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
+                Mockito.eq("Missing recommended Security Headers: {}"), AdditionalMatchers.aryEq(new Object[]{MISSING_HEADERS.stream().map(Object::toString).collect(Collectors.toSet())}));
     }
 
     @Test
@@ -83,7 +83,7 @@ class CheckSecurityHeadersFuzzerTest {
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
                 Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
-        Mockito.doNothing().when(testCaseListener).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
+        Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         List<KeyValuePair<String, String>> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
         allHeaders.add(new KeyValuePair<>("dummy", "dummy"));
 

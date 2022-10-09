@@ -13,7 +13,6 @@ import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonObject;
-import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -210,7 +209,7 @@ class FunctionalFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportInfo(Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     @Test
@@ -220,7 +219,7 @@ class FunctionalFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(PrettyLogger.class), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     @Test
@@ -230,7 +229,7 @@ class FunctionalFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportError(Mockito.any(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Parameter [id] with value [45] not matching [25]. "), Mockito.any());
     }
 
     @Test
@@ -251,7 +250,7 @@ class FunctionalFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following Verify parameters were not present in the response: {}"),
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("The following Verify parameters were not present in the response: {}"),
                 AdditionalMatchers.aryEq(new Object[]{List.of("address")}));
     }
 

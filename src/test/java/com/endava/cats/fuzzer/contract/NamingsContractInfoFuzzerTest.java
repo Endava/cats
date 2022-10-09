@@ -48,7 +48,7 @@ class NamingsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
 
         namingsContractInfoFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow RESTful API naming good practices: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Path does not follow RESTful API naming good practices: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
     }
 
     @ParameterizedTest
@@ -61,7 +61,7 @@ class NamingsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).pathItem(pathItem).reqSchemaName("Cats").build();
 
         namingsContractInfoFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path follows the RESTful API naming good practices."));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path follows the RESTful API naming good practices."));
     }
 
     @ParameterizedTest
@@ -71,7 +71,7 @@ class NamingsContractInfoFuzzerTest {
 
         namingsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("Path does not follow RESTful API naming good practices: {}"),
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Path does not follow RESTful API naming good practices: {}"),
                 Mockito.contains(String.format("The following request/response objects are not matching CamelCase, snake_case or hyphen-case: %s", schemaName)));
     }
 
@@ -82,7 +82,7 @@ class NamingsContractInfoFuzzerTest {
 
         namingsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("Path follows the RESTful API naming good practices."));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path follows the RESTful API naming good practices."));
     }
 
 
