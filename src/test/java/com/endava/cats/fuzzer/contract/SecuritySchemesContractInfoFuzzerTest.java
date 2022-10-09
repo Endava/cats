@@ -81,7 +81,7 @@ class SecuritySchemesContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.PUT).tags(Collections.singletonList("petsCats")).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportWarn(Mockito.any(), Mockito.eq("The current path has security scheme(s) defined, but they are not present in the [components->securitySchemes] contract element"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("The current path has security scheme(s) defined, but they are not present in the [components->securitySchemes] contract element"));
     }
 
     @Test
