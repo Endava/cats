@@ -104,7 +104,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(21)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     @Test
@@ -123,7 +123,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(84)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(88)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
