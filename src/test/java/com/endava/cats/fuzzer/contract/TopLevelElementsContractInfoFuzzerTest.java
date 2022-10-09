@@ -51,7 +51,7 @@ class TopLevelElementsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         topLevelElementsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains(expectedError));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.contains(expectedError));
     }
 
     @Test
@@ -60,7 +60,7 @@ class TopLevelElementsContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         topLevelElementsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.contains("OpenAPI contract contains all top level relevant information!"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.contains("OpenAPI contract contains all top level relevant information!"));
     }
 
     @Test

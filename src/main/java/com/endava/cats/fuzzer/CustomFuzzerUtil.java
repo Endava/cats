@@ -137,7 +137,7 @@ public class CustomFuzzerUtil {
         if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
             log.error("There are Verify parameters which were not present in the response!");
 
-            testCaseListener.reportError(log, "The following Verify parameters were not present in the response: {}",
+            testCaseListener.reportResultError(log, data, "Verify parameters not present in response", "The following Verify parameters were not present in the response: {}",
                     responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))
                             .map(Map.Entry::getKey).toList());
         } else {
@@ -154,12 +154,12 @@ public class CustomFuzzerUtil {
             });
 
             if (errorMessages.length() == 0 && expectedResponseCode.equalsIgnoreCase(response.responseCodeAsString())) {
-                testCaseListener.reportInfo(log, "Response matches all 'verify' parameters");
+                testCaseListener.reportResultInfo(log, data, "Response matches all 'verify' parameters");
             } else if (errorMessages.length() == 0) {
                 testCaseListener.reportResultWarn(log, data, "Returned response code not matching expected response code",
                         "Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]", expectedResponseCode, response.responseCodeAsString());
             } else {
-                testCaseListener.reportError(log, errorMessages.toString());
+                testCaseListener.reportResultError(log, data, "Verify parameters not matching response", errorMessages.toString());
             }
         }
     }

@@ -35,13 +35,13 @@ public class PathTagsContractInfoFuzzer extends BaseContractInfoFuzzer {
                 .stream().filter(topLevelTagNames::contains).toList();
 
         if (CollectionUtils.isEmpty(data.getTags())) {
-            testCaseListener.reportError(log, "The current path does not contain any [tags] element");
+            testCaseListener.reportResultError(log, data, "No tag element", "The current path does not contain any [tags] element");
         } else if (matching.size() == data.getTags().size()) {
-            testCaseListener.reportInfo(log, "The current path's [tags] are correctly defined at the top level [tags] element");
+            testCaseListener.reportResultInfo(log, data, "The current path's [tags] are correctly defined at the top level [tags] element");
         } else {
             List<String> missing = new ArrayList<>(data.getTags());
             missing.removeAll(matching);
-            testCaseListener.reportError(log, "The following [tags] are not present in the top level [tags] element: {}", missing);
+            testCaseListener.reportResultError(log, data, "Tag not present in top level tags element", "The following [tags] are not present in the top level [tags] element: {}", missing);
         }
     }
 

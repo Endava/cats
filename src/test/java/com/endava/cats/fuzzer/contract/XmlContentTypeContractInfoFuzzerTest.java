@@ -39,7 +39,7 @@ class XmlContentTypeContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("/pet").requestContentTypes(Collections.singletonList("application/xml")).build();
         xmlContentTypeContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.contains("Path accepts [application/xml] as Content-Type"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.contains("Path accepts [application/xml] as Content-Type"));
     }
 
     @Test
@@ -47,7 +47,7 @@ class XmlContentTypeContractInfoFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("/pet").requestContentTypes(Collections.singletonList("application/json")).build();
         xmlContentTypeContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.contains("Path does not accept [application/xml] as Content-Type"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.contains("Path does not accept [application/xml] as Content-Type"));
     }
 
     @Test

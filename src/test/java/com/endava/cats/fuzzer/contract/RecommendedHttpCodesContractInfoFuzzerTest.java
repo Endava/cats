@@ -47,7 +47,7 @@ class RecommendedHttpCodesContractInfoFuzzerTest {
 
         recommendedHttpCodesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportInfo(Mockito.any(), Mockito.eq("All recommended HTTP codes are defined!"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All recommended HTTP codes are defined!"));
     }
 
     @ParameterizedTest
@@ -59,7 +59,8 @@ class RecommendedHttpCodesContractInfoFuzzerTest {
 
         recommendedHttpCodesContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.eq("The following recommended HTTP response codes are missing: {}"), Mockito.eq(Collections.singletonList(missing)));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
+                Mockito.eq("The following recommended HTTP response codes are missing: {}"), Mockito.eq(Collections.singletonList(missing)));
     }
 
 

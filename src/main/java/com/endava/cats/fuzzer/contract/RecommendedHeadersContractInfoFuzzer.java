@@ -30,9 +30,9 @@ public class RecommendedHeadersContractInfoFuzzer extends BaseContractInfoFuzzer
                 .filter(catsHeader -> HEADERS.parallelStream().anyMatch(this.replaceSpecialChars(catsHeader.getName()).toLowerCase()::contains)).toList();
 
         if (recommendedHeaders.isEmpty()) {
-            testCaseListener.reportError(log, "Path does not contain the recommended [TracedId/CorrelationId] headers for HTTP method {}", data.getMethod());
+            testCaseListener.reportResultError(log, data, "No traceId/correlationId headers", "Path does not contain the recommended [TracedId/CorrelationId] headers for HTTP method {}", data.getMethod());
         } else {
-            testCaseListener.reportInfo(log, "Path contains the recommended [TracedId/CorrelationId] headers for HTTP method {}", data.getMethod());
+            testCaseListener.reportResultInfo(log, data, "Path contains the recommended [TracedId/CorrelationId] headers for HTTP method {}", data.getMethod());
         }
     }
 

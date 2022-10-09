@@ -75,6 +75,6 @@ class HappyFuzzerTest {
 
         happyFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
     }
 }

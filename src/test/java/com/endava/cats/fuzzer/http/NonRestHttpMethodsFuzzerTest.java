@@ -45,7 +45,7 @@ class NonRestHttpMethodsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
     }
 
     @Test
@@ -55,7 +55,7 @@ class NonRestHttpMethodsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportInfo(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
     }
 
     @Test
@@ -75,7 +75,7 @@ class NonRestHttpMethodsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(17)).reportInfo(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
+        Mockito.verify(testCaseListener, Mockito.times(17)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
         Mockito.clearInvocations(testCaseListener);
         nonRestHttpMethodsFuzzer.fuzz(data);
         Mockito.verifyNoMoreInteractions(testCaseListener);

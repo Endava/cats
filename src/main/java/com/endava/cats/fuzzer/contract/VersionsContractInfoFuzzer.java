@@ -37,9 +37,9 @@ public class VersionsContractInfoFuzzer extends BaseContractInfoFuzzer {
         }
 
         if (found) {
-            testCaseListener.reportError(log, "Path contains versioning information");
+            testCaseListener.reportResultError(log, data, "Path contains versioning info", "Path contains versioning information");
         } else {
-            testCaseListener.reportInfo(log, "Path does not contain versioning information");
+            testCaseListener.reportResultInfo(log, data, "Path does not contain versioning information");
         }
     }
 

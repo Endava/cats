@@ -82,7 +82,7 @@ class FieldsIteratorExecutorTest {
         int times = !isSupplied || isMatch ? 4 : 0;
         fieldsIteratorExecutor.execute(setupContextBuilder().build());
 
-        Mockito.verify(testCaseListener, Mockito.times(times)).reportError(Mockito.any(), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(times)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
     }
 
     @Test

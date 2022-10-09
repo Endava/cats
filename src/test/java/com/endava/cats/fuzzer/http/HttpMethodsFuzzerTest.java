@@ -61,8 +61,7 @@ class HttpMethodsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportInfo(Mockito.any(), Mockito.anyString(),
-                AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
     }
 
     @Test
@@ -72,7 +71,7 @@ class HttpMethodsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
     }
 
     @Test
@@ -97,8 +96,8 @@ class HttpMethodsFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
         httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportError(Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
     }
 }
