@@ -2,7 +2,6 @@ package com.endava.cats.factory;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
@@ -58,6 +57,13 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldCreateFuzzingDataForEmptyPut() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets/{id}", "src/test/resources/petstore-empty.yml");
+        Assertions.assertThat(data).hasSize(1);
+        Assertions.assertThat(data.get(0).getMethod()).isEqualByComparingTo(HttpMethod.PUT);
+    }
+
+    @Test
     void shouldUseExamplesForPathParams() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets/{id}", "src/test/resources/petstore.yml");
         Assertions.assertThat(data).hasSize(1);
@@ -85,6 +91,7 @@ class FuzzingDataFactoryTest {
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json"));
         catsGlobalContext.getSchemaMap().clear();
         catsGlobalContext.getSchemaMap().putAll(schemas);
+        catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
         PathItem pathItem = openAPI.getPaths().get(path);
         return fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);
     }
