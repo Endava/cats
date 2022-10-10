@@ -8,8 +8,10 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Holds global variables which should not be recomputed for each path.
@@ -22,4 +24,5 @@ public class CatsGlobalContext {
     private final List<String> additionalProperties = new ArrayList<>();
     private final List<Discriminator> discriminators = new ArrayList<>();
     private final Map<String, Deque<String>> postSuccessfulResponses = new HashMap<>();
+    private final Set<String> successfulDeletes = new HashSet<>();
 }

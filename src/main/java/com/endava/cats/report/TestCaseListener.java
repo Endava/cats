@@ -381,6 +381,14 @@ public class TestCaseListener {
         testCase.setResult(success);
         testCase.setResultDetails(replaceBrackets(message, params));
         logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), success);
+        storeSuccessfulDelete(testCase);
+    }
+
+    void storeSuccessfulDelete(CatsTestCase testCase) {
+        if (ResponseCodeFamily.is2xxCode(testCase.getResponse().getResponseCode()) && HttpMethod.DELETE.name().equalsIgnoreCase(testCase.getRequest().getHttpMethod())) {
+            globalContext.getSuccessfulDeletes().add(testCase.getRequest().getUrl());
+            logger.note("Storing successful DELETE: {}", testCase.getRequest().getUrl());
+        }
     }
 
     /**
