@@ -596,6 +596,31 @@ class TestCaseListenerTest {
         Assertions.assertThat(testCaseListener.isFieldNotADiscriminator("additionalField")).isTrue();
     }
 
+    @ParameterizedTest
+    @CsvSource({"DELETE,200", "DELETE,204"})
+    void shouldStoreDeleteResponse(String httpMethod, int code) {
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setResponse(CatsResponse.builder().responseCode(code).build());
+        testCase.setRequest(CatsRequest.builder().httpMethod(httpMethod).url("test").build());
+
+        Assertions.assertThat(catsGlobalContext.getSuccessfulDeletes()).isEmpty();
+        testCaseListener.storeSuccessfulDelete(testCase);
+        Assertions.assertThat(catsGlobalContext.getSuccessfulDeletes()).contains("test");
+        catsGlobalContext.getSuccessfulDeletes().clear();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"DELETE,400", "GET,204", "GET,400"})
+    void shouldNotStoreDeleteResponse(String httpMethod, int code) {
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setResponse(CatsResponse.builder().responseCode(code).build());
+        testCase.setRequest(CatsRequest.builder().httpMethod(httpMethod).url("test").build());
+
+        Assertions.assertThat(catsGlobalContext.getSuccessfulDeletes()).isEmpty();
+        testCaseListener.storeSuccessfulDelete(testCase);
+        Assertions.assertThat(catsGlobalContext.getSuccessfulDeletes()).isEmpty();
+    }
+
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build) {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addScenario(logger, "Given a {} field", "string");
