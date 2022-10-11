@@ -66,7 +66,7 @@ public class ReplayCommand implements Runnable {
     }
 
     public List<String> parseTestCases() {
-        return Optional.of(Arrays.asList(tests)).orElse(Collections.emptyList()).stream()
+        return Arrays.stream(tests)
                 .map(testCase -> testCase.trim().strip())
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
                 .toList();
