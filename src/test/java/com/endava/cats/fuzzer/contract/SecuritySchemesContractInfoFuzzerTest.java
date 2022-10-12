@@ -41,7 +41,7 @@ class SecuritySchemesContractInfoFuzzerTest {
 
     @Test
     void shouldNotReportAnyError() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/openapi.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/openapi.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).method(HttpMethod.POST).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
@@ -50,7 +50,7 @@ class SecuritySchemesContractInfoFuzzerTest {
 
     @Test
     void shouldReportError() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-no-security.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/contract-no-security.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).method(HttpMethod.PUT).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
@@ -60,7 +60,7 @@ class SecuritySchemesContractInfoFuzzerTest {
 
     @Test
     void shouldNotReportErrorWithSecurityAtPathLevel() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-no-path-tags.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/contract-no-path-tags.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.PUT).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
@@ -69,7 +69,7 @@ class SecuritySchemesContractInfoFuzzerTest {
 
     @Test
     void shouldNotReportErrorWithSecurityGlobal() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-path-tags-mismatch.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/contract-path-tags-mismatch.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.PUT).tags(Collections.singletonList("petsCats")).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
@@ -78,7 +78,7 @@ class SecuritySchemesContractInfoFuzzerTest {
 
     @Test
     void shouldReportWarningWithSecurityGlobalAndSchemeNotDefined() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-security-mismatch-schemes.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/contract-security-mismatch-schemes.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.PUT).tags(Collections.singletonList("petsCats")).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 
@@ -87,7 +87,7 @@ class SecuritySchemesContractInfoFuzzerTest {
 
     @Test
     void shouldNotRunOnSecondAttempt() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/openapi.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/openapi.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").method(HttpMethod.POST).tags(Collections.singletonList("pet")).pathItem(openAPI.getPaths().get("/pet")).build();
         securitySchemesContractInfoFuzzer.fuzz(data);
 

@@ -15,6 +15,6 @@ public class FuzzingConstraints {
     }
 
     public String getRequiredString() {
-        return (String.valueOf(hasRequiredFieldsFuzzed).toUpperCase()) + (hasMinlength && !hasRequiredFieldsFuzzed ? " but has minLength" : "");
+        return String.valueOf(hasRequiredFieldsFuzzed).toUpperCase() + (hasMinlength && !hasRequiredFieldsFuzzed ? " but has minLength" : "");
     }
 }

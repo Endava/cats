@@ -80,6 +80,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
         return setOfSets;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         for (Set<CatsHeader> headers : this.getHeaders(data)) {
             String headerValue = headers.stream().filter(header -> header.getName().equalsIgnoreCase(targetHeaderName()))

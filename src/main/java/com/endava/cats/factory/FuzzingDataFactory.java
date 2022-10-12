@@ -213,7 +213,7 @@ public class FuzzingDataFactory {
                             .build()).toList());
         }
 
-        return fuzzingDataList;
+        return List.copyOf(fuzzingDataList);
     }
 
     /**

@@ -73,6 +73,7 @@ public class NewFieldsFuzzer implements Fuzzer {
         return jsonElement;
     }
 
+    @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }

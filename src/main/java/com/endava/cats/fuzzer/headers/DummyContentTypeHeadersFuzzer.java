@@ -27,14 +27,17 @@ public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzz
         super(simpleExecutor);
     }
 
+    @Override
     public String getExpectedResponseCode() {
         return "415";
     }
 
+    @Override
     public String typeOfHeader() {
         return "dummy";
     }
 
+    @Override
     public String targetHeaderName() {
         return HttpHeaders.CONTENT_TYPE;
     }

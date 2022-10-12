@@ -28,6 +28,7 @@ public class HttpMethodsFuzzer implements Fuzzer {
         this.httpMethodFuzzerUtil = hmfu;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         if (!fuzzedPaths.contains(data.getPath())) {
             executeForOperation(data, PathItem::getPost, HttpMethod.POST);
@@ -52,6 +53,7 @@ public class HttpMethodsFuzzer implements Fuzzer {
         }
     }
 
+    @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }

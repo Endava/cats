@@ -29,6 +29,7 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
         this.catsExecutor = ce;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> schemaFilter = schema -> schema.getEnum() != null;
         Function<Schema<?>, List<String>> fuzzValueProducer = schema -> schema.getEnum().stream().map(String::valueOf).toList();

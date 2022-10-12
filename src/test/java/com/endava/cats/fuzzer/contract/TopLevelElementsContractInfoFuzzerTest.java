@@ -47,7 +47,7 @@ class TopLevelElementsContractInfoFuzzerTest {
             "src/test/resources/contract-incomplete-contact.yml,info.contact.url, info.contact.email",
             "src/test/resources/contract-incomplete-tags.yml,tags,description"})
     void shouldReportError(String contractPath, String expectedError) throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get(contractPath))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get(contractPath)), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         topLevelElementsContractInfoFuzzer.fuzz(data);
 
@@ -56,7 +56,7 @@ class TopLevelElementsContractInfoFuzzerTest {
 
     @Test
     void shouldNotReportAnyError() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/openapi.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/openapi.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         topLevelElementsContractInfoFuzzer.fuzz(data);
 

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 @QuarkusTest
 class CatsDSLParserTest {
@@ -30,7 +31,7 @@ class CatsDSLParserTest {
         String initial = "T(java.time.OffsetDateTime).now().plusDays(2)";
         String actual = catsDSLParser.parseAndGetResult(initial, null);
         OffsetDateTime actualDate = OffsetDateTime.parse(actual);
-        Assertions.assertThat(actualDate).isAfter(OffsetDateTime.now().plusDays(1));
+        Assertions.assertThat(actualDate).isAfter(OffsetDateTime.now(ZoneId.systemDefault()).plusDays(1));
     }
 
     @Test

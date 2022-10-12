@@ -26,6 +26,7 @@ public class RemoveHeadersFuzzer implements Fuzzer {
         this.simpleExecutor = simpleExecutor;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         if (data.getHeaders().isEmpty()) {
             logger.skip("No headers to fuzz");

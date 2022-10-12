@@ -105,7 +105,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options (they are only active when supplying a custom dictionary):|@%n", exclusive = false)
     MatchArguments matchArguments;
-    
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -203,8 +203,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             result.addAll(allContractPaths
                     .stream()
                     .filter(path -> (wildCardPath.startsWith("*") && path.endsWith(wildCardPath.substring(1))) ||
-                            (wildCardPath.endsWith("*") && path.startsWith(wildCardPath.substring(0, wildCardPath.length() - 1)) ||
-                                    path.contains(wildCardPath.substring(1, wildCardPath.length() - 1))))
+                            (wildCardPath.endsWith("*") && path.startsWith(wildCardPath.substring(0, wildCardPath.length() - 1))) ||
+                            path.contains(wildCardPath.substring(1, wildCardPath.length() - 1)))
                     .toList());
         }
 

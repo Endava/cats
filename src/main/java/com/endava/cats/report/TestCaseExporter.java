@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -204,7 +205,7 @@ public abstract class TestCaseExporter {
 
         return CatsTestReport.builder().testCases(summaries).errors(executionStatisticsListener.getErrors())
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
-                .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME))
+                .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME))
                 .executionTime(((System.currentTimeMillis() - t0) / 1000))
                 .catsVersion(this.version).build();
     }
@@ -245,7 +246,7 @@ public abstract class TestCaseExporter {
         StringWriter stringWriter = new StringWriter();
         Map<String, Object> context = new HashMap<>();
         context.put("TEST_CASE", testCase);
-        context.put("TIMESTAMP", OffsetDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
+        context.put("TIMESTAMP", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME));
         context.put("VERSION", this.version);
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);

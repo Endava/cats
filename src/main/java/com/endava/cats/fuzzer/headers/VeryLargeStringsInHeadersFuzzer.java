@@ -13,7 +13,7 @@ import java.util.List;
 
 
 /**
- *
+ * Fuzzer sending very large strings in headers.
  */
 @Singleton
 @HeaderFuzzer

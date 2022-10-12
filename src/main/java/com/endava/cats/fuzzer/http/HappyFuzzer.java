@@ -27,6 +27,7 @@ public class HappyFuzzer implements Fuzzer {
         this.simpleExecutor = simpleExecutor;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         simpleExecutor.execute(SimpleExecutorContext.builder()
                 .fuzzingData(data)
@@ -38,6 +39,7 @@ public class HappyFuzzer implements Fuzzer {
                 .build());
     }
 
+    @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }

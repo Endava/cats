@@ -13,6 +13,7 @@ public class TimeExecution {
         return testId + " - " + executionInMs + "ms";
     }
 
+    @Override
     public String toString() {
         return executionTimeString();
     }
