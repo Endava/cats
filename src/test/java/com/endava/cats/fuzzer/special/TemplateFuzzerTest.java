@@ -6,6 +6,7 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
+import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
@@ -85,9 +86,10 @@ class TemplateFuzzerTest {
 
     @ParameterizedTest
     @CsvSource({"true,true", "false,false", "false,true"})
-    void shouldRunWhenMatchArgumentsAndResponseMatched(boolean isAnyMatch, boolean isResponseMatch) {
+    void shouldRunWhenMatchArgumentsAndResponseMatched(boolean isAnyMatch, boolean isResponseMatch) throws Exception {
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(isAnyMatch);
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(isResponseMatch);
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("field"))
                 .processedPayload("{\"field\":\"value\"}")
@@ -101,7 +103,9 @@ class TemplateFuzzerTest {
 
     @ParameterizedTest
     @CsvSource({"http://localhost/field", "http://localhost/path?field&test=value"})
-    void shouldRunWhenPathParam(String url) {
+    void shouldRunWhenPathParam(String url) throws Exception {
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("field"))
                 .processedPayload("{\"anotherField\":\"value\"}")
@@ -115,7 +119,9 @@ class TemplateFuzzerTest {
 
 
     @Test
-    void shouldRunWhenTargetFieldInHeader() {
+    void shouldRunWhenTargetFieldInHeader() throws Exception {
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("header"))
                 .processedPayload("{\"field\":\"value\"}")
@@ -143,7 +149,8 @@ class TemplateFuzzerTest {
     }
 
     @Test
-    void shouldRunWithUserDictionary() {
+    void shouldRunWithUserDictionary() throws Exception {
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("header"))
                 .processedPayload("{\"field\":\"value\"}")
