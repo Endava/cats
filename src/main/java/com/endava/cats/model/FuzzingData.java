@@ -22,7 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Builder
+@Builder(toBuilder = true)
 @Getter
 @ToString
 public class FuzzingData {

@@ -8,6 +8,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.SanitizeAndValidate;
+import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.annotations.TrimAndValidate;
 import com.endava.cats.annotations.ValidateAndSanitize;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 @Getter
 public class FilterArguments {
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
+
+    static final List<String> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
     @Inject
     Instance<Fuzzer> fuzzers;
@@ -81,7 +84,7 @@ public class FilterArguments {
         return Optional.ofNullable(this.paths).orElse(Collections.emptyList());
     }
 
-    public List<String> getFuzzersForPath() {
+    public List<String> getFirstPhaseFuzzersForPath() {
         if (FUZZERS_TO_BE_RUN.isEmpty()) {
             List<String> allowedFuzzers = processSuppliedFuzzers();
             allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
@@ -94,8 +97,17 @@ public class FilterArguments {
         if (userArguments.getWords() != null) {
             FUZZERS_TO_BE_RUN.clear();
             FUZZERS_TO_BE_RUN.addAll(List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer"));
+        } else {
+            FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers()::contains);
         }
         return FUZZERS_TO_BE_RUN;
+    }
+
+    public List<String> getSecondPhaseFuzzers() {
+        if (SECOND_PHASE_FUZZERS_TO_BE_RUN.isEmpty()) {
+            SECOND_PHASE_FUZZERS_TO_BE_RUN.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class));
+        }
+        return SECOND_PHASE_FUZZERS_TO_BE_RUN;
     }
 
     private List<String> removeSpecialFuzzers(List<String> allowedFuzzers) {

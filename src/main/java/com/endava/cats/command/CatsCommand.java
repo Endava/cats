@@ -250,11 +250,16 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .collect(Collectors.toSet());
 
         List<Fuzzer> allFuzzersSorted = filterArguments.getAllRegisteredFuzzers();
-        List<String> configuredFuzzers = filterArguments.getFuzzersForPath();
+        List<String> configuredFuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         logger.info("The following HTTP methods won't be executed for path {}: {}", pathItemEntry.getKey(), excludedHttpMethods);
         logger.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), (long) allFuzzersSorted.size(), configuredFuzzers);
 
+        this.runFuzzers(pathItemEntry, fuzzingDataListWithHttpMethodsFiltered, allFuzzersSorted, configuredFuzzers);
+        this.runFuzzers(pathItemEntry, fuzzingDataListWithHttpMethodsFiltered, allFuzzersSorted, filterArguments.getSecondPhaseFuzzers());
+    }
+
+    private void runFuzzers(Map.Entry<String, PathItem> pathItemEntry, List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, List<Fuzzer> allFuzzersSorted, List<String> configuredFuzzers) {
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
         for (Fuzzer fuzzer : allFuzzersSorted) {
             if (configuredFuzzers.contains(fuzzer.toString())) {
