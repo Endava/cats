@@ -16,7 +16,6 @@ import java.util.Optional;
 @Singleton
 @Getter
 public class ReportingArguments {
-    private static final String EMPTY = "empty";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReportingArguments.class);
     @CommandLine.Option(names = {"-l", "--log"},
             description = "Set custom log level of a given package(s). You can provide a comma separated list of @|bold,underline package:level|@ pairs or a global log level", split = ",")

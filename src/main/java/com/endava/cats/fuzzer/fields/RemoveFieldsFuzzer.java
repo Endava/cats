@@ -42,6 +42,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
         this.processingArguments = pa;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         logger.debug("All required fields, including subfields: {}", data.getAllRequiredFields());
         Set<Set<String>> sets = this.getAllFields(data);

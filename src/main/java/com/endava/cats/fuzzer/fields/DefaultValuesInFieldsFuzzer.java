@@ -28,6 +28,7 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
         this.catsExecutor = ce;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> isNotEnum = schema -> schema.getEnum() == null;
         Predicate<Schema<?>> hasDefault = schema -> schema.getDefault() != null;

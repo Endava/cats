@@ -1,6 +1,5 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -29,8 +28,6 @@ import static com.endava.cats.dsl.CatsDSLWords.NEW_FIELD;
 class NewFieldsFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private NullValuesInFieldsFuzzer nullValuesInFieldsFuzzer;
-    private FilesArguments filesArguments;
     private ServiceCaller serviceCaller;
 
     private NewFieldsFuzzer newFieldsFuzzer;

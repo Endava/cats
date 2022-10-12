@@ -74,7 +74,7 @@ public class ListCommand implements Runnable {
         try {
             OpenAPI openAPI = OpenApiUtils.readOpenApi(listCommandGroups.listContractOptions.contract);
             if (json) {
-                PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson((openAPI.getPaths().keySet())));
+                PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(openAPI.getPaths().keySet()));
             } else {
                 logger.star("Available paths:");
                 openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(logger::info);

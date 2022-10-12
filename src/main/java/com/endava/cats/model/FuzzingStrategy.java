@@ -88,7 +88,8 @@ public abstract class FuzzingStrategy {
             return null;
         }
         StringBuilder builder = new StringBuilder();
-        for (char c : data.toCharArray()) {
+        for (int i = 0; i < data.length(); i++) {
+            char c = data.charAt(i);
             if (isUnicodeWhitespace(c) || isUnicodeControlChar(c) || isUnicodeOtherSymbol(c)) {
                 builder.append(String.format("\\u%04x", (int) c));
             } else {

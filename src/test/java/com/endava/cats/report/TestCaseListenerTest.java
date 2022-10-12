@@ -167,9 +167,6 @@ class TestCaseListenerTest {
         Mockito.when(ignoreArguments.isIgnoredResponse(Mockito.any())).thenReturn(true);
         Mockito.when(ignoreArguments.isSkipReportingForIgnoredCodes()).thenReturn(true);
         CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("300", "400"));
-        Mockito.when(data.getResponses()).thenReturn(Map.of("300", Collections.emptyList()));
         prepareTestCaseListenerSimpleSetup(response);
         testCaseListener.reportInfo(logger, "Something was good");
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();

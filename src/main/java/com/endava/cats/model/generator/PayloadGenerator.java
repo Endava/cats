@@ -53,7 +53,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * A modified version of @code{io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
+ * A modified version of {@code io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
  * setups including complex objects and array of objects.
  * <p>
  * This is a stateful object. Don't use it through dependency injection.
@@ -123,7 +123,7 @@ public class PayloadGenerator {
 
                 if (example != null) {
                     kv.put(EXAMPLE, example);
-                    return kv;
+                    return Map.copyOf(kv);
                 }
             }
         }
@@ -146,9 +146,9 @@ public class PayloadGenerator {
                 return objectProperties;
             }
         } else if (property instanceof DateSchema) {
-            return DATE_FORMATTER.format(LocalDateTime.now());
+            return DATE_FORMATTER.format(LocalDateTime.now(ZoneId.of("GMT")));
         } else if (property instanceof DateTimeSchema) {
-            return ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return ZonedDateTime.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         } else if (property instanceof NumberSchema numberSchema) {
             return this.getExampleFromNumberSchema(numberSchema);
         } else if (property instanceof IntegerSchema integerSchema) {
@@ -439,7 +439,7 @@ public class PayloadGenerator {
                 if (value instanceof Map map) {
                     finalMap.putAll(map);
                 } else {
-                    values.put(key, value);
+                    values.put(key, value);//TODO
                     innerAllOff = true;
                 }
             }

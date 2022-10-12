@@ -174,7 +174,7 @@ class PayloadGeneratorTest {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
         options.setFlatten(true);
-        OpenAPI openAPI = openAPIV3Parser.readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/petstore.yml"))), null, options).getOpenAPI();
+        OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         globalContext.getSchemaMap().putAll(schemas);
         return new PayloadGenerator(globalContext, true, 3);

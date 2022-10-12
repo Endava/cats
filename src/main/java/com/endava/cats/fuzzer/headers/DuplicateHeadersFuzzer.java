@@ -51,6 +51,7 @@ public class DuplicateHeadersFuzzer implements Fuzzer {
         }
     }
 
+    @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }

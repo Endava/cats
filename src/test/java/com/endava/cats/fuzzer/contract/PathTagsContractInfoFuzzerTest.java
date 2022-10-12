@@ -40,7 +40,7 @@ class PathTagsContractInfoFuzzerTest {
 
     @Test
     void shouldNotReportAnyError() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/openapi.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/openapi.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
@@ -50,7 +50,7 @@ class PathTagsContractInfoFuzzerTest {
 
     @Test
     void shouldReportErrorWhenMissingPathTags() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-no-path-tags.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/contract-no-path-tags.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
@@ -59,7 +59,7 @@ class PathTagsContractInfoFuzzerTest {
 
     @Test
     void shouldReportErrorWhenTagsMismatch() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/contract-path-tags-mismatch.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/contract-path-tags-mismatch.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("petsCats")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 
@@ -68,7 +68,7 @@ class PathTagsContractInfoFuzzerTest {
 
     @Test
     void shouldNotRunOnSecondAttempt() throws Exception {
-        OpenAPI openAPI = new OpenAPIParser().readContents(new String(Files.readAllBytes(Paths.get("src/test/resources/openapi.yml"))), null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/openapi.yml")), null, null).getOpenAPI();
         FuzzingData data = FuzzingData.builder().openApi(openAPI).path("/pet").tags(Collections.singletonList("pet")).build();
         pathTagsContractInfoFuzzer.fuzz(data);
 

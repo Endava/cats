@@ -65,7 +65,7 @@ class FunctionalFuzzerTest {
         FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
         File refData = File.createTempFile("refData", ".yml");
         String line = "this/is/custom/${resp}";
-        Files.write(refData.toPath(), line.getBytes());
+        Files.writeString(refData.toPath(), line);
         ReflectionTestUtils.setField(filesArguments, "refDataFile", refData);
 
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);

@@ -197,9 +197,9 @@ public class FuzzingData {
         /**
          * Returns all possible subsets of the given set
          *
-         * @param originalSet
-         * @param <T>
-         * @return
+         * @param originalSet initial set
+         * @param <T>         type of data within the set
+         * @return a set of sets with all possible combinations
          */
         public static <T> Set<Set<T>> powerSet(Set<T> originalSet) {
             Set<Set<T>> sets = new HashSet<>();
@@ -224,9 +224,9 @@ public class FuzzingData {
         /**
          * Returns all possible subsets of size K of the given list
          *
-         * @param elements
-         * @param k
-         * @return
+         * @param elements list of elements to accumulate
+         * @param k        size
+         * @return a set of sets
          */
         private static Set<Set<String>> getAllSubsetsOfSize(List<String> elements, int k) {
             List<List<String>> result = new ArrayList<>();

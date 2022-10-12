@@ -299,7 +299,7 @@ public class CustomFuzzerUtil {
                 allValues.add(testCase.entrySet()
                         .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
             }
-            return allValues;
+            return List.copyOf(allValues);
         }
 
         return Collections.singletonList(testCase.entrySet()

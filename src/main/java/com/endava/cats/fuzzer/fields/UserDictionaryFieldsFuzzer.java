@@ -56,6 +56,7 @@ public class UserDictionaryFieldsFuzzer implements Fuzzer {
         return "iterates through each request fields and sends values from the user supplied dictionary";
     }
 
+    @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
     }

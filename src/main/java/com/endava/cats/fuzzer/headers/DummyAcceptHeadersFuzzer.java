@@ -21,18 +21,22 @@ public class DummyAcceptHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
         super(simpleExecutor);
     }
 
+    @Override
     public String getExpectedResponseCode() {
         return "406";
     }
 
+    @Override
     public String typeOfHeader() {
         return "dummy";
     }
 
+    @Override
     public String targetHeaderName() {
         return HttpHeaders.ACCEPT;
     }
 
+    @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(data.getHeaders());
         clonedHeaders.add(CatsHeader.builder().name(HttpHeaders.ACCEPT).value(CATS_ACCEPT).build());
