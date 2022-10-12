@@ -84,7 +84,7 @@ class CatsCommandTest {
     void shouldRunPathsWhenEndingWithWildcard(String path, int invocations) {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
-        Mockito.when(filterArguments.getFuzzersForPath()).thenReturn(List.of("HappyFuzzer"));
+        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("HappyFuzzer"));
         Mockito.when(filterArguments.getPaths()).thenReturn(List.of(path));
         Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new HappyFuzzer(Mockito.mock(SimpleExecutor.class))));
 
@@ -106,7 +106,7 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(reportingArguments, "skipLogs", List.of("complete", "notSkip"));
 
         ReflectionTestUtils.setField(reportingArguments, "debug", true);
-        Mockito.when(filterArguments.getFuzzersForPath()).thenReturn(List.of("PathTagsContractInfoFuzzer"));
+        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsContractInfoFuzzer"));
         Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));
         Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new PathTagsContractInfoFuzzer(testCaseListener)));
 
@@ -131,7 +131,7 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(checkArguments, "includeControlChars", true);
         ReflectionTestUtils.setField(checkArguments, "includeWhitespaces", true);
         CatsCommand spyMain = Mockito.spy(catsMain);
-        Mockito.when(filterArguments.getFuzzersForPath()).thenReturn(List.of("PathTagsContractInfoFuzzer"));
+        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsContractInfoFuzzer"));
         Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new PathTagsContractInfoFuzzer(testCaseListener)));
 
         spyMain.run();
