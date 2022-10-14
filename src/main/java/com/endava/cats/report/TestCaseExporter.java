@@ -65,7 +65,7 @@ public abstract class TestCaseExporter {
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String version;
 
-    private Path reportingPath;
+    private Path reportingPath = Path.of("/tmp");
     private long t0;
 
     public void initPath() throws IOException {
