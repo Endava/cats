@@ -78,7 +78,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
 
         Map<String, String> variablesValues = new HashMap<>();
         for (String variable : variables) {
-            String variableName = variable.substring(0, variable.length() - 1);
+            String variableName = variable.substring(1, variable.length() - 1);
             String value = Optional.ofNullable(filesArguments.getRefData(path).get(variableName))
                     .orElse(filesArguments.getUrlParamsList()
                             .stream()
