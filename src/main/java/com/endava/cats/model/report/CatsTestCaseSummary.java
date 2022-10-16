@@ -24,7 +24,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.scenario = testCase.getScenario();
         summary.result = testCase.getResult();
         summary.fuzzer = testCase.getFuzzer();
-        summary.path = testCase.getPath();
+        summary.path = testCase.getContractPath();
         summary.resultReason = testCase.getResultReason();
         summary.resultDetails = testCase.getResultDetails();
         summary.timeToExecuteInSec = testCase.getResponse().getResponseTimeInMs() / 1000d;

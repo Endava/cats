@@ -26,6 +26,7 @@ public class CatsTestCase {
     private String path = "####";
     private String fuzzer;
     private String fullRequestPath;
+    private String contractPath;
 
     public boolean isNotSkipped() {
         return !"skipped".equalsIgnoreCase(result);

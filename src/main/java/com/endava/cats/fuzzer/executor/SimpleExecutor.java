@@ -46,6 +46,7 @@ public class SimpleExecutor {
                 CatsResponse response = serviceCaller.call(
                         ServiceData.builder()
                                 .relativePath(context.getPath())
+                                .contractPath(context.getFuzzingData().getContractPath())
                                 .headers(context.getHeaders())
                                 .payload(context.getPayload())
                                 .queryParams(context.getFuzzingData().getQueryParams())

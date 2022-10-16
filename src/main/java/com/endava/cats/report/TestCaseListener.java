@@ -113,7 +113,7 @@ public class TestCaseListener {
             CatsResult catsResult = CatsResult.EXCEPTION
                     .withDocumentedResponseCodes(Optional.ofNullable(e.getMessage()).orElse(""))
                     .withExpectedResponseCodes(fuzzer.getClass().getSimpleName());
-            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).build(), catsResult.getReason(), catsResult.getMessage());
+            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).contractPath(DEFAULT_ERROR).build(), catsResult.getReason(), catsResult.getMessage());
             externalLogger.error("Exception while processing: {}", e.getMessage());
             externalLogger.debug("Detailed stacktrace", e);
         }
@@ -142,6 +142,10 @@ public class TestCaseListener {
 
     public void addPath(String path) {
         testCaseMap.get(MDC.get(ID)).setPath(path);
+    }
+
+    public void addContractPath(String path) {
+        testCaseMap.get(MDC.get(ID)).setContractPath(path);
     }
 
     public void addRequest(CatsRequest request) {

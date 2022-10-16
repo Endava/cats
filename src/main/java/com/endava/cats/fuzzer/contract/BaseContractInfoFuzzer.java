@@ -46,6 +46,7 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
      */
     private void addDefaultsAndProcess(FuzzingData data) {
         testCaseListener.addPath(data.getPath());
+        testCaseListener.addContractPath(data.getContractPath());
         testCaseListener.addFullRequestPath("NA");
 
         this.process(data);

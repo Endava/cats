@@ -80,7 +80,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.getFuzzedValue(), data, fuzzedField);
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())
-                    .headers(data.getHeaders()).payload(fuzzingResult.getJson()).httpMethod(data.getMethod())
+                    .headers(data.getHeaders()).payload(fuzzingResult.getJson()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
                     .fuzzedField(fuzzedField).queryParams(data.getQueryParams()).contentType(data.getFirstRequestContentType()).build();
 
             CatsResponse response = serviceCaller.call(serviceData);

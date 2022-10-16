@@ -83,6 +83,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
                     .orElse(filesArguments.getUrlParamsList()
                             .stream()
                             .filter(param -> param.startsWith(variableName + ":"))
+                            .map(item -> item.split(":")[1])
                             .findFirst().orElse(variable));
             variablesValues.put(variable, value);
         }
