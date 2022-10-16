@@ -14,6 +14,7 @@ import java.util.Set;
 @Builder
 @Getter
 public class ServiceData {
+    private final String contractPath;
     private final String relativePath;
     private final Collection<CatsHeader> headers;
     private final String payload;

@@ -54,7 +54,7 @@ public class NewFieldsFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", expectedResultCode.asString());
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzedJson.toString()).queryParams(data.getQueryParams()).httpMethod(data.getMethod())
+                .payload(fuzzedJson.toString()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
                 .contentType(data.getFirstRequestContentType()).build());
         testCaseListener.reportResult(logger, data, response, expectedResultCode);
     }

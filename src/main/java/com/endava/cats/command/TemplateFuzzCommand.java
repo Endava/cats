@@ -112,6 +112,7 @@ public class TemplateFuzzCommand implements Runnable {
             String payload = this.loadPayload();
             logger.debug("Resolved payload: {}", payload);
             FuzzingData fuzzingData = FuzzingData.builder().path(url)
+                    .contractPath(url)
                     .processedPayload(payload)
                     .method(httpMethod)
                     .headers(this.getHeaders())

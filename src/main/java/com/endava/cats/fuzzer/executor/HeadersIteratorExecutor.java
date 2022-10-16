@@ -50,6 +50,7 @@ public class HeadersIteratorExecutor {
 
                         ServiceData serviceData = ServiceData.builder()
                                 .relativePath(context.getFuzzingData().getPath())
+                                .contractPath(context.getFuzzingData().getContractPath())
                                 .headers(clonedHeaders)
                                 .payload(context.getFuzzingData().getPayload())
                                 .fuzzedHeader(header.getName())

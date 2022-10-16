@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class FuzzingData {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingData.class);
     private final HttpMethod method;
+    private final String contractPath;
     private final String path;
     private final Set<CatsHeader> headers;
     private final String payload;

@@ -84,6 +84,7 @@ public class FieldsIteratorExecutor {
                                 CatsResponse response = serviceCaller.call(
                                         ServiceData.builder()
                                                 .relativePath(context.getFuzzingData().getPath())
+                                                .contractPath(context.getFuzzingData().getContractPath())
                                                 .headers(context.getFuzzingData().getHeaders())
                                                 .payload(fuzzingResult.getJson())
                                                 .queryParams(context.getFuzzingData().getQueryParams())

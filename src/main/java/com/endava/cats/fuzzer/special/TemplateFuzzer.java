@@ -171,6 +171,7 @@ public class TemplateFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(logger, "Should get a valid response from the service");
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addPath(catsRequest.getUrl());
+        testCaseListener.addContractPath(catsRequest.getUrl());
         testCaseListener.addFullRequestPath(catsRequest.getUrl());
         try {
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
