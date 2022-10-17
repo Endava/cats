@@ -132,7 +132,7 @@ public class FuzzingDataFactory {
             if (("path".equalsIgnoreCase(parameter.getIn()) || "query".equalsIgnoreCase(parameter.getIn()))
                     && filesArguments.getUrlParamsList().stream().noneMatch(urlParam -> urlParam.startsWith(parameter.getName()))) {
                 parameter.getSchema().setName(parameter.getName() + "|" + parameter.getIn());
-                syntheticSchema.addProperties(parameter.getName(), parameter.getSchema());
+                syntheticSchema.addProperty(parameter.getName(), parameter.getSchema());
                 if (parameter.getSchema().getExample() == null) {
                     parameter.getSchema().setExample(parameter.getExample());
                 }
