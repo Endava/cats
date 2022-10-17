@@ -434,12 +434,10 @@ public class PayloadGenerator {
             boolean innerAllOff = false;
 
             for (Map.Entry<String, Object> entry : values.entrySet()) {
-                String key = entry.getKey();
                 Object value = entry.getValue();
                 if (value instanceof Map map) {
                     finalMap.putAll(map);
                 } else {
-                    values.put(key, value);//TODO
                     innerAllOff = true;
                 }
             }
