@@ -71,41 +71,42 @@ public class FieldsIteratorExecutor {
             Schema<?> fuzzedFieldSchema = context.getFuzzingData().getRequestPropertyTypes().get(fuzzedField);
             if (context.getSchemaFilter().test(fuzzedFieldSchema) && context.getFieldFilter().test(fuzzedField)) {
                 for (String currentValue : context.getFuzzValueProducer().apply(fuzzedFieldSchema)) {
-                    testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> {
-                                FuzzingStrategy strategy = context.getFuzzingStrategy().withData(currentValue);
-                                context.getLogger().debug("Applying [{}] for field [{}]", strategy, fuzzedField);
-
-                                testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current field [{}] [{}]", fuzzedField, strategy);
-                                testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
-                                        context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a valid response");
-
-                                FuzzingResult fuzzingResult = catsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
-
-                                CatsResponse response = serviceCaller.call(
-                                        ServiceData.builder()
-                                                .relativePath(context.getFuzzingData().getPath())
-                                                .contractPath(context.getFuzzingData().getContractPath())
-                                                .headers(context.getFuzzingData().getHeaders())
-                                                .payload(fuzzingResult.getJson())
-                                                .queryParams(context.getFuzzingData().getQueryParams())
-                                                .httpMethod(context.getFuzzingData().getMethod())
-                                                .contentType(context.getFuzzingData().getFirstRequestContentType())
-                                                .replaceRefData(context.isReplaceRefData())
-                                                .build());
-
-                                if (context.getExpectedResponseCode() != null) {
-                                    testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
-                                } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
-                                    testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
-                                } else {
-                                    testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
-                                }
-                            }
-                    );
+                    testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> executeTestCase(context, fuzzedField, currentValue));
                 }
             } else {
                 context.getLogger().skip("Skipping [{}]. " + context.getSkipMessage(), fuzzedField);
             }
+        }
+    }
+
+    private void executeTestCase(FieldsIteratorExecutorContext context, String fuzzedField, String currentValue) {
+        FuzzingStrategy strategy = context.getFuzzingStrategy().withData(currentValue);
+        context.getLogger().debug("Applying [{}] for field [{}]", strategy, fuzzedField);
+
+        testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current field [{}] [{}]", fuzzedField, strategy);
+        testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
+                context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a valid response");
+
+        FuzzingResult fuzzingResult = catsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
+
+        CatsResponse response = serviceCaller.call(
+                ServiceData.builder()
+                        .relativePath(context.getFuzzingData().getPath())
+                        .contractPath(context.getFuzzingData().getContractPath())
+                        .headers(context.getFuzzingData().getHeaders())
+                        .payload(fuzzingResult.getJson())
+                        .queryParams(context.getFuzzingData().getQueryParams())
+                        .httpMethod(context.getFuzzingData().getMethod())
+                        .contentType(context.getFuzzingData().getFirstRequestContentType())
+                        .replaceRefData(context.isReplaceRefData())
+                        .build());
+
+        if (context.getExpectedResponseCode() != null) {
+            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
+        } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
+            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
+        } else {
+            testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
         }
     }
 
