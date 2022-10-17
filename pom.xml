@@ -44,6 +44,7 @@
         <spring-integration-core.version>5.5.14</spring-integration-core.version>
         <json.version>20220924</json.version>
         <error-prone.version>2.15.0</error-prone.version>
+        <archunit-junit5.version>1.0.0</archunit-junit5.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -386,6 +387,12 @@
         <dependency>
             <groupId>info.picocli</groupId>
             <artifactId>picocli-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit-junit5.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <repositories>
