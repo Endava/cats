@@ -380,7 +380,7 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `Special Fuzzers` a special category which need further configuration and are focused on more complex activities like functional flow, security testing or supplying your own request templates, rather than OpenAPI specs
 
 ## Field Fuzzers
-`CATS` has currently 49 registered Field `Fuzzers`:
+`CATS` has currently 50 registered Field `Fuzzers`:
 - `BooleanFieldsFuzzer` - iterate through each Boolean field and send random strings in the targeted field
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -394,7 +394,8 @@ Additional checks which are not actually using any fuzzing, but leverage the CAT
 - `IntegerFieldsLeftBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the left side in the targeted field
 - `IntegerFieldsRightBoundaryFuzzer` - iterate through each Integer field and send requests with outside the range values on the right side in the targeted field
 - `InvalidValuesInEnumsFieldsFuzzer` - iterate through each ENUM field and send invalid values
-- `InvalidValuesInEnumsFieldsFuzzer` - iterate through each ENUM field and send invalid values
+- `InvalidReferencesFieldsFuzzer` - iterate through each path fuzz the path parameters with invalid references
+- `IterateThroughEnumValuesFieldsFuzzer` - iterate through each enum field and send happy flow requests iterating through each possible enum values
 - `LeadingWhitespacesInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode whitespaces and invisible separators prefixing the current value in the targeted field
 - `LeadingControlCharsInFieldsTrimValidateFuzzer` - iterate through each field and send requests with Unicode control chars prefixing the current value in the targeted field
 - `LeadingSingleCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values prefixed with single code points emojis
