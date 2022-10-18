@@ -5,8 +5,8 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.KeyValuePair;
-import com.endava.cats.model.report.CatsTestCase;
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
 import com.google.common.collect.Maps;
@@ -81,7 +81,7 @@ public class ReplayCommand implements Runnable {
         headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
 
-        headersFromFile.forEach(header -> header.setValue(catsDSLParser.parseAndGetResult(header.getValue().toString(), null)));
+        headersFromFile.forEach(header -> header.setValue(catsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
         String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
 

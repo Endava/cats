@@ -1,6 +1,6 @@
 package com.endava.cats.command;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
@@ -9,9 +9,9 @@ import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.util.ConsoleUtils;
-import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;

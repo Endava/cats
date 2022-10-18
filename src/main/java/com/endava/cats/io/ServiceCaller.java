@@ -5,19 +5,19 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
-import com.endava.cats.dsl.CatsDSLWords;
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
-import com.endava.cats.model.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.FuzzingStrategy;
 import com.endava.cats.model.KeyValuePair;
-import com.endava.cats.model.util.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsException;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,8 +72,8 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.dsl.CatsDSLWords.ADDITIONAL_PROPERTIES;
-import static com.endava.cats.model.util.JsonUtils.NOT_SET;
+import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
+import static com.endava.cats.json.JsonUtils.NOT_SET;
 
 /**
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
@@ -506,7 +506,7 @@ public class ServiceCaller {
 
         Map<String, String> suppliedHeaders = filesArguments.getHeaders(relativePath).entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> catsDSLParser.parseAndGetResult(entry.getValue(), null)));
+                        entry -> catsDSLParser.parseAndGetResult(entry.getValue(), authArguments.getAuthScriptAsMap())));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {

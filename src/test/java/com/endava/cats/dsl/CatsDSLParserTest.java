@@ -15,7 +15,7 @@ class CatsDSLParserTest {
 
     @BeforeEach
     public void setup() {
-        catsDSLParser = new CatsDSLParser(null);
+        catsDSLParser = new CatsDSLParser();
     }
 
     @Test

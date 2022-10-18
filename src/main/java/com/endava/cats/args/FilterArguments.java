@@ -1,6 +1,6 @@
 package com.endava.cats.args;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.annotations.ControlCharFuzzer;
 import com.endava.cats.annotations.EmojiFuzzer;

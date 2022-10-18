@@ -1,7 +1,7 @@
 package com.endava.cats.io.util;
 
 import com.endava.cats.model.KeyValuePair;
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.json.JsonUtils;
 
 import java.io.File;
 import java.io.IOException;

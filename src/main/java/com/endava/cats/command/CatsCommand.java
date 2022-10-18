@@ -1,6 +1,6 @@
 package com.endava.cats.command;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.CheckArguments;
@@ -13,14 +13,14 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.factory.NoMediaType;
-import com.endava.cats.fuzzer.fields.FunctionalFuzzer;
+import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsGlobalContext;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;

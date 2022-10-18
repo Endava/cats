@@ -1,8 +1,8 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
-import com.endava.cats.dsl.CatsDSLWords;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;

@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format;
 
+import com.endava.cats.generator.format.api.FormatGeneratorStrategy;
 import com.endava.cats.generator.format.impl.ByteFormatGeneratorStrategy;
 import com.endava.cats.generator.format.impl.DateFormatGeneratorStrategy;
 import com.endava.cats.generator.format.impl.DateTimeFormatGeneratorStrategy;

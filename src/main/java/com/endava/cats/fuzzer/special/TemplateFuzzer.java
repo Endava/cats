@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
@@ -10,10 +10,10 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.model.KeyValuePair;
-import com.endava.cats.model.util.JsonUtils;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.json.JsonUtils;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -117,9 +117,9 @@ public class TemplateFuzzer implements Fuzzer {
     private List<String> getAllPayloads(int payloadSize) {
         try {
             if (userArguments.getWords() == null) {
-                List<String> payloads = PayloadUtils.getAllPayloadsOfSize(payloadSize);
-                payloads.add(PayloadUtils.getBadPayload());
-                payloads.add(PayloadUtils.getZalgoText());
+                List<String> payloads = PayloadGenerator.getAllPayloadsOfSize(payloadSize);
+                payloads.add(PayloadGenerator.getBadPayload());
+                payloads.add(PayloadGenerator.getZalgoText());
                 payloads.add(StringGenerator.generateLargeString(20000));
                 payloads.add(null);
                 payloads.add("");

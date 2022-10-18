@@ -1,7 +1,7 @@
 package com.endava.cats.dsl.impl;
 
-import com.endava.cats.dsl.Parser;
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.dsl.api.Parser;
+import com.endava.cats.json.JsonUtils;
 
 /**
  * Parser used to evaluate expressions from a given request JSON payload.
@@ -9,7 +9,7 @@ import com.endava.cats.model.util.JsonUtils;
  */
 public class RequestVariableParser implements Parser {
     @Override
-    public String parse(String expression, String payload) {
-        return String.valueOf(JsonUtils.getVariableFromJson(payload, expression.replace("request", "").substring(2)));
+    public String parse(String expression, Object context) {
+        return String.valueOf(JsonUtils.getVariableFromJson(String.valueOf(context), expression.replace("request", "").substring(2)));
     }
 }

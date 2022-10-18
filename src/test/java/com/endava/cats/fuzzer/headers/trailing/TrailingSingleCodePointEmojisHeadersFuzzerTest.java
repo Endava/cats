@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.headers.trailing;
 
-import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

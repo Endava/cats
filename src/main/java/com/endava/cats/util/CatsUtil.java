@@ -1,16 +1,14 @@
 package com.endava.cats.util;
 
 import com.endava.cats.dsl.CatsDSLParser;
-import com.endava.cats.model.FuzzingResult;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.json.JsonUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
-import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
@@ -33,15 +31,14 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.dsl.CatsDSLWords.ADDITIONAL_PROPERTIES;
-import static com.endava.cats.dsl.CatsDSLWords.ELEMENT;
-import static com.endava.cats.dsl.CatsDSLWords.MAP_VALUES;
+import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
+import static com.endava.cats.util.CatsDSLWords.ELEMENT;
+import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
 
 @ApplicationScoped
 public class CatsUtil {
     public static final String FUZZER_KEY_DEFAULT = "*******";
     public static final String TEST_KEY_DEFAULT = "**********";
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(CatsUtil.class);
     private final CatsDSLParser catsDSLParser;
 
     public CatsUtil(CatsDSLParser parser) {
@@ -64,25 +61,6 @@ public class CatsUtil {
 
     public static void setLogLevel(String pkg, String level) {
         LogContext.getLogContext().getLogger(pkg).setLevel(Level.parse(level.toUpperCase(Locale.ROOT)));
-    }
-
-    public static boolean isCyclicReference(String currentProperty, int depth) {
-        String[] properties = currentProperty.split("#");
-
-        if (properties.length < depth) {
-            return false;
-        }
-
-        for (int i = 0; i < properties.length - 1; i++) {
-            for (int j = i + 1; j <= properties.length - 1; j++) {
-                if (properties[i].equalsIgnoreCase(properties[j])) {
-                    LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     public void writeToYaml(String yaml, Map<String, Map<String, Object>> data) throws IOException {

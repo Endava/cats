@@ -6,8 +6,8 @@ import com.endava.cats.annotations.TrimAndValidate;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.InvisibleCharsBaseTrimValidateFuzzer;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 
@@ -31,7 +31,7 @@ public class TrailingSingleCodePointEmojisInFieldsTrimValidateFuzzer extends Inv
 
     @Override
     public List<String> getInvisibleChars() {
-        return PayloadUtils.getSingleCodePointEmojis();
+        return PayloadGenerator.getSingleCodePointEmojis();
     }
 
     @Override

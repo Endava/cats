@@ -1,6 +1,6 @@
 package com.endava.cats.util;
 
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.json.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -120,5 +120,17 @@ class JsonUtilsTest {
     @Test
     void shouldNotReturnEmptyPayload() {
         Assertions.assertThat(JsonUtils.isEmptyPayload("{\"id\": 2}")).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"prop1#prop2", "prop1#prop2#prop3", "prop1#prop2#prop3#prop4"})
+    void shouldNotReturnCyclic(String properties) {
+        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"prop1#prop1#prop1", "prop1#prop2#prop3#prop1#prop2", "prop1#prop2#prop3#prop2#prop3", "prop1#prop2#prop1"})
+    void shouldReturnCyclic(String properties) {
+        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 3)).isTrue();
     }
 }

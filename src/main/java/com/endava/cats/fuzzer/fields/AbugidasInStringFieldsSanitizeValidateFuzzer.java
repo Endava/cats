@@ -6,10 +6,10 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.ExpectOnly2XXBaseFieldsFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.CommonWithinMethods;
+import com.endava.cats.strategy.CommonWithinMethods;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
@@ -28,7 +28,7 @@ public class AbugidasInStringFieldsSanitizeValidateFuzzer extends ExpectOnly2XXB
 
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return CommonWithinMethods.getFuzzingStrategies(data, fuzzedField, PayloadUtils.getAbugidasChars(), true);
+        return CommonWithinMethods.getFuzzingStrategies(data, fuzzedField, PayloadGenerator.getAbugidasChars(), true);
     }
 
     @Override

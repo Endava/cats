@@ -6,9 +6,8 @@ import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.generator.PayloadGenerator;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
     @Override
     protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         return this.getInvisibleChars().stream()
-                .map(value -> PayloadGenerator.getFuzzStrategyWithRepeatedCharacterReplacingValidValue(data, fuzzedField, value)).toList();
+                .map(value -> FuzzingStrategy.getFuzzStrategyWithRepeatedCharacterReplacingValidValue(data, fuzzedField, value)).toList();
     }
 
     @Override

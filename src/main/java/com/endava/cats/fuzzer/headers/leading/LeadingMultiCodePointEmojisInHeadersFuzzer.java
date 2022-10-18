@@ -4,8 +4,8 @@ import com.endava.cats.annotations.EmojiFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.generator.simple.PayloadGenerator;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -21,7 +21,7 @@ public class LeadingMultiCodePointEmojisInHeadersFuzzer extends InvisibleCharsBa
 
     @Override
     public List<String> getInvisibleChars() {
-        return PayloadUtils.getMultiCodePointEmojis();
+        return PayloadGenerator.getMultiCodePointEmojis();
     }
 
     @Override

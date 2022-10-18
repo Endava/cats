@@ -4,8 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -27,7 +26,7 @@ public class VeryLargeUnicodeStringsInHeadersFuzzer extends ExpectOnly4XXBaseHea
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return PayloadUtils.getLargeValuesStrategy(processingArguments.getLargeStringsSize());
+        return FuzzingStrategy.getLargeValuesStrategy(processingArguments.getLargeStringsSize());
     }
 
     @Override

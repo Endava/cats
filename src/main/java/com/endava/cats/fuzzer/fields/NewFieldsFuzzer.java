@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -8,7 +8,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
@@ -20,7 +20,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import javax.inject.Singleton;
 
-import static com.endava.cats.dsl.CatsDSLWords.NEW_FIELD;
+import static com.endava.cats.util.CatsDSLWords.NEW_FIELD;
 
 @Singleton
 @FieldFuzzer

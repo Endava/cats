@@ -1,8 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.util.JsonUtils;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.json.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -85,7 +84,7 @@ public class FuzzingData {
 
     private Set<CatsField> getFields(Schema schema, String prefix) {
         logger.trace("Getting fields for prefix: {}", prefix);
-        if (CatsUtil.isCyclicReference(prefix, selfReferenceDepth)) {
+        if (JsonUtils.isCyclicReference(prefix, selfReferenceDepth)) {
             return Collections.emptySet();
         }
         Set<CatsField> catsFields = new HashSet<>();

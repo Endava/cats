@@ -1,6 +1,5 @@
 package com.endava.cats.generator.simple;
 
-import com.endava.cats.model.util.PayloadUtils;
 import com.github.curiousoddman.rgxgen.RgxGen;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
@@ -101,8 +100,8 @@ public class StringGenerator {
     }
 
     public static String generateRandomUnicode() {
-        StringBuilder builder = new StringBuilder(PayloadUtils.getBadPayload().length() + 1000);
-        builder.append(PayloadUtils.getBadPayload());
+        StringBuilder builder = new StringBuilder(PayloadGenerator.getBadPayload().length() + 1000);
+        builder.append(PayloadGenerator.getBadPayload());
 
         int count = 1000;
         while (count > 0) {

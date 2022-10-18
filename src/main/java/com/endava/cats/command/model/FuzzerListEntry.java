@@ -1,6 +1,6 @@
 package com.endava.cats.command.model;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import lombok.Builder;
 import lombok.Getter;
 

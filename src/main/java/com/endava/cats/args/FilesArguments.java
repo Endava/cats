@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.dsl.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -242,7 +241,7 @@ public class FilesArguments {
 
     static Map<String, String> getPathAndAll(Map<String, Map<String, String>> collection, String path) {
         return collection.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(CatsDSLWords.ALL))
+                .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
     }
 }

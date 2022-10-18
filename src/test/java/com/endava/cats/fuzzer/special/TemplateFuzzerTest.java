@@ -42,7 +42,7 @@ class TemplateFuzzerTest {
         matchArguments = Mockito.mock(MatchArguments.class);
         userArguments = Mockito.mock(UserArguments.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsUtil = new CatsUtil(new CatsDSLParser(null));
+        catsUtil = new CatsUtil(new CatsDSLParser());
         serviceCaller = Mockito.mock(ServiceCaller.class);
         templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, catsUtil, userArguments, matchArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));

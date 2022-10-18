@@ -1,11 +1,8 @@
 package com.endava.cats.util;
 
-import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingResult;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -23,7 +20,7 @@ class CatsUtilTest {
 
     @Test
     void givenAYamlFile_whenParseYamlIsCalled_thenTheYamlFileIsProperlyParsed() throws Exception {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         Map<String, Map<String, Object>> yaml = catsUtil.parseYaml("src/test/resources/test.yml");
 
         Assertions.assertThat(yaml.get("all")).isNotNull();
@@ -49,7 +46,7 @@ class CatsUtilTest {
             "{\"field\": {\"subField\":\"value\"}, \"anotherField\":\"otherValue\"}|field#subField",
             "{\"field\": [{\"subField\":\"value\"},{\"subField\":\"value\"}], \"anotherField\":\"otherValue\"}|field[*]#subField"}, delimiter = '|')
     void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed(String json, String path) {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField(json, path, strategy);
 
@@ -59,7 +56,7 @@ class CatsUtilTest {
 
     @Test
     void shouldAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
@@ -69,7 +66,7 @@ class CatsUtilTest {
 
     @Test
     void shouldNotAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
@@ -79,7 +76,7 @@ class CatsUtilTest {
 
     @Test
     void shouldReturnEmptyFuzzingResultWhenEmptyJson() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(null));
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField("", "test", strategy);
 
@@ -88,27 +85,8 @@ class CatsUtilTest {
     }
 
     @Test
-    void shouldMarkText() {
-        String result = PayloadUtils.markLargeString("test");
-
-        Assertions.assertThat(result).isEqualTo("catestts");
-    }
-
-    @ParameterizedTest
-    @CsvSource({"prop1#prop2", "prop1#prop2#prop3", "prop1#prop2#prop3#prop4"})
-    void shouldNotReturnCyclic(String properties) {
-        Assertions.assertThat(CatsUtil.isCyclicReference(properties, 2)).isFalse();
-    }
-
-    @ParameterizedTest
-    @CsvSource({"prop1#prop1#prop1", "prop1#prop2#prop3#prop1#prop2", "prop1#prop2#prop3#prop2#prop3", "prop1#prop2#prop1"})
-    void shouldReturnCyclic(String properties) {
-        Assertions.assertThat(CatsUtil.isCyclicReference(properties, 3)).isTrue();
-    }
-
-    @Test
     void shouldReplace() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser(new AuthArguments()));
+        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
         String payload = """
                 {
                   "arrayOfData": [

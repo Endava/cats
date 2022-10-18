@@ -1,6 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.FormatGeneratorStrategy;
+import com.endava.cats.generator.format.api.FormatGeneratorStrategy;
 
 public class HostnameFormatGeneratorStrategy implements FormatGeneratorStrategy {
 
