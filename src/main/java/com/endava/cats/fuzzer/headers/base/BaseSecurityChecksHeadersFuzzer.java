@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.headers.base;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.Cloner;

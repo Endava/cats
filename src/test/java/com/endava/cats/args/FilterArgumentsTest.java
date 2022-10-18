@@ -1,6 +1,6 @@
 package com.endava.cats.args;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
 import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
 import com.endava.cats.fuzzer.http.HappyFuzzer;

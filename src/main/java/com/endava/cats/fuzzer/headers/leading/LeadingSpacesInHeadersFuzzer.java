@@ -3,8 +3,8 @@ package com.endava.cats.fuzzer.headers.leading;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.SpacesCharsBaseFuzzer;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.generator.simple.PayloadGenerator;
 
 import javax.inject.Singleton;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ public class LeadingSpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        List<String> leadingChars = new ArrayList<>(PayloadUtils.getSpacesHeaders());
+        List<String> leadingChars = new ArrayList<>(PayloadGenerator.getSpacesHeaders());
         leadingChars.remove("\r");
         return leadingChars;
     }

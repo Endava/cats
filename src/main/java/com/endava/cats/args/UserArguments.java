@@ -1,6 +1,6 @@
 package com.endava.cats.args;
 
-import com.endava.cats.util.CatsException;
+import com.endava.cats.exception.CatsException;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;

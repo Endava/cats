@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
@@ -10,7 +10,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.util.JsonUtils;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;

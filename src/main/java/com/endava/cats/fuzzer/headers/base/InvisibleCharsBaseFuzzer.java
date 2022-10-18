@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.headers.base;
 
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
-import com.endava.cats.model.FuzzingStrategy;
+import com.endava.cats.strategy.FuzzingStrategy;
 
 import java.util.List;
 

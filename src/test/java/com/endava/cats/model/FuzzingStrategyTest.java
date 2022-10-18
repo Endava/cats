@@ -1,10 +1,11 @@
 package com.endava.cats.model;
 
-import com.endava.cats.model.strategy.NoopFuzzingStrategy;
-import com.endava.cats.model.strategy.PrefixFuzzingStrategy;
-import com.endava.cats.model.strategy.ReplaceFuzzingStrategy;
-import com.endava.cats.model.strategy.SkipFuzzingStrategy;
-import com.endava.cats.model.strategy.TrailFuzzingStrategy;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.strategy.NoopFuzzingStrategy;
+import com.endava.cats.strategy.PrefixFuzzingStrategy;
+import com.endava.cats.strategy.ReplaceFuzzingStrategy;
+import com.endava.cats.strategy.SkipFuzzingStrategy;
+import com.endava.cats.strategy.TrailFuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
@@ -182,5 +183,12 @@ class FuzzingStrategyTest {
         String formatted = FuzzingStrategy.formatValue(null);
 
         Assertions.assertThat(formatted).isNull();
+    }
+
+    @Test
+    void shouldMarkText() {
+        String result = FuzzingStrategy.markLargeString("test");
+
+        Assertions.assertThat(result).isEqualTo("catestts");
     }
 }

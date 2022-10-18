@@ -1,7 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.model.report.CatsTestReport;
+import com.endava.cats.model.CatsTestReport;
 import com.github.mustachejava.Mustache;
 
 import javax.enterprise.context.ApplicationScoped;

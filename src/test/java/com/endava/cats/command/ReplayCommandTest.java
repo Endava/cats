@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
@@ -29,6 +30,7 @@ class ReplayCommandTest {
     @BeforeEach
     public void setup() {
         replayCommand = new ReplayCommand(serviceCaller, catsDSLParser);
+        replayCommand.authArgs = Mockito.mock(AuthArguments.class);
     }
 
     @Test

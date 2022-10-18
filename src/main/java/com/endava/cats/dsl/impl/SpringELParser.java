@@ -1,6 +1,6 @@
 package com.endava.cats.dsl.impl;
 
-import com.endava.cats.dsl.Parser;
+import com.endava.cats.dsl.api.Parser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -10,7 +10,6 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.json.JsonPropertyAccessor;
 
 import java.util.Collections;
-import java.util.Optional;
 
 /**
  * Parser used to evaluate expression using Spring EL.
@@ -28,14 +27,14 @@ public class SpringELParser implements Parser {
     }
 
     @Override
-    public String parse(String expression, String payload) {
+    public String parse(String expression, Object context) {
         log.info("Parsing {}", expression);
         try {
-            JsonNode jsonObject = mapper.readTree(Optional.ofNullable(payload).orElse(""));
-            StandardEvaluationContext context = new StandardEvaluationContext(jsonObject);
-            context.setPropertyAccessors(Collections.singletonList(new JsonPropertyAccessor()));
+            JsonNode jsonObject = mapper.readTree(context == null ? "" : String.valueOf(context));
+            StandardEvaluationContext evaluationContext = new StandardEvaluationContext(jsonObject);
+            evaluationContext.setPropertyAccessors(Collections.singletonList(new JsonPropertyAccessor()));
 
-            return String.valueOf(spelExpressionParser.parseExpression(expression).getValue(context));
+            return String.valueOf(spelExpressionParser.parseExpression(expression).getValue(evaluationContext));
         } catch (Exception e) {
             log.debug("Something went wrong while parsing!", e);
             log.error("Failed to parse {} as invalid syntax: {}", expression, e.getMessage());

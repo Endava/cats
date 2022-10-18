@@ -144,7 +144,7 @@ public class TemplateFuzzCommand implements Runnable {
                 .stream()
                 .map(entry -> CatsHeader.builder()
                         .name(entry.getKey().trim())
-                        .value(catsDSLParser.parseAndGetResult(entry.getValue().trim(), null))
+                        .value(catsDSLParser.parseAndGetResult(entry.getValue().trim(), authArgs.getAuthScriptAsMap()))
                         .build())
                 .collect(Collectors.toSet());
     }

@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 
 /**
  * Holds all args related to Authentication details.
@@ -44,7 +45,7 @@ public class AuthArguments {
                     "The script will replace any headers that have @|bold,underline aut_script|@ as value. " +
                     "If you don't supply a --authRefreshInterval, but you supply a script, the script " +
                     "will be used to get the initial auth credentials.")
-    private String authRefreshScript;
+    private String authRefreshScript = "";
 
     @CommandLine.Option(names = {"--authRefreshInterval", "--ari"},
             description = "Amount of time in seconds after which to get new auth credentials")
@@ -79,5 +80,9 @@ public class AuthArguments {
     public String getBasicAuthHeader() {
         byte[] encodedAuth = Base64.getEncoder().encode(this.basicAuth.getBytes(StandardCharsets.UTF_8));
         return "Basic " + new String(encodedAuth, StandardCharsets.UTF_8);
+    }
+
+    public Map<String, String> getAuthScriptAsMap() {
+        return Map.of("auth_script", this.getAuthRefreshScript(), "refresh_interval", String.valueOf(getAuthRefreshInterval()));
     }
 }

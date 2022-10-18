@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;

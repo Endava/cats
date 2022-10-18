@@ -1,17 +1,17 @@
 package com.endava.cats.report;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.model.CatsGlobalContext;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.report.CatsResult;
-import com.endava.cats.model.report.CatsTestCase;
+import com.endava.cats.model.CatsResult;
+import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;

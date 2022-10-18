@@ -1,10 +1,8 @@
 package com.endava.cats.model.generator;
 
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.simple.StringGenerator;
-import com.endava.cats.model.CatsGlobalContext;
-import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.json.JsonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -25,7 +23,6 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
@@ -103,15 +100,6 @@ public class PayloadGenerator {
             maxLength = minLength;
         }
         return StringGenerator.generate(pattern, minLength, maxLength);
-    }
-
-    public static FuzzingStrategy getFuzzStrategyWithRepeatedCharacterReplacingValidValue(FuzzingData data, String fuzzedField, String characterToRepeat) {
-        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
-        String spaceValue = characterToRepeat;
-        if (schema != null && schema.getMinLength() != null) {
-            spaceValue = StringUtils.repeat(spaceValue, (schema.getMinLength() / spaceValue.length()) + 1);
-        }
-        return FuzzingStrategy.replace().withData(spaceValue);
     }
 
     public Map<String, String> generate(String modelName) {
@@ -328,7 +316,7 @@ public class PayloadGenerator {
         logger.trace("Resolving model '{}' to example", name);
         schema = normalizeDiscriminatorMappingsToOneOf(name, schema);
 
-        if (CatsUtil.isCyclicReference(currentProperty, selfReferenceDepth)) {
+        if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth)) {
             return values;
         }
 

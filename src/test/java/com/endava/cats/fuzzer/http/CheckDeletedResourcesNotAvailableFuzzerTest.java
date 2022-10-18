@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsGlobalContext;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.endava.cats.dsl.CatsDSLWords.NEW_FIELD;
+import static com.endava.cats.util.CatsDSLWords.NEW_FIELD;
 
 @QuarkusTest
 class NewFieldsFuzzerTest {

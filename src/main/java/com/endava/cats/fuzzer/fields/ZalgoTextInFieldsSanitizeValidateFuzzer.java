@@ -6,8 +6,8 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.ExpectOnly2XXBaseFieldsFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.generator.simple.PayloadGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 
@@ -30,7 +30,7 @@ public class ZalgoTextInFieldsSanitizeValidateFuzzer extends ExpectOnly2XXBaseFi
 
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return List.of(FuzzingStrategy.prefix().withData(PayloadUtils.getZalgoText()));
+        return List.of(FuzzingStrategy.prefix().withData(PayloadGenerator.getZalgoText()));
     }
 
     @Override

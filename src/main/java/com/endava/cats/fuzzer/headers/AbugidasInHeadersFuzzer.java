@@ -3,8 +3,8 @@ package com.endava.cats.fuzzer.headers;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
-import com.endava.cats.model.FuzzingStrategy;
-import com.endava.cats.model.util.PayloadUtils;
+import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.generator.simple.PayloadGenerator;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -24,7 +24,7 @@ public class AbugidasInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return PayloadUtils.getAbugidasChars().stream().map(value -> FuzzingStrategy.replace().withData(value)).toList();
+        return PayloadGenerator.getAbugidasChars().stream().map(value -> FuzzingStrategy.replace().withData(value)).toList();
     }
 
     @Override

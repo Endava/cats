@@ -1,13 +1,13 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.Fuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.model.CatsGlobalContext;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;

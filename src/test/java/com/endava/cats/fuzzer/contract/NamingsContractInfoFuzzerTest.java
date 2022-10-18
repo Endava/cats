@@ -4,7 +4,7 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.model.CatsGlobalContext;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
