@@ -235,4 +235,17 @@ class FilterArgumentsTest {
     void shouldNotAddFirstPhaseFuzzersInSecondPhase() {
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).containsOnly("CheckDeletedResourcesNotAvailableFuzzer");
     }
+
+    @Test
+    void shouldReturnEmptySecondPhaseWhenSpecialFuzzer() {
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).containsOnly("CheckDeletedResourcesNotAvailableFuzzer");
+        filterArguments.customFilter("FunctionalFuzzer");
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
+    }
+
+    @Test
+    void shouldOnlyReturnSpecialFuzzer() {
+        filterArguments.customFilter("FunctionalFuzzer");
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("FunctionalFuzzer");
+    }
 }

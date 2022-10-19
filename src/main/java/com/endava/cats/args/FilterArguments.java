@@ -1,6 +1,5 @@
 package com.endava.cats.args;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.annotations.ControlCharFuzzer;
 import com.endava.cats.annotations.EmojiFuzzer;
@@ -14,6 +13,7 @@ import com.endava.cats.annotations.TrimAndValidate;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import lombok.Getter;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -26,6 +26,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -107,13 +108,25 @@ public class FilterArguments {
         if (SECOND_PHASE_FUZZERS_TO_BE_RUN.isEmpty()) {
             SECOND_PHASE_FUZZERS_TO_BE_RUN.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class));
         }
+        if (onlySpecialFuzzers(this.getSuppliedFuzzers())) {
+            return Collections.emptyList();
+        }
         return SECOND_PHASE_FUZZERS_TO_BE_RUN;
     }
 
     private List<String> removeSpecialFuzzers(List<String> allowedFuzzers) {
+        if (onlySpecialFuzzers(allowedFuzzers)) {
+            return allowedFuzzers;
+        }
         List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SpecialFuzzer.class);
 
         return allowedFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();
+    }
+
+    private boolean onlySpecialFuzzers(List<String> candidates) {
+        List<String> specialFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SpecialFuzzer.class);
+
+        return !candidates.isEmpty() && new HashSet<>(specialFuzzers).containsAll(candidates);
     }
 
     public List<Fuzzer> getAllRegisteredFuzzers() {
