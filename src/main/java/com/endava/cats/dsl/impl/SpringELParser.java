@@ -10,6 +10,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.json.JsonPropertyAccessor;
 
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Parser used to evaluate expression using Spring EL.
@@ -27,10 +28,12 @@ public class SpringELParser implements Parser {
     }
 
     @Override
-    public String parse(String expression, Object context) {
+    public String parse(String expression, Map<String, String> context) {
         log.info("Parsing {}", expression);
+        String parserContext = context.getOrDefault(Parser.RESPONSE, context.getOrDefault(Parser.REQUEST, ""));
+
         try {
-            JsonNode jsonObject = mapper.readTree(context == null ? "" : String.valueOf(context));
+            JsonNode jsonObject = mapper.readTree(parserContext);
             StandardEvaluationContext evaluationContext = new StandardEvaluationContext(jsonObject);
             evaluationContext.setPropertyAccessors(Collections.singletonList(new JsonPropertyAccessor()));
 

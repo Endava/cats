@@ -16,10 +16,9 @@ public class AuthScriptProviderParser implements Parser {
 
 
     @Override
-    public String parse(String expression, Object context) {
-        Map<String, String> authParams = (Map<String, String>) context;
-        String script = authParams.get("auth_script");
-        int authRefreshInterval = Integer.parseInt(authParams.getOrDefault("refresh_interval", "0"));
+    public String parse(String expression, Map<String, String> context) {
+        String script = context.get(Parser.AUTH_SCRIPT);
+        int authRefreshInterval = Integer.parseInt(context.getOrDefault(Parser.AUTH_REFRESH, "0"));
 
         if (authRefreshInterval > 0 && refreshIntervalElapsed(authRefreshInterval)) {
             logger.debug("Refresh interval passed.");

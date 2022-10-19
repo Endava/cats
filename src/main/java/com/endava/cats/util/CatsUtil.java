@@ -1,6 +1,7 @@
 package com.endava.cats.util;
 
 import com.endava.cats.dsl.CatsDSLParser;
+import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -158,7 +159,7 @@ public class CatsUtil {
         String mapValues = additionalProperties.replace(MAP_VALUES + "=", "").replace("{", "").replace("}", "");
         for (String values : mapValues.split(",")) {
             String[] entry = values.split("=");
-            jsonDoc.put(JsonPath.compile(prefix), entry[0].trim(), catsDSLParser.parseAndGetResult(entry[1].trim(), jsonDoc.jsonString()));
+            jsonDoc.put(JsonPath.compile(prefix), entry[0].trim(), catsDSLParser.parseAndGetResult(entry[1].trim(), Map.of(Parser.REQUEST, jsonDoc.jsonString())));
         }
     }
 }

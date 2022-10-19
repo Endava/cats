@@ -203,7 +203,7 @@ class FunctionalFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithVerifyParameters_whenTheFuzzerRuns_thenVerifyParameterAreProperlyChecked() throws Exception {
-        FuzzingData data = setContext("src/test/resources/functionalFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\"}");
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-verify.yml", "{\"name\": {\"first\": \"dodo\"}, \"id\": \"25\", \"expiry\":\"2000-02-02\"}");
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
@@ -223,7 +223,7 @@ class FunctionalFuzzerTest {
 
     @Test
     void givenACustomFuzzerFileWithVerifyParametersThatDoNotMatchTheResponseValues_whenTheFuzzerRuns_thenAnErrorIsReported() throws Exception {
-        FuzzingData data = setContext("src/test/resources/functionalFuzzer-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"45\"}");
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-verify.yml", "{\"name\": {\"first\": \"dodo\"}, \"id\": \"45\", \"expiry\":\"2000-02-02\"}");
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);

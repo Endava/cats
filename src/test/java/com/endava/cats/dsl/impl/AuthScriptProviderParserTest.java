@@ -1,6 +1,7 @@
 package com.endava.cats.dsl.impl;
 
 
+import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -27,13 +28,13 @@ class AuthScriptProviderParserTest {
 
     @Test
     void shouldThrowIOExceptionWhenScriptNotProvided() {
-        Map<?, ?> context = Map.of();
+        Map<String, String> context = Map.of();
         Assertions.assertThatThrownBy(() -> authScriptProviderParser.parse(null, context)).isInstanceOf(CatsException.class);
     }
 
     @Test
     void shouldRunScriptButDontRefresh() {
-        Map<String, String> context = Map.of("auth_script", "hostname");
+        Map<String, String> context = Map.of(Parser.AUTH_SCRIPT, "hostname");
         Assertions.assertThat(authScriptProviderParser.parse(null, context)).isNotBlank();
         authScriptProviderParser.parse(null, context);
         Mockito.verify(prettyLogger, Mockito.times(0)).debug("Refresh interval passed.");
@@ -42,7 +43,7 @@ class AuthScriptProviderParserTest {
 
     @Test
     void shouldRefreshOnInterval() throws Exception {
-        Map<String, String> context = Map.of("auth_script", "hostname", "refresh_interval", "1");
+        Map<String, String> context = Map.of(Parser.AUTH_SCRIPT, "hostname", Parser.AUTH_REFRESH, "1");
 
         Assertions.assertThat(authScriptProviderParser.parse(null, context)).isNotBlank();
         Mockito.verify(prettyLogger, Mockito.times(0)).debug("Refresh interval passed.");
