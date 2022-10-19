@@ -663,6 +663,25 @@ You can also refer to request fields in the `verify` section by using the `${req
 
 It will verify if the response contains a `pet#name` element and that its value equals `My Pet` as sent in the request.
 
+You can also supply boolean expression to be checked in the verify section using the `checkBoolean` keyword:
+
+```yaml
+/pet:
+  test_1:
+    description: Create a Pet
+    httpMethod: POST
+    name: "My Pet"
+    expectedResponseCode: 200
+    output:
+      petId: pet#id
+    verify:
+      pet#name: "${request#name}"
+      pet#id: "[0-9]+"
+      checkBoolean: T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))
+```
+
+The `checkBoolean` example also uses a [SpEL expression](#dynamic-values-in-configuration-files) to check that the returned `expiry` is after the current date.
+
 Some notes:
 - `verify` parameters support Java regexes as values
 - you can supply more than one parameter to check (as seen above)
@@ -1065,7 +1084,27 @@ A `functionalFuzzer` using this can look like:
 ```
 
 You can also check the responses using a similar syntax and also accounting for the actual values returned in the response. This is a syntax than can test if a returned date is after the current date:
-`T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))`. It will check if the `expiry` field returned in the json response, parsed as date, is after the current date.
+`T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))`. It will check if the `expiry` field returned in the json response, parsed as date, is after the current date:
+
+```yaml
+/path:
+    testNumber:
+        description: Short description of the test
+        prop: value
+        prop#subprop: "T(java.time.OffsetDateTime).now().plusDays(10)"
+        prop7:
+          - value1
+          - value2
+          - value3
+        oneOfSelection:
+          element#type: "Value"
+        expectedResponseCode: HTTP_CODE
+        httpMethod: HTTP_NETHOD
+        verify:
+          checkBoolean: T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))
+```
+
+Notice the keyword `checkBoolean` which will test if the expression is `true`.
 
 The syntax of dynamically setting dates is compliant with the [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs.
 
