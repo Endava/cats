@@ -15,7 +15,6 @@ import java.util.Optional;
 @Singleton
 public class CatsDSLParser {
 
-
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsDSLParser.class);
     private static final Map<String, Parser> PARSERS = Map.of(
             "T(", new SpringELParser(),
@@ -30,7 +29,7 @@ public class CatsDSLParser {
      * @param context       a given context: JSON request or response, a Map of values
      * @return the result after the appropriate parser runs
      */
-    public String parseAndGetResult(String valueFromFile, Object context) {
+    public String parseAndGetResult(String valueFromFile, Map<String, String> context) {
         Optional<Map.Entry<String, Parser>> parserEntry = PARSERS.entrySet().stream().filter(entry -> valueFromFile.startsWith(entry.getKey())).findAny();
         if (parserEntry.isPresent()) {
             logger.debug("Identified parser {}", parserEntry.get().getValue().getClass().getSimpleName());
@@ -38,21 +37,5 @@ public class CatsDSLParser {
         }
 
         return valueFromFile;
-    }
-
-    /**
-     * Returns the appropriate context where the given expression will be interpreted by the parser.
-     * If the {@code expression} contains {@code $request} this method will return the request, otherwise the response.
-     *
-     * @param expression the given expression
-     * @param request    the given JSON request
-     * @param response   the given JSON response
-     * @return either the request or the response based on the supplied expression
-     */
-    public String getParseContext(String expression, String request, String response) {
-        if (expression.startsWith("$request")) {
-            return request;
-        }
-        return response;
     }
 }

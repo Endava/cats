@@ -1,5 +1,6 @@
 package com.endava.cats.dsl;
 
+import com.endava.cats.dsl.api.Parser;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Map;
 
 @QuarkusTest
 class CatsDSLParserTest {
@@ -29,7 +31,7 @@ class CatsDSLParserTest {
     @Test
     void shouldParseAsDate() {
         String initial = "T(java.time.OffsetDateTime).now().plusDays(2)";
-        String actual = catsDSLParser.parseAndGetResult(initial, null);
+        String actual = catsDSLParser.parseAndGetResult(initial, Map.of());
         OffsetDateTime actualDate = OffsetDateTime.parse(actual);
         Assertions.assertThat(actualDate).isAfter(OffsetDateTime.now(ZoneId.systemDefault()).plusDays(1));
     }
@@ -37,7 +39,7 @@ class CatsDSLParserTest {
     @Test
     void shouldIgnoreAsMethodInvalid() {
         String initial = "T(java.time.OffsetDateTime).nowMe().plusDays(2)";
-        String actual = catsDSLParser.parseAndGetResult(initial, null);
+        String actual = catsDSLParser.parseAndGetResult(initial, Map.of());
 
         Assertions.assertThat(actual).isEqualTo(initial);
     }
@@ -50,7 +52,7 @@ class CatsDSLParserTest {
                 "    \"match\": \"NOT\"\n" +
                 "  }";
         String initial = "T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))";
-        String actual = catsDSLParser.parseAndGetResult(initial, json);
+        String actual = catsDSLParser.parseAndGetResult(initial, Map.of(Parser.RESPONSE, json));
 
         Assertions.assertThat(actual).isEqualTo("true");
     }

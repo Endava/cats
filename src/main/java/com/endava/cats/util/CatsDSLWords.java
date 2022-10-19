@@ -5,6 +5,10 @@ import java.util.List;
 public abstract class CatsDSLWords {
     public static final String ALL = "all";
     public static final String DESCRIPTION = "description";
+
+    public static final String CHECK = "checkBoolean";
+
+    public static final String TRUE = "true";
     public static final String HTTP_METHOD = "httpMethod";
     public static final String EXPECTED_RESPONSE_CODE = "expectedResponseCode";
     public static final String OUTPUT = "output";
