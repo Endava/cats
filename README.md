@@ -1123,13 +1123,16 @@ You can supply the specific HTTP header name and value and apply to `all` endpoi
 
 Additionally, basic auth is also supported using the `--basicauth=USR:PWD` argument.
 
-If the authentication token needs periodical refresh, or if you want to provide it dynamically, you can encapsulate the provision of the authentication header in a script and user the following syntax:
+## Refreshing the access credentials
+If the authentication token needs periodical refresh, or if you want to provide it dynamically, you can encapsulate the provision of the authentication header in a script and use the following syntax:
 
 ```shell
 >  cats --contract=api.yml --server=http://localhost:8000 -H "Authorization=auth_script" --authRefreshScript="./get_token.sh" --authRefreshInterval 300
 ```
 
 This will use the `get_token.sh` script to get the value for the `Authorization` header and will refresh its value by calling the `get_tokne.sh` script every 5 minutes.
+
+Please note that that output of the `get_token.sh` script will be copied as raw data in the header value so make sure you remove any formatting or include needed prefixes (like `Bearer` for example for JWTs).
 
 ## One-Way or Two-Way SSL
 By default, CATS trusts all server certificates and doesn't perform hostname verification. 
