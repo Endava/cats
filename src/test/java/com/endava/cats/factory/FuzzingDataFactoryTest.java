@@ -2,8 +2,8 @@ package com.endava.cats.factory;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonParser;
@@ -57,6 +57,22 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldLoadExamples() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml");
+        Assertions.assertThat(data.get(0).getExamples()).hasSize(2);
+        Assertions.assertThat(data.get(0).getExamples())
+                .anyMatch(example -> example.contains("dog-example"))
+                .anyMatch(example -> example.contains("dog-no-ref"));
+    }
+
+    @Test
+    void shouldLoadExample() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pet-types-rec", "src/test/resources/petstore.yml");
+        Assertions.assertThat(data.get(0).getExamples()).hasSize(1);
+        Assertions.assertThat(data.get(0).getExamples()).anyMatch(example -> example.contains("dog-simple-example"));
+    }
+
+    @Test
     void shouldCreateFuzzingDataForEmptyPut() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets/{id}", "src/test/resources/petstore-empty.yml");
         Assertions.assertThat(data).hasSize(1);
@@ -91,6 +107,7 @@ class FuzzingDataFactoryTest {
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json"));
         catsGlobalContext.getSchemaMap().clear();
         catsGlobalContext.getSchemaMap().putAll(schemas);
+        catsGlobalContext.getExampleMap().putAll(OpenApiUtils.getExamples(openAPI));
         catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
         PathItem pathItem = openAPI.getPaths().get(path);
         return fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);

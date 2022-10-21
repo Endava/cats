@@ -3,6 +3,7 @@ package com.endava.cats.openapi;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -70,6 +71,11 @@ public abstract class OpenApiUtils {
         }
         return schemas;
     }
+
+    public static Map<String, Example> getExamples(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getComponents().getExamples()).orElse(Collections.emptyMap());
+    }
+
 
     private static void addToSchemas(Map<String, Schema> schemas, String schemaName, String ref, Content content, String contentType) {
         Schema<?> schemaToAdd = new Schema();

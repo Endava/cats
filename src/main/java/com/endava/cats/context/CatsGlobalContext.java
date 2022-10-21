@@ -1,5 +1,6 @@
 package com.endava.cats.context;
 
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
@@ -20,6 +21,7 @@ import java.util.Set;
 @Getter
 public class CatsGlobalContext {
     private final Map<String, Schema> schemaMap = new HashMap<>();
+    private final Map<String, Example> exampleMap = new HashMap<>();
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
     private final List<String> additionalProperties = new ArrayList<>();
     private final List<Discriminator> discriminators = new ArrayList<>();
