@@ -89,6 +89,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Pet'
+            examples:
+              default:
+                $ref: "#/components/examples/pet-ex"
+              another:
+                value:
+                  breed: dog-no-ref
       responses:
         '200':
           description: pet response
@@ -137,6 +143,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MegaPet'
+            example:
+              breed: dog-simple-example
       responses:
         '200':
           description: pet response
@@ -158,6 +166,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+  examples:
+    pet-ex:
+      value:
+        id: 1
+        breed: dog-example
   schemas:
     Pets:
       type: array
@@ -174,8 +187,8 @@ components:
               type: string
               format: date-time
             id:
-              type: integer
-              format: int64
+              type: string
+              format: time
             breed:
               description: Sensitive data that will be kept encrypted in the vault, associated with the Token
               oneOf:

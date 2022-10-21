@@ -2,12 +2,12 @@ package com.endava.cats.factory;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.PayloadGenerator;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -16,6 +16,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Content;
@@ -187,6 +188,8 @@ public class FuzzingDataFactory {
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
         logger.debug("Request schema names identified for path {}, method {}: {}", path, method, reqSchemaNames);
 
+        Set<String> examples = this.extractExamples(mediaType);
+
         Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet());
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
@@ -210,6 +213,7 @@ public class FuzzingDataFactory {
                             .openApi(openAPI)
                             .tags(operation.getTags())
                             .reqSchemaName(reqSchemaName)
+                            .examples(examples)
                             .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
                             .build()).toList());
         }
@@ -261,6 +265,28 @@ public class FuzzingDataFactory {
                         .reqSchemaName(SYNTH_SCHEMA_NAME)
                         .selfReferenceDepth(processingArguments.getSelfReferenceDepth()).build())
                 .toList();
+    }
+
+    private Set<String> extractExamples(MediaType mediaType) {
+        Set<String> examples = new HashSet<>();
+        examples.add(Optional.ofNullable(mediaType.getExample()).orElse("").toString());
+        if (mediaType.getExamples() != null) {
+            examples.addAll(mediaType.getExamples().values()
+                    .stream()
+                    .map(Example::getValue)
+                    .filter(Objects::nonNull)
+                    .map(JsonUtils.GSON::toJson)
+                    .collect(Collectors.toSet()));
+
+            examples.addAll(mediaType.getExamples().values()
+                    .stream()
+                    .filter(example -> example.get$ref() != null)
+                    .map(example -> globalContext.getExampleMap().get(this.getSchemaName(example.get$ref())).getValue())
+                    .map(JsonUtils.GSON::toJson)
+                    .collect(Collectors.toSet()));
+        }
+        examples.remove("");
+        return examples;
     }
 
 

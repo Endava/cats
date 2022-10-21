@@ -54,6 +54,9 @@ public class FuzzingData {
     private Set<String> targetFields;
     private int selfReferenceDepth;
 
+    @Builder.Default
+    private Set<String> examples = new HashSet<>();
+
     public boolean isQueryParam(String field) {
         return this.queryParams.contains(field);
     }
