@@ -5,16 +5,16 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class PasswordFormatGeneratorStrategyTest {
+class InvalidPasswordFormatGeneratorTest {
     @Test
     void givenAPasswordFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        PasswordFormatGeneratorStrategy strategy = new PasswordFormatGeneratorStrategy();
+        InvalidPasswordFormatGenerator strategy = new InvalidPasswordFormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("bgZD89DEkl");
     }
 
     @Test
     void givenAPasswordFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        PasswordFormatGeneratorStrategy strategy = new PasswordFormatGeneratorStrategy();
+        InvalidPasswordFormatGenerator strategy = new InvalidPasswordFormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("abcdefgh");
     }
 }

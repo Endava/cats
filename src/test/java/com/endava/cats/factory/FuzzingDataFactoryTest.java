@@ -5,6 +5,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.generator.api.ValidDataFormat;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
@@ -30,6 +31,8 @@ import java.util.Set;
 class FuzzingDataFactoryTest {
     @Inject
     CatsGlobalContext catsGlobalContext;
+    @Inject
+    ValidDataFormat validDataFormat;
     private FilesArguments filesArguments;
     private ProcessingArguments processingArguments;
     private FuzzingDataFactory fuzzingDataFactory;
@@ -40,7 +43,7 @@ class FuzzingDataFactoryTest {
         processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of("application/json", "application/x-www-form-urlencoded"));
-        fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext);
+        fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat);
     }
 
     @Test

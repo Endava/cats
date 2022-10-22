@@ -5,16 +5,16 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class NoFormatGenerationStrategyTest {
+class NoFormatGeneratorTest {
     @Test
     void givenANoFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        NoFormatGenerationStrategy strategy = new NoFormatGenerationStrategy();
+        NoFormatGenerator strategy = new NoFormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isNull();
     }
 
     @Test
     void givenANoFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        NoFormatGenerationStrategy strategy = new NoFormatGenerationStrategy();
+        NoFormatGenerator strategy = new NoFormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isNull();
     }
 }

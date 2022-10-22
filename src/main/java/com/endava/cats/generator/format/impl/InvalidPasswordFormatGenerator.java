@@ -1,8 +1,8 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.api.FormatGeneratorStrategy;
+import com.endava.cats.generator.format.api.InvalidFormatGenerator;
 
-public class PasswordFormatGeneratorStrategy implements FormatGeneratorStrategy {
+public class InvalidPasswordFormatGenerator implements InvalidFormatGenerator {
 
     @Override
     public String getAlmostValidValue() {

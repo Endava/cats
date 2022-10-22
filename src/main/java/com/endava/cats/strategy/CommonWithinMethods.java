@@ -1,7 +1,7 @@
 package com.endava.cats.strategy;
 
+import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.generator.PayloadGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.springframework.util.CollectionUtils;
@@ -20,7 +20,7 @@ public final class CommonWithinMethods {
         if (!StringSchema.class.isAssignableFrom(fuzzedFieldSchema.getClass())) {
             return Collections.singletonList(FuzzingStrategy.skip().withData("Field does not match String schema"));
         }
-        String initialValue = PayloadGenerator.generateValueBasedOnMinMAx(fuzzedFieldSchema);
+        String initialValue = StringGenerator.generateValueBasedOnMinMax(fuzzedFieldSchema);
 
         /*independent of the supplied strategy, we still maintain sizes for enums*/
         final boolean insertWithoutReplace = !maintainSize || !CollectionUtils.isEmpty(fuzzedFieldSchema.getEnum());

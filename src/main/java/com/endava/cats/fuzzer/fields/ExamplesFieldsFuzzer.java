@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
@@ -26,12 +25,10 @@ import java.util.Set;
 @Singleton
 public class ExamplesFieldsFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ExamplesFieldsFuzzer.class);
-    private final CatsGlobalContext catsGlobalContext;
     private final SimpleExecutor simpleExecutor;
 
     @Inject
-    public ExamplesFieldsFuzzer(CatsGlobalContext catsGlobalContext, SimpleExecutor simpleExecutor) {
-        this.catsGlobalContext = catsGlobalContext;
+    public ExamplesFieldsFuzzer(SimpleExecutor simpleExecutor) {
         this.simpleExecutor = simpleExecutor;
     }
 

@@ -3,6 +3,7 @@ package com.endava.cats.generator.simple;
 import com.github.curiousoddman.rgxgen.RgxGen;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.security.SecureRandom;
 import java.util.regex.Pattern;
@@ -117,5 +118,18 @@ public class StringGenerator {
         }
 
         return builder.toString();
+    }
+
+    public static String generateValueBasedOnMinMax(Schema<?> property) {
+        if (!CollectionUtils.isEmpty(property.getEnum())) {
+            return String.valueOf(property.getEnum().get(0));
+        }
+        int minLength = property.getMinLength() != null ? property.getMinLength() : 5;
+        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
+        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
+        if (maxLength < minLength) {
+            maxLength = minLength;
+        }
+        return StringGenerator.generate(pattern, minLength, maxLength);
     }
 }

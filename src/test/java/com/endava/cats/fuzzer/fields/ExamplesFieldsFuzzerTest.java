@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
 
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
@@ -18,14 +17,12 @@ class ExamplesFieldsFuzzerTest {
 
     private ExamplesFieldsFuzzer examplesFieldsFuzzer;
     private SimpleExecutor simpleExecutor;
-    private CatsGlobalContext catsGlobalContext;
 
     @BeforeEach
     void setup() {
         simpleExecutor = Mockito.mock(SimpleExecutor.class);
-        catsGlobalContext = Mockito.mock(CatsGlobalContext.class);
 
-        examplesFieldsFuzzer = new ExamplesFieldsFuzzer(catsGlobalContext, simpleExecutor);
+        examplesFieldsFuzzer = new ExamplesFieldsFuzzer(simpleExecutor);
     }
 
     @Test
@@ -35,7 +32,7 @@ class ExamplesFieldsFuzzerTest {
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(examplesFieldsFuzzer.toString()).isEqualTo("ExamplesFieldsFuzzer");
+        Assertions.assertThat(examplesFieldsFuzzer).hasToString("ExamplesFieldsFuzzer");
     }
 
     @Test

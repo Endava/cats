@@ -214,6 +214,14 @@ components:
           type: string
           format: date-time
           example: 2012-01-24T15:54:14.876Z
+        age:
+          type: string
+          pattern: "[0-9]+"
+        owner:
+          type: object
+        previousOwner:
+          type: object
+          example: "prev owner"
         metadata:
           type: object
           maxProperties: 10

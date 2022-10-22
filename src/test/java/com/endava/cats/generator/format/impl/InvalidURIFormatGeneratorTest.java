@@ -5,16 +5,16 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class URIFormatGeneratorStrategyTest {
+class InvalidURIFormatGeneratorTest {
     @Test
     void givenAURIFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        URIFormatGeneratorStrategy strategy = new URIFormatGeneratorStrategy();
+        InvalidURIFormatGenerator strategy = new InvalidURIFormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("mailto:l@s.");
     }
 
     @Test
     void givenAURIFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        URIFormatGeneratorStrategy strategy = new URIFormatGeneratorStrategy();
+        InvalidURIFormatGenerator strategy = new InvalidURIFormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("\"wrongURI\"");
     }
 }

@@ -1,8 +1,8 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.api.FormatGeneratorStrategy;
+import com.endava.cats.generator.format.api.InvalidFormatGenerator;
 
-public class IPV4FormatGenerationStrategy implements FormatGeneratorStrategy {
+public class InvalidIPV4FormatGenerator implements InvalidFormatGenerator {
 
     @Override
     public String getAlmostValidValue() {

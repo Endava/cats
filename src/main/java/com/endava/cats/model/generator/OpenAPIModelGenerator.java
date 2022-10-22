@@ -3,51 +3,44 @@ package com.endava.cats.model.generator;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.model.generator.api.ValidDataFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BooleanSchema;
-import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.EmailSchema;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
-import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static com.endava.cats.generator.simple.StringGenerator.generateValueBasedOnMinMax;
 
 /**
  * A modified version of {@code io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -69,38 +62,26 @@ import java.util.concurrent.ThreadLocalRandom;
  *     <li>uri/url</li>
  * </ul>
  */
-public class PayloadGenerator {
+public class OpenAPIModelGenerator {
     private static final String EXAMPLE = "example";
-    private static final String URL = "url";
-    private static final String URI = "uri";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(PayloadGenerator.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGenerator.class);
     private final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     private final Random random;
     private final boolean useExamples;
     private final CatsGlobalContext globalContext;
+    private final ValidDataFormat validDataFormat;
     private final int selfReferenceDepth;
     private String currentProperty = "";
 
-    public PayloadGenerator(CatsGlobalContext catsGlobalContext, boolean useExamplesArgument, int selfReferenceDepth) {
+    public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth) {
         this.globalContext = catsGlobalContext;
         this.random = ThreadLocalRandom.current();
         useExamples = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
+        this.validDataFormat = validDataFormat;
     }
 
-    public static String generateValueBasedOnMinMAx(Schema<?> property) {
-        if (!CollectionUtils.isEmpty(property.getEnum())) {
-            return String.valueOf(property.getEnum().get(0));
-        }
-        int minLength = property.getMinLength() != null ? property.getMinLength() : 5;
-        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
-        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
-        if (maxLength < minLength) {
-            maxLength = minLength;
-        }
-        return StringGenerator.generate(pattern, minLength, maxLength);
-    }
 
     public Map<String, String> generate(String modelName) {
         Map<String, String> kv = new HashMap<>();
@@ -115,45 +96,37 @@ public class PayloadGenerator {
                 }
             }
         }
-
-
         return Collections.emptyMap();
     }
 
-    private <T> Object resolvePropertyToExample(String propertyName, Schema<T> property) {
-        if (property.getExample() != null && canUseExamples(property)) {
-            logger.trace("Example set in swagger spec, returning example: '{}'", property.getExample());
-            return this.formatExampleIfNeeded(property);
-        } else if (property instanceof StringSchema stringSchema) {
+    private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
+        Object generatedValueFromFormat = validDataFormat.generate(propertySchema, propertyName);
+
+        if (propertySchema.getExample() != null && canUseExamples(propertySchema)) {
+            logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
+            return this.formatExampleIfNeeded(propertySchema);
+        } else if (generatedValueFromFormat != null) {
+            return generatedValueFromFormat;
+        } else if (propertySchema instanceof StringSchema stringSchema) {
             return this.getExampleFromStringSchema(propertyName, stringSchema);
-        } else if (property instanceof BooleanSchema booleanSchema) {
+        } else if (propertySchema instanceof BooleanSchema booleanSchema) {
             return this.getExampleFromBooleanSchema(booleanSchema);
-        } else if (property instanceof ArraySchema arraySchema) {
+        } else if (propertySchema instanceof ArraySchema arraySchema) {
             Object objectProperties = this.getExampleFromArraySchema(propertyName, arraySchema);
             if (objectProperties != null) {
                 return objectProperties;
             }
-        } else if (property instanceof DateSchema) {
-            return DATE_FORMATTER.format(LocalDateTime.now(ZoneId.of("GMT")));
-        } else if (property instanceof DateTimeSchema) {
-            return ZonedDateTime.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        } else if (property instanceof NumberSchema numberSchema) {
+        } else if (propertySchema instanceof NumberSchema numberSchema) {
             return this.getExampleFromNumberSchema(numberSchema);
-        } else if (property instanceof IntegerSchema integerSchema) {
+        } else if (propertySchema instanceof IntegerSchema integerSchema) {
             return this.getExampleFromIntegerSchema(integerSchema);
-        } else if (property instanceof ObjectSchema) {
-            return this.getExampleForObjectSchema(property);
-        } else if (property instanceof UUIDSchema) {
-            return UUID.randomUUID().toString();
-        } else if (property instanceof ByteArraySchema) {
-            return this.getExampleForByteArraySchema(property);
-        } else if (property instanceof EmailSchema) {
-            return "cool.cats@cats.io";
-        } else if (property.getAdditionalProperties() instanceof Schema) {
-            return this.getExampleFromAdditionalPropertiesSchema(propertyName, property);
+        } else if (propertySchema instanceof ObjectSchema) {
+            return this.getExampleForObjectSchema(propertySchema);
+        } else if (propertySchema.getAdditionalProperties() instanceof Schema) {
+            return this.getExampleFromAdditionalPropertiesSchema(propertyName, propertySchema);
         }
 
-        return resolveProperties(property);
+        return resolveProperties(propertySchema);
     }
 
     private <T> Object formatExampleIfNeeded(Schema<T> property) {
@@ -181,11 +154,6 @@ public class PayloadGenerator {
         return useExamples || catsGeneratedExamples.contains(property);
     }
 
-    private <T> Object getExampleForByteArraySchema(Schema<T> property) {
-        String value = generateValueBasedOnMinMAx(property);
-        return Base64.getEncoder().encodeToString(value.getBytes(StandardCharsets.UTF_8));
-    }
-
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
         return property.getExample() != null ? property.getExample() : "{\"cats\":\"cats\"}";
     }
@@ -197,31 +165,14 @@ public class PayloadGenerator {
         if (!CollectionUtils.isEmpty(enumValues)) {
             return enumValues.get(0);
         }
-        if (isURI(property, propertyName)) {
-            return "http://example.com/aeiou";
-        }
-        if (isEmailAddress(property, propertyName)) {
-            return RandomStringUtils.randomAlphabetic(5) + "cool.cats@cats.io";
-        }
-        if (isIPV4(property, propertyName)) {
-            return "10.10.10.20";
-        }
-        if (isIPV6(property, propertyName)) {
-            return "21DA:D3:0:2F3B:2AA:FF:FE28:9C5A";
-        }
-
         if (property.getMinLength() != null || property.getMaxLength() != null) {
-            return generateValueBasedOnMinMAx(property);
+            return generateValueBasedOnMinMax(property);
         }
         if (property.getPattern() != null) {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
         logger.trace("No values found, using property name {} as example", propertyName);
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
-    }
-
-    boolean isURI(Schema<String> property, String propertyName) {
-        return URI.equals(property.getFormat()) || URL.equals(property.getFormat()) || propertyName.equalsIgnoreCase(URL) || propertyName.equalsIgnoreCase(URI) || propertyName.toLowerCase(Locale.ROOT).endsWith(URL) || propertyName.toLowerCase(Locale.ROOT).endsWith(URI);
     }
 
     Map<String, Object> getExampleFromAdditionalPropertiesSchema(String propertyName, Schema property) {
@@ -284,18 +235,6 @@ public class PayloadGenerator {
             return objectProperties;
         }
         return null;
-    }
-
-    boolean isEmailAddress(Schema<String> property, String propertyName) {
-        return propertyName.toLowerCase().endsWith("email") || propertyName.toLowerCase().endsWith("emailaddress") || "email".equalsIgnoreCase(property.getFormat());
-    }
-
-    boolean isIPV4(Schema<String> property, String propertyName) {
-        return propertyName.toLowerCase().endsWith("ip") || propertyName.toLowerCase().endsWith("ipaddress") || "ip".equalsIgnoreCase(property.getFormat()) || "ipv4".equalsIgnoreCase(property.getFormat());
-    }
-
-    boolean isIPV6(Schema<String> property, String propertyName) {
-        return propertyName.toLowerCase().endsWith("ipv6") || "ipv6".equalsIgnoreCase(property.getFormat());
     }
 
     double randomNumber(Double min, Double max) {

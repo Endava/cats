@@ -9,17 +9,17 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 @QuarkusTest
-class DateTimeFormatGeneratorStrategyTest {
+class InvalidDateTimeFormatGeneratorTest {
     @Test
     void givenADateTimeFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        DateTimeFormatGeneratorStrategy strategy = new DateTimeFormatGeneratorStrategy();
+        InvalidDateTimeFormatGenerator strategy = new InvalidDateTimeFormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:'Z'").format(LocalDateTime.now(ZoneId.systemDefault())));
     }
 
 
     @Test
     void givenADateTimeFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        DateTimeFormatGeneratorStrategy strategy = new DateTimeFormatGeneratorStrategy();
+        InvalidDateTimeFormatGenerator strategy = new InvalidDateTimeFormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("1000-07-21T88:32:28Z");
     }
 }
