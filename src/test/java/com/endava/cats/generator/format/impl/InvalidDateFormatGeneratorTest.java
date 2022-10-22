@@ -9,18 +9,18 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 @QuarkusTest
-class DateFormatGeneratorStrategyTest {
+class InvalidDateFormatGeneratorTest {
 
     @Test
     void givenADateFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        DateFormatGeneratorStrategy strategy = new DateFormatGeneratorStrategy();
+        InvalidDateFormatGenerator strategy = new InvalidDateFormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now(ZoneId.systemDefault())));
     }
 
 
     @Test
     void givenADateFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        DateFormatGeneratorStrategy strategy = new DateFormatGeneratorStrategy();
+        InvalidDateFormatGenerator strategy = new InvalidDateFormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("1000-07-21");
     }
 }

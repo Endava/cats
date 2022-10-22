@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
-import com.endava.cats.generator.format.FormatGenerator;
+import com.endava.cats.generator.format.InvalidFormat;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -41,7 +41,7 @@ public class StringFormatAlmostValidValuesFuzzer extends BaseBoundaryFieldFuzzer
 
     @Override
     public String getBoundaryValue(Schema schema) {
-        return FormatGenerator.from(schema.getFormat()).getGeneratorStrategy().getAlmostValidValue();
+        return InvalidFormat.from(schema.getFormat()).getGeneratorStrategy().getAlmostValidValue();
     }
 
     @Override

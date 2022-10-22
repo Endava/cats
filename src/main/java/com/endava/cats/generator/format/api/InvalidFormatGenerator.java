@@ -3,7 +3,7 @@ package com.endava.cats.generator.format.api;
 /**
  * Provide implementation for different formats
  */
-public interface FormatGeneratorStrategy {
+public interface InvalidFormatGenerator {
 
     /**
      * This method will provide values which seem almost valid for the given format. For example: for an email field something like 'cats@cats.'

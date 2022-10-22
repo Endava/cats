@@ -5,16 +5,16 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class UUIDFormatGeneratorStrategyTest {
+class InvalidUUIDFormatGeneratorTest {
     @Test
     void givenAUUIDFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        UUIDFormatGeneratorStrategy strategy = new UUIDFormatGeneratorStrategy();
+        InvalidUUIDFormatGenerator strategy = new InvalidUUIDFormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("123e4567-e89b-22d3-a456-42665544000");
     }
 
     @Test
     void givenAUUIDFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        UUIDFormatGeneratorStrategy strategy = new UUIDFormatGeneratorStrategy();
+        InvalidUUIDFormatGenerator strategy = new InvalidUUIDFormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("123e4567");
     }
 }

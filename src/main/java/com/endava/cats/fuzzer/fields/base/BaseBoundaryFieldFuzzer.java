@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.generator.format.FormatGenerator;
+import com.endava.cats.generator.format.InvalidFormat;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -63,7 +63,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      * <ol>
      *     <li>the fuzzed field schema is not fuzzable by the current fuzzer. Each boundary Fuzzer provides a list with all applicable schemas.</li>
      *     <li>there is no boundary defined for the current field. This is also specific for each Fuzzer</li>
-     *     <li>the string format is not recognizable. Check {@link FormatGenerator} for supported formats</li>
+     *     <li>the string format is not recognizable. Check {@link InvalidFormat} for supported formats</li>
      * </ol>
      *
      * @param fuzzedField the current fuzzed field
@@ -76,7 +76,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     }
 
     private boolean isStringFormatRecognizable(Schema schema) {
-        return FormatGenerator.from(schema.getFormat()).compareTo(FormatGenerator.SKIP) != 0;
+        return InvalidFormat.from(schema.getFormat()).compareTo(InvalidFormat.SKIP) != 0;
     }
 
     private boolean fuzzedFieldHasAnAssociatedSchema(Schema schema) {

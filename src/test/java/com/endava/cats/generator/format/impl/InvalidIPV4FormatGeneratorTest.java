@@ -5,16 +5,16 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class IPV4FormatGenerationStrategyTest {
+class InvalidIPV4FormatGeneratorTest {
     @Test
     void givenAIPV4FormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        IPV4FormatGenerationStrategy strategy = new IPV4FormatGenerationStrategy();
+        InvalidIPV4FormatGenerator strategy = new InvalidIPV4FormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("10.10.10.300");
     }
 
     @Test
     void givenAIPV4FormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        IPV4FormatGenerationStrategy strategy = new IPV4FormatGenerationStrategy();
+        InvalidIPV4FormatGenerator strategy = new InvalidIPV4FormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("255.");
     }
 }

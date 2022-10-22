@@ -5,17 +5,17 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class EmailFormatGeneratorStrategyTest {
+class InvalidEmailFormatGeneratorTest {
     @Test
     void givenAEmailFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
-        EmailFormatGeneratorStrategy strategy = new EmailFormatGeneratorStrategy();
+        InvalidEmailFormatGenerator strategy = new InvalidEmailFormatGenerator();
         Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("email@bubu.");
     }
 
 
     @Test
     void givenAEmailFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
-        EmailFormatGeneratorStrategy strategy = new EmailFormatGeneratorStrategy();
+        InvalidEmailFormatGenerator strategy = new InvalidEmailFormatGenerator();
         Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("bubulina");
     }
 }

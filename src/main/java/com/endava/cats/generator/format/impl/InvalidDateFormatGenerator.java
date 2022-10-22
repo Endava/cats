@@ -1,12 +1,12 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.api.FormatGeneratorStrategy;
+import com.endava.cats.generator.format.api.InvalidFormatGenerator;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-public class DateFormatGeneratorStrategy implements FormatGeneratorStrategy {
+public class InvalidDateFormatGenerator implements InvalidFormatGenerator {
 
     @Override
     public String getAlmostValidValue() {
