@@ -9,9 +9,11 @@ import java.util.Random;
 
 @Singleton
 public class DurationGenerator implements ValidDataFormatGenerator {
+    private static final Random RANDOM = new Random();
+
     @Override
     public Object generate(Schema<?> schema) {
-        return Duration.ofDays(new Random().nextInt());
+        return Duration.ofDays(RANDOM.nextInt());
     }
 
     @Override
