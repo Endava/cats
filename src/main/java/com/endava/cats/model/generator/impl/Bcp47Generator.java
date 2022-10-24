@@ -4,19 +4,20 @@ import com.endava.cats.model.generator.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
-import java.time.OffsetTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.util.Random;
 
 @Singleton
-public class TimeGenerator implements ValidDataFormatGenerator {
+public class Bcp47Generator implements ValidDataFormatGenerator {
+    private static final Random RANDOM = new Random();
+
     @Override
     public Object generate(Schema<?> schema) {
-        return OffsetTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_TIME);
+        String[] locales = {"en-US", "en-JP", "fr-FR", "de-DE", "de-CH", "de-JP", "ro-RO"};
+        return locales[RANDOM.nextInt(locales.length)];
     }
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return "time".equalsIgnoreCase(format);
+        return "bcp47".equalsIgnoreCase(format);
     }
 }
