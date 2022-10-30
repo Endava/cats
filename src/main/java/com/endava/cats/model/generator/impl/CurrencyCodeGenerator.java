@@ -12,12 +12,12 @@ import java.util.Set;
 
 @Singleton
 public class CurrencyCodeGenerator implements ValidDataFormatGenerator {
-    private static final Random RANDOM = new Random();
+    private final Random random = new Random();
 
     @Override
     public Object generate(Schema<?> schema) {
         Set<Currency> currencySet = Currency.getAvailableCurrencies();
-        return currencySet.stream().skip(RANDOM.nextInt(currencySet.size())).findFirst().orElse(Currency.getInstance(Locale.UK)).getCurrencyCode();
+        return currencySet.stream().skip(random.nextInt(currencySet.size())).findFirst().orElse(Currency.getInstance(Locale.UK)).getCurrencyCode();
     }
 
     @Override
