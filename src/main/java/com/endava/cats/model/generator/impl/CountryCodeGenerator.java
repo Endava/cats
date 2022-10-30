@@ -11,7 +11,7 @@ import java.util.Set;
 
 @Singleton
 public class CountryCodeGenerator implements ValidDataFormatGenerator {
-    private static final Random RANDOM = new Random();
+    private final Random random = new Random();
 
     @Override
     public Object generate(Schema<?> schema) {
@@ -20,7 +20,7 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator {
             isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA2;
         }
         Set<String> isoCountries = Locale.getISOCountries(isoCountryCode);
-        return isoCountries.stream().skip(RANDOM.nextInt(isoCountries.size())).findFirst().orElse(Locale.UK.getCountry());
+        return isoCountries.stream().skip(random.nextInt(isoCountries.size())).findFirst().orElse(Locale.UK.getCountry());
     }
 
     @Override

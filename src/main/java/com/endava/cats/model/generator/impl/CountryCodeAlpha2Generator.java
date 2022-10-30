@@ -11,12 +11,12 @@ import java.util.Set;
 
 @Singleton
 public class CountryCodeAlpha2Generator implements ValidDataFormatGenerator {
-    private static final Random RANDOM = new Random();
+    private final Random random = new Random();
 
     @Override
     public Object generate(Schema<?> schema) {
         Set<String> isoCountries = Locale.getISOCountries(Locale.IsoCountryCode.PART1_ALPHA2);
-        return isoCountries.stream().skip(RANDOM.nextInt(isoCountries.size())).findFirst().orElse(Locale.ROOT.getCountry());
+        return isoCountries.stream().skip(random.nextInt(isoCountries.size())).findFirst().orElse(Locale.ROOT.getCountry());
     }
 
     @Override

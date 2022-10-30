@@ -8,12 +8,12 @@ import java.util.Random;
 
 @Singleton
 public class Bcp47Generator implements ValidDataFormatGenerator {
-    private static final Random RANDOM = new Random();
+    private final Random random = new Random();
 
     @Override
     public Object generate(Schema<?> schema) {
         String[] locales = {"en-US", "en-JP", "fr-FR", "de-DE", "de-CH", "de-JP", "ro-RO"};
-        return locales[RANDOM.nextInt(locales.length)];
+        return locales[random.nextInt(locales.length)];
     }
 
     @Override
