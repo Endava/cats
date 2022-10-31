@@ -1,19 +1,5 @@
 [
   {
-    "name": "com.endava.cats.model.report.CatsTestCaseSummary",
-    "methods": [
-      {
-        "name": "<init>",
-        "parameterTypes": []
-      }
-    ],
-    "allDeclaredConstructors": true,
-    "allPublicConstructors": true,
-    "allDeclaredMethods": true,
-    "allPublicMethods": true,
-    "allDeclaredFields": true
-  },
-  {
     "name": "io.swagger.v3.oas.models.responses.ApiResponse",
     "methods": [
       {
