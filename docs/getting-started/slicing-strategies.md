@@ -1,0 +1,36 @@
+---
+sidebar_position: 5
+description: How to get meaningful results in a timely manner
+---
+
+# Slicing Strategies
+
+CATS has a significant number of `Fuzzers`. Currently, **98** and growing. Some of the `Fuzzers` are executing multiple tests for every given field within the request.
+For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields for example, this will result in **1020 tests**.
+Considering that there are additional `Fuzzers` with the same magnitude of tests being generated, you can easily get to 20k tests being executed on a typical run. This will result in huge reports and long run times (i.e. minutes, rather than seconds).
+
+Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages in a deployment pipeline, one after the other.
+
+:::caution
+Running CATS with **all** Fuzzers will produce a significant amount of logging. 
+Please make sure you have a purging strategy in place, especially when choosing to store the output in files. Additionally, you can control the logging level using the `--log` argument.
+:::
+
+## Slice by Endpoints
+You can use the `--paths=PATH` argument to run CATS sequentially for each path.
+
+## Slice by Fuzzer Category
+You can use the `--checkXXX` arguments to run CATS only with specific `Fuzzers` like: `--checkHttp`, `-checkFields`, etc.
+
+## Slice by Fuzzer Type
+You can use various arguments like `--fuzzers=Fuzzer1,Fuzzer2` or `-skipFuzzers=Fuzzer1,Fuzzer2` to either include or exclude specific `Fuzzers`.
+For example, you can run all `Fuzzers` except for the `ControlChars` and `Whitespaces` ones like this: `--skipFuzzers=ControlChars,Whitesspaces`. This will skip all Fuzzers containing these strings in their name.
+After, you can create an additional run only with these `Fuzzers`: `--fuzzers=ControlChars,Whitespaces`.
+
+These are just some recommendations on how you can split the types of tests cases. Depending on how complex your API is, you might go with a combination of the above or with even more granular splits.
+
+:::note
+Please note that due to the fact that `ControlChars, Emojis and Whitespaces` generate huge number of tests even for small OpenAPI contracts, they are disabled by default.
+You can enable them using the `--includeControlChars`, `--includeWhitespaces` and/or `--includeEmojis` arguments.
+The recommendation is to run them in separate runs so that you get manageable reports and optimal running times.
+:::

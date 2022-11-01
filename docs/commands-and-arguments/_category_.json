@@ -1,0 +1,8 @@
+{
+  "label": "Sub-Commands and Arguments",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "CATS sub-commands and description of all supported arguments"
+  }
+}

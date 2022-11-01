@@ -1,0 +1,8 @@
+{
+  "label": "Advanced Topics",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "Discover additional configuration, advanced features and how to abuse the power of CATS"
+  }
+}

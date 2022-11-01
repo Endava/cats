@@ -57,7 +57,13 @@ const config = {
             type: 'doc',
             docId: 'intro',
             position: 'left',
-            label: 'Get Started',
+            label: 'Quick Start',
+          },
+          {
+            "type": "doc",
+            "docId": "/category/getting-started",
+            "position": "left",
+            "label": "Docs"
           },
           {
             href: 'https://github.com/Endava/cats',

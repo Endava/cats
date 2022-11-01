@@ -1,2 +1,4 @@
-node-modules/
+.idea
+.docusaurus
+node_modules/
 .DS_Store

@@ -9,3 +9,11 @@
   height: 200px;
   width: 200px;
 }
+
+[data-theme='light'] .featureSvg {
+  filter: saturate(0%) brightness(70%) contrast(1000%);
+}
+
+[data-theme='dark'] .featureSvg {
+  filter: brightness(0) invert(1);
+}
