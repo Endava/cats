@@ -26,7 +26,7 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
 
 Get started by running CATS in ◼️ `blackbox` mode.
 
-Make sure you have CATS installed following the instructions on the Installation page.
+Make sure you have CATS installed following the instructions on the [installation page](/docs/getting-started/installation).
 
 ### What you'll need
 
