@@ -17,7 +17,7 @@
 
 </p>
 
-> CATS documentation is available at [https://endava.github.io/cats/](https://endava.github.io/cats/)
+> <h2>CATS documentation is available at [https://endava.github.io/cats/](https://endava.github.io/cats/)</h2>
 
 **REST API fuzzer and negative testing tool. Run thousands of self-healing API tests within minutes with no coding effort!**
 
@@ -30,7 +30,7 @@
 
 <p align="center"></p>
 
-> Short on time? Check out the [1-minute Quick Start Guide](https://endava.github.io/cats/docs/intro)!
+> <h2>Short on time? Check out the [1-minute Quick Start Guide](https://endava.github.io/cats/docs/intro)!</h2>
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
