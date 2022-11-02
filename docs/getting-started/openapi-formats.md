@@ -4,10 +4,10 @@ description: Formats recognized by CATS generators
 ---
 
 # OpenAPI Formats
-CATS has custom generators for the most common OpenAPI formats like `date-time`, `email`, `binary` and extends that with a lot more others so that it can generate
-data as meaningful as possible to the given context. Below you can find the mapping between the values you can use in the `format` field and what CATS will generate.
-This will also be very helpful for the consumers of your API, not only for CATS. Additionally CATS might infer the format of the property from the property name.
-This will be explicitly mentioned in the mapping table.
+CATS has custom generators for the most common OpenAPI formats like `date-time`, `email`, `binary` and extends it with a lot more others so that it can generate
+data as meaningful as possible. Below you can find the mapping between the values you can use in the `format` field and what CATS will generate.
+This will also be very helpful for the consumers of your API, not only for CATS. Additionally, CATS might infer the data format from the property name.
+This is explicitly mentioned in the mapping table.
 
 | OpenAPI format              | Property Name                                                             | What CATS generates                    |
 |-----------------------------|---------------------------------------------------------------------------|----------------------------------------|
@@ -43,3 +43,8 @@ This will be explicitly mentioned in the mapping table.
 | `uri-reference`             | N/A                                                                       | `/fuzzing/`                            |
 | `uri-template`              | N/A                                                                       | `/fuzzing/{path}`                      |
 | `uuid`                      | N/A                                                                       | `c58919de-3210-4549-87fa-c196324d0594` |
+
+
+:::info
+Whenever you see a `camelCase` naming, CATS also checks for `snake_case` and `kebab-case`. For example, for `countryCode` CATS will also match properties ending in `country-code` and `country_code`. 
+:::

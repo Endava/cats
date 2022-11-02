@@ -1,6 +1,6 @@
 ---
 sidebar_position: 12
-description: What types of authentication are supported by CATS
+description: Types of authentication supported by CATS
 ---
 
 # API Authentication
@@ -8,14 +8,14 @@ description: What types of authentication are supported by CATS
 :::danger
 CATS outputs authentication headers in plain text in both logs and report files. 
 Make sure you remove those when sharing/archiving/uploading the report files or logs.
-You can leverage environment variables by setting `$$env_variable` as values.
+When sharing individual tests files you can leverage environment variables by using `$$env_variable` as values.
 :::
 
 ## HTTP header(s) based authentication
-CATS supports any form of HTTP header(s) based authentication (basic auth, oauth, custom JWT, apiKey, etc) using the [headers](#headers-file) mechanism or using `-H header=value` arguments.
+CATS supports any form of HTTP header(s) based authentication (basic auth, oauth, custom JWT, apiKey, etc) using the [headers](headers-file) mechanism or using `-H header=value` arguments.
 
 :::tip
-When using the `--headerFile` make sure the specific HTTP header name and value is applied to `all` endpoints.
+When using the `--headerFile` make sure the specific authentication header is applied to `all` endpoints.
 :::
 
 Additionally, basic auth is also supported using the `--basicauth=USR:PWD` argument.
@@ -34,7 +34,10 @@ Please note that the output of the `get_token.sh` script will be copied as raw d
 :::
 
 ## One-Way or Two-Way SSL
+
+:::info
 By default, CATS trusts all server certificates and doesn't perform hostname verification.
+:::
 
 For two-way SSL you can specify a JKS file (Java Keystore) that holds the client's private key using the following arguments:
 - `--sslKeystore` Location of the JKS keystore holding certificates used when authenticating calls using one-way or two-way SSL

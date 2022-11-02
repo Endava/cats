@@ -1,3 +1,16 @@
+# Random Strings In Boolean Fields
+
+| Item                                                             | Value                                                            |
+|:-----------------------------------------------------------------|:-----------------------------------------------------------------|
+| **Enabled by default?**                                          | Yes                                                              |
+| **Target field types**                                           | OpenAPI type `boolean`                                           |
+| **Expected result when required fields are fuzzed**              | `4XX`                                                            |
+| **Expected result when optional fields are fuzzed**              | `4XX`                                                            |
+| **Expected result when fuzzed value not matching field pattern** | `4XX`                                                            |
+| **Fuzzing logic**                                                | Iteratively **replaces** `boolean` fields with the string `fuzz` |
+| **Conditions when this fuzzer will be skipped**                  | When field is not of type `boolean`                              |
+| **HTTP methods that will be skipped**                            | None                                                             |
+
 
 ### BooleanFieldsFuzzer
 This `Fuzzer` applies only to Boolean fields. It will try to send invalid boolean values and expects a `4XX` response code.

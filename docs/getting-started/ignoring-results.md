@@ -5,7 +5,7 @@ description: How to ignore specific HTTP response
 
 # Ignoring Results
 CATS reports can be huge. Opening a report with 20k tests it's not the best user experience. 
-Outside the typical [Slicing Strategies](slicing-strategies), you can also choose to ignore reporting for specific HTTP responses based on different criteria.
+Outside the typical [Slicing Strategies](slicing-strategies), you can also choose to ignore reporting for specific HTTP responses.
 
 ## Ignoring Specific HTTP Responses
 By default, CATS will report `WARNs` and `ERRORs` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.

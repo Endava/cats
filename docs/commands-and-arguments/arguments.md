@@ -66,4 +66,4 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 cats --contract=my.yml --server=https://locathost:8080 --checkHeaders
 ```
 
-This will run CATS against `http://localhost:8080` using `my.yml` as an API spec and will only run the HTTP headers `Fuzzers`.
+This will run CATS against `http://localhost:8080` using `my.yml` as an API spec and will only run the HTTP headers Fuzzers.

@@ -1,7 +1,7 @@
 # Limitations
 
 ## Native Binaries
-When using the native binaries (not the uberjar) there might be issues when using dynamic values in the configuration files.
+When using the native binaries (not affecting the uberjar) there might be issues when using dynamic values in the configuration files.
 This is due to the fact that GraalVM only bundles whatever can discover at compile time.
 The following classes are currently supported:
 
@@ -17,7 +17,7 @@ The following classes are currently supported:
 At this moment, CATS only works with OpenAPI specs and has limited functionality using template payloads through the `cats fuzz ...` subcommand.
 
 ## Media types and HTTP methods
-The `Fuzzers` has the following support for media types and HTTP methods:
+The Fuzzers have the following support for media types and HTTP methods:
 - `application/json` and `application/x-www-form-urlencoded` media types only
 - HTTP methods: `POST`, `PUT`, `PATCH`, `GET` and `DELETE`
 

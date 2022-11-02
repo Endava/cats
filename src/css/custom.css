@@ -6,7 +6,7 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
+  --ifm-color-primary: #3cad6e;
   --ifm-color-primary-dark: #29784c;
   --ifm-color-primary-darker: #277148;
   --ifm-color-primary-darkest: #205d3b;
@@ -19,7 +19,7 @@
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary: #4fddbf;
   --ifm-color-primary-dark: #21af90;
   --ifm-color-primary-darker: #1fa588;
   --ifm-color-primary-darkest: #1a8870;
@@ -27,4 +27,41 @@
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.hero__title {
+  font-size: 108px;
+  letter-spacing: 0;
+  line-height: 138px;
+  text-align: center;
+}
+
+[data-theme='dark'] .Title .important {
+  color: #fff;
+  line-height: 138px;
+  font-size: 108px;
+}
+
+[data-theme='light'] .Title .important {
+  color: #000;
+  line-height: 138px;
+  font-size: 108px;
+}
+
+.hero__subtitle {
+  font-size: 108px;
+  letter-spacing: 0;
+  line-height: 138px;
+}
+
+.line {
+  align-items: center;
+  flex: 1;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  text-align: center;
+}
+
+.navbar__logo {
+  height: 3rem;
 }

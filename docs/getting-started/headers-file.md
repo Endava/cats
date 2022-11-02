@@ -4,7 +4,9 @@ description: Supplying custom headers to CATS
 ---
 
 # Headers File
-This can be used to send custom fixed headers with each payload. It is useful when you have authentication tokens you want to use to authenticate the API calls. You can use path specific headers or common headers that will be added to each call using an `all` element. Specific paths will take precedence over the `all` element.
+The headers file can be used to send fixed-value headers. The most common use case is authentication headers. 
+Headers can be path-specific or applicable to all paths using the `all` element. Specific paths will take precedence over the `all` element.
+
 Sample headers file:
 
 ```yaml

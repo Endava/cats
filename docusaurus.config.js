@@ -35,6 +35,7 @@ const config = {
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
+          editUrl: `https://github.com/Endava/cats/tree/gh-pages/`,
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

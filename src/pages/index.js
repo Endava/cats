@@ -12,8 +12,33 @@ function HomepageHeader() {
   return (
     <header className={clsx('hero hero--primary', styles.heroBanner)}>
       <div className="container">
-        <h1 className="hero__title">{siteConfig.title}</h1>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <h1 className="Title">
+        <div className="line">
+          <span className="hero__title">
+            &nbsp;REST API&nbsp;
+          </span>
+          <span className="important">
+            fuzzer&nbsp;
+          </span>
+          <span className="hero__title">
+            and
+          </span>
+        </div>
+        <div className="line">
+           <span className="hero__title">
+            &nbsp;&nbsp;
+          </span>
+           <span className="important">
+            negative testing&nbsp;
+          </span>
+          <span className="hero__title">
+              tool
+          </span>
+          <span>&nbsp;</span>
+        </div>
+          <div>
+              &nbsp;
+          </div>
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
@@ -21,6 +46,7 @@ function HomepageHeader() {
             Get Started with CATS - 1min ⏱️
           </Link>
         </div>
+        </h1>
       </div>
     </header>
   );

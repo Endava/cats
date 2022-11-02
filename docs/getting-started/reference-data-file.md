@@ -4,8 +4,9 @@ description: Supplying context to CATS
 ---
 
 # Reference Data File
-There are often cases where some fields need to contain relevant data in order for a request to succeed. You can provide such values using a reference data file specified by the `--refData` argument. 
-The reference data file is a YAML file that contains specific fixed values for different paths in the request document. The file structure is as follows:
+Most of the time some fields need to contain relevant data in order for a request to succeed. CATS consider this type of data `reference data`. 
+You can provide such values using the `--refData` argument. 
+The reference data file is a YAML file that specifies fixed values for different request paths. The file structure is as follows:
 
 ```yaml
 /path/0.1/auth:
@@ -16,7 +17,10 @@ The reference data file is a YAML file that contains specific fixed values for d
     prop#test: 1
 ```
 
-For each path you can supply custom values for properties and sub-properties which will have priority over values supplied by any other Fuzzer.
+:::note
+Reference data values will have priority over values supplied by the Fuzzers.
+:::
+
 Consider this request payload:
 
 ```json
@@ -32,7 +36,7 @@ Consider this request payload:
 
 ```
 
-and the following reference data file file:
+and the following reference data file:
 
 
 ```yaml
@@ -56,8 +60,8 @@ This will result in any fuzzed request to the `/path/0.1/auth` endpoint being up
 ```
 
 :::note
-CATS engine will try to merge fuzzed values with the ref data values when possible. This means that even if fields will get replaced with their
-reference data value, they will still get properly fuzzed, thus letting CATS do its magic as expected.
+Although reference data values takes precedence over fuzzed values, CATS will try to merge fuzzed values with the ref data values when possible. 
+This means that even if fields will get replaced with their reference data value, they will still get properly fuzzed, thus letting CATS do its magic as expected.
 :::
 
 The file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` as in the example above instead of `.`.
@@ -70,7 +74,7 @@ Notice double `$$` when supplying environment variables.
 
 ## Setting additionalProperties
 As additional properties are maps i.e. they don't actually have a structure, CATS cannot currently generate valid values. If the elements within such a data structure are essential for a request,
-you can supply them via the `refData` file using the following syntax:
+you can supply them via the `--refData` file using the `additionalProperties` element:
 
 ```yaml
 /path/0.1/auth:
@@ -83,10 +87,11 @@ you can supply them via the `refData` file using the following syntax:
         anotherTest: "value2"
 ```
 
-The `additionalProperties` element must contain the actual key-value pairs to be sent within the requests and also a top element if needed. `topElement` is not mandatory.
-The above example will output the following json (considering also the above examples):
-```json
+The `additionalProperties` element must contain the actual key-value pairs to be sent within the requests and also a `topElement` if needed (not mandatory). `topElement` will be the name of the map.
 
+The above example will output the following json (considering also the above examples):
+
+```json
 {
     "address": {
         "phone": "123",
@@ -100,10 +105,8 @@ The above example will output the following json (considering also the above exa
     }   
 }
 ```
-## RefData reserved keywords
-The following keywords are reserved in a reference data file: `additionalProperties`, `topElement` and `mapValues`.
 
-## Sending ref data for ALL paths
+## Sending Reference Data for ALL Paths
 You can also have the ability to send the same reference data for ALL paths (just like you do with the headers). You can achieve this by using `all` as a key in the `refData` file:
 
 ```yaml
@@ -112,7 +115,7 @@ all:
 ```
 This will try to replace `address#zip` in **all** requests (if the field is present).
 
-## Removing fields
+## Removing Fields
 There are (rare) cases when some fields may not make sense together. Something like: if you send `firstName` and `lastName`, you are not allowed to also send `name`.
 As OpenAPI does not have the capability to send request fields which are dependent on each other, you can use the `refData` file to instruct CATS to remove fields before sending a request to the service.
 You can achieve this by using the `cats_remove_field` as a value for the fields you want to remove. For the above case the `refData` field will look as follows:
@@ -121,3 +124,6 @@ You can achieve this by using the `cats_remove_field` as a value for the fields 
 all:
   name: "cats_remove_field"
 ```
+
+## Reference Data Reserved Keywords
+The following keywords are reserved in a reference data file: `all`, `additionalProperties`, `topElement`, `mapValues` and `cats_remove_field`.

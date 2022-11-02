@@ -3,8 +3,8 @@ sidebar_position: 5
 ---
 
 # Dynamic Values
-The following configuration files: `securityFuzzerFile, functionalFuzzerFile, refData` support setting dynamic values.
-For now **the support only exists** for `java.time.*` and `org.apache.commons.lang3.*`, but more types of elements will be added in the future.
+The following configuration files: `SecurityFuzzer` file, `FunctionalFuzzer` file and `--refData` support setting dynamic values.
+For now **the support only exists** for `java.time.*` and `org.apache.commons.lang3.*`, but more types will be added in the future.
 
 Let's suppose you have a date/date-time field, and you want to set it to 10 days from now. You can do this by setting this as a value `T(java.time.OffsetDateTime).now().plusDays(10)`.
 This will return an ISO compliant time in UTC format.

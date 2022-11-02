@@ -7,8 +7,8 @@ description: How to interpret CATS reports
 
 
 ## HTML_JS
-`HTML_JS` is the default report produced by CATS. The execution report is placed in a folder called `cats-report`. The folder will be created inside the current folder. 
-The report itself is in the `index.html` file, where you can:
+`HTML_JS` is the default report produced by CATS. The execution report is placed in a folder called `cats-report` which is created inside the current folder. 
+Opening the `cats-report/index.html` file, you will be able to:
 
 - filter tests based on the result: `All`, `Success`, `Warn` and `Error`
 - filter based on the `Fuzzer` so that you can only see the runs for that specific `Fuzzer`
@@ -23,7 +23,7 @@ Along with the summary from `index.html` each individual test will have a specif
 
 :::tip
 Individual tests are also written as JSON files. This is useful when you want to replay a test using `cats replay TestXXX`. 
-Tests can also be uploaded as test evidence and be later reproduced/verified.
+Tests can be uploaded as test evidence and be later reproduced/verified.
 :::
 
 Understanding the `Result Reason` values:
@@ -33,9 +33,6 @@ Understanding the `Result Reason` values:
 - `Unexpected Response Code` - reported as an `error`; this indicates a possible bug in the service - the response code is documented, but is not expected for this scenario
 - `Unexpected Behaviour` - reported as an `error`; this indicates a possible bug in the service - the response code is neither documented nor expected for this scenario
 - `Not Found` - reported as an `error` in order to force providing more context; this indicates that CATS needs additional business context in order to run successfully - you can do this using the `--refData` and/or `--urlParams` arguments
-
-
-tip - timestamp
 
 
 This is the summary page:
