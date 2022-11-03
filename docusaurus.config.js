@@ -81,6 +81,12 @@ const config = {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
       },
+      algolia: {
+        appId: 'J7RROID3LU',
+        apiKey: 'df653983a5f821a48d9604e3e309ba2b',
+        indexName: 'cats',
+        contextualSearch: true
+      }
     }),
 };
 

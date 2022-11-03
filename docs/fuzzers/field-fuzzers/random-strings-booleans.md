@@ -1,15 +1,17 @@
-# Random Strings In Boolean Fields
+# Random Strings In Booleans
 
-| Item                                                             | Value                                                            |
-|:-----------------------------------------------------------------|:-----------------------------------------------------------------|
-| **Enabled by default?**                                          | Yes                                                              |
-| **Target field types**                                           | OpenAPI type `boolean`                                           |
-| **Expected result when required fields are fuzzed**              | `4XX`                                                            |
-| **Expected result when optional fields are fuzzed**              | `4XX`                                                            |
-| **Expected result when fuzzed value not matching field pattern** | `4XX`                                                            |
-| **Fuzzing logic**                                                | Iteratively **replaces** `boolean` fields with the string `fuzz` |
-| **Conditions when this fuzzer will be skipped**                  | When field is not of type `boolean`                              |
-| **HTTP methods that will be skipped**                            | None                                                             |
+| Item                                                                | Description                                                      |
+|:--------------------------------------------------------------------|:-----------------------------------------------------------------|
+| **Full Fuzzer Name**                                                | RandomStringsInBooleanFieldsFuzzer                               |
+| **Log Key**                                                         | **RSIBFF**                                                       |
+| **Enabled by default?**                                             | Yes                                                              |
+| **Target field types**                                              | OpenAPI type `boolean`                                           |
+| **Expected result when fuzzed field is required**                   | `4XX`                                                            |
+| **Expected result when fuzzed field is optional**                   | `4XX`                                                            |
+| **Expected result when fuzzed value is matching not field pattern** | `4XX`                                                            |
+| **Fuzzing logic**                                                   | Iteratively **replaces** `boolean` fields with the string `fuzz` |
+| **Conditions when this fuzzer will be skipped**                     | When field is not of type `boolean`                              |
+| **HTTP methods that will be skipped**                               | None                                                             |
 
 
 ### BooleanFieldsFuzzer
