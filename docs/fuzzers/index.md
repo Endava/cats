@@ -35,12 +35,12 @@ Each Fuzzer from the above categories are individually detailed using the below 
 
 
 Clarifications on the wording from the `Description` column:
-- `happy path` means that CATS expects a `2XX` HTTP response code
-- `rejects request as invalid` means that CATS expects a `4XX` HTTP response code
-- `response code is documented` means that that HTTP response code is documented as a potential response code in the OpenAPI specs
-- `resopnse code is expected` means that CATS expects to receive this HTTP response code for the current Fuzzer (taking into consideration the above 2 `Expected result when...` conditions)
+- `happy path` means CATS expects a `2XX` HTTP response code
+- `rejects request as invalid` means CATS expects a `4XX` HTTP response code
+- `response code is documented` means the HTTP response code is documented in the OpenAPI specs
+- `resopnse code is expected` means CATS expects to receive this HTTP response code for the current Fuzzer (taking into consideration the above 3 `Expected result when...` conditions)
 - `unexpected exception` means anything that happens outside the rest of the conditions (Connection Timeout for example)
-- `not matches response schema` means that the structure of the HTTP response body does not match the schema defined in the OpenAPI specs
+- `not matches response schema` means the structure of the HTTP response body does not match the schema defined in the OpenAPI specs
 - `response code is expected, but not documented` means that the received HTTP response code matches Fuzzer's expectations, but the HTTP response code is not documented in the OpenAPI specs as a potential response code
 
 

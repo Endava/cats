@@ -6,6 +6,10 @@ sidebar_position: 1
 
 CATS is a REST API fuzzer and negative testing tool for OpenAPI endpoints. It helps you run thousands of self-healing API tests within minutes with no coding effort! 
 
+:::danger Be careful!
+Running CATS against production systems might produce unwanted behaviour like performance issues, consistency issues or crashes.
+:::
+
 ## Overview
 
 CATS is:
