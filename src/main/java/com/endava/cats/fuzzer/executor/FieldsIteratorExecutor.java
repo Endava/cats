@@ -103,7 +103,7 @@ public class FieldsIteratorExecutor {
 
         if (context.getExpectedResponseCode() != null) {
             testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
-        } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
+        } else if (!matchArguments.isAnyMatchArgumentSupplied() || matchArguments.isMatchResponse(response)) {
             testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
         } else {
             testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
