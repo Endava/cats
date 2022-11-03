@@ -7,7 +7,7 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.contract.PathTagsContractInfoFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.fuzzer.http.HappyFuzzer;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
@@ -84,15 +84,15 @@ class CatsCommandTest {
     void shouldRunPathsWhenEndingWithWildcard(String path, int invocations) {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
-        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("HappyFuzzer"));
+        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("HappyPathFuzzer"));
         Mockito.when(filterArguments.getPaths()).thenReturn(List.of(path));
-        Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new HappyFuzzer(Mockito.mock(SimpleExecutor.class))));
+        Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new HappyPathFuzzer(Mockito.mock(SimpleExecutor.class))));
 
         CatsCommand spyMain = Mockito.spy(catsMain);
         spyMain.run();
 
         Mockito.verify(testCaseListener, Mockito.times(invocations)).afterFuzz();
-        Mockito.verify(testCaseListener, Mockito.times(invocations)).beforeFuzz(HappyFuzzer.class);
+        Mockito.verify(testCaseListener, Mockito.times(invocations)).beforeFuzz(HappyPathFuzzer.class);
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");

@@ -18,12 +18,12 @@ import javax.inject.Singleton;
  */
 @Singleton
 @HttpFuzzer
-public class HappyFuzzer implements Fuzzer {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HappyFuzzer.class);
+public class HappyPathFuzzer implements Fuzzer {
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HappyPathFuzzer.class);
     private final SimpleExecutor simpleExecutor;
 
     @Inject
-    public HappyFuzzer(SimpleExecutor simpleExecutor) {
+    public HappyPathFuzzer(SimpleExecutor simpleExecutor) {
         this.simpleExecutor = simpleExecutor;
     }
 

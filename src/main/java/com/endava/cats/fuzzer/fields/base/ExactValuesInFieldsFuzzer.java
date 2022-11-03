@@ -46,7 +46,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
      * <p>
      * The method will generate a boundary value only if there is a left or right boundary defined.
      * It won't generate values if the format is recognized but it doesn't have any boundaries defined,
-     * as those scenarios are already covered by the HappyFuzzer.
+     * as those scenarios are already covered by the HappyPathFuzzer.
      *
      * @param schema used to extract boundary information
      * @return null of the schema has proper boundaries defined or a generated string value matching the boundaries otherwise

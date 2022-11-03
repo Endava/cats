@@ -3,7 +3,7 @@ package com.endava.cats.args;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
 import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
-import com.endava.cats.fuzzer.http.HappyFuzzer;
+import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -54,7 +54,7 @@ class FilterArgumentsTest {
     @ParameterizedTest
     @CsvSource({"checkHeaders,CheckSecurityHeadersFuzzer,RemoveFieldsFuzzer",
             "checkFields,RemoveFieldsFuzzer,CheckSecurityHeadersFuzzer",
-            "checkHttp,HappyFuzzer,CheckSecurityHeadersFuzzer"})
+            "checkHttp,HappyPathFuzzer,CheckSecurityHeadersFuzzer"})
     void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
         ReflectionTestUtils.setField(checkArguments, argument, true);
 
@@ -93,7 +93,7 @@ class FilterArgumentsTest {
     void shouldReturnAllFuzzersWhenNoCheckSupplied() {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer");
+        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer");
     }
 
     @Test
@@ -102,7 +102,7 @@ class FilterArgumentsTest {
 
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
+        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer")
                 .doesNotContain("TopLevelElementsContractInfoFuzzer");
     }
 
@@ -112,7 +112,7 @@ class FilterArgumentsTest {
 
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer")
+        Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer")
                 .doesNotContain("TopLevelElementsContractInfoFuzzer");
     }
 
@@ -121,7 +121,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).contains("HappyFuzzer", "RemoveFieldsFuzzer")
+        Assertions.assertThat(fuzzers).contains("HappyPathFuzzer", "RemoveFieldsFuzzer")
                 .doesNotContain("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "Jumbo");
 
     }
@@ -131,7 +131,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyFuzzer", "RemoveFieldsFuzzer", "Jumbo")
+        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer", "Jumbo")
                 .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInHeadersFuzzer", "VeryLargeStringsInHeadersFuzzer",
                         "VeryLargeDecimalsInNumericFieldsFuzzer", "VeryLargeIntegersInNumericFieldsFuzzer");
     }
@@ -185,17 +185,17 @@ class FilterArgumentsTest {
 
     @Test
     void shouldNotGetFuzzersWhenAllFuzzersPopulated() {
-        HappyFuzzer happyFuzzer = new HappyFuzzer(null);
-        FilterArguments.ALL_CATS_FUZZERS.add(happyFuzzer);
+        HappyPathFuzzer happyPathFuzzer = new HappyPathFuzzer(null);
+        FilterArguments.ALL_CATS_FUZZERS.add(happyPathFuzzer);
 
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).containsOnly(happyFuzzer);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).containsOnly(happyPathFuzzer);
     }
 
     @Test
     void shouldNotGetFuzzersToBeRunWhenPopulated() {
-        FilterArguments.FUZZERS_TO_BE_RUN.add("HappyFuzzer");
+        FilterArguments.FUZZERS_TO_BE_RUN.add("HappyPathFuzzer");
 
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("HappyFuzzer");
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("HappyPathFuzzer");
     }
 
     @Test

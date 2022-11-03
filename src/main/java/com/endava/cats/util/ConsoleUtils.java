@@ -20,6 +20,6 @@ public final class ConsoleUtils {
     }
 
     public static String removeTrimSanitize(String currentName) {
-        return currentName.replaceAll("TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize", "");
+        return currentName.replaceAll("TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize|Fuzzer", "");
     }
 }
