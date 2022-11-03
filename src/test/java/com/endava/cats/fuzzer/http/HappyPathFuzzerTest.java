@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 @QuarkusTest
-class HappyFuzzerTest {
+class HappyPathFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
 
-    private HappyFuzzer happyFuzzer;
+    private HappyPathFuzzer happyFuzzer;
 
     private SimpleExecutor simpleExecutor;
 
@@ -36,7 +36,7 @@ class HappyFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        happyFuzzer = new HappyFuzzer(simpleExecutor);
+        happyFuzzer = new HappyPathFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
