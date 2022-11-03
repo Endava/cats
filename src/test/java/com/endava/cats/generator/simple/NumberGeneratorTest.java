@@ -28,7 +28,7 @@ class NumberGeneratorTest {
         Schema schema = new IntegerSchema();
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Long.MIN_VALUE).subtract(BigDecimal.TEN));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Double.MIN_VALUE).subtract(new BigDecimal(Double.MAX_VALUE)));
     }
 
     @Test
@@ -47,7 +47,7 @@ class NumberGeneratorTest {
         Schema schema = new IntegerSchema();
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Long.MAX_VALUE).add(BigDecimal.TEN));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo( new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE)));
     }
 
     @Test
@@ -66,7 +66,7 @@ class NumberGeneratorTest {
         Schema schema = new NumberSchema();
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Long.MIN_VALUE).subtract(BigDecimal.TEN));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Double.MIN_VALUE).subtract(new BigDecimal(Double.MAX_VALUE)));
     }
 
     @Test
@@ -84,7 +84,7 @@ class NumberGeneratorTest {
         Schema schema = new NumberSchema();
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Long.MAX_VALUE).add(BigDecimal.TEN));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo( new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE)));
     }
 
     @Test
@@ -145,7 +145,7 @@ class NumberGeneratorTest {
         schema.setFormat("float");
         Number extremePositive = NumberGenerator.getExtremePositiveDecimalValue(schema);
 
-        Assertions.assertThat(extremePositive).isEqualTo(Float.MAX_VALUE);
+        Assertions.assertThat(extremePositive).isEqualTo(Double.MAX_VALUE);
     }
 
     @Test
@@ -162,7 +162,7 @@ class NumberGeneratorTest {
         schema.setFormat("double");
         Number extremePositive = NumberGenerator.getExtremePositiveDecimalValue(schema);
 
-        Assertions.assertThat(extremePositive).isEqualTo(Double.MAX_VALUE);
+        Assertions.assertThat(extremePositive).isEqualTo(BigDecimal.valueOf(Double.MAX_VALUE).add(BigDecimal.valueOf(Double.MAX_VALUE)));
     }
 
     @Test
@@ -171,7 +171,7 @@ class NumberGeneratorTest {
         schema.setFormat("float");
         Number extremeNegative = NumberGenerator.getExtremeNegativeDecimalValue(schema);
 
-        Assertions.assertThat(extremeNegative).isEqualTo(-Float.MAX_VALUE);
+        Assertions.assertThat(extremeNegative).isEqualTo(-Double.MAX_VALUE);
     }
 
     @Test
@@ -188,7 +188,7 @@ class NumberGeneratorTest {
         schema.setFormat("double");
         Number extremeNegative = NumberGenerator.getExtremeNegativeDecimalValue(schema);
 
-        Assertions.assertThat(extremeNegative).isEqualTo(-Double.MAX_VALUE);
+        Assertions.assertThat(extremeNegative).isEqualTo(BigDecimal.valueOf(-Double.MAX_VALUE).add(BigDecimal.valueOf(-Double.MAX_VALUE)));
     }
 
     @Test
@@ -200,6 +200,24 @@ class NumberGeneratorTest {
         BigDecimal generated = new BigDecimal(NumberGenerator.generateDecimalValue(schema).toString());
 
         Assertions.assertThat(generated.doubleValue() > minimum.doubleValue() && generated.doubleValue() < minimum.doubleValue() + 1).isTrue();
+    }
+
+    @Test
+    void shouldGenerateLeftBoundaryWhenFloatAndNoMinimum() {
+        Schema schema = new NumberSchema();
+        schema.setFormat("float");
+        Number generated = NumberGenerator.generateLeftBoundaryDecimalValue(schema);
+
+        Assertions.assertThat(generated).isEqualTo(new BigDecimal(Float.MIN_VALUE).subtract(new BigDecimal(Float.MAX_VALUE)));
+    }
+
+    @Test
+    void shouldGenerateRightBoundaryWhenFloatAndNoMaximum() {
+        Schema schema = new NumberSchema();
+        schema.setFormat("float");
+        Number generated = NumberGenerator.generateRightBoundaryDecimalValue(schema);
+
+        Assertions.assertThat(generated).isEqualTo( new BigDecimal(Float.MAX_VALUE).subtract(new BigDecimal(Float.MIN_VALUE)));
     }
 
 }
