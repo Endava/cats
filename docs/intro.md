@@ -28,7 +28,7 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
 
 ## Fast Track ⏱️
 
-Get started by running CATS in ◼️ `blackbox` mode.
+Get started by running CATS in ◼️ `--blackbox` mode.
 
 Make sure you have CATS installed following the instructions on the [installation page](/docs/getting-started/installation).
 
@@ -41,9 +41,9 @@ Make sure you have CATS installed following the instructions on the [installatio
 You can now run CATS using the following command:
 
 ```bash
-cats --contract=openapi.yml -H "Authorization=$token" --server=https://api-url.com -b
+cats --contract=openapi.yml -H "Authorization=$token" --server=https://api-url.com -b -k
 ```
 
-When running in blackbox mode CATS will only report `500` http response codes as 🛑 errors. 
+When running in blackbox (`-b`) mode CATS will only report `500` http response codes as 🛑 errors (`-k`). 
 
 The 📊 report is available at `cats-report/index.html`.
