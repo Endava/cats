@@ -30,7 +30,7 @@
 }
 
 .hero__title {
-  font-size: 108px;
+  font-size: 7vw;
   letter-spacing: 0;
   line-height: 138px;
   text-align: center;
@@ -39,13 +39,13 @@
 [data-theme='dark'] .Title .important {
   color: #fff;
   line-height: 138px;
-  font-size: 108px;
+  font-size: 7vw;
 }
 
 [data-theme='light'] .Title .important {
   color: #000;
   line-height: 138px;
-  font-size: 108px;
+  font-size: 7vw;
 }
 
 .hero__subtitle {
