@@ -22,7 +22,7 @@ public class NumberGenerator {
     }
 
     public static Number generateLeftBoundaryIntegerValue(Schema schema) {
-        return generateLeftBoundaryValue(schema, new BigDecimal(TEN_THOUSANDS));
+        return generateLeftBoundaryIntegerValue(schema, TEN_THOUSANDS);
     }
 
     public static Number generateLeftBoundaryDecimalValue(Schema schema) {
@@ -34,7 +34,27 @@ public class NumberGenerator {
     }
 
     public static Number generateRightBoundaryIntegerValue(Schema schema) {
-        return generateRightBoundaryValue(schema, new BigDecimal(TEN_THOUSANDS));
+        return generateRightBoundaryIntegerValue(schema, TEN_THOUSANDS);
+    }
+
+    private static Number generateRightBoundaryIntegerValue(Schema schema, int toAdd) {
+        if (schema.getMaximum() != null) {
+            return schema.getMaximum().longValue() + toAdd;
+        }
+        if ("int32".equalsIgnoreCase(schema.getFormat())) {
+            return Integer.MAX_VALUE;
+        }
+        return Long.MAX_VALUE;
+    }
+
+    private static Number generateLeftBoundaryIntegerValue(Schema schema, int toAdd) {
+        if (schema.getMinimum() != null) {
+            return schema.getMinimum().longValue() - toAdd;
+        }
+        if ("int32".equalsIgnoreCase(schema.getFormat())) {
+            return Integer.MIN_VALUE;
+        }
+        return Long.MIN_VALUE;
     }
 
     private static BigDecimal generateRightBoundaryValue(Schema schema, BigDecimal toAdd) {
@@ -42,10 +62,10 @@ public class NumberGenerator {
             return schema.getMaximum().add(toAdd);
         }
         if ("float".equalsIgnoreCase(schema.getFormat())) {
-            return  new BigDecimal(Float.MAX_VALUE).subtract(new BigDecimal(Float.MIN_VALUE));
+            return new BigDecimal(Float.MAX_VALUE).subtract(new BigDecimal(Float.MIN_VALUE));
         }
 
-        return  new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE));
+        return new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE));
     }
 
     private static BigDecimal generateLeftBoundaryValue(Schema schema, BigDecimal toSubtract) {

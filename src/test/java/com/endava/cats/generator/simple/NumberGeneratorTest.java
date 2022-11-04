@@ -20,15 +20,32 @@ class NumberGeneratorTest {
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
 
         Number expected = new BigDecimal(minimum - NumberGenerator.TEN_THOUSANDS);
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(expected);
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(expected.longValue());
     }
 
     @Test
     void givenAnIntegerSchemaWithoutDefinedMinimum_whenGeneratingLeftBoundaryInteger_thenTheValueIsDefault() {
         Schema schema = new IntegerSchema();
+        schema.setFormat(null);
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Double.MIN_VALUE).subtract(new BigDecimal(Double.MAX_VALUE)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(Long.MIN_VALUE);
+    }
+
+    @Test
+    void shouldGenerateMinIntegerWhenFormatInt32AndNoMinimum() {
+        Schema schema = new IntegerSchema();
+        Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryIntegerValue(schema);
+
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(Integer.MIN_VALUE);
+    }
+
+    @Test
+    void shouldGenerateMaxIntegerWhenFormatInt32AndNoMaximum() {
+        Schema schema = new IntegerSchema();
+        Number leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
+
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(Integer.MAX_VALUE);
     }
 
     @Test
@@ -39,15 +56,16 @@ class NumberGeneratorTest {
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
 
         Number expected = new BigDecimal(maximum + NumberGenerator.TEN_THOUSANDS);
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(expected);
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(expected.longValue());
     }
 
     @Test
     void givenAnIntegerSchemaWithoutDefinedMaximum_whenGeneratingRightBoundaryInteger_thenTheValueIsDefault() {
         Schema schema = new IntegerSchema();
+        schema.setFormat(null);
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryIntegerValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo( new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(Long.MAX_VALUE);
     }
 
     @Test
@@ -84,7 +102,7 @@ class NumberGeneratorTest {
         Schema schema = new NumberSchema();
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo( new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE)));
     }
 
     @Test
@@ -217,7 +235,7 @@ class NumberGeneratorTest {
         schema.setFormat("float");
         Number generated = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(generated).isEqualTo( new BigDecimal(Float.MAX_VALUE).subtract(new BigDecimal(Float.MIN_VALUE)));
+        Assertions.assertThat(generated).isEqualTo(new BigDecimal(Float.MAX_VALUE).subtract(new BigDecimal(Float.MIN_VALUE)));
     }
 
 }
