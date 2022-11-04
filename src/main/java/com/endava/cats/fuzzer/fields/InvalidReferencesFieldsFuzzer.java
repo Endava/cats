@@ -119,7 +119,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
 
     @Override
     public String description() {
-        return "iterate through each path fuzz the path parameters with invalid references";
+        return "iterate through each path and fuzz the path parameters with invalid references";
     }
 
     @Override
