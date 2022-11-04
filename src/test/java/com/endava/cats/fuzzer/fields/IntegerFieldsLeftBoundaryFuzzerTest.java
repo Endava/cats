@@ -25,6 +25,6 @@ class IntegerFieldsLeftBoundaryFuzzerTest {
         Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(IntegerSchema.class))).isTrue();
         Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.description()).isNotNull();
-        Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(BigDecimal.class);
+        Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(Long.class);
     }
 }
