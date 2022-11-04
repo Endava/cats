@@ -16,6 +16,8 @@ public class NumberGenerator {
 
     public static final String NINE_EIGHT_SEVEN_SIX = "9876";
     public static final BigDecimal DECIMAL_CONSTANT = new BigDecimal("455553333.543543543");
+    public static final String INT_32 = "int32";
+    public static final String FLOAT = "float";
 
     private NumberGenerator() {
         //ntd
@@ -41,7 +43,7 @@ public class NumberGenerator {
         if (schema.getMaximum() != null) {
             return schema.getMaximum().longValue() + toAdd;
         }
-        if ("int32".equalsIgnoreCase(schema.getFormat())) {
+        if (INT_32.equalsIgnoreCase(schema.getFormat())) {
             return Integer.MAX_VALUE;
         }
         return Long.MAX_VALUE;
@@ -51,7 +53,7 @@ public class NumberGenerator {
         if (schema.getMinimum() != null) {
             return schema.getMinimum().longValue() - toAdd;
         }
-        if ("int32".equalsIgnoreCase(schema.getFormat())) {
+        if (INT_32.equalsIgnoreCase(schema.getFormat())) {
             return Integer.MIN_VALUE;
         }
         return Long.MIN_VALUE;
@@ -61,33 +63,33 @@ public class NumberGenerator {
         if (schema.getMaximum() != null) {
             return schema.getMaximum().add(toAdd);
         }
-        if ("float".equalsIgnoreCase(schema.getFormat())) {
-            return new BigDecimal(Float.MAX_VALUE).subtract(new BigDecimal(Float.MIN_VALUE));
+        if (FLOAT.equalsIgnoreCase(schema.getFormat())) {
+            return BigDecimal.valueOf(Float.MAX_VALUE).subtract(BigDecimal.valueOf(Float.MIN_VALUE));
         }
 
-        return new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE));
+        return BigDecimal.valueOf(Double.MAX_VALUE).subtract(BigDecimal.valueOf(Double.MIN_VALUE));
     }
 
     private static BigDecimal generateLeftBoundaryValue(Schema schema, BigDecimal toSubtract) {
         if (schema.getMinimum() != null) {
             return schema.getMinimum().subtract(toSubtract);
         }
-        if ("float".equalsIgnoreCase(schema.getFormat())) {
-            return new BigDecimal(Float.MIN_VALUE).subtract(new BigDecimal(Float.MAX_VALUE));
+        if (FLOAT.equalsIgnoreCase(schema.getFormat())) {
+            return BigDecimal.valueOf(Float.MIN_VALUE).subtract(BigDecimal.valueOf(Float.MAX_VALUE));
         }
 
-        return new BigDecimal(Double.MIN_VALUE).subtract(new BigDecimal(Double.MAX_VALUE));
+        return BigDecimal.valueOf(Double.MIN_VALUE).subtract(BigDecimal.valueOf(Double.MAX_VALUE));
     }
 
     public static Number getExtremeNegativeIntegerValue(Schema schema) {
-        if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase("int32")) {
+        if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase(INT_32)) {
             return Long.MIN_VALUE;
         }
         return MOST_NEGATIVE_INTEGER;
     }
 
     public static Number getExtremePositiveIntegerValue(Schema schema) {
-        if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase("int32")) {
+        if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase(INT_32)) {
             return Long.MAX_VALUE;
         }
         return MOST_POSITIVE_INTEGER;
@@ -96,7 +98,7 @@ public class NumberGenerator {
     public static Number getExtremePositiveDecimalValue(Schema schema) {
         if (schema.getFormat() == null) {
             return MOST_POSITIVE_DECIMAL;
-        } else if (schema.getFormat().equalsIgnoreCase("float")) {
+        } else if (schema.getFormat().equalsIgnoreCase(FLOAT)) {
             return Double.MAX_VALUE;
         }
         return BigDecimal.valueOf(Double.MAX_VALUE).add(BigDecimal.valueOf(Double.MAX_VALUE));
@@ -105,7 +107,7 @@ public class NumberGenerator {
     public static Number getExtremeNegativeDecimalValue(Schema schema) {
         if (schema.getFormat() == null) {
             return MOST_NEGATIVE_DECIMAL;
-        } else if (schema.getFormat().equalsIgnoreCase("float")) {
+        } else if (schema.getFormat().equalsIgnoreCase(FLOAT)) {
             return -Double.MAX_VALUE;
         }
         return BigDecimal.valueOf(-Double.MAX_VALUE).add(BigDecimal.valueOf(-Double.MAX_VALUE));
