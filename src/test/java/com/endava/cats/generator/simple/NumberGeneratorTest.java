@@ -84,7 +84,7 @@ class NumberGeneratorTest {
         Schema schema = new NumberSchema();
         Number leftBoundaryValue = NumberGenerator.generateLeftBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Double.MIN_VALUE).subtract(new BigDecimal(Double.MAX_VALUE)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(BigDecimal.valueOf(Double.MIN_VALUE).subtract(BigDecimal.valueOf(Double.MAX_VALUE)));
     }
 
     @Test
@@ -102,7 +102,7 @@ class NumberGeneratorTest {
         Schema schema = new NumberSchema();
         Number leftBoundaryValue = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(leftBoundaryValue).isEqualTo(new BigDecimal(Double.MAX_VALUE).subtract(new BigDecimal(Double.MIN_VALUE)));
+        Assertions.assertThat(leftBoundaryValue).isEqualTo(BigDecimal.valueOf(Double.MAX_VALUE).subtract(BigDecimal.valueOf(Double.MIN_VALUE)));
     }
 
     @Test
@@ -226,7 +226,7 @@ class NumberGeneratorTest {
         schema.setFormat("float");
         Number generated = NumberGenerator.generateLeftBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(generated).isEqualTo(new BigDecimal(Float.MIN_VALUE).subtract(new BigDecimal(Float.MAX_VALUE)));
+        Assertions.assertThat(generated).isEqualTo(BigDecimal.valueOf(Float.MIN_VALUE).subtract(BigDecimal.valueOf(Float.MAX_VALUE)));
     }
 
     @Test
@@ -235,7 +235,7 @@ class NumberGeneratorTest {
         schema.setFormat("float");
         Number generated = NumberGenerator.generateRightBoundaryDecimalValue(schema);
 
-        Assertions.assertThat(generated).isEqualTo(new BigDecimal(Float.MAX_VALUE).subtract(new BigDecimal(Float.MIN_VALUE)));
+        Assertions.assertThat(generated).isEqualTo(BigDecimal.valueOf(Float.MAX_VALUE).subtract(BigDecimal.valueOf(Float.MIN_VALUE)));
     }
 
 }
