@@ -42,7 +42,10 @@ Clarifications on the wording from the `Description` column:
 - `unexpected exception` means anything that happens outside the rest of the conditions (Connection Timeout for example)
 - `not matches response schema` means the structure of the HTTP response body does not match the schema defined in the OpenAPI specs
 - `response code is expected, but not documented` means that the received HTTP response code matches Fuzzer's expectations, but the HTTP response code is not documented in the OpenAPI specs as a potential response code
-
+- `TRIM_AND_VALIDATE` means that CATS expects the API endpoints to first trim the values, removing whitespaces, emojis and control characters, and them perform the validation
+- `VALIDATE_AND_TRIM` means that CATS expects the API endpoints to perform the validation without trimming the values
+- `SANITIZE_AND_VALIDATE` means that CATS expects the API endpoints to first sanitize the values, removing zalgo text and abugidas, and then perform the validation
+- `VALIDATE_AND_SANITIZE` means that CATS expects the API endpoints to perform the validation without sanitizing the values
 
 ```mdx-code-block
 import DocCardList from '@theme/DocCardList';
