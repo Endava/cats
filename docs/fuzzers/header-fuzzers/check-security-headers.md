@@ -1,0 +1,19 @@
+--- 
+hide_table_of_contents: true
+---
+
+# Check Security Headers
+
+| Item                                               | Description                                                                                                                                                                                                                                 |
+|:---------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Full Fuzzer Name**                               | CheckSecurityHeadersFuzzer                                                                                                                                                                                                                  |
+| **Log Key**                                        | **CSHF**                                                                                                                                                                                                                                    |
+| **Description**                                    | This fuzzer will check if APIs respond with the recommended [security headers](https://owasp.org/www-project-secure-headers/). The Fuzzer will send happy path requests.                                                                    |
+| **Enabled by default?**                            | Yes                                                                                                                                                                                                                                         |
+| **Target header types**                            | All                                                                                                                                                                                                                                         |
+| **Expected result when fuzzed header is required** | N/A                                                                                                                                                                                                                                         |
+| **Expected result when fuzzed header is optional** | N/A                                                                                                                                                                                                                                         |
+| **Fuzzing logic**                                  | Iteratively **calls** all paths and HTTP methods and expects responses to include at least the following security headers: `[X-Frame-Options=DENY, Cache-Control=no-store, X-Content-Type-Options=nosniff, X-XSS-Protection=1; mode=block]` |
+| **Conditions when this fuzzer will be skipped**    | None                                                                                                                                                                                                                                        |
+| **HTTP methods that will be skipped**              | None                                                                                                                                                                                                                                        |
+| **Reporting**                                      | Reports `error` if response does not contain at least one of the headers or `success`  otherwise.                                                                                                                                           | 
