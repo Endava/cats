@@ -267,7 +267,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 CatsUtil.filterAndPrintNotMatching(fuzzingDataListWithHttpMethodsFiltered, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
                                 logger, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString())
                         .forEach(data -> {
-                            logger.start("Starting Fuzzer {} ", ansi().fgGreen().a(fuzzer.toString()).reset());
+                            logger.start("Starting Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
                             logger.debug("Fuzzing payload: {}", data.getPayload());
                             testCaseListener.beforeFuzz(fuzzer.getClass());
                             fuzzer.fuzz(data);
