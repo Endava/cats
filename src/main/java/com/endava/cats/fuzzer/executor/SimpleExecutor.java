@@ -5,6 +5,7 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -26,7 +27,7 @@ import javax.inject.Singleton;
  * a {@code SimpleExecutorContext#runFilter} if you want to skip reporting for specific HTTP methods.
  * </p>
  */
-@Singleton
+@ApplicationScoped
 public class SimpleExecutor {
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;

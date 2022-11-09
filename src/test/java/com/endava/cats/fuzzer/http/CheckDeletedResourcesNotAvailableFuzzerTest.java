@@ -1,16 +1,22 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.report.TestCaseExporter;
+import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,15 +26,22 @@ import java.util.Set;
 class CheckDeletedResourcesNotAvailableFuzzerTest {
 
     private CheckDeletedResourcesNotAvailableFuzzer checkDeletedResourcesNotAvailableFuzzer;
-    private SimpleExecutor simpleExecutor;
     private CatsGlobalContext catsGlobalContext;
-
+    @InjectSpy
+    private TestCaseListener testCaseListener;
+    @InjectSpy
+    private SimpleExecutor simpleExecutor;
+    private ServiceCaller serviceCaller;
 
     @BeforeEach
     void setup() {
-        simpleExecutor = Mockito.mock(SimpleExecutor.class);
         catsGlobalContext = Mockito.mock(CatsGlobalContext.class);
-        checkDeletedResourcesNotAvailableFuzzer = new CheckDeletedResourcesNotAvailableFuzzer(simpleExecutor, catsGlobalContext);
+        checkDeletedResourcesNotAvailableFuzzer = new CheckDeletedResourcesNotAvailableFuzzer(simpleExecutor, catsGlobalContext, testCaseListener);
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(simpleExecutor, "testCaseListener", testCaseListener);
+        serviceCaller = Mockito.mock(ServiceCaller.class);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).build());
+        ReflectionTestUtils.setField(simpleExecutor, "serviceCaller", serviceCaller);
     }
 
     @Test
@@ -66,8 +79,10 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
         Mockito.verifyNoInteractions(simpleExecutor);
     }
 
-    @Test
-    void shouldRunWhenGetAndStoredDeleteRequests() {
+    @ParameterizedTest
+    @CsvSource({"400", "404", "410"})
+    void shouldRunWhenGetAndStoredDeleteRequests(int respCode) {
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(respCode).build());
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
         Mockito.when(catsGlobalContext.getSuccessfulDeletes()).thenReturn(new HashSet<>(Set.of("http://localhost/path")));
@@ -75,5 +90,10 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
 
         Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());
         Assertions.assertThat(catsGlobalContext.getSuccessfulDeletes()).isEmpty();
+    }
+
+    @Test
+    void shouldSkipAllMethodsButNotGet() {
+        Assertions.assertThat(checkDeletedResourcesNotAvailableFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.HEAD, HttpMethod.PATCH, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.TRACE);
     }
 }
