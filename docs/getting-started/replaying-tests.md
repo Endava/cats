@@ -5,7 +5,7 @@ description: How to replay specific tests from a CATS run
 
 # Replaying Tests
 
-CATS will output both an HTML file that will be linked in the final report and individual JSON files. The JSON files can be used to replay tests at later times.
+CATS will output both an HTML file that will be linked in the summary report and individual JSON files. The JSON files can be used to replay tests at later times.
 When replaying a test (or a list of tests), CATS won't produce any report. The output will be solely available in the console.
 This is useful when you want to see the exact behaviour of the specific test or attach it in a bug report for example.
 

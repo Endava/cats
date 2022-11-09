@@ -5,14 +5,14 @@ To get a list of fuzzers and a short description run `cats list --fuzzers`.
 
 There are multiple categories of Fuzzers available:
 
-- `Field` Fuzzers which target request body fields or path parameters
+- `Field` Fuzzers which target request body fields and path parameters
 - `Header` Fuzzers which target HTTP headers
 - `HTTP` Fuzzers which target just the interaction with the service (without fuzzing fields or headers)
 
 Additional checks which are not actually using any fuzzing, but leverage the CATS internal model for consistency and are also called Fuzzers:
 
 - `ContractInfo` Fuzzers which checks the contract for API good practices
-- `Special` Fuzzers a special category which need further configuration and are focused on more complex activities like functional flow, custom dictionaries or supplying your own request templates, rather than OpenAPI specs.
+- `Special` Fuzzers a special category of Fuzzers which need further configuration and are focused on more complex activities like functional flow, custom dictionaries or supplying your own request templates, rather than OpenAPI specs.
 
 Each Fuzzer from the above categories are individually detailed using the below description table.
 
@@ -20,10 +20,10 @@ Each Fuzzer from the above categories are individually detailed using the below 
 
 | Item                                                                | Description                                                                                                                                                                           |
 |:--------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Full Fuzzer Name**                                                | The full name of the Fuzzer as printed in the logs and in reports                                                                                                                     |
+| **Full Fuzzer Name**                                                | The full name of the Fuzzer as printed in logs and reports.                                                                                                                           |
 | **Log Key**                                                         | The key used to prefix log lines. This is useful to understand all processing happening through the lifecycle of the Fuzzer.                                                          |
-| **Description**                                                     | A brief description on how this Fuzzer work and what is expected behavior from the API.                                                                                               |
-| **Enabled by default?**                                             | Is this Fuzzer enabled by default or does it need additional arguments to be present.                                                                                                 |
+| **Description**                                                     | A brief description of how this Fuzzer works and what is expected behavior from the API.                                                                                              |
+| **Enabled by default?**                                             | Is this Fuzzer enabled by default or does it need additional arguments to be supplied.                                                                                                |
 | **Target field types**                                              | What is the target of this Fuzzer. Some Fuzzers might target only `string` fields, while others might only target `boolean` fields. Some Fuzzer might even target specific `format`s. |
 | **Expected result when fuzzed field is required**                   | What is the expected HTTP response code when the fuzzed field is marked as `required`.                                                                                                |
 | **Expected result when fuzzed field is optional**                   | What is the expected HTTP response code when the fuzzed field is optional (i.e. not explicitly marked as `required`).                                                                 |

@@ -3,14 +3,14 @@
 Linters are also called `ContractInfo` Fuzzers.
 
 Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
-- follow good practices around naming the contract elements like paths, requests, responses
+- follow good and **consistent** practices for naming the contract elements like paths, requests, responses
 - always use plural for the path names, separate paths words through hyphens/underscores, use camelCase or snake_case for any `json` types and properties
 - provide tags for all operations in order to avoid breaking code generation on some languages and have a logical grouping of the API operations
 - provide good description for all paths, methods and request/response elements
 - provide meaningful responses for `POST`, `PATCH` and `PUT` requests
 - provide examples for all requests/response elements
 - provide structural constraints for (ideally) all request/response properties (min, max, regex)
-- heaver some sort of `CorrelationIds/TraceIds` within headers
+- have some sort of `CorrelationIds/TraceIds` headers for traceability
 - have at least a security schema in place
 - avoid having the API version part of the paths
 - document response codes for both "happy" and "unhappy" flows

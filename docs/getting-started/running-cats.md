@@ -37,9 +37,10 @@ cats --contract=openapi.yaml --server=http://localhost:8080 --headers=headers.ym
 
 ## Notes on Skipped Tests
 :::info
-You may notice a significant number of tests marked as `skipped`. CATS tries to apply all `Fuzzers` to all fields, but this is not always possible.
-For example the `BooleanFieldsFuzzer` cannot be applied to `String` fields. This is why that test attempt will be marked as skipped.
-It was an intentional decision to also report the `skipped` tests in order to show that CATS actually tries all the `Fuzzers` on all the fields/paths/endpoints.
+You may notice a significant number of tests marked as `skipped`. CATS tries to apply all Fuzzers to all fields, but this is not always possible.
+For example the `RandomStringInBooleanFieldsFuzzer` cannot be applied to `string` fields. This is why that test attempt will be marked as skipped.
+It was an intentional decision to also report the `skipped` tests in order to show that CATS actually tries all the Fuzzers on all the fields/paths/endpoints.
+Skipped tests are not included in the final report.
 :::
 
 ## Notes on Console Output

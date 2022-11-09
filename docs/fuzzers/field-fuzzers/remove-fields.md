@@ -21,9 +21,9 @@ hide_table_of_contents: true
 
 ## Details on How Combinations Are Calculated
 
-This `Fuzzer` will remove fields from the requests based on a supplied strategy. It will create subsets of all the fields and subfields within the request schema. Based on these subsets, it will:
+This Fuzzer will remove fields from the requests based on a supplied strategy. It will create subsets of all the fields and subfields within the request schema. Based on these subsets, it will:
 - iterate through them one by one
-- remove the fields present in the current subset from a full service payload
+- remove the fields present in the current subset from a full request payload
 - send the modified request to the server
 
 These subsets can be generated using the following strategies (supplied through the `--fieldsFuzzingStrategy` option):

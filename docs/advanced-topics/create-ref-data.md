@@ -1,5 +1,6 @@
 ---
 sidebar_position: 6
+description: How CATS can help to automatically create reference data
 ---
 
 # Creating Ref Data Files

@@ -1,5 +1,6 @@
 ---
 sidebar_position: 3
+description: How CATS handles data sanitization and trimming
 ---
 
 # Edge Spaces Strategy

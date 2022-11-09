@@ -14,17 +14,17 @@ Running CATS against production systems might produce unwanted behaviour like pe
 
 CATS is:
 
-- **🧐 Comprehensive**: tests are generated automatically based on a large number scenarios and cover **every** field and header
+- **🧐 Comprehensive**: tests are generated automatically based on a large number of scenarios and cover **every** request field and header
 - **💡 Intelligent**: tests are generated based on data types and structural constraints; each Fuzzer has specific expectations depending on the scenario under test
 - **⚙️ Highly Configurable**: high amount of customizations: you can filter specific Fuzzers, HTTP response codes, HTTP methods, request paths, provide business context and a lot more
 - **🏥 Self-Healing**: as tests are generated, any OpenAPI spec change is picked up automatically
 - **📖 Simple to Learn**: flat learning curve, with intuitive configuration and syntax
-- **⚡️ Fast**: automatic process for writing, running and reporting thousands of tests within minutes
+- **⚡️ Fast**: automatic process for writing, running and reporting
 
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
 All tests are **generated, run and reported automatically** based on a pre-defined set of **98 Fuzzers**.
-The Fuzzers cover a wide range of boundary testing and negative scenarios from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints.
-Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
+The Fuzzers cover a wide range of boundary testing and negative scenarios from random large Unicode values to well crafted, context dependant values based on the request data types and constraints.
+Even more, you can **leverage** the fact that **CATS** generates request payloads dynamically and **write simple end-to-end functional tests**.
 
 ## Fast Track ⏱️
 

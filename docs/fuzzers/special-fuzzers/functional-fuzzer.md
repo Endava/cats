@@ -10,7 +10,7 @@ This is achieved using the so called `FunctionaFuzzer` using the `cats run <file
 The `FunctionalFuzzer` is not a `Fuzzer` per se, but was named as such for consistency.
 The functional tests are written in a YAML file using a simple DSL.
 The DSL supports adding identifiers, descriptions, assertions as well as passing variables between tests.
-The cool thing is that, by leveraging the fact that CATS generates valid payload, you only need to override values for specific fields.
+The cool thing is that, by leveraging the fact that CATS generates valid payload, you only need to override values for a limited set of fields.
 The rest of the information will be populated by CATS using valid data, just like a `happy` flow request.
 
 :::caution

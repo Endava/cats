@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-description: The Fuzzer used to supply custom dictionaries
+description: Fuzz with custom dictionaries and discrete configuration
 ---
 
 # Security Fuzzer

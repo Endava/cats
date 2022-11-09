@@ -1,15 +1,16 @@
 ---
 sidebar_position: 5
+description: How to supply dynamic values in CATS configuration
 ---
 
 # Dynamic Values
 The following configuration files: `SecurityFuzzer` file, `FunctionalFuzzer` file and `--refData` support setting dynamic values.
 For now **the support only exists** for `java.time.*` and `org.apache.commons.lang3.*`, but more types will be added in the future.
 
-Let's suppose you have a date/date-time field, and you want to set it to 10 days from now. You can do this by setting this as a value `T(java.time.OffsetDateTime).now().plusDays(10)`.
+Let's suppose you have a date/date-time field, and you want to set it to 10 days from now. You can do this using `T(java.time.OffsetDateTime).now().plusDays(10)`.
 This will return an ISO compliant time in UTC format.
 
-A `FunctionalFuzzer` using this can look like:
+This is `FunctionalFuzzer` file using the above dynamic value:
 ```yaml
 /path:
     testNumber:
@@ -26,9 +27,8 @@ A `FunctionalFuzzer` using this can look like:
         httpMethod: HTTP_NETHOD
 ```
 
-You can also check the responses using a similar syntax and also take into consideration the actual values returned within the response. 
-This is a syntax than can test if a returned date is after the current date:`T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))`. 
-This will check if the `expiry` field returned within the json response, parsed as date, is after the current date:
+You can check the responses using a similar syntax and also take into consideration the response. 
+This will check if the `expiry` field returned within the json response, parsed as date, is after the current date ` T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))`: 
 
 ```yaml
 /path:

@@ -1,5 +1,6 @@
 ---
 sidebar_position: 4
+description: How CATS deals with `oneOf`, `anyOf` and `allOf`
 ---
 
 # Composition

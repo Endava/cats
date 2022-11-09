@@ -1,5 +1,6 @@
 ---
 sidebar_position: 2
+description: Dealing with content negotiation versioning
 ---
 
 # Content Negotiation

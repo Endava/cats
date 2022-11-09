@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+description: How CATS intelligently handles DELETEs
 ---
 
 # DELETE Requests
