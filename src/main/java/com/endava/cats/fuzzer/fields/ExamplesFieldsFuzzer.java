@@ -13,10 +13,11 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * // from components.examples; from schema.example(s), MediaType.example(s) Example can be ref
@@ -35,9 +36,17 @@ public class ExamplesFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         Set<String> payloads = new HashSet<>();
-        payloads.add(Optional.ofNullable(data.getReqSchema().getExample()).map(JsonUtils.GSON::toJson).orElse(""));
-        Optional.ofNullable(data.getReqSchema().getExamples()).orElse(List.of()).forEach(payload -> payloads.add(JsonUtils.GSON.toJson(payload)));
-        payloads.addAll(data.getExamples());
+        Predicate<Object> removeCatsComposition = example -> !example.toString().contains("_OF");
+        payloads.add(Optional.ofNullable(data.getReqSchema().getExample())
+                .filter(removeCatsComposition).map(JsonUtils.GSON::toJson).orElse(""));
+        payloads.addAll(
+                Optional.ofNullable(data.getReqSchema().getExamples())
+                        .orElse(Collections.emptyList())
+                        .stream()
+                        .filter(removeCatsComposition)
+                        .map(JsonUtils.GSON::toJson)
+                        .toList());
+        payloads.addAll(data.getExamples().stream().filter(removeCatsComposition).toList());
         payloads.remove("");
 
         for (String payload : payloads) {
