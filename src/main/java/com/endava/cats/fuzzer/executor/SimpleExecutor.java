@@ -7,7 +7,6 @@ import com.endava.cats.report.TestCaseListener;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.inject.Singleton;
 
 /**
  * Executors are meant to be the units that will execute the fuzzer's payloads and facilitate the interaction with all the reporting.

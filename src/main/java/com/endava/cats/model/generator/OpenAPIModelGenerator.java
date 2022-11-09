@@ -3,7 +3,7 @@ package com.endava.cats.model.generator;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.json.JsonUtils;
-import com.endava.cats.model.generator.api.ValidDataFormat;
+import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;

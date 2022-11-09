@@ -90,7 +90,6 @@ class BaseBoundaryFieldFuzzerTest {
     void shouldSkipWhenFormatNotRecognized() {
         FuzzingData data = getMockFuzzingData();
         StringSchema schema = new StringSchema();
-        schema.setFormat("cats");
         data.getRequestPropertyTypes().put("emailAddress", schema);
         myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
 
