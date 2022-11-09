@@ -5,9 +5,9 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.google.common.collect.Sets;
 import io.quarkus.test.junit.QuarkusTest;
@@ -76,18 +76,18 @@ class NullValuesInFieldsFuzzerTest {
     @Test
     void shouldNotRunFuzzerWhenGetButNoQueryParam() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).queryParams(Set.of("query1")).build();
-        Assertions.assertThat(nullValuesInFieldsFuzzer.isFuzzingPossibleSpecificToFuzzer(data, "notQuery", FuzzingStrategy.replace())).isFalse();
+        Assertions.assertThat(nullValuesInFieldsFuzzer.isFuzzerWillingToFuzz(data, "notQuery")).isFalse();
     }
 
     @Test
     void shouldRunFuzzerWhenGetAndQueryParam() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).queryParams(Set.of("query1")).build();
-        Assertions.assertThat(nullValuesInFieldsFuzzer.isFuzzingPossibleSpecificToFuzzer(data, "query1", FuzzingStrategy.replace())).isTrue();
+        Assertions.assertThat(nullValuesInFieldsFuzzer.isFuzzerWillingToFuzz(data, "query1")).isTrue();
     }
 
     @Test
     void shouldRunFuzzerWhenPost() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).build();
-        Assertions.assertThat(nullValuesInFieldsFuzzer.isFuzzingPossibleSpecificToFuzzer(data, "notQuery", FuzzingStrategy.replace())).isTrue();
+        Assertions.assertThat(nullValuesInFieldsFuzzer.isFuzzerWillingToFuzz(data, "notQuery")).isTrue();
     }
 }

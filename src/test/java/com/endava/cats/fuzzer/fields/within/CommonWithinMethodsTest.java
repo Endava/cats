@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields.within;
 import com.endava.cats.strategy.CommonWithinMethods;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -92,25 +92,25 @@ class CommonWithinMethodsTest {
     @Test
     void shouldReturnFullZalgoTextWhenMaxLengthNull() {
         StringSchema schema = new StringSchema();
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadGenerator.getZalgoText());
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, UnicodeGenerator.getZalgoText());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadGenerator.getZalgoText());
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(UnicodeGenerator.getZalgoText());
     }
 
     @Test
     void shouldReturnFullZalgoTextWhenMaxLengthGreaterThenZalgoText() {
         StringSchema schema = new StringSchema();
         schema.setMaxLength(1000);
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadGenerator.getZalgoText());
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, UnicodeGenerator.getZalgoText());
 
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadGenerator.getZalgoText());
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(UnicodeGenerator.getZalgoText());
     }
 
     @Test
     void shouldReturnMaxLengthZalgoText() {
         StringSchema schema = new StringSchema();
         schema.setMaxLength(100);
-        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, PayloadGenerator.getZalgoText());
-        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(PayloadGenerator.getZalgoText().substring(0, 100));
+        FuzzingStrategy fuzzingStrategy = CommonWithinMethods.getTextBasedOnMaxSize(schema, UnicodeGenerator.getZalgoText());
+        Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(UnicodeGenerator.getZalgoText().substring(0, 100));
     }
 }

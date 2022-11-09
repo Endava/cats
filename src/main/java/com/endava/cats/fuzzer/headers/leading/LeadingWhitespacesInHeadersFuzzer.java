@@ -5,7 +5,7 @@ import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -26,7 +26,7 @@ public class LeadingWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer 
 
     @Override
     public List<String> getInvisibleChars() {
-        return PayloadGenerator.getSeparatorsHeaders();
+        return UnicodeGenerator.getSeparatorsHeaders();
     }
 
     @Override

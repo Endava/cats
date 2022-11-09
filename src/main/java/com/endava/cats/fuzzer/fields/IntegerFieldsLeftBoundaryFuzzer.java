@@ -17,8 +17,8 @@ import java.util.List;
 @FieldFuzzer
 public class IntegerFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
-    public IntegerFieldsLeftBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-        super(sc, lr, cu, cp);
+    public IntegerFieldsLeftBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments fa) {
+        super(sc, lr, cu, fa);
     }
 
     @Override
@@ -29,6 +29,11 @@ public class IntegerFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     @Override
     public Number getBoundaryValue(Schema schema) {
         return NumberGenerator.generateLeftBoundaryIntegerValue(schema);
+    }
+
+    @Override
+    protected boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
+        return filesArguments.getRefData(data.getPath()).get(fuzzedField) == null;
     }
 
     @Override

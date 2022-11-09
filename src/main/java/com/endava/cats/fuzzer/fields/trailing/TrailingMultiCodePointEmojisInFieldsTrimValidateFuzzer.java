@@ -7,7 +7,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.InvisibleCharsBaseTrimValidateFuzzer;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 
@@ -31,7 +31,7 @@ public class TrailingMultiCodePointEmojisInFieldsTrimValidateFuzzer extends Invi
 
     @Override
     public List<String> getInvisibleChars() {
-        return PayloadGenerator.getMultiCodePointEmojis();
+        return UnicodeGenerator.getMultiCodePointEmojis();
     }
 
     @Override

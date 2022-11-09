@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.ExpectOnly4XXBaseHeadersFuzzer;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 
 import javax.inject.Singleton;
 import java.util.Collections;
@@ -25,7 +25,7 @@ public class ZalgoTextInHeadersFuzzer extends ExpectOnly4XXBaseHeadersFuzzer {
 
     @Override
     protected List<FuzzingStrategy> fuzzStrategy() {
-        return Collections.singletonList(FuzzingStrategy.replace().withData(PayloadGenerator.getZalgoText()));
+        return Collections.singletonList(FuzzingStrategy.replace().withData(UnicodeGenerator.getZalgoText()));
     }
 
     @Override

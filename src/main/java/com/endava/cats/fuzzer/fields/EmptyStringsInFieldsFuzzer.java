@@ -8,8 +8,8 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 
 import javax.inject.Singleton;
@@ -42,7 +42,7 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
     }
 
     @Override
-    public boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
+    public boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
         return HttpMethod.requiresBody(data.getMethod()) || data.isQueryParam(fuzzedField);
     }
 

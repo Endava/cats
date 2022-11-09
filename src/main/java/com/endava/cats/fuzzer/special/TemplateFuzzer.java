@@ -13,7 +13,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.json.JsonUtils;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -117,9 +117,9 @@ public class TemplateFuzzer implements Fuzzer {
     private List<String> getAllPayloads(int payloadSize) {
         try {
             if (userArguments.getWords() == null) {
-                List<String> payloads = PayloadGenerator.getAllPayloadsOfSize(payloadSize);
-                payloads.add(PayloadGenerator.getBadPayload());
-                payloads.add(PayloadGenerator.getZalgoText());
+                List<String> payloads = UnicodeGenerator.getAllPayloadsOfSize(payloadSize);
+                payloads.add(UnicodeGenerator.getBadPayload());
+                payloads.add(UnicodeGenerator.getZalgoText());
                 payloads.add(StringGenerator.generateLargeString(20000));
                 payloads.add(null);
                 payloads.add("");
