@@ -31,7 +31,7 @@ class RandomStringsInBooleanFieldsFuzzerTest {
 
     @Test
     void givenANewBooleanFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheBooleanFuzzer() {
-        Assertions.assertThat(randomStringsInBooleanFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(BooleanSchema.class))).isTrue();
+        Assertions.assertThat(randomStringsInBooleanFieldsFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("boolean"))).isTrue();
         Assertions.assertThat(randomStringsInBooleanFieldsFuzzer.getBoundaryValue(null)).isNotNull();
         Assertions.assertThat(randomStringsInBooleanFieldsFuzzer.hasBoundaryDefined(null, FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(randomStringsInBooleanFieldsFuzzer.description()).isNotNull();

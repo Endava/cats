@@ -71,7 +71,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
-        Assertions.assertThat(strategy.getData().toString()).startsWith("Data type not matching [IntegerSchema]");
+        Assertions.assertThat(strategy.getData().toString()).startsWith("Data type not matching [integer]");
     }
 
     @Test
@@ -103,7 +103,7 @@ class BaseBoundaryFieldFuzzerTest {
     void shouldMatchFuzzerTypeWhenSchemaAssignable() {
         myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
         Mockito.doCallRealMethod().when(myBaseBoundaryFuzzer).isRequestSchemaMatchingFuzzerType(Mockito.any());
-        Mockito.when(myBaseBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo()).thenReturn(List.of(NumberSchema.class));
+        Mockito.when(myBaseBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).thenReturn(List.of("number"));
 
         Assertions.assertThat(myBaseBoundaryFuzzer.isRequestSchemaMatchingFuzzerType(new NumberSchema())).isTrue();
     }
@@ -112,7 +112,7 @@ class BaseBoundaryFieldFuzzerTest {
     void shouldNotMatchWhenSchemaNotAssignable() {
         myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
         Mockito.doCallRealMethod().when(myBaseBoundaryFuzzer).isRequestSchemaMatchingFuzzerType(Mockito.any());
-        Mockito.when(myBaseBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo()).thenReturn(List.of(NumberSchema.class));
+        Mockito.when(myBaseBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).thenReturn(List.of("number"));
 
         Assertions.assertThat(myBaseBoundaryFuzzer.isRequestSchemaMatchingFuzzerType(new IntegerSchema())).isFalse();
     }
@@ -122,7 +122,7 @@ class BaseBoundaryFieldFuzzerTest {
     void shouldMatchFuzzerTypeWhenSchemaTypeMatchesFuzzerSchema(String schemaType, boolean matching) {
         myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
         Mockito.doCallRealMethod().when(myBaseBoundaryFuzzer).isRequestSchemaMatchingFuzzerType(Mockito.any());
-        Mockito.when(myBaseBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo()).thenReturn(List.of(NumberSchema.class));
+        Mockito.when(myBaseBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).thenReturn(List.of("number"));
         Schema schema = new Schema();
         schema.setType(schemaType);
 
@@ -144,8 +144,8 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-            return Collections.singletonList(StringSchema.class);
+        public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
+            return List.of("string");
         }
 
         @Override
@@ -171,8 +171,8 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-            return Collections.singletonList(StringSchema.class);
+        public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
+            return List.of("string");
         }
 
         @Override
@@ -198,8 +198,8 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-            return Collections.singletonList(StringSchema.class);
+        public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
+            return List.of("string");
         }
 
         @Override
@@ -225,8 +225,8 @@ class BaseBoundaryFieldFuzzerTest {
         }
 
         @Override
-        public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-            return Collections.singletonList(IntegerSchema.class);
+        public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
+            return List.of("integer");
         }
 
         @Override

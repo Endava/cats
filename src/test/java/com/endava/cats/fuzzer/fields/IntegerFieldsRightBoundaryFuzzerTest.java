@@ -8,8 +8,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-
 @QuarkusTest
 class IntegerFieldsRightBoundaryFuzzerTest {
     private IntegerFieldsRightBoundaryFuzzer integerFieldsRightBoundaryFuzzer;
@@ -22,7 +20,7 @@ class IntegerFieldsRightBoundaryFuzzerTest {
     @Test
     void givenANewIntegerFieldsRightBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheIntegerFieldsRightBoundaryFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
-        Assertions.assertThat(integerFieldsRightBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(IntegerSchema.class))).isTrue();
+        Assertions.assertThat(integerFieldsRightBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("integer"))).isTrue();
         Assertions.assertThat(integerFieldsRightBoundaryFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(integerFieldsRightBoundaryFuzzer.description()).isNotNull();
         Assertions.assertThat(integerFieldsRightBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(Long.class);

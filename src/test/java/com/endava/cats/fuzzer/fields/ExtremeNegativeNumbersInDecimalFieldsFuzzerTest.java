@@ -21,7 +21,7 @@ class ExtremeNegativeNumbersInDecimalFieldsFuzzerTest {
     @Test
     void givenANewExtremeNegativeValueDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
-        Assertions.assertThat(extremeNegativeNumbersInDecimalFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(NumberSchema.class))).isTrue();
+        Assertions.assertThat(extremeNegativeNumbersInDecimalFieldsFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("number"))).isTrue();
         Assertions.assertThat(extremeNegativeNumbersInDecimalFieldsFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(extremeNegativeNumbersInDecimalFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(extremeNegativeNumbersInDecimalFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();

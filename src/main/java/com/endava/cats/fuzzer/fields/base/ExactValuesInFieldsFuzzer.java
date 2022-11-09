@@ -10,12 +10,10 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -32,8 +30,8 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     }
 
     @Override
-    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-        return Collections.singletonList(StringSchema.class);
+    public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
+        return List.of("string");
     }
 
     /**
@@ -90,7 +88,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     @Override
     public String description() {
         return String.format("iterate through each %s fields that have %s defined and send values matching the %s size/value",
-                getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).toList(), exactValueTypeString(), exactValueTypeString());
+                getSchemaTypesTheFuzzerWillApplyTo(), exactValueTypeString(), exactValueTypeString());
     }
 
     /**

@@ -22,7 +22,7 @@ class DecimalFieldsRightBoundaryFuzzerTest {
     @Test
     void givenANewDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
-        Assertions.assertThat(decimalFieldsRightBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(NumberSchema.class))).isTrue();
+        Assertions.assertThat(decimalFieldsRightBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("number"))).isTrue();
         Assertions.assertThat(decimalFieldsRightBoundaryFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(decimalFieldsRightBoundaryFuzzer.description()).isNotNull();
         Assertions.assertThat(decimalFieldsRightBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(BigDecimal.class);

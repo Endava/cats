@@ -23,7 +23,6 @@ public class XmlContentTypeContractInfoFuzzer extends BaseContractInfoFuzzer {
         testCaseListener.addScenario(log, "Check if the current path accepts [application/xml] Content-Type for HTTP method {}", data.getMethod());
         testCaseListener.addExpectedResult(log, "Paths should avoid accepting [application/xml] and focus only on [application/json] Content-Type");
 
-
         if (data.getRequestContentTypes().contains(APPLICATION_XML)) {
             testCaseListener.reportResultError(log, data, "Path accepts [application/xml]", "Path accepts [application/xml] as Content-Type");
         } else {

@@ -2,13 +2,10 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
-import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
 
 @QuarkusTest
 class IntegerFieldsLeftBoundaryFuzzerTest {
@@ -22,7 +19,7 @@ class IntegerFieldsLeftBoundaryFuzzerTest {
     @Test
     void givenANewIntegerFieldsLeftBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheIntegerFieldsLeftBoundaryFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
-        Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(IntegerSchema.class))).isTrue();
+        Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("integer"))).isTrue();
         Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.description()).isNotNull();
         Assertions.assertThat(integerFieldsLeftBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(Long.class);

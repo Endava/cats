@@ -9,10 +9,8 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 
 import javax.inject.Singleton;
-import java.util.Collections;
 import java.util.List;
 
 @Singleton
@@ -24,8 +22,8 @@ public class StringFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
     }
 
     @Override
-    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-        return Collections.singletonList(StringSchema.class);
+    public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
+        return List.of("string");
     }
 
     @Override

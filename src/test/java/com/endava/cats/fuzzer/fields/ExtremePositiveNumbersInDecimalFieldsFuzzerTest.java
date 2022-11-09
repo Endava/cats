@@ -22,7 +22,7 @@ class ExtremePositiveNumbersInDecimalFieldsFuzzerTest {
     @Test
     void givenANewExtremePositiveValueDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
-        Assertions.assertThat(extremePositiveNumbersInDecimalFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(NumberSchema.class))).isTrue();
+        Assertions.assertThat(extremePositiveNumbersInDecimalFieldsFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("number"))).isTrue();
         Assertions.assertThat(extremePositiveNumbersInDecimalFieldsFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(extremePositiveNumbersInDecimalFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(extremePositiveNumbersInDecimalFieldsFuzzer.typeOfDataSentToTheService()).isNotNull();
