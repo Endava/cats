@@ -7,7 +7,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.NumberSchema;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.api.BigDecimalAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -34,7 +33,7 @@ class DecimalFieldsLeftBoundaryFuzzerTest {
     @Test
     void givenANewDecimalFieldsFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheDecimalFuzzer() {
         NumberSchema nrSchema = new NumberSchema();
-        Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(NumberSchema.class))).isTrue();
+        Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("number"))).isTrue();
         Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.hasBoundaryDefined("test", FuzzingData.builder().build())).isTrue();
         Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.description()).isNotNull();
         Assertions.assertThat(decimalFieldsLeftBoundaryFuzzer.getBoundaryValue(nrSchema)).isInstanceOf(BigDecimal.class);

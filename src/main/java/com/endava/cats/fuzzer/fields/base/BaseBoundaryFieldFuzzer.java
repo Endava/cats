@@ -4,14 +4,13 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.format.InvalidFormat;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Extend this class to provide concrete boundary values to be used for fuzzing.
@@ -36,7 +35,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
             if (this.isFieldFuzzable(fuzzedField, data) && this.fuzzerGeneratedBoundaryValue(schema)) {
                 logger.debug("Field {} is fuzzable and has boundary value", fuzzedField);
-                logger.start("[{}]. Start fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+                logger.start("{}. Start fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
                 return Collections.singletonList(FuzzingStrategy.replace().withData(this.getBoundaryValue(schema)));
             } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
                 logger.debug("Field {} does not have a boundary defined", fuzzedField);
@@ -48,10 +47,10 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
                 return Collections.singletonList(FuzzingStrategy.skip().withData("String format not supplied or not recognized!"));
             } else {
                 logger.debug("Data type not matching. Skipping fuzzing for {}", fuzzedField);
-                logger.skip("Not [{}]. Will skip fuzzing...", getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+                logger.skip("Not {}. Will skip fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
             }
         }
-        return Collections.singletonList(FuzzingStrategy.skip().withData("Data type not matching " + getSchemasThatTheFuzzerWillApplyTo().stream().map(Class::getSimpleName).collect(Collectors.toSet())));
+        return Collections.singletonList(FuzzingStrategy.skip().withData("Data type not matching " + getSchemaTypesTheFuzzerWillApplyTo()));
     }
 
     private boolean fuzzerGeneratedBoundaryValue(Schema<?> schema) {
@@ -84,18 +83,16 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     }
 
     boolean isRequestSchemaMatchingFuzzerType(Schema schema) {
-        return getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(currentSchema1 -> currentSchema1.isAssignableFrom(schema.getClass())) ||
-                (schema.getType() != null && schema.getClass().equals(Schema.class) &&
-                        getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(currentSchema2 -> currentSchema2.getSimpleName().toLowerCase().startsWith(schema.getType())));
+        return getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(currentSchemaType -> currentSchemaType.equalsIgnoreCase(schema.getType()));
     }
 
     /**
-     * Override this to provide information about which Schema the Fuzzer is applicable to.
-     * For example if the current Schema is StringSchema, but the Fuzzer apply to Integer values then the Fuzzer will get skipped.
+     * Override this to provide information about which Schema {@code type} the Fuzzer is applicable to.
+     * For example if the current Schema is of type String, but the Fuzzer applies to Integer values then the Fuzzer will get skipped.
      *
      * @return schema type for which the Fuzzer will apply.
      */
-    public abstract List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo();
+    public abstract List<String> getSchemaTypesTheFuzzerWillApplyTo();
 
     /**
      * The value that will be used for fuzzing.

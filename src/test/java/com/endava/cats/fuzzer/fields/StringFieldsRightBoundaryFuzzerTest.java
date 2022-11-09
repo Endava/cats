@@ -22,7 +22,7 @@ class StringFieldsRightBoundaryFuzzerTest {
     void givenANewStringFieldsRightBoundaryFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheStringFieldsRightBoundaryFuzzer() {
         StringSchema nrSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", nrSchema)).build();
-        Assertions.assertThat(stringFieldsRightBoundaryFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
+        Assertions.assertThat(stringFieldsRightBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("string"))).isTrue();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.getBoundaryValue(nrSchema)).isNotNull();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.description()).isNotNull();

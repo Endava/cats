@@ -5,8 +5,6 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
-import io.swagger.v3.oas.models.media.IntegerSchema;
-import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +31,7 @@ class MaximumExactNumbersInNumericFieldsFuzzerTest {
         StringSchema stringSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
         Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
-        Assertions.assertThat(maximumExactNumbersInNumericFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo()).containsOnly(IntegerSchema.class, NumberSchema.class);
+        Assertions.assertThat(maximumExactNumbersInNumericFieldsFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).containsOnly("integer", "number");
         Assertions.assertThat(maximumExactNumbersInNumericFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(maximumExactNumbersInNumericFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(maximumExactNumbersInNumericFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);

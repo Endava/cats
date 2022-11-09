@@ -30,7 +30,7 @@ class MinLengthExactValuesInStringFieldsFuzzerTest {
         StringSchema stringSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
         Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
-        Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
+        Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("string"))).isTrue();
         Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.description()).isNotNull();
         Assertions.assertThat(minLengthExactValuesInStringFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);

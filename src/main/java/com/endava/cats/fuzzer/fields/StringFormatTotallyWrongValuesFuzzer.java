@@ -8,16 +8,9 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-import io.swagger.v3.oas.models.media.DateSchema;
-import io.swagger.v3.oas.models.media.DateTimeSchema;
-import io.swagger.v3.oas.models.media.EmailSchema;
-import io.swagger.v3.oas.models.media.PasswordSchema;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
-import io.swagger.v3.oas.models.media.UUIDSchema;
 
 import javax.inject.Singleton;
-import java.util.Arrays;
 import java.util.List;
 
 @Singleton
@@ -34,8 +27,8 @@ public class StringFormatTotallyWrongValuesFuzzer extends BaseBoundaryFieldFuzze
     }
 
     @Override
-    public List<Class<? extends Schema>> getSchemasThatTheFuzzerWillApplyTo() {
-        return Arrays.asList(StringSchema.class, DateSchema.class, DateTimeSchema.class, PasswordSchema.class, UUIDSchema.class, EmailSchema.class);
+    public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
+        return List.of("string");
     }
 
     @Override

@@ -23,7 +23,7 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
     void shouldNotHaveBoundaryDefined() {
         StringSchema stringSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("string"))).isTrue();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getBoundaryValue(stringSchema)).isNullOrEmpty();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.description()).isNotNull();
@@ -35,7 +35,7 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
         StringSchema stringSchema = new StringSchema();
         stringSchema.setEnum(Collections.singletonList("TEST"));
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getSchemasThatTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.isAssignableFrom(StringSchema.class))).isTrue();
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("string"))).isTrue();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getBoundaryValue(stringSchema)).hasSizeLessThanOrEqualTo(4);
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.hasBoundaryDefined("test", data)).isTrue();
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.description()).isNotNull();
