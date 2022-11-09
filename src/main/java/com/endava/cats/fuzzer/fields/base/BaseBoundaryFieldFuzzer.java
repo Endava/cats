@@ -1,13 +1,14 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.generator.format.InvalidFormat;
+import com.endava.cats.generator.format.api.InvalidDataFormat;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +63,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      * <ol>
      *     <li>the fuzzed field schema is not fuzzable by the current fuzzer. Each boundary Fuzzer provides a list with all applicable schemas.</li>
      *     <li>there is no boundary defined for the current field. This is also specific for each Fuzzer</li>
-     *     <li>the string format is not recognizable. Check {@link InvalidFormat} for supported formats</li>
+     *     <li>the string format is not recognizable. Check {@link InvalidDataFormat} for supported formats</li>
      * </ol>
      *
      * @param fuzzedField the current fuzzed field
@@ -75,7 +76,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
     }
 
     private boolean isStringFormatRecognizable(Schema schema) {
-        return InvalidFormat.from(schema.getFormat()).compareTo(InvalidFormat.SKIP) != 0;
+        return StringUtils.isNotEmpty(schema.getFormat());
     }
 
     private boolean fuzzedFieldHasAnAssociatedSchema(Schema schema) {

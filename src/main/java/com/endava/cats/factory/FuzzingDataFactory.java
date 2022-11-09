@@ -8,7 +8,7 @@ import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
-import com.endava.cats.model.generator.api.ValidDataFormat;
+import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
