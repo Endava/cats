@@ -1,6 +1,5 @@
 package com.endava.cats.command;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
@@ -8,10 +7,11 @@ import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
-import com.endava.cats.model.FuzzingData;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.json.JsonUtils;
-import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -41,7 +41,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         versionProvider = VersionProvider.class)
 @Dependent
 public class ListCommand implements Runnable {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ListCommand.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     private final List<Fuzzer> fuzzersList;
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
@@ -76,8 +76,8 @@ public class ListCommand implements Runnable {
             if (json) {
                 PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(openAPI.getPaths().keySet()));
             } else {
-                logger.star("Available paths:");
-                openAPI.getPaths().keySet().stream().sorted().map(item -> "\t " + item).forEach(logger::info);
+                logger.noFormat("Available paths:");
+                openAPI.getPaths().keySet().stream().sorted().map(item -> "\t" + item).forEach(logger::noFormat);
             }
         } catch (IOException e) {
             logger.debug("Exception while reading contract!", e);
@@ -86,7 +86,7 @@ public class ListCommand implements Runnable {
     }
 
     void listFuzzerStrategies() {
-        logger.info("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
+        logger.noFormat("Registered fieldsFuzzerStrategies: {}", Arrays.asList(FuzzingData.SetFuzzingStrategy.values()));
     }
 
     void listFuzzers() {
@@ -104,7 +104,7 @@ public class ListCommand implements Runnable {
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(fuzzerEntries));
         } else {
             String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
-            logger.info(message, fuzzersList.size());
+            logger.noFormat(message, fuzzersList.size());
             displayFuzzers(fieldFuzzers, FieldFuzzer.class);
             displayFuzzers(headerFuzzers, HeaderFuzzer.class);
             displayFuzzers(httpFuzzers, HttpFuzzer.class);
@@ -123,8 +123,8 @@ public class ListCommand implements Runnable {
         String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {} Fuzzers:").reset().toString();
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
         logger.noFormat(" ");
-        logger.info(message, fuzzers.size(), typeOfFuzzers);
-        fuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::info);
+        logger.noFormat(message, fuzzers.size(), typeOfFuzzers);
+        fuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::noFormat);
     }
 
     static class ListCommandGroups {
