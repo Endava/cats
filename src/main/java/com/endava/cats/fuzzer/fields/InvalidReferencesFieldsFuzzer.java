@@ -8,7 +8,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -93,9 +93,9 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
 
     private static List<String> createPathCombinations(String path, List<String> variables, Map<String, String> variablesValues) {
         List<String> result = new ArrayList<>();
-        List<String> payloads = new ArrayList<>(PayloadGenerator.getAbugidasChars());
-        payloads.add(PayloadGenerator.getZalgoText());
-        payloads.addAll(PayloadGenerator.getInvalidReferences());
+        List<String> payloads = new ArrayList<>(UnicodeGenerator.getAbugidasChars());
+        payloads.add(UnicodeGenerator.getZalgoText());
+        payloads.addAll(UnicodeGenerator.getInvalidReferences());
 
         for (String variable : variables) {
             String interimPath = path;

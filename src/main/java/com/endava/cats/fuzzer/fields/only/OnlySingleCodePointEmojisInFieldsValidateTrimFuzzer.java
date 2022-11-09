@@ -6,7 +6,7 @@ import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 
@@ -30,6 +30,6 @@ public class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer extends Invisib
 
     @Override
     List<String> getInvisibleChars() {
-        return PayloadGenerator.getSingleCodePointEmojis();
+        return UnicodeGenerator.getSingleCodePointEmojis();
     }
 }

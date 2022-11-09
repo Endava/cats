@@ -43,11 +43,11 @@ class LeadingControlCharsInFieldsTrimValidateFuzzerTest {
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        Assertions.assertThat(leadingControlCharsInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(leadingControlCharsInFieldsTrimValidateFuzzer.isFuzzerWillingToFuzz(null, "pet#type")).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        Assertions.assertThat(leadingControlCharsInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(leadingControlCharsInFieldsTrimValidateFuzzer.isFuzzerWillingToFuzz(null, "pet#number")).isTrue();
     }
 }

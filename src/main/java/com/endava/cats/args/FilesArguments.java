@@ -97,7 +97,7 @@ public class FilesArguments {
 
     public void loadSecurityFuzzerFile() throws IOException {
         if (securityFuzzerFile == null) {
-            log.debug("No security custom Fuzzer file. SecurityFuzzer will be skipped!");
+            log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
         } else {
             log.info("Security Fuzzer file {}", securityFuzzerFile.getAbsolutePath());
             securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile.getAbsolutePath());
@@ -106,7 +106,7 @@ public class FilesArguments {
 
     public void loadCustomFuzzerFile() throws IOException {
         if (customFuzzerFile == null) {
-            log.debug("No custom Fuzzer file. FunctionalFuzzer will be skipped!");
+            log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
         } else {
             log.info("Custom Fuzzer file supplied {}", customFuzzerFile.getAbsolutePath());
             customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile.getAbsolutePath());

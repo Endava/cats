@@ -101,8 +101,8 @@ public class StringGenerator {
     }
 
     public static String generateRandomUnicode() {
-        StringBuilder builder = new StringBuilder(PayloadGenerator.getBadPayload().length() + 1000);
-        builder.append(PayloadGenerator.getBadPayload());
+        StringBuilder builder = new StringBuilder(UnicodeGenerator.getBadPayload().length() + 1000);
+        builder.append(UnicodeGenerator.getBadPayload());
 
         int count = 1000;
         while (count > 0) {

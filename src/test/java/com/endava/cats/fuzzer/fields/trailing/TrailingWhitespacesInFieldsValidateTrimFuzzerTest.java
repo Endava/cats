@@ -46,11 +46,11 @@ class TrailingWhitespacesInFieldsValidateTrimFuzzerTest {
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        Assertions.assertThat(trailingWhitespacesInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(trailingWhitespacesInFieldsValidateTrimFuzzer.isFuzzerWillingToFuzz(null, "pet#type")).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        Assertions.assertThat(trailingWhitespacesInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(trailingWhitespacesInFieldsValidateTrimFuzzer.isFuzzerWillingToFuzz(null, "pet#number")).isTrue();
     }
 }

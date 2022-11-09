@@ -112,7 +112,7 @@ class BaseFieldsFuzzerTest {
     void shouldSkipWhenFuzzingNotPossibleFromFuzzer() {
         FuzzingData data = createFuzzingData();
         BaseFieldsFuzzer spyFuzzer = Mockito.spy(baseFieldsFuzzer);
-        Mockito.when(spyFuzzer.isFuzzingPossibleSpecificToFuzzer(Mockito.eq(data), Mockito.anyString(), Mockito.any())).thenReturn(false);
+        Mockito.when(spyFuzzer.isFuzzerWillingToFuzz(Mockito.eq(data), Mockito.anyString())).thenReturn(false);
         spyFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas"));
     }

@@ -3,8 +3,8 @@ package com.endava.cats.fuzzer.fields.trailing;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -43,11 +43,11 @@ class TrailingWhitespacesInFieldsTrimValidateFuzzerTest {
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.isFuzzerWillingToFuzz(null, "pet#type")).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.isFuzzerWillingToFuzz(null, "pet#number")).isTrue();
     }
 }

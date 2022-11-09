@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.SpacesCharsBaseFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 
 import javax.inject.Singleton;
 import java.util.List;
@@ -30,7 +30,7 @@ public class OnlySpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
 
     @Override
     public List<String> getInvisibleChars() {
-        return PayloadGenerator.getSpacesHeaders();
+        return UnicodeGenerator.getSpacesHeaders();
     }
 
     @Override

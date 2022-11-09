@@ -51,11 +51,11 @@ class ZalgoTextInStringFieldsValidateSanitizeFuzzerTest {
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.isFuzzerWillingToFuzz(null, "pet#type")).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(zalgoTextInStringFieldsValidateSanitizeFuzzer.isFuzzerWillingToFuzz(null, "pet#number")).isTrue();
     }
 }

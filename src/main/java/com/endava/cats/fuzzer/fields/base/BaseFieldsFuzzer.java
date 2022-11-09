@@ -1,20 +1,20 @@
 package com.endava.cats.fuzzer.fields.base;
 
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.FuzzingResult;
-import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.FuzzingResult;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
@@ -116,7 +116,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      */
     private boolean isFuzzingPossible(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         return !fuzzingStrategy.isSkip() && JsonUtils.isPrimitive(data.getPayload(), fuzzedField)
-                && isFuzzingPossibleSpecificToFuzzer(data, fuzzedField, fuzzingStrategy)
+                && isFuzzerWillingToFuzz(data, fuzzedField)
                 && !isSkippedField(fuzzedField);
     }
 
@@ -229,12 +229,11 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     /**
      * Override this in order to prevent the fuzzer from running for context particular to the given fuzzer.
      *
-     * @param data            the current FuzzingData object
-     * @param fuzzedField     the current field being fuzzed
-     * @param fuzzingStrategy the current FuzzingStrategy
+     * @param data        the current FuzzingData object
+     * @param fuzzedField the current field being fuzzed
      * @return true by default
      */
-    protected boolean isFuzzingPossibleSpecificToFuzzer(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
+    protected boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
         return true;
     }
 

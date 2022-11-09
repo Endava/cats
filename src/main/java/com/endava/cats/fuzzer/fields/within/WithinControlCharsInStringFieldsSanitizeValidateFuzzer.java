@@ -9,7 +9,7 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.strategy.CommonWithinMethods;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.generator.simple.PayloadGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 
@@ -38,7 +38,7 @@ public class WithinControlCharsInStringFieldsSanitizeValidateFuzzer extends Invi
 
     @Override
     public List<String> getInvisibleChars() {
-        return PayloadGenerator.getControlCharsFields();
+        return UnicodeGenerator.getControlCharsFields();
     }
 
     @Override

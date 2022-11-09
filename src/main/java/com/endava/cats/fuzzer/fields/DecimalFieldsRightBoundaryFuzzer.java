@@ -17,13 +17,18 @@ import java.util.List;
 @FieldFuzzer
 public class DecimalFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
-    public DecimalFieldsRightBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-        super(sc, lr, cu, cp);
+    public DecimalFieldsRightBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments fa) {
+        super(sc, lr, cu, fa);
     }
 
     @Override
     public List<String> getSchemaTypesTheFuzzerWillApplyTo() {
         return List.of("number");
+    }
+
+    @Override
+    protected boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
+        return filesArguments.getRefData(data.getPath()).get(fuzzedField) == null;
     }
 
     @Override

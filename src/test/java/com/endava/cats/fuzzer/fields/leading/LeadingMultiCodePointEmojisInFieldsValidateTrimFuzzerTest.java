@@ -47,11 +47,11 @@ class LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
     @Test
     void shouldNotFuzzIfDiscriminatorField() {
-        Assertions.assertThat(leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#type", null)).isFalse();
+        Assertions.assertThat(leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzerWillingToFuzz(null, "pet#type")).isFalse();
     }
 
     @Test
     void shouldFuzzIfNotDiscriminatorField() {
-        Assertions.assertThat(leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzingPossibleSpecificToFuzzer(null, "pet#number", null)).isTrue();
+        Assertions.assertThat(leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.isFuzzerWillingToFuzz(null, "pet#number")).isTrue();
     }
 }
