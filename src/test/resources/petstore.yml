@@ -204,6 +204,11 @@ components:
         code:
           type: string
           format: byte
+          example: MjIyMjIyMg==
+        additionalCode:
+          type: string
+          format: binary
+          example: MjIyMjIyMg==
         petType:
           $ref: '#/components/schemas/PetType'
         dateOfBirth:

@@ -9,7 +9,9 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.BinarySchema;
 import io.swagger.v3.oas.models.media.BooleanSchema;
+import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
@@ -28,6 +30,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -135,6 +138,9 @@ public class OpenAPIModelGenerator {
         }
         if (property instanceof DateTimeSchema) {
             return ((OffsetDateTime) property.getExample()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        }
+        if (property instanceof BinarySchema || property instanceof ByteArraySchema) {
+            return Base64.getDecoder().decode((byte[]) property.getExample());
         }
         return property.getExample();
     }
