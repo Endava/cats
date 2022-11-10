@@ -136,7 +136,7 @@ public class CustomFuzzerUtil {
         log.debug("Parameters to verify: {}", verifies);
         log.debug("Parameters matched to response: {}", responseValues);
         if (responseValues.entrySet().stream().anyMatch(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))) {
-            log.error("There are Verify parameters which were not present in the response!");
+            log.error("Test failed! There are Verify parameters which were not present in the response!");
 
             testCaseListener.reportResultError(log, data, "Verify parameters not present in response", "The following Verify parameters were not present in the response: {}",
                     responseValues.entrySet().stream().filter(entry -> entry.getValue().equalsIgnoreCase(NOT_SET))

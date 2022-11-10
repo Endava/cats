@@ -1,20 +1,20 @@
 package com.endava.cats.fuzzer.special;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.model.KeyValuePair;
-import com.endava.cats.json.JsonUtils;
-import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.jayway.jsonpath.JsonPathException;
@@ -129,7 +129,8 @@ public class TemplateFuzzer implements Fuzzer {
             }
         } catch (IOException e) {
             logger.debug("Something went wrong while fuzzing!", e);
-            logger.error("Something went wrong while reading user supplied dictionary: {}", e.getMessage());
+            logger.error("Something went wrong while reading user supplied dictionary: {}. The file might not exist or is not reachable. Error message: {}",
+                    userArguments.getWords().getAbsolutePath(), e.getMessage());
         }
         return Collections.emptyList();
     }

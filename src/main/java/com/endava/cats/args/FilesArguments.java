@@ -115,7 +115,7 @@ public class FilesArguments {
 
     public void loadRefData() throws IOException {
         if (refDataFile == null) {
-            log.debug("No reference data file was supplied! Payloads supplied by Fuzzers will remain unchanged!");
+            log.debug("No reference data file provided! Payloads supplied by Fuzzers will remain unchanged!");
         } else {
             log.info("Loading reference data from: {}", refDataFile.getAbsolutePath());
             refData.putAll(catsUtil.loadYamlFileToMap(refDataFile.getAbsolutePath()));
@@ -125,7 +125,7 @@ public class FilesArguments {
 
     public void loadQueryParams() throws IOException {
         if (queryFile == null) {
-            log.debug("No queryParams file was supplied! No additional query parameters will be added!");
+            log.debug("No queryParams file provided! No additional query parameters will be added!");
         } else {
             log.info("Query params file supplied {}", queryFile.getAbsolutePath());
             queryParams.putAll(catsUtil.loadYamlFileToMap(queryFile.getAbsolutePath()));
@@ -135,7 +135,7 @@ public class FilesArguments {
 
     public void loadURLParams() {
         if (params == null) {
-            log.debug("No URL parameters supplied!");
+            log.debug("No URL parameters provided!");
         } else {
             log.info("URL parameters: {}", params);
         }
@@ -143,9 +143,9 @@ public class FilesArguments {
 
     public void loadHeaders() throws IOException {
         if (headersFile == null) {
-            log.debug("No headers file was supplied! No additional header will be added!");
+            log.debug("No headers file provided! No additional header will be added!");
         } else {
-            log.info("Headers file supplied {}", headersFile.getAbsolutePath());
+            log.info("Headers file provided {}", headersFile.getAbsolutePath());
             headers.putAll(catsUtil.loadYamlFileToMap(headersFile.getAbsolutePath()));
             log.debug("Headers file loaded successfully: {}", headers);
         }

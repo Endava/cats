@@ -81,7 +81,8 @@ public class ListCommand implements Runnable {
             }
         } catch (IOException e) {
             logger.debug("Exception while reading contract!", e);
-            logger.error("Error while reading contract: {}", e.getMessage());
+            logger.error("Error while reading contract. The file might not exist or is not reachable: {}. Error message: {}",
+                    listCommandGroups.listContractOptions.contract, e.getMessage());
         }
     }
 

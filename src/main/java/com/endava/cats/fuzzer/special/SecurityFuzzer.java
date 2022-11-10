@@ -2,11 +2,11 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -89,7 +89,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
             List<String> targetFields = this.getTargetFields(individualTestConfig, data);
             this.fuzzFields(data, key, individualTestConfig, nastyStrings, targetFields);
         } catch (Exception e) {
-            log.error("Invalid stringsFile [{}]", stringsFile, e);
+            log.error("There was a problem reading the stringsFile: {}. The file might not exist or is not reachable. Error message: {}", stringsFile, e.getMessage());
         }
     }
 

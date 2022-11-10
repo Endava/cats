@@ -238,7 +238,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), openAPI);
 
         if (fuzzingDataList.isEmpty()) {
-            logger.warning("There was a problem fuzzing path {}. You might want to enable debug mode for more details.", pathItemEntry.getKey());
+            logger.warning("There was a problem fuzzing path {}. You might want to enable debug mode for more details. Additionally, you can log a GitHub issue at: https://github.com/Endava/cats/issues.", pathItemEntry.getKey());
             return;
         }
 

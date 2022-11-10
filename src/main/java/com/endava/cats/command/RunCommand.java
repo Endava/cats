@@ -108,7 +108,7 @@ public class RunCommand implements Runnable {
             catsCommand.run();
         } catch (IOException e) {
             logger.debug("Exception while processing file!", e);
-            logger.error("Something went wrong while processing input file: {}", e.getMessage());
+            logger.error("Something went wrong while processing input file: {}. The file might not exist or is not reachable. Error message: {}", file, e.getMessage());
         }
     }
 
