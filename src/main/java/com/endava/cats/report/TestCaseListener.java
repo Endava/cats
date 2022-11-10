@@ -1,17 +1,17 @@
 package com.endava.cats.report;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.CatsResult;
 import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
@@ -116,6 +116,7 @@ public class TestCaseListener {
             this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).contractPath(DEFAULT_ERROR).build(), catsResult.getReason(), catsResult.getMessage());
             externalLogger.error("Exception while processing: {}", e.getMessage());
             externalLogger.debug("Detailed stacktrace", e);
+            this.checkForIOErrors(e);
         }
         this.endTestCase();
         logger.info("{} {}", SEPARATOR, "\n");
@@ -267,6 +268,19 @@ public class TestCaseListener {
         } else {
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
+        }
+        recordAuthErrors(catsResponse);
+    }
+
+    private void recordAuthErrors(CatsResponse catsResponse) {
+        if (catsResponse.getResponseCode() == 401 || catsResponse.getResponseCode() == 403) {
+            executionStatisticsListener.increaseAuthErrors();
+        }
+    }
+
+    private void checkForIOErrors(Exception e) {
+        if (e.getCause() instanceof IOException) {
+            executionStatisticsListener.increaseIoErrors();
         }
     }
 
