@@ -102,13 +102,15 @@ class CatsCommandTest {
     void givenContractAndServerParameter_whenStartingCats_thenParametersAreProcessedSuccessfully() throws Exception {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/petstore.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
-        ReflectionTestUtils.setField(reportingArguments, "logData", List.of("org.apache.wire:debug", "com.endava.cats:warn","error"));
+        ReflectionTestUtils.setField(reportingArguments, "logData", List.of("org.apache.wire:debug", "com.endava.cats:warn", "error"));
         ReflectionTestUtils.setField(reportingArguments, "skipLogs", List.of("complete", "notSkip"));
 
         ReflectionTestUtils.setField(reportingArguments, "debug", true);
         Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsContractInfoFuzzer"));
         Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));
         Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new PathTagsContractInfoFuzzer(testCaseListener)));
+        Mockito.when(executionStatisticsListener.areManyIoErrors()).thenReturn(true);
+        Mockito.when(executionStatisticsListener.getIoErrors()).thenReturn(10);
 
         CatsCommand spyMain = Mockito.spy(catsMain);
         spyMain.run();
@@ -133,6 +135,8 @@ class CatsCommandTest {
         CatsCommand spyMain = Mockito.spy(catsMain);
         Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsContractInfoFuzzer"));
         Mockito.when(filterArguments.getAllRegisteredFuzzers()).thenReturn(List.of(new PathTagsContractInfoFuzzer(testCaseListener)));
+        Mockito.when(executionStatisticsListener.areManyAuthErrors()).thenReturn(true);
+        Mockito.when(executionStatisticsListener.getAuthErrors()).thenReturn(10);
 
         spyMain.run();
         Mockito.verify(spyMain).createOpenAPI();

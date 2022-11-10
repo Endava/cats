@@ -123,6 +123,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             testCaseListener.startSession();
             this.doLogic();
             testCaseListener.endSession();
+            this.printSuggestions();
         } catch (IOException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.getMessage());
             logger.debug("Stacktrace", e);
@@ -137,6 +138,27 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.initGlobalData(openAPI);
         this.startFuzzing(openAPI);
         this.executeCustomFuzzer();
+    }
+
+    private void printSuggestions() {
+        if (executionStatisticsListener.areManyAuthErrors()) {
+            String message = ansi()
+                    .bold()
+                    .fgBrightYellow()
+                    .a("There were {} tests failing with authorisation errors. Either supply authentication details or check if the supplied credentials are correct!")
+                    .reset()
+                    .toString();
+            logger.star(message, executionStatisticsListener.getAuthErrors());
+        }
+        if (executionStatisticsListener.areManyIoErrors()) {
+            String message = ansi()
+                    .bold()
+                    .fgBrightYellow()
+                    .a("There were {} tests failing with i/o errors. Make sure that you have access to the service or that the --server url is correct!")
+                    .reset()
+                    .toString();
+            logger.star(message, executionStatisticsListener.getIoErrors());
+        }
     }
 
     private void initGlobalData(OpenAPI openAPI) {

@@ -3,6 +3,10 @@ package com.endava.cats.report;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import java.util.stream.IntStream;
 
 @QuarkusTest
 class ExecutionStatisticsListenerTest {
@@ -56,5 +60,25 @@ class ExecutionStatisticsListenerTest {
         listener.increaseErrors();
 
         Assertions.assertThat(listener.getAll()).isEqualTo(3);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2,5,false", "4,5,true"})
+    void shouldTestForAuthErrors(int authErrors, int all, boolean expected) {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        IntStream.range(0, authErrors).forEach(element -> listener.increaseAuthErrors());
+        IntStream.range(0, all).forEach(element -> listener.increaseErrors());
+
+        Assertions.assertThat(listener.areManyAuthErrors()).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2,5,false", "4,5,true"})
+    void shouldTestForIOErrors(int authErrors, int all, boolean expected) {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        IntStream.range(0, authErrors).forEach(element -> listener.increaseIoErrors());
+        IntStream.range(0, all).forEach(element -> listener.increaseErrors());
+
+        Assertions.assertThat(listener.areManyIoErrors()).isEqualTo(expected);
     }
 }

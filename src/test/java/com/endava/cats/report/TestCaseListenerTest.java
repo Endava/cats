@@ -1,15 +1,16 @@
 package com.endava.cats.report;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.exception.CatsException;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.FuzzingData;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -28,6 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -138,6 +140,31 @@ class TestCaseListenerTest {
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
         Assertions.assertThat(testCase.getResult()).isEqualTo(Level.WARN.toString().toLowerCase());
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Warn 1 happened");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"401,1", "403,1", "200,0"})
+    void shouldIncreaseTheNumberOfAuthErrors(int respCode, int times) {
+        CatsResponse response = CatsResponse.builder().body("{}").responseCode(respCode).build();
+        prepareTestCaseListenerSimpleSetup(response);
+        testCaseListener.reportError(logger, "Something happened: {}", "bad stuff!");
+        Mockito.verify(executionStatisticsListener, Mockito.times(times)).increaseAuthErrors();
+    }
+
+    @Test
+    void shouldIncreaseTheNumberOfIOErrors() {
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            throw new CatsException("something bad", new IOException());
+        });
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseIoErrors();
+    }
+
+    @Test
+    void shouldNotIncreaseIOErrorsForNonIOException() {
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+            throw new CatsException("something bad", new IndexOutOfBoundsException());
+        });
+        Mockito.verify(executionStatisticsListener, Mockito.times(0)).increaseIoErrors();
     }
 
     @ParameterizedTest
