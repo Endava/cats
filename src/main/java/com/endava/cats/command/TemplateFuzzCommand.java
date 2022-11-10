@@ -124,7 +124,7 @@ public class TemplateFuzzCommand implements Runnable {
             afterFuzz();
         } catch (IOException e) {
             logger.debug("Exception while fuzzing given data!", e);
-            logger.error("Something went wrong while fuzzing: {}", e.getMessage());
+            logger.error("Something went wrong while fuzzing. The data file does not exist or is not reachable: {}. Error message: {}", data, e.getMessage());
         }
     }
 

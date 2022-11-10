@@ -25,7 +25,7 @@ public class UserArguments {
         try {
             return Files.readAllLines(Path.of(words.getAbsolutePath()), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new CatsException(e);
+            throw new CatsException("Unable to process the --words file. Either the file does not exist or it's not reachable", e);
         }
     }
 }

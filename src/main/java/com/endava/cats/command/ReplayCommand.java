@@ -3,10 +3,10 @@ package com.endava.cats.command;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.KeyValuePair;
-import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
 import com.google.common.collect.Maps;
@@ -101,7 +101,8 @@ public class ReplayCommand implements Runnable {
                 logger.complete("Finish executing {}", testCaseFileName);
             } catch (IOException e) {
                 logger.debug("Exception while replaying test!", e);
-                logger.error("Something went wrong while replaying {}: {}", testCaseFileName, e.toString());
+                logger.error("Something went wrong while replaying {}. If the test name ends with .json it is searched as a full path. " +
+                        "If it doesn't have an extension it will be searched in cats-report/ folder. Error message: {}", testCaseFileName, e.toString());
             }
         }
     }
