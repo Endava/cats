@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.ISBN10Generator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -14,7 +13,7 @@ class ISBN10GeneratorTest {
     @Test
     void shouldGenerate() {
         ISBN10Generator isbn10Generator = new ISBN10Generator();
-        Assertions.assertThat(isbn10Generator.generate(new Schema<>())).isEqualTo("0439023481");
+        Assertions.assertThat(isbn10Generator.generate(new Schema<>()).toString()).matches("[0-9]{10}");
     }
 
     @ParameterizedTest

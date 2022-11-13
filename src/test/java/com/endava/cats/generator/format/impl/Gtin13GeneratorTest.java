@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.Gtin13Generator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -14,7 +13,7 @@ class Gtin13GeneratorTest {
     @Test
     void shouldGenerate() {
         Gtin13Generator gtin13Generator = new Gtin13Generator();
-        Assertions.assertThat(gtin13Generator.generate(new Schema<>())).isEqualTo("5710798389878");
+        Assertions.assertThat(gtin13Generator.generate(new Schema<>()).toString()).matches("[0-9]+").hasSize(13);
     }
 
     @ParameterizedTest

@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.IPV4Generator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -28,7 +27,7 @@ class IPV4GeneratorTest {
 
     @Test
     void shouldGenerate() {
-        Assertions.assertThat(ipv4Generator.generate(new Schema<>())).isEqualTo("10.10.10.20");
+        Assertions.assertThat(ipv4Generator.generate(new Schema<>()).toString()).matches("[0-9]+.[0-9]+.[0-9]+.[0-9]+");
     }
 
     @Test

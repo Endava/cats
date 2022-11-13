@@ -3,6 +3,7 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.inject.Singleton;
 import java.util.Locale;
@@ -14,7 +15,7 @@ public class URIGenerator implements ValidDataFormatGenerator, InvalidDataFormat
 
     @Override
     public Object generate(Schema<?> schema) {
-        return "http://example.com/cats";
+        return "http://cats%s.com/cats".formatted(RandomStringUtils.randomAlphabetic(6));
     }
 
     @Override

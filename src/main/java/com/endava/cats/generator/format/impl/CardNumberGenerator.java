@@ -5,13 +5,23 @@ import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
+import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 
 @Singleton
 public class CardNumberGenerator implements ValidDataFormatGenerator {
+
+    static final List<String> CARDS = List.of(
+            "4485785156913636", "4716210684476791", "4929532217247180", "4929460887451637", "4929638520597888",
+            "5259272637080971", "5411382200125346", "5371612728016173", "5463084305505847", "5532093434659042",
+            "6011334474724389", "6011315558568180", "6011727787327750", "6011659001329850", "6011729202913511",
+            "371277972520881", "340706417617348", "376559356956996", "376559356956996", "376559356956996");
+    private final Random random = new Random();
+
     @Override
     public Object generate(Schema<?> schema) {
-        return "4111111111111111";
+        return CARDS.get(random.nextInt(CARDS.size()));
     }
 
     @Override

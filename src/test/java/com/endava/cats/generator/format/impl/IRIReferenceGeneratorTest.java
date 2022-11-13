@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.IRIReferenceGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -14,7 +13,7 @@ class IRIReferenceGeneratorTest {
     @Test
     void shouldGenerate() {
         IRIReferenceGenerator iriReferenceGenerator = new IRIReferenceGenerator();
-        Assertions.assertThat(iriReferenceGenerator.generate(new Schema<>())).isEqualTo("/füzzing/");
+        Assertions.assertThat(iriReferenceGenerator.generate(new Schema<>()).toString()).startsWith("/füzzing");
     }
 
     @ParameterizedTest

@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.IRIGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -14,7 +13,7 @@ class IRIGeneratorTest {
     @Test
     void shouldGenerate() {
         IRIGenerator iriGenerator = new IRIGenerator();
-        Assertions.assertThat(iriGenerator.generate(new Schema<>())).isEqualTo("http://ëxample.com/cats");
+        Assertions.assertThat(iriGenerator.generate(new Schema<>()).toString()).startsWith("http://ë").endsWith(".com/cats");
     }
 
     @ParameterizedTest
