@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.HostnameGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -14,7 +13,7 @@ class HostnameGeneratorTest {
     @Test
     void shouldGenerate() {
         HostnameGenerator hostnameGenerator = new HostnameGenerator();
-        Assertions.assertThat(hostnameGenerator.generate(new Schema<>())).isEqualTo("www.endava.com");
+        Assertions.assertThat(hostnameGenerator.generate(new Schema<>()).toString()).startsWith("www.").endsWith(".com");
     }
 
     @ParameterizedTest

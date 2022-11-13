@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.URIReferenceGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -14,7 +13,7 @@ class URIReferenceGeneratorTest {
     @Test
     void shouldGenerate() {
         URIReferenceGenerator uriReferenceGenerator = new URIReferenceGenerator();
-        Assertions.assertThat(uriReferenceGenerator.generate(new Schema<>())).isEqualTo("/fuzzing/");
+        Assertions.assertThat(uriReferenceGenerator.generate(new Schema<>()).toString()).startsWith("/fuzzing");
     }
 
     @ParameterizedTest

@@ -3,6 +3,7 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.inject.Singleton;
 
@@ -10,7 +11,7 @@ import javax.inject.Singleton;
 public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
     @Override
     public Object generate(Schema<?> schema) {
-        return "10.10.10.20";
+        return "%s.%s.%s.%s".formatted(RandomStringUtils.randomNumeric(1, 255), RandomStringUtils.randomNumeric(1, 255), RandomStringUtils.randomNumeric(1, 255), RandomStringUtils.randomNumeric(1, 255));
     }
 
     @Override

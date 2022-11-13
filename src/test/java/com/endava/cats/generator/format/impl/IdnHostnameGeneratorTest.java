@@ -14,7 +14,7 @@ class IdnHostnameGeneratorTest {
     @Test
     void shouldGenerate() {
         IdnHostnameGenerator hostnameGenerator = new IdnHostnameGenerator();
-        Assertions.assertThat(hostnameGenerator.generate(new Schema<>())).isEqualTo("www.ëndava.com");
+        Assertions.assertThat(hostnameGenerator.generate(new Schema<>()).toString()).startsWith("www.ë").endsWith(".com");
     }
 
     @ParameterizedTest
