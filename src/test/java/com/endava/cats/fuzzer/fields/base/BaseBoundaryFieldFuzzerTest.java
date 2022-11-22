@@ -3,8 +3,8 @@ package com.endava.cats.fuzzer.fields.base;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -18,7 +18,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,18 +83,6 @@ class BaseBoundaryFieldFuzzerTest {
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData().toString()).startsWith("Data type not matching");
         Assertions.assertThat(myBaseBoundaryFuzzer.typeOfDataSentToTheService()).startsWith("outside the boundary values");
-    }
-
-    @Test
-    void shouldSkipWhenFormatNotRecognized() {
-        FuzzingData data = getMockFuzzingData();
-        StringSchema schema = new StringSchema();
-        data.getRequestPropertyTypes().put("emailAddress", schema);
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
-
-        FuzzingStrategy fuzzingStrategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "emailAddress").get(0);
-        Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.skip().name());
-        Assertions.assertThat(fuzzingStrategy.getData().toString()).startsWith("String format not supplied or not recognized!");
     }
 
     @Test
