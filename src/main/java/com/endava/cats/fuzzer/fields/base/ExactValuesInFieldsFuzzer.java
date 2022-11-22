@@ -10,12 +10,12 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer {
@@ -66,8 +66,8 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
     @Override
     public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
-        Map<String, String> refDataForCurrentPath = filesArguments.getRefData(data.getPath());
-        return refDataForCurrentPath.isEmpty() && getExactMethod().apply(schema) != null;
+        boolean isRefDataField = filesArguments.getRefData(data.getPath()).get(fuzzedField) != null;
+        return !isRefDataField && getExactMethod().apply(schema) != null && StringUtils.isBlank(schema.getFormat());
     }
 
     @Override
