@@ -8,7 +8,6 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,10 +41,6 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
                 logger.debug("Field {} does not have a boundary defined", fuzzedField);
                 logger.skip("Boundaries not defined. Will skip fuzzing...");
                 return Collections.singletonList(FuzzingStrategy.skip().withData("No LEFT or RIGHT boundary info within the contract!"));
-            } else if (!this.isStringFormatRecognizable(schema) && isRequestSchemaMatchingFuzzerType(schema)) {
-                logger.debug("Field {} has format unrecognizable {}", fuzzedField, schema.getFormat());
-                logger.skip("String format not supplied or not recognized [{}]", schema.getFormat());
-                return Collections.singletonList(FuzzingStrategy.skip().withData("String format not supplied or not recognized!"));
             } else {
                 logger.debug("Data type not matching. Skipping fuzzing for {}", fuzzedField);
                 logger.skip("Not {}. Will skip fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
@@ -72,11 +67,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      */
     protected boolean isFieldFuzzable(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
-        return this.isRequestSchemaMatchingFuzzerType(schema) && (this.hasBoundaryDefined(fuzzedField, data) || this.isStringFormatRecognizable(schema));
-    }
-
-    private boolean isStringFormatRecognizable(Schema schema) {
-        return StringUtils.isNotEmpty(schema.getFormat());
+        return this.isRequestSchemaMatchingFuzzerType(schema) && this.hasBoundaryDefined(fuzzedField, data);
     }
 
     private boolean fuzzedFieldHasAnAssociatedSchema(Schema schema) {
