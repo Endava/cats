@@ -14,7 +14,7 @@ class CardNumberGeneratorTest {
     void shouldGenerate() {
         CardNumberGenerator cardNumberGenerator = new CardNumberGenerator();
         String generated = cardNumberGenerator.generate(new Schema<>()).toString();
-        Assertions.assertThat(generated).contains(CardNumberGenerator.CARDS);
+        Assertions.assertThat(generated).matches(CardNumberGenerator.CARDS::contains);
     }
 
     @ParameterizedTest
