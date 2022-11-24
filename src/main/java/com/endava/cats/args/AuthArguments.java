@@ -83,6 +83,6 @@ public class AuthArguments {
     }
 
     public Map<String, String> getAuthScriptAsMap() {
-        return Map.of("auth_script", this.getAuthRefreshScript(), "refresh_interval", String.valueOf(getAuthRefreshInterval()));
+        return Map.of("auth_script", this.getAuthRefreshScript(), "auth_refresh", String.valueOf(getAuthRefreshInterval()));
     }
 }
