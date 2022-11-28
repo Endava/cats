@@ -1,5 +1,6 @@
 package com.endava.cats.openapi;
 
+import com.endava.cats.args.ProcessingArguments;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -66,9 +67,9 @@ public abstract class OpenApiUtils {
 
         for (String contentType : contentTypeList) {
             Optional.ofNullable(openAPI.getComponents().getRequestBodies()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
-
-            Optional.ofNullable(openAPI.getComponents().getResponses()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
         }
+        Optional.ofNullable(openAPI.getComponents().getResponses()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), ProcessingArguments.JSON_WILDCARD));
+
         return schemas;
     }
 
@@ -92,7 +93,7 @@ public abstract class OpenApiUtils {
                 String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
                 schemaToAdd = schemas.get(schemaKey);
             }
-        } else if (content != null && schemas.get(schemaName) == null) {
+        } else if (content != null && !content.isEmpty() && schemas.get(schemaName) == null) {
             /*it means it wasn't already added with another content type*/
             LOGGER.warn("Content-Type not supported. Found: {} for {}", content.keySet(), schemaName);
         }
@@ -100,6 +101,9 @@ public abstract class OpenApiUtils {
     }
 
     public static boolean hasContentType(Content content, List<String> contentType) {
-        return content != null && content.keySet().stream().anyMatch(contentKey -> contentType.stream().anyMatch(contentKey::matches));
+        return content != null && content.keySet().stream()
+                .anyMatch(contentKey -> contentType.stream()
+                        .anyMatch(contentItem -> contentKey.matches(contentItem) || contentKey.equalsIgnoreCase(contentItem))
+                );
     }
 }

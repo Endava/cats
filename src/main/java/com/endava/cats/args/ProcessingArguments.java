@@ -43,9 +43,11 @@ public class ProcessingArguments {
             description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String contentType;
 
+    public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
+
     public List<String> getContentType() {
         if (contentType == null) {
-            return List.of("application\\/.*\\+?json;?.*", "application/x-www-form-urlencoded");
+            return List.of(JSON_WILDCARD, "application/x-www-form-urlencoded");
         }
         return List.of(contentType);
     }
