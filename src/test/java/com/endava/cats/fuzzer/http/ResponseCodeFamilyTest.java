@@ -72,7 +72,7 @@ class ResponseCodeFamilyTest {
     void shouldBeValid4xxGenericAllowedCodes() {
         Assertions.assertThat(ResponseCodeFamily.FOURXX.asString()).isEqualTo("4XX");
         Assertions.assertThat(ResponseCodeFamily.FOURXX.getStartingDigit()).isEqualTo("4");
-        Assertions.assertThat(ResponseCodeFamily.FOURXX.allowedResponseCodes()).containsOnly("400", "413", "414", "422");
+        Assertions.assertThat(ResponseCodeFamily.FOURXX.allowedResponseCodes()).containsOnly("400", "413", "414", "422", "4XX");
     }
 
     @Test
@@ -98,22 +98,22 @@ class ResponseCodeFamilyTest {
 
     @Test
     void shouldBeValid2xxAllowedCodes() {
-        Assertions.assertThat(ResponseCodeFamily.TWOXX.allowedResponseCodes()).containsOnly("200", "201", "202", "204");
+        Assertions.assertThat(ResponseCodeFamily.TWOXX.allowedResponseCodes()).containsOnly("200", "201", "202", "204", "2XX");
     }
 
     @Test
     void shouldBeValid5xxAllowedCodes() {
-        Assertions.assertThat(ResponseCodeFamily.FIVEXX.allowedResponseCodes()).containsOnly("500", "501");
+        Assertions.assertThat(ResponseCodeFamily.FIVEXX.allowedResponseCodes()).containsOnly("500", "501", "5XX");
     }
 
     @Test
     void shouldBeValid1xxAllowedCodes() {
-        Assertions.assertThat(ResponseCodeFamily.ONEXX.allowedResponseCodes()).containsOnly("100", "101");
+        Assertions.assertThat(ResponseCodeFamily.ONEXX.allowedResponseCodes()).containsOnly("100", "101", "1XX");
     }
 
     @Test
     void shouldBeValid3xxAllowedCodes() {
-        Assertions.assertThat(ResponseCodeFamily.THREEXX.allowedResponseCodes()).containsOnly("300", "301", "302");
+        Assertions.assertThat(ResponseCodeFamily.THREEXX.allowedResponseCodes()).containsOnly("300", "301", "302", "3XX");
     }
 
     @Test

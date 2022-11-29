@@ -18,7 +18,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("200", "201", "202", "204");
+            return Arrays.asList("200", "201", "202", "204", "2XX");
         }
     }, FOURXX {
         @Override
@@ -33,7 +33,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("400", "413", "414", "422");
+            return Arrays.asList("400", "413", "414", "422", "4XX");
         }
     }, FOURXX_AA {
         @Override
@@ -93,7 +93,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("500", "501");
+            return Arrays.asList("500", "501", "5XX");
         }
     }, ONEXX {
         @Override
@@ -108,7 +108,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("100", "101");
+            return Arrays.asList("100", "101", "1XX");
         }
     }, THREEXX {
         @Override
@@ -123,7 +123,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("300", "301", "302");
+            return Arrays.asList("300", "301", "302", "3XX");
         }
     }, ZEROXX {
         @Override
