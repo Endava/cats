@@ -20,6 +20,10 @@ all:
 
 This will add the `Accept` header to all calls and the `jwt` header to the specified paths. 
 
+:::tip
+Alternatively, you can supply headers using the `-H name=value` argument. Those headers will apply to **all** paths.
+:::
+
 You can use environment (system) variables in a headers file using: `$$VARIABLE_NAME`.
 
 :::caution
