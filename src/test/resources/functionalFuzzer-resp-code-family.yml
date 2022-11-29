@@ -1,0 +1,11 @@
+/pets/{id}/move:
+  test_1:
+    description: Simple Test Case
+    httpMethod: POST
+    pet:
+      - stay
+    expectedResponseCode: 2XX
+    oneOfSelection:
+      test#test: "mumu"
+    output:
+      resp: code

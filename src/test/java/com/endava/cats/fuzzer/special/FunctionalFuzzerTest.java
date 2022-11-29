@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.dsl.CatsDSLParser;
-import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -10,6 +9,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.google.gson.JsonObject;
 import io.quarkus.test.junit.QuarkusTest;
@@ -18,6 +18,8 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.AdditionalMatchers;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -153,15 +155,42 @@ class FunctionalFuzzerTest {
         return data;
     }
 
-    @Test
-    void givenACompleteCustomFuzzerFileWithDescriptionAndOutputVariables_whenTheFuzzerRuns_thenTheTestCasesAreCorrectlyExecuted() throws Exception {
-        FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
+    @ParameterizedTest
+    @CsvSource({"src/test/resources/functionalFuzzer.yml,TWOXX,4", "src/test/resources/functionalFuzzer-no-resp-code.yml,FOURXX,1", "src/test/resources/functionalFuzzer-resp-code-family.yml,TWOXX,1"})
+    void shouldMatchExpectedResultCodeFamily(String file, ResponseCodeFamily expectedResponseCode, int times) throws Exception {
+        FuzzingData data = setContext(file, "{\"code\": \"200\"}");
 
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(4)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(times)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(expectedResponseCode));
+    }
+
+    @Test
+    void shouldWarnWhenRespCodeNotMatches() throws Exception {
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-resp-code-verify.yml", "{\"code\": \"200\"}");
+
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
+        filesArguments.loadCustomFuzzerFile();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResultWarn(Mockito.any(), Mockito.eq(data), Mockito.eq("Returned response code not matching expected response code"),
+                        Mockito.eq("Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]"),
+                        AdditionalMatchers.aryEq(new Object[]{"400", "200"}));
+    }
+
+    @Test
+    void shouldInfoWhenResponseCodeMatchesAsRanges() throws Exception {
+        FuzzingData data = setContext("src/test/resources/functionalFuzzer-resp-code-family-verify.yml", "{\"code\": \"200\"}");
+
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
+        filesArguments.loadCustomFuzzerFile();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResultInfo(Mockito.any(), Mockito.eq(data), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
     @Test
