@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -12,6 +13,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -311,12 +313,14 @@ public class CustomFuzzerUtil {
 
     public String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, String> currentPathValues) {
         String newPath = data.getPath();
-        for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
-            String valueToReplaceWith = entry.getValue();
-            if (this.isVariable(entry.getValue())) {
-                valueToReplaceWith = variables.getOrDefault(this.getVariableName(entry.getValue()), NOT_SET);
+        if (HttpMethod.requiresBody(data.getMethod())) {
+            for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
+                String valueToReplaceWith = entry.getValue();
+                if (this.isVariable(entry.getValue())) {
+                    valueToReplaceWith = variables.getOrDefault(this.getVariableName(entry.getValue()), NOT_SET);
+                }
+                newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
             }
-            newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
         }
         return newPath;
     }
@@ -380,5 +384,12 @@ public class CustomFuzzerUtil {
 
         catsUtil.writeToYaml("refData_custom.yml", finalPathsAndVariables);
         log.complete("Finish writing refData_custom.yml");
+    }
+
+    public boolean isMatchingHttpMethod(Object currentValues, HttpMethod httpMethod) {
+        Map<String, Object> currentPathValues = (Map<String, Object>) currentValues;
+        Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CatsDSLWords.HTTP_METHOD)));
+
+        return httpMethodFromYaml.isEmpty() || httpMethodFromYaml.get().equals(httpMethod);
     }
 }

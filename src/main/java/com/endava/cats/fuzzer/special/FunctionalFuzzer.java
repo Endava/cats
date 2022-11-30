@@ -50,19 +50,13 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     protected void processCustomFuzzerFile(FuzzingData data) {
         Map<String, Object> currentPathValues = filesArguments.getCustomFuzzerDetails().get(data.getPath());
         if (currentPathValues != null) {
-            currentPathValues.entrySet().stream().filter(stringObjectEntry -> isMatchingHttpMethod(stringObjectEntry.getValue(), data.getMethod()))
+            currentPathValues.entrySet().stream()
+                    .filter(stringObjectEntry -> customFuzzerUtil.isMatchingHttpMethod(stringObjectEntry.getValue(), data.getMethod()))
                     .forEach(entry -> executions.add(CustomFuzzerExecution.builder()
                             .fuzzingData(data).testId(entry.getKey()).testEntry(entry.getValue()).build()));
         } else {
             logger.info("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getPath(), data.getMethod());
         }
-    }
-
-    private boolean isMatchingHttpMethod(Object currentValues, HttpMethod httpMethod) {
-        Map<String, Object> currentPathValues = (Map<String, Object>) currentValues;
-        Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CatsDSLWords.HTTP_METHOD)));
-
-        return httpMethodFromYaml.isEmpty() || httpMethodFromYaml.get().equals(httpMethod);
     }
 
     /**
