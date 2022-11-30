@@ -5,12 +5,14 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.AbstractMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @QuarkusTest
@@ -72,5 +74,16 @@ class OpenApiUtilsTest {
 
         boolean actual = OpenApiUtils.hasContentType(content, List.of("application/v1+json", "application\\/.*\\+?json;?.*"));
         Assertions.assertThat(actual).isFalse();
+    }
+
+    @Test
+    void shouldNotParseContentType() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/petstore-invalid-content.yml");
+        Map<String, Schema> schemaMap = OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json;?.*"));
+        Assertions.assertThat(schemaMap.keySet()).contains("ThePet");
+
+        Schema<?> badRequest = schemaMap.get("BadRequest");
+        Assertions.assertThat(badRequest).isNotNull();
+        Assertions.assertThat(badRequest.getProperties()).isNull();
     }
 }

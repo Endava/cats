@@ -17,8 +17,10 @@ import javax.inject.Singleton;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -66,6 +68,10 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         if (CollectionUtils.isEmpty(currentPathValues)) {
             currentPathValues = filesArguments.getSecurityFuzzerDetails().get(CatsDSLWords.ALL);
         }
+
+        currentPathValues = Optional.ofNullable(currentPathValues).orElse(Collections.emptyMap()).entrySet().stream()
+                .filter(stringObjectEntry -> customFuzzerUtil.isMatchingHttpMethod(stringObjectEntry.getValue(), data.getMethod()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return currentPathValues;
     }

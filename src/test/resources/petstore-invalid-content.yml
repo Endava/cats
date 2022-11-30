@@ -1,0 +1,101 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: http://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://petstore.swagger.io/api
+paths:
+  /pets:
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/xhtml+xml:
+            schema:
+              $ref: '#/components/schemas/MegaPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MegaPet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  responses:
+    BadRequest:
+      description: Request rejected due to a structural or business validation
+      content:
+        application/xhtml+xml:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ThePet:
+      description: Request rejected due to a structural or business validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MegaPet'
+  schemas:
+    MegaPet:
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          format: byte
+          example: MjIyMjIyMg==
+        additionalCode:
+          type: string
+          format: binary
+          example: MjIyMjIyMg==
+        dateOfBirth:
+          type: string
+          format: date
+          example: "2000-12-12"
+        timeOfVaccination:
+          type: string
+          format: date-time
+          example: 2012-01-24T15:54:14.876Z
+        age:
+          type: string
+          pattern: "[0-9]+"
+        owner:
+          type: object
+        previousOwner:
+          type: object
+          example: "prev owner"
+        metadata:
+          type: object
+          maxProperties: 10
+          additionalProperties:
+            type: string
+            maxLength: 256
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+
