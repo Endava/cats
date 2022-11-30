@@ -56,11 +56,14 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
             return null;
         }
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
-        String generated = StringGenerator.generate(pattern, getExactMethod().apply(schema).intValue(), getExactMethod().apply(schema).intValue());
+        int fromSchemaLength = getExactMethod().apply(schema).intValue();
+        int generatedStringLength = fromSchemaLength + 10;
+
+        String generated = StringGenerator.generate(pattern, generatedStringLength, generatedStringLength);
         if (schema instanceof ByteArraySchema) {
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
         }
-        return generated;
+        return generated.substring(5, fromSchemaLength + 5);
     }
 
     @Override
