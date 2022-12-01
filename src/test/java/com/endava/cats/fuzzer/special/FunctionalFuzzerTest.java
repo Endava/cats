@@ -156,7 +156,7 @@ class FunctionalFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"src/test/resources/functionalFuzzer.yml,TWOXX,4", "src/test/resources/functionalFuzzer-no-resp-code.yml,FOURXX,1", "src/test/resources/functionalFuzzer-resp-code-family.yml,TWOXX,1"})
+    @CsvSource({"src/test/resources/functionalFuzzer.yml,TWOXX,4", "src/test/resources/functionalFuzzer-no-resp-code.yml,FOURXX,1", "src/test/resources/functionalFuzzer-resp-code-family.yml,TWOXX_GENERIC,1"})
     void shouldMatchExpectedResultCodeFamily(String file, ResponseCodeFamily expectedResponseCode, int times) throws Exception {
         FuzzingData data = setContext(file, "{\"code\": \"200\"}");
 

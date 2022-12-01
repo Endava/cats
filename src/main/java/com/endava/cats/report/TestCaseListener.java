@@ -332,12 +332,13 @@ public class TestCaseListener {
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
-        if (isNotFound(response)) {
-            this.logger.debug("NOT_FOUND response");
-            this.reportError(logger, CatsResult.NOT_FOUND);
-        } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
+
+        if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
             this.logger.debug("Response code expected and documented and matches response schema");
             this.reportInfo(logger, CatsResult.OK.withResponseCode(response.responseCodeAsString()));
+        } else if (isNotFound(response)) {
+            this.logger.debug("NOT_FOUND response");
+            this.reportError(logger, CatsResult.NOT_FOUND);
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.logger.debug("Response code expected and documented and but doesn't match response schema");
             this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA.withResponseCode(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
@@ -418,7 +419,7 @@ public class TestCaseListener {
      * @return {@code true} if the response matches CATS expectations and {@code false} otherwise
      */
     private boolean isResponseCodeExpected(CatsResponse response, ResponseCodeFamily expectedResultCode) {
-        return expectedResultCode.allowedResponseCodes().contains(String.valueOf(response.responseCodeAsString()));
+        return expectedResultCode.matchesAllowedResponseCodes(response.responseCodeAsString());
     }
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
@@ -448,7 +449,7 @@ public class TestCaseListener {
     }
 
     private boolean isErrorResponse(CatsResponse response) {
-        return ResponseCodeFamily.FOURXX.allowedResponseCodes().contains(response.responseCodeAsString());
+        return ResponseCodeFamily.FOURXX.matchesAllowedResponseCodes(response.responseCodeAsString());
     }
 
     private boolean isNotErrorResponse(CatsResponse response) {
