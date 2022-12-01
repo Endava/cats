@@ -43,7 +43,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
      * </ol>
      * <p>
      * The method will generate a boundary value only if there is a left or right boundary defined.
-     * It won't generate values if the format is recognized but it doesn't have any boundaries defined,
+     * It won't generate values if the format is recognized, but it doesn't have any boundaries defined,
      * as those scenarios are already covered by the HappyPathFuzzer.
      *
      * @param schema used to extract boundary information
@@ -56,6 +56,9 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
             return null;
         }
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
+
+        /* Sometimes the regex generators will generate weird chars at the beginning or end of string.
+          So we generate a larger one and substring the right size. */
         int fromSchemaLength = getExactMethod().apply(schema).intValue();
         int generatedStringLength = fromSchemaLength + 10;
 
