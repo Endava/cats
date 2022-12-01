@@ -3,14 +3,10 @@ package com.endava.cats.http;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public enum ResponseCodeFamily {
     TWOXX {
-        @Override
-        public String getStartingDigit() {
-            return "2";
-        }
-
         @Override
         public String asString() {
             return "2XX";
@@ -18,14 +14,20 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("200", "201", "202", "204", "2XX");
+            return Arrays.asList("200", "201", "202", "204");
         }
-    }, FOURXX {
+    }, TWOXX_GENERIC {
         @Override
-        public String getStartingDigit() {
-            return "4";
+        public String asString() {
+            return "2XX";
         }
 
+        @Override
+        public List<String> allowedResponseCodes() {
+            return List.of("2XX");
+        }
+    },
+    FOURXX {
         @Override
         public String asString() {
             return "4XX";
@@ -33,14 +35,21 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("400", "413", "414", "422", "4XX");
+            return Arrays.asList("400", "413", "414", "422");
         }
-    }, FOURXX_AA {
+    },
+    FOURXX_GENERIC {
         @Override
-        public String getStartingDigit() {
-            return "4";
+        public String asString() {
+            return "4XX";
         }
 
+        @Override
+        public List<String> allowedResponseCodes() {
+            return List.of("4XX");
+        }
+    },
+    FOURXX_AA {
         @Override
         public String asString() {
             return "401, 403";
@@ -50,12 +59,9 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return Arrays.asList("401", "403");
         }
-    }, FOURXX_MT {
-        @Override
-        public String getStartingDigit() {
-            return "4";
-        }
+    },
 
+    FOURXX_MT {
         @Override
         public String asString() {
             return "4XX";
@@ -65,12 +71,9 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return Arrays.asList("406", "415");
         }
-    }, FOURXX_NF {
-        @Override
-        public String getStartingDigit() {
-            return "4";
-        }
+    },
 
+    FOURXX_NF {
         @Override
         public String asString() {
             return "4XX";
@@ -80,12 +83,9 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return Collections.singletonList("404");
         }
-    }, FIVEXX {
-        @Override
-        public String getStartingDigit() {
-            return "5";
-        }
+    },
 
+    FIVEXX {
         @Override
         public String asString() {
             return "5XX";
@@ -93,14 +93,21 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("500", "501", "5XX");
+            return Arrays.asList("500", "501");
         }
-    }, ONEXX {
+    },
+    FIVEXX_GENERIC {
         @Override
-        public String getStartingDigit() {
-            return "1";
+        public String asString() {
+            return "5XX";
         }
 
+        @Override
+        public List<String> allowedResponseCodes() {
+            return List.of("5XX");
+        }
+    },
+    ONEXX {
         @Override
         public String asString() {
             return "1XX";
@@ -110,12 +117,9 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return Arrays.asList("100", "101", "1XX");
         }
-    }, THREEXX {
-        @Override
-        public String getStartingDigit() {
-            return "3";
-        }
+    },
 
+    THREEXX {
         @Override
         public String asString() {
             return "3XX";
@@ -125,12 +129,9 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return Arrays.asList("300", "301", "302", "3XX");
         }
-    }, ZEROXX {
-        @Override
-        public String getStartingDigit() {
-            return "0";
-        }
+    },
 
+    ZEROXX {
         @Override
         public String asString() {
             return "0XX";
@@ -141,6 +142,8 @@ public enum ResponseCodeFamily {
             return Collections.singletonList("000");
         }
     };
+
+    public static final String XX = "XX";
 
     public static boolean isValidCode(String code) {
         return code != null && code.length() == 3 && Character.isDigit(code.charAt(0));
@@ -181,11 +184,24 @@ public enum ResponseCodeFamily {
 
     public static boolean matchAsCodeOrRange(String codeOne, String codeTwo) {
         return codeOne.equalsIgnoreCase(codeTwo)
-                || (codeOne.substring(1, 3).equalsIgnoreCase("xx") && codeOne.substring(0, 1).equalsIgnoreCase(codeTwo.substring(0, 1)))
-                || (codeTwo.substring(1, 3).equalsIgnoreCase("xx") && codeTwo.substring(0, 1).equalsIgnoreCase(codeOne.substring(0, 1)));
+                || (codeOne.substring(1, 3).equalsIgnoreCase(XX) && codeOne.substring(0, 1).equalsIgnoreCase(codeTwo.substring(0, 1)))
+                || (codeTwo.substring(1, 3).equalsIgnoreCase(XX) && codeTwo.substring(0, 1).equalsIgnoreCase(codeOne.substring(0, 1)));
     }
 
-    public abstract String getStartingDigit();
+    public boolean matchesAllowedResponseCodes(String code) {
+        boolean isAllowedResponseCode = this.allowedResponseCodes().contains(code);
+        boolean isAllowedGenericResponseCode = this.allowedResponseCodes().stream()
+                .filter(allowedCode -> allowedCode.endsWith(XX))
+                .findFirst()
+                .orElse("X")
+                .charAt(0) == code.toUpperCase(Locale.ROOT).charAt(0);
+
+        return isAllowedGenericResponseCode || isAllowedResponseCode;
+    }
+
+    public String getStartingDigit() {
+        return String.valueOf(asString().charAt(0));
+    }
 
     public abstract String asString();
 
