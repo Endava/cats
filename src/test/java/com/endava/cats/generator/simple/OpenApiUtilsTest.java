@@ -80,7 +80,7 @@ class OpenApiUtilsTest {
     void shouldNotParseContentType() throws Exception {
         OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/petstore-invalid-content.yml");
         Map<String, Schema> schemaMap = OpenApiUtils.getSchemas(openAPI, List.of("application\\/.*\\+?json;?.*"));
-        Assertions.assertThat(schemaMap.keySet()).contains("ThePet");
+        Assertions.assertThat(schemaMap).containsKey("ThePet");
 
         Schema<?> badRequest = schemaMap.get("BadRequest");
         Assertions.assertThat(badRequest).isNotNull();
