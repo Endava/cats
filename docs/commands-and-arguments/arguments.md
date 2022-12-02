@@ -59,7 +59,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
 - `--blackbox` If supplied (no value needed) it will ignore all response codes except for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
 - `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
-- `--outoput` The path where the CATS report will be written. Default is `cats-report` in the current directory
+- `--output` The path where the CATS report will be written. Default is `cats-report` in the current directory
 - `--skipReportingForIgnoredCodes` Skip reporting entirely for any of the ignored arguments provided in `--ignoreResponseXXX`
 
 ```bash
