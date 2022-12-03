@@ -35,7 +35,8 @@ class CheckSecurityHeadersFuzzerTest {
     private static final List<KeyValuePair<String, String>> SOME_SECURITY_HEADERS = Arrays.asList(new KeyValuePair<>("Cache-Control", "no-store"),
             new KeyValuePair<>("X-Content-Type-Options", "nosniff"));
     private static final List<KeyValuePair<String, String>> MISSING_HEADERS = Arrays.asList(new KeyValuePair<>("X-Frame-Options", "DENY"),
-            new KeyValuePair<>("X-XSS-Protection", "1; mode=block"), new KeyValuePair<>("X-XSS-Protection", "0"));
+            new KeyValuePair<>("X-XSS-Protection", "1; mode=block"), new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'"),
+            new KeyValuePair<>("X-XSS-Protection", "0"));
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
@@ -89,6 +90,25 @@ class CheckSecurityHeadersFuzzerTest {
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Stream.concat(allHeaders.stream(), MISSING_HEADERS.stream())
                 .collect(Collectors.toList())).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        checkSecurityHeadersFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
+    @Test
+    void shouldNotReportMissingHeadersWhenCSP() {
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
+                .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
+        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        List<KeyValuePair<String, String>> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
+        allHeaders.add(new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'"));
+        allHeaders.add(new KeyValuePair<>("X-XSS-Protection", "0"));
+
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(allHeaders).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         checkSecurityHeadersFuzzer.fuzz(data);
