@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.Bcp47Generator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -22,5 +21,17 @@ class Bcp47GeneratorTest {
     void shouldApply(String format, boolean expected) {
         Bcp47Generator bcp47Generator = new Bcp47Generator();
         Assertions.assertThat(bcp47Generator.appliesTo(format, "")).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldReturnWrongValue() {
+        Bcp47Generator bcp47Generator = new Bcp47Generator();
+        Assertions.assertThat(bcp47Generator.getAlmostValidValue()).isEqualTo("ro-US");
+    }
+
+    @Test
+    void shouldReturnTotallyWrongValue() {
+        Bcp47Generator bcp47Generator = new Bcp47Generator();
+        Assertions.assertThat(bcp47Generator.getTotallyWrongValue()).isEqualTo("xx-XX");
     }
 }

@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.CountryCodeAlpha2Generator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -22,5 +21,17 @@ class CountryCodeAlpha2GeneratorTest {
     void shouldApply(String format, boolean expected) {
         CountryCodeAlpha2Generator countryCodeAlpha2Generator = new CountryCodeAlpha2Generator();
         Assertions.assertThat(countryCodeAlpha2Generator.appliesTo(format, "")).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldGenerateWrongValue() {
+        CountryCodeAlpha2Generator countryCodeAlpha2Generator = new CountryCodeAlpha2Generator();
+        Assertions.assertThat(countryCodeAlpha2Generator.getAlmostValidValue()).isEqualTo("PP");
+    }
+
+    @Test
+    void shouldGenerateTotallyWrongValue() {
+        CountryCodeAlpha2Generator countryCodeAlpha2Generator = new CountryCodeAlpha2Generator();
+        Assertions.assertThat(countryCodeAlpha2Generator.getTotallyWrongValue()).isEqualTo("XX");
     }
 }

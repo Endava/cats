@@ -14,11 +14,9 @@ public abstract class DataFormat<T extends DataFormatGenerator> {
     }
 
     Optional<T> getGenerator(Schema<?> schema, String propertyName) {
-        if (schema.getFormat() == null) {
-            return Optional.empty();
-        }
         return generators.stream()
-                .filter(generator -> generator.appliesTo(schema.getFormat(), propertyName))
+                .filter(generator -> generator.appliesTo(Optional.ofNullable(schema.getFormat()).orElse(""),
+                        Optional.ofNullable(propertyName).orElse("")))
                 .findFirst();
     }
 }
