@@ -14,7 +14,7 @@
         <jansi.version>2.4.0</jansi.version>
         <lombok.version>1.18.24</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
-        <wiremock-jre8.version>2.34.0</wiremock-jre8.version>
+        <wiremock-jre8.version>2.35.0</wiremock-jre8.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <guava.version>31.1-jre</guava.version>
         <openapi-generator.version>6.2.0</openapi-generator.version>
@@ -37,11 +37,11 @@
         <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>5.3.23</spring.version>
+        <spring.version>6.0.2</spring.version>
         <assertj-core.version>3.23.1</assertj-core.version>
         <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
-        <spring-integration-core.version>5.5.14</spring-integration-core.version>
+        <spring-integration-core.version>6.0.0</spring-integration-core.version>
         <json.version>20220924</json.version>
         <error-prone.version>2.15.0</error-prone.version>
         <archunit-junit5.version>1.0.0</archunit-junit5.version>
