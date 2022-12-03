@@ -35,7 +35,7 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
             logger.info("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
             if (this.isFieldFuzzable(fuzzedField, data) && this.fuzzerGeneratedBoundaryValue(schema)) {
                 logger.debug("Field {} is fuzzable and has boundary value", fuzzedField);
-                logger.start("{}. Start fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
+                logger.start("{} type matching. Start fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
                 return Collections.singletonList(FuzzingStrategy.replace().withData(this.getBoundaryValue(schema)));
             } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
                 logger.debug("Field {} does not have a boundary defined", fuzzedField);

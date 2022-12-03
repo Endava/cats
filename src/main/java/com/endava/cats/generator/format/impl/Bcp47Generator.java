@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
@@ -7,7 +8,7 @@ import javax.inject.Singleton;
 import java.util.Random;
 
 @Singleton
-public class Bcp47Generator implements ValidDataFormatGenerator {
+public class Bcp47Generator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
     private final Random random = new Random();
 
     @Override
@@ -19,5 +20,15 @@ public class Bcp47Generator implements ValidDataFormatGenerator {
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "bcp47".equalsIgnoreCase(format);
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "ro-US";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "xx-XX";
     }
 }

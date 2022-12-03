@@ -23,4 +23,16 @@ class CardNumberGeneratorTest {
         CardNumberGenerator cardNumberGenerator = new CardNumberGenerator();
         Assertions.assertThat(cardNumberGenerator.appliesTo(format, property)).isEqualTo(expected);
     }
+
+    @Test
+    void shouldGenerateWrongValue() {
+        CardNumberGenerator cardNumberGenerator = new CardNumberGenerator();
+        Assertions.assertThat(cardNumberGenerator.getAlmostValidValue()).isEqualTo("2222420000001112");
+    }
+
+    @Test
+    void shouldGenerateTotallyWrongValue() {
+        CardNumberGenerator cardNumberGenerator = new CardNumberGenerator();
+        Assertions.assertThat(cardNumberGenerator.getTotallyWrongValue()).isEqualTo("4444444444444444");
+    }
 }

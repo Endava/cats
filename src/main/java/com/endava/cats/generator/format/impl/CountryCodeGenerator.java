@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
@@ -10,7 +11,7 @@ import java.util.Random;
 import java.util.Set;
 
 @Singleton
-public class CountryCodeGenerator implements ValidDataFormatGenerator {
+public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
     private final Random random = new Random();
 
     @Override
@@ -28,5 +29,15 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator {
         return "iso3166".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 "countrycode".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("countrycode");
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "ROM";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "XXX";
     }
 }

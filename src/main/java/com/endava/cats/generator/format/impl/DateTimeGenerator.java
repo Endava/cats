@@ -5,7 +5,6 @@ import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,11 +23,11 @@ public class DateTimeGenerator implements ValidDataFormatGenerator, InvalidDataF
 
     @Override
     public String getAlmostValidValue() {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:'Z'").format(LocalDateTime.now(ZoneId.systemDefault()));
+        return "2021-07-21-T10:22:1Z";
     }
 
     @Override
     public String getTotallyWrongValue() {
-        return "1000-07-21T88:32:28Z";
+        return "1111-07-21T88:32:28Z";
     }
 }

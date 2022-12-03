@@ -4,23 +4,19 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-
 @QuarkusTest
 class DateGeneratorTest {
 
     @Test
     void givenADateFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
         DateGenerator strategy = new DateGenerator();
-        Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now(ZoneId.systemDefault())));
+        Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("2021-02-30");
     }
 
 
     @Test
     void givenADateFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
         DateGenerator strategy = new DateGenerator();
-        Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("1000-07-21");
+        Assertions.assertThat(strategy.getTotallyWrongValue()).isEqualTo("11111-07-21");
     }
 }

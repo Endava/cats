@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
@@ -10,7 +11,7 @@ import java.util.Locale;
 import java.util.Random;
 
 @Singleton
-public class CardNumberGenerator implements ValidDataFormatGenerator {
+public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
 
     static final List<String> CARDS = List.of(
             "4485785156913636", "4716210684476791", "4929532217247180", "4929460887451637", "4929638520597888",
@@ -28,5 +29,15 @@ public class CardNumberGenerator implements ValidDataFormatGenerator {
     public boolean appliesTo(String format, String propertyName) {
         return "cardnumber".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("cardnumber");
+    }
+
+    @Override
+    public String getAlmostValidValue() {
+        return "2222420000001112";
+    }
+
+    @Override
+    public String getTotallyWrongValue() {
+        return "4444444444444444";
     }
 }

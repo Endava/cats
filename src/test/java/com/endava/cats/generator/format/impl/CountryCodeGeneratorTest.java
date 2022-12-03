@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.CountryCodeGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -43,5 +42,15 @@ class CountryCodeGeneratorTest {
     @Test
     void shouldGenerate3LettersCode() {
         Assertions.assertThat(countryCodeGenerator.generate(new Schema<>()).toString()).hasSize(3);
+    }
+
+    @Test
+    void shouldGenerateWrongValue() {
+        Assertions.assertThat(countryCodeGenerator.getAlmostValidValue()).isEqualTo("ROM");
+    }
+
+    @Test
+    void shouldGenerateTotallyWrongValue() {
+        Assertions.assertThat(countryCodeGenerator.getTotallyWrongValue()).isEqualTo("XXX");
     }
 }

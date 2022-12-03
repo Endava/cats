@@ -25,11 +25,11 @@ public class DateGenerator implements ValidDataFormatGenerator, InvalidDataForma
 
     @Override
     public String getAlmostValidValue() {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now(ZoneId.systemDefault()));
+        return "2021-02-30";
     }
 
     @Override
     public String getTotallyWrongValue() {
-        return "1000-07-21";
+        return "11111-07-21";
     }
 }
