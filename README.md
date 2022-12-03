@@ -34,7 +34,7 @@
 
 # Overview
 By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
-All tests are **generated, run and reported automatically** based on a pre-defined set of **98 Fuzzers**. 
+All tests are **generated, run and reported automatically** based on a pre-defined set of **99 Fuzzers**. 
 The Fuzzers cover a wide range of boundary testing and negative scenarios from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
 
@@ -88,6 +88,33 @@ There is no native binary for Windows, but you can use the uberjar version. This
 You can run it as `java -jar cats.jar`.
 
 Head to the releases page to download the latest version: [https://github.com/Endava/cats/releases](https://github.com/Endava/cats/releases).
+
+## Build from sources
+
+You can build CATS from sources on you local box. You need [Java 17+](https://sdkman.io/jdks). Maven is already bundled.
+
+> Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork ok [OKHttp](https://square.github.io/okhttp/) which will install locally
+under the `4.10.0-CATS` version, so don't worry about overriding the official versions.
+
+
+You can use the following Maven command to build the project as an uberjar:
+
+`./mvnw package -Dquarkus.package.type=uber-jar`
+
+
+You will end up with a `cats-runner.jar` in the `target` folder. You can run it wih `java -jar cats-runner.jar ...`.
+
+You can also build native images using a [GraalVM Java version](https://www.graalvm.org/).
+
+`./mvnw package -Pnative`
+
+> You will need to configure Maven with a [GitHub PAT](https://docs.github.com/en/free-pro-team@latest/packages/guides/configuring-apache-maven-for-use-with-github-packages) with `read-packages` scope to get some dependencies for the build.
+
+
+### Notes on Unit Tests
+
+You may see some `error` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the Fuzzers.
+
 
 # Contributing
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md). 
