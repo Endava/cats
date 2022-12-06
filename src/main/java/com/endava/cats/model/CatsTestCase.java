@@ -1,5 +1,6 @@
 package com.endava.cats.model;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.json.JsonUtils;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -13,6 +14,15 @@ import java.io.StringReader;
 @Setter
 @ToString(of = "scenario")
 public class CatsTestCase {
+    private static final String CURL_TEMPLATE = """
+            curl  -X %s \\
+                 %s \\
+                 %s \\
+                  %s
+            """;
+    private static final String CURL_HEADER = " -H \"%s: %s\"";
+    private static final String CURL_BODY = " -d '%s'";
+
     private String testId;
     private String scenario;
     private String expectedResult;
@@ -49,5 +59,20 @@ public class CatsTestCase {
 
     public String getResponseJson() {
         return JsonUtils.GSON.toJson(response);
+    }
+
+    public String getCurl() {
+        if (request.getHttpMethod().equals("####")) {
+            return "";
+        }
+
+        StringBuilder headersString = new StringBuilder();
+        String body = "";
+        request.getHeaders().forEach(header -> headersString.append(CURL_HEADER.formatted(header.getKey(), header.getValue())));
+        if (HttpMethod.requiresBody(request.getHttpMethod())) {
+            body = CURL_BODY.formatted(request.getPayload());
+        }
+
+        return CURL_TEMPLATE.formatted(request.getHttpMethod(), headersString.toString(), body, fullRequestPath);
     }
 }
