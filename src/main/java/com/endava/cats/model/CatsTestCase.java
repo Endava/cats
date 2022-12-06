@@ -23,6 +23,8 @@ public class CatsTestCase {
     private static final String CURL_HEADER = " -H \"%s: %s\"";
     private static final String CURL_BODY = " -d '%s'";
 
+    private static final String CATS_REPLAY = "cats replay %s";
+
     private String testId;
     private String scenario;
     private String expectedResult;
@@ -74,5 +76,9 @@ public class CatsTestCase {
         }
 
         return CURL_TEMPLATE.formatted(request.getHttpMethod(), headersString.toString(), body, fullRequestPath);
+    }
+
+    public String getCatsReplay() {
+        return CATS_REPLAY.formatted(testId.replace(" ", ""));
     }
 }
