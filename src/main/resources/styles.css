@@ -62,9 +62,32 @@ td a {
   display: block;
 }
 
+pre {
+  position: relative;
+  overflow: auto;
+  margin: 5px 0;
+}
+
+pre button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+
+  font-size: 0.9rem;
+  padding: 0.15rem;
+
+  border: ridge 1px #7b7b7c;
+  border-radius: 5px;
+}
+
+pre button:hover {
+  cursor: pointer;
+  background-color: #bcbabb;
+}
+
 pre code {
   display: block;
-  background: lightgray;
+  background: #C1D4D4;
   /*white-space: pre;*/
   -webkit-overflow-scrolling: touch;
   overflow-x: scroll;
