@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
+import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
@@ -11,7 +12,7 @@ import java.util.Locale;
 import java.util.Random;
 
 @Singleton
-public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
+public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
     static final List<String> CARDS = List.of(
             "4485785156913636", "4716210684476791", "4929532217247180", "4929460887451637", "4929638520597888",
@@ -39,5 +40,10 @@ public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDat
     @Override
     public String getTotallyWrongValue() {
         return "4444444444444444";
+    }
+
+    @Override
+    public List<String> marchingFormats() {
+        return List.of("cardNumber", "card-number", "card_number");
     }
 }

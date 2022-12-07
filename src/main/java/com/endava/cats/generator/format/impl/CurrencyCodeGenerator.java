@@ -1,18 +1,20 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
+import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
 import java.util.Currency;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 
 @Singleton
-public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
+public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     private final Random random = new Random();
 
     @Override
@@ -24,7 +26,7 @@ public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidD
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "currencycode".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                "iso-4217".equalsIgnoreCase(format) ||
+                "iso4217".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("currencycode");
     }
 
@@ -36,5 +38,10 @@ public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidD
     @Override
     public String getTotallyWrongValue() {
         return "XXX";
+    }
+
+    @Override
+    public List<String> marchingFormats() {
+        return List.of("iso4217", "currencyCode", "currency-code", "currency_code");
     }
 }

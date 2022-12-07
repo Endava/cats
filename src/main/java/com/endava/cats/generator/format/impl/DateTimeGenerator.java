@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
+import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
@@ -8,9 +9,10 @@ import javax.inject.Singleton;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Singleton
-public class DateTimeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
+public class DateTimeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
         return ZonedDateTime.now(ZoneId.of("GMT")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
@@ -29,5 +31,10 @@ public class DateTimeGenerator implements ValidDataFormatGenerator, InvalidDataF
     @Override
     public String getTotallyWrongValue() {
         return "1111-07-21T88:32:28Z";
+    }
+
+    @Override
+    public List<String> marchingFormats() {
+        return List.of("date-time");
     }
 }

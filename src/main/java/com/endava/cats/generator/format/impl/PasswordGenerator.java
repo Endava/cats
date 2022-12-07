@@ -1,13 +1,15 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
+import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
+import java.util.List;
 
 @Singleton
-public class PasswordGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
+public class PasswordGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
         return "catsISc00l?!useIt#";
@@ -26,5 +28,10 @@ public class PasswordGenerator implements ValidDataFormatGenerator, InvalidDataF
     @Override
     public String getTotallyWrongValue() {
         return "abcdefgh";
+    }
+
+    @Override
+    public List<String> marchingFormats() {
+        return List.of("password");
     }
 }
