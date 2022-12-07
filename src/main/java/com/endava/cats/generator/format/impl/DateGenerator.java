@@ -1,6 +1,7 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
+import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
@@ -8,9 +9,10 @@ import javax.inject.Singleton;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Singleton
-public class DateGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
+public class DateGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     @Override
@@ -31,5 +33,10 @@ public class DateGenerator implements ValidDataFormatGenerator, InvalidDataForma
     @Override
     public String getTotallyWrongValue() {
         return "11111-07-21";
+    }
+
+    @Override
+    public List<String> marchingFormats() {
+        return List.of("date");
     }
 }

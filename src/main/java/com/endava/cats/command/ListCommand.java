@@ -8,6 +8,7 @@ import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
@@ -43,6 +44,9 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class ListCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     private final List<Fuzzer> fuzzersList;
+
+    private final List<String> formats;
+
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
     @CommandLine.Option(names = {"-j", "--json"},
@@ -50,11 +54,12 @@ public class ListCommand implements Runnable {
     private boolean json;
 
 
-    public ListCommand(@Any Instance<Fuzzer> fuzzersList) {
+    public ListCommand(@Any Instance<Fuzzer> fuzzersList, @Any Instance<OpenAPIFormat> formats) {
         this.fuzzersList = fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndSanitize.class) == null)
                 .toList();
+        this.formats = formats.stream().flatMap(format -> format.marchingFormats().stream()).toList();
     }
 
     @Override
@@ -67,6 +72,17 @@ public class ListCommand implements Runnable {
         }
         if (listCommandGroups.listContractOptions != null && listCommandGroups.listContractOptions.paths) {
             listContractPaths();
+        }
+        if (listCommandGroups.listFormats != null && listCommandGroups.listFormats.formats) {
+            listFormats();
+        }
+    }
+
+    void listFormats() {
+        if (json) {
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(formats));
+        } else {
+            logger.noFormat("Registered OpenAPI formats: {}", formats);
         }
     }
 
@@ -129,7 +145,7 @@ public class ListCommand implements Runnable {
     }
 
     static class ListCommandGroups {
-        @CommandLine.ArgGroup(exclusive = false, heading = "List OpenAPI contract Paths%n")
+        @CommandLine.ArgGroup(exclusive = false, heading = "List OpenAPI Contract Paths%n")
         ListContractOptions listContractOptions;
 
         @CommandLine.ArgGroup(exclusive = false, heading = "List Fuzzers%n")
@@ -137,6 +153,17 @@ public class ListCommand implements Runnable {
 
         @CommandLine.ArgGroup(exclusive = false, heading = "List Fields Fuzzer Strategies%n")
         ListStrategies listStrategiesGroup;
+
+        @CommandLine.ArgGroup(exclusive = false, heading = "List Supported OpenAPI Formats%n")
+        ListFormats listFormats;
+    }
+
+    static class ListFormats {
+        @CommandLine.Option(
+                names = {"--formats", "formats"},
+                description = "Display all formats supported by CATS generators",
+                required = true)
+        boolean formats;
     }
 
     static class ListStrategies {

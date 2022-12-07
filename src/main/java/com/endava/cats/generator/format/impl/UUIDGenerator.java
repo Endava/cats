@@ -1,14 +1,16 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
+import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import javax.inject.Singleton;
+import java.util.List;
 import java.util.UUID;
 
 @Singleton
-public class UUIDGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
+public class UUIDGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public Object generate(Schema<?> schema) {
@@ -28,5 +30,10 @@ public class UUIDGenerator implements ValidDataFormatGenerator, InvalidDataForma
     @Override
     public String getTotallyWrongValue() {
         return "123e4567";
+    }
+
+    @Override
+    public List<String> marchingFormats() {
+        return List.of("uuid");
     }
 }
