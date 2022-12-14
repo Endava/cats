@@ -13,6 +13,8 @@ import java.util.List;
 @Singleton
 public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
+    public static final String EMAIL = "email";
+
     @Override
     public Object generate(Schema<?> schema) {
         return RandomStringUtils.randomAlphabetic(5) + "cool.cats@cats.io";
@@ -20,9 +22,9 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return propertyName.toLowerCase().endsWith("email") ||
+        return propertyName.toLowerCase().endsWith(EMAIL) ||
                 PropertySanitizer.sanitize(propertyName).toLowerCase().endsWith("emailaddress") ||
-                "email".equalsIgnoreCase(format);
+                EMAIL.equalsIgnoreCase(format);
     }
 
     @Override
@@ -37,6 +39,6 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public List<String> marchingFormats() {
-        return List.of("email");
+        return List.of(EMAIL);
     }
 }
