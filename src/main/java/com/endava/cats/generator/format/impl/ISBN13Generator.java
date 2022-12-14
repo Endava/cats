@@ -11,6 +11,9 @@ import java.util.List;
 
 @Singleton
 public class ISBN13Generator implements ValidDataFormatGenerator, OpenAPIFormat {
+
+    public static final String ISBN_13 = "isbn13";
+
     @Override
     public Object generate(Schema<?> schema) {
         return RandomStringUtils.randomNumeric(13, 13);
@@ -18,12 +21,12 @@ public class ISBN13Generator implements ValidDataFormatGenerator, OpenAPIFormat 
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return "isbn13".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                "isbn13".equalsIgnoreCase(PropertySanitizer.sanitize(propertyName));
+        return ISBN_13.equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
+                ISBN_13.equalsIgnoreCase(PropertySanitizer.sanitize(propertyName));
     }
 
     @Override
     public List<String> marchingFormats() {
-        return List.of("isbn13");
+        return List.of(ISBN_13);
     }
 }

@@ -12,6 +12,9 @@ import java.util.List;
 @Singleton
 public class ISBN10Generator implements ValidDataFormatGenerator, OpenAPIFormat {
 
+    public static final String ISBN_10 = "isbn10";
+    public static final String ISBN = "isbn";
+
     @Override
     public Object generate(Schema<?> schema) {
         return RandomStringUtils.randomNumeric(10, 10);
@@ -19,14 +22,14 @@ public class ISBN10Generator implements ValidDataFormatGenerator, OpenAPIFormat 
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return "isbn10".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                "isbn".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                "isbn10".equalsIgnoreCase(PropertySanitizer.sanitize(propertyName)) ||
-                "isbn".equalsIgnoreCase(PropertySanitizer.sanitize(propertyName));
+        return ISBN_10.equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
+                ISBN.equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
+                ISBN_10.equalsIgnoreCase(PropertySanitizer.sanitize(propertyName)) ||
+                ISBN.equalsIgnoreCase(PropertySanitizer.sanitize(propertyName));
     }
 
     @Override
     public List<String> marchingFormats() {
-        return List.of("isbn10", "isbn");
+        return List.of(ISBN_10, ISBN);
     }
 }
