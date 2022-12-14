@@ -23,6 +23,7 @@
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
             **/*HttpContent*.*, **/*MultipartProcessor*.*
         </sonar.coverage.exclusions>
+        <sonar.cpd.exclusions>**/*Generator*.*</sonar.cpd.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <maven-site-plugin.version>3.10.0</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.1.1</maven-project-info-reports-plugin.version>
