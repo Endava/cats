@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-import com.endava.cats.generator.format.impl.DurationGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -24,5 +23,18 @@ class DurationGeneratorTest {
     void shouldApply(String format, boolean expected) {
         DurationGenerator durationGenerator = new DurationGenerator();
         Assertions.assertThat(durationGenerator.appliesTo(format, "")).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldGenerateWrongValue() {
+        DurationGenerator durationGenerator = new DurationGenerator();
+        Assertions.assertThat(durationGenerator.getAlmostValidValue()).isEqualTo("PT2334384");
+
+    }
+
+    @Test
+    void shouldGenerateTotallyWrongValue() {
+        DurationGenerator durationGenerator = new DurationGenerator();
+        Assertions.assertThat(durationGenerator.getTotallyWrongValue()).isEqualTo("1234569");
     }
 }
