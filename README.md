@@ -6,7 +6,7 @@
 <p align="center">
 
 ![CI](https://img.shields.io/github/workflow/status/Endava/cats/CI?logo=GitHub&style=for-the-badge)
-[![Commits](https://img.shields.io/github/commit-activity/m/Endava/cats?style=for-the-badge&logo=git&logoColor=white)](https://github.com/Endava/cats/pulse)
+[![Commits](https://img.shields.io/github/actions/workflow/status/Endava/cats/main.yml?style=for-the-badge&logo=git&logoColor=white)](https://github.com/Endava/cats/pulse)
 
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=cats&metric=alert_status)](https://sonarcloud.io/dashboard?id=cats)
