@@ -512,7 +512,7 @@ public class ServiceCaller {
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(headers, data, suppliedHeader);
-            } else if (!data.isAddUserHeaders() && (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey()))) {
+            } else if (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey())) {
                 headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
                 headers.add(new KeyValuePair<>(suppliedHeader.getKey(), suppliedHeader.getValue()));
             }
