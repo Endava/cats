@@ -292,6 +292,8 @@ public class OpenAPIModelGenerator {
 
             if (innerSchema == null) {
                 this.parseFromInnerSchema(name, schema, values, propertyName);
+            } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
+                values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
             } else {
                 values.put(propertyName.toString(), this.resolveModelToExample(propertyName.toString(), innerSchema));
             }
