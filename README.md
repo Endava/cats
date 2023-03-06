@@ -93,7 +93,7 @@ Head to the releases page to download the latest version: [https://github.com/En
 
 You can build CATS from sources on you local box. You need [Java 17+](https://sdkman.io/jdks). Maven is already bundled.
 
-> Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork ok [OKHttp](https://square.github.io/okhttp/) which will install locally
+> Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork of [OKHttp](https://square.github.io/okhttp/) which will install locally
 under the `4.10.0-CATS` version, so don't worry about overriding the official versions.
 
 
