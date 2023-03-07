@@ -502,7 +502,7 @@ public class TestCaseListener {
                 result = result && matchesSingleElement(responseSchema, inner.getValue(), inner.getKey());
             }
         } else {
-            return responseSchema != null && responseSchema.contains(name);
+            return responseSchema != null && responseSchema.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT));
         }
         return result || responseSchema == null || responseSchema.isEmpty();
     }
