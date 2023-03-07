@@ -15,9 +15,9 @@
         <lombok.version>1.18.24</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
         <wiremock-jre8.version>2.35.0</wiremock-jre8.version>
-        <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <guava.version>31.1-jre</guava.version>
-        <openapi-generator.version>6.2.1</openapi-generator.version>
+        <openapi-generator.version>6.4.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -34,7 +34,7 @@
         <json-path.version>2.7.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.16.2.Final</quarkus.platform.version>
+        <quarkus.platform.version>2.16.4.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M8</surefire-plugin.version>
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -46,6 +46,7 @@
         <json.version>20220924</json.version>
         <error-prone.version>2.18.0</error-prone.version>
         <archunit-junit5.version>1.0.1</archunit-junit5.version>
+        <snakeyaml.version>2.0</snakeyaml.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -319,6 +320,11 @@
             <artifactId>assertj-core</artifactId>
             <version>${assertj-core.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
