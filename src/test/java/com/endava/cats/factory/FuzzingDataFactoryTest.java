@@ -3,9 +3,9 @@ package com.endava.cats.factory;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
@@ -66,6 +66,24 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data.get(0).getExamples())
                 .anyMatch(example -> example.contains("dog-example"))
                 .anyMatch(example -> example.contains("dog-no-ref"));
+    }
+
+    @Test
+    void shouldReturnRequiredFieldsWhenAllOfSchemaAndRequiredInRoot() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/allof-with-required-in-root.yml");
+
+        Assertions.assertThat(data).hasSize(1);
+        FuzzingData fuzzingData = data.get(0);
+        Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactly("breed", "id").doesNotContain("color");
+    }
+
+    @Test
+    void shouldReturnRequiredFieldsWhenAllOfSchemaAndRequiredPropertiesInBothSchemas() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/allof-with-required-for-both-schemas.yml");
+
+        Assertions.assertThat(data).hasSize(1);
+        FuzzingData fuzzingData = data.get(0);
+        Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactly("legs", "breed", "id").doesNotContain("color");
     }
 
     @Test
