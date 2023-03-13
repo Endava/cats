@@ -457,7 +457,7 @@ public class TestCaseListener {
     }
 
     private boolean isFuzzedFieldPresentInResponse(CatsResponse response) {
-        return response.getFuzzedField() == null || response.getBody().contains(response.getFuzzedField());
+        return response.getFuzzedField() == null || response.getBody().toLowerCase(Locale.ROOT).contains(response.getFuzzedField().toLowerCase(Locale.ROOT));
     }
 
     private boolean isNotTypicalDocumentedResponseCode(CatsResponse response) {
