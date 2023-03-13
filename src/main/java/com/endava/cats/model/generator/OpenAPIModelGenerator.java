@@ -1,9 +1,9 @@
 package com.endava.cats.model.generator;
 
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.json.JsonUtils;
-import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -161,7 +162,13 @@ public class OpenAPIModelGenerator {
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
-        return property.getExample() != null ? property.getExample() : "{\"cats\":\"cats\"}";
+        if (property.getExample() != null) {
+            return property.getExample();
+        }
+        if (property.getProperties() == null || property.getProperties().isEmpty()) {
+            return new HashMap<>();
+        }
+        return "{\"cats\":\"cats\"}";
     }
 
     private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {
@@ -383,6 +390,7 @@ public class OpenAPIModelGenerator {
             } else {
                 values.put(propertyName, finalMap);
             }
+            this.createMergedSchema(propertyName, composedSchema.getAllOf());
         }
 
         if (composedSchema.getAnyOf() != null) {
@@ -394,6 +402,21 @@ public class OpenAPIModelGenerator {
             mapDiscriminator(composedSchema, composedSchema.getOneOf());
             addXXXOfExamples(values, propertyName, composedSchema.getOneOf(), "ONE_OF");
         }
+    }
+
+    private void createMergedSchema(String schemaName, List<Schema> allOfSchema) {
+        Schema<?> newSchema = new Schema<>();
+        newSchema.properties(new LinkedHashMap<>());
+        newSchema.required(new ArrayList<>());
+
+        for (Schema<?> schema : allOfSchema) {
+            if (schema.get$ref() != null) {
+                schema = globalContext.getSchemaMap().get(schema.get$ref().substring(schema.get$ref().lastIndexOf("/") + 1));
+            }
+            newSchema.getProperties().putAll(schema.getProperties() != null ? schema.getProperties() : Collections.emptyMap());
+            newSchema.getRequired().addAll(schema.getRequired() != null ? schema.getRequired() : Collections.emptyList());
+        }
+        globalContext.getSchemaMap().put(schemaName, newSchema);
     }
 
     private void mapDiscriminator(ComposedSchema composedSchema, List<Schema> anyOf) {
