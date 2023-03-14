@@ -89,6 +89,14 @@ class StringGeneratorTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"0,0,10,30", "0,20,10,30"})
+    void shouldGenerateValueWhenPatternAndNoMinMax(int min, int max, int left, int right) {
+        String generated = StringGenerator.generate("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$", min, max);
+        Assertions.assertThat(generated).hasSizeBetween(left, right);
+    }
+
+
+    @ParameterizedTest
     @CsvSource({"[A-Z]+", "^[^\\s]+(\\s+[^\\s]+)*$", "^[\\w\\u00C0-\\u02AF]+(\\s+[\\w\\u00C0-\\u02AF]+)*$"})
     void shouldGenerateStringForSpecificRegexes(String regex) {
         String generated = StringGenerator.generate(regex, 2048, 2048);
