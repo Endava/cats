@@ -434,7 +434,7 @@ public class ServiceCaller {
         if (processedPath.contains("{")) {
             for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
                 String toReplaceWith;
-                if (child.getValue().isJsonNull()) {
+                if (child.getValue().isJsonNull() || child.getValue().isJsonObject()) {
                     toReplaceWith = "";
                 } else if (child.getValue().isJsonArray()) {
                     toReplaceWith = URLEncoder.encode(child.getValue().getAsJsonArray().get(0).getAsString(), StandardCharsets.UTF_8);
@@ -465,7 +465,9 @@ public class ServiceCaller {
         List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
         JsonElement jsonElement = JsonUtils.parseAsJsonElement(payload);
         for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
-            if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey()) || CatsDSLWords.isExtraField(child.getKey())) {
+            if (child.getValue().isJsonObject()) {
+                queryParams.addAll(this.buildQueryParameters(child.getValue().toString(), data));
+            } else if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey()) || CatsDSLWords.isExtraField(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
                     queryParams.add(new KeyValuePair<>(child.getKey(), null));
                 } else if (child.getValue().isJsonArray()) {
