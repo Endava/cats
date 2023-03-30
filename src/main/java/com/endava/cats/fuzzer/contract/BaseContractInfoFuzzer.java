@@ -1,6 +1,8 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.model.CatsRequest;
+import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -48,6 +50,9 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
         testCaseListener.addPath(data.getPath());
         testCaseListener.addContractPath(data.getContractPath());
         testCaseListener.addFullRequestPath("NA");
+        CatsRequest request = CatsRequest.empty();
+        request.setHttpMethod(String.valueOf(data.getMethod()));
+        testCaseListener.addRequest(request);
 
         this.process(data);
     }

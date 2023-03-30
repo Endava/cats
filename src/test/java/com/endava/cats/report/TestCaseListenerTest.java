@@ -501,8 +501,8 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT matches the corresponding schema.".formatted(response.responseCodeAsString()));
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
     @Test
