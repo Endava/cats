@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.util.VersionProvider;
 import picocli.CommandLine;
@@ -26,6 +27,10 @@ public class LintCommand implements Runnable {
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
     ReportingArguments reportingArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Naming Options:|@%n", exclusive = false)
+    NamingArguments namingArguments;
 
     @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract")

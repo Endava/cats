@@ -1,11 +1,14 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsField;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
@@ -16,45 +19,82 @@ import org.apache.commons.lang3.StringUtils;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 @ContractInfoFuzzer
 @Singleton
 public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
-    private static final Pattern HYPHEN_CASE = Pattern.compile("^[a-z]+((-)?[a-z])*+$");
-    private static final Pattern SNAKE_CASE = Pattern.compile("^[a-z]+((_)?[a-z])*+$");
-    private static final Pattern CAMEL_CASE = Pattern.compile("^[a-z]+[A-Za-z]+$");
-    private static final Pattern CAMEL_CASE_CAPITAL_START = Pattern.compile("^[A-Z][A-Za-z]+$");
     private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_\\d*");
     private static final String PLURAL_END = "s";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;
+    private final NamingArguments namingArguments;
 
-    public NamingsContractInfoFuzzer(TestCaseListener tcl, ProcessingArguments proc) {
+    public NamingsContractInfoFuzzer(TestCaseListener tcl, ProcessingArguments proc, NamingArguments nameArgs) {
         super(tcl);
         this.processingArguments = proc;
+        this.namingArguments = nameArgs;
     }
 
     @Override
     public void process(FuzzingData data) {
+        String expectedResult = "Path should follow the RESTful API naming good practices. " +
+                "Must use the following naming conventions: nouns, plurals, paths %s, path variables %s, query params %s, JSON objects %s, JSON properties %s, headers %s"
+                        .formatted(namingArguments.getPathNaming().getDescription(), namingArguments.getPathVariablesNaming().getDescription(),
+                                namingArguments.getQueryParamsNaming().getDescription(), namingArguments.getJsonObjectsNaming().getDescription(),
+                                namingArguments.getJsonPropertiesNaming().getDescription(), namingArguments.getHeadersNaming().getDescription());
         testCaseListener.addScenario(log, "Check if the path {} follows RESTful API naming good practices for HTTP method {}", data.getPath(), data.getMethod());
-        testCaseListener.addExpectedResult(log, "Path should follow the RESTful API naming good practices. Must use: nouns, plurals, lowercase hyphen-case/snake_case for endpoints, camelCase/snake_case for JSON properties");
+        testCaseListener.addExpectedResult(log, expectedResult);
 
         StringBuilder errorString = new StringBuilder();
         String[] pathElements = data.getPath().substring(1).split("/");
 
         errorString.append(this.checkPlurals(pathElements));
-        errorString.append(this.checkFormat(pathElements));
-        errorString.append(this.checkVariables(pathElements));
-        errorString.append(this.checkJsonObjects(data));
+        errorString.append(this.checkPathElements(pathElements));
+        errorString.append(this.checkPathVariables(pathElements));
+        if (HttpMethod.requiresBody(data.getMethod().name())) {
+            errorString.append(this.checkJsonObjects(data));
+            errorString.append(this.checkJsonProperties(data));
+        }
+        errorString.append(this.checkHeaders(data));
+        errorString.append(this.checkQueryParams(data));
 
         if (!errorString.toString().isEmpty()) {
-            testCaseListener.reportResultError(log, data, "Paths not following recommended naming", "Path does not follow RESTful API naming good practices: {}", errorString.toString());
+            testCaseListener.reportResultError(log, data, "Paths not following recommended naming",
+                    "Path does not follow RESTful API naming good practices: {}", StringUtils.stripEnd(errorString.toString().trim(),","));
         } else {
             testCaseListener.reportResultInfo(log, data, "Path follows the RESTful API naming good practices.");
         }
+    }
+
+    private String checkJsonProperties(FuzzingData data) {
+        Set<CatsField> catsFields = data.getAllFieldsAsCatsFields();
+        StringBuilder result = new StringBuilder();
+        for (CatsField catsField : catsFields) {
+            String[] props = catsField.getName().split("#");
+            result.append(this.check(props, property -> !namingArguments.getJsonPropertiesNaming().getPattern().matcher(property).matches(),
+                    "JSON properties not matching %s: %s, ", namingArguments.getJsonPropertiesNaming().getDescription()));
+
+        }
+        return result.toString();
+    }
+
+    private String checkQueryParams(FuzzingData data) {
+        return this.check(Optional.ofNullable(data.getQueryParams()).orElse(Collections.emptySet()).toArray(new String[0]), queryParam ->
+                        !namingArguments.getQueryParamsNaming().getPattern().matcher(queryParam).matches(),
+                "query parameters not matching %s: %s, ", namingArguments.getQueryParamsNaming().getDescription());
+    }
+
+    private String checkHeaders(FuzzingData data) {
+        Set<CatsHeader> headers = data.getHeaders();
+        return this.check(headers.stream().map(CatsHeader::getName).toArray(String[]::new), header ->
+                        !namingArguments.getHeadersNaming().getPattern().matcher(header).matches(),
+                "headers not matching %s: %s, ", namingArguments.getHeadersNaming().getDescription());
     }
 
     private String checkJsonObjects(FuzzingData data) {
@@ -75,33 +115,31 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
             }
 
         }
-        return this.check(stringToCheck.toArray(new String[0]), jsonObject -> !CAMEL_CASE_CAPITAL_START.matcher(jsonObject).matches()
-                        && !HYPHEN_CASE.matcher(jsonObject).matches() && !SNAKE_CASE.matcher(jsonObject).matches() && !GENERATED_BODY_OBJECTS.matcher(jsonObject).matches(),
-                "The following request/response objects are not matching CamelCase, snake_case or hyphen-case: %s");
+        return this.check(stringToCheck.toArray(new String[0]), jsonObject -> !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()
+                        && !GENERATED_BODY_OBJECTS.matcher(jsonObject).matches(),
+                "JSON objects not matching %s: %s, ", namingArguments.getJsonObjectsNaming().getDescription());
     }
 
-    private String checkVariables(String[] pathElements) {
+    private String checkPathVariables(String[] pathElements) {
         return this.check(pathElements, pathElement -> this.isAPathVariable(pathElement)
-                        && !CAMEL_CASE.matcher(pathElement.replace("{", "").replace("}", "")).matches()
-                        && !SNAKE_CASE.matcher(pathElement.replace("{", "").replace("}", "")).matches(),
-                "The following path variables are not matching camelCase or snake_case: %s");
+                        && !namingArguments.getPathVariablesNaming().getPattern().matcher(pathElement.replace("{", "").replace("}", "")).matches(),
+                "path variables not matching %s: %s, ", namingArguments.getPathVariablesNaming().getDescription());
     }
 
-    private String checkFormat(String[] pathElements) {
+    private String checkPathElements(String[] pathElements) {
         return this.check(pathElements, pathElement -> this.isNotAPathVariable(pathElement)
-                        && !SNAKE_CASE.matcher(pathElement).matches()
-                        && !HYPHEN_CASE.matcher(pathElement).matches(),
-                "The following path elements are not matching snake_case or hyphen-case: %s");
+                        && !namingArguments.getPathNaming().getPattern().matcher(pathElement).matches(),
+                "path elements not matching %s: %s, ", namingArguments.getPathNaming().getDescription());
     }
 
     private String checkPlurals(String[] pathElements) {
         String[] strippedPathElements = pathElements.length >= 2 ? Arrays.copyOfRange(pathElements, 1, pathElements.length - 1) : pathElements;
 
         return this.check(strippedPathElements, pathElement -> this.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END),
-                "The following path elements are not using plural: %s");
+                "path elements not using %s: %s, ", "plural");
     }
 
-    private String check(String[] pathElements, Predicate<String> checkFunction, String errorMessage) {
+    private String check(String[] pathElements, Predicate<String> checkFunction, String errorMessage, String convention) {
         StringBuilder result = new StringBuilder();
 
         for (String pathElement : pathElements) {
@@ -111,7 +149,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
         }
 
         if (!result.toString().isEmpty()) {
-            return String.format(errorMessage, StringUtils.stripStart(result.toString().trim(), ", "));
+            return String.format(errorMessage, convention, StringUtils.stripStart(result.toString().trim(), ", "));
         }
 
         return EMPTY;
