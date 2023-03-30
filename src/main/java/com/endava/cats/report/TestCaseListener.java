@@ -429,7 +429,12 @@ public class TestCaseListener {
         List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
         return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
                 || isResponseEmpty(response, responses)
-                || isNotTypicalDocumentedResponseCode(response);
+                || isNotTypicalDocumentedResponseCode(response)
+                || isEmptyArray(jsonElement);
+    }
+
+    private boolean isEmptyArray(JsonElement jsonElement) {
+        return jsonElement.isJsonArray() && isEmptyBody(jsonElement.toString());
     }
 
     private List<String> getExpectedResponsesByResponseCode(CatsResponse response, FuzzingData data) {
