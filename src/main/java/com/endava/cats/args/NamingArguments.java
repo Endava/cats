@@ -11,27 +11,27 @@ import java.util.regex.Pattern;
 public class NamingArguments {
 
     @CommandLine.Option(names = {"--pathNaming"},
-            description = "Naming strategy for paths (excluding path variables). Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@,  @|bold,underline PASCAL|@,  @|bold,underline CAMEL|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for paths (excluding path variables). Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming pathNaming = Naming.KEBAB;
 
     @CommandLine.Option(names = {"--pathVariablesNaming"},
-            description = "Naming strategy for paths variables. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@,  @|bold,underline PASCAL|@,  @|bold,underline CAMEL|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for paths variables. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming pathVariablesNaming = Naming.CAMEL;
 
     @CommandLine.Option(names = {"--queryParamsNaming"},
-            description = "Naming strategy for query parameters. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@,  @|bold,underline PASCAL|@,  @|bold,underline CAMEL|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for query parameters. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming queryParamsNaming = Naming.SNAKE;
 
     @CommandLine.Option(names = {"--jsonObjectsNaming"},
-            description = "Naming strategy for json objects. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@,  @|bold,underline PASCAL|@,  @|bold,underline CAMEL|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for json objects. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming jsonObjectsNaming = Naming.PASCAL;
 
     @CommandLine.Option(names = {"--jsonPropertiesNaming"},
-            description = "Naming strategy for json object properties. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@,  @|bold,underline PASCAL|@,  @|bold,underline CAMEL|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for json object properties. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming jsonPropertiesNaming = Naming.CAMEL;
 
     @CommandLine.Option(names = {"--headersNaming"},
-            description = "Naming strategy for json object properties. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@,  @|bold,underline PASCAL|@,  @|bold,underline CAMEL|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for json object properties. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming headersNaming = Naming.HTTP_HEADER;
 
 
