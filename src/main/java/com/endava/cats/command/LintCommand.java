@@ -22,7 +22,7 @@ import javax.inject.Inject;
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Dependent
-public class LintCommand implements Runnable {
+public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
@@ -47,5 +47,10 @@ public class LintCommand implements Runnable {
         catsCommand.filterArguments.customFilter("Contract");
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
         catsCommand.run();
+    }
+
+    @Override
+    public int getExitCode() {
+        return catsCommand.getExitCode();
     }
 }

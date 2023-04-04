@@ -32,7 +32,7 @@ import java.util.Map;
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Dependent
-public class RunCommand implements Runnable {
+public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RunCommand.class);
 
     @CommandLine.Parameters(index = "0",
@@ -116,5 +116,10 @@ public class RunCommand implements Runnable {
         List<String> lines = Files.readAllLines(file.toPath());
 
         return lines.stream().noneMatch(line -> line.contains(CatsDSLWords.TARGET_FIELDS) || line.contains(CatsDSLWords.TARGET_FIELDS_TYPES));
+    }
+
+    @Override
+    public int getExitCode() {
+        return catsCommand.getExitCode();
     }
 }
