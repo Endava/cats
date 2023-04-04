@@ -27,6 +27,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
@@ -65,6 +66,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @Dependent
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
+    private static final String SEPARATOR = StringUtils.repeat("-", 100);
 
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
@@ -294,6 +296,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                             testCaseListener.beforeFuzz(fuzzer.getClass());
                             fuzzer.fuzz(data);
                             testCaseListener.afterFuzz();
+                            logger.complete("Finishing Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
+                            logger.info("{} {}", SEPARATOR, "\n");
                         });
             } else {
                 logger.debug("Skipping fuzzer {} for path {} as configured!", fuzzer, pathItemEntry.getKey());

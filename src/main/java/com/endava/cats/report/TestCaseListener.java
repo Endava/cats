@@ -58,7 +58,6 @@ public class TestCaseListener {
     public static final String FUZZER = "fuzzer";
     protected static final String ID_ANSI = "id_ansi";
     protected static final AtomicInteger TEST = new AtomicInteger(0);
-    private static final String SEPARATOR = StringUtils.repeat("-", 100);
     private static final String DEFAULT_ERROR = "####";
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414");
     public static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
@@ -119,7 +118,6 @@ public class TestCaseListener {
             this.checkForIOErrors(e);
         }
         this.endTestCase();
-        logger.info("{} {}", SEPARATOR, "\n");
     }
 
     private void startTestCase() {
