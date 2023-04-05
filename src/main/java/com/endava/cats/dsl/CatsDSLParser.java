@@ -41,7 +41,7 @@ public class CatsDSLParser {
      */
     private String sanitize(String expression) {
         return expression.replaceAll("\\$\\{([^}]*)}", "$1")
-                .replaceAll("request#", "request.")
-                .replaceAll("\\$request", "request");
+                .replace("request#", "request.")
+                .replace("$request", "request");
     }
 }
