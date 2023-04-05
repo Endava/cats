@@ -279,14 +279,14 @@ public class FuzzingDataFactory {
                     .stream()
                     .map(Example::getValue)
                     .filter(Objects::nonNull)
-                    .map(JsonUtils.GSON::toJson)
+                    .map(Object::toString)
                     .collect(Collectors.toSet()));
 
             examples.addAll(mediaType.getExamples().values()
                     .stream()
                     .filter(example -> example.get$ref() != null)
                     .map(example -> globalContext.getExampleMap().get(this.getSchemaName(example.get$ref())).getValue())
-                    .map(JsonUtils.GSON::toJson)
+                    .map(Object::toString)
                     .collect(Collectors.toSet()));
         }
         examples.remove("");
