@@ -330,7 +330,11 @@ public class CustomFuzzerUtil {
     }
 
     private String replaceElementWithCustomValue(Map.Entry<String, String> keyValue, String payload) {
-        String toReplace = catsDSLParser.parseAndGetResult(this.getPropertyValueToReplaceInBody(keyValue), Map.of(Parser.REQUEST, payload));
+        Map<String, String> contextForParser = new HashMap<>();
+        contextForParser.put(Parser.REQUEST, payload);
+        contextForParser.putAll(variables);
+
+        String toReplace = catsDSLParser.parseAndGetResult(this.getPropertyValueToReplaceInBody(keyValue), contextForParser);
         try {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
             return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).getJson();

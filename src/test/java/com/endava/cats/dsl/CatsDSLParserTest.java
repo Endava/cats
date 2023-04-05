@@ -1,10 +1,11 @@
 package com.endava.cats.dsl;
 
-import com.endava.cats.dsl.api.Parser;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -13,6 +14,12 @@ import java.util.Map;
 @QuarkusTest
 class CatsDSLParserTest {
 
+    public static final String JSON = """
+            {
+                "filed1": "113",
+                "expiry": "2018-06-25",
+                "match": "NOT"
+              }""";
     private CatsDSLParser catsDSLParser;
 
     @BeforeEach
@@ -23,7 +30,7 @@ class CatsDSLParserTest {
     @Test
     void shouldReturnSameValue() {
         String initial = "test";
-        String actual = catsDSLParser.parseAndGetResult(initial, null);
+        String actual = catsDSLParser.parseAndGetResult(initial, Map.of());
 
         Assertions.assertThat(actual).isEqualTo(initial);
     }
@@ -44,17 +51,27 @@ class CatsDSLParserTest {
         Assertions.assertThat(actual).isEqualTo(initial);
     }
 
-    @Test
-    void shouldParseValueFromJson() {
-        String json = "{\n" +
-                "    \"filed1\": \"113\",\n" +
-                "    \"expiry\": \"2018-06-25\",\n" +
-                "    \"match\": \"NOT\"\n" +
-                "  }";
-        String initial = "T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))";
-        String actual = catsDSLParser.parseAndGetResult(initial, Map.of(Parser.RESPONSE, json));
+    @CsvSource({"request,${request.expiry}", "response,expiry"})
+    @ParameterizedTest
+    void shouldParseFromRequest(String context, String expression) {
+        String initial = "T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(" + expression + ".toString()))";
+        String actual = catsDSLParser.parseAndGetResult(initial, Map.of(context, JSON));
 
         Assertions.assertThat(actual).isEqualTo("true");
+    }
+
+    @Test
+    void shouldParseValueFromOutputVariables() {
+        String initial = "T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(${expiry}.toString()))";
+        String actual = catsDSLParser.parseAndGetResult(initial, Map.of("expiry", "2018-06-25"));
+        Assertions.assertThat(actual).isEqualTo("false");
+    }
+
+    @Test
+    void shouldSubstring() {
+        String expression = "name.substring(1,3)";
+        String actual = catsDSLParser.parseAndGetResult(expression, Map.of("name", "john"));
+        Assertions.assertThat(actual).isEqualTo("oh");
     }
 
     @Test

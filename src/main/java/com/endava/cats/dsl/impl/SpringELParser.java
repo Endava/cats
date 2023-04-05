@@ -1,15 +1,15 @@
 package com.endava.cats.dsl.impl;
 
 import com.endava.cats.dsl.api.Parser;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.integration.json.JsonPropertyAccessor;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,27 +20,32 @@ import java.util.Map;
 public class SpringELParser implements Parser {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final SpelExpressionParser spelExpressionParser;
-    private final ObjectMapper mapper;
 
     public SpringELParser() {
         spelExpressionParser = new SpelExpressionParser();
-        mapper = new ObjectMapper();
     }
 
     @Override
     public String parse(String expression, Map<String, String> context) {
         log.info("Parsing {}", expression);
-        String parserContext = context.getOrDefault(Parser.RESPONSE, context.getOrDefault(Parser.REQUEST, ""));
+        Object result = parseContext(expression, context);
 
+        if (expression.equalsIgnoreCase(String.valueOf(result))) {
+            result = parseContext(expression, context.getOrDefault(Parser.RESPONSE, null));
+        }
+
+        return result == null ? expression : String.valueOf(result);
+    }
+
+    @Nullable
+    private Object parseContext(String expression, Object context) {
         try {
-            JsonNode jsonObject = mapper.readTree(parserContext);
-            StandardEvaluationContext evaluationContext = new StandardEvaluationContext(jsonObject);
-            evaluationContext.setPropertyAccessors(Collections.singletonList(new JsonPropertyAccessor()));
+            StandardEvaluationContext evaluationContext = new StandardEvaluationContext(context);
+            evaluationContext.setPropertyAccessors(List.of(new MapAccessor(), new JsonPropertyAccessor()));
 
-            return String.valueOf(spelExpressionParser.parseExpression(expression).getValue(evaluationContext));
+            return spelExpressionParser.parseExpression(expression).getValue(evaluationContext);
         } catch (Exception e) {
             log.debug("Something went wrong while parsing!", e);
-            log.error("Failed to parse {} as invalid syntax: {}", expression, e.getMessage());
             return expression;
         }
     }
