@@ -3,8 +3,8 @@
 Linters are also called `ContractInfo` Fuzzers.
 
 Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
-- follow good and **consistent** practices for naming the contract elements like paths, requests, responses
-- always use plural for the path names, separate paths words through hyphens/underscores, use camelCase or snake_case for any `json` types and properties
+- follow good and **consistent** practices for naming the contract elements like paths, query params, headers, requests, responses
+- always use plural for the resources
 - provide tags for all operations in order to avoid breaking code generation on some languages and have a logical grouping of the API operations
 - provide good description for all paths, methods and request/response elements
 - provide meaningful responses for `POST`, `PATCH` and `PUT` requests
@@ -29,6 +29,15 @@ CATS has currently 9 registered `ContractInfo` Fuzzers or Linters:
 - `XmlContentTypeContractInfoFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
 
 You can run only these Fuzzers using `cats lint --contract=CONTRACT`.
+
+Naming conventions can be configured using the following arguments:
+- `--headersNaming=<headersNaming>` Naming strategy for json object properties. Possible values `SNAKE, KEBAB, PASCAL, CAMEL, HTTP_HEADER`. Default: `HTTP_HEADER`
+- `--jsonObjectsNaming=<jsonObjectsNaming>` Naming strategy for json objects. Possible values `SNAKE, KEBAB, PASCAL, CAMEL, HTTP_HEADER`. Default: `PASCAL`
+- `--jsonPropertiesNaming=<jsonPropertiesNaming>` Naming strategy for json object properties. Possible values `SNAKE, KEBAB, PASCAL, CAMEL, HTTP_HEADER`. Default: `CAMEL`
+- `--pathNaming=<pathNaming>` Naming strategy for paths (excluding path variables). Possible values `SNAKE, KEBAB, PASCAL, CAMEL, HTTP_HEADER`. Default: `KEBAB`
+- `--pathVariablesNaming=<pathVariablesNaming>` Naming strategy for paths variables. Possible values `SNAKE, KEBAB, PASCAL, CAMEL, HTTP_HEADER`. Default: `CAMEL`
+- `--queryParamsNaming=<queryParamsNaming>` Naming strategy for query parameters. Possible values `SNAKE, KEBAB, PASCAL, CAMEL, HTTP_HEADER`. Default: `SNAKE`
+
 
 :::info
 `ContractInfo` Fuzzers are disabled by default. You must either use the `cats lint ...` command to run only the linters or
