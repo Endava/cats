@@ -33,7 +33,7 @@ The `FunctionalFuzzer` file has the following syntax:
         oneOfSelection:
           element#type: "Value"
         expectedResponseCode: HTTP_CODE
-        httpMethod: HTTP_NETHOD
+        httpMethod: HTTP_METHOD
 ```
 
 And a typical run will look like (supposing the above file is named `functionalFuzzer.yml`):
@@ -52,7 +52,7 @@ This is a description of the elements within the `functionalFuzzer.yml` file:
 - if the supplied `httpMethod` is not a valid HTTP method, a `warning` will be issued and the test won't be executed
 - if the request payload uses a `oneOf` element to allow multiple request types, you can control which of the possible types the `FunctionalFuzzer` will apply to using the `oneOfSelection` keyword. The value of the `oneOfSelection` keyword must match the fully qualified name of the `discriminator`.
 - if no `oneOfSelection` is supplied, and the request payload accepts multiple `oneOf` elements, then a test will be created for each type of payload
-- the file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you must separate elements through `#` as in the example above instead of `.`
+- the file uses [Json path](https://github.com/json-path/JsonPath) syntax for all the properties you can supply; you can separate elements through `#` or `.`
 
 ## Dealing with oneOf, anyOf
 When you have request payloads which can take multiple object types, you can use the `oneOfSelection` keyword to specify which of the possible object types is required by the `FunctionalFuzzer`.
@@ -186,6 +186,12 @@ You can also supply boolean expression to be checked in the verify section using
 :::note
 The `checkBoolean` example also uses a [SpEL expression](/docs/advanced-topics/dynamic-values) to check that the returned `expiry` is after the current date.
 :::
+
+Dynamic expressions can be supplied in any section of the test case: either as input data (for example you might need a random identifier each time the test will run)
+in the output sections (you might want to format the response fields before storing them in a variable) or in the verify section (applying different transformations before asserting).
+Dynamic expressions can also refer variables or request/response fields internally. In the example above, `expiry` is a field returned in the response.
+If you want to refer a variable created in a previous test, let's call it `petName`, you can do so as: `T(org.apache.commons.lang3.StringUtils).substringAfterLast(${petName},'a')`.
+You can also refer request elements using `${request#field}`. 
 
 Important notes:
 - `verify` parameters support Java regexes as values

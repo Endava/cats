@@ -53,3 +53,7 @@ Notice the keyword `checkBoolean` which will test if the expression is `true`. T
 :::
 
 The syntax of dynamically setting dates is compliant with the [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs.
+
+Dynamic expressions can also refer variables or request/response fields internally. In the example above, `expiry` is a field returned in the response.
+If you want to refer a variable created in a previous test, let's call it `petName`, you can do so as: `T(org.apache.commons.lang3.StringUtils).substringAfterLast(${petName},'a')`.
+You can also refer request elements using `${request#field}`.
