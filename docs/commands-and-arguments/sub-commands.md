@@ -21,6 +21,8 @@ All available subcommands are listed below:
 
 - `cats list --paths --contract=CONTRACT` will list all the paths available within the contract
 
+- `cats list --formats` will list all supported formats for fields
+
 - `cats replay "test1,test2"` will replay the given tests `test1` and `test2`
 
 - `cats fuzz` will fuzz based on a given request template, rather than an OpenAPI contract
