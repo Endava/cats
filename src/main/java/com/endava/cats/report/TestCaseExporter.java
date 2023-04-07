@@ -26,12 +26,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -161,15 +163,16 @@ public abstract class TestCaseExporter {
     }
 
     public void printExecutionDetails(ExecutionStatisticsListener executionStatisticsListener) {
-        String catsFinished = ansi().fgBlue().a("CATS finished in {} ms. Total (excluding skipped) requests {}. ").toString();
+        String catsFinished = ansi().fgBlue().a("CATS finished in {}. Total (excluding skipped) requests {}. ").toString();
         String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
         String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
         String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
         String skipped = ansi().fgCyan().bold().a("❯ skipped: {}. ").toString();
         String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + REPORT_HTML)).reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
+        String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
 
-        logger.complete(finalMessage, (System.currentTimeMillis() - t0), executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+        logger.complete(finalMessage, duration, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
     }
 
 
