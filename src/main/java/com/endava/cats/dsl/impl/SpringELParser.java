@@ -27,7 +27,7 @@ public class SpringELParser implements Parser {
 
     @Override
     public String parse(String expression, Map<String, String> context) {
-        log.info("Parsing {}", expression);
+        log.debug("Parsing {}", expression);
         Object result = parseContext(expression, context);
 
         if (expression.equalsIgnoreCase(String.valueOf(result))) {
