@@ -22,6 +22,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -160,7 +161,7 @@ public class TemplateFuzzCommand implements Runnable {
             logger.debug("Resolving from file: {}", data);
             return Files.readString(Paths.get(data.substring(1)));
         } else if (data != null) {
-            return catsDSLParser.parseAndGetResult(data, null);
+            return data;
         }
         return "{}";
     }
