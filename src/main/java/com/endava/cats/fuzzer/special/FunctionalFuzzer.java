@@ -4,7 +4,6 @@ import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
@@ -24,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Singleton
 @SpecialFuzzer
