@@ -31,7 +31,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply `--printExecutionStatistics=detailed`
 - `--timestampReports` If supplied (no value needed), it will output the report still inside the `cats-report` folder, but in a sub-folder with the current timestamp
 - `--reportFormat=FORMAT` Specifies the format of the CATS report. Supported formats: `HTML_ONLY`, `HTML_JS` or `JUNIT`. You can use `HTML_ONLY` if you want the report to not contain any Javascript. This is useful in CI environments due to Javascript content security policies. Default is `HTML_JS` which includes some sorting and filtering capabilities.
-- `--useExamples` If `true` (default value when not supplied) then CATS will use examples supplied in the OpenAPI contact. If `false` CATS will rely only on generated values
+- `--[no-]useExamples` If `true` (default value when not supplied) then CATS will use examples supplied in the OpenAPI contact. If `false` CATS will rely only on generated values
 - `--checkFields` If supplied (no value needed), it will only run the `Field` Fuzzers
 - `--checkHeaders` If supplied (no value needed), it will only run the `Header` Fuzzers
 - `--checkHttp` If supplied (no value needed), it will only run the `HTTP` Fuzzers
@@ -61,6 +61,17 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
 - `--output` The path where the CATS report will be written. Default is `cats-report` in the current directory
 - `--skipReportingForIgnoredCodes` Skip reporting entirely for any of the ignored arguments provided in `--ignoreResponseXXX`
+- `--largeStringsSize=NUMBER` The size of the strings used by the Fuzzers sending large values like `VeryLargeStringsFuzzer`. Default: `40000`
+- `--debug` Sets logging level to all
+- `--json` Make specific commands output in `json` format
+- `--words=FILE` A custom dictionary that can be supplied. When this is supplied only the `TemplateFuzzer` will be active.
+
+Next arguments are active only when supplying a custom dictionary via `--words`:
+- `--matchResponseCodes=<matchResponseCodes>[,<matchResponseCodes>...]` A comma separated list of HTTP response codes that will be matched as error. All other response codes will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
+- `--matchResponseLines=<matchResponseLines>[,<matchResponseLines>...]` A comma separated list of number of line counts in the response that will be matched as error. All other response line counts will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
+- `--matchResponseRegex=<matchResponseRegex>` A regex that will match against the response that will be matched as error. All other response body matches will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
+- `--matchResponseSize=<matchResponseSizes>[,<matchResponseSizes>...]` A comma separated list of response sizes that will be matched as error. All other response sizes will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
+- `--matchResponseWords=<matchResponseWords>[,<matchResponseWords>...]` A comma separated list of word counts in the response that will be matched as error. All other response word counts will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
 
 ```bash
 cats --contract=my.yml --server=https://locathost:8080 --checkHeaders
