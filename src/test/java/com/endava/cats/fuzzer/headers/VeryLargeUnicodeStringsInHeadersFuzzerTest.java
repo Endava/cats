@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
@@ -25,7 +26,7 @@ class VeryLargeUnicodeStringsInHeadersFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
-        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class));
+        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class), Mockito.mock(IgnoreArguments.class));
         veryLargeUnicodeStringsInHeadersFuzzer = new VeryLargeUnicodeStringsInHeadersFuzzer(headersIteratorExecutor, processingArguments);
     }
 

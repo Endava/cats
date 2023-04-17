@@ -41,8 +41,6 @@ public class FilterArguments {
     @Inject
     Instance<Fuzzer> fuzzers;
     @Inject
-    IgnoreArguments ignoreArguments;
-    @Inject
     CheckArguments checkArguments;
     @Inject
     ProcessingArguments processingArguments;

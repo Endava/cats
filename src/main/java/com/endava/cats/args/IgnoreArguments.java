@@ -49,8 +49,12 @@ public class IgnoreArguments {
     private boolean skipReportingForIgnoredCodes;
 
     @CommandLine.Option(names = {"--skipFields"},
-            description = "A comma separated list of of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")
+            description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")
     private List<String> skipFields;
+
+    @CommandLine.Option(names = {"--skipHeaders"},
+            description = "A comma separated list of headers that will be skipped by all Fuzzers", split = ",")
+    private List<String> skipHeaders;
 
     @CommandLine.Option(names = {"-b", "--blackbox"},
             description = "Ignore all response codes except for @|bold,underline 5XX|@ which will be returned as @|bold,underline error|@. This is similar to @|bold --ignoreResponseCodes=\"2xx,4xx\"|@")
@@ -99,5 +103,9 @@ public class IgnoreArguments {
 
     public List<String> getSkipFields() {
         return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList());
+    }
+
+    public List<String> getSkipHeaders() {
+        return Optional.ofNullable(this.skipHeaders).orElse(Collections.emptyList());
     }
 }

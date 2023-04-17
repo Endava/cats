@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers.base;
 
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -21,6 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,40 +35,31 @@ class BaseHeadersFuzzerTest {
 
     private BaseHeadersFuzzer baseHeadersFuzzer;
 
+    private IgnoreArguments ignoreArguments;
+
+    private CatsResponse catsResponse;
+
+
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class));
+        ignoreArguments = Mockito.mock(IgnoreArguments.class);
+        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class), ignoreArguments);
         baseHeadersFuzzer = new MyBaseHeadersFuzzer(headersIteratorExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
     }
 
     @Test
     void givenAConcreteBaseHeadersFuzzerInstanceWithNoMandatoryHeader_whenExecutingTheFuzzMethod_thenTheFuzzingLogicIsProperlyExecuted() {
-        Map<String, List<String>> responses = new HashMap<>();
-        responses.put("200", Collections.singletonList("response"));
-        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
-                responses(responses).responseCodes(Sets.newHashSet("200", "202")).reqSchema(new StringSchema())
-                .requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
+        FuzzingData data = this.createData(false);
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX), Mockito.eq(true));
     }
 
     @Test
     void givenAConcreteBaseHeadersFuzzerInstanceWithMandatoryHeader_whenExecutingTheFuzzMethod_thenTheFuzzingLogicIsProperlyExecuted() {
-        Map<String, List<String>> responses = new HashMap<>();
-        responses.put("200", Collections.singletonList("response"));
-        FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").required(true).build()))
-                .responseCodes(Sets.newHashSet("200", "202")).reqSchema(new StringSchema())
-                .responses(responses).requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
-        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
-
+        FuzzingData data = this.createData(true);
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
     }
@@ -78,6 +71,31 @@ class BaseHeadersFuzzerTest {
         Mockito.doCallRealMethod().when(serviceCaller).isAuthenticationHeader(Mockito.any());
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldNotRunForIgnoredHeaders() {
+        FuzzingData data = createData(true);
+        data.getHeaders().add(CatsHeader.builder().name("skippedHeader").value("skippedValue").required(true).build());
+        baseHeadersFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
+
+        Mockito.when(ignoreArguments.getSkipHeaders()).thenReturn(List.of("skippedHeader"));
+        baseHeadersFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
+    }
+
+    private FuzzingData createData(boolean requiredHeaders) {
+        Map<String, List<String>> responses = new HashMap<>();
+        responses.put("200", Collections.singletonList("response"));
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>(Set.of(CatsHeader.builder().name("header").value("value").required(requiredHeaders).build())))
+                .responseCodes(Sets.newHashSet("200", "202")).reqSchema(new StringSchema())
+                .responses(responses).requestContentTypes(List.of("application/json")).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+
+        return data;
     }
 
     static class MyBaseHeadersFuzzer extends BaseHeadersFuzzer {

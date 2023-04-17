@@ -41,9 +41,7 @@ class FilterArgumentsTest {
         ignoreArguments = new IgnoreArguments();
         processingArguments = new ProcessingArguments();
         ReflectionTestUtils.setField(filterArguments, "checkArguments", checkArguments);
-        ReflectionTestUtils.setField(filterArguments, "ignoreArguments", ignoreArguments);
         ReflectionTestUtils.setField(filterArguments, "processingArguments", processingArguments);
-
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", Collections.emptyList());
         FilterArguments.ALL_CATS_FUZZERS.clear();
