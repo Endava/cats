@@ -65,15 +65,7 @@ public class HeadersIteratorExecutor {
                                     .build();
 
                             CatsResponse response = serviceCaller.call(serviceData);
-
-                            if (expectedResponseCode != null) {
-                                testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode, context.isMatchResponseSchema());
-                            } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
-                                testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
-                            } else {
-                                testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
-                            }
-
+                            this.reportResult(context, expectedResponseCode, response);
                         });
                     } finally {
                         /* we reset back the current header */
@@ -81,6 +73,16 @@ public class HeadersIteratorExecutor {
                     }
                 }
             }
+        }
+    }
+
+    private void reportResult(HeadersIteratorExecutorContext context, ResponseCodeFamily expectedResponseCode, CatsResponse response) {
+        if (expectedResponseCode != null) {
+            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode, context.isMatchResponseSchema());
+        } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
+            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
+        } else {
+            testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
         }
     }
 
