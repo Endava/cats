@@ -4,9 +4,9 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.KeyValuePair;
@@ -391,6 +391,22 @@ class ServiceCallerTest {
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
         List<String> headerNames = headers.stream().map(KeyValuePair::getKey).collect(Collectors.toList());
         Assertions.assertThat(headerNames).doesNotContain("header", "catsFuzzedHeader").contains("simpleHeader", "jwt");
+    }
+
+    @Test
+    void shouldPreserverNumberOfHeadersWhenHeaderSuppliedAndPresentInOpenApi() {
+        ServiceData data = ServiceData.builder()
+                .headers(List.of(CatsHeader.builder().name("catsFuzzedHeader").value("simpleValue").build(),
+                        CatsHeader.builder().name("catsFuzzedHeader").value("anotherValue").build()))
+                .relativePath("auth-header")
+                .fuzzedHeader("anotherOne").contentType("application/json").build();
+
+        List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
+        long numberOfHeaders = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).count();
+        Set<Object> headerValues = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).map(KeyValuePair::getValue).collect(Collectors.toSet());
+
+        Assertions.assertThat(numberOfHeaders).isEqualTo(2);
+        Assertions.assertThat(headerValues).hasSize(1).containsExactly("cats");
     }
 
     @Test
