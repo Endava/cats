@@ -71,7 +71,9 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static com.endava.cats.json.JsonUtils.NOT_SET;
 import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
@@ -516,11 +518,19 @@ public class ServiceCaller {
             if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(headers, data, suppliedHeader);
             } else if (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey())) {
-                /**/
-                headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
-                headers.add(new KeyValuePair<>(suppliedHeader.getKey(), suppliedHeader.getValue()));
+                replaceHeaderWithUserSuppliedHeader(headers, suppliedHeader.getKey(), suppliedHeader.getValue());
             }
         }
+    }
+
+    private static void replaceHeaderWithUserSuppliedHeader(List<KeyValuePair<String, Object>> headers, String headerName, Object headerValue) {
+        /* We need to make sure we add the same number of headers back as this is important for some Fuzzers*/
+        Predicate<KeyValuePair<String, Object>> headersToFilter = header -> header.getKey().equalsIgnoreCase(headerName);
+        long howManyHeadersToRemove = Math.max(headers.stream().filter(headersToFilter).count(), 1);
+        headers.removeIf(headersToFilter);
+
+        LongStream.range(0, howManyHeadersToRemove)
+                .forEach(iteration -> headers.add(new KeyValuePair<>(headerName, headerValue)));
     }
 
     private boolean isSuppliedHeaderInFuzzData(ServiceData data, Map.Entry<String, String> suppliedHeader) {
@@ -533,14 +543,16 @@ public class ServiceCaller {
 
     private void replaceHeaderIfNotFuzzed(List<KeyValuePair<String, Object>> headers, ServiceData data, Map.Entry<String, String> suppliedHeader) {
         if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
-            headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
-            headers.add(new KeyValuePair<>(suppliedHeader.getKey(), suppliedHeader.getValue()));
+            replaceHeaderWithUserSuppliedHeader(headers, suppliedHeader.getKey(), suppliedHeader.getValue());
         } else {
             /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behaviour on a valid header value */
-            KeyValuePair<String, Object> existingHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey())).findFirst().orElse(new KeyValuePair<>("", ""));
+            KeyValuePair<String, Object> existingHeader = headers.stream()
+                    .filter(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()))
+                    .findFirst()
+                    .orElse(new KeyValuePair<>("", ""));
+
             Object finalHeaderValue = FuzzingStrategy.mergeFuzzing(existingHeader.getValue(), suppliedHeader.getValue());
-            headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
-            headers.add(new KeyValuePair<>(suppliedHeader.getKey(), finalHeaderValue));
+            replaceHeaderWithUserSuppliedHeader(headers, suppliedHeader.getKey(), finalHeaderValue);
             logger.debug("Header's [{}] fuzzing will merge with the supplied header value from headers.yml. Final header value {}", suppliedHeader.getKey(), finalHeaderValue);
         }
     }
