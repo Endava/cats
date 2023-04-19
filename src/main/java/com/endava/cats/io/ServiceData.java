@@ -22,8 +22,15 @@ public class ServiceData {
     private final String contentType;
     @Builder.Default
     private final boolean replaceRefData = true;
+    /**
+     * Set to true if headers supplied by the user will be added or false otherwise.
+     * There are Fuzzers which needs this level of control.
+     */
     @Builder.Default
     private final boolean addUserHeaders = true;
+    /**
+     * Any header that will get removed before sending the request to the service.
+     */
     @Builder.Default
     private final Set<String> skippedHeaders = new HashSet<>();
     @Singular

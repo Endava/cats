@@ -305,11 +305,11 @@ public class ServiceCaller {
         List<KeyValuePair<String, Object>> headers = new ArrayList<>();
 
         this.addMandatoryHeaders(data, headers);
-        this.addSuppliedHeaders(headers, data.getRelativePath(), data);
+        this.addSuppliedHeaders(data, headers);
         this.removeSkippedHeaders(data, headers);
         this.addBasicAuth(headers);
 
-        return headers;
+        return Collections.unmodifiableList(headers);
     }
 
     private String addUriParams(String processedPayload, ServiceData data, String currentUrl) {
@@ -504,10 +504,11 @@ public class ServiceCaller {
         testCaseListener.addFullRequestPath(HtmlEscapers.htmlEscaper().escape(catsRequest.getUrl()));
     }
 
-    private void addSuppliedHeaders(List<KeyValuePair<String, Object>> headers, String relativePath, ServiceData data) {
-        logger.debug("Path {} (including ALL headers) has the following headers: {}", relativePath, filesArguments.getHeaders(relativePath));
+    private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
+        Map<String, String> userSuppliedHeaders = filesArguments.getHeaders(data.getRelativePath());
+        logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getRelativePath(), userSuppliedHeaders);
 
-        Map<String, String> suppliedHeaders = filesArguments.getHeaders(relativePath).entrySet().stream()
+        Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         entry -> catsDSLParser.parseAndGetResult(entry.getValue(), authArguments.getAuthScriptAsMap())));
 
@@ -515,6 +516,7 @@ public class ServiceCaller {
             if (data.isAddUserHeaders()) {
                 this.replaceHeaderIfNotFuzzed(headers, data, suppliedHeader);
             } else if (this.isSuppliedHeaderInFuzzData(data, suppliedHeader) || this.isAuthenticationHeader(suppliedHeader.getKey())) {
+                /**/
                 headers.removeIf(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()));
                 headers.add(new KeyValuePair<>(suppliedHeader.getKey(), suppliedHeader.getValue()));
             }
