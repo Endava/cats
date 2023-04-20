@@ -40,18 +40,15 @@ class FunctionalFuzzerTest {
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;
     private ServiceCaller serviceCaller;
-    private CatsDSLParser catsDSLParser;
-    private CatsUtil catsUtil;
     private CustomFuzzerUtil customFuzzerUtil;
     private FunctionalFuzzer functionalFuzzer;
 
     @BeforeEach
     void setup() {
-        catsDSLParser = new CatsDSLParser();
-        catsUtil = new CatsUtil(catsDSLParser);
+        CatsUtil catsUtil = new CatsUtil();
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments();
-        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener, catsDSLParser);
+        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener);
         functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
@@ -133,7 +130,7 @@ class FunctionalFuzzerTest {
         CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
         ReflectionTestUtils.setField(filesArguments, "customFuzzerDetails", createCustomFuzzerFile(customFieldValues));
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, mockCatsUtil, testCaseListener, catsDSLParser);
+        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, mockCatsUtil, testCaseListener);
         functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));
 

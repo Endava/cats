@@ -20,7 +20,7 @@ import java.util.Map;
 
 @QuarkusTest
 class ZalgoTextInStringFieldsValidateSanitizeFuzzerTest {
-    private final CatsUtil catsUtil = new CatsUtil(null);
+    private final CatsUtil catsUtil = new CatsUtil();
     private ZalgoTextInFieldsValidateSanitizeFuzzer zalgoTextInStringFieldsValidateSanitizeFuzzer;
 
     @BeforeEach

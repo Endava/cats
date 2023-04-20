@@ -20,7 +20,7 @@ import java.util.Map;
 
 @QuarkusTest
 class WithinControlCharsInStringFieldsSanitizeValidateFuzzerTest {
-    private final CatsUtil catsUtil = new CatsUtil(null);
+    private final CatsUtil catsUtil = new CatsUtil();
     private WithinControlCharsInStringFieldsSanitizeValidateFuzzer withinControlCharsInStringFieldsSanitizeValidateFuzzer;
 
     @BeforeEach

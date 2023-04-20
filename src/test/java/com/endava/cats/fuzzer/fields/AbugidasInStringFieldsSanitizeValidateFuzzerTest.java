@@ -24,7 +24,7 @@ import java.util.Map;
 @QuarkusTest
 class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
 
-    private final CatsUtil catsUtil = new CatsUtil(null);
+    private final CatsUtil catsUtil = new CatsUtil();
     private AbugidasInStringFieldsSanitizeValidateFuzzer abugidasCharsInStringFieldsSanitizeValidateFuzzer;
     private FilesArguments filesArguments;
 

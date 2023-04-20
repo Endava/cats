@@ -40,7 +40,6 @@ import java.util.Optional;
 public class ReplayCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
-    private final CatsDSLParser catsDSLParser;
 
     @CommandLine.Parameters(
             description = "The list of CATS tests. If you provide the .json extension it will be considered a path, " +
@@ -60,9 +59,8 @@ public class ReplayCommand implements Runnable {
     Map<String, Object> headersMap = Maps.newHashMap();
 
     @Inject
-    public ReplayCommand(ServiceCaller serviceCaller, CatsDSLParser catsDSLParser) {
+    public ReplayCommand(ServiceCaller serviceCaller) {
         this.serviceCaller = serviceCaller;
-        this.catsDSLParser = catsDSLParser;
     }
 
     public List<String> parseTestCases() {
@@ -81,7 +79,7 @@ public class ReplayCommand implements Runnable {
         headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
 
-        headersFromFile.forEach(header -> header.setValue(catsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
+        headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
         String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
 

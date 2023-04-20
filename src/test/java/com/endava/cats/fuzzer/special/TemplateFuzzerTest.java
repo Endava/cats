@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
@@ -42,7 +41,7 @@ class TemplateFuzzerTest {
         matchArguments = Mockito.mock(MatchArguments.class);
         userArguments = Mockito.mock(UserArguments.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsUtil = new CatsUtil(new CatsDSLParser());
+        catsUtil = new CatsUtil();
         serviceCaller = Mockito.mock(ServiceCaller.class);
         templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, catsUtil, userArguments, matchArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));

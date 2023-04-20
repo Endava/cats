@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -40,7 +39,6 @@ class SecurityFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private CatsDSLParser catsDSLParser;
     private CatsUtil catsUtil;
     private CustomFuzzerUtil customFuzzerUtil;
 
@@ -48,11 +46,10 @@ class SecurityFuzzerTest {
 
     @BeforeEach
     void setup() {
-        catsDSLParser = new CatsDSLParser();
-        catsUtil = new CatsUtil(catsDSLParser);
+        catsUtil = new CatsUtil();
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments();
-        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener, catsDSLParser);
+        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener);
         securityFuzzer = new SecurityFuzzer(filesArguments, customFuzzerUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }

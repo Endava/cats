@@ -34,11 +34,6 @@ import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
 public class CatsUtil {
     public static final String FUZZER_KEY_DEFAULT = "*******";
     public static final String TEST_KEY_DEFAULT = "**********";
-    private final CatsDSLParser catsDSLParser;
-
-    public CatsUtil(CatsDSLParser parser) {
-        this.catsDSLParser = parser;
-    }
 
     public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, PrettyLogger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
         Map<Boolean, List<T>> results = collection.stream().collect(Collectors.partitioningBy(predicateToFilter));
@@ -130,7 +125,7 @@ public class CatsUtil {
         String mapValues = additionalProperties.replace(MAP_VALUES + "=", "").replace("{", "").replace("}", "");
         for (String values : mapValues.split(",")) {
             String[] entry = values.split("=");
-            jsonDoc.put(JsonPath.compile(prefix), entry[0].trim(), catsDSLParser.parseAndGetResult(entry[1].trim(), Map.of(Parser.REQUEST, jsonDoc.jsonString())));
+            jsonDoc.put(JsonPath.compile(prefix), entry[0].trim(), CatsDSLParser.parseAndGetResult(entry[1].trim(), Map.of(Parser.REQUEST, jsonDoc.jsonString())));
         }
     }
 }

@@ -21,7 +21,7 @@ import java.util.Map;
 @QuarkusTest
 class ZalgoTextInFieldsSanitizeValidateFuzzerTest {
 
-    private final CatsUtil catsUtil = new CatsUtil(null);
+    private final CatsUtil catsUtil = new CatsUtil();
     private ZalgoTextInFieldsSanitizeValidateFuzzer zalgoTextInFieldsSanitizeValidateFuzzer;
 
     @BeforeEach
