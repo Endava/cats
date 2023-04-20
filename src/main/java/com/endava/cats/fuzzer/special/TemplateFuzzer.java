@@ -144,7 +144,7 @@ public class TemplateFuzzer implements Fuzzer {
 
     private String replacePayload(FuzzingData data, String withData, String targetField) {
         try {
-            return catsUtil.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).getJson();
+            return catsUtil.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).json();
         } catch (JsonPathException e) {
             return data.getPayload();
         }

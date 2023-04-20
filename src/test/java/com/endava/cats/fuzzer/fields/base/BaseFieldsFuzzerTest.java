@@ -79,8 +79,7 @@ class BaseFieldsFuzzerTest {
 
     @NotNull
     private FuzzingData createFuzzingData() {
-        FuzzingResult fuzzingResult = Mockito.mock(FuzzingResult.class);
-        Mockito.when(fuzzingResult.getJson()).thenReturn("{}");
+        FuzzingResult fuzzingResult = new FuzzingResult("{}", null);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
         Map<String, Schema> schemaMap = new HashMap<>();
