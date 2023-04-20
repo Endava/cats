@@ -51,7 +51,7 @@ class SecurityFuzzerTest {
         catsDSLParser = new CatsDSLParser();
         catsUtil = new CatsUtil(catsDSLParser);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        filesArguments = new FilesArguments(catsUtil);
+        filesArguments = new FilesArguments();
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener, catsDSLParser);
         securityFuzzer = new SecurityFuzzer(filesArguments, customFuzzerUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));

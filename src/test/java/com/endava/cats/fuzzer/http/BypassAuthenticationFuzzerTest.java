@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,8 +39,7 @@ class BypassAuthenticationFuzzerTest {
 
     @BeforeEach
     void setup() {
-        catsUtil = Mockito.mock(CatsUtil.class);
-        filesArguments = new FilesArguments(catsUtil);
+        filesArguments = Mockito.mock(FilesArguments.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
         simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
         bypassAuthenticationFuzzer = new BypassAuthenticationFuzzer(simpleExecutor, filesArguments);
@@ -59,9 +57,7 @@ class BypassAuthenticationFuzzerTest {
 
     @Test
     void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerRuns() throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "headersFile", new File("notEmpty"));
-        Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
-        filesArguments.loadHeaders();
+        Mockito.when(filesArguments.getHeaders(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
 
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
@@ -116,27 +112,20 @@ class BypassAuthenticationFuzzerTest {
 
     @Test
     void shouldProperlyIdentifyAuthHeadersFromHeadersFile() throws Exception {
-        ReflectionTestUtils.setField(filesArguments, "headersFile", new File("notEmpty"));
-        Mockito.when(catsUtil.parseYaml(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
-        Mockito.doCallRealMethod().when(catsUtil).loadYamlFileToMap(Mockito.anyString());
+        Mockito.when(filesArguments.getHeaders(Mockito.any())).thenReturn(createCustomFuzzerFile());
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").reqSchema(new StringSchema()).build();
-
-        filesArguments.loadHeaders();
         Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
         Assertions.assertThat(authHeaders).containsExactlyInAnyOrder("api-key", "authorization", "jwt");
     }
 
-    private Map<String, Map<String, Object>> createCustomFuzzerFile() {
-        Map<String, Map<String, Object>> result = new HashMap<>();
-        Map<String, Object> tests = new HashMap<>();
+    private Map<String, String> createCustomFuzzerFile() {
+        Map<String, String> tests = new HashMap<>();
         tests.put("jwt", "v1");
         tests.put("authorization", "200");
         tests.put("cats", "mumu");
+        tests.put("api-key", "secret");
 
-        result.put("all", tests);
-        result.put("path1", Collections.singletonMap("api-key", "secret"));
-        result.put("path2", Collections.singletonMap("api_key", "secret"));
 
-        return result;
+        return tests;
     }
 }
