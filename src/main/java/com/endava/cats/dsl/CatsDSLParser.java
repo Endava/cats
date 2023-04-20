@@ -14,6 +14,8 @@ public class CatsDSLParser {
             "$$", new EnvVariableParser(),
             "auth_script", new AuthScriptProviderParser());
 
+    private static final Parser DEFAULT_PARSER = new SpringELParser();
+
     /**
      * Gets the appropriate parser based on the {@code valueFromFile} and runs it against the given payload.
      * If no Parser is found, it will default to {@link SpringELParser}.
@@ -28,7 +30,7 @@ public class CatsDSLParser {
                 .filter(entry -> valueFromFile.startsWith(entry.getKey()))
                 .map(Map.Entry::getValue)
                 .findFirst()
-                .orElse(new SpringELParser())
+                .orElse(DEFAULT_PARSER)
                 .parse(this.sanitize(valueFromFile), context);
     }
 
