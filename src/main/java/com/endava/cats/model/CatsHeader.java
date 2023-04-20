@@ -7,8 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.joda.time.DateTime;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -60,7 +60,7 @@ public class CatsHeader {
             return UUID.randomUUID().toString();
         }
         if ("date-time".equalsIgnoreCase(schema.getFormat())) {
-            return DateTime.now().toString();
+            return OffsetDateTime.now().toString();
         }
 
         if ("string".equalsIgnoreCase(schema.getType())) {
