@@ -94,7 +94,7 @@ public class FieldsIteratorExecutor {
                         .relativePath(context.getFuzzingData().getPath())
                         .contractPath(context.getFuzzingData().getContractPath())
                         .headers(context.getFuzzingData().getHeaders())
-                        .payload(fuzzingResult.getJson())
+                        .payload(fuzzingResult.json())
                         .queryParams(context.getFuzzingData().getQueryParams())
                         .httpMethod(context.getFuzzingData().getMethod())
                         .contentType(context.getFuzzingData().getFirstRequestContentType())

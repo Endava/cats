@@ -40,8 +40,8 @@ class CatsUtilTest {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField(json, path, strategy);
 
-        Assertions.assertThat(result.getFuzzedValue()).isEqualTo("fuzzed");
-        Assertions.assertThat(result.getJson()).contains("fuzzed");
+        Assertions.assertThat(result.fuzzedValue()).isEqualTo("fuzzed");
+        Assertions.assertThat(result.json()).contains("fuzzed");
     }
 
     @Test
@@ -70,8 +70,8 @@ class CatsUtilTest {
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField("", "test", strategy);
 
-        Assertions.assertThat(result.getFuzzedValue()).asString().isEmpty();
-        Assertions.assertThat(result.getJson()).isEmpty();
+        Assertions.assertThat(result.fuzzedValue()).asString().isEmpty();
+        Assertions.assertThat(result.json()).isEmpty();
     }
 
     @Test
@@ -88,6 +88,6 @@ class CatsUtilTest {
                 }
                 """;
         FuzzingResult result = catsUtil.replaceField(payload, "arrayOfData", FuzzingStrategy.trail().withData("test"));
-        Assertions.assertThat(result.getJson()).contains("test").contains("FAoe22OkDDln6qHyqALVI1test").contains("USA");
+        Assertions.assertThat(result.json()).contains("test").contains("FAoe22OkDDln6qHyqALVI1test").contains("USA");
     }
 }

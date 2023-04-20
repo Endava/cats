@@ -1,6 +1,6 @@
 package com.endava.cats.strategy;
 
-public class ReplaceFuzzingStrategy extends FuzzingStrategy {
+public final class ReplaceFuzzingStrategy extends FuzzingStrategy {
 
     @Override
     public Object process(Object value) {

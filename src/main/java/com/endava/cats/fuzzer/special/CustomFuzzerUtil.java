@@ -334,7 +334,7 @@ public class CustomFuzzerUtil {
         String toReplace = CatsDSLParser.parseAndGetResult(this.getPropertyValueToReplaceInBody(keyValue), contextForParser);
         try {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
-            return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).getJson();
+            return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).json();
         } catch (Exception e) {
             log.debug("Something went wrong while parsing!", e);
             log.warning("Property [{}] does not exist", keyValue.getKey());
