@@ -8,9 +8,9 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @QuarkusTest
@@ -41,7 +41,7 @@ class CatsHeaderTest {
         CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
 
         Assertions.assertThat(header.getName()).isEqualTo("header");
-        Assertions.assertThat(DateTime.parse(header.getValue())).isNotNull();
+        Assertions.assertThat(OffsetDateTime.parse(header.getValue())).isNotNull();
     }
 
     @Test
