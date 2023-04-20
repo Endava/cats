@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.google.common.collect.Sets;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
@@ -11,6 +10,7 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 class ContractFuzzerDataUtil {
 
@@ -30,7 +30,7 @@ class ContractFuzzerDataUtil {
         operation.setResponses(apiResponses);
         pathItem.setPost(operation);
         return FuzzingData.builder().path("/pets").method(method).pathItem(pathItem).reqSchemaName(schemaName)
-                .reqSchema(new Schema().$ref(schemaName)).schemaMap(schemaMap).responseCodes(Sets.newHashSet(responseCodes)).headers(Sets.newHashSet()).build();
+                .reqSchema(new Schema().$ref(schemaName)).schemaMap(schemaMap).responseCodes(Set.of(responseCodes)).headers(Set.of()).build();
     }
 
     public static FuzzingData prepareFuzzingData(String schemaName, String responseCode) {

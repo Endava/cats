@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public abstract class DataFormat<T extends DataFormatGenerator> {
 
-    Instance<T> generators;
+    final Instance<T> generators;
 
     protected DataFormat(Instance<T> generators) {
         this.generators = generators;

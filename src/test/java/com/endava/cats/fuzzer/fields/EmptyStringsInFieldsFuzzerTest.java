@@ -10,7 +10,6 @@ import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
-import com.google.common.collect.Sets;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -49,7 +48,7 @@ class EmptyStringsInFieldsFuzzerTest {
         Mockito.when(ignoreArguments.getSkipFields()).thenReturn(Collections.singletonList("id"));
         Assertions.assertThat(emptyStringsInFieldsFuzzer.skipForFields()).containsOnly("id");
         FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Sets.newHashSet("id"));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("id"));
         Mockito.when(data.getPayload()).thenReturn("{}");
         emptyStringsInFieldsFuzzer.fuzz(data);
 

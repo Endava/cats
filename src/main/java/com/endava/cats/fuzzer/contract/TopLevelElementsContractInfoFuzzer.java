@@ -3,7 +3,6 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.google.common.collect.Sets;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.info.Contact;
@@ -70,7 +69,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
         StringBuilder builder = new StringBuilder();
 
         for (Server server : servers) {
-            String serverString = this.emptyOrShort(server::getDescription, DESCRIPTION);
+            String serverString = this.emptyOrShort(server::getDescription);
 
             if (!serverString.isEmpty()) {
                 builder.append(" , server[").append(server.getUrl()).append("].").append(StringUtils.stripStart(serverString, ",").trim());
@@ -87,7 +86,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
             if (StringUtils.isBlank(tag.getName()) || "null".equalsIgnoreCase(tag.getName())) {
                 tagString += "name" + IS_EMPTY;
             }
-            tagString += this.emptyOrShort(tag::getDescription, DESCRIPTION);
+            tagString += this.emptyOrShort(tag::getDescription);
 
             if (!tagString.isEmpty()) {
                 builder.append(" , tag[").append(tag.getName()).append("] = ").append(StringUtils.stripStart(tagString.trim(), ",").trim());
@@ -96,12 +95,12 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
         return StringUtils.stripStart(builder.toString().trim(), ",").trim();
     }
 
-    private String emptyOrShort(Supplier<String> supplier, String field) {
+    private String emptyOrShort(Supplier<String> supplier) {
         String result = EMPTY;
         if (StringUtils.isBlank(supplier.get())) {
-            result += COMMA + field + IS_EMPTY;
+            result += COMMA + DESCRIPTION + IS_EMPTY;
         } else if (supplier.get().split(" ").length < 3) {
-            result += COMMA + field + IS_TOO_SHORT;
+            result += COMMA + DESCRIPTION + IS_TOO_SHORT;
         }
 
         return result;
@@ -109,7 +108,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     private Set<String> checkInfo(Info info) {
         if (info == null) {
-            return Sets.newHashSet("info.title", "info.description", "info.version", "info.contact.name",
+            return Set.of("info.title", "info.description", "info.version", "info.contact.name",
                     "info.contact.email", "info.contact.url");
         }
 
@@ -126,7 +125,7 @@ public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
     public Set<String> checkContact(Contact contact) {
         if (contact == null) {
-            return Sets.newHashSet("contact.email", "contact.name", "contact.url");
+            return Set.of("contact.email", "contact.name", "contact.url");
         }
 
         Set<String> missingFields = new HashSet<>();

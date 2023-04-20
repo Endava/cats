@@ -9,7 +9,6 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
-import com.google.common.collect.Maps;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import picocli.CommandLine;
@@ -21,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,7 +56,7 @@ public class ReplayCommand implements Runnable {
 
     @CommandLine.Option(names = {"-H"},
             description = "Specifies the headers to be passed with all requests and will override values from the replay files for the same header name")
-    Map<String, Object> headersMap = Maps.newHashMap();
+    Map<String, Object> headersMap = new HashMap<>();
 
     @Inject
     public ReplayCommand(ServiceCaller serviceCaller) {
