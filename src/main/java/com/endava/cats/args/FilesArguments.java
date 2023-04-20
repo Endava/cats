@@ -1,30 +1,36 @@
 package com.endava.cats.args;
 
-import com.endava.cats.util.CatsUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
 
-import javax.inject.Singleton;
+import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-@Singleton
+@ApplicationScoped
 public class FilesArguments {
     private static final String ALL = "all";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private final Map<String, Map<String, String>> headers = new HashMap<>();
-    private final Map<String, Map<String, String>> queryParams = new HashMap<>();
-    private final Map<String, Map<String, String>> refData = new HashMap<>();
-    private final CatsUtil catsUtil;
-
+    private Map<String, Map<String, String>> headers;
+    private Map<String, Map<String, String>> queryParams;
+    private Map<String, Map<String, String>> refData;
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
 
@@ -77,10 +83,6 @@ public class FilesArguments {
     @Setter
     private boolean createRefData;
 
-    public FilesArguments(CatsUtil cu) {
-        this.catsUtil = cu;
-    }
-
     /**
      * Loads all supplied files for --securityFuzzerFile, --customFuzzerFile, --refData, --urlParams and --headers.
      *
@@ -100,7 +102,7 @@ public class FilesArguments {
             log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
         } else {
             log.info("Security Fuzzer file {}", securityFuzzerFile.getAbsolutePath());
-            securityFuzzerDetails = catsUtil.parseYaml(securityFuzzerFile.getAbsolutePath());
+            securityFuzzerDetails = this.parseYaml(securityFuzzerFile.getAbsolutePath());
         }
     }
 
@@ -108,29 +110,17 @@ public class FilesArguments {
         if (customFuzzerFile == null) {
             log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
         } else {
-            log.info("Custom Fuzzer file supplied {}", customFuzzerFile.getAbsolutePath());
-            customFuzzerDetails = catsUtil.parseYaml(customFuzzerFile.getAbsolutePath());
+            log.info("Functional Fuzzer file supplied {}", customFuzzerFile.getAbsolutePath());
+            customFuzzerDetails = this.parseYaml(customFuzzerFile.getAbsolutePath());
         }
     }
 
     public void loadRefData() throws IOException {
-        if (refDataFile == null) {
-            log.debug("No reference data file provided! Payloads supplied by Fuzzers will remain unchanged!");
-        } else {
-            log.info("Loading reference data from: {}", refDataFile.getAbsolutePath());
-            refData.putAll(catsUtil.loadYamlFileToMap(refDataFile.getAbsolutePath()));
-            log.debug("Reference data file loaded successfully: {}", refData);
-        }
+        this.refData = this.loadFileAsMapOfMapsOfStrings(refDataFile, "Reference Data");
     }
 
     public void loadQueryParams() throws IOException {
-        if (queryFile == null) {
-            log.debug("No queryParams file provided! No additional query parameters will be added!");
-        } else {
-            log.info("Query params file supplied {}", queryFile.getAbsolutePath());
-            queryParams.putAll(catsUtil.loadYamlFileToMap(queryFile.getAbsolutePath()));
-            log.debug("Query params file loaded successfully: {}", queryParams);
-        }
+        this.queryParams = this.loadFileAsMapOfMapsOfStrings(queryFile, "Query Params");
     }
 
     public void loadURLParams() {
@@ -142,13 +132,9 @@ public class FilesArguments {
     }
 
     public void loadHeaders() throws IOException {
-        if (headersFile == null) {
-            log.debug("No headers file provided! No additional header will be added!");
-        } else {
-            log.info("Headers file provided {}", headersFile.getAbsolutePath());
-            headers.putAll(catsUtil.loadYamlFileToMap(headersFile.getAbsolutePath()));
-            log.debug("Headers file loaded successfully: {}", headers);
-        }
+        this.headers = this.loadFileAsMapOfMapsOfStrings(headersFile, "Headers");
+
+        /*Merge headers from file with the ones supplied using the -H argument*/
         if (headersMap != null) {
             headers.merge(ALL, headersMap, (stringStringMap, stringStringMap2) -> {
                 Map<String, String> mergedMap = new HashMap<>(stringStringMap);
@@ -157,7 +143,6 @@ public class FilesArguments {
             });
         }
     }
-
 
     /**
      * Returns a list of the --urlParams supplied. The list will contain strings in the {@code name:value} pairs.
@@ -243,5 +228,43 @@ public class FilesArguments {
         return collection.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
+    }
+
+
+    private Map<String, Map<String, String>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
+        Map<String, Map<String, String>> fromFile = Collections.emptyMap();
+        if (file == null) {
+            log.debug("No {} file provided!");
+        } else {
+            log.info("{} file supplied {}", fileType, file.getAbsolutePath());
+            fromFile = this.loadYamlFileToMap(file.getAbsolutePath());
+            log.debug("{} file loaded successfully: {}", fileType, fromFile);
+        }
+        return fromFile;
+    }
+
+    public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
+        Map<String, Map<String, Object>> result = new LinkedHashMap<>();
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        try (Reader reader = new InputStreamReader(new FileInputStream(yaml), StandardCharsets.UTF_8)) {
+            JsonNode node = mapper.reader().readTree(reader);
+            Map<String, Object> paths = mapper.convertValue(node, Map.class);
+
+            for (Map.Entry<String, Object> entry : Optional.ofNullable(paths).orElse(Collections.emptyMap()).entrySet()) {
+                Map<String, Object> properties = mapper.convertValue(entry.getValue(), LinkedHashMap.class);
+                result.put(entry.getKey(), properties);
+            }
+        }
+        return result;
+    }
+
+    public Map<String, Map<String, String>> loadYamlFileToMap(String filePath) throws IOException {
+        Map<String, Map<String, String>> result = new HashMap<>();
+        Map<String, Map<String, Object>> headersAsObject = this.parseYaml(filePath);
+        for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().entrySet()
+                    .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
+        }
+        return result;
     }
 }

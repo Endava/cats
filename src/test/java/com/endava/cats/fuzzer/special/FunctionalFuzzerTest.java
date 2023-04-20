@@ -11,7 +11,6 @@ import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
-import com.google.gson.JsonObject;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -35,13 +34,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
-
 @QuarkusTest
 class FunctionalFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
-
     private FilesArguments filesArguments;
     private ServiceCaller serviceCaller;
     private CatsDSLParser catsDSLParser;
@@ -54,10 +50,9 @@ class FunctionalFuzzerTest {
         catsDSLParser = new CatsDSLParser();
         catsUtil = new CatsUtil(catsDSLParser);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        filesArguments = new FilesArguments(catsUtil);
+        filesArguments = new FilesArguments();
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener, catsDSLParser);
         functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
-        filesArguments.getCustomFuzzerDetails().clear();
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -107,12 +102,8 @@ class FunctionalFuzzerTest {
     @Test
     void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecuted() throws Exception {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("field", "oldValue");
-
-        FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "newValue", "newValue2");
+        FuzzingData data = this.setupFuzzingData(catsResponse, "newValue", "newValue2");
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
-        filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
 
@@ -123,12 +114,8 @@ class FunctionalFuzzerTest {
     @Test
     void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecutedAndDatesAreProperlyParsed() throws Exception {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("field", "oldValue");
-
-        FuzzingData data = this.setupFuzzingData(catsResponse, jsonObject, "T(java.time.OffsetDateTime).now().plusDays(20)");
+        FuzzingData data = this.setupFuzzingData(catsResponse, "T(java.time.OffsetDateTime).now().plusDays(20)");
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
-        filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
 
@@ -136,7 +123,7 @@ class FunctionalFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
-    private FuzzingData setupFuzzingData(CatsResponse catsResponse, JsonObject jsonObject, String... customFieldValues) throws IOException {
+    private FuzzingData setupFuzzingData(CatsResponse catsResponse, String... customFieldValues) throws IOException {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").
@@ -144,10 +131,8 @@ class FunctionalFuzzerTest {
                 .headers(new HashSet<>()).requestContentTypes(List.of("application/json")).build();
 
         CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
-        Mockito.when(mockCatsUtil.parseYaml(any())).thenReturn(createCustomFuzzerFile(customFieldValues));
+        ReflectionTestUtils.setField(filesArguments, "customFuzzerDetails", createCustomFuzzerFile(customFieldValues));
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
-        filesArguments = new FilesArguments(mockCatsUtil);
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, mockCatsUtil, testCaseListener, catsDSLParser);
         functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));

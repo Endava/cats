@@ -4,7 +4,6 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.jayway.jsonpath.DocumentContext;
@@ -16,13 +15,8 @@ import org.jboss.logmanager.LogContext;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -69,20 +63,6 @@ public class CatsUtil {
         mapper.writeValue(new File(yaml), data);
     }
 
-    public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
-        Map<String, Map<String, Object>> result = new LinkedHashMap<>();
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        try (Reader reader = new InputStreamReader(new FileInputStream(yaml), StandardCharsets.UTF_8)) {
-            JsonNode node = mapper.reader().readTree(reader);
-            Map<String, Object> paths = mapper.convertValue(node, Map.class);
-
-            for (Map.Entry<String, Object> entry : paths.entrySet()) {
-                Map<String, Object> properties = mapper.convertValue(entry.getValue(), LinkedHashMap.class);
-                result.put(entry.getKey(), properties);
-            }
-        }
-        return result;
-    }
 
     public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply) {
         return this.replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
@@ -117,15 +97,6 @@ public class CatsUtil {
         return object == null ? null : String.valueOf(object);
     }
 
-    public Map<String, Map<String, String>> loadYamlFileToMap(String headersFile) throws IOException {
-        Map<String, Map<String, String>> result = new HashMap<>();
-        Map<String, Map<String, Object>> headersAsObject = this.parseYaml(headersFile);
-        for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().entrySet()
-                    .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
-        }
-        return result;
-    }
 
     /**
      * When parsing the custom fuzzer files the additionalProperties element will be parsed as:

@@ -1,11 +1,8 @@
 package com.endava.cats.args;
 
-import com.endava.cats.dsl.CatsDSLParser;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
@@ -17,11 +14,9 @@ import java.util.Map;
 @QuarkusTest
 class FilesArgumentsTest {
 
-    private final CatsUtil catsUtil = new CatsUtil(Mockito.mock(CatsDSLParser.class));
-
     @Test
-    void shouldReturnSameUrlWhenUrlParamsEmpty() throws Exception {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+    void shouldReturnSameUrlWhenUrlParamsEmpty() {
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "params", Collections.emptyList());
         filesArguments.loadURLParams();
 
@@ -31,7 +26,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldReplaceUrlWhenUrlParamsSupplied() {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "params", List.of("version:v1.0"));
         filesArguments.loadURLParams();
 
@@ -43,7 +38,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldNotReplaceUrlWhenUrlParamsSuppliedButNotMatching() {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "params", List.of("someOther:v1.0"));
         filesArguments.loadURLParams();
 
@@ -54,7 +49,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldThrowExceptionOnMissingRefData() {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("mumu"));
 
         Assertions.assertThrows(IOException.class, filesArguments::loadRefData);
@@ -62,7 +57,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldThrowExceptionOnMissingHeadersFile() {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("mumu"));
 
         Assertions.assertThrows(IOException.class, filesArguments::loadHeaders);
@@ -70,7 +65,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldMergeHeaders() throws Exception {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
         ReflectionTestUtils.setField(filesArguments, "headersMap", Map.of("auth", "secret"));
         filesArguments.loadHeaders();
@@ -81,7 +76,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldThrowExceptionOnMissingHeadersQueryParamsFile() {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("mumu"));
 
         Assertions.assertThrows(IOException.class, filesArguments::loadQueryParams);
@@ -89,7 +84,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldLoadPathAndAllQueryParamsForPath() throws Exception {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParams.yml"));
         filesArguments.loadQueryParams();
 
@@ -99,7 +94,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldLoadOnlyAllQueryParamsForPath() throws Exception {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParams.yml"));
         filesArguments.loadQueryParams();
 
@@ -109,7 +104,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldNotLoadAnyQueryParam() throws Exception {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/refFields.yml"));
         filesArguments.loadQueryParams();
         org.assertj.core.api.Assertions.assertThat(filesArguments.getAdditionalQueryParamsForPath("/no-pets")).isEmpty();
@@ -117,9 +112,17 @@ class FilesArgumentsTest {
 
     @Test
     void shouldReturnEmptyUrlParams() {
-        FilesArguments filesArguments = new FilesArguments(catsUtil);
+        FilesArguments filesArguments = new FilesArguments();
 
         filesArguments.loadURLParams();
         org.assertj.core.api.Assertions.assertThat(filesArguments.getUrlParamsList()).isEmpty();
+    }
+
+    @Test
+    void shouldProperlyParseYamlFile() throws Exception {
+        Map<String, Map<String, Object>> yaml = new FilesArguments().parseYaml("src/test/resources/test.yml");
+
+        org.assertj.core.api.Assertions.assertThat(yaml.get("all")).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(yaml.get("all").get("Authorization")).isNotNull();
     }
 }

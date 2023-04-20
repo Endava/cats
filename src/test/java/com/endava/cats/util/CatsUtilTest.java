@@ -19,15 +19,6 @@ import java.util.Set;
 class CatsUtilTest {
 
     @Test
-    void givenAYamlFile_whenParseYamlIsCalled_thenTheYamlFileIsProperlyParsed() throws Exception {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
-        Map<String, Map<String, Object>> yaml = catsUtil.parseYaml("src/test/resources/test.yml");
-
-        Assertions.assertThat(yaml.get("all")).isNotNull();
-        Assertions.assertThat(yaml.get("all").get("Authorization")).isNotNull();
-    }
-
-    @Test
     void givenASetAndMinSize_whenGettingAllSetsWithMinSize_thenAllSubsetsAreProperlyReturned() {
         Set<String> data = new HashSet<>(Arrays.asList("a", "b", "c"));
         Set<Set<String>> sets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(data, 2);

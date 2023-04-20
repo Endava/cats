@@ -77,13 +77,14 @@ class ServiceCallerTest {
 
     @BeforeEach
     public void setupEach() throws Exception {
-        filesArguments = new FilesArguments(catsUtil);
+        filesArguments = new FilesArguments();
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments, processingArguments);
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("src/test/resources/refFields.yml"));
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
+        ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParamsEmpty.yml"));
         ReflectionTestUtils.setField(filesArguments, "params", List.of("id=1", "test=2"));
         ReflectionTestUtils.setField(authArguments, "sslKeystore", null);
         ReflectionTestUtils.setField(authArguments, "proxyHost", null);
@@ -92,6 +93,7 @@ class ServiceCallerTest {
         filesArguments.loadHeaders();
         filesArguments.loadRefData();
         filesArguments.loadURLParams();
+        filesArguments.loadQueryParams();
         catsGlobalContext.getPostSuccessfulResponses().clear();
     }
 
