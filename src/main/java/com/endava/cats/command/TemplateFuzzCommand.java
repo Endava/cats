@@ -22,7 +22,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -79,9 +78,6 @@ public class TemplateFuzzCommand implements Runnable {
 
     @Inject
     TemplateFuzzer templateFuzzer;
-
-    @Inject
-    CatsDSLParser catsDSLParser;
 
     @Inject
     TestCaseListener testCaseListener;
@@ -145,7 +141,7 @@ public class TemplateFuzzCommand implements Runnable {
                 .stream()
                 .map(entry -> CatsHeader.builder()
                         .name(entry.getKey().trim())
-                        .value(catsDSLParser.parseAndGetResult(entry.getValue().trim(), authArgs.getAuthScriptAsMap()))
+                        .value(CatsDSLParser.parseAndGetResult(entry.getValue().trim(), authArgs.getAuthScriptAsMap()))
                         .build())
                 .collect(Collectors.toSet());
     }

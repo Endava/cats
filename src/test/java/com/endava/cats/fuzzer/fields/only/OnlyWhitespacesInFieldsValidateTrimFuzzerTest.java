@@ -22,7 +22,7 @@ import java.util.Map;
 
 @QuarkusTest
 class OnlyWhitespacesInFieldsValidateTrimFuzzerTest {
-    private final CatsUtil catsUtil = new CatsUtil(null);
+    private final CatsUtil catsUtil = new CatsUtil();
     private ServiceCaller serviceCaller;
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;

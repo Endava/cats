@@ -40,20 +40,17 @@ import static com.endava.cats.util.CatsDSLWords.*;
 
 @ApplicationScoped
 public class CustomFuzzerUtil {
-    private static final String NOT_MATCHING_ERROR = "Parameter [%s] with value [%s] not matching [%s]. ";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
     private final Map<String, String> variables = new HashMap<>();
     private final Map<String, Map<String, Object>> pathsWithInputVariables = new HashMap<>();
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
-    private final CatsDSLParser catsDSLParser;
 
-    public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl, CatsDSLParser cdsl) {
+    public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl) {
         this.serviceCaller = sc;
         catsUtil = cu;
         testCaseListener = tcl;
-        this.catsDSLParser = cdsl;
     }
 
 
@@ -129,7 +126,7 @@ public class CustomFuzzerUtil {
                 .filter(entry -> entry.getValue().startsWith("$request"))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> catsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.REQUEST, request))));
+                        entry -> CatsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.REQUEST, request))));
     }
 
     private void checkVerifiesAndReport(FuzzingData data, String request, CatsResponse response, String verify, String expectedResponseCode) {
@@ -152,7 +149,7 @@ public class CustomFuzzerUtil {
 
                 Matcher verifyMatcher = Pattern.compile(parsedVerifyValue).matcher(valueToCheck);
                 if (!verifyMatcher.matches()) {
-                    errorMessages.append(String.format(NOT_MATCHING_ERROR, key, valueToCheck, parsedVerifyValue));
+                    errorMessages.append(String.format("Parameter [%s] with value [%s] not matching [%s]. ", key, valueToCheck, parsedVerifyValue));
                 }
             });
 
@@ -168,7 +165,7 @@ public class CustomFuzzerUtil {
     }
 
     private String getVerifyValue(String request, CatsResponse response, String value) {
-        String verifyValue = catsDSLParser.parseAndGetResult(value, Map.of(Parser.REQUEST, request, Parser.RESPONSE, response.getBody()));
+        String verifyValue = CatsDSLParser.parseAndGetResult(value, Map.of(Parser.REQUEST, request, Parser.RESPONSE, response.getBody()));
 
         /* It means that it's 'just' a CATS variable */
         if (verifyValue.startsWith("$")) {
@@ -334,7 +331,7 @@ public class CustomFuzzerUtil {
         contextForParser.put(Parser.REQUEST, payload);
         contextForParser.putAll(variables);
 
-        String toReplace = catsDSLParser.parseAndGetResult(this.getPropertyValueToReplaceInBody(keyValue), contextForParser);
+        String toReplace = CatsDSLParser.parseAndGetResult(this.getPropertyValueToReplaceInBody(keyValue), contextForParser);
         try {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
             return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).getJson();

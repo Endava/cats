@@ -5,10 +5,8 @@ import com.endava.cats.dsl.impl.AuthScriptProviderParser;
 import com.endava.cats.dsl.impl.EnvVariableParser;
 import com.endava.cats.dsl.impl.SpringELParser;
 
-import javax.inject.Singleton;
 import java.util.Map;
 
-@Singleton
 public class CatsDSLParser {
     private static final Map<String, Parser> PARSERS = Map.of(
             "$$", new EnvVariableParser(),
@@ -24,14 +22,14 @@ public class CatsDSLParser {
      * @param context       a given context: JSON request or response, a Map of values
      * @return the result after the appropriate parser runs
      */
-    public String parseAndGetResult(String valueFromFile, Map<String, String> context) {
+    public static String parseAndGetResult(String valueFromFile, Map<String, String> context) {
         return PARSERS.entrySet()
                 .stream()
                 .filter(entry -> valueFromFile.startsWith(entry.getKey()))
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElse(DEFAULT_PARSER)
-                .parse(this.sanitize(valueFromFile), context);
+                .parse(sanitize(valueFromFile), context);
     }
 
     /**
@@ -41,7 +39,7 @@ public class CatsDSLParser {
      * @param expression the expression as supplied by the user
      * @return normalized form of the expression
      */
-    private String sanitize(String expression) {
+    private static String sanitize(String expression) {
         return expression.replaceAll("\\$\\{([^}]*)}", "$1")
                 .replace("request#", "request.")
                 .replace("$request", "request");

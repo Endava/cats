@@ -41,8 +41,6 @@ class ServiceCallerTest {
 
     public static WireMockServer wireMockServer;
     @Inject
-    CatsDSLParser catsDSLParser;
-    @Inject
     AuthArguments authArguments;
     @Inject
     CatsUtil catsUtil;
@@ -79,7 +77,7 @@ class ServiceCallerTest {
     public void setupEach() throws Exception {
         filesArguments = new FilesArguments();
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, catsUtil, filesArguments, catsDSLParser, authArguments, apiArguments, processingArguments);
+        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, catsUtil, filesArguments, authArguments, apiArguments, processingArguments);
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("src/test/resources/refFields.yml"));

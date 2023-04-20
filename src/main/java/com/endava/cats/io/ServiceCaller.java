@@ -91,7 +91,6 @@ public class ServiceCaller {
     private final FilesArguments filesArguments;
     private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
-    private final CatsDSLParser catsDSLParser;
     private final AuthArguments authArguments;
     private final ApiArguments apiArguments;
     private final ProcessingArguments processingArguments;
@@ -101,11 +100,10 @@ public class ServiceCaller {
     private RateLimiter rateLimiter;
 
     @Inject
-    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, CatsDSLParser cdsl, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
+    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
         this.testCaseListener = lr;
         this.catsUtil = cu;
         this.filesArguments = filesArguments;
-        this.catsDSLParser = cdsl;
         this.authArguments = authArguments;
         this.apiArguments = apiArguments;
         this.processingArguments = processingArguments;
@@ -512,7 +510,7 @@ public class ServiceCaller {
 
         Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> catsDSLParser.parseAndGetResult(entry.getValue(), authArguments.getAuthScriptAsMap())));
+                        entry -> CatsDSLParser.parseAndGetResult(entry.getValue(), authArguments.getAuthScriptAsMap())));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
@@ -593,7 +591,7 @@ public class ServiceCaller {
             refDataWithoutAdditionalProperties.putAll(this.getPathParamFromCorrespondingPostIfDelete(data));
 
             for (Map.Entry<String, String> entry : refDataWithoutAdditionalProperties.entrySet()) {
-                String refDataValue = catsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.REQUEST, data.getPayload()));
+                String refDataValue = CatsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.REQUEST, data.getPayload()));
 
                 try {
                     if (CATS_REMOVE_FIELD.equalsIgnoreCase(refDataValue)) {

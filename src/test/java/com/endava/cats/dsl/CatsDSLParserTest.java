@@ -2,7 +2,6 @@ package com.endava.cats.dsl;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -20,17 +19,11 @@ class CatsDSLParserTest {
                 "expiry": "2018-06-25",
                 "match": "NOT"
               }""";
-    private CatsDSLParser catsDSLParser;
-
-    @BeforeEach
-    public void setup() {
-        catsDSLParser = new CatsDSLParser();
-    }
 
     @Test
     void shouldReturnSameValue() {
         String initial = "test";
-        String actual = catsDSLParser.parseAndGetResult(initial, Map.of());
+        String actual = CatsDSLParser.parseAndGetResult(initial, Map.of());
 
         Assertions.assertThat(actual).isEqualTo(initial);
     }
@@ -38,7 +31,7 @@ class CatsDSLParserTest {
     @Test
     void shouldParseAsDate() {
         String initial = "T(java.time.OffsetDateTime).now().plusDays(2)";
-        String actual = catsDSLParser.parseAndGetResult(initial, Map.of());
+        String actual = CatsDSLParser.parseAndGetResult(initial, Map.of());
         OffsetDateTime actualDate = OffsetDateTime.parse(actual);
         Assertions.assertThat(actualDate).isAfter(OffsetDateTime.now(ZoneId.systemDefault()).plusDays(1));
     }
@@ -46,7 +39,7 @@ class CatsDSLParserTest {
     @Test
     void shouldIgnoreAsMethodInvalid() {
         String initial = "T(java.time.OffsetDateTime).nowMe().plusDays(2)";
-        String actual = catsDSLParser.parseAndGetResult(initial, Map.of());
+        String actual = CatsDSLParser.parseAndGetResult(initial, Map.of());
 
         Assertions.assertThat(actual).isEqualTo(initial);
     }
@@ -55,7 +48,7 @@ class CatsDSLParserTest {
     @ParameterizedTest
     void shouldParseFromRequest(String context, String expression) {
         String initial = "T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(" + expression + ".toString()))";
-        String actual = catsDSLParser.parseAndGetResult(initial, Map.of(context, JSON));
+        String actual = CatsDSLParser.parseAndGetResult(initial, Map.of(context, JSON));
 
         Assertions.assertThat(actual).isEqualTo("true");
     }
@@ -63,26 +56,26 @@ class CatsDSLParserTest {
     @Test
     void shouldParseValueFromOutputVariables() {
         String initial = "T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(${expiry}.toString()))";
-        String actual = catsDSLParser.parseAndGetResult(initial, Map.of("expiry", "2018-06-25"));
+        String actual = CatsDSLParser.parseAndGetResult(initial, Map.of("expiry", "2018-06-25"));
         Assertions.assertThat(actual).isEqualTo("false");
     }
 
     @Test
     void shouldSubstring() {
         String expression = "name.substring(1,3)";
-        String actual = catsDSLParser.parseAndGetResult(expression, Map.of("name", "john"));
+        String actual = CatsDSLParser.parseAndGetResult(expression, Map.of("name", "john"));
         Assertions.assertThat(actual).isEqualTo("oh");
     }
 
     @Test
     void shouldGetSystemVariable() {
-        String actual = catsDSLParser.parseAndGetResult("$$PATH", null);
+        String actual = CatsDSLParser.parseAndGetResult("$$PATH", null);
         Assertions.assertThat(actual).isNotBlank();
     }
 
     @Test
     void shouldGetNotFoundSystemVariable() {
-        String actual = catsDSLParser.parseAndGetResult("$$cats", null);
+        String actual = CatsDSLParser.parseAndGetResult("$$cats", null);
         Assertions.assertThat(actual).isEqualTo("not_found_$$cats");
     }
 }

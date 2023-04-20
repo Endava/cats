@@ -14,7 +14,7 @@ import org.mockito.Mockito;
 
 @QuarkusTest
 class LeadingControlCharsInFieldsValidateTrimFuzzerTest {
-    private final CatsUtil catsUtil = new CatsUtil(null);
+    private final CatsUtil catsUtil = new CatsUtil();
     private ServiceCaller serviceCaller;
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;

@@ -1,6 +1,5 @@
 package com.endava.cats.util;
 
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
@@ -37,7 +36,7 @@ class CatsUtilTest {
             "{\"field\": {\"subField\":\"value\"}, \"anotherField\":\"otherValue\"}|field#subField",
             "{\"field\": [{\"subField\":\"value\"},{\"subField\":\"value\"}], \"anotherField\":\"otherValue\"}|field[*]#subField"}, delimiter = '|')
     void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed(String json, String path) {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil();
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField(json, path, strategy);
 
@@ -47,7 +46,7 @@ class CatsUtilTest {
 
     @Test
     void shouldAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil();
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
@@ -57,7 +56,7 @@ class CatsUtilTest {
 
     @Test
     void shouldNotAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil();
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
@@ -67,7 +66,7 @@ class CatsUtilTest {
 
     @Test
     void shouldReturnEmptyFuzzingResultWhenEmptyJson() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil();
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
         FuzzingResult result = catsUtil.replaceField("", "test", strategy);
 
@@ -77,7 +76,7 @@ class CatsUtilTest {
 
     @Test
     void shouldReplace() {
-        CatsUtil catsUtil = new CatsUtil(new CatsDSLParser());
+        CatsUtil catsUtil = new CatsUtil();
         String payload = """
                 {
                   "arrayOfData": [
