@@ -15,7 +15,8 @@ import java.util.Map;
 /**
  * Parser used to evaluate expression using Spring EL.
  * The format of these expressions usually start with {@code T{....}}.
- * Expression can also have access to the JSON elements supplied in the payload.
+ * Expressions can also have access to the JSON elements supplied in request,
+ * responses as well as global variables from the FunctionFuzzer.
  */
 public class SpringELParser implements Parser {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -27,7 +28,7 @@ public class SpringELParser implements Parser {
 
     @Override
     public String parse(String expression, Map<String, String> context) {
-        log.debug("Parsing {}", expression);
+        log.trace("Parsing {}", expression);
         Object result = parseContext(expression, context);
 
         if (expression.equalsIgnoreCase(String.valueOf(result))) {
