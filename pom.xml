@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
@@ -12,11 +13,10 @@
         <maven.compiler.target>17</maven.compiler.target>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <jansi.version>2.4.0</jansi.version>
-        <lombok.version>1.18.24</lombok.version>
+        <lombok.version>1.18.26</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
         <wiremock-jre8.version>2.35.0</wiremock-jre8.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <guava.version>31.1-jre</guava.version>
         <openapi-generator.version>6.4.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
@@ -38,7 +38,7 @@
         <surefire-plugin.version>3.0.0-M8</surefire-plugin.version>
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>6.0.4</spring.version>
+        <spring.version>6.0.6</spring.version>
         <assertj-core.version>3.24.2</assertj-core.version>
         <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.0</maven-install-plugin.version>
@@ -268,10 +268,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.slf4j</groupId>
-            <artifactId>slf4j-jboss-logmanager</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.10.0-CATS</version>
@@ -296,18 +292,6 @@
             <groupId>org.springframework.integration</groupId>
             <artifactId>spring-integration-core</artifactId>
             <version>${spring-integration-core.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId>commons-logging-jboss-logging</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>log4j-jboss-logmanager</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>log4j2-jboss-logmanager</artifactId>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
@@ -369,11 +353,6 @@
             <groupId>com.github.curious-odd-man</groupId>
             <artifactId>rgxgen</artifactId>
             <version>${rgxgen.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>

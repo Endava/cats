@@ -11,8 +11,6 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.FuzzingData;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Discriminator;
@@ -416,8 +414,8 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.getFuzzedField()).thenReturn(fuzzedField);
 
@@ -436,7 +434,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn(body);
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Collections.emptyMap());
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
@@ -455,8 +453,8 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("[{'test':1},{'test':2}]");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
@@ -474,8 +472,8 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn(returnedBody);
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList(documentedResponses), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList(documentedResponses), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
@@ -492,8 +490,8 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("[]");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
@@ -511,8 +509,8 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "400"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.getFuzzedField()).thenReturn("someField");
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
@@ -532,8 +530,8 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "4xx"));
-        Mockito.when(data.getResponses()).thenReturn(new TreeMap<>(ImmutableMap.of("4xx", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}"))));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "4xx"));
+        Mockito.when(data.getResponses()).thenReturn(new TreeMap<>(Map.of("4xx", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}"))));
         Mockito.when(response.responseCodeAsString()).thenReturn(responseCode);
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
         Mockito.when(response.getFuzzedField()).thenReturn("test");
@@ -553,8 +551,8 @@ class TestCaseListenerTest {
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("200", "401"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("401", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "401"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("401", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
 
@@ -570,8 +568,8 @@ class TestCaseListenerTest {
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         Mockito.when(response.getBody()).thenReturn("");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("401"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("401", Collections.singletonList("{'test':'4'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("401"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("401", Collections.singletonList("{'test':'4'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("404");
         Mockito.when(response.getResponseCode()).thenReturn(404);
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
@@ -588,8 +586,8 @@ class TestCaseListenerTest {
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         Mockito.when(response.getBody()).thenReturn("");
-        Mockito.when(data.getResponseCodes()).thenReturn(Sets.newHashSet("401"));
-        Mockito.when(data.getResponses()).thenReturn(ImmutableMap.of("401", Collections.singletonList("{'test':'4'}")));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("401"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("401", Collections.singletonList("{'test':'4'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("501");
         Mockito.when(response.getResponseCode()).thenReturn(501);
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("501");

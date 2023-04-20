@@ -11,7 +11,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.google.common.collect.Sets;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -89,7 +88,7 @@ class BaseHeadersFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(Set.of(CatsHeader.builder().name("header").value("value").required(requiredHeaders).build())))
-                .responseCodes(Sets.newHashSet("200", "202")).reqSchema(new StringSchema())
+                .responseCodes(Set.of("200", "202")).reqSchema(new StringSchema())
                 .responses(responses).requestContentTypes(List.of("application/json")).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 

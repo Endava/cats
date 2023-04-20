@@ -31,6 +31,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Arguments used to restrict CATS run footprint. The difference between Filter and Ignore arguments
+ * is that Filter arguments are focused on input filtering while Ignore are focused on response filtering.
+ */
 @Singleton
 @Getter
 public class FilterArguments {

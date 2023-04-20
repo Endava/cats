@@ -10,7 +10,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.google.common.collect.Sets;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -26,8 +25,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @QuarkusTest
@@ -64,7 +63,7 @@ class NamingsContractInfoFuzzerTest {
         pathItem.setPost(operation);
 
         FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).reqSchema(new Schema().$ref("Cats"))
-                .schemaMap(Map.of("Cats",new Schema().$ref("Cats"))).pathItem(pathItem).headers(Sets.newHashSet()).reqSchemaName("Cats").build();
+                .schemaMap(Map.of("Cats",new Schema().$ref("Cats"))).pathItem(pathItem).headers(Set.of()).reqSchemaName("Cats").build();
 
         namingsContractInfoFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Path does not follow RESTful API naming good practices: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
@@ -83,7 +82,7 @@ class NamingsContractInfoFuzzerTest {
         operation.setResponses(new ApiResponses());
         pathItem.setPost(operation);
         FuzzingData data = FuzzingData.builder().path(path).method(HttpMethod.POST).pathItem(pathItem).reqSchema(new Schema().$ref("Cats"))
-                .schemaMap(Map.of("Cats",new Schema().$ref("Cats"))).headers(Sets.newHashSet()).reqSchemaName("Cats").build();
+                .schemaMap(Map.of("Cats",new Schema().$ref("Cats"))).headers(Set.of()).reqSchemaName("Cats").build();
 
         namingsContractInfoFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path follows the RESTful API naming good practices."));

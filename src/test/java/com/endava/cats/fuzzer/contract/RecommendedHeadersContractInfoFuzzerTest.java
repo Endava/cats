@@ -10,7 +10,6 @@ import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseExporterHtmlJs;
 import com.endava.cats.report.TestCaseListener;
-import com.google.common.collect.Sets;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +19,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import javax.enterprise.inject.Instance;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @QuarkusTest
@@ -41,7 +41,7 @@ class RecommendedHeadersContractInfoFuzzerTest {
     @CsvSource({"X-Trace-Id", "XTraceid", "X-CorrelationId", "X-APP-Correlation_Id"})
     void shouldReportInfo(String header) {
         CatsHeader catsHeader = CatsHeader.builder().name(header).build();
-        FuzzingData data = FuzzingData.builder().headers(Sets.newHashSet(catsHeader)).method(HttpMethod.POST).build();
+        FuzzingData data = FuzzingData.builder().headers(Set.of(catsHeader)).method(HttpMethod.POST).build();
         recommendedHeadersContractInfoFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path contains the recommended [TracedId/CorrelationId] headers for HTTP method {}"), Mockito.eq(HttpMethod.POST));
@@ -51,7 +51,7 @@ class RecommendedHeadersContractInfoFuzzerTest {
     @CsvSource({"X-Trac-Id", "XTracing", "X-Correlation", "X-APP-Correlation*Id"})
     void shouldReportError(String header) {
         CatsHeader catsHeader = CatsHeader.builder().name(header).build();
-        FuzzingData data = FuzzingData.builder().headers(Sets.newHashSet(catsHeader)).method(HttpMethod.POST).build();
+        FuzzingData data = FuzzingData.builder().headers(Set.of(catsHeader)).method(HttpMethod.POST).build();
         recommendedHeadersContractInfoFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
