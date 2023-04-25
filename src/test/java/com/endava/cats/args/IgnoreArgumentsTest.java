@@ -41,6 +41,11 @@ class IgnoreArgumentsTest {
     }
 
     @Test
+    void shouldReturnEmptySkipHeaders() {
+        Assertions.assertThat(ignoreArguments.getSkipHeaders()).isEmpty();
+    }
+
+    @Test
     void shouldMatchIgnoredResponseCodes() {
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", List.of("2XX", "400"));
         Assertions.assertThat(ignoreArguments.isIgnoredResponseCode("200")).isTrue();

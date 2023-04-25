@@ -12,6 +12,9 @@ import java.util.stream.Collectors;
 public abstract class WordUtils {
     private static final List<String> DELIMITERS = List.of("", "-", "_");
 
+    private WordUtils() {
+        //ntd
+    }
     /**
      * Starts from a list of words and creates all possible combinations matching all cases and delimiters.
      *

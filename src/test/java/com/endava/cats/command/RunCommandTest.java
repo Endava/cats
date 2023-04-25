@@ -2,7 +2,9 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import io.quarkus.test.junit.QuarkusTest;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,5 +48,14 @@ class RunCommandTest {
         ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/" + securityFuzzerFile));
         runCommand.run();
         Mockito.verify(filterArguments, Mockito.times(times)).customFilter("SecurityFuzzer");
+    }
+
+    @Test
+    void shouldReturnNonZeroExitCode() {
+        ExecutionStatisticsListener listener = Mockito.mock(ExecutionStatisticsListener.class);
+        Mockito.when(listener.getErrors()).thenReturn(10);
+        ReflectionTestUtils.setField(catsCommand, "executionStatisticsListener", listener);
+        int exitCode = runCommand.getExitCode();
+        Assertions.assertThat(exitCode).isEqualTo(10);
     }
 }

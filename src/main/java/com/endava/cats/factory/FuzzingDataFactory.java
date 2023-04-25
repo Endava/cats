@@ -486,13 +486,6 @@ public class FuzzingDataFactory {
         return Arrays.stream(toSearch).anyMatch(elementAsString::contains);
     }
 
-    private boolean isJsonValueOf(JsonElement element, String startKey) {
-        if (element.isJsonObject()) {
-            return element.getAsJsonObject().keySet().stream().anyMatch(key -> key.contains(startKey));
-        }
-        return false;
-    }
-
     private String squashAllOfElements(String payloadSample) {
         JsonElement jsonElement = JsonParser.parseString(payloadSample);
         this.squashAllOf(jsonElement);

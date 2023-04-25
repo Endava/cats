@@ -5,6 +5,10 @@ import org.fusesource.jansi.Ansi;
 
 public abstract class ConsoleUtils {
 
+    private ConsoleUtils() {
+        //ntd
+    }
+
     public static String centerWithAnsiColor(String str, int padding, Ansi.Color color) {
         String strAnsi = Ansi.ansi().fg(color).bold().a(str).reset().toString();
         int paddingLength = strAnsi.length() - str.length() + padding;
