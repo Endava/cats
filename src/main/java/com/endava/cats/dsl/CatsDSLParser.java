@@ -12,6 +12,9 @@ public class CatsDSLParser {
             "$$", new EnvVariableParser(),
             "auth_script", new AuthScriptProviderParser());
 
+    private CatsDSLParser() {
+        //ntd
+    }
     private static final Parser DEFAULT_PARSER = new SpringELParser();
 
     /**
