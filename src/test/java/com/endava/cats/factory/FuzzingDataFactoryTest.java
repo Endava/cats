@@ -69,6 +69,14 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateValidAnyOfCombinationWhenForLevel3Nesting() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/api/some-endpoint", "src/test/resources/issue66.yml");
+        Assertions.assertThat(data).hasSize(2);
+        Assertions.assertThat(data.get(0).getPayload()).contains("someSubObjectKey3");
+        Assertions.assertThat(data.get(1).getPayload()).doesNotContain("someSubObjectKey3");
+    }
+
+    @Test
     void shouldReturnRequiredFieldsWhenAllOfSchemaAndRequiredInRoot() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/allof-with-required-in-root.yml");
 
