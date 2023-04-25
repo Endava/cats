@@ -3,12 +3,12 @@ package com.endava.cats.factory;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
-import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -441,9 +441,6 @@ public class FuzzingDataFactory {
             } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
                 anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
                         Map.of(elementEntry.getKey(), elementEntry.getValue()), this.mergeMapsBiFunction());
-            } else if (isJsonValueOf(elementEntry.getValue(), ONE_OF) || isJsonValueOf(elementEntry.getValue(), ANY_OF)) {
-                anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
-                        elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this.mergeMapsBiFunction());
             } else if (isAnyOrOneOfInChildren(elementEntry.getValue(), ANY_OF, ONE_OF)) {
                 anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
             }
