@@ -5,6 +5,9 @@ import org.fusesource.jansi.Ansi;
 
 public abstract class ConsoleUtils {
 
+    private static final String QUARKUS_PROXY_SUFFIX = "_Subclass";
+    private static final String REGEX_TO_REMOVE_FROM_FUZZER_NAMES = "TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize|Fuzzer";
+
     private ConsoleUtils() {
         //ntd
     }
@@ -16,10 +19,10 @@ public abstract class ConsoleUtils {
     }
 
     public static String sanitizeFuzzerName(String currentName) {
-        return currentName.replace("_Subclass", "");
+        return currentName.replace(QUARKUS_PROXY_SUFFIX, "");
     }
 
     public static String removeTrimSanitize(String currentName) {
-        return currentName.replaceAll("TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize|Fuzzer", "");
+        return currentName.replaceAll(REGEX_TO_REMOVE_FROM_FUZZER_NAMES, "");
     }
 }
