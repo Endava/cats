@@ -7,6 +7,10 @@ import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
 
+/**
+ * Javascript is not very friendly with long numbers, so
+ * we convert it to String.
+ */
 public class LongTypeSerializer implements JsonSerializer<Long> {
     @Override
     public JsonElement serialize(Long src, Type typeOfSrc, JsonSerializationContext context) {

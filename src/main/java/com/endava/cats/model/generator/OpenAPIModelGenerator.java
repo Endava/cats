@@ -81,7 +81,7 @@ public class OpenAPIModelGenerator {
     public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth) {
         this.globalContext = catsGlobalContext;
         this.random = ThreadLocalRandom.current();
-        useExamples = useExamplesArgument;
+        this.useExamples = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
     }
