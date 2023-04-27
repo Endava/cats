@@ -46,7 +46,7 @@ public class SpringELParser implements Parser {
 
             return spelExpressionParser.parseExpression(expression).getValue(evaluationContext);
         } catch (Exception e) {
-            log.debug("Something went wrong while parsing!", e);
+            log.trace("Something went wrong while parsing: {}", e.getMessage());
             return expression;
         }
     }
