@@ -31,8 +31,8 @@ import org.apache.commons.lang3.StringUtils;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

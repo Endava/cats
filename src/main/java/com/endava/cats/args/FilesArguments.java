@@ -5,11 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@ApplicationScoped
+@Singleton
 public class FilesArguments {
     private static final String ALL = "all";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -234,7 +234,7 @@ public class FilesArguments {
     private Map<String, Map<String, String>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
         Map<String, Map<String, String>> fromFile = Collections.emptyMap();
         if (file == null) {
-            log.debug("No {} file provided!");
+            log.debug("No {} file provided!", fileType);
         } else {
             log.info("{} file supplied {}", fileType, file.getAbsolutePath());
             fromFile = this.loadYamlFileToMap(file.getAbsolutePath());

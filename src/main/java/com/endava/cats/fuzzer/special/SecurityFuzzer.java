@@ -13,7 +13,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;

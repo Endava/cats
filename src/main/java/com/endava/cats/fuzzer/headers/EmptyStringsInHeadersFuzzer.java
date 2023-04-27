@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.Expect4XXBaseHeadersFuzzer;
 import com.endava.cats.strategy.FuzzingStrategy;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 

@@ -3,9 +3,9 @@ package com.endava.cats.generator.format.api;
 import com.endava.cats.generator.format.impl.VoidGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 public class ValidDataFormat extends DataFormat<ValidDataFormatGenerator> {

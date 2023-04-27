@@ -2,7 +2,7 @@ package com.endava.cats.generator.format.api;
 
 import io.swagger.v3.oas.models.media.Schema;
 
-import javax.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Instance;
 import java.util.Optional;
 
 public abstract class DataFormat<T extends DataFormatGenerator> {

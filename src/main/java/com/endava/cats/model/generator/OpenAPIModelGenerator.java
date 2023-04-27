@@ -244,7 +244,7 @@ public class OpenAPIModelGenerator {
             Object[] objectProperties = new Object[arrayLength];
 
             for (int i = 0; i < arrayLength; i++) {
-                objectProperties[i] = resolveModelToExample(propertyName, innerType);;
+                objectProperties[i] = resolveModelToExample(propertyName, innerType);
             }
             return objectProperties;
         }

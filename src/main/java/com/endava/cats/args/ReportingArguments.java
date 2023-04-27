@@ -7,7 +7,7 @@ import io.github.ludovicianul.prettylogger.config.level.PrettyLevel;
 import lombok.Getter;
 import picocli.CommandLine;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

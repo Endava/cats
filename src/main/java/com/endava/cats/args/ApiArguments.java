@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Holds all arguments related to API details.

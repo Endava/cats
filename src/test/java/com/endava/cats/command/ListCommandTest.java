@@ -10,8 +10,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import picocli.CommandLine;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 
 @QuarkusTest
 class ListCommandTest {

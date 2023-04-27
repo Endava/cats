@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
@@ -30,21 +31,25 @@
         <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
         <pretty-logger.version>1.11</pretty-logger.version>
         <compiler.version>0.9.10</compiler.version>
-        <json-path.version>2.7.0</json-path.version>
+        <json-path.version>2.8.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>2.16.6.Final</quarkus.platform.version>
+        <quarkus.platform.version>3.0.1.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M8</surefire-plugin.version>
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>6.0.6</spring.version>
+        <spring.version>6.0.8</spring.version>
         <assertj-core.version>3.24.2</assertj-core.version>
         <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.0</maven-install-plugin.version>
-        <spring-integration-core.version>6.0.2</spring-integration-core.version>
+        <spring-integration-core.version>6.0.5</spring-integration-core.version>
         <json.version>20230227</json.version>
         <error-prone.version>2.18.0</error-prone.version>
         <archunit-junit5.version>1.0.1</archunit-junit5.version>
+        <json-smart.version>2.4.10</json-smart.version>
+        <jettison.version>1.5.4</jettison.version>
+        <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -372,6 +377,26 @@
             <artifactId>archunit-junit5</artifactId>
             <version>${archunit-junit5.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>${json-smart.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+            <version>${jettison.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>${jaxb-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
         </dependency>
     </dependencies>
     <repositories>
