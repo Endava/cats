@@ -5,8 +5,8 @@ import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.report.TestCaseListener;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 /**
  * Executors are meant to be the units that will execute the fuzzer's payloads and facilitate the interaction with all the reporting.

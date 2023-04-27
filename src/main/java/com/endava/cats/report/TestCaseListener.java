@@ -28,8 +28,8 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.util.CollectionUtils;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayDeque;

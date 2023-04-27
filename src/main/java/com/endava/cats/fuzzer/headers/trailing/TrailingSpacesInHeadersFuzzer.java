@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.headers.base.SpacesCharsBaseFuzzer;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.List;
 
 @Singleton

@@ -11,7 +11,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Set;
 import java.util.stream.Collectors;
 

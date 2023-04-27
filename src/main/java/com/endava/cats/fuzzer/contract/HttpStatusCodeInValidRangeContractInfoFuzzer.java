@@ -6,7 +6,7 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Set;
 import java.util.stream.Collectors;
 

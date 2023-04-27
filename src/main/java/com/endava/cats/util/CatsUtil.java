@@ -13,7 +13,7 @@ import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;

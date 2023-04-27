@@ -11,7 +11,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 @QuarkusTest
 class TemplateFuzzCommandTest {

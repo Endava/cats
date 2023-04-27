@@ -3,7 +3,7 @@ package com.endava.cats.report;
 import com.endava.cats.annotations.DryRun;
 import lombok.Getter;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @Getter

@@ -21,7 +21,7 @@ import com.jayway.jsonpath.JsonPathException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;

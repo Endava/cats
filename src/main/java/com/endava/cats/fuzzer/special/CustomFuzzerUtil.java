@@ -19,7 +19,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;

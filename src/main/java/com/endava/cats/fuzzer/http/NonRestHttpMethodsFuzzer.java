@@ -6,7 +6,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 

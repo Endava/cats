@@ -18,7 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
-import javax.enterprise.inject.Instance;
+import jakarta.enterprise.inject.Instance;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.stream.Stream;

@@ -4,8 +4,8 @@ import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.FuzzingData;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 
 @Singleton
 @HttpFuzzer

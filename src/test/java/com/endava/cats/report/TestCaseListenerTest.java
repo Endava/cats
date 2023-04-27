@@ -25,8 +25,8 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;

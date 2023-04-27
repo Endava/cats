@@ -23,8 +23,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;

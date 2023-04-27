@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.headers.base.BaseRandomHeadersFuzzer;
 import com.endava.cats.report.TestCaseListener;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.function.Function;
 
 

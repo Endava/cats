@@ -8,7 +8,7 @@ import org.assertj.core.api.Assertions;
 import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.Test;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 @QuarkusTest
 class InvalidDataFormatTest {

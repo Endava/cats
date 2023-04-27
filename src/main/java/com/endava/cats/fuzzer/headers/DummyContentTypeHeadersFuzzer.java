@@ -10,7 +10,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.json.JsonUtils;
 import com.google.common.net.HttpHeaders;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

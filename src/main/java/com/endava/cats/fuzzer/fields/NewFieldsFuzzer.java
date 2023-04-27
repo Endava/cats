@@ -18,7 +18,7 @@ import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 import static com.endava.cats.util.CatsDSLWords.NEW_FIELD;
 

@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;

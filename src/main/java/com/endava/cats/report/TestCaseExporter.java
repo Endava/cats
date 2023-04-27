@@ -16,7 +16,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;

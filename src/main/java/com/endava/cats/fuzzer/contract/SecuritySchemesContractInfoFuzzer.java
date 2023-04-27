@@ -11,7 +11,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

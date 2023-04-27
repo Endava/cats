@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

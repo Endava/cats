@@ -5,8 +5,8 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.util.VersionProvider;
 import picocli.CommandLine;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 
 /**
  * This is responsible to run all @ContractFuzzers

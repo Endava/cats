@@ -21,9 +21,9 @@ import org.fusesource.jansi.Ansi;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
-import javax.enterprise.context.Dependent;
-import javax.enterprise.inject.Any;
-import javax.enterprise.inject.Instance;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;

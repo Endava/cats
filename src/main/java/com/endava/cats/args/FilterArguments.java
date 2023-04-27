@@ -19,9 +19,9 @@ import lombok.Getter;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.time.OffsetTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;

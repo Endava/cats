@@ -3,7 +3,7 @@ package com.endava.cats.args;
 import lombok.Getter;
 import picocli.CommandLine;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.charset.StandardCharsets;
