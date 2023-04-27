@@ -146,7 +146,7 @@ public class OpenAPIModelGenerator {
         return property.getExample();
     }
 
-    private Object resolveProperties(Schema<?> schema) {
+    private  Object resolveProperties(Schema<?> schema) {
         if (schema.getProperties() != null) {
             Map<String, Object> result = new HashMap<>();
             for (Map.Entry<String, Schema> property : schema.getProperties().entrySet()) {
@@ -240,10 +240,11 @@ public class OpenAPIModelGenerator {
         }
         if (innerType != null) {
             int arrayLength = null == property.getMaxItems() ? 2 : property.getMaxItems();
+            arrayLength = null == property.getMinItems() ? arrayLength : property.getMinItems();
             Object[] objectProperties = new Object[arrayLength];
-            Object objProperty = resolveModelToExample(propertyName, innerType);
+
             for (int i = 0; i < arrayLength; i++) {
-                objectProperties[i] = objProperty;
+                objectProperties[i] = resolveModelToExample(propertyName, innerType);;
             }
             return objectProperties;
         }

@@ -5,6 +5,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonParser;
@@ -74,6 +75,20 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).hasSize(2);
         Assertions.assertThat(data.get(0).getPayload()).contains("someSubObjectKey3");
         Assertions.assertThat(data.get(1).getPayload()).doesNotContain("someSubObjectKey3");
+    }
+
+    @Test
+    void shouldGenerateArraySchemaBasedOnMixItemsAndMaxItems() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/api/some-endpoint", "src/test/resources/issue66_2.yml");
+        Assertions.assertThat(data).hasSize(2);
+        String firstPayload = data.get(0).getPayload();
+        int firstArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1.length()").toString());
+        int secondArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1[0].length()").toString());
+        int thirdArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1[0][0].length()").toString());
+
+        Assertions.assertThat(firstArraySize).isEqualTo(1);
+        Assertions.assertThat(secondArraySize).isEqualTo(4);
+        Assertions.assertThat(thirdArraySize).isEqualTo(2);
     }
 
     @Test
