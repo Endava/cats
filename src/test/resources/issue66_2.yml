@@ -1,0 +1,96 @@
+info:
+  description: ""
+  title: ""
+  version: ""
+openapi: 3.0.1
+paths:
+  /api/some-endpoint:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/someRequestBody"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+          description: OK
+components:
+  schemas:
+    someRequestBody:
+      properties:
+        someRequestBodyKey1:
+          $ref: "#/components/schemas/someObject"
+        someRequestBodyKey2:
+          format: date-time
+          type: string
+        someRequestBodyKey3:
+          items:
+            format: int32
+            type: integer
+          type: array
+        someRequestBodyKey4:
+          format: date-time
+          type: string
+      type: object
+    someObject:
+      properties:
+        someObjectKey1:
+          anyOf:
+            - $ref: "#/components/schemas/someSubObject1"
+            - $ref: "#/components/schemas/someSubObject2"
+          type: object
+        someObjectKey2:
+          format: int32
+          type: integer
+        someObjectKey3:
+          type: string
+        someObjectKey4:
+          type: string
+      required:
+        - someObjectKey1
+        - someObjectKey2
+        - someObjectKey3
+        - someObjectKey4
+      type: object
+    someSubObject1:
+      properties:
+        someSubObjectKey1:
+          type: array
+          minItems: 1
+          items:
+            type: array
+            minItems: 4
+            items:
+              type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: number
+        someSubObjectKey2:
+          format: double
+          type: number
+        someSubObjectKey3:
+          type: string
+      required:
+        - someSubObjectKey1
+        - someSubObjectKey2
+        - someSubObjectKey3
+      type: object
+    someSubObject2:
+      properties:
+        someSubObjectKey1:
+          items:
+            format: double
+            type: number
+          type: array
+        someSubObjectKey2:
+          type: string
+      required:
+        - someSubObjectKey1
+        - someSubObjectKey2
+      type: object
