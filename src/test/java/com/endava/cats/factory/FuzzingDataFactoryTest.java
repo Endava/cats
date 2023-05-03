@@ -15,12 +15,12 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -89,6 +89,20 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(firstArraySize).isEqualTo(1);
         Assertions.assertThat(secondArraySize).isEqualTo(4);
         Assertions.assertThat(thirdArraySize).isEqualTo(2);
+    }
+
+
+    @Test
+    void shouldProperlyParseOneOfWithBaseClass() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/path1", "src/test/resources/oneOf_with_base_class.yml");
+        Assertions.assertThat(data).hasSize(2);
+
+        String firstPayload = data.get(0).getPayload();
+        Object type = JsonUtils.getVariableFromJson(firstPayload, "$.payload.type");
+        Object innerPayload = JsonUtils.getVariableFromJson(firstPayload, "$.payload.payload");
+
+        Assertions.assertThat(type).asString().isEqualTo("Address");
+        Assertions.assertThat(innerPayload).asString().isEqualTo("NOT_SET");
     }
 
     @Test

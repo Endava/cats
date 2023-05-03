@@ -1,0 +1,122 @@
+openapi: "3.0.0"
+info:
+  version: 1
+  title: Some Title
+  description: Some Description
+paths:
+  /path1:
+    post:
+      summary: Creates a new resource
+      operationId: createResource
+      requestBody:
+        description: Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestIn'
+        required: true
+      responses:
+        '201':
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOut'
+components:
+  schemas:
+    RequestIn:
+      required:
+        - format
+        - payload
+        - channel
+      properties:
+        channel:
+          type: string
+          enum:
+            - "WEB"
+            - "MOBILE"
+            - "OMNI"
+          example: WEB
+        customerIdentifier:
+          type: string
+          minLength: 3
+          maxLength: 64
+          pattern: '[A-Za-z0-9_-]+'
+        payload:
+          $ref: '#/components/schemas/Payload'
+        myData:
+          type: string
+          minLength: 14
+          maxLength: 21
+          pattern: '[A-Z0-9]+'
+    ResponseOut:
+      required:
+        - data
+      properties:
+        data:
+          type: string
+        expiry:
+          type: string
+          format: date
+          example: "2021-07-31"
+    BasePayload:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+      discriminator:
+        propertyName: type
+    Payload:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/Card'
+        - $ref: '#/components/schemas/Address'
+      discriminator:
+        propertyName: type
+    TypeEnum:
+      type: string
+      enum:
+        - Card
+        - Address
+    Card:
+      allOf:
+        - $ref: '#/components/schemas/BasePayload'
+        - type: object
+          required:
+            - number
+            - expiryMonth
+            - expiryYear
+            - type
+          properties:
+            number:
+              type: string
+              format: byte
+              minLength: 13
+              maxLength: 19
+            expiryMonth:
+              type: integer
+              minimum: 1
+              maximum: 12
+            expiryYear:
+              type: integer
+              minimum: 2020
+              maximum: 3000
+    Address:
+      allOf:
+        - $ref: '#/components/schemas/BasePayload'
+        - type: object
+          required:
+            - line1
+            - city
+            - type
+          properties:
+            line1:
+              type: string
+              minLength: 3
+              maxLength: 150
+            city:
+              type: string
+              minLength: 3
+              maxLength: 60
