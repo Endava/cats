@@ -26,11 +26,11 @@ import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -441,12 +441,23 @@ public class FuzzingDataFactory {
             } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
                 anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
                         Map.of(elementEntry.getKey(), elementEntry.getValue()), this.mergeMapsBiFunction());
+            } else if (isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ONE_OF) || isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ANY_OF)) {
+                anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
+                        elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this.mergeMapsBiFunction());
             } else if (isAnyOrOneOfInChildren(elementEntry.getValue(), ANY_OF, ONE_OF)) {
                 anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
             }
         }
 
         return anyOrOneOfs;
+    }
+
+    private boolean isJsonValueOf(JsonElement element, String startKey) {
+        if (element.isJsonObject()) {
+            Set<String> jsonKeySet = element.getAsJsonObject().keySet();
+            return !jsonKeySet.isEmpty() && jsonKeySet.stream().allMatch(key -> key.startsWith(startKey));
+        }
+        return false;
     }
 
     @NotNull
