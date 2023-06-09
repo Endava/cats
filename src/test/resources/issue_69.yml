@@ -1,0 +1,64 @@
+openapi: 3.0.2
+info:
+  title: Minimum Crashing Example
+  version: '0.0'
+servers:
+  - url: http://api.server.test/
+components:
+  schemas:
+  
+    VariantDiscriminator:
+      type: object
+      required:
+        ["discr"]
+      properties:
+        discr:
+          type: string
+          enum: [
+            "option1",
+            "option2"
+          ]
+      discriminator:
+        propertyName: discr
+        mapping:
+          "option1": '#/components/schemas/VariantOption1'
+          "option2": '#/components/schemas/VariantOption2'
+    VariantOption1:
+      type: object
+      allOf: [
+        $ref: '#/components/schemas/VariantDiscriminator',
+        $ref: '#/components/schemas/VariantOption1AdditionalStuff']
+    VariantOption2:
+      type: object
+      allOf: [
+        $ref: '#/components/schemas/VariantDiscriminator',
+        $ref: '#/components/schemas/VariantOption2AdditionalStuff']
+    Variant:
+      type: object
+      oneOf: [
+        $ref: '#/components/schemas/VariantOption1',
+        $ref: '#/components/schemas/VariantOption2']
+    VariantOption1AdditionalStuff:
+      type: object
+      properties:
+        i:
+          type: integer
+    VariantOption2AdditionalStuff:
+      type: object
+      properties:
+        j:
+          type: string
+paths:
+  /variant:
+    get:
+      summary: Get variant
+      description: Get variant
+      tags:
+        - Variant
+      responses:
+        '200':
+          description: Get variant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variant'

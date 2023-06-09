@@ -50,8 +50,8 @@ class OpenAPIModelGeneratorTest {
         String exampleJson = example.get("example");
 
         Assertions.assertThat(exampleJson)
-                .contains("PetTypeONE_OF#/components/schemas/Husky")
-                .contains("PetTypeONE_OF#/components/schemas/Labrador");
+                .contains("ONE_OF#/components/schemas/Husky")
+                .contains("ONE_OF#/components/schemas/Labrador");
     }
 
     @Test

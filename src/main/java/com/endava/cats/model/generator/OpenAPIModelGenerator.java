@@ -30,6 +30,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -312,7 +313,8 @@ public class OpenAPIModelGenerator {
     }
 
     private Schema normalizeDiscriminatorMappingsToOneOf(String name, Schema<?> schema) {
-        if (schema.getDiscriminator() != null && !CollectionUtils.isEmpty(schema.getDiscriminator().getMapping()) && !(schema instanceof ComposedSchema)) {
+        if (schema.getDiscriminator() != null && !CollectionUtils.isEmpty(schema.getDiscriminator().getMapping())
+                && !(schema instanceof ComposedSchema) && !isAnyComposedSchemaInChain(name)) {
             ComposedSchema composedSchema = new ComposedSchema();
             composedSchema.setOneOf(schema.getDiscriminator().getMapping().values()
                     .stream().map(schemaName -> new Schema<>().$ref(schemaName))
@@ -324,7 +326,8 @@ public class OpenAPIModelGenerator {
             newSchema.setName("CatsChanged" + name);
             newSchema.getDiscriminator().setMapping(null);
             globalContext.getSchemaMap().put(newSchema.getName(), newSchema);
-            for (String oneOfSchema : schema.getDiscriminator().getMapping().keySet()) {
+            for (String oneOfSchema : schema.getDiscriminator().getMapping().values()) {
+                oneOfSchema = oneOfSchema.substring(oneOfSchema.lastIndexOf("/") + 1);
                 ComposedSchema currentOneOfSchema = (ComposedSchema) globalContext.getSchemaMap().get(oneOfSchema);
                 currentOneOfSchema.getAllOf()
                         .stream()
@@ -334,6 +337,11 @@ public class OpenAPIModelGenerator {
             return composedSchema;
         }
         return schema;
+    }
+
+    private boolean isAnyComposedSchemaInChain(String schemaChain) {
+        String[] schemaRefs = schemaChain.split("_");
+        return Arrays.stream(schemaRefs).anyMatch(entry -> globalContext.getSchemaMap().get(entry) instanceof ComposedSchema);
     }
 
     private void parseFromInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName) {
@@ -450,8 +458,9 @@ public class OpenAPIModelGenerator {
                 schemaRef = StringGenerator.generate("[A-Z]{5,10}", 5, 10);
                 fullSchemaRef = "#" + schemaRef;
             }
-            String propertyKey = propertyName.toString() + schemaRef;
-            values.put(propertyName + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
+            String propertyKey = propertyName.toString() + "_" + schemaRef;
+            String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1): currentProperty;
+            values.put(keyToStore + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
         }
     }
 }
