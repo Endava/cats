@@ -131,6 +131,9 @@ public abstract class JsonUtils {
      */
     public static String createValidOneOfAnyOfNode(String payload, String nodeKey, String alternativeKey, String nodeValue, Set<String> toEliminate) {
         try {
+            if ("$".equals(nodeKey)) {
+                return nodeValue;
+            }
             return JsonPath.parse(payload).set(nodeKey, GENERIC_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
         } catch (ParseException e) {
             LOGGER.debug("Could not add node {}", nodeKey);

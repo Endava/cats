@@ -48,6 +48,17 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateMultiplePayloadsWhenRootOneOfAndDiscriminatorAndAllOfAndMappings() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/variant", "src/test/resources/issue_69.yml");
+        Assertions.assertThat(data).hasSize(1);
+
+        List<String> responses = data.get(0).getResponses().get("200");
+        Assertions.assertThat(responses).hasSize(2);
+        Assertions.assertThat(responses.get(0)).doesNotContain("Variant").contains("option2");
+        Assertions.assertThat(responses.get(1)).doesNotContain("Variant").contains("option1");
+    }
+
+    @Test
     void givenAContract_whenParsingThePathItemDetailsForPost_thenCorrectFuzzingDataAreBeingReturned() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml");
 

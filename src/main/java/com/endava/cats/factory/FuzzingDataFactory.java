@@ -412,7 +412,10 @@ public class FuzzingDataFactory {
                 .stream()
                 .collect(Collectors.groupingBy(entry ->
                         entry.getKey().contains("_OF") ? entry.getKey().substring(0, entry.getKey().indexOf("_OF") - 3) : entry.getKey()))
-                .keySet();
+                .keySet()
+                .stream()
+                .map(entry -> entry.replaceAll("\\.+$", ""))
+                .collect(Collectors.toSet());
 
         List<Map<String, Map<String, JsonElement>>> listOfMap = keySet.stream()
                 .map(key -> startingOneAnyOfs
