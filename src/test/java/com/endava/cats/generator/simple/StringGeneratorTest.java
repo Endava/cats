@@ -103,4 +103,11 @@ class StringGeneratorTest {
 
         Assertions.assertThat(generated).matches(Pattern.compile(regex)).hasSizeBetween(2048, 2048);
     }
+
+    @ParameterizedTest
+    @CsvSource({"te`st,test", "boost,boost"})
+    void shouldSanitize(String input, String expected) {
+        String sanitized = StringGenerator.sanitize(input);
+        Assertions.assertThat(sanitized).isEqualTo(expected);
+    }
 }
