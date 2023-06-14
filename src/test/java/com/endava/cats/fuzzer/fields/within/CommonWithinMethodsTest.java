@@ -22,9 +22,12 @@ class CommonWithinMethodsTest {
 
     public static final String YY = "YY";
 
-    @Test
-    void shouldSkipWhenNotStringSchema() {
-        NumberSchema schema = new NumberSchema();
+    @ParameterizedTest
+    @CsvSource({"number,any", "string,byte", "string,binary"})
+    void shouldSkipWhenNotStringSchemaOrBinaryString(String type, String format) {
+        Schema schema = new Schema();
+        schema.setType(type);
+        schema.setFormat(format);
         FuzzingData fuzzingData = Mockito.mock(FuzzingData.class);
         Map<String, Schema> reqPropTypes = Map.of("test", schema);
         Mockito.when(fuzzingData.getRequestPropertyTypes()).thenReturn(reqPropTypes);

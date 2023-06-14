@@ -17,8 +17,10 @@ public final class CommonWithinMethods {
 
     public static List<FuzzingStrategy> getFuzzingStrategies(FuzzingData data, String fuzzedField, List<String> invisibleChars, boolean maintainSize) {
         Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        if (!StringSchema.class.isAssignableFrom(fuzzedFieldSchema.getClass())) {
-            return Collections.singletonList(FuzzingStrategy.skip().withData("Field does not match String schema"));
+        if (!"string".equalsIgnoreCase(fuzzedFieldSchema.getType())
+                || "binary".equalsIgnoreCase(fuzzedFieldSchema.getFormat())
+                || "byte".equalsIgnoreCase(fuzzedFieldSchema.getFormat())) {
+            return Collections.singletonList(FuzzingStrategy.skip().withData("Field does not match String schema or has binary/byte format"));
         }
         String initialValue = StringGenerator.generateValueBasedOnMinMax(fuzzedFieldSchema);
 
