@@ -32,6 +32,9 @@ import com.google.gson.JsonPrimitive;
 import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import net.minidev.json.JSONValue;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
@@ -42,9 +45,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -469,7 +469,7 @@ public class ServiceCaller {
                 queryParams.addAll(this.buildQueryParameters(child.getValue().toString(), data));
             } else if (!data.getPathParams().contains(child.getKey()) || data.getQueryParams().contains(child.getKey()) || CatsDSLWords.isExtraField(child.getKey())) {
                 if (child.getValue().isJsonNull()) {
-                    queryParams.add(new KeyValuePair<>(child.getKey(), null));
+                    logger.debug("Not adding null query parameter {}", child.getKey());
                 } else if (child.getValue().isJsonArray()) {
                     queryParams.add(new KeyValuePair<>(child.getKey(), child.getValue().toString().replace("[", "")
                             .replace("]", "").replace("\"", "")));

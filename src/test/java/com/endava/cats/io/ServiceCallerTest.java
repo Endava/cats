@@ -61,7 +61,7 @@ class ServiceCallerTest {
         wireMockServer.stubFor(WireMock.post("/pets").willReturn(WireMock.ok("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.put("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
-        wireMockServer.stubFor(WireMock.get("/pets/1?limit=2&no").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
+        wireMockServer.stubFor(WireMock.get("/pets/1?limit=2").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.delete("/pets/1").willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.head(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.trace(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
@@ -263,7 +263,7 @@ class ServiceCallerTest {
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build()))
                 .queryParams(Set.of("limit", "no")).contentType("application/json").build());
 
-        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/pets/1?limit=2&no")));
+        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo("/pets/1?limit=2")));
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).isEqualTo("{'pet':'pet'}");
     }
