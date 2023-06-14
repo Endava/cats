@@ -135,4 +135,10 @@ public class StringGenerator {
         }
         return StringGenerator.generate(pattern, minLength, maxLength);
     }
+
+    public static String sanitize(String input) {
+        return input
+                .replaceAll("(^[\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+)|([\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+$)", "")
+                .replaceAll("[\\p{C}\\p{So}\\p{M}\\p{Sk}\r\n]+", "");
+    }
 }

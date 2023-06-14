@@ -60,13 +60,14 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         /* Sometimes the regex generators will generate weird chars at the beginning or end of string.
           So we generate a larger one and substring the right size. */
         int fromSchemaLength = getExactMethod().apply(schema).intValue();
-        int generatedStringLength = fromSchemaLength + 10;
+        int generatedStringLength = fromSchemaLength + 15;
 
         String generated = StringGenerator.generate(pattern, generatedStringLength, generatedStringLength);
         if (schema instanceof ByteArraySchema) {
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
         }
-        return generated.substring(5, fromSchemaLength + 5);
+
+        return StringGenerator.sanitize(generated).substring(5, fromSchemaLength + 5);
     }
 
     @Override
