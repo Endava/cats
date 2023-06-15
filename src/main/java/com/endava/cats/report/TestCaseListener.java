@@ -147,6 +147,10 @@ public class TestCaseListener {
         testCaseMap.get(MDC.get(ID)).setContractPath(path);
     }
 
+    public void addServer(String server) {
+        testCaseMap.get(MDC.get(ID)).setServer(server);
+    }
+
     public void addRequest(CatsRequest request) {
         testCaseMap.get(MDC.get(ID)).setRequest(request);
     }

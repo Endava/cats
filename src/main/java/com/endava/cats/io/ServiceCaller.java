@@ -499,6 +499,7 @@ public class ServiceCaller {
     private void recordRequestAndResponse(CatsRequest catsRequest, CatsResponse catsResponse, ServiceData serviceData) {
         testCaseListener.addPath(serviceData.getRelativePath());
         testCaseListener.addContractPath(serviceData.getContractPath());
+        testCaseListener.addServer(apiArguments.getServer());
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addResponse(catsResponse);
         testCaseListener.addFullRequestPath(HtmlEscapers.htmlEscaper().escape(catsRequest.getUrl()));

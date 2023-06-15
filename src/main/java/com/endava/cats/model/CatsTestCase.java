@@ -7,6 +7,7 @@ import com.google.gson.stream.JsonReader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
 
@@ -37,6 +38,7 @@ public class CatsTestCase {
     private String fuzzer;
     private String fullRequestPath;
     private String contractPath;
+    private String server;
 
     public boolean isNotSkipped() {
         return !"skipped".equalsIgnoreCase(result);
@@ -80,5 +82,18 @@ public class CatsTestCase {
 
     public String getCatsReplay() {
         return CATS_REPLAY.formatted(testId.replace(" ", ""));
+    }
+
+    /**
+     * Updates the fullRequest path and request#url with the new server.
+     *
+     * @param server the url where the service is deployed
+     */
+    public void updateServer(String server) {
+        if (StringUtils.isBlank(server)) {
+            return;
+        }
+        this.fullRequestPath = this.fullRequestPath.replace(this.server, server);
+        request.setUrl(request.getUrl().replace(this.server, server));
     }
 }

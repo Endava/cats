@@ -58,6 +58,11 @@ public class ReplayCommand implements Runnable {
             description = "Specifies the headers to be passed with all requests and will override values from the replay files for the same header name")
     Map<String, Object> headersMap = new HashMap<>();
 
+    @CommandLine.Option(names = {"-s", "--server"},
+            description = "Base URL of the service")
+    private String server;
+
+
     @Inject
     public ReplayCommand(ServiceCaller serviceCaller) {
         this.serviceCaller = serviceCaller;
@@ -74,17 +79,18 @@ public class ReplayCommand implements Runnable {
         String testCaseFile = Files.readString(Paths.get(testCaseFileName));
         logger.note("Loaded content: \n" + testCaseFile);
         CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
+        testCase.updateServer(server);
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         List<KeyValuePair<String, Object>> headersFromFile = new java.util.ArrayList<>(Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList()));
         headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
-
         headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
         String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
 
         logger.complete("Response body: \n{}", responseBody);
     }
+
 
     @Override
     public void run() {

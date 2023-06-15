@@ -3,7 +3,6 @@ package com.endava.cats.strategy;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.FuzzingData;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
