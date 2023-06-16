@@ -52,9 +52,9 @@ public abstract class TestCaseExporter {
     protected static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     protected static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
     protected static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
-    private static final String REPORT_JS = "cats-summary-report.js";
+    private static final String REPORT_JS = "cats-summary-report.json";
 
-    private static final String EXECUTION_TIME_REPORT = "execution_times.js";
+    private static final String EXECUTION_TIME_REPORT = "execution_times.json";
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
