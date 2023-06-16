@@ -33,11 +33,11 @@
         <json-path.version>2.8.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.1.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>3.1.2.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M8</surefire-plugin.version>
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>6.0.9</spring.version>
+        <spring.version>6.0.10</spring.version>
         <assertj-core.version>3.24.2</assertj-core.version>
         <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.0</maven-install-plugin.version>
