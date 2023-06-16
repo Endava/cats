@@ -7,14 +7,17 @@ import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.KeyValuePair;
+import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import picocli.CommandLine;
-
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import picocli.CommandLine;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -40,6 +43,7 @@ import java.util.Optional;
 public class ReplayCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
+    private final TestCaseListener testCaseListener;
 
     @CommandLine.Parameters(
             description = "The list of CATS tests. If you provide the .json extension it will be considered a path, " +
@@ -59,13 +63,18 @@ public class ReplayCommand implements Runnable {
     Map<String, Object> headersMap = new HashMap<>();
 
     @CommandLine.Option(names = {"-s", "--server"},
-            description = "Base URL of the service")
+            description = "Base URL of the service. You can override the base URL from the initial test in order to replay it against other service instances")
     private String server;
+
+    @CommandLine.Option(names = {"-o", "--output"},
+            description = "If supplied, it will create TestXXX.json files within the given folder with the updated responses received when replaying the tests")
+    private String outputReportFolder;
 
 
     @Inject
-    public ReplayCommand(ServiceCaller serviceCaller) {
+    public ReplayCommand(ServiceCaller serviceCaller, TestCaseListener testCaseListener) {
         this.serviceCaller = serviceCaller;
+        this.testCaseListener = testCaseListener;
     }
 
     public List<String> parseTestCases() {
@@ -76,19 +85,48 @@ public class ReplayCommand implements Runnable {
     }
 
     public void executeTestCase(String testCaseFileName) throws IOException {
-        String testCaseFile = Files.readString(Paths.get(testCaseFileName));
-        logger.note("Loaded content: \n" + testCaseFile);
-        CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
-        testCase.updateServer(server);
+        CatsTestCase testCase = this.loadTestCaseFile(testCaseFileName);
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
+        this.loadHeadersIfSupplied(testCase);
+        CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
+        String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
+        logger.complete("Response body: \n{}", responseBody);
+        this.writeTestJsonsIfSupplied(testCase, response);
+    }
+
+    private void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) throws IOException {
+        if (!StringUtils.isBlank(this.outputReportFolder)) {
+            catsTestCase.setResponse(response);
+            testCaseListener.writeIndividualTestCase(catsTestCase);
+        }
+    }
+
+    private void loadHeadersIfSupplied(CatsTestCase testCase) {
         List<KeyValuePair<String, Object>> headersFromFile = new java.util.ArrayList<>(Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList()));
         headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
         headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
-        CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
-        String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
+    }
 
-        logger.complete("Response body: \n{}", responseBody);
+    @NotNull
+    private CatsTestCase loadTestCaseFile(String testCaseFileName) throws IOException {
+        String testCaseFile = Files.readString(Paths.get(testCaseFileName));
+        logger.note("Loaded content: \n" + testCaseFile);
+        CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
+        testCase.updateServer(server);
+        return testCase;
+    }
+
+    private void initReportingPath() {
+        try {
+            if (!StringUtils.isBlank(this.outputReportFolder)) {
+                testCaseListener.initReportingPath(this.outputReportFolder);
+                testCaseListener.writeHelperFiles();
+            }
+        } catch (IOException e) {
+            logger.error("There was an issue creating the output folder: {}", e.getMessage());
+            logger.debug("Stacktrace:", e);
+        }
     }
 
 
@@ -98,6 +136,7 @@ public class ReplayCommand implements Runnable {
             CatsUtil.setCatsLogLevel("ALL");
             logger.fav("Setting CATS log level to ALL!");
         }
+        this.initReportingPath();
         for (String testCaseFileName : this.parseTestCases()) {
             try {
                 logger.start("Executing {}", testCaseFileName);
