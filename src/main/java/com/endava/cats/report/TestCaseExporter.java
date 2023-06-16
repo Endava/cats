@@ -13,10 +13,11 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 
-import jakarta.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,9 +71,13 @@ public abstract class TestCaseExporter {
     private Path reportingPath;
     private long t0;
 
-    public void initPath() throws IOException {
+    public void initPath(String folder) throws IOException {
+        String outputFolder = reportingArguments.getOutputReportFolder();
+        if (!StringUtils.isBlank(folder)) {
+            outputFolder = folder;
+        }
         String subFolder = reportingArguments.isTimestampReports() ? String.valueOf(System.currentTimeMillis()) : "";
-        reportingPath = Paths.get(reportingArguments.getOutputReportFolder(), subFolder);
+        reportingPath = Paths.get(outputFolder, subFolder);
 
         if (!reportingArguments.isTimestampReports() && reportingPath.toFile().exists()) {
             deleteFiles(reportingPath);

@@ -182,7 +182,19 @@ public class TestCaseListener {
     }
 
     public void initReportingPath() throws IOException {
-        testCaseExporter.initPath();
+        testCaseExporter.initPath(null);
+    }
+
+    public void initReportingPath(String folder) throws IOException {
+        testCaseExporter.initPath(folder);
+    }
+
+    public void writeIndividualTestCase(CatsTestCase catsTestCase) {
+        testCaseExporter.writeTestCase(catsTestCase);
+    }
+
+    public void writeHelperFiles() {
+        testCaseExporter.writeHelperFiles();
     }
 
     public void endSession() {
