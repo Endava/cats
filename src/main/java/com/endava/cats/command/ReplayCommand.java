@@ -94,7 +94,7 @@ public class ReplayCommand implements Runnable {
         this.writeTestJsonsIfSupplied(testCase, response);
     }
 
-    private void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) throws IOException {
+    private void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) {
         if (!StringUtils.isBlank(this.outputReportFolder)) {
             catsTestCase.setResponse(response);
             testCaseListener.writeIndividualTestCase(catsTestCase);
