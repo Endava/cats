@@ -9,11 +9,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
+import jakarta.enterprise.context.ApplicationScoped;
 import net.minidev.json.JSONArray;
+import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -71,21 +72,33 @@ public class CatsUtil {
                 jsonPropToGetValue = JsonUtils.FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
                 jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
             }
-            DocumentContext context = JsonPath.parse(payload);
-            Object oldValue = context.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
+            DocumentContext jsonDocument = JsonPath.parse(payload);
+            Object oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
             if (oldValue instanceof JSONArray && !jsonPropToGetValue.contains("[*]")) {
-                oldValue = context.read("$." + jsonPropToGetValue + "[0]");
+                oldValue = jsonDocument.read("$." + jsonPropToGetValue + "[0]");
                 jsonPropertyForReplacement = "$." + jsonPropertyForReplacement + "[*]";
             }
             Object valueToSet = fuzzingStrategyToApply.process(oldValue);
             if (mergeFuzzing) {
                 valueToSet = FuzzingStrategy.mergeFuzzing(this.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
             }
-            context.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
+            replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, valueToSet);
 
-            return new FuzzingResult(context.jsonString(), valueToSet);
+            return new FuzzingResult(jsonDocument.jsonString(), valueToSet);
         }
         return FuzzingResult.empty();
+    }
+
+    private static void replaceOldValueWithNewOne(String jsonPropertyForReplacement, DocumentContext jsonDocument, Object valueToSet) {
+        if (JsonUtils.isValidJson(String.valueOf(valueToSet))) {
+            try {
+                jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), JsonUtils.GENERIC_PERMISSIVE_PARSER.parse(String.valueOf(valueToSet)));
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
+        }
     }
 
     private String nullOrValueOf(Object object) {
