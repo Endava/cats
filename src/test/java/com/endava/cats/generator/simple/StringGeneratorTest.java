@@ -110,4 +110,12 @@ class StringGeneratorTest {
         String sanitized = StringGenerator.sanitize(input);
         Assertions.assertThat(sanitized).isEqualTo(expected);
     }
+
+    @ParameterizedTest
+    @CsvSource(value = {"^\\+?[1-9]\\d{6,14}$;16", "[A-Z];20", "[A-Z0-9]{13,18};50"}, delimiterString = ";")
+    void shouldGenerateFixedLength(String pattern, int length) {
+        String fixedLengthGenerated = StringGenerator.generateExactLength(pattern, length);
+
+        Assertions.assertThat(fixedLengthGenerated).hasSize(length);
+    }
 }

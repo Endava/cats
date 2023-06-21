@@ -28,6 +28,29 @@ public class StringGenerator {
     }
 
     /**
+     * This method makes sure that the generated size of the string is matching the given length.
+     * When patterns have length inside, for example {@code "\\d{6,10}" }, the generated value
+     * will have a variable length, in the case of the example between 6 and 10.
+     *
+     * @param pattern the given  pattern
+     * @param length  the desired length
+     * @return a generated value of exact length provided
+     */
+    public static String generateExactLength(String pattern, int length) {
+        StringBuilder initialValue = new StringBuilder(generate(pattern, length, length));
+        if (initialValue.length() != length) {
+            int startingAt = initialValue.length() / 2;
+            String toRepeat = initialValue.substring(startingAt);
+            initialValue.append(toRepeat);
+            while (initialValue.length() < length) {
+                initialValue.append(toRepeat);
+            }
+        }
+
+        return initialValue.substring(0, length);
+    }
+
+    /**
      * This method generates a random string according to the given input. If the pattern already has length information the min/max will be ignored.
      *
      * @param pattern the regex pattern
