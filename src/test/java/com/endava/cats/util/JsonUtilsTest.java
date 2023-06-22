@@ -105,6 +105,20 @@ class JsonUtilsTest {
     }
 
     @Test
+    void shouldBeArray() {
+        boolean result = JsonUtils.isArray("[{\"test\":[{\"inner\": 4}]}]", "test");
+
+        Assertions.assertThat(result).isTrue();
+    }
+
+    @Test
+    void shouldNotBeArray() {
+        boolean result = JsonUtils.isArray("[{\"test\":{\"inner\": 4}}]", "test");
+
+        Assertions.assertThat(result).isFalse();
+    }
+
+    @Test
     void shouldNotBeObjectWhenInvalidPath() {
         boolean result = JsonUtils.isObject("[{\"test\":{\"inner\": 4}}]", "test_bad");
 

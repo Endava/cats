@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
 import java.util.Set;
+import java.util.function.Predicate;
 
 public abstract class JsonUtils {
     public static final String NOT_SET = "NOT_SET";
@@ -79,12 +80,16 @@ public abstract class JsonUtils {
     }
 
     private static boolean testForPrimitiveOrThrow(String payload, String property) {
+        return testForPredicateOrThrow(payload, property, JsonNode::isValueNode);
+    }
+
+    private static boolean testForPredicateOrThrow(String payload, String property, Predicate<JsonNode> testFunction) {
         if (isJsonArray(payload)) {
             property = FIRST_ELEMENT_FROM_ROOT_ARRAY + property;
         }
 
         JsonNode jsonNode = PARSE_CONTEXT.parse(payload).read(JsonUtils.sanitizeToJsonPath(property));
-        return jsonNode.isValueNode();
+        return testFunction.test(jsonNode);
     }
 
     public static boolean isPrimitive(String payload, String property) {
@@ -98,6 +103,14 @@ public abstract class JsonUtils {
     public static boolean isObject(String payload, String property) {
         try {
             return !testForPrimitiveOrThrow(payload, property);
+        } catch (InvalidPathException e) {
+            return false;
+        }
+    }
+
+    public static boolean isArray(String payload, String property) {
+        try {
+            return testForPredicateOrThrow(payload, property, JsonNode::isArray);
         } catch (InvalidPathException e) {
             return false;
         }
