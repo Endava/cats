@@ -24,7 +24,7 @@ public class UUIDGenerator implements ValidDataFormatGenerator, InvalidDataForma
 
     @Override
     public String getAlmostValidValue() {
-        return "123e4567-e89b-22d3-a456-42665544000";
+        return "123e4567-e89b-22d3-a456-426655440-92";
     }
 
     @Override
