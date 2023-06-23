@@ -3,34 +3,31 @@ package com.endava.cats.fuzzer.headers.leading;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
-import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
-import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzerContext;
 import com.endava.cats.generator.simple.UnicodeGenerator;
-
+import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
-import java.util.List;
 
 @Singleton
 @HeaderFuzzer
 @WhitespaceFuzzer
-public class LeadingWhitespacesInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
+public class LeadingWhitespacesInHeadersFuzzer extends BaseHeadersFuzzer {
 
     public LeadingWhitespacesInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
-        return "prefix value with unicode separators";
+    public BaseHeadersFuzzerContext getFuzzerContext() {
+        return BaseHeadersFuzzerContext.builder()
+                .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .typeOfDataSentToTheService("values prefixed with unicode separators")
+                .fuzzStrategy(UnicodeGenerator.getSeparatorsHeaders()
+                        .stream().map(value -> FuzzingStrategy.prefix().withData(value)).toList())
+                .build();
     }
 
-    @Override
-    public List<String> getInvisibleChars() {
-        return UnicodeGenerator.getSeparatorsHeaders();
-    }
-
-    @Override
-    public FuzzingStrategy concreteFuzzStrategy() {
-        return FuzzingStrategy.prefix();
-    }
 }

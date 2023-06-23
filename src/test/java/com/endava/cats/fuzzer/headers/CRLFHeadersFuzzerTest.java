@@ -24,22 +24,23 @@ class CRLFHeadersFuzzerTest {
 
     @Test
     void shouldNotMatchResponseSchema() {
-        Assertions.assertThat(crlfHeadersFuzzer.matchResponseSchema()).isFalse();
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
     }
 
     @Test
     void shouldHaveReplaceFuzzingStrategy() {
-        Assertions.assertThat(crlfHeadersFuzzer.concreteFuzzStrategy().name()).isEqualTo("REPLACE");
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo("REPLACE");
     }
 
     @Test
     void shouldReturnCrLfInvisibleChars() {
-        Assertions.assertThat(crlfHeadersFuzzer.getInvisibleChars()).containsExactly("\r\n");
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(1);
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData().toString()).isEqualTo("\r\n");
     }
 
     @Test
     void shouldReturnTypeOfDataToSend() {
-        Assertions.assertThat(crlfHeadersFuzzer.typeOfDataSentToTheService()).isEqualTo("send CR & LF characters");
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isEqualTo("CR & LF characters");
     }
 
 }

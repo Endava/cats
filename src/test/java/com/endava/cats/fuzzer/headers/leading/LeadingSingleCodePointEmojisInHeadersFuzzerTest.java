@@ -17,13 +17,13 @@ class LeadingSingleCodePointEmojisInHeadersFuzzerTest {
 
     @Test
     void shouldNotMatchResponseSchema() {
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.matchResponseSchema()).isFalse();
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
     }
 
     @Test
     void shouldReturnPrefixFuzzingStrategy() {
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC80");
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC80");
     }
 
     @Test
@@ -33,6 +33,6 @@ class LeadingSingleCodePointEmojisInHeadersFuzzerTest {
 
     @Test
     void shouldHaveTypeOfDataToSend() {
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotBlank();
     }
 }

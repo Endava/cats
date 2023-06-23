@@ -3,15 +3,14 @@ package com.endava.cats.fuzzer.headers.base;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
-import java.util.List;
-
+/**
+ * Fuzzer that iterates through all headers and executes fuzzing according to a given {@link BaseHeadersFuzzerContext}.
+ */
 public abstract class BaseHeadersFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(this.getClass());
 
@@ -23,56 +22,31 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData fuzzingData) {
+        BaseHeadersFuzzerContext context = this.getFuzzerContext();
         headersIteratorExecutor.execute(
                 HeadersIteratorExecutorContext.builder()
                         .fuzzer(this)
                         .logger(logger)
-                        .expectedResponseCodeForOptionalHeaders(this.getExpectedHttpForOptionalHeadersFuzzed())
-                        .expectedResponseCodeForRequiredHeaders(this.getExpectedHttpCodeForRequiredHeadersFuzzed())
-                        .fuzzValueProducer(this::fuzzStrategy)
-                        .scenario("Send [%s] in headers.".formatted(this.typeOfDataSentToTheService()))
-                        .matchResponseSchema(this.matchResponseSchema())
+                        .expectedResponseCodeForOptionalHeaders(context.getExpectedHttpForOptionalHeadersFuzzed())
+                        .expectedResponseCodeForRequiredHeaders(context.getExpectedHttpCodeForRequiredHeadersFuzzed())
+                        .fuzzValueProducer(context::getFuzzStrategy)
+                        .scenario("Send [%s] in headers.".formatted(context.getTypeOfDataSentToTheService()))
+                        .matchResponseSchema(context.isMatchResponseSchema())
                         .fuzzingData(fuzzingData)
                         .build());
     }
 
     /**
-     * Short description of data that is sent to the service.
+     * Override this to provide details about Fuzzer expectations and fuzzing strategy.
      *
-     * @return a short description
+     * @return a context to be used to execute the fuzzing
      */
-    protected abstract String typeOfDataSentToTheService();
+    public abstract BaseHeadersFuzzerContext getFuzzerContext();
 
-    /**
-     * What is the expected HTTP Code when required headers are fuzzed with invalid values
-     *
-     * @return expected HTTP code
-     */
-    protected abstract ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed();
-
-    /**
-     * What is the expected HTTP code when optional headers are fuzzed with invalid values
-     *
-     * @return expected HTTP code
-     */
-    protected abstract ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed();
-
-    /**
-     * What is the Fuzzing strategy the current Fuzzer will apply
-     *
-     * @return expected FuzzingStrategy
-     */
-    protected abstract List<FuzzingStrategy> fuzzStrategy();
-
-    /**
-     * There is a special case when we send Control Chars in Headers and an error (due to HTTP RFC specs)
-     * is returned by the app server itself, not the application. In this case we don't want to check
-     * if there is even a response body as the error page/response is served by the server, not the application layer.
-     *
-     * @return true if it should match response schema and false otherwise
-     */
-    public boolean matchResponseSchema() {
-        return true;
+    @Override
+    public String description() {
+        return "iterate through each header and send %s in the targeted header"
+                .formatted(this.getFuzzerContext().getTypeOfDataSentToTheService());
     }
 
     @Override

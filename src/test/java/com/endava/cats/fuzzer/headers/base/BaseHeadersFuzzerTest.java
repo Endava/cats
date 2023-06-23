@@ -8,9 +8,9 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -104,28 +104,14 @@ class BaseHeadersFuzzerTest {
         }
 
         @Override
-        protected String typeOfDataSentToTheService() {
-            return "my data";
-        }
-
-        @Override
-        protected ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
-            return ResponseCodeFamily.FOURXX;
-        }
-
-        @Override
-        protected ResponseCodeFamily getExpectedHttpForOptionalHeadersFuzzed() {
-            return ResponseCodeFamily.TWOXX;
-        }
-
-        @Override
-        protected List<FuzzingStrategy> fuzzStrategy() {
-            return Collections.singletonList(FuzzingStrategy.replace());
-        }
-
-        @Override
-        public String description() {
-            return null;
+        public BaseHeadersFuzzerContext getFuzzerContext() {
+            return BaseHeadersFuzzerContext.builder()
+                    .matchResponseSchema(true)
+                    .fuzzStrategy(Collections.singletonList(FuzzingStrategy.replace()))
+                    .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                    .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.TWOXX)
+                    .typeOfDataSentToTheService("my data")
+                    .build();
         }
     }
 }

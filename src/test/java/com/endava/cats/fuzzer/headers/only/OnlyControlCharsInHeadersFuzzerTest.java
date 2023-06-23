@@ -17,8 +17,8 @@ class OnlyControlCharsInHeadersFuzzerTest {
 
     @Test
     void shouldHaveReplaceFuzzingStrategy() {
-        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0000");
+        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\u0000");
     }
 
     @Test
@@ -28,11 +28,11 @@ class OnlyControlCharsInHeadersFuzzerTest {
 
     @Test
     void shouldNotMatchResponseSchema() {
-        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
+        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
     }
 
     @Test
     void shouldHaveTypeOfDataToSend() {
-        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotBlank();
     }
 }

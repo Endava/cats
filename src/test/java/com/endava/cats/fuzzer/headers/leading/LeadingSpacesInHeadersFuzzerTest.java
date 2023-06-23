@@ -18,21 +18,21 @@ class LeadingSpacesInHeadersFuzzerTest {
 
     @Test
     void shouldExpect2xxForOptionalAndRequiredHeaders() {
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
     }
 
     @Test
     void shouldMatchResponseSchema() {
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isTrue();
     }
 
     @Test
     void shouldReturnPrefixFuzzingStrategy() {
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo(" ");
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0009");
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.fuzzStrategy()).hasSize(2);
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo(" ");
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\u0009");
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(2);
 
     }
 
@@ -43,6 +43,6 @@ class LeadingSpacesInHeadersFuzzerTest {
 
     @Test
     void shouldHaveTypeOfDataToSend() {
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotBlank();
     }
 }

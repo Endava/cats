@@ -2,36 +2,29 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
-import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzerContext;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
-
 import jakarta.inject.Singleton;
-import java.util.List;
+
+import java.util.stream.Stream;
 
 @Singleton
 @HeaderFuzzer
-public class CRLFHeadersFuzzer extends InvisibleCharsBaseFuzzer {
+public class CRLFHeadersFuzzer extends BaseHeadersFuzzer {
     protected CRLFHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }
 
     @Override
-    protected String typeOfDataSentToTheService() {
-        return "send CR & LF characters";
-    }
-
-    @Override
-    public List<String> getInvisibleChars() {
-        return List.of("\r\n");
-    }
-
-    @Override
-    public FuzzingStrategy concreteFuzzStrategy() {
-        return FuzzingStrategy.replace();
-    }
-
-    @Override
-    public boolean matchResponseSchema() {
-        return false;
+    public BaseHeadersFuzzerContext getFuzzerContext() {
+        return BaseHeadersFuzzerContext.builder()
+                .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .typeOfDataSentToTheService("CR & LF characters")
+                .fuzzStrategy(Stream.of("\r\n").map(value -> FuzzingStrategy.replace().withData(value)).toList())
+                .matchResponseSchema(false)
+                .build();
     }
 }

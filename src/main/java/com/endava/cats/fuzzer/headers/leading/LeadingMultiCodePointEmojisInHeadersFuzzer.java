@@ -3,39 +3,31 @@ package com.endava.cats.fuzzer.headers.leading;
 import com.endava.cats.annotations.EmojiFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
-import com.endava.cats.fuzzer.headers.base.InvisibleCharsBaseFuzzer;
-import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzerContext;
 import com.endava.cats.generator.simple.UnicodeGenerator;
-
+import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
-import java.util.List;
 
 @Singleton
 @HeaderFuzzer
 @EmojiFuzzer
-public class LeadingMultiCodePointEmojisInHeadersFuzzer extends InvisibleCharsBaseFuzzer {
+public class LeadingMultiCodePointEmojisInHeadersFuzzer extends BaseHeadersFuzzer {
 
     public LeadingMultiCodePointEmojisInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }
 
     @Override
-    public List<String> getInvisibleChars() {
-        return UnicodeGenerator.getMultiCodePointEmojis();
-    }
-
-    @Override
-    public FuzzingStrategy concreteFuzzStrategy() {
-        return FuzzingStrategy.prefix();
-    }
-
-    @Override
-    public String typeOfDataSentToTheService() {
-        return "prefix values with multi code point emojis";
-    }
-
-    @Override
-    public boolean matchResponseSchema() {
-        return false;
+    public BaseHeadersFuzzerContext getFuzzerContext() {
+        return BaseHeadersFuzzerContext.builder()
+                .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .typeOfDataSentToTheService("values prefixed with multi code point emojis")
+                .fuzzStrategy(UnicodeGenerator.getMultiCodePointEmojis()
+                        .stream().map(value -> FuzzingStrategy.prefix().withData(value)).toList())
+                .matchResponseSchema(false)
+                .build();
     }
 }
