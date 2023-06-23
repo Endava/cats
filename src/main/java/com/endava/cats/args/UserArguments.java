@@ -1,11 +1,11 @@
 package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
 
-import jakarta.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

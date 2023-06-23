@@ -2,39 +2,30 @@ package com.endava.cats.fuzzer.headers.only;
 
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
-import com.endava.cats.fuzzer.headers.base.SpacesCharsBaseFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzerContext;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.generator.simple.UnicodeGenerator;
-
 import jakarta.inject.Singleton;
-import java.util.List;
 
 @Singleton
 @HeaderFuzzer
-public class OnlySpacesInHeadersFuzzer extends SpacesCharsBaseFuzzer {
+public class OnlySpacesInHeadersFuzzer extends BaseHeadersFuzzer {
 
     protected OnlySpacesInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }
 
     @Override
-    public ResponseCodeFamily getExpectedHttpCodeForRequiredHeadersFuzzed() {
-        return ResponseCodeFamily.FOURXX;
+    public BaseHeadersFuzzerContext getFuzzerContext() {
+        return BaseHeadersFuzzerContext.builder()
+                .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.TWOXX)
+                .typeOfDataSentToTheService("values replaced by spaces")
+                .fuzzStrategy(UnicodeGenerator.getSpacesHeaders()
+                        .stream().map(value -> FuzzingStrategy.replace().withData(value)).toList())
+                .build();
     }
 
-    @Override
-    protected String typeOfDataSentToTheService() {
-        return "replace value with spaces";
-    }
-
-    @Override
-    public List<String> getInvisibleChars() {
-        return UnicodeGenerator.getSpacesHeaders();
-    }
-
-    @Override
-    public FuzzingStrategy concreteFuzzStrategy() {
-        return FuzzingStrategy.replace();
-    }
 }

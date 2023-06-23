@@ -6,6 +6,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.stream.Collectors;
+
 @QuarkusTest
 class TrailingControlCharsInHeadersFuzzerTest {
     private TrailingControlCharsInHeadersFuzzer trailingControlCharsInHeadersFuzzer;
@@ -17,9 +19,10 @@ class TrailingControlCharsInHeadersFuzzerTest {
 
     @Test
     void shouldReturnTrailFuzzingStrategy() {
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.fuzzStrategy().get(1).getData()).isEqualTo("\u0000");
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getInvisibleChars()).doesNotContain("\r");
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\u0000");
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().stream().map(fuzzingStrategy ->
+                String.valueOf(fuzzingStrategy.getData())).collect(Collectors.toSet())).doesNotContain("\r");
     }
 
     @Test
@@ -29,11 +32,11 @@ class TrailingControlCharsInHeadersFuzzerTest {
 
     @Test
     void shouldNotMatchResponseSchema() {
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.matchResponseSchema()).isFalse();
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
     }
 
     @Test
     void shouldHaveTypeOfDataToSend() {
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotBlank();
     }
 }

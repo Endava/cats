@@ -18,14 +18,14 @@ class OnlySpacesInHeadersFuzzerTest {
 
     @Test
     void shouldHaveReplaceFuzzingStrategy() {
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo(" ");
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo(" ");
     }
 
     @Test
     void shouldReturn4xxForRequiredAnd2xxForOptionalResponseCodes() {
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
     }
 
     @Test
@@ -35,11 +35,11 @@ class OnlySpacesInHeadersFuzzerTest {
 
     @Test
     void shouldMatchResponseSchema() {
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isTrue();
     }
 
     @Test
     void shouldHaveTypeOfDataToSend() {
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotBlank();
     }
 }

@@ -17,8 +17,8 @@ class LeadingWhitespacesInHeadersFuzzerTest {
 
     @Test
     void shouldHavePrefixFuzzingStrategy() {
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.fuzzStrategy().get(0).getData()).isEqualTo("\u1680");
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo("\u1680");
     }
 
     @Test
@@ -28,11 +28,11 @@ class LeadingWhitespacesInHeadersFuzzerTest {
 
     @Test
     void shouldMatchResponseSchema() {
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.matchResponseSchema()).isTrue();
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isTrue();
     }
 
     @Test
     void shouldHaveTypeOfDataToSend() {
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotBlank();
     }
 }

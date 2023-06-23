@@ -17,7 +17,7 @@ class EmptyStringsInHeadersFuzzerTest {
 
     @Test
     void shouldReturnReplaceFuzzingStrategy() {
-        Assertions.assertThat(emptyStringsInHeadersFuzzer.fuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(emptyStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 
     @Test
@@ -27,11 +27,11 @@ class EmptyStringsInHeadersFuzzerTest {
 
     @Test
     void shouldMatchResponseSchema() {
-        Assertions.assertThat(emptyStringsInHeadersFuzzer.matchResponseSchema()).isTrue();
+        Assertions.assertThat(emptyStringsInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isTrue();
     }
 
     @Test
     void shouldHaveTypeOfDataToSend() {
-        Assertions.assertThat(emptyStringsInHeadersFuzzer.typeOfDataSentToTheService()).isNotBlank();
+        Assertions.assertThat(emptyStringsInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotBlank();
     }
 }

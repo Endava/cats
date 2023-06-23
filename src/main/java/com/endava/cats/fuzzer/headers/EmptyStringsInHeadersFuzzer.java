@@ -2,33 +2,30 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
-import com.endava.cats.fuzzer.headers.base.Expect4XXBaseHeadersFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzer;
+import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzerContext;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
-
 import jakarta.inject.Singleton;
+
 import java.util.Collections;
-import java.util.List;
 
 @Singleton
 @HeaderFuzzer
-public class EmptyStringsInHeadersFuzzer extends Expect4XXBaseHeadersFuzzer {
+public class EmptyStringsInHeadersFuzzer extends BaseHeadersFuzzer {
 
     public EmptyStringsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }
 
     @Override
-    public String typeOfDataSentToTheService() {
-        return "empty values";
+    public BaseHeadersFuzzerContext getFuzzerContext() {
+        return BaseHeadersFuzzerContext.builder()
+                .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.FOURXX)
+                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.TWOXX)
+                .typeOfDataSentToTheService("empty values")
+                .fuzzStrategy(Collections.singletonList(FuzzingStrategy.replace().withData("")))
+                .build();
     }
 
-    @Override
-    protected List<FuzzingStrategy> fuzzStrategy() {
-        return Collections.singletonList(FuzzingStrategy.replace().withData(""));
-    }
-
-    @Override
-    public String description() {
-        return "iterate through each header and send empty String values in the targeted header";
-    }
 }

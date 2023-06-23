@@ -27,12 +27,12 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
-import jakarta.enterprise.context.Dependent;
-import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
