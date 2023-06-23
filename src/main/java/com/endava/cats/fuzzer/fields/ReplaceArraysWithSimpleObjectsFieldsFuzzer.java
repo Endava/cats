@@ -13,21 +13,21 @@ import java.util.List;
 
 @FieldFuzzer
 @Singleton
-public class ReplaceObjectsWithArraysFieldsFuzzer extends BaseReplaceFieldsFuzzer {
+public class ReplaceArraysWithSimpleObjectsFieldsFuzzer extends BaseReplaceFieldsFuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
 
-    public ReplaceObjectsWithArraysFieldsFuzzer(FieldsIteratorExecutor ce) {
+    public ReplaceArraysWithSimpleObjectsFieldsFuzzer(FieldsIteratorExecutor ce) {
         super(ce);
     }
 
     @Override
     public BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext getContext(FuzzingData data) {
         return BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext.builder()
-                .replaceWhat("object")
-                .replaceWith("array")
-                .skipMessage("Fuzzer only runs for objects")
-                .fieldFilter(field -> JsonUtils.isObject(data.getPayload(), field) && !JsonUtils.isArray(data.getPayload(), field))
-                .fuzzValueProducer(schema -> List.of("[{\"catsKey1\":\"catsValue1\",\"catsKey2\":20},{\"catsKey3\":\"catsValue3\",\"catsKey3\":40}]"))
+                .replaceWhat("array")
+                .replaceWith("simple object")
+                .skipMessage("Fuzzer only runs for arrays")
+                .fieldFilter(field -> JsonUtils.isArray(data.getPayload(), field))
+                .fuzzValueProducer(schema -> List.of("{\"catsKey1\":\"catsValue1\",\"catsKey2\":20}"))
                 .build();
     }
 }

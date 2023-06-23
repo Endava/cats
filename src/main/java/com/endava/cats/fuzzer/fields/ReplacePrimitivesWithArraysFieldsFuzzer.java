@@ -11,12 +11,12 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
-@FieldFuzzer
 @Singleton
-public class ReplacePrimitivesWithObjectsFieldsFuzzer extends BaseReplaceFieldsFuzzer {
+@FieldFuzzer
+public class ReplacePrimitivesWithArraysFieldsFuzzer extends BaseReplaceFieldsFuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
 
-    public ReplacePrimitivesWithObjectsFieldsFuzzer(FieldsIteratorExecutor ce) {
+    public ReplacePrimitivesWithArraysFieldsFuzzer(FieldsIteratorExecutor ce) {
         super(ce);
     }
 
@@ -24,10 +24,10 @@ public class ReplacePrimitivesWithObjectsFieldsFuzzer extends BaseReplaceFieldsF
     public BaseReplaceFieldsContext getContext(FuzzingData data) {
         return BaseReplaceFieldsContext.builder()
                 .replaceWhat("primitive")
-                .replaceWith("object")
+                .replaceWith("array")
                 .skipMessage("Fuzzer only runs for primitives")
                 .fieldFilter(field -> JsonUtils.isPrimitive(data.getPayload(), field))
-                .fuzzValueProducer(schema -> List.of("{\"catsKey1\":\"catsValue1\",\"catsKey2\":20}"))
+                .fuzzValueProducer(schema -> List.of("[{\"catsKey1\":\"catsValue1\"},{\"catsKey2\":\"catsValue2\"}]"))
                 .build();
     }
 }
