@@ -9,7 +9,7 @@ class UUIDGeneratorTest {
     @Test
     void givenAUUIDFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
         UUIDGenerator strategy = new UUIDGenerator();
-        Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("123e4567-e89b-22d3-a456-42665544000");
+        Assertions.assertThat(strategy.getAlmostValidValue()).isEqualTo("123e4567-e89b-22d3-a456-426655440-92");
     }
 
     @Test
