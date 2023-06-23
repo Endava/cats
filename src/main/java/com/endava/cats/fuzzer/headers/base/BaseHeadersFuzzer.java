@@ -15,6 +15,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(this.getClass());
 
     private final HeadersIteratorExecutor headersIteratorExecutor;
+    private BaseHeadersFuzzerContext fuzzerContext;
 
     protected BaseHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         this.headersIteratorExecutor = headersIteratorExecutor;
@@ -36,12 +37,21 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
                         .build());
     }
 
+    public BaseHeadersFuzzerContext getFuzzerContext() {
+        if (fuzzerContext == null) {
+            fuzzerContext = createFuzzerContext();
+        }
+        return fuzzerContext;
+    }
+
+
     /**
      * Override this to provide details about Fuzzer expectations and fuzzing strategy.
      *
      * @return a context to be used to execute the fuzzing
      */
-    public abstract BaseHeadersFuzzerContext getFuzzerContext();
+    public abstract BaseHeadersFuzzerContext createFuzzerContext();
+
 
     @Override
     public String description() {
