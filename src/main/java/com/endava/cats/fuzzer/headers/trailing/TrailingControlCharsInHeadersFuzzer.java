@@ -23,7 +23,7 @@ public class TrailingControlCharsInHeadersFuzzer extends BaseHeadersFuzzer {
     }
 
     @Override
-    public BaseHeadersFuzzerContext getFuzzerContext() {
+    public BaseHeadersFuzzerContext createFuzzerContext() {
         return BaseHeadersFuzzerContext.builder()
                 .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.FOURXX)
                 .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.FOURXX)

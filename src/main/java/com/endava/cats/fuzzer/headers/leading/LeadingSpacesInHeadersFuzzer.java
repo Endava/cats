@@ -21,7 +21,7 @@ public class LeadingSpacesInHeadersFuzzer extends BaseHeadersFuzzer {
     }
 
     @Override
-    public BaseHeadersFuzzerContext getFuzzerContext() {
+    public BaseHeadersFuzzerContext createFuzzerContext() {
         return BaseHeadersFuzzerContext.builder()
                 .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.TWOXX)
                 .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.TWOXX)

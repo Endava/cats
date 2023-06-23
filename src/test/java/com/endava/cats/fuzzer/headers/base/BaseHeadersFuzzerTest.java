@@ -104,7 +104,7 @@ class BaseHeadersFuzzerTest {
         }
 
         @Override
-        public BaseHeadersFuzzerContext getFuzzerContext() {
+        public BaseHeadersFuzzerContext createFuzzerContext() {
             return BaseHeadersFuzzerContext.builder()
                     .matchResponseSchema(true)
                     .fuzzStrategy(Collections.singletonList(FuzzingStrategy.replace()))
