@@ -5,14 +5,14 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.util.FuzzingResult;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.FuzzingResult;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +70,7 @@ public class FieldsIteratorExecutor {
         for (String fuzzedField : allFields) {
             Schema<?> fuzzedFieldSchema = context.getFuzzingData().getRequestPropertyTypes().get(fuzzedField);
             if (context.getSchemaFilter().test(fuzzedFieldSchema) && context.getFieldFilter().test(fuzzedField)) {
-                for (String currentValue : context.getFuzzValueProducer().apply(fuzzedFieldSchema)) {
+                for (String currentValue : context.getFuzzValueProducer().apply(fuzzedFieldSchema, fuzzedField)) {
                     testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> executeTestCase(context, fuzzedField, currentValue));
                 }
             } else {
@@ -87,7 +87,7 @@ public class FieldsIteratorExecutor {
         testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
                 context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a valid response");
 
-        FuzzingResult fuzzingResult = catsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
+        FuzzingResult fuzzingResult = this.getFuzzingResult(context, fuzzedField, strategy);
 
         CatsResponse response = serviceCaller.call(
                 ServiceData.builder()
@@ -108,6 +108,13 @@ public class FieldsIteratorExecutor {
         } else {
             testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
         }
+    }
+
+    private FuzzingResult getFuzzingResult(FieldsIteratorExecutorContext context, String fuzzedField, FuzzingStrategy strategy) {
+        if (context.isSimpleReplaceField()) {
+            return catsUtil.justReplaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy.getData());
+        }
+        return catsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
     }
 
     public boolean isFieldNotADiscriminator(String field) {

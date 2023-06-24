@@ -1,21 +1,21 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 @Singleton
@@ -32,7 +32,7 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> schemaFilter = schema -> schema.getEnum() != null;
-        Function<Schema<?>, List<String>> fuzzValueProducer = schema -> schema.getEnum().stream().map(String::valueOf).toList();
+        BiFunction<Schema<?>, String, List<String>> fuzzValueProducer = (schema, field) -> schema.getEnum().stream().map(String::valueOf).toList();
         Predicate<String> notADiscriminator = catsExecutor::isFieldNotADiscriminator;
         Predicate<String> fieldExists = field -> JsonUtils.isFieldInJson(data.getPayload(), field);
 

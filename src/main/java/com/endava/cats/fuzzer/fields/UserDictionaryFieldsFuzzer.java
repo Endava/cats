@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.model.FuzzingData;
@@ -12,10 +12,10 @@ import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 @Singleton
 @FieldFuzzer
@@ -38,7 +38,7 @@ public class UserDictionaryFieldsFuzzer implements Fuzzer {
         } else if (!matchArguments.isAnyMatchArgumentSupplied()) {
             logger.error("Skipping fuzzer as no --m* argument was provided!");
         } else {
-            Function<Schema<?>, List<String>> fuzzedValueProducer = schema -> userArguments.getWordsAsList();
+            BiFunction<Schema<?>, String, List<String>> fuzzedValueProducer = (schema, field) -> userArguments.getWordsAsList();
 
             catsExecutor.execute(
                     FieldsIteratorExecutorContext.builder()
