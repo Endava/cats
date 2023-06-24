@@ -6,6 +6,8 @@ import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,8 +15,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -84,7 +84,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(103);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(104);
     }
 
     @Test
@@ -151,7 +151,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(107);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(108);
     }
 
     @Test
