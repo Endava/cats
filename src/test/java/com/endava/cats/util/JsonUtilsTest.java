@@ -112,6 +112,13 @@ class JsonUtilsTest {
     }
 
     @Test
+    void shouldThrowAndNotBeArray() {
+        boolean result = JsonUtils.isArray("[{\"test\":[{\"inner\": 4}]}]", "cats");
+
+        Assertions.assertThat(result).isFalse();
+    }
+
+    @Test
     void shouldNotBeArray() {
         boolean result = JsonUtils.isArray("[{\"test\":{\"inner\": 4}}]", "test");
 
