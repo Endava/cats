@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
 import com.endava.cats.json.JsonUtils;
@@ -16,15 +17,18 @@ import java.util.function.BiFunction;
 @Singleton
 @FieldFuzzer
 public class OverflowArraySizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
-    public OverflowArraySizeFieldsFuzzer(FieldsIteratorExecutor ce) {
+    private final ProcessingArguments processingArguments;
+
+    public OverflowArraySizeFieldsFuzzer(FieldsIteratorExecutor ce, ProcessingArguments pa) {
         super(ce);
+        this.processingArguments = pa;
     }
 
     @Override
     public BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext getContext(FuzzingData data) {
         BiFunction<Schema<?>, String, List<String>> fuzzValueProducer = (schema, string) -> {
             ArraySchema arraySchema = (ArraySchema) schema;
-            int size = arraySchema.getMaxItems();
+            int size = arraySchema.getMaxItems() != null ? arraySchema.getMaxItems() : processingArguments.getLargeStringsSize();
             String fieldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), string + "[0]"));
             return List.of("[" + StringUtils.repeat(fieldValue, ",", size + 10) + "]");
         };

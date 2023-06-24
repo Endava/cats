@@ -2,6 +2,7 @@ package com.endava.cats.util;
 
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -112,7 +113,7 @@ public class CatsUtil {
             try {
                 jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), JsonUtils.GENERIC_PERMISSIVE_PARSER.parse(String.valueOf(valueToSet)));
             } catch (ParseException e) {
-                throw new RuntimeException(e);
+                throw new CatsException(e);
             }
         } else {
             jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
