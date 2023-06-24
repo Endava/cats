@@ -1,21 +1,22 @@
 package com.endava.cats.fuzzer.executor;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,7 +24,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -114,7 +114,7 @@ class FieldsIteratorExecutorTest {
         return FieldsIteratorExecutorContext.builder()
                 .logger(Mockito.mock(PrettyLogger.class))
                 .scenario("Replacing value")
-                .fuzzValueProducer(schema -> List.of("value1", "value2"))
+                .fuzzValueProducer((schema, field) -> List.of("value1", "value2"))
                 .fuzzer(Mockito.mock(Fuzzer.class))
                 .fuzzingStrategy(FuzzingStrategy.replace())
                 .fuzzingData(data);

@@ -64,6 +64,24 @@ public class CatsUtil {
         return this.replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
     }
 
+    /**
+     * This method replaces the existing value of the {@code jsonPropertyForReplacement} with the supplied value.
+     * For complex replacement like merging with refData values or processing the FuzzingStrategy use the {@code replaceField} method.
+     *
+     * @param payload                    the JSON payload
+     * @param jsonPropertyForReplacement the JSON property path to replace
+     * @param with                       the value to replace with
+     * @return a result with the payload replaced
+     */
+    public FuzzingResult justReplaceField(String payload, String jsonPropertyForReplacement, Object with) {
+        if (JsonUtils.isJsonArray(payload)) {
+            jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
+        }
+        DocumentContext jsonDocument = JsonPath.parse(payload);
+        replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, with);
+
+        return new FuzzingResult(jsonDocument.jsonString(), with);
+    }
 
     public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
         if (StringUtils.isNotBlank(payload)) {

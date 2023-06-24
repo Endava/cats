@@ -14,7 +14,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import lombok.Builder;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
@@ -37,6 +37,7 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
                         .fieldFilter(context.fieldFilter)
                         .fuzzValueProducer(context.fuzzValueProducer)
                         .replaceRefData(false)
+                        .simpleReplaceField(true)
                         .logger(logger)
                         .fuzzer(this)
                         .build());
@@ -64,7 +65,7 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
         private final String replaceWith;
         private final String skipMessage;
         private final Predicate<String> fieldFilter;
-        private final Function<Schema<?>, List<String>> fuzzValueProducer;
+        private final BiFunction<Schema<?>, String, List<String>> fuzzValueProducer;
     }
 
     public abstract BaseReplaceFieldsContext getContext(FuzzingData data);

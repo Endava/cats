@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -11,10 +11,10 @@ import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 @Singleton
@@ -32,7 +32,7 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> isNotEnum = schema -> schema.getEnum() == null;
         Predicate<Schema<?>> hasDefault = schema -> schema.getDefault() != null;
-        Function<Schema<?>, List<String>> fuzzedValueProducer = schema -> List.of(String.valueOf(schema.getDefault()));
+        BiFunction<Schema<?>, String, List<String>> fuzzedValueProducer = (schema, field) -> List.of(String.valueOf(schema.getDefault()));
 
         catsExecutor.execute(
                 FieldsIteratorExecutorContext.builder()
