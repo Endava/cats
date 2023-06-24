@@ -35,7 +35,7 @@ class CRLFHeadersFuzzerTest {
     @Test
     void shouldReturnCrLfInvisibleChars() {
         Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(1);
-        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData().toString()).isEqualTo("\r\n");
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).hasToString("\r\n");
     }
 
     @Test

@@ -21,7 +21,7 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final FieldsIteratorExecutor catsExecutor;
 
-    public BaseReplaceFieldsFuzzer(FieldsIteratorExecutor ce) {
+    protected BaseReplaceFieldsFuzzer(FieldsIteratorExecutor ce) {
         this.catsExecutor = ce;
     }
 
