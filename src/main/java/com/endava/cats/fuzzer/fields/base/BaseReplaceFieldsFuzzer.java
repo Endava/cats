@@ -20,7 +20,6 @@ import java.util.function.Predicate;
 public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final FieldsIteratorExecutor catsExecutor;
-
     protected BaseReplaceFieldsFuzzer(FieldsIteratorExecutor ce) {
         this.catsExecutor = ce;
     }

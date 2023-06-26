@@ -6,7 +6,6 @@ import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
-import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
@@ -27,8 +26,7 @@ public class OverflowArraySizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
     @Override
     public BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext getContext(FuzzingData data) {
         BiFunction<Schema<?>, String, List<String>> fuzzValueProducer = (schema, string) -> {
-            ArraySchema arraySchema = (ArraySchema) schema;
-            int size = arraySchema.getMaxItems() != null ? arraySchema.getMaxItems() : processingArguments.getLargeStringsSize();
+            int size = schema.getMaxItems() != null ? schema.getMaxItems() : processingArguments.getLargeStringsSize();
             String fieldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), string + "[0]"));
             return List.of("[" + StringUtils.repeat(fieldValue, ",", size + 10) + "]");
         };
