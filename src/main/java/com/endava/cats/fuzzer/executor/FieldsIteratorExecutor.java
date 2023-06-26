@@ -74,7 +74,7 @@ public class FieldsIteratorExecutor {
                     testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> executeTestCase(context, fuzzedField, currentValue));
                 }
             } else {
-                context.getLogger().skip("Skipping [{}]. " + context.getSkipMessage(), fuzzedField);
+                context.getLogger().debug("Skipping [{}]. " + context.getSkipMessage(), fuzzedField);
             }
         }
     }
