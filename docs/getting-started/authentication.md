@@ -27,7 +27,7 @@ If the authentication token needs periodical refresh, or if you want to provide 
 cats --contract=api.yml --server=http://localhost:8000 -H "Authorization=auth_script" --authRefreshScript="./get_token.sh" --authRefreshInterval 300
 ```
 
-This will use the `get_token.sh` script to get the value for the `Authorization` header and will refresh its value by calling the `get_tokne.sh` script every 300 seconds.
+This will use the `get_token.sh` script to get the value for the `Authorization` header and will refresh its value by calling the `get_token.sh` script every 300 seconds.
 
 :::caution
 Please note that the output of the `get_token.sh` script will be copied as raw data in the header value so make sure you remove any formatting or include needed prefixes (like `Bearer` for example for JWTs).
