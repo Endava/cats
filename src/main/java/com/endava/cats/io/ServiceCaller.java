@@ -502,7 +502,7 @@ public class ServiceCaller {
         testCaseListener.addServer(apiArguments.getServer());
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addResponse(catsResponse);
-        testCaseListener.addFullRequestPath(HtmlEscapers.htmlEscaper().escape(catsRequest.getUrl()));
+        testCaseListener.addFullRequestPath(catsRequest.getUrl());
     }
 
     private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
