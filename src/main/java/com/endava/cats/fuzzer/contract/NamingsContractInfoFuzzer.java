@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.annotations.ContractInfoFuzzer;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.factory.NoMediaType;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.CatsHeader;
@@ -116,7 +117,7 @@ public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
 
         }
         return this.check(stringToCheck.toArray(new String[0]), jsonObject -> !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()
-                        && !GENERATED_BODY_OBJECTS.matcher(jsonObject).matches(),
+                        && !GENERATED_BODY_OBJECTS.matcher(jsonObject).matches() && !NoMediaType.EMPTY_BODY.matches(jsonObject),
                 "JSON objects not matching %s: %s, ", namingArguments.getJsonObjectsNaming().getDescription());
     }
 
