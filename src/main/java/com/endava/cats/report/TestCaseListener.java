@@ -20,16 +20,15 @@ import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import lombok.Builder;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.util.CollectionUtils;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayDeque;
@@ -476,7 +475,13 @@ public class TestCaseListener {
     }
 
     private boolean isFuzzedFieldPresentInResponse(CatsResponse response) {
-        return response.getFuzzedField() == null || response.getBody().toLowerCase(Locale.ROOT).contains(response.getFuzzedField().replaceAll("[_-]+", "").toLowerCase(Locale.ROOT));
+        return response.getFuzzedField() == null ||
+                response.getBody()
+                        .replaceAll("[_-]+", "")
+                        .toLowerCase(Locale.ROOT)
+                        .contains(response.getFuzzedField()
+                                .replaceAll("[_-]+", "")
+                                .toLowerCase(Locale.ROOT));
     }
 
     private boolean isNotTypicalDocumentedResponseCode(CatsResponse response) {
