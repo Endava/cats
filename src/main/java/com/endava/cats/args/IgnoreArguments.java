@@ -2,11 +2,11 @@ package com.endava.cats.args;
 
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
-import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
