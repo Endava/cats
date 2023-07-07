@@ -8,6 +8,10 @@ import picocli.CommandLine;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 /**
  * This is responsible to run all @ContractFuzzers
  */
@@ -36,6 +40,10 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "The OpenAPI contract")
     private String contract;
 
+    @CommandLine.Option(names = {"--skipFuzzers"},
+            description = "A comma separated list of fuzzers you want to ignore. You can use full or partial Fuzzer names", split = ",")
+    private List<String> skipFuzzers;
+
     @CommandLine.ParentCommand
     private CatsCommand catsCommand;
 
@@ -45,6 +53,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
         catsCommand.apiArguments.setContract(contract);
         catsCommand.apiArguments.setServer("empty");
         catsCommand.filterArguments.customFilter("Contract");
+        catsCommand.filterArguments.getSkipFuzzers().addAll(Optional.ofNullable(skipFuzzers).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
         catsCommand.run();
     }
