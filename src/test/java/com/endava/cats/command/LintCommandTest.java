@@ -13,6 +13,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import jakarta.inject.Inject;
 
+import java.util.Collections;
+
 @QuarkusTest
 class LintCommandTest {
     @Inject
@@ -31,6 +33,7 @@ class LintCommandTest {
         ReflectionTestUtils.setField(lintCommand, "contract", "contract");
         ReflectionTestUtils.setField(catsCommand, "filterArguments", filterArguments);
         ReflectionTestUtils.setField(lintCommand, "catsCommand", catsCommand);
+        ReflectionTestUtils.setField(lintCommand, "skipFuzzers", Collections.emptyList());
     }
 
     @Test

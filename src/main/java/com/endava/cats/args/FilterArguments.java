@@ -222,7 +222,7 @@ public class FilterArguments {
     public void customFilter(String specialFuzzer) {
         this.suppliedFuzzers = List.of(specialFuzzer);
         this.paths = Collections.emptyList();
-        this.skipFuzzers = Collections.emptyList();
+        this.skipFuzzers = new ArrayList<>();
         this.skipPaths = Collections.emptyList();
         this.httpMethods = HttpMethod.restMethods();
         this.dryRun = false;
