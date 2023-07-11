@@ -21,7 +21,7 @@ public class VersionChecker {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(VersionChecker.class);
     protected static String baseUrl = "https://api.github.com/repos/Endava/cats/releases/latest";
     private static final String DOWNLOAD_URL = "https://github.com/Endava/cats/releases/tag/";
-    private final OkHttpClient HTTP_CLIENT = new OkHttpClient.Builder()
+    private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(2, TimeUnit.SECONDS)
             .readTimeout(2, TimeUnit.SECONDS)
             .build();
@@ -31,7 +31,7 @@ public class VersionChecker {
         String downloadLink = null;
         String latestVersion = null;
         String releaseNotes = null;
-        try (Response response = HTTP_CLIENT.newCall(new Request.Builder().url(baseUrl).build()).execute()) {
+        try (Response response = httpClient.newCall(new Request.Builder().url(baseUrl).build()).execute()) {
             if (response.body() != null) {
                 String responseBody = response.body().string();
                 latestVersion = String.valueOf(JsonUtils.getVariableFromJson(responseBody, "$.tag_name"));
@@ -54,8 +54,8 @@ public class VersionChecker {
     }
 
     public static int compare(String version1, String version2) {
-        String[] parts1 = version1.replaceAll("-SNAPSHOT", "").split("\\.");
-        String[] parts2 = version2.replaceAll("-SNAPSHOT", "").split("\\.");
+        String[] parts1 = version1.replace("-SNAPSHOT", "").split("\\.");
+        String[] parts2 = version2.replace("-SNAPSHOT", "").split("\\.");
 
         int length = Math.max(parts1.length, parts2.length);
 

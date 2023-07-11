@@ -74,7 +74,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
     @Inject
@@ -138,14 +138,16 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             testCaseListener.endSession();
             this.printSuggestions();
             this.printVersion(newVersion);
-        } catch (IOException | ExecutionException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (IOException | ExecutionException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.getMessage());
             logger.debug("Stacktrace", e);
             exitCodeDueToErrors = 192;
         }
     }
 
-    private void printVersion(Future<VersionChecker.CheckResult> newVersion) throws ExecutionException, InterruptedException {
+    void printVersion(Future<VersionChecker.CheckResult> newVersion) throws ExecutionException, InterruptedException {
         VersionChecker.CheckResult checkResult = newVersion.get();
         logger.debug("Current version {}. Latest version {}", appVersion, checkResult.getVersion());
         if (checkResult.isNewVersion()) {
@@ -182,7 +184,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.executeCustomFuzzer();
     }
 
-    private Future<VersionChecker.CheckResult> checkForNewVersion() {
+    Future<VersionChecker.CheckResult> checkForNewVersion() {
         Callable<VersionChecker.CheckResult> versionCallable = () -> VersionChecker.CheckResult.builder().build();
         if (reportingArguments.isCheckUpdate()) {
             versionCallable = () -> versionChecker.checkForNewVersion(this.appVersion);

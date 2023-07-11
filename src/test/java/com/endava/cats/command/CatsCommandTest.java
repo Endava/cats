@@ -11,8 +11,10 @@ import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,8 +24,8 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
-import jakarta.inject.Inject;
 import java.util.List;
+import java.util.concurrent.Future;
 
 @QuarkusTest
 class CatsCommandTest {
@@ -49,6 +51,40 @@ class CatsCommandTest {
         filterArguments = Mockito.mock(FilterArguments.class);
         ReflectionTestUtils.setField(catsMain, "filterArguments", filterArguments);
         Mockito.when(filterArguments.getHttpMethods()).thenReturn(HttpMethod.restMethods());
+    }
+
+    @Test
+    void shouldCheckForNewVersion() throws Exception {
+        ReportingArguments repArgs = Mockito.mock(ReportingArguments.class);
+        Mockito.when(repArgs.isCheckUpdate()).thenReturn(true);
+        ReflectionTestUtils.setField(catsMain, "reportingArguments", repArgs);
+        VersionChecker checker = Mockito.mock(VersionChecker.class);
+        Mockito.when(checker.checkForNewVersion(Mockito.anyString())).thenReturn(VersionChecker.CheckResult.builder().newVersion(true).version("1.0.0").build());
+        ReflectionTestUtils.setField(catsMain, "versionChecker", checker);
+
+        Future<VersionChecker.CheckResult> resultFuture = catsMain.checkForNewVersion();
+        catsMain.printVersion(resultFuture);
+
+        VersionChecker.CheckResult result = resultFuture.get();
+        Assertions.assertThat(result.isNewVersion()).isTrue();
+        Assertions.assertThat(result.getVersion()).isEqualTo("1.0.0");
+    }
+
+    @Test
+    void shouldNotCheckForNewVersion() throws Exception {
+        ReportingArguments repArgs = Mockito.mock(ReportingArguments.class);
+        Mockito.when(repArgs.isCheckUpdate()).thenReturn(false);
+        ReflectionTestUtils.setField(catsMain, "reportingArguments", repArgs);
+        VersionChecker checker = Mockito.mock(VersionChecker.class);
+        Mockito.when(checker.checkForNewVersion(Mockito.anyString())).thenReturn(VersionChecker.CheckResult.builder().newVersion(true).version("1.0.0").build());
+        ReflectionTestUtils.setField(catsMain, "versionChecker", checker);
+
+        Future<VersionChecker.CheckResult> resultFuture = catsMain.checkForNewVersion();
+        catsMain.printVersion(resultFuture);
+
+        VersionChecker.CheckResult result = resultFuture.get();
+        Assertions.assertThat(result.isNewVersion()).isFalse();
+        Assertions.assertThat(result.getVersion()).isNotEqualTo("1.0.0");
     }
 
     @Test
