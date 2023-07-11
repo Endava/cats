@@ -58,6 +58,9 @@ public class ReportingArguments {
             description = "Make selected commands output to console in JSON format.")
     private boolean json;
 
+    @CommandLine.Option(names = {"--checkUpdate"},
+            description = "If true checks if there is a CATS update available and prints the release notes along with the links. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean checkUpdate = true;
 
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
