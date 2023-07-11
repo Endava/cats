@@ -21,6 +21,7 @@ import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.VersionChecker;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -30,6 +31,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
@@ -39,6 +41,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -67,7 +74,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
-
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
     @Inject
@@ -99,15 +106,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
     ReportingArguments reportingArguments;
-
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Dictionary Options:|@%n", exclusive = false)
     UserArguments userArguments;
-
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options (they are only active when supplying a custom dictionary):|@%n", exclusive = false)
     MatchArguments matchArguments;
-
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -117,19 +121,55 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     CatsGlobalContext globalContext;
 
+    @Inject
+    VersionChecker versionChecker;
+
+    @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
+    String appVersion;
+
     private int exitCodeDueToErrors;
 
     @Override
     public void run() {
         try {
+            Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
             this.doLogic();
             testCaseListener.endSession();
             this.printSuggestions();
-        } catch (IOException e) {
+            this.printVersion(newVersion);
+        } catch (IOException | ExecutionException | InterruptedException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.getMessage());
             logger.debug("Stacktrace", e);
             exitCodeDueToErrors = 192;
+        }
+    }
+
+    private void printVersion(Future<VersionChecker.CheckResult> newVersion) throws ExecutionException, InterruptedException {
+        VersionChecker.CheckResult checkResult = newVersion.get();
+        logger.debug("Current version {}. Latest version {}", appVersion, checkResult.getVersion());
+        if (checkResult.isNewVersion()) {
+            String message = ansi()
+                    .bold()
+                    .fgBrightBlue()
+                    .a("A new version is available: {}. Download url: {}")
+                    .reset()
+                    .toString();
+            String currentVersionFormatted = ansi()
+                    .bold()
+                    .fgBrightBlue()
+                    .a(checkResult.getVersion())
+                    .reset()
+                    .bold()
+                    .fgBrightBlue()
+                    .toString();
+            String downloadUrlFormatted = ansi()
+                    .bold()
+                    .fgGreen()
+                    .a(checkResult.getDownloadUrl())
+                    .reset()
+                    .toString();
+            logger.star(message, currentVersionFormatted, downloadUrlFormatted);
         }
     }
 
@@ -140,6 +180,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.initGlobalData(openAPI);
         this.startFuzzing(openAPI);
         this.executeCustomFuzzer();
+    }
+
+    private Future<VersionChecker.CheckResult> checkForNewVersion() {
+        Callable<VersionChecker.CheckResult> versionCallable = () -> VersionChecker.CheckResult.builder().build();
+        if (reportingArguments.isCheckUpdate()) {
+            versionCallable = () -> versionChecker.checkForNewVersion(this.appVersion);
+        }
+        return executor.submit(versionCallable);
     }
 
     private void printSuggestions() {
