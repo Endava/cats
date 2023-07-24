@@ -38,7 +38,7 @@ class AuthScriptProviderParserTest {
         Assertions.assertThat(authScriptProviderParser.parse(null, context)).isNotBlank();
         authScriptProviderParser.parse(null, context);
         Mockito.verify(prettyLogger, Mockito.times(0)).debug("Refresh interval passed.");
-        Mockito.verify(prettyLogger, Mockito.times(1)).info("Running script {} to get credentials", "hostname");
+        Mockito.verify(prettyLogger, Mockito.times(1)).note("Running script {} to get credentials", "hostname");
     }
 
     @Test
@@ -47,17 +47,17 @@ class AuthScriptProviderParserTest {
 
         Assertions.assertThat(authScriptProviderParser.parse(null, context)).isNotBlank();
         Mockito.verify(prettyLogger, Mockito.times(0)).debug("Refresh interval passed.");
-        Mockito.verify(prettyLogger, Mockito.times(1)).info("Running script {} to get credentials", "hostname");
+        Mockito.verify(prettyLogger, Mockito.times(1)).note("Running script {} to get credentials", "hostname");
 
         Thread.sleep(500);
         Assertions.assertThat(authScriptProviderParser.parse(null, context)).isNotBlank();
         Mockito.verify(prettyLogger, Mockito.times(0)).debug("Refresh interval passed.");
-        Mockito.verify(prettyLogger, Mockito.times(1)).info("Running script {} to get credentials", "hostname");
+        Mockito.verify(prettyLogger, Mockito.times(1)).note("Running script {} to get credentials", "hostname");
 
         Thread.sleep(600);
         Assertions.assertThat(authScriptProviderParser.parse(null, context)).isNotBlank();
         Mockito.verify(prettyLogger, Mockito.times(1)).debug("Refresh interval passed.");
-        Mockito.verify(prettyLogger, Mockito.times(2)).info("Running script {} to get credentials", "hostname");
+        Mockito.verify(prettyLogger, Mockito.times(2)).note("Running script {} to get credentials", "hostname");
 
     }
 }

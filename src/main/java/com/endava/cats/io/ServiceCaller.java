@@ -131,7 +131,7 @@ public class ServiceCaller {
                     .retryOnConnectionFailure(true)
                     .hostnameVerifier((hostname, session) -> true).build();
 
-            logger.note("Proxy configuration to be used: {}", authArguments.getProxy());
+            logger.config("Proxy configuration to be used: {}", authArguments.getProxy());
         } catch (GeneralSecurityException | IOException e) {
             logger.warning("Failed to configure HTTP CLIENT: {}", e.getMessage());
             logger.debug("Stacktrace", e);
@@ -257,18 +257,18 @@ public class ServiceCaller {
     Map<String, String> getPathParamFromCorrespondingPostIfDelete(ServiceData data) {
         if (data.getHttpMethod() == HttpMethod.DELETE) {
             String postPath = data.getRelativePath().substring(0, data.getRelativePath().lastIndexOf("/"));
-            logger.info("Executing DELETE for path {}. Searching stored POST requests for corresponding POST path {}", data.getRelativePath(), postPath);
+            logger.note("Executing DELETE for path {}. Searching stored POST requests for corresponding POST path {}", data.getRelativePath(), postPath);
             String postPayload = catsGlobalContext.getPostSuccessfulResponses().getOrDefault(postPath, new ArrayDeque<>()).peek();
             if (postPayload != null) {
                 String deleteParam = data.getRelativePath().substring(data.getRelativePath().lastIndexOf("/") + 1).replace("{", "").replace("}", "");
-                logger.info("Found corresponding POST payload. Matching DELETE path parameter {} with POST body...", deleteParam);
+                logger.note("Found corresponding POST payload. Matching DELETE path parameter {} with POST body...", deleteParam);
                 Optional<String> deleteParamValue = this.getParamValueFromPostPayload(deleteParam, postPayload);
 
                 if (deleteParamValue.isPresent()) {
                     return Map.of(deleteParam, deleteParamValue.get());
                 }
             } else {
-                logger.info("No corresponding POST payload found or already consumed");
+                logger.note("No corresponding POST payload found or already consumed");
             }
         }
 
@@ -383,8 +383,8 @@ public class ServiceCaller {
                     .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build();
 
-            logger.complete("Protocol: {}, Method: {}, ReasonPhrase: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
-                    catsResponse.getHttpMethod(), response.message(), catsResponse.responseCodeAsString(), endTime - startTime, catsResponse.getContentLengthInBytes());
+            logger.complete("Protocol: {}, Method: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
+                    catsResponse.getHttpMethod(), catsResponse.responseCodeAsString(), endTime - startTime, catsResponse.getContentLengthInBytes());
 
             return catsResponse;
         }

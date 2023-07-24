@@ -101,7 +101,7 @@ public class FilesArguments {
         if (securityFuzzerFile == null) {
             log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
         } else {
-            log.info("Security Fuzzer file {}", securityFuzzerFile.getAbsolutePath());
+            log.config("Security Fuzzer file {}", securityFuzzerFile.getAbsolutePath());
             securityFuzzerDetails = this.parseYaml(securityFuzzerFile.getAbsolutePath());
         }
     }
@@ -110,7 +110,7 @@ public class FilesArguments {
         if (customFuzzerFile == null) {
             log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
         } else {
-            log.info("Functional Fuzzer file supplied {}", customFuzzerFile.getAbsolutePath());
+            log.config("Functional Fuzzer file supplied {}", customFuzzerFile.getAbsolutePath());
             customFuzzerDetails = this.parseYaml(customFuzzerFile.getAbsolutePath());
         }
     }
@@ -127,7 +127,7 @@ public class FilesArguments {
         if (params == null) {
             log.debug("No URL parameters provided!");
         } else {
-            log.info("URL parameters: {}", params);
+            log.config("URL parameters: {}", params);
         }
     }
 
@@ -236,7 +236,7 @@ public class FilesArguments {
         if (file == null) {
             log.debug("No {} file provided!", fileType);
         } else {
-            log.info("{} file supplied {}", fileType, file.getAbsolutePath());
+            log.config("{} file supplied {}", fileType, file.getAbsolutePath());
             fromFile = this.loadYamlFileToMap(file.getAbsolutePath());
             log.debug("{} file loaded successfully: {}", fileType, fromFile);
         }

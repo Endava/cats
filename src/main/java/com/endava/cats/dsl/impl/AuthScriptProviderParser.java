@@ -33,7 +33,7 @@ public class AuthScriptProviderParser implements Parser {
     }
 
     private String runScript(String script) {
-        logger.info("Running script {} to get credentials", script);
+        logger.note("Running script {} to get credentials", script);
         try {
             ProcessBuilder processBuilder = new ProcessBuilder(script);
             processBuilder.redirectErrorStream(true);

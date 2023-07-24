@@ -327,8 +327,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         List<Fuzzer> allFuzzersSorted = filterArguments.getAllRegisteredFuzzers();
         List<String> configuredFuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        logger.info("The following HTTP methods won't be executed for path {}: {}", pathItemEntry.getKey(), excludedHttpMethods);
-        logger.info("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), (long) allFuzzersSorted.size(), configuredFuzzers);
+        logger.config("The following HTTP methods won't be executed for path {}: {}", pathItemEntry.getKey(), excludedHttpMethods);
+        logger.config("{} configured fuzzers out of {} total fuzzers: {}", configuredFuzzers.size(), (long) allFuzzersSorted.size(), configuredFuzzers);
 
         this.runFuzzers(pathItemEntry, fuzzingDataListWithHttpMethodsFiltered, allFuzzersSorted, configuredFuzzers);
         this.runFuzzers(pathItemEntry, fuzzingDataListWithHttpMethodsFiltered, allFuzzersSorted, filterArguments.getSecondPhaseFuzzers());

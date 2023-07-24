@@ -98,7 +98,7 @@ public class CustomFuzzerUtil {
     private int getNumberOfIterationsBasedOnHeaders(FuzzingData data, Map<String, String> currentPathValues) {
         boolean isHeadersFuzzing = currentPathValues.get(CATS_HEADERS) != null;
         if (isHeadersFuzzing) {
-            log.info("Fuzzing headers! Total number of headers: {}", data.getHeaders().size());
+            log.note("Fuzzing headers! Total number of headers: {}", data.getHeaders().size());
             return data.getHeaders().size();
         }
 
@@ -117,7 +117,7 @@ public class CustomFuzzerUtil {
             this.variables.putAll(matchVariablesWithTheResponse(response, variablesFromYaml, Map.Entry::getValue));
             this.variables.putAll(requestVariables);
 
-            log.info("The following OUTPUT variables were identified {}", variables);
+            log.note("The following OUTPUT variables were identified {}", variables);
         }
     }
 
@@ -351,7 +351,7 @@ public class CustomFuzzerUtil {
             if (variableValue == null) {
                 log.error("Supplied variable was not found [{}]", propertyValue);
             } else {
-                log.info("Variable [{}] found. Will be replaced with [{}]", propertyValue, variableValue);
+                log.note("Variable [{}] found. Will be replaced with [{}]", propertyValue, variableValue);
                 propertyValue = variableValue;
             }
         }

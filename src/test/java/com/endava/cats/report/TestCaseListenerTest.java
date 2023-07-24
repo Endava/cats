@@ -305,7 +305,7 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void givenATestCase_whenSkippingIt_thenTheTestCaseIsCorrectlySkipped() {
+    void givenATestCase_whenSkippingIt_thenTheTestCaseIsNotReported() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.skipTest(logger, "Skipper!"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
@@ -314,8 +314,8 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
 
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
-        Assertions.assertThat(testCase.getResult()).isEqualTo("skipped");
-        Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Skipped due to: Skipper!");
+        Assertions.assertThat(testCase.getResult()).isNull();
+        Assertions.assertThat(testCase.getResultDetails()).isNull();
     }
 
     @Test
