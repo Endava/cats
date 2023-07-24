@@ -53,7 +53,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
                     .forEach(entry -> executions.add(CustomFuzzerExecution.builder()
                             .fuzzingData(data).testId(entry.getKey()).testEntry(entry.getValue()).build()));
         } else {
-            logger.info("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getPath(), data.getMethod());
+            logger.skip("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getPath(), data.getMethod());
         }
     }
 

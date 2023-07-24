@@ -69,7 +69,7 @@ public class DryRunAspect {
         } else {
             logger.noFormat("\n");
             CatsUtil.setCatsLogLevel("INFO");
-            logger.note("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
+            logger.info("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
             paths.forEach((s, integer) -> logger.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
         }
         return null;

@@ -22,7 +22,8 @@ public class ReportingArguments {
     private List<String> logData;
 
     @CommandLine.Option(names = {"-g", "--skipLog"},
-            description = "A list of log levels to skip. For example you can skip only @|bold,underline note|@ and @|bold,underline info|@ levels, but leave the rest. If supplied, this will override the --onlyLog argument", split = ",")
+            description = "A list of log levels to skip. For example you can skip only @|bold,underline note|@ and @|bold,underline info|@ levels, but leave the rest. By default if skips  @|bold,underline note, skip|@ levels which are used to enable more detailed traceability." +
+                    " If supplied, this will override the --onlyLog argument", split = ",")
     private List<String> skipLogs;
 
     @CommandLine.Option(names = {"-O", "--onlyLog"},
@@ -97,6 +98,11 @@ public class ReportingArguments {
         }
         PrettyLogger.enableLevels(getAsPrettyLevelList(this.onlyLog).toArray(new PrettyLevel[0]));
         PrettyLogger.disableLevels(getAsPrettyLevelList(this.skipLogs).toArray(new PrettyLevel[0]));
+
+        /*if no input is supplied, by default note and skip are not logged*/
+        if (this.skipLogs == null && this.onlyLog == null) {
+            PrettyLogger.disableLevels(getAsPrettyLevelList(List.of("note", "skip")).toArray(new PrettyLevel[0]));
+        }
     }
 
     public enum ReportFormat {

@@ -134,7 +134,7 @@ public class TestCaseListener {
     }
 
     public void addExpectedResult(PrettyLogger logger, String expectedResult, Object... params) {
-        logger.info(expectedResult, params);
+        logger.note(expectedResult, params);
         testCaseMap.get(MDC.get(ID)).setExpectedResult(replaceBrackets(expectedResult, params));
     }
 
@@ -177,7 +177,7 @@ public class TestCaseListener {
         MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
 
         logger.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(appName.toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(appVersion), ansi().fg(Ansi.Color.GREEN).a(appBuildTime).reset());
-        logger.note("{}", ansi().fgGreen().a("Processing configuration...").reset());
+        logger.config("{}", ansi().fgGreen().a("Processing configuration...").reset());
     }
 
     public void initReportingPath() throws IOException {
@@ -305,7 +305,6 @@ public class TestCaseListener {
     private void reportSkipped(PrettyLogger logger, Object... params) {
         executionStatisticsListener.increaseSkipped();
         logger.skip("Skipped due to: {}", params);
-        recordResult("Skipped due to: {}", params, "skipped", logger);
     }
 
     void reportInfo(PrettyLogger logger, String message, Object... params) {

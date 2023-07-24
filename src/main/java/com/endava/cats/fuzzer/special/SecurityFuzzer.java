@@ -77,7 +77,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     private void executeTestCases(FuzzingData data, String key, Object value) {
-        log.info("Path [{}] has the following security configuration [{}]", data.getPath(), value);
+        log.config("Path [{}] has the following security configuration [{}]", data.getPath(), value);
         Map<String, Object> individualTestConfig = (Map<String, Object>) value;
 
         List<String> missingRequiredKeywords = this.getMissingRequiredKeywords(individualTestConfig);

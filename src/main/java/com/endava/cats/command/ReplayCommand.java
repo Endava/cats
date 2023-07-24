@@ -111,7 +111,7 @@ public class ReplayCommand implements Runnable {
     @NotNull
     private CatsTestCase loadTestCaseFile(String testCaseFileName) throws IOException {
         String testCaseFile = Files.readString(Paths.get(testCaseFileName));
-        logger.note("Loaded content: \n" + testCaseFile);
+        logger.config("Loaded content: \n" + testCaseFile);
         CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
         testCase.updateServer(server);
         return testCase;
