@@ -52,6 +52,16 @@ public class IgnoreArguments {
             description = "Skip reporting entirely for the ignored response codes, sizes, words and lines provided in @|bold,underline --ignoreResponseXXX|@ arguments. Default: @|bold false|@ ")
     private boolean skipReportingForIgnoredCodes;
 
+
+    @CommandLine.Option(names = {"--srs", "--skipReportingForSuccess"},
+            description = "Skip reporting entirely for tests cases reported as success. Default: @|bold false|@ ")
+    private boolean skipReportingForSuccess;
+
+    @CommandLine.Option(names = {"--srw", "--skipReportingForWarning"},
+            description = "Skip reporting entirely for tests cases reported as warnings. Default: @|bold false|@ ")
+    private boolean skipReportingForWarnings;
+
+
     @CommandLine.Option(names = {"--skipFields"},
             description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")
     private List<String> skipFields;

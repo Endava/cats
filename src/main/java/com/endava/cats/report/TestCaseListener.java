@@ -225,7 +225,10 @@ public class TestCaseListener {
     void reportWarn(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty());
-        if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
+        if (ignoreArguments.isSkipReportingForWarnings()) {
+            this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
+            this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForWarnings is enabled"));
+        } else if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting warn!");
             executionStatisticsListener.increaseWarns();
             logger.warning(message, params);
@@ -305,12 +308,17 @@ public class TestCaseListener {
     private void reportSkipped(PrettyLogger logger, Object... params) {
         executionStatisticsListener.increaseSkipped();
         logger.skip("Skipped due to: {}", params);
+        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        testCase.setResult("skipped");
+        testCase.setResultDetails(replaceBrackets("Skipped due to: {}", params));
     }
 
     void reportInfo(PrettyLogger logger, String message, Object... params) {
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
-
-        if (ignoreArguments.isIgnoredResponse(catsResponse) && ignoreArguments.isSkipReportingForIgnoredCodes()) {
+        if (ignoreArguments.isSkipReportingForSuccess()) {
+            this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
+            this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForSuccess is enabled"));
+        } else if (ignoreArguments.isIgnoredResponse(catsResponse) && ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
         } else {

@@ -201,6 +201,30 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldSkipInfoWhenSkipSuccessIsEnabled() {
+        Mockito.when(ignoreArguments.isSkipReportingForSuccess()).thenReturn(true);
+        CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
+        prepareTestCaseListenerSimpleSetup(response);
+        testCaseListener.reportInfo(logger, "Something was good");
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @Test
+    void shouldSkipWarnWhenSkipWarningsIsEnabled() {
+        Mockito.when(ignoreArguments.isSkipReportingForWarnings()).thenReturn(true);
+        CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
+        prepareTestCaseListenerSimpleSetup(response);
+        testCaseListener.reportWarn(logger, "Something was good");
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @Test
     void shouldStorePostRequestAndRemoveAfterDelete() {
         CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
         FuzzingData data = Mockito.mock(FuzzingData.class);
@@ -314,8 +338,8 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
 
         CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
-        Assertions.assertThat(testCase.getResult()).isNull();
-        Assertions.assertThat(testCase.getResultDetails()).isNull();
+        Assertions.assertThat(testCase.getResult()).isEqualTo("skipped");
+        Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Skipped due to: Skipper!");
     }
 
     @Test
