@@ -28,7 +28,7 @@ class TopLevelElementsContractInfoFuzzerTest {
 
     private TestCaseListener testCaseListener;
 
-    private TopLevelElementsContractInfoFuzzer topLevelElementsContractInfoFuzzer;
+    private TopLevelElementsLinterFuzzer topLevelElementsContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -37,7 +37,7 @@ class TopLevelElementsContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        topLevelElementsContractInfoFuzzer = new TopLevelElementsContractInfoFuzzer(testCaseListener);
+        topLevelElementsContractInfoFuzzer = new TopLevelElementsLinterFuzzer(testCaseListener);
     }
 
     @ParameterizedTest

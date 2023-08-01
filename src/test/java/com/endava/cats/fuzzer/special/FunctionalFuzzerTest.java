@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -25,7 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,7 +95,7 @@ class FunctionalFuzzerTest {
     }
 
     @Test
-    void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecuted() throws Exception {
+    void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecuted() {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         FuzzingData data = this.setupFuzzingData(catsResponse, "newValue", "newValue2");
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
@@ -109,7 +107,7 @@ class FunctionalFuzzerTest {
     }
 
     @Test
-    void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecutedAndDatesAreProperlyParsed() throws Exception {
+    void givenACustomFuzzerFileWithSimpleTestCases_whenTheFuzzerRuns_thenCustomTestCasesAreExecutedAndDatesAreProperlyParsed() {
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         FuzzingData data = this.setupFuzzingData(catsResponse, "T(java.time.OffsetDateTime).now().plusDays(20)");
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
@@ -120,7 +118,18 @@ class FunctionalFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
-    private FuzzingData setupFuzzingData(CatsResponse catsResponse, String... customFieldValues) throws IOException {
+    @Test
+    void shouldRemoveCatsRemoveFields() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {"field1":"value1", "field2":"value2"}
+                """);
+        String jsonRemoved = customFuzzerUtil.getJsonWithCustomValuesFromFile(data, Map.of("field1", "cats_remove_field"));
+
+        Assertions.assertThat(jsonRemoved).doesNotContain("field1", "value1").contains("field2", "value2");
+    }
+
+    private FuzzingData setupFuzzingData(CatsResponse catsResponse, String... customFieldValues) {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").

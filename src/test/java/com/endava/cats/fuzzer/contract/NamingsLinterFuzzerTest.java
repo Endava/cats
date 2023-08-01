@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 class NamingsContractInfoFuzzerTest {
 
     private TestCaseListener testCaseListener;
-    private NamingsContractInfoFuzzer namingsContractInfoFuzzer;
+    private NamingsLinterFuzzer namingsContractInfoFuzzer;
 
     @Inject
     NamingArguments namingArguments;
@@ -44,7 +44,7 @@ class NamingsContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(Mockito.mock(TestCaseExporter.class)));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        namingsContractInfoFuzzer = new NamingsContractInfoFuzzer(testCaseListener, Mockito.mock(ProcessingArguments.class), namingArguments);
+        namingsContractInfoFuzzer = new NamingsLinterFuzzer(testCaseListener, Mockito.mock(ProcessingArguments.class), namingArguments);
         ReflectionTestUtils.setField(namingArguments, "pathNaming", NamingArguments.Naming.CAMEL);
         ReflectionTestUtils.setField(namingArguments, "pathVariablesNaming", NamingArguments.Naming.CAMEL);
         ReflectionTestUtils.setField(namingArguments, "queryParamsNaming", NamingArguments.Naming.SNAKE);

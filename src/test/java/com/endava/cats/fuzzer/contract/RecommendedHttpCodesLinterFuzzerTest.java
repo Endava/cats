@@ -26,7 +26,7 @@ class RecommendedHttpCodesContractInfoFuzzerTest {
 
     private TestCaseListener testCaseListener;
 
-    private RecommendedHttpCodesContractInfoFuzzer recommendedHttpCodesContractInfoFuzzer;
+    private RecommendedHttpCodesLinterFuzzer recommendedHttpCodesContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -35,7 +35,7 @@ class RecommendedHttpCodesContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        recommendedHttpCodesContractInfoFuzzer = new RecommendedHttpCodesContractInfoFuzzer(testCaseListener);
+        recommendedHttpCodesContractInfoFuzzer = new RecommendedHttpCodesLinterFuzzer(testCaseListener);
     }
 
     @ParameterizedTest

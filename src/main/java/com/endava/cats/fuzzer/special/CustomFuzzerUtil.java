@@ -17,9 +17,9 @@ import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -231,7 +231,9 @@ public class CustomFuzzerUtil {
         String payload = data.getPayload();
 
         for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
-            if (this.isNotAReservedWord(entry.getKey())) {
+            if (this.isCatsRemove(entry)) {
+                payload = JsonUtils.deleteNode(payload, entry.getKey());
+            } else if (this.isNotAReservedWord(entry.getKey())) {
                 payload = this.replaceElementWithCustomValue(entry, payload);
             }
         }
@@ -239,6 +241,10 @@ public class CustomFuzzerUtil {
         log.debug("Final payload after custom values replaced: [{}]", payload);
 
         return payload;
+    }
+
+    public boolean isCatsRemove(Map.Entry<String, String> keyValue) {
+        return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(keyValue.getValue());
     }
 
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {

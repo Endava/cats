@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 @QuarkusTest
 class VersionsContractInfoFuzzerTest {
     private TestCaseListener testCaseListener;
-    private VersionsContractInfoFuzzer versionsContractInfoFuzzer;
+    private VersionsLinterFuzzer versionsContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -31,7 +31,7 @@ class VersionsContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        versionsContractInfoFuzzer = new VersionsContractInfoFuzzer(testCaseListener);
+        versionsContractInfoFuzzer = new VersionsLinterFuzzer(testCaseListener);
     }
 
     @ParameterizedTest

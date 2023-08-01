@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 class SecuritySchemesContractInfoFuzzerTest {
     private TestCaseListener testCaseListener;
 
-    private SecuritySchemesContractInfoFuzzer securitySchemesContractInfoFuzzer;
+    private SecuritySchemesLinterFuzzer securitySchemesContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -36,7 +36,7 @@ class SecuritySchemesContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        securitySchemesContractInfoFuzzer = new SecuritySchemesContractInfoFuzzer(testCaseListener);
+        securitySchemesContractInfoFuzzer = new SecuritySchemesLinterFuzzer(testCaseListener);
     }
 
     @Test

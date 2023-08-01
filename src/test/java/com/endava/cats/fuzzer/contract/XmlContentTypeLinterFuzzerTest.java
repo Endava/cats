@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 class XmlContentTypeContractInfoFuzzerTest {
 
     private TestCaseListener testCaseListener;
-    private XmlContentTypeContractInfoFuzzer xmlContentTypeContractInfoFuzzer;
+    private XmlContentTypeLinterFuzzer xmlContentTypeContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -31,7 +31,7 @@ class XmlContentTypeContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        xmlContentTypeContractInfoFuzzer = new XmlContentTypeContractInfoFuzzer(testCaseListener);
+        xmlContentTypeContractInfoFuzzer = new XmlContentTypeLinterFuzzer(testCaseListener);
     }
 
     @Test
