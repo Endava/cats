@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class PathTagsContractInfoFuzzerTest {
+class PathTagsLinterFuzzerTest {
 
     private TestCaseListener testCaseListener;
     private PathTagsLinterFuzzer pathTagsContractInfoFuzzer;

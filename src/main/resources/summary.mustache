@@ -1,71 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>CATS</title>
-    <link rel="stylesheet" type="text/css" href="styles.css"/>
-    {{#JS}}
-    <script src="jquery.min.js"></script>
-    <script src="script.js"></script>
-    {{/JS}}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    <title>Cats</title>
 </head>
-
-<body class="bg-1">
-
-<header class="shaddow bg-2">
-    <div class="wrapper">
-        <a href="https://github.com/Endava/cats"><img class="logo lefty" src="cats.png" alt="CatsLogo" /></a>
-        <h4 class="d-inline lefty tagline">
-            <p>EXECUTION REPORT</p>
-            <p style="color:green" id="header-timestamp">{{TIMESTAMP}}</p>
-            <p id="header-version" style="color: black">GENERATED WITH CATS {{VERSION}}</p>
-        </h4>
+<body>
+<div class="banner-component">
+    <div class="flex-items-center">
+        <img src="./assets/clock-wise.svg" alt="version">
+        <span class="left">
+				Generated with CATS {{VERSION}}
+			</span>
+    </div>
+    <div class="flex-items-center">
+        <img src="./assets/clock.svg" alt="timestamp">
+        <span>
+				{{TIMESTAMP}}
+			</span>
+    </div>
+</div>
+<header>
+    <div class="logo">
+        <img class="logo-white" src="./assets/cats-logo-dark.svg" alt="White Logo">
+        <img class="logo-dark" src="./assets/cats-logo-white.svg" alt="Dark Logo">
+    </div>
+    <div class="theme-toggle">
+        <button id="theme-toggle"  style="display: none;">
+            <img class="theme-icon-light" src="./assets/white-mode-icon.svg" alt="Light Theme Icon">
+            <img class="theme-icon-dark" src="./assets/dark-mode-icon.svg" alt="Dark Theme Icon">
+        </button>
     </div>
 </header>
-
-<div class="wrapper">
-    <h5 id="summary">
-        <div>
-            TESTS
-            <span class="menu-total rounded menu active" data-filtered="All">Total: <b data-filtered="All">{{TOTAL}}</b></span>
-            <span class="menu-success rounded menu {{^JS}}active{{/JS}}" data-filtered="success">Success: <b
-                    data-filtered="success">{{SUCCESS}}</b></span>
-            <span class="menu-warning rounded menu {{^JS}}active{{/JS}}" data-filtered="warn">Warnings: <b data-filtered="warn">{{WARNINGS}}</b></span>
-            <span class="menu-error rounded menu {{^JS}}active{{/JS}}" data-filtered="error">Errors: <b data-filtered="error">{{ERRORS}}</b></span>
-            <span class="execution rounded">Execution Time: <b>{{EXECUTION}}</b> seconds</span>
+<main class="container">
+    <h2 class="title-section">Overview</h2>
+    <div class="overview-section-component">
+        <div class="card-wrapper large">
+            <img src="./assets/time.svg" alt="execution time">
+            <div class="execution-time-content">
+                <h3 class="action-tag">Execution time</h3>
+                <span class="total-tag">{{EXECUTION}}</span>
+            </div>
         </div>
-        {{#JS}}
-        <select id="fuzzerSelect" class="menu-filter">
-            <option value="All">All</option>
-            {{#FUZZERS}}
-                <option value="{{.}}">{{.}}</option>
-            {{/FUZZERS}}
-        </select>
-        {{/JS}}
-    </h5>
-    <div class="table-container">
-        <table id="summaryTable">
-            <tr class="header">
-                <th width="7%">ID</th>
-                <th width="22%">Fuzzer</th>
-                <th width="60%">Scenario</th>
-                <th width="7%">Result</th>
-                <th width="14%">Result Reason</th>
-            </tr>
-            {{#TEST_CASES}}
-            <tr data-id="{{key}}" class="{{key}}">
-                <td><a href="{{key}}.html">{{id}}</a></td>
-                <td><a href="{{key}}.html">{{fuzzer}}</a></td>
-                <td><a href="{{key}}.html"><span class="item-path active rounded method {{httpMethod}}">{{httpMethod}}</span><span class="item-path active rounded">{{path}}</span>&nbsp;&nbsp;<span
-                        class="scenario">{{scenario}}</span></a></td>
-                <td><a href="{{key}}.html"><label class="rounded result {{result}}">{{result}}</label></a></td>
-                <td><a href="{{key}}.html">{{resultReason}}</a></td>
-            </tr>
-            {{/TEST_CASES}}
-        </table>
+        <div class="card-wrapper small">
+            <img src="./assets/all.svg" alt="total tests">
+            <div class="total-test-content">
+                <h3 class="action-tag">Total</h3>
+                <span class="total-tag">{{TOTAL}} tests</span>
+            </div>
+        </div>
+        <div class="card-wrapper small">
+            <img src="./assets/errors.svg" alt="errors">
+            <div class="total-test-content">
+                <h3 class="action-tag">Errors</h3>
+                <span class="total-tag">{{ERRORS}} tests</span>
+            </div>
+        </div>
+        <div class="card-wrapper small">
+            <img src="./assets/warns.svg" alt="warns">
+            <div class="total-test-content">
+                <h3 class="action-tag">Warnings</h3>
+                <span class="total-tag">{{WARNINGS}} tests</span>
+            </div>
+        </div>
+        <div class="card-wrapper small">
+            <img src="./assets/success.svg" alt="success">
+            <div class="total-test-content">
+                <h3 class="action-tag">Successful</h3>
+                <span class="total-tag">{{SUCCESS}} tests</span>
+            </div>
+        </div>
     </div>
-
-</div>
+    <h2 class="title-section">Execution Details</h2>
+    <div class="ran-tests-component">
+        <div id="summary">
+            <div class="summary-container">
+                <span class="menu-total menu active" data-filtered="All">All: <button type="button" data-filtered="All">{{TOTAL}}</button></span>
+                <span class="menu-error menu" data-filtered="error">Errors: <button type="button" data-filtered="error">{{ERRORS}}</button></span>
+                <span class="menu-warning menu" data-filtered="warn">Warnings: <button type="button" data-filtered="warn">{{WARNINGS}}</button></span>
+                <span class="menu-success menu" data-filtered="success">Success: <button type="button" data-filtered="success">{{SUCCESS}}</button></span>
+            </div>
+            {{#JS}}
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Search...">
+                <button class="search-clear-btn" onclick="clearSearch()">Clear</button>
+                <img class="search-icon" src="./assets/magnifying-glass.png" alt="Search Icon">
+            </div>
+            {{/JS}}
+        </div>
+        <div class="table-container">
+            <table id="summaryTable">
+                <thead>
+                <tr class="header">
+                    <th style="width: 5%">ID</th>
+                    <th style="width: 20%">Fuzzer</th>
+                    <th style="width: 50%">Scenario</th>
+                    <th style="width: 5%">Result</th>
+                    <th style="width: 15%">Result Reason</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{#TEST_CASES}}
+                <tr data-id="{{key}}" class="{{key}}">
+                    <td><a href="{{key}}.html">{{id}}</a></td>
+                    <td><a href="{{key}}.html">{{fuzzer}}</a></td>
+                    <td><a href="{{key}}.html"><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span
+                            class="active rounded path">{{path}}</span><span class="scenario">{{scenario}}</span></a></td>
+                    <td><a href="{{key}}.html"><label class="test-result result-{{result}}">{{result}}</label></a></td>
+                    <td><a href="{{key}}.html">{{resultReason}}</a></td>
+                </tr>
+                {{/TEST_CASES}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+{{#JS}}
+<script src="script.js"></script>
+{{/JS}}
 </body>
-
 </html>

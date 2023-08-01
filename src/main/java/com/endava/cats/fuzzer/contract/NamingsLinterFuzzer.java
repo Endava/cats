@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.factory.NoMediaType;
@@ -27,16 +27,16 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-@ContractInfoFuzzer
+@LinterFuzzer
 @Singleton
-public class NamingsContractInfoFuzzer extends BaseContractInfoFuzzer {
+public class NamingsLinterFuzzer extends BaseLinterFuzzer {
     private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_\\d*");
     private static final String PLURAL_END = "s";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;
     private final NamingArguments namingArguments;
 
-    public NamingsContractInfoFuzzer(TestCaseListener tcl, ProcessingArguments proc, NamingArguments nameArgs) {
+    public NamingsLinterFuzzer(TestCaseListener tcl, ProcessingArguments proc, NamingArguments nameArgs) {
         super(tcl);
         this.processingArguments = proc;
         this.namingArguments = nameArgs;

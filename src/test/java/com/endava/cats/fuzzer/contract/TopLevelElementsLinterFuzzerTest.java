@@ -24,7 +24,7 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class TopLevelElementsContractInfoFuzzerTest {
+class TopLevelElementsLinterFuzzerTest {
 
     private TestCaseListener testCaseListener;
 

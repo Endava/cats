@@ -48,10 +48,9 @@ public class IgnoreArguments {
             description = "A regex that will match against the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped")
     private String ignoreResponseRegex;
 
-    @CommandLine.Option(names = {"-k", "--skipReportingForIgnoredCodes", "--skipReportingForIgnored"},
+    @CommandLine.Option(names = {"-k", "--skipReportingForIgnoredCodes", "--skipReportingForIgnored", "--sri"},
             description = "Skip reporting entirely for the ignored response codes, sizes, words and lines provided in @|bold,underline --ignoreResponseXXX|@ arguments. Default: @|bold false|@ ")
     private boolean skipReportingForIgnoredCodes;
-
 
     @CommandLine.Option(names = {"--srs", "--skipReportingForSuccess"},
             description = "Skip reporting entirely for tests cases reported as success. Default: @|bold false|@ ")
@@ -60,7 +59,6 @@ public class IgnoreArguments {
     @CommandLine.Option(names = {"--srw", "--skipReportingForWarning"},
             description = "Skip reporting entirely for tests cases reported as warnings. Default: @|bold false|@ ")
     private boolean skipReportingForWarnings;
-
 
     @CommandLine.Option(names = {"--skipFields"},
             description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")

@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -19,12 +19,12 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-@ContractInfoFuzzer
+@LinterFuzzer
 @Singleton
-public class TopLevelElementsContractInfoFuzzer extends BaseContractInfoFuzzer {
+public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    public TopLevelElementsContractInfoFuzzer(TestCaseListener tcl) {
+    public TopLevelElementsLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 

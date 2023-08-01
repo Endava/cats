@@ -26,6 +26,7 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -38,6 +39,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -191,9 +194,9 @@ public abstract class TestCaseExporter {
         context.put("TOTAL", report.getTotalTests());
         context.put("TIMESTAMP", report.getTimestamp());
         context.put("TEST_CASES", report.getTestCases());
-        context.put("EXECUTION", report.getExecutionTime());
+        context.put("EXECUTION", Duration.ofSeconds(report.getExecutionTime()).toString().toLowerCase(Locale.ROOT).substring(2));
         context.put("VERSION", report.getCatsVersion());
-        context.putAll(this.getSpecificContext(report));
+        context.put("JS", this.isJavascript());
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
 
         try {
@@ -221,14 +224,32 @@ public abstract class TestCaseExporter {
     }
 
     public void writeHelperFiles() {
-        for (String file : this.getSpecificHelperFiles()) {
-            try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
-                Files.copy(Objects.requireNonNull(stream), Paths.get(reportingPath.toFile().getAbsolutePath(), file));
-            } catch (IOException e) {
-                logger.error("Unable to write reporting files: {}. Please check if CATS has proper right to write in the report location: {}",
-                        e.getMessage(), reportingPath.toFile().getAbsolutePath());
-                logger.debug(STACKTRACE, e);
+        try {
+            writeAssets();
+            for (String file : this.getSpecificHelperFiles()) {
+                try (InputStream stream = this.getClass().getClassLoader().getResourceAsStream(file)) {
+                    Files.copy(Objects.requireNonNull(stream), Paths.get(reportingPath.toFile().getAbsolutePath(), file));
+                }
             }
+        } catch (IOException e) {
+            logger.error("Unable to write reporting files: {}. Please check if CATS has proper right to write in the report location: {}",
+                    e.getMessage(), reportingPath.toFile().getAbsolutePath());
+            logger.debug(STACKTRACE, e);
+        }
+    }
+
+    public void writeAssets() throws IOException {
+        Path assetsPath = Paths.get(reportingPath.toFile().getAbsolutePath(), "assets");
+        Files.createDirectories(assetsPath);
+
+        try (ZipInputStream zis = new ZipInputStream(Objects.requireNonNull(this.getClass().getClassLoader().getResourceAsStream("assets.zip")))) {
+            ZipEntry zipEntry = zis.getNextEntry();
+
+            while (zipEntry != null) {
+                Files.copy(zis, Paths.get(assetsPath.toFile().getAbsolutePath(), zipEntry.getName()), StandardCopyOption.REPLACE_EXISTING);
+                zipEntry = zis.getNextEntry();
+            }
+            zis.closeEntry();
         }
     }
 
@@ -271,10 +292,11 @@ public abstract class TestCaseExporter {
         }
     }
 
+    protected boolean isJavascript() {
+        return false;
+    }
 
     public abstract String[] getSpecificHelperFiles();
-
-    public abstract Map<String, Object> getSpecificContext(CatsTestReport report);
 
     public abstract ReportingArguments.ReportFormat reportFormat();
 

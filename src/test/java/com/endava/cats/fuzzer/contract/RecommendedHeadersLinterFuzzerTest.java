@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class RecommendedHeadersContractInfoFuzzerTest {
+class RecommendedHeadersLinterFuzzerTest {
     private TestCaseListener testCaseListener;
     private RecommendedHeadersLinterFuzzer recommendedHeadersContractInfoFuzzer;
 

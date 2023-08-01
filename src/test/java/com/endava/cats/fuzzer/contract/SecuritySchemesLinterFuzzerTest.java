@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class SecuritySchemesContractInfoFuzzerTest {
+class SecuritySchemesLinterFuzzerTest {
     private TestCaseListener testCaseListener;
 
     private SecuritySchemesLinterFuzzer securitySchemesContractInfoFuzzer;

@@ -66,7 +66,7 @@ class FilterArgumentsTest {
     @CsvSource({"includeControlChars,LeadingControlCharsInHeadersFuzzer,LeadingWhitespacesInHeadersFuzzer",
             "includeEmojis,LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
             "includeWhitespaces,LeadingWhitespacesInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
-            "includeContract,TopLevelElementsContractInfoFuzzer,LeadingWhitespacesInHeadersFuzzer"})
+            "includeContract,TopLevelElementsLinterFuzzer,LeadingWhitespacesInHeadersFuzzer"})
     void shouldIncludeLengthyFuzzers(String argument, String matching, String notMatching) {
         ReflectionTestUtils.setField(checkArguments, argument, true);
 
@@ -101,7 +101,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer")
-                .doesNotContain("TopLevelElementsContractInfoFuzzer");
+                .doesNotContain("TopLevelElementsLinterFuzzer");
     }
 
     @Test
@@ -111,7 +111,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer")
-                .doesNotContain("TopLevelElementsContractInfoFuzzer");
+                .doesNotContain("TopLevelElementsLinterFuzzer");
     }
 
     @Test
@@ -129,7 +129,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsContractInfoFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer", "Jumbo")
+        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsLinterFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer", "Jumbo")
                 .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInHeadersFuzzer", "VeryLargeStringsInHeadersFuzzer",
                         "VeryLargeDecimalsInNumericFieldsFuzzer", "VeryLargeIntegersInNumericFieldsFuzzer");
     }

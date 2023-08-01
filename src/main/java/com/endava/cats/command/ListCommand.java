@@ -1,6 +1,6 @@
 package com.endava.cats.command;
 
-import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
@@ -110,14 +110,14 @@ public class ListCommand implements Runnable {
         List<Fuzzer> fieldFuzzers = filterFuzzers(FieldFuzzer.class);
         List<Fuzzer> headerFuzzers = filterFuzzers(HeaderFuzzer.class);
         List<Fuzzer> httpFuzzers = filterFuzzers(HttpFuzzer.class);
-        List<Fuzzer> contractInfo = filterFuzzers(ContractInfoFuzzer.class);
+        List<Fuzzer> contractInfo = filterFuzzers(LinterFuzzer.class);
 
         if (json) {
             List<FuzzerListEntry> fuzzerEntries = List.of(
                     new FuzzerListEntry().category("Field").fuzzers(fieldFuzzers),
                     new FuzzerListEntry().category("Header").fuzzers(headerFuzzers),
                     new FuzzerListEntry().category("HTTP").fuzzers(httpFuzzers),
-                    new FuzzerListEntry().category("Contract").fuzzers(contractInfo));
+                    new FuzzerListEntry().category("Linters").fuzzers(contractInfo));
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(fuzzerEntries));
         } else {
             String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
@@ -125,7 +125,7 @@ public class ListCommand implements Runnable {
             displayFuzzers(fieldFuzzers, FieldFuzzer.class);
             displayFuzzers(headerFuzzers, HeaderFuzzer.class);
             displayFuzzers(httpFuzzers, HttpFuzzer.class);
-            displayFuzzers(contractInfo, ContractInfoFuzzer.class);
+            displayFuzzers(contractInfo, LinterFuzzer.class);
         }
     }
 

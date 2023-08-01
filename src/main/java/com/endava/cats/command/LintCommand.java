@@ -19,7 +19,7 @@ import java.util.Optional;
         name = "lint",
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
-        description = "Run OpenAPI contract linters, also called ContractInfoFuzzers",
+        description = "Run OpenAPI contract linters",
         abbreviateSynopsis = true,
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
