@@ -1,7 +1,7 @@
 <p align="center">
 
-[CATS Logo](./images/cats_logo_light.png#gh-light-mode-only)
-[CATS Logo](./images/cats_logo_dark.png#gh-dark-mode-only)
+![CATS Logo](./images/cats_logo_light.png#gh-light-mode-only)
+![CATS Logo](./images/cats_logo_dark.png#gh-dark-mode-only)
 
 </p>
 <p align="center">
