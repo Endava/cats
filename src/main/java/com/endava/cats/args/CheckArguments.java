@@ -25,7 +25,7 @@ public class CheckArguments {
             description = "Run only HTTP Fuzzers")
     private boolean checkHttp;
 
-    @CommandLine.Option(names = {"-C", "--checkContract", "--includeContract"},
+    @CommandLine.Option(names = {"-C", "--checkContract", "--includeContract", "--includeLinters"},
             description = "Include Contract Fuzzers")
     private boolean includeContract;
 

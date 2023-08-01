@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class RecommendedHttpCodesContractInfoFuzzerTest {
+class RecommendedHttpCodesLinterFuzzerTest {
 
     private TestCaseListener testCaseListener;
 

@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -11,13 +11,13 @@ import jakarta.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
 
-@ContractInfoFuzzer
+@LinterFuzzer
 @Singleton
-public class RecommendedHeadersContractInfoFuzzer extends BaseContractInfoFuzzer {
+public class RecommendedHeadersLinterFuzzer extends BaseLinterFuzzer {
     static final List<String> HEADERS = Arrays.asList("correlationid", "traceid");
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    public RecommendedHeadersContractInfoFuzzer(TestCaseListener tcl) {
+    public RecommendedHeadersLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 

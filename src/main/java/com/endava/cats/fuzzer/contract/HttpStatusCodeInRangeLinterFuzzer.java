@@ -12,10 +12,10 @@ import java.util.stream.Collectors;
 
 @LinterFuzzer
 @Singleton
-public class HttpStatusCodeInValidRangeLinterFuzzer extends BaseLinterFuzzer {
+public class HttpStatusCodeInRangeLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    public HttpStatusCodeInValidRangeLinterFuzzer(TestCaseListener tcl) {
+    public HttpStatusCodeInRangeLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 

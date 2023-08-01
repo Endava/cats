@@ -20,11 +20,11 @@ import jakarta.enterprise.inject.Instance;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class HttpStatusCodeInValidRangeLinterFuzzerTest {
+class HttpStatusCodeInRangeLinterFuzzerTest {
 
     TestCaseListener testCaseListener;
 
-    private HttpStatusCodeInValidRangeLinterFuzzer httpStatusCodeInValidRangeContractInfoFuzzer;
+    private HttpStatusCodeInRangeLinterFuzzer httpStatusCodeInValidRangeContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -33,7 +33,7 @@ class HttpStatusCodeInValidRangeLinterFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        httpStatusCodeInValidRangeContractInfoFuzzer = new HttpStatusCodeInValidRangeLinterFuzzer(testCaseListener);
+        httpStatusCodeInValidRangeContractInfoFuzzer = new HttpStatusCodeInRangeLinterFuzzer(testCaseListener);
     }
 
     @ParameterizedTest

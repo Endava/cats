@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class NamingsContractInfoFuzzerTest {
+class NamingsLinterFuzzerTest {
 
     private TestCaseListener testCaseListener;
     private NamingsLinterFuzzer namingsContractInfoFuzzer;

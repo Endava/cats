@@ -20,7 +20,7 @@ import jakarta.enterprise.inject.Instance;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class VersionsContractInfoFuzzerTest {
+class VersionsLinterFuzzerTest {
     private TestCaseListener testCaseListener;
     private VersionsLinterFuzzer versionsContractInfoFuzzer;
 

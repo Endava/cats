@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class XmlContentTypeContractInfoFuzzerTest {
+class XmlContentTypeLinterFuzzerTest {
 
     private TestCaseListener testCaseListener;
     private XmlContentTypeLinterFuzzer xmlContentTypeContractInfoFuzzer;

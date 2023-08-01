@@ -16,7 +16,7 @@ import java.util.function.Supplier;
  * Base class for all Contract Fuzzers. If you need additional behaviour please make sure you don't break existing Fuzzers.
  * Contract Fuzzers are only focused on contract following best practices without calling the actual service.
  */
-public abstract class BaseContractInfoFuzzer implements Fuzzer {
+public abstract class BaseLinterFuzzer implements Fuzzer {
     protected static final String DESCRIPTION = "description";
     protected static final String COMMA = ", ";
     protected static final String IS_EMPTY = " is empty";
@@ -26,7 +26,7 @@ public abstract class BaseContractInfoFuzzer implements Fuzzer {
     protected final List<String> fuzzedPaths = new ArrayList<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    protected BaseContractInfoFuzzer(TestCaseListener tcl) {
+    protected BaseLinterFuzzer(TestCaseListener tcl) {
         this.testCaseListener = tcl;
     }
 

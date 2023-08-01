@@ -33,7 +33,7 @@
         <json-path.version>2.8.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.2.1.Final</quarkus.platform.version>
+        <quarkus.platform.version>3.2.2.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M8</surefire-plugin.version>
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -136,6 +136,16 @@
                         <resource>
                             <directory>src/main/resources</directory>
                             <filtering>true</filtering>
+                            <excludes>
+                                <exclude>assets.zip</exclude>
+                            </excludes>
+                        </resource>
+                        <resource>
+                            <directory>src/main/resources</directory>
+                            <includes>
+                                <include>assets.zip</include>
+                            </includes>
+                            <filtering>false</filtering>
                         </resource>
                     </resources>
                 </configuration>

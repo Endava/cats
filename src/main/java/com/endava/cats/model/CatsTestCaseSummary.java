@@ -28,7 +28,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.resultReason = testCase.getResultReason();
         summary.resultDetails = testCase.getResultDetails();
         summary.timeToExecuteInSec = testCase.getResponse().getResponseTimeInMs() / 1000d;
-        summary.httpMethod = testCase.getRequest().getHttpMethod().toUpperCase(Locale.ROOT);
+        summary.httpMethod = testCase.getRequest().getHttpMethod().toLowerCase(Locale.ROOT);
 
         return summary;
     }

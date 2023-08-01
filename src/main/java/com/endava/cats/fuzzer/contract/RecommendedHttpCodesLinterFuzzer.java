@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -11,12 +11,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@ContractInfoFuzzer
+@LinterFuzzer
 @Singleton
-public class RecommendedHttpCodesContractInfoFuzzer extends BaseContractInfoFuzzer {
+public class RecommendedHttpCodesLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    public RecommendedHttpCodesContractInfoFuzzer(TestCaseListener tcl) {
+    public RecommendedHttpCodesLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 

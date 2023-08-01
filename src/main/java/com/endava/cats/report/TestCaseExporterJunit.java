@@ -1,13 +1,9 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.model.CatsTestReport;
 import com.github.mustachejava.Mustache;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
-import java.util.Collections;
-import java.util.Map;
 
 @ApplicationScoped
 @Named("junit")
@@ -16,11 +12,6 @@ public class TestCaseExporterJunit extends TestCaseExporter {
     @Override
     public String[] getSpecificHelperFiles() {
         return new String[0];
-    }
-
-    @Override
-    public Map<String, Object> getSpecificContext(CatsTestReport report) {
-        return Collections.emptyMap();
     }
 
     @Override

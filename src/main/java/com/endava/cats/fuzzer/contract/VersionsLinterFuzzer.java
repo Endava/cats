@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.contract;
 
-import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@ContractInfoFuzzer
+@LinterFuzzer
 @Singleton
-public class VersionsContractInfoFuzzer extends BaseContractInfoFuzzer {
+public class VersionsLinterFuzzer extends BaseLinterFuzzer {
     private static final List<String> VERSIONS = Arrays.asList("version\\d*\\.?", "v\\d+\\.?");
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    public VersionsContractInfoFuzzer(TestCaseListener tcl) {
+    public VersionsLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 

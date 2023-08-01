@@ -1,6 +1,6 @@
 package com.endava.cats.args;
 
-import com.endava.cats.annotations.ContractInfoFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.ControlCharFuzzer;
 import com.endava.cats.annotations.EmojiFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
@@ -187,7 +187,7 @@ public class FilterArguments {
         this.removeIfNotSupplied(checkArguments.isIncludeControlChars(), ControlCharFuzzer.class, finalList);
         this.removeIfNotSupplied(checkArguments.isIncludeEmojis(), EmojiFuzzer.class, finalList);
         this.removeIfNotSupplied(checkArguments.isIncludeWhitespaces(), WhitespaceFuzzer.class, finalList);
-        this.removeIfNotSupplied(checkArguments.isIncludeContract(), ContractInfoFuzzer.class, finalList);
+        this.removeIfNotSupplied(checkArguments.isIncludeContract(), LinterFuzzer.class, finalList);
 
         return finalList;
     }
