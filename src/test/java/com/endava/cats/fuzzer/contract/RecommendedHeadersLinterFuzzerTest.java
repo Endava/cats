@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 @QuarkusTest
 class RecommendedHeadersContractInfoFuzzerTest {
     private TestCaseListener testCaseListener;
-    private RecommendedHeadersContractInfoFuzzer recommendedHeadersContractInfoFuzzer;
+    private RecommendedHeadersLinterFuzzer recommendedHeadersContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -34,7 +34,7 @@ class RecommendedHeadersContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        recommendedHeadersContractInfoFuzzer = new RecommendedHeadersContractInfoFuzzer(testCaseListener);
+        recommendedHeadersContractInfoFuzzer = new RecommendedHeadersLinterFuzzer(testCaseListener);
     }
 
     @ParameterizedTest

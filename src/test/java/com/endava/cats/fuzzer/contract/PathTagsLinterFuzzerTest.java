@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 class PathTagsContractInfoFuzzerTest {
 
     private TestCaseListener testCaseListener;
-    private PathTagsContractInfoFuzzer pathTagsContractInfoFuzzer;
+    private PathTagsLinterFuzzer pathTagsContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -35,7 +35,7 @@ class PathTagsContractInfoFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        pathTagsContractInfoFuzzer = new PathTagsContractInfoFuzzer(testCaseListener);
+        pathTagsContractInfoFuzzer = new PathTagsLinterFuzzer(testCaseListener);
     }
 
     @Test
