@@ -1,7 +1,10 @@
 <p align="center">
 
-![CATS Logo](./images/cats_logo_light.png#gh-light-mode-only)
-![CATS Logo](./images/cats_logo_dark.png#gh-dark-mode-only)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./images/cats_logo_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="./images/cats_logo_dark.png">
+  <img alt="CATS logo" src="./images/cats_logo_light.png" >
+</picture>
 
 </p>
 <p align="center">
