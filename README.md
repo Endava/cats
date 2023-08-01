@@ -1,9 +1,8 @@
 <p align="center">
 
-<picture>
-    <source srcset="https://github.com/Endava/cats/blob/32489f2d28b0eef36ad1ecedd49fd8a2034f0eb8/images/cats_logo_light.png"  media="(prefers-color-scheme: dark)" />
-    <img alt="CATS" width="400" src="https://github.com/Endava/cats/blob/32489f2d28b0eef36ad1ecedd49fd8a2034f0eb8/images/cats_logo_dark.png" />
-</picture>
+<img alt="CATS" width="400" src="https://github.com/Endava/cats/blob/32489f2d28b0eef36ad1ecedd49fd8a2034f0eb8/images/cats_logo_light.png?raw=true#gh-light-mode-only"  />
+<img alt="CATS" width="400" src="https://github.com/Endava/cats/blob/32489f2d28b0eef36ad1ecedd49fd8a2034f0eb8/images/cats_logo_dark.png?raw=trueg#gh-dark-mode-only"  />
+
 </p>
 <p align="center">
 
