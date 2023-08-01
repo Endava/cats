@@ -29,7 +29,7 @@ All available subcommands are listed below:
 
 - `cats run` will run functional and targeted security tests written in the CATS YAML format
 
-- `cats lint`  will run OpenAPI contract linters, also called `ContractInfo` Fuzzers
+- `cats lint`  will run OpenAPI contract linters, also called `Linter` Fuzzers
 
 :::tip
 Each sub-command has its own help. You can run `cats sub-command -h` to check all available arguments: `cats fuzz -h`.

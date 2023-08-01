@@ -1,6 +1,6 @@
 # Linters
 
-Linters are also called `ContractInfo` Fuzzers.
+Linters are also called `Linter` Fuzzers.
 
 Usually a good OpenAPI contract must follow several good practices in order to make it easy digestible by the service clients and act as much as possible as self-sufficient documentation:
 - follow good and **consistent** practices for naming the contract elements like paths, query params, headers, requests, responses
@@ -17,7 +17,7 @@ Usually a good OpenAPI contract must follow several good practices in order to m
 - avoid using `xml` payload unless there is a really good reason (like documenting an old API for example)
 - json types and properties do not use the same naming (like having a `Pet` with a property named `pet`)
 
-CATS has currently 9 registered `ContractInfo` Fuzzers or Linters:
+CATS has currently 9 registered `Linter` Fuzzers or Linters:
 - `HttpStatusCodeInValidRangeFuzzer` -  verifies that all HTTP response codes are within the range of 100 to 599
 - `NamingsContractInfoFuzzer` - verifies that all OpenAPI contract elements follow REST API naming good practices
 - `PathTagsContractInfoFuzzer` - verifies that all OpenAPI paths contain tags elements and checks if the tags elements match the ones declared at the top level
@@ -40,8 +40,8 @@ Naming conventions can be configured using the following arguments:
 
 
 :::info
-`ContractInfo` Fuzzers are disabled by default. You must either use the `cats lint ...` command to run only the linters or
-the `--includeContract` argument to run them along other Fuzzers.
+`Linter` Fuzzers are disabled by default. You must either use the `cats lint ...` command to run only the linters or
+the `--includeLinters` argument to run them along other Fuzzers.
 :::
 
 ```mdx-code-block

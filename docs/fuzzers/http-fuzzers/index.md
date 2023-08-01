@@ -1,5 +1,5 @@
 # HTTP Fuzzers
-CATS has currently 6 registered `HTTP` Fuzzers:
+CATS has currently 7 registered `HTTP` Fuzzers:
 - `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
 - `CheckDeletedResourcesNotAvailableFuzzer` - checks that resources are not available through `GET` after a successful `DELETE`
 - `DummyRequestFuzzer` - send a dummy json request {'cats': 'cats'}
