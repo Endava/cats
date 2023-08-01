@@ -1,7 +1,7 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./images/cats_logo_light.png">
-  <source media="(prefers-color-scheme: light)" srcset="./images/cats_logo_dark.png">
-  <img alt="CATS logo" src="./images/cats_logo_light.png" >
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_light.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_dark.png">
+  <img alt="CATS logo" src="./images/cats.png" >
 </picture>
 
 <p align="center">
