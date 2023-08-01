@@ -51,7 +51,7 @@ const config = {
         title: '',
         logo: {
           alt: 'CATS Logo',
-          src: 'img/cats.png',
+          src: 'img/cats.svg',
         },
         items: [
           {
