@@ -1,5 +1,5 @@
 html[data-theme='dark'] .navbar .navbar__logo {
-  content: url(img/cats_dark.svg)
+  content: url(../../static/img/cats_dark.svg)
 }
 /**
  * Any CSS included here will be global. The classic template
