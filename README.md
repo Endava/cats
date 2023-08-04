@@ -1,7 +1,7 @@
 <p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_dark.svg" />
-  <img alt="CATS logo" src="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_light.svg" >
+  <img alt="CATS logo" src="https://raw.githubusercontent.com/Endava/cats/master/images/cats_logo_light.svg" width="400">
 </picture>
 </p>
 <p align="center">
@@ -38,6 +38,14 @@ By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ont
 All tests are **generated, run and reported automatically** based on a pre-defined set of **100+ Fuzzers**. 
 The Fuzzers cover a wide range of boundary testing and negative scenarios from fully random large Unicode values to well crafted, context dependant values based on the request data types and constraints. 
 Even more, you can leverage the fact that CATS generates request payloads dynamically and write simple end-to-end functional tests.
+
+## HTML Report
+
+<div align="center">
+  <img alt="CATS" width="100%" src="images/tests_result.png"/>
+</div>
+
+## Command Line
 
 <div align="center">
   <img alt="CATS" width="100%" src="images/run_result.png"/>
