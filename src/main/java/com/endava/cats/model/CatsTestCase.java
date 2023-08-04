@@ -10,6 +10,7 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
+import java.util.Locale;
 
 @Getter
 @Setter
@@ -40,6 +41,8 @@ public class CatsTestCase {
     private String contractPath;
     private String server;
 
+    private boolean js;
+
     public boolean isNotSkipped() {
         return !"skipped".equalsIgnoreCase(result);
     }
@@ -63,6 +66,10 @@ public class CatsTestCase {
 
     public String getResponseJson() {
         return JsonUtils.GSON.toJson(response);
+    }
+
+    public String getHttpMethod() {
+        return String.valueOf(request.getHttpMethod()).toLowerCase(Locale.ROOT);
     }
 
     public String getCurl() {

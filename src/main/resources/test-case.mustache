@@ -1,92 +1,215 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>CATS</title>
-
-    <link rel="stylesheet" type="text/css" href="styles.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    <title>Cats</title>
 </head>
-
-<body class="bg-1">
-
-<header class="shaddow bg-2">
-    <div class="wrapper">
-        <a href="https://github.com/Endava/cats"><img class="logo lefty" src="cats.png" alt="CatsLogo" /></a>
-        <h4 class="d-inline lefty tagline">
-            <p>EXECUTION REPORT</p>
-            <p style="color:green" id="header-timestamp">{{TIMESTAMP}}</p>
-            <p id="header-version" style="color: black">GENERATED WITH CATS {{VERSION}}</p>
-        </h4>
+<body>
+<div class="banner-component">
+    <div class="flex-items-center">
+        <img src="./assets/clock-wise.svg" alt="version">
+        <span class="left">
+				Generated with CATS {{VERSION}}
+			</span>
     </div>
+    <div class="flex-items-center">
+        <img src="./assets/clock.svg" alt="timestamp">
+        <span>
+				{{TIMESTAMP}}
+			</span>
+    </div>
+</div>
+<header>
+    <div class="logo">
+        <img class="logo-white" src="./assets/cats-logo-dark.svg" alt="White Logo">
+        {{#JS}}
+        <img class="logo-dark" src="./assets/cats-logo-white.svg" alt="Dark Logo">
+        {{/JS}}
+    </div>
+    {{#JS}}
+    <div class="theme-toggle">
+        <button id="theme-toggle"  style="display: none;">
+            <img class="theme-icon-light" src="./assets/white-mode-icon.svg" alt="Light Theme Icon">
+            <img class="theme-icon-dark" src="./assets/dark-mode-icon.svg" alt="Dark Theme Icon">
+        </button>
+    </div>
+    {{/JS}}
 </header>
 {{#TEST_CASE}}
-<div class="wrapper">
-    <h5 id="summary">
-        <div>
-            <span>
-                <a href="index.html" style="text-decoration: underline seagreen 3px">All Tests</a> >> {{testId}}
-            </span>
+<div class="page-body">
+    <div class="page-container page-text">
+        <a href="index.html" class="anchor-tag">All Tests</a>&nbsp&nbsp/&nbsp&nbsp<b>{{testId}}</b>
+    </div>
+
+    <div class="table-container">
+        <div class="component title border-left-top">
+            <p>Test ID</p>
         </div>
-    </h5>
-</div>
-<div>
-    <div class="wrapper table-container">
-        <h5>Test Id</h5>
-        <p>{{testId}}</p>  <h5>Scenario</h5>
-        <p>{{scenario}}</p>  <h5>Expected result</h5>
-        <p>{{expectedResult}}</p> <h5 class="d-inline">Result</h5> <label class="rounded d-inline {{result}}">
-        {{result}}</label> <h5>Result Details</h5>
-        <p>{{resultDetails}}</p> <h5>
-        Contract Path</h5>
-        <p>{{contractPath}}</p> <h5>Fuzzer</h5>
-        <p>{{fuzzer}}</p> <h5>Full Request Path</h5>
-        <p>{{fullRequestPath}}</p> <h5>Http Method</h5>
-        <p>{{request.httpMethod}}</p> <h5>Timestamp</h5>
-        <p>{{request.timestamp}}</p>
-        <h5>Request Details</h5>
-        <div class="subWrapper"><h6>headers</h6>
+        <div class="component text border-right-top">
+            <p>{{testId}}</p>
+        </div>
+
+        <div class="component title">
+            <p>Timestamp</p>
+        </div>
+        <div class="component text">
+            <p>{{request.timestamp}}</p>
+        </div>
+
+
+        <div class="component title">
+            <p>Scenario</p>
+        </div>
+        <div class="component text">
+            <p>{{scenario}}</p>
+        </div>
+        <div class="component title">
+            <p>Expected Result</p>
+        </div>
+        <div class="component text">
+            <p>{{expectedResult}}</p>
+        </div>
+        <div class="component title">
+            <p>Result</p>
+        </div>
+        <div class="component text">
+            <label class="test-result result-{{result}}">{{result}}</label>
+        </div>
+        <div class="component title">
+            <p>Result Details</p>
+        </div>
+        <div class="component text">
+            <p>
+                {{resultDetails}}
+            </p>
+        </div>
+
+        <div class="component title">
+            <p>Contract Path</p>
+        </div>
+        <div class="component text">
+            <span class="rounded path details">{{contractPath}}</span>
+        </div>
+
+        <div class="component title">
+            <p>Fuzzer</p>
+        </div>
+        <div class="component text">
+            <p>{{fuzzer}}</p>
+        </div>
+
+        <div class="component title">
+            <p>Full Request Path</p>
+        </div>
+        <div class="component text">
+            <span class="rounded path details">{{fullRequestPath}}</span>
+        </div>
+
+        <div class="component title border-left-bottom">
+            <p>Http Method</p>
+        </div>
+        <div class="component text border-right-bottom">
+            <span class="active rounded rounded-{{httpMethod}} details">{{httpMethod}}</span>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+    {{#js}}
+    <div>
+        <div class="tabs">
+            <div class="tabs-and-title">
+                <div class="component section-title">Request Details</div>
+                <div class="all-tabs">
+                    <div class="component tab active" onclick="showCode(1)">Headers</div>
+                    <div class="component tab" onclick="showCode(2)">Payload</div>
+                    <div class="component tab" onclick="showCode(3)">cURL</div>
+                </div>
+            </div>
+            <button class="copy-button" onclick="copyTabs()">Copy code</button>
+        </div>
+        <div class="code-area active" id="code-1">
             <pre><code>{{headers}}</code></pre>
-            <h6>payload</h6>
+        </div>
+
+        <div class="code-area" id="code-2">
             <pre><code>{{requestJson}}</code></pre>
         </div>
-        <h5>Response</h5>
-        <pre><code>{{responseJson}}</code></pre>
-        <h5>curl</h5>
-        <pre><code>{{curl}}</code></pre>
-        <h5>CATS Replay</h5>
-        <pre><code>{{catsReplay}}</code></pre>
+
+        <div class="code-area" id="code-3">
+            <pre><code>{{curl}}</code></pre>
+        </div>
+    </div>
+    {{/js}}
+
+    {{^js}}
+    <div>
+        <div class="tabs">
+            <div class="tabs-and-title">
+                <div class="component section-title">Request Details</div>
+                <div class="all-tabs">
+                    <div class="component tab active">Headers</div>
+                </div>
+            </div>
+        </div>
+        <div class="code-area active">
+            <pre><code>{{headers}}</code></pre>
+        </div>
+        <div class="tabs">
+            <div class="tabs-and-title">
+                <div class="component section-title">Request Details</div>
+                <div class="all-tabs">
+                    <div class="component tab active">Payload</div>
+                </div>
+            </div>
+        </div>
+        <div class="code-area active">
+            <pre><code>{{requestJson}}</code></pre>
+        </div>
+        <div class="tabs">
+            <div class="tabs-and-title">
+                <div class="component section-title">Request Details</div>
+                <div class="all-tabs">
+                    <div class="component tab active">cURL</div>
+                </div>
+            </div>
+        </div>
+        <div class="code-area active">
+            <pre><code>{{curl}}</code></pre>
+        </div>
+    </div>
+    {{/js}}
+    <div class='section-response'>
+        <div class="tabs-header">
+            <div class="component section-title">Response</div>
+            {{#js}}
+            <button class="copy-button copy-button-response" onclick="copyResponse()">Copy code</button>
+            {{/js}}
+        </div>
+        <div class="code-area-outside" id="code-response">
+            <pre><code>{{responseJson}}</code></pre>
+        </div>
+    </div>
+
+    <div>
+        <div class="tabs-header">
+            <div class="component section-title">CATS Replay</div>
+            {{#js}}
+            <button class="copy-button copy-button-cats-replay" onclick="copyCatsReplay()">Copy code</button>
+            {{/js}}
+        </div>
+        <div class="code-area-outside" id="code-cats-replay">
+            <pre><code>{{catsReplay}}</code></pre>
+        </div>
     </div>
 </div>
 {{/TEST_CASE}}
-<script>
-    const copyButtonLabel = "Copy Code";
-    let blocks = document.querySelectorAll("pre");
-
-    blocks.forEach((block) => {
-        if (navigator.clipboard) {
-            let button = document.createElement("button");
-
-            button.innerText = copyButtonLabel;
-            block.appendChild(button);
-
-            button.addEventListener("click", async () => {
-                await copyCode(block, button);
-            });
-        }
-    });
-
-    async function copyCode(block, button) {
-        let code = block.querySelector("code");
-        let text = code.innerText;
-
-        await navigator.clipboard.writeText(text);
-
-        button.innerText = "Code Copied";
-
-        setTimeout(() => {
-            button.innerText = copyButtonLabel;
-        }, 700);
-    }
-</script>
+{{#JS}}
+<script src="script.js"></script>
+{{/JS}}
 </body>
+
 </html>

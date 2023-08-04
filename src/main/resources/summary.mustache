@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
     <title>Cats</title>
 </head>
@@ -27,7 +27,9 @@
 <header>
     <div class="logo">
         <img class="logo-white" src="./assets/cats-logo-dark.svg" alt="White Logo">
+        {{#JS}}
         <img class="logo-dark" src="./assets/cats-logo-white.svg" alt="Dark Logo">
+        {{/JS}}
     </div>
     <div class="theme-toggle">
         <button id="theme-toggle"  style="display: none;">
@@ -67,7 +69,7 @@
                 <span class="total-tag">{{WARNINGS}} tests</span>
             </div>
         </div>
-        <div class="card-wrapper small">
+        <div class="card-wrapper small last-small">
             <img src="./assets/success.svg" alt="success">
             <div class="total-test-content">
                 <h3 class="action-tag">Successful</h3>
@@ -99,7 +101,7 @@
                     <th style="width: 5%">ID</th>
                     <th style="width: 20%">Fuzzer</th>
                     <th style="width: 50%">Scenario</th>
-                    <th style="width: 5%">Result</th>
+                    <th style="width: 6%">Result</th>
                     <th style="width: 15%">Result Reason</th>
                 </tr>
                 </thead>
