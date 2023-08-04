@@ -1,4 +1,3 @@
-let selectedFilter = "All";
 let selectedFuzzer = "All";
 let set = new Set();
 
@@ -95,8 +94,10 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 
 	const searchInput = document.querySelector('.search-input');
-	searchInput.addEventListener('input', handleSearch);
-	handleSearch();
+	if (searchInput) {
+		searchInput.addEventListener('input', handleSearch);
+		handleSearch();
+	}
 });
 
 //theme
@@ -142,3 +143,78 @@ if (prefersDarkMode) {
 themeToggleBtn.style.display = 'block';
 themeToggleBtn.addEventListener('click', toggleTheme);
 
+
+// Page scripts
+window.onload = function () {
+	showCode(1);
+};
+
+function showCode(tabIndex) {
+	const codeAreas = document.querySelectorAll('.code-area');
+	const tabs = document.querySelectorAll('.tab');
+	codeAreas.forEach(codeArea => codeArea.classList.remove('active'));
+	tabs.forEach(tab => tab.classList.remove('active'));
+
+	const selectedCodeArea = document.getElementById('code-' + tabIndex);
+	const selectedTab = document.querySelector('.tab:nth-child(' + tabIndex + ')');
+	if (selectedTab) {
+		selectedCodeArea.classList.add('active');
+		selectedTab.classList.add('active');
+	}
+}
+
+function copyTabs() {
+	const activeTab = document.querySelector('.tab.active');
+	const tabIndex = Array.from(activeTab.parentNode.children).indexOf(activeTab);
+	const codeArea = document.getElementById('code-' + (tabIndex + 1));
+	const codeText = codeArea.querySelector('code').innerText;
+
+	const tempTextarea = document.createElement('textarea');
+	tempTextarea.value = codeText;
+	document.body.appendChild(tempTextarea);
+	tempTextarea.select();
+	document.execCommand('copy');
+	document.body.removeChild(tempTextarea);
+
+	const copyButton = document.querySelector('.copy-button');
+	copyButton.textContent = 'Copied';
+	setTimeout(() => {
+		copyButton.textContent = 'Copy code';
+	}, 2000);
+}
+
+function copyResponse() {
+	const codeArea = document.getElementById('code-response');
+	const codeText = codeArea.querySelector('code').innerText;
+
+	const tempTextarea = document.createElement('textarea');
+	tempTextarea.value = codeText;
+	document.body.appendChild(tempTextarea);
+	tempTextarea.select();
+	document.execCommand('copy');
+	document.body.removeChild(tempTextarea);
+
+	const copyButton = document.querySelector('.copy-button-response');
+	copyButton.textContent = 'Copied';
+	setTimeout(() => {
+		copyButton.textContent = 'Copy code';
+	}, 2000);
+}
+
+function copyCatsReplay() {
+	const codeArea = document.getElementById('code-cats-replay');
+	const codeText = codeArea.querySelector('code').innerText;
+
+	const tempTextarea = document.createElement('textarea');
+	tempTextarea.value = codeText;
+	document.body.appendChild(tempTextarea);
+	tempTextarea.select();
+	document.execCommand('copy');
+	document.body.removeChild(tempTextarea);
+
+	const copyButton = document.querySelector('.copy-button-cats-replay');
+	copyButton.textContent = 'Copied';
+	setTimeout(() => {
+		copyButton.textContent = 'Copy code';
+	}, 2000);
+}

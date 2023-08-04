@@ -278,9 +278,11 @@ public abstract class TestCaseExporter {
     private void writeHtmlTestCase(CatsTestCase testCase) {
         StringWriter stringWriter = new StringWriter();
         Map<String, Object> context = new HashMap<>();
+        testCase.setJs(this.isJavascript());
         context.put("TEST_CASE", testCase);
         context.put("TIMESTAMP", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME));
         context.put("VERSION", this.version);
+        context.put("JS", this.isJavascript());
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);
         try {
