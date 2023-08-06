@@ -93,7 +93,7 @@ public class ListCommand implements Runnable {
                 PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(openAPI.getPaths().keySet()));
             } else {
                 logger.noFormat("Available paths:");
-                openAPI.getPaths().keySet().stream().sorted().map(item -> "\t" + item).forEach(logger::noFormat);
+                openAPI.getPaths().keySet().stream().sorted().map(item -> " ◼ " + item).forEach(logger::noFormat);
             }
         } catch (IOException e) {
             logger.debug("Exception while reading contract!", e);
@@ -141,7 +141,7 @@ public class ListCommand implements Runnable {
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
         logger.noFormat(" ");
         logger.noFormat(message, fuzzers.size(), typeOfFuzzers);
-        fuzzers.stream().map(fuzzer -> "\t ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::noFormat);
+        fuzzers.stream().map(fuzzer -> " ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::noFormat);
     }
 
     static class ListCommandGroups {
