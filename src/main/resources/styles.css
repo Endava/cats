@@ -621,6 +621,7 @@ body.dark-mode .result-none {
 
 .path.details {
 	margin-left: 0;
+	word-break: break-all;
 }
 
 .code-area {
