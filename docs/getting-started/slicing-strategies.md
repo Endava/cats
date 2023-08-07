@@ -5,7 +5,7 @@ description: How to get meaningful results in a timely manner
 
 # Slicing Strategies
 
-CATS has a significant number of Fuzzers. Currently, **98** and growing. Some Fuzzers are executing multiple tests for every given field within the request.
+CATS has a significant number of Fuzzers. Currently, **100+** and growing. Some Fuzzers are executing multiple tests for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields, this will result in **945 tests**.
 Considering that there are additional Fuzzers with the same magnitude, you can easily get to 20k tests being executed on a typical run. 
 This will result in huge reports and long-running times (i.e. minutes, rather than seconds).
