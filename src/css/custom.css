@@ -67,4 +67,5 @@ html[data-theme='dark'] .navbar .navbar__logo {
 
 .navbar__logo {
   height: 3rem;
+  margin-bottom: 8px;
 }
