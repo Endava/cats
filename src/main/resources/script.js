@@ -210,48 +210,20 @@ function showCode(tabIndex) {
 function copyTabs() {
 	const activeTab = document.querySelector('.tab.active');
 	const tabIndex = Array.from(activeTab.parentNode.children).indexOf(activeTab);
-	const codeArea = document.getElementById('code-' + (tabIndex + 1));
-	const codeText = codeArea.querySelector('code').innerText;
 
-	const tempTextarea = document.createElement('textarea');
-	tempTextarea.value = codeText;
-	document.body.appendChild(tempTextarea);
-	tempTextarea.select();
-	document.execCommand('copy');
-	document.body.removeChild(tempTextarea);
-
-	const copyButton = document.querySelector('.copy-button');
-	copyButton.textContent = 'Copied';
-	copyButton.classList.add("copied");
-	setTimeout(() => {
-		copyButton.textContent = 'Copy code';
-		copyButton.classList.remove("copied");
-	}, 2000);
+	copyCode('code-' + (tabIndex + 1), '.copy-button');
 }
 
 function copyResponse() {
-	const codeArea = document.getElementById('code-response');
-	const codeText = codeArea.querySelector('code').innerText;
-
-	const tempTextarea = document.createElement('textarea');
-	tempTextarea.value = codeText;
-	document.body.appendChild(tempTextarea);
-	tempTextarea.select();
-	document.execCommand('copy');
-	document.body.removeChild(tempTextarea);
-
-	const copyButton = document.querySelector('.copy-button-response');
-	copyButton.textContent = 'Copied';
-	copyButton.classList.add("copied");
-
-	setTimeout(() => {
-		copyButton.textContent = 'Copy code';
-		copyButton.classList.remove("copied");
-	}, 2000);
+	copyCode('code-response','.copy-button-response');
 }
 
 function copyCatsReplay() {
-	const codeArea = document.getElementById('code-cats-replay');
+	copyCode('code-cats-replay','.copy-button-cats-replay');
+}
+
+function copyCode(codeAreaId, copyButtonSelector) {
+	const codeArea = document.getElementById(codeAreaId);
 	const codeText = codeArea.querySelector('code').innerText;
 
 	const tempTextarea = document.createElement('textarea');
@@ -261,7 +233,7 @@ function copyCatsReplay() {
 	document.execCommand('copy');
 	document.body.removeChild(tempTextarea);
 
-	const copyButton = document.querySelector('.copy-button-cats-replay');
+	const copyButton = document.querySelector(copyButtonSelector);
 	copyButton.textContent = 'Copied';
 	copyButton.classList.add("copied");
 	setTimeout(() => {
