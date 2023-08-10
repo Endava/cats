@@ -10,7 +10,7 @@
         <java.version>17</java.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
         <jansi.version>2.4.0</jansi.version>
         <lombok.version>1.18.28</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
@@ -33,7 +33,7 @@
         <json-path.version>2.8.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.2.2.Final</quarkus.platform.version>
+        <quarkus.platform.version>3.2.3.Final</quarkus.platform.version>
         <surefire-plugin.version>3.0.0-M8</surefire-plugin.version>
         <compiler-plugin.version>3.10.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -44,7 +44,7 @@
         <spring-integration-core.version>6.1.2</spring-integration-core.version>
         <json.version>20230618</json.version>
         <error-prone.version>2.18.0</error-prone.version>
-        <archunit-junit5.version>1.0.1</archunit-junit5.version>
+        <archunit-junit5.version>1.1.0</archunit-junit5.version>
         <json-smart.version>2.5.0</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
