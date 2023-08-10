@@ -107,21 +107,65 @@ const logoWhite = document.querySelector('.logo-white');
 const logoDark = document.querySelector('.logo-dark');
 const themeIconLight = document.querySelector('.theme-icon-light');
 const themeIconDark = document.querySelector('.theme-icon-dark');
+const timeWhite = document.querySelector('.time-white');
+const timeDark = document.querySelector('.time-dark');
+const allWhite = document.querySelector('.all-white');
+const allDark = document.querySelector('.all-dark');
+const errorsWhite = document.querySelector('.errors-white');
+const errorsDark = document.querySelector('.errors-dark');
+const warnsWhite = document.querySelector('.warns-white');
+const warnsDark  = document.querySelector('.warns-dark');
+const successWhite = document.querySelector('.success-white');
+const successDark = document.querySelector('.success-dark');
 
 function enableDarkMode() {
-  body.classList.add('dark-mode');
-  logoWhite.style.display = 'none';
-  logoDark.style.display = 'block';
-  themeIconLight.style.display = 'block';
-  themeIconDark.style.display = 'none';
+	body.classList.add('dark-mode');
+	hideElement(logoWhite);
+	hideElement(themeIconDark);
+	hideElement(timeWhite);
+	hideElement(allWhite);
+	hideElement(errorsWhite);
+	hideElement(warnsWhite);
+	hideElement(successWhite);
+
+	displayElement(logoDark);
+	displayElement(themeIconLight);
+	displayElement(timeDark);
+	displayElement(allDark);
+	displayElement(errorsDark);
+	displayElement(warnsDark);
+	displayElement(successDark);
 }
 
 function enableLightMode() {
-  body.classList.remove('dark-mode');
-  logoWhite.style.display = 'block';
-  logoDark.style.display = 'none';
-  themeIconLight.style.display = 'none';
-  themeIconDark.style.display = 'block';
+  	body.classList.remove('dark-mode');
+	displayElement(logoWhite);
+	displayElement(themeIconDark);
+	displayElement(timeWhite);
+	displayElement(allWhite);
+	displayElement(errorsWhite);
+	displayElement(warnsWhite);
+	displayElement(successWhite);
+
+	hideElement(logoDark);
+	hideElement(themeIconLight);
+	hideElement(timeDark);
+	hideElement(allDark);
+	hideElement(errorsDark);
+	hideElement(warnsDark);
+	hideElement(successDark);
+}
+
+function displayElement(element) {
+	if (element) {
+		element.style.display = 'block';
+	}
+}
+
+function hideElement(element) {
+	if (element) {
+		element.style.display = 'none';
+	}
 }
 
 function toggleTheme() {
@@ -178,8 +222,10 @@ function copyTabs() {
 
 	const copyButton = document.querySelector('.copy-button');
 	copyButton.textContent = 'Copied';
+	copyButton.classList.add("copied");
 	setTimeout(() => {
 		copyButton.textContent = 'Copy code';
+		copyButton.classList.remove("copied");
 	}, 2000);
 }
 
@@ -196,8 +242,11 @@ function copyResponse() {
 
 	const copyButton = document.querySelector('.copy-button-response');
 	copyButton.textContent = 'Copied';
+	copyButton.classList.add("copied");
+
 	setTimeout(() => {
 		copyButton.textContent = 'Copy code';
+		copyButton.classList.remove("copied");
 	}, 2000);
 }
 
@@ -214,7 +263,9 @@ function copyCatsReplay() {
 
 	const copyButton = document.querySelector('.copy-button-cats-replay');
 	copyButton.textContent = 'Copied';
+	copyButton.classList.add("copied");
 	setTimeout(() => {
 		copyButton.textContent = 'Copy code';
+		copyButton.classList.remove("copied");
 	}, 2000);
 }

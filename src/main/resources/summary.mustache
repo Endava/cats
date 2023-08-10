@@ -42,35 +42,42 @@
     <h2 class="title-section">Overview</h2>
     <div class="overview-section-component">
         <div class="card-wrapper large">
-            <img src="./assets/time.svg" alt="execution time">
+            <img src="./assets/time.svg" alt="execution time" class="time-white">
+            <img src="./assets/time_dark.svg" alt="execution time" style="display: none;" class="time-dark">
+
             <div class="execution-time-content">
                 <h3 class="action-tag">Execution time</h3>
                 <span class="total-tag">{{EXECUTION}}</span>
             </div>
         </div>
         <div class="card-wrapper small">
-            <img src="./assets/all.svg" alt="total tests">
+            <img src="./assets/all.svg" alt="total tests" class="all-white">
+            <img src="./assets/all_dark.svg" alt="total tests" style="display: none;" class="all-dark">
             <div class="total-test-content">
                 <h3 class="action-tag">Total</h3>
                 <span class="total-tag">{{TOTAL}} tests</span>
             </div>
         </div>
         <div class="card-wrapper small">
-            <img src="./assets/errors.svg" alt="errors">
+            <img src="./assets/errors.svg" alt="errors" class="errors-white">
+            <img src="./assets/errors_dark.svg" alt="errors" style="display: none;" class="errors-dark">
+
             <div class="total-test-content">
                 <h3 class="action-tag">Errors</h3>
                 <span class="total-tag">{{ERRORS}} tests</span>
             </div>
         </div>
         <div class="card-wrapper small">
-            <img src="./assets/warns.svg" alt="warns">
+            <img src="./assets/warns.svg" alt="warns" class="warns-white">
+            <img src="./assets/warns_dark.svg" alt="warns" style="display: none;" class="warns-dark">
             <div class="total-test-content">
                 <h3 class="action-tag">Warnings</h3>
                 <span class="total-tag">{{WARNINGS}} tests</span>
             </div>
         </div>
         <div class="card-wrapper small last-small">
-            <img src="./assets/success.svg" alt="success">
+            <img src="./assets/success.svg" alt="success" class="success-white">
+            <img src="./assets/success_dark.svg" alt="success" style="display: none" class="success-dark">
             <div class="total-test-content">
                 <h3 class="action-tag">Successful</h3>
                 <span class="total-tag">{{SUCCESS}} tests</span>
@@ -81,16 +88,16 @@
     <div class="ran-tests-component">
         <div id="summary">
             <div class="summary-container">
-                <span class="menu-total menu active" data-filtered="All">All: <button type="button" data-filtered="All">{{TOTAL}}</button></span>
-                <span class="menu-error menu" data-filtered="error">Errors: <button type="button" data-filtered="error">{{ERRORS}}</button></span>
-                <span class="menu-warning menu" data-filtered="warn">Warnings: <button type="button" data-filtered="warn">{{WARNINGS}}</button></span>
-                <span class="menu-success menu" data-filtered="success">Success: <button type="button" data-filtered="success">{{SUCCESS}}</button></span>
+                <span class="menu-total menu active" data-filtered="All">All <button type="button" data-filtered="All">{{TOTAL}}</button></span>
+                <span class="menu-error menu" data-filtered="error">Errors <button type="button" data-filtered="error">{{ERRORS}}</button></span>
+                <span class="menu-warning menu" data-filtered="warn">Warnings <button type="button" data-filtered="warn">{{WARNINGS}}</button></span>
+                <span class="menu-success menu" data-filtered="success">Success <button type="button" data-filtered="success">{{SUCCESS}}</button></span>
             </div>
             {{#JS}}
             <div class="search-container">
                 <input type="text" class="search-input" placeholder="Search...">
                 <button class="search-clear-btn" onclick="clearSearch()">Clear</button>
-                <img class="search-icon" src="./assets/magnifying-glass.png" alt="Search Icon">
+                <img class="search-icon" src="./assets/magnifying-glass.svg" alt="Search Icon">
             </div>
             {{/JS}}
         </div>
@@ -107,13 +114,13 @@
                 </thead>
                 <tbody>
                 {{#TEST_CASES}}
-                <tr data-id="{{key}}" class="{{key}}">
-                    <td><a href="{{key}}.html">{{id}}</a></td>
-                    <td><a href="{{key}}.html">{{fuzzer}}</a></td>
-                    <td><a href="{{key}}.html"><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span
+                <tr data-id="{{key}}" class="{{key}}" onclick="window.open('{{key}}.html','_blank')">
+                    <td><a href="{{key}}.html" target="_blank">{{id}}</a></td>
+                    <td><a href="{{key}}.html" target="_blank">{{fuzzer}}</a></td>
+                    <td><a href="{{key}}.html" target="_blank"><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span
                             class="active rounded path">{{path}}</span><span class="scenario">{{scenario}}</span></a></td>
-                    <td><a href="{{key}}.html"><label class="test-result result-{{result}}">{{result}}</label></a></td>
-                    <td><a href="{{key}}.html">{{resultReason}}</a></td>
+                    <td><a href="{{key}}.html" target="_blank"><label class="test-result result-{{result}}">{{result}}</label></a></td>
+                    <td><a href="{{key}}.html" target="_blank">{{resultReason}}</a></td>
                 </tr>
                 {{/TEST_CASES}}
                 </tbody>
