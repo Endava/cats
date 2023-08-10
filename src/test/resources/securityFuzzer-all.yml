@@ -1,6 +1,7 @@
 /pets/{id}/move:
   test1:
     description: XSS strings
+    firstName: "2"
     targetFields:
       - name
     stringsFile: xss.txt
