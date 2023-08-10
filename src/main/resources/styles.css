@@ -583,7 +583,7 @@ body.dark-mode .result-warn {
 }
 
 body.dark-mode .result-error {
-	color: #CF1322;
+	color: #F5222D;
 }
 
 .result-success {
@@ -798,11 +798,14 @@ code {
 	border-radius: 8px;
 	font-weight: 500;
 	font-size: 16px;
+	font-family: 'Outfit', sans-serif;
 }
 
 .copied {
 	background-color: #6fe910;
 	color: #1a1a1a;
+	font-family: 'Outfit', sans-serif;
+	font-weight: 600;
 }
 
 .code-area-outside {
@@ -831,6 +834,7 @@ code {
 	border-top: 1px solid var(--path-background);
 	border-right: 1px solid var(--path-background);
 	border-left: 1px solid var(--path-background);
+	border-bottom: 1px solid var(--path-background);
 	border-top-right-radius: 16px;
 	border-top-left-radius: 16px;
 }
