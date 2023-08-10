@@ -232,7 +232,7 @@ public class FilesArguments {
 
 
     private Map<String, Map<String, String>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
-        Map<String, Map<String, String>> fromFile = Collections.emptyMap();
+        Map<String, Map<String, String>> fromFile = new HashMap<>();
         if (file == null) {
             log.debug("No {} file provided!", fileType);
         } else {
