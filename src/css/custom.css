@@ -69,11 +69,11 @@ html[data-theme='dark'] .navbar .navbar__logo {
   height: 3rem;
 }
 
-[data-theme='light'] .navbar__logo img {
+[data-theme='light'] .navbar__logo {
   padding-bottom: 10px;
 }
 
-[data-theme='dark'] .navbar__logo img {
+[data-theme='dark'] .navbar__logo {
   padding-bottom: 10px;
 }
 
