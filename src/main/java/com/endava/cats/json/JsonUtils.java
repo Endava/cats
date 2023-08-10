@@ -76,7 +76,7 @@ public abstract class JsonUtils {
         } catch (Exception e) {
             return false;
         }
-        return true;
+        return text.contains("{") || text.contains("]");
     }
 
     private static boolean testForPrimitiveOrThrow(String payload, String property) {
