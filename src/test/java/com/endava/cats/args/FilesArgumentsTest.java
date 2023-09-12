@@ -69,7 +69,7 @@ class FilesArgumentsTest {
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
         ReflectionTestUtils.setField(filesArguments, "headersMap", Map.of("auth", "secret"));
         filesArguments.loadHeaders();
-        Map<String, String> headers = filesArguments.getHeaders("all");
+        Map<String, Object> headers = filesArguments.getHeaders("all");
 
         org.assertj.core.api.Assertions.assertThat(headers).hasSize(3).containsOnlyKeys("auth", "catsFuzzedHeader", "header");
     }

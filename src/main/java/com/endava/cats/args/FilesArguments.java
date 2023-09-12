@@ -22,15 +22,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Singleton
 public class FilesArguments {
     private static final String ALL = "all";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
-    private Map<String, Map<String, String>> headers;
-    private Map<String, Map<String, String>> queryParams;
-    private Map<String, Map<String, String>> refData;
+    private Map<String, Map<String, Object>> headers;
+    private Map<String, Map<String, Object>> queryParams;
+    private Map<String, Map<String, Object>> refData;
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
 
@@ -49,7 +48,7 @@ public class FilesArguments {
             description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control use the `--headers` arg that requires a file.")
     @Setter
     @Getter
-    Map<String, String> headersMap;
+    Map<String, Object> headersMap;
 
     @CommandLine.Option(names = {"--queryParams"},
             description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params")
@@ -137,7 +136,7 @@ public class FilesArguments {
         /*Merge headers from file with the ones supplied using the -H argument*/
         if (headersMap != null) {
             headers.merge(ALL, headersMap, (stringStringMap, stringStringMap2) -> {
-                Map<String, String> mergedMap = new HashMap<>(stringStringMap);
+                Map<String, Object> mergedMap = new HashMap<>(stringStringMap);
                 mergedMap.putAll(stringStringMap2);
                 return mergedMap;
             });
@@ -178,7 +177,7 @@ public class FilesArguments {
      *
      * @return a Map representation of the --headers file with paths being the Map keys
      */
-    public Map<String, String> getHeaders(String path) {
+    public Map<String, Object> getHeaders(String path) {
         return getPathAndAll(headers, path);
     }
 
@@ -190,7 +189,7 @@ public class FilesArguments {
      * @param currentPath the current API path
      * @return a Map with the supplied --refData
      */
-    public Map<String, String> getRefData(String currentPath) {
+    public Map<String, Object> getRefData(String currentPath) {
         return getPathAndAll(refData, currentPath);
     }
 
@@ -201,7 +200,7 @@ public class FilesArguments {
      * @param path the given path
      * @return a key-value map with all additional query params
      */
-    public Map<String, String> getAdditionalQueryParamsForPath(String path) {
+    public Map<String, Object> getAdditionalQueryParamsForPath(String path) {
         return getPathAndAll(queryParams, path);
     }
 
@@ -224,20 +223,19 @@ public class FilesArguments {
     }
 
 
-    static Map<String, String> getPathAndAll(Map<String, Map<String, String>> collection, String path) {
+    static Map<String, Object> getPathAndAll(Map<String, Map<String, Object>> collection, String path) {
         return collection.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
     }
 
-
-    private Map<String, Map<String, String>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
-        Map<String, Map<String, String>> fromFile = new HashMap<>();
+    private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
+        Map<String, Map<String, Object>> fromFile = new HashMap<>();
         if (file == null) {
             log.debug("No {} file provided!", fileType);
         } else {
             log.config("{} file supplied {}", fileType, file.getAbsolutePath());
-            fromFile = this.loadYamlFileToMap(file.getAbsolutePath());
+            fromFile = this.parseYaml(file.getAbsolutePath());
             log.debug("{} file loaded successfully: {}", fileType, fromFile);
         }
         return fromFile;
@@ -254,16 +252,6 @@ public class FilesArguments {
                 Map<String, Object> properties = mapper.convertValue(entry.getValue(), LinkedHashMap.class);
                 result.put(entry.getKey(), properties);
             }
-        }
-        return result;
-    }
-
-    public Map<String, Map<String, String>> loadYamlFileToMap(String filePath) throws IOException {
-        Map<String, Map<String, String>> result = new HashMap<>();
-        Map<String, Map<String, Object>> headersAsObject = this.parseYaml(filePath);
-        for (Map.Entry<String, Map<String, Object>> entry : headersAsObject.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().entrySet()
-                    .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
         }
         return result;
     }

@@ -49,7 +49,7 @@ class CatsUtilTest {
         CatsUtil catsUtil = new CatsUtil();
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
-        Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
+        Map<String, Object> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
         String updatedPayload = catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payload);
         Assertions.assertThat(updatedPayload).contains("metadata").contains("test1");
     }
@@ -59,7 +59,7 @@ class CatsUtilTest {
         CatsUtil catsUtil = new CatsUtil();
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
-        Map<String, String> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
+        Map<String, Object> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
         String updatedPayload = catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payload);
         Assertions.assertThat(updatedPayload).doesNotContain("metadata").contains("test1");
     }

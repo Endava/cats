@@ -11,6 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -80,6 +81,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
         for (String variable : variables) {
             String variableName = variable.substring(1, variable.length() - 1);
             String value = Optional.ofNullable(filesArguments.getRefData(path).get(variableName))
+                    .map(WordUtils::nullOrValueOf)
                     .orElse(filesArguments.getUrlParamsList()
                             .stream()
                             .filter(param -> param.startsWith(variableName + ":"))

@@ -65,7 +65,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @CommandLine.Option(names = {"-H"},
             description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control use the `--headers` arg that requires a file.")
-    Map<String, String> headersMap;
+    Map<String, Object> headersMap;
 
     @CommandLine.Option(names = {"--createRefData"},
             description = "This is only applicable when enabling the @|bold FunctionalFuzzer |@. It will instruct the @|bold FunctionalFuzzer|@ to create a @|bold,underline --refData|@ file " +

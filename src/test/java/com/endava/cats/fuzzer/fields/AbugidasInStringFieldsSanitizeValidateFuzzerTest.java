@@ -89,14 +89,14 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
 
     @Test
     void shouldNotFuzzIfRefDataField() {
-        Map<String, String> refData = Map.of("field", "test");
+        Map<String, Object> refData = Map.of("field", "test");
         Mockito.when(filesArguments.getRefData("/test")).thenReturn(refData);
         Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.isFuzzerWillingToFuzz(mockFuzzingData(), "field")).isFalse();
     }
 
     @Test
     void shouldNotFuzzWhenEnum() {
-        Map<String, String> refData = Map.of("field", "test");
+        Map<String, Object> refData = Map.of("field", "test");
         Mockito.when(filesArguments.getRefData("/test")).thenReturn(refData);
         Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.isFuzzerWillingToFuzz(mockFuzzingData(), "pet#age")).isFalse();
     }

@@ -232,8 +232,8 @@ public class ServiceCaller {
     String addAdditionalQueryParams(String startingUrl, String currentPath) {
         HttpUrl.Builder httpUrl = HttpUrl.get(startingUrl).newBuilder();
 
-        for (Map.Entry<String, String> queryParamEntry : filesArguments.getAdditionalQueryParamsForPath(currentPath).entrySet()) {
-            httpUrl.addQueryParameter(queryParamEntry.getKey(), queryParamEntry.getValue());
+        for (Map.Entry<String, Object> queryParamEntry : filesArguments.getAdditionalQueryParamsForPath(currentPath).entrySet()) {
+            httpUrl.addQueryParameter(queryParamEntry.getKey(), String.valueOf(queryParamEntry.getValue()));
         }
 
         return httpUrl.build().toString();
@@ -506,12 +506,12 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
-        Map<String, String> userSuppliedHeaders = filesArguments.getHeaders(data.getRelativePath());
+        Map<String, Object> userSuppliedHeaders = filesArguments.getHeaders(data.getRelativePath());
         logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getRelativePath(), userSuppliedHeaders);
 
         Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> CatsDSLParser.parseAndGetResult(entry.getValue(), authArguments.getAuthScriptAsMap())));
+                        entry -> CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), authArguments.getAuthScriptAsMap())));
 
         for (Map.Entry<String, String> suppliedHeader : suppliedHeaders.entrySet()) {
             if (data.isAddUserHeaders()) {
@@ -557,11 +557,11 @@ public class ServiceCaller {
     }
 
     private String replacePathWithRefData(ServiceData data, String currentUrl) {
-        Map<String, String> currentPathRefData = filesArguments.getRefData(data.getRelativePath());
+        Map<String, Object> currentPathRefData = filesArguments.getRefData(data.getRelativePath());
         logger.debug("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
-        for (Map.Entry<String, String> entry : currentPathRefData.entrySet()) {
-            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", entry.getValue());
+        for (Map.Entry<String, Object> entry : currentPathRefData.entrySet()) {
+            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
             data.getPathParams().add(entry.getKey());
         }
 
@@ -580,10 +580,10 @@ public class ServiceCaller {
             logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return data.getPayload();
         } else {
-            Map<String, String> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
+            Map<String, Object> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
 
-            Map<String, String> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
+            Map<String, Object> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             String payload = data.getPayload();
@@ -591,11 +591,13 @@ public class ServiceCaller {
             /*this will override refData for DELETE requests in order to provide valid entities that will get deleted*/
             refDataWithoutAdditionalProperties.putAll(this.getPathParamFromCorrespondingPostIfDelete(data));
 
-            for (Map.Entry<String, String> entry : refDataWithoutAdditionalProperties.entrySet()) {
-                String refDataValue = CatsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.REQUEST, data.getPayload()));
-
+            for (Map.Entry<String, Object> entry : refDataWithoutAdditionalProperties.entrySet()) {
+                Object refDataValue = entry.getValue();
+                if (refDataValue instanceof String str) {
+                    refDataValue = CatsDSLParser.parseAndGetResult(str, Map.of(Parser.REQUEST, data.getPayload()));
+                }
                 try {
-                    if (CATS_REMOVE_FIELD.equalsIgnoreCase(refDataValue)) {
+                    if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
                         payload = JsonUtils.deleteNode(payload, entry.getKey());
                     } else {
 

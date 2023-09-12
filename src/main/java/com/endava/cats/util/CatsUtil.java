@@ -133,9 +133,9 @@ public class CatsUtil {
      * @param payload           the existing payload
      * @return a payload with additionalProperties added
      */
-    public String setAdditionalPropertiesToPayload(Map<String, String> currentPathValues, String payload) {
-        String additionalProperties = currentPathValues.get(ADDITIONAL_PROPERTIES);
-        if (!"null".equalsIgnoreCase(additionalProperties) && additionalProperties != null && StringUtils.isNotBlank(payload)) {
+    public String setAdditionalPropertiesToPayload(Map<String, Object> currentPathValues, String payload) {
+        String additionalProperties = WordUtils.nullOrValueOf(currentPathValues.get(ADDITIONAL_PROPERTIES));
+        if (additionalProperties != null && StringUtils.isNotBlank(payload)) {
             DocumentContext jsonDoc = JsonPath.parse(payload);
             String mapValues = additionalProperties;
             String prefix = "$";
