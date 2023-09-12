@@ -15,6 +15,7 @@ public abstract class WordUtils {
     private WordUtils() {
         //ntd
     }
+
     /**
      * Starts from a list of words and creates all possible combinations matching all cases and delimiters.
      *
@@ -50,5 +51,9 @@ public abstract class WordUtils {
         }
 
         return result;
+    }
+
+    public static String nullOrValueOf(Object obj) {
+        return obj == null ? null : String.valueOf(obj);
     }
 }

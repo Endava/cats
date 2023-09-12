@@ -15,6 +15,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -54,13 +55,13 @@ public class CustomFuzzerUtil {
     }
 
 
-    public void process(FuzzingData data, String testName, Map<String, String> currentPathValues) {
+    public void process(FuzzingData data, String testName, Map<String, Object> currentPathValues) {
         int howManyTests = this.getNumberOfIterationsBasedOnHeaders(data, currentPathValues);
         boolean isHeadersFuzzing = currentPathValues.get(CATS_HEADERS) != null;
         CatsHeader[] arrayOfHeaders = data.getHeaders().toArray(new CatsHeader[0]);
 
         for (int i = 0; i < howManyTests; i++) {
-            String expectedResponseCode = currentPathValues.get(EXPECTED_RESPONSE_CODE);
+            String expectedResponseCode = String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE));
             this.startCustomTest(testName, currentPathValues, expectedResponseCode);
 
             String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
@@ -74,7 +75,7 @@ public class CustomFuzzerUtil {
 
             this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
 
-            String verify = currentPathValues.get(VERIFY);
+            String verify = WordUtils.nullOrValueOf(currentPathValues.get(VERIFY));
 
             if (verify != null) {
                 this.checkVerifiesAndReport(data, payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
@@ -84,18 +85,18 @@ public class CustomFuzzerUtil {
         }
     }
 
-    private Set<CatsHeader> getHeaders(CatsHeader[] existingHeaders, Map<String, String> currentPathValues, boolean isHeadersFuzzing, int i) {
+    private Set<CatsHeader> getHeaders(CatsHeader[] existingHeaders, Map<String, Object> currentPathValues, boolean isHeadersFuzzing, int i) {
         Set<CatsHeader> headers = new java.util.HashSet<>(Set.of(existingHeaders));
         if (!headers.isEmpty() && isHeadersFuzzing) {
             CatsHeader headerToReplace = existingHeaders[i];
-            String toReplaceWith = currentPathValues.get(headerToReplace.getName());
-            headerToReplace.withValue(toReplaceWith);
+            Object toReplaceWith = currentPathValues.get(headerToReplace.getName());
+            headerToReplace.withValue(WordUtils.nullOrValueOf(toReplaceWith));
             headers.add(headerToReplace);
         }
         return headers;
     }
 
-    private int getNumberOfIterationsBasedOnHeaders(FuzzingData data, Map<String, String> currentPathValues) {
+    private int getNumberOfIterationsBasedOnHeaders(FuzzingData data, Map<String, Object> currentPathValues) {
         boolean isHeadersFuzzing = currentPathValues.get(CATS_HEADERS) != null;
         if (isHeadersFuzzing) {
             log.note("Fuzzing headers! Total number of headers: {}", data.getHeaders().size());
@@ -105,13 +106,13 @@ public class CustomFuzzerUtil {
         return 1;
     }
 
-    private void setOutputVariables(Map<String, String> currentPathValues, CatsResponse response, String request) {
-        String output = currentPathValues.get(OUTPUT);
+    private void setOutputVariables(Map<String, Object> currentPathValues, CatsResponse response, String request) {
+        Object output = currentPathValues.get(OUTPUT);
 
         /* add all variables first; resolve any variables requiring request access, resolve response variables and merge all in the end.*/
         /* we merge request variables at the end, because otherwise the resolved values will try to be searched in response and result in NOT_SET*/
         if (output != null) {
-            Map<String, String> variablesFromYaml = this.parseYmlEntryIntoMap(output);
+            Map<String, String> variablesFromYaml = this.parseYmlEntryIntoMap(String.valueOf(output));
             this.variables.putAll(variablesFromYaml);
             Map<String, String> requestVariables = matchVariablesFromRequest(request);
             this.variables.putAll(matchVariablesWithTheResponse(response, variablesFromYaml, Map.Entry::getValue));
@@ -211,8 +212,8 @@ public class CustomFuzzerUtil {
     }
 
 
-    public String getTestScenario(String testName, Map<String, String> currentPathValues) {
-        String description = currentPathValues.get(DESCRIPTION);
+    public String getTestScenario(String testName, Map<String, Object> currentPathValues) {
+        String description = WordUtils.nullOrValueOf(currentPathValues.get(DESCRIPTION));
         if (StringUtils.isNotBlank(description)) {
             return description;
         }
@@ -221,16 +222,16 @@ public class CustomFuzzerUtil {
     }
 
 
-    public void startCustomTest(String testName, Map<String, String> currentPathValues, String expectedResponseCode) {
+    public void startCustomTest(String testName, Map<String, Object> currentPathValues, String expectedResponseCode) {
         String testScenario = this.getTestScenario(testName, currentPathValues);
         testCaseListener.addScenario(log, "Scenario: {}", testScenario);
         testCaseListener.addExpectedResult(log, "Should return [{}]", expectedResponseCode);
     }
 
-    public String getJsonWithCustomValuesFromFile(FuzzingData data, Map<String, String> currentPathValues) {
+    public String getJsonWithCustomValuesFromFile(FuzzingData data, Map<String, Object> currentPathValues) {
         String payload = data.getPayload();
 
-        for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
+        for (Map.Entry<String, Object> entry : currentPathValues.entrySet()) {
             if (this.isCatsRemove(entry)) {
                 payload = JsonUtils.deleteNode(payload, entry.getKey());
             } else if (this.isNotAReservedWord(entry.getKey())) {
@@ -243,8 +244,8 @@ public class CustomFuzzerUtil {
         return payload;
     }
 
-    public boolean isCatsRemove(Map.Entry<String, String> keyValue) {
-        return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(keyValue.getValue());
+    public boolean isCatsRemove(Map.Entry<String, Object> keyValue) {
+        return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(keyValue.getValue()));
     }
 
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
@@ -253,8 +254,8 @@ public class CustomFuzzerUtil {
 
         if (this.entryIsValid((Map<String, Object>) value) && isValidOneOf) {
             this.pathsWithInputVariables.put(data.getPath(), (Map<String, Object>) value);
-            List<Map<String, String>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
-            for (Map<String, String> testCase : individualTestCases) {
+            List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
+            for (Map<String, Object> testCase : individualTestCases) {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
             }
         } else if (!isValidOneOf) {
@@ -296,31 +297,31 @@ public class CustomFuzzerUtil {
      * @param testCase object from the custom fuzzer file
      * @return individual requests
      */
-    public List<Map<String, String>> createIndividualRequest(Map<String, Object> testCase) {
+    public List<Map<String, Object>> createIndividualRequest(Map<String, Object> testCase) {
         Optional<Map.Entry<String, Object>> listOfValuesOptional = testCase.entrySet().stream().filter(entry -> entry.getValue() instanceof List).findFirst();
-        List<Map<String, String>> allValues = new ArrayList<>();
+        List<Map<String, Object>> allValues = new ArrayList<>();
 
         if (listOfValuesOptional.isPresent()) {
             Map.Entry<String, Object> listOfValues = listOfValuesOptional.get();
             for (Object value : (List<?>) listOfValues.getValue()) {
                 testCase.put(listOfValues.getKey(), value);
                 allValues.add(testCase.entrySet()
-                        .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
+                        .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
             }
             return List.copyOf(allValues);
         }
 
         return Collections.singletonList(testCase.entrySet()
-                .stream().collect(Collectors.toMap(Map.Entry::getKey, en -> String.valueOf(en.getValue()))));
+                .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
-    public String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, String> currentPathValues) {
+    public String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, Object> currentPathValues) {
         String newPath = data.getPath();
         if (HttpMethod.requiresBody(data.getMethod())) {
-            for (Map.Entry<String, String> entry : currentPathValues.entrySet()) {
-                String valueToReplaceWith = entry.getValue();
-                if (this.isVariable(entry.getValue())) {
-                    valueToReplaceWith = variables.getOrDefault(this.getVariableName(entry.getValue()), NOT_SET);
+            for (Map.Entry<String, Object> entry : currentPathValues.entrySet()) {
+                String valueToReplaceWith = String.valueOf(entry.getValue());
+                if (this.isVariable(valueToReplaceWith)) {
+                    valueToReplaceWith = variables.getOrDefault(this.getVariableName(valueToReplaceWith), NOT_SET);
                 }
                 newPath = newPath.replace("{" + entry.getKey() + "}", valueToReplaceWith);
             }
@@ -332,12 +333,15 @@ public class CustomFuzzerUtil {
         return !RESERVED_WORDS.contains(key);
     }
 
-    private String replaceElementWithCustomValue(Map.Entry<String, String> keyValue, String payload) {
+    private String replaceElementWithCustomValue(Map.Entry<String, Object> keyValue, String payload) {
         Map<String, String> contextForParser = new HashMap<>();
         contextForParser.put(Parser.REQUEST, payload);
         contextForParser.putAll(variables);
 
-        String toReplace = CatsDSLParser.parseAndGetResult(this.getPropertyValueToReplaceInBody(keyValue), contextForParser);
+        Object toReplace = this.getPropertyValueToReplaceInBody(keyValue);
+        if (toReplace instanceof String str) {
+            toReplace = CatsDSLParser.parseAndGetResult(str, contextForParser);
+        }
         try {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
             return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).json();
@@ -348,11 +352,11 @@ public class CustomFuzzerUtil {
         }
     }
 
-    public String getPropertyValueToReplaceInBody(Map.Entry<String, String> keyValue) {
-        String propertyValue = keyValue.getValue();
+    public Object getPropertyValueToReplaceInBody(Map.Entry<String, Object> keyValue) {
+        Object propertyValue = keyValue.getValue();
 
-        if (this.isVariable(propertyValue)) {
-            String variableValue = variables.get(this.getVariableName(propertyValue));
+        if (this.isVariable(String.valueOf(propertyValue))) {
+            String variableValue = variables.get(this.getVariableName(String.valueOf(propertyValue)));
 
             if (variableValue == null) {
                 log.error("Supplied variable was not found [{}]", propertyValue);

@@ -118,8 +118,8 @@ class BypassAuthenticationFuzzerTest {
         Assertions.assertThat(authHeaders).containsExactlyInAnyOrder("api-key", "authorization", "jwt");
     }
 
-    private Map<String, String> createCustomFuzzerFile() {
-        Map<String, String> tests = new HashMap<>();
+    private Map<String, Object> createCustomFuzzerFile() {
+        Map<String, Object> tests = new HashMap<>();
         tests.put("jwt", "v1");
         tests.put("authorization", "200");
         tests.put("cats", "mumu");
