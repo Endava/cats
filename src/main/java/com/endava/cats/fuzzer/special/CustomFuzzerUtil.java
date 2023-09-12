@@ -312,7 +312,7 @@ public class CustomFuzzerUtil {
         }
 
         return Collections.singletonList(testCase.entrySet()
-                .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                .stream().collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll));
     }
 
     public String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, Object> currentPathValues) {
