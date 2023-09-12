@@ -14,7 +14,7 @@
         <jansi.version>2.4.0</jansi.version>
         <lombok.version>1.18.28</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
-        <wiremock-jre8.version>2.35.0</wiremock-jre8.version>
+        <wiremock-jre8.version>2.35.1</wiremock-jre8.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <openapi-generator.version>6.6.0</openapi-generator.version>
         <sonar.coverage.exclusions>
