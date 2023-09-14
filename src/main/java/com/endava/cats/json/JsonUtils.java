@@ -155,18 +155,20 @@ public abstract class JsonUtils {
         } catch (PathNotFoundException e) {
             String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
             String replacementKey = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
-            String interimPayload = JsonPath.parse(payload).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
+            if (payload.contains("_OF")) {
+                String interimPayload = JsonPath.parse(payload).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
 
-            DocumentContext finalPayload = JsonPath.parse(interimPayload);
-            toEliminate.forEach(toEliminateKey -> {
-                try {
-                    finalPayload.delete(pathTowardsReplacement + "." + toEliminateKey);
-                } catch (PathNotFoundException ex) {
-                    LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
-                }
-            });
-
-            return finalPayload.jsonString();
+                DocumentContext finalPayload = JsonPath.parse(interimPayload);
+                toEliminate.forEach(toEliminateKey -> {
+                    try {
+                        finalPayload.delete(pathTowardsReplacement + "." + toEliminateKey);
+                    } catch (PathNotFoundException ex) {
+                        LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
+                    }
+                });
+                return finalPayload.jsonString();
+            }
+            return payload;
         }
     }
 

@@ -11,6 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -437,8 +438,13 @@ public class FuzzingDataFactory {
 
     private Map<String, Map<String, JsonElement>> getAnyOrOneOffElements(String jsonElementKey, JsonElement jsonElement) {
         Map<String, Map<String, JsonElement>> anyOrOneOfs = new HashMap<>();
-
-        for (Map.Entry<String, JsonElement> elementEntry : jsonElement.getAsJsonObject().entrySet()) {
+        JsonObject jsonObject = null;
+        if (jsonElement.isJsonArray()) {
+            jsonObject = jsonElement.getAsJsonArray().get(0).getAsJsonObject();
+        } else {
+            jsonObject = jsonElement.getAsJsonObject();
+        }
+        for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
             if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull()) {
                 anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
             } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
@@ -476,16 +482,12 @@ public class FuzzingDataFactory {
 
     /**
      * Creates a fully qualified Json path.
-     * If the initial path ends with an array, it won't add the elementEntry.
      *
      * @param jsonElementKey the initial path
      * @param elementEntry   the next element path
      * @return a fully qualified JsonPath
      */
     private String createSimpleElementPath(String jsonElementKey, String elementEntry) {
-        if (jsonElementKey.contains("[*]")) {
-            return jsonElementKey;
-        }
         return jsonElementKey + "." + elementEntry;
     }
 
