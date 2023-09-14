@@ -202,6 +202,17 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateValidResponseForOneOfNestedCombinations() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/api/groops/{groopId}/StartGroopitPaging", "src/test/resources/nswag_gen_oneof.json");
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
+        Assertions.assertThat(firstData.getResponses().get("200")).hasSize(9);
+        String firstResponse = firstData.getResponses().get("200").get(0);
+        Assertions.assertThat(firstResponse).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
+    }
+
+    @Test
     void shouldThrowExceptionWhenSchemeDoesNotExist() {
         Assertions.assertThatThrownBy(() -> setupFuzzingData("/pet-types", "src/test/resources/petstore-no-schema.yml")).isInstanceOf(IllegalArgumentException.class);
     }
