@@ -52,7 +52,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public void run() {
         catsCommand.apiArguments.setContract(contract);
         catsCommand.apiArguments.setServer("empty");
-        catsCommand.filterArguments.customFilter("Contract");
+        catsCommand.filterArguments.customFilter("Linter");
         catsCommand.filterArguments.getSkipFuzzers().addAll(Optional.ofNullable(skipFuzzers).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
         catsCommand.run();

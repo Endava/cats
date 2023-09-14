@@ -39,7 +39,8 @@ class LintCommandTest {
     @Test
     void shouldRunContractFuzzers() {
         lintCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("Contract");
+        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("Linter");
+        //TODO check that it actually runs
     }
 
     @Test
