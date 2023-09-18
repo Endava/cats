@@ -16,7 +16,7 @@
         <rgxgen.version>1.4</rgxgen.version>
         <wiremock-jre8.version>3.0.1</wiremock-jre8.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <openapi-generator.version>6.6.0</openapi-generator.version>
+        <openapi-generator.version>7.0.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -48,7 +48,8 @@
         <json-smart.version>2.5.0</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-        <snakeyaml.version>1.33</snakeyaml.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
+        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -407,6 +408,12 @@
             <artifactId>snakeyaml</artifactId>
             <version>${snakeyaml.version}</version>
         </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>${javax.validation-api.version}</version>
+        </dependency>
+
     </dependencies>
     <repositories>
         <repository>
