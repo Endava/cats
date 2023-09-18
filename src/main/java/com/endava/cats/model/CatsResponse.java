@@ -46,4 +46,6 @@ public class CatsResponse {
     public String responseCodeAsResponseRange() {
         return responseCodeAsString().charAt(0) + "XX";
     }
+
+    public static class CatsResponseBuilder {}
 }
