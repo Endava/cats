@@ -16,7 +16,7 @@ jobs:
 
       - name: Set up Apache Maven Central
         uses: actions/setup-java@v3
-        with: # running setup-java again overwrites the settings.xml
+        with:
           distribution: 'temurin'
           java-version: '17'
           server-id: ossrh
@@ -34,3 +34,4 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME}}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.OSSRH_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
