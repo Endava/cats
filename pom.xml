@@ -5,6 +5,17 @@
     <artifactId>cats</artifactId>
     <description>OpenAPI Fuzzer and Negative Testing Tool</description>
     <version>9.0.2-SNAPSHOT</version>
+    <name>CATS</name>
+
+    <developers>
+        <developer>
+            <id>Madalin Ilie</id>
+            <name>Madalin Ilie</name>
+            <email>madalin.ilie@endava.com</email>
+            <organization>Endava</organization>
+            <organizationUrl>https://endava.com</organizationUrl>
+        </developer>
+    </developers>
 
     <properties>
         <java.version>17</java.version>
@@ -246,6 +257,7 @@
             <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+
     <profiles>
         <profile>
             <id>sign</id>
