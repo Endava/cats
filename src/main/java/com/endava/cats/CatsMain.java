@@ -12,7 +12,6 @@ import jakarta.inject.Inject;
 /**
  * We need to print the build version and build time
  */
-
 @QuarkusMain
 public class CatsMain implements QuarkusApplication {
 

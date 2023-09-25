@@ -9,6 +9,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Model class used to stored request details.
+ */
 @Getter
 @Setter
 @Builder

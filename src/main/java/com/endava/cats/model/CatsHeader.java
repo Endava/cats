@@ -30,14 +30,30 @@ public class CatsHeader {
         this.value = this.generateValue(param.getSchema());
     }
 
+    /**
+     * Creates a new CatsHeader from a OpenAPI Parameter object.
+     *
+     * @param param the OpenAPI Parameter object
+     * @return a CatsHeader object created based on the supplied Parameter
+     */
     public static CatsHeader fromHeaderParameter(Parameter param) {
         return new CatsHeader(param);
     }
 
+    /**
+     * Sets the header's value.
+     *
+     * @param value the value to be set
+     */
     public void withValue(String value) {
         this.value = value;
     }
 
+    /**
+     * Truncates the value if is longer than 50 characters.
+     *
+     * @return a truncated value of the header
+     */
     public String getTruncatedValue() {
         if (this.value != null && this.value.length() > 50) {
             return this.value.substring(0, 20) + "...[Total length:" + this.value.length() + "]";
@@ -47,6 +63,11 @@ public class CatsHeader {
     }
 
 
+    /**
+     * Creates a copy of the current header.
+     *
+     * @return a copy of the current header
+     */
     public CatsHeader copy() {
         return CatsHeader.builder().name(this.name).required(this.required).value(this.value).build();
     }
@@ -81,6 +102,11 @@ public class CatsHeader {
         return this.name;
     }
 
+    /**
+     * Concatenates the header name and value using the equal sign.
+     *
+     * @return the concatenated value
+     */
     public String nameAndValue() {
         return name + "=" + value;
     }
