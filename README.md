@@ -103,7 +103,7 @@ Head to the releases page to download the latest version: [https://github.com/En
 You can build CATS from sources on you local box. You need [Java 17+](https://sdkman.io/jdks). Maven is already bundled.
 
 > Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork of [OKHttp](https://square.github.io/okhttp/) which will install locally
-under the `4.10.0-CATS` version, so don't worry about overriding the official versions.
+under the `4.11.0-CATS` version, so don't worry about overriding the official versions.
 
 
 You can use the following Maven command to build the project as an uberjar:
@@ -117,13 +117,32 @@ You can also build native images using a [GraalVM Java version](https://www.graa
 
 `./mvnw package -Pnative`
 
-> You will need to configure Maven with a [GitHub PAT](https://docs.github.com/en/free-pro-team@latest/packages/guides/configuring-apache-maven-for-use-with-github-packages) with `read-packages` scope to get some dependencies for the build.
-
-
 ### Notes on Unit Tests
 
 You may see some `error` log messages while running the Unit Tests. Those are expected behaviour for testing the negative scenarios of the Fuzzers.
 
+## Experimental: Maven dependency for programmatic use
+CATS doesn't have explicit support (yet) for programmatic use via JUnit or TestNG. 
+You can however experiment with running the `CatsMain` class with the same arguments as you would run in the command line.
+
+You must add these 2 dependencies:
+
+```xml
+<dependency>
+    <groupId>com.squareup.okhttp3</groupId>
+    <artifactId>okhttp</artifactId>
+    <version>4.11.0</version>
+</dependency>
+<dependency>
+    <groupId>com.endava</groupId>
+    <artifactId>cats</artifactId>
+    <version>9.0.3</version>
+</dependency>
+```
+
+> Please not that you also need to explicitly add the `okhttp` dependency. 
+> CATS uses a fork of okhttp that is not published in Maven central.
+> When using CATS as a dependency, HTTP header fuzzers that prefix/suffix header values with spaces won't properly work.
 
 # Contributing
 Please refer to [CONTRIBUTING.md](CONTRIBUTING.md). 
