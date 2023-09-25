@@ -3,15 +3,39 @@ package com.endava.cats.util;
 import java.util.List;
 
 public abstract class CatsDSLWords {
+    /**
+     * Typically used to flag that user selected all fuzzers or paths.
+     */
     public static final String ALL = "all";
+    /**
+     * Reserved word used in CATS DSL files to describe the test case being run.
+     */
     public static final String DESCRIPTION = "description";
 
+    /**
+     * Reserved word used in CATS DSL files to verify a boolean expression.
+     */
     public static final String CHECK = "checkBoolean";
 
+    /**
+     * Self-explanatory.
+     */
     public static final String TRUE = "true";
+    /**
+     * Reserved word used in CATS DSL files to specify the http method to be run.
+     */
     public static final String HTTP_METHOD = "httpMethod";
+    /**
+     * Reserved word used in CATS DSL files to specify the expected HTTP response code when the test case is executed.
+     */
     public static final String EXPECTED_RESPONSE_CODE = "expectedResponseCode";
+    /**
+     * Reserved word used in CATS DSL files to specify output variables.
+     */
     public static final String OUTPUT = "output";
+    /**
+     * Reserved word used in CATS DSL files to verify different assertions.
+     */
     public static final String VERIFY = "verify";
     public static final String STRINGS_FILE = "stringsFile";
     public static final String TARGET_FIELDS = "targetFields";

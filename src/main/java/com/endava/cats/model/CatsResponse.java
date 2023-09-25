@@ -9,6 +9,9 @@ import lombok.Getter;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Model class used to hold http response details.
+ */
 @Builder
 @Getter
 public class CatsResponse {
@@ -35,6 +38,11 @@ public class CatsResponse {
     }
 
 
+    /**
+     * Returns an empty response with default values.
+     *
+     * @return a object which can be considered empty
+     */
     public static CatsResponse empty() {
         return CatsResponse.from(999, "{}", "", 0);
     }
@@ -47,5 +55,6 @@ public class CatsResponse {
         return responseCodeAsString().charAt(0) + "XX";
     }
 
-    public static class CatsResponseBuilder {}
+    public static class CatsResponseBuilder {
+    }
 }

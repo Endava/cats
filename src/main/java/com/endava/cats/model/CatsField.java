@@ -6,6 +6,9 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
+/**
+ * An internal representation of a field from OpenAPI.
+ */
 @Builder
 @ToString(of = {"name", "required"})
 @EqualsAndHashCode(of = "name")
