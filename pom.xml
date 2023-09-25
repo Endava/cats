@@ -67,7 +67,7 @@
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
-        <okio.version>3.2.0</okio.version>
+        <okio.version>3.4.0</okio.version>
         <wiremock.version>3.1.0</wiremock.version>
     </properties>
     <dependencyManagement>
