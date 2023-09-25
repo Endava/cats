@@ -154,8 +154,8 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
-        Mockito.verify(testCaseListener, Mockito.times(8)).afterFuzz();
-        Mockito.verify(testCaseListener, Mockito.times(8)).beforeFuzz(PathTagsLinterFuzzer.class);
+        Mockito.verify(testCaseListener, Mockito.times(10)).afterFuzz();
+        Mockito.verify(testCaseListener, Mockito.times(10)).beforeFuzz(PathTagsLinterFuzzer.class);
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
