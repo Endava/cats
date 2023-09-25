@@ -202,6 +202,16 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void testAgain() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pets-batch", "src/test/resources/petstore.yml");
+
+        Assertions.assertThat(dataList).hasSize(2);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
+        Assertions.assertThat(JsonParser.parseString(firstData.getPayload()).isJsonArray()).isTrue();
+    }
+
+    @Test
     void shouldGenerateValidResponseForOneOfNestedCombinations() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/api/groops/{groopId}/StartGroopitPaging", "src/test/resources/nswag_gen_oneof.json");
         Assertions.assertThat(dataList).hasSize(1);

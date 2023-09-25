@@ -108,6 +108,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /pets-batch:
+    post:
+      description: Creates a batch of pets in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pets'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /pet-types:
     post:
       description: Creates a new pet in the store.  Duplicates are allowed

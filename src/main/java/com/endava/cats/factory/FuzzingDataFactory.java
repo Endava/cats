@@ -373,7 +373,7 @@ public class FuzzingDataFactory {
         JsonElement jsonElement = JsonParser.parseString(initialPayload);
 
         if (jsonElement.isJsonArray()) {
-            result = this.addNewCombination(jsonElement.getAsJsonArray().get(0));
+            result = this.buildArray(this.addNewCombination(jsonElement.getAsJsonArray().get(0)));
         }
         if (jsonElement.isJsonObject()) {
             result = this.addNewCombination(jsonElement);
@@ -383,6 +383,16 @@ public class FuzzingDataFactory {
         }
 
         return result;
+    }
+
+    private List<String> buildArray(List<String> singleElements) {
+        return singleElements
+                .stream()
+                .map(element -> {
+                    JsonElement jsonElement = JsonUtils.parseAsJsonElement(element);
+                    return JsonUtils.GSON.toJson(List.of(jsonElement, jsonElement));
+                })
+                .toList();
     }
 
     /**
