@@ -60,7 +60,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         defaultValueProvider = CommandLine.PropertiesDefaultProvider.class,
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
-//        resourceBundle = "version",
+        resourceBundle = "version",
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
                 CommandLine.HelpCommand.class,
