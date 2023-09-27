@@ -16,6 +16,7 @@ import com.endava.cats.util.VersionProvider;
 import com.google.common.net.HttpHeaders;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.quarkus.arc.Unremovable;
 import picocli.CommandLine;
 
 import jakarta.inject.Inject;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
         exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
+@Unremovable
 public class TemplateFuzzCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzCommand.class);
     @CommandLine.Parameters(index = "0",

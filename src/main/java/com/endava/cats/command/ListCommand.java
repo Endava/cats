@@ -16,6 +16,7 @@ import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.quarkus.arc.Unremovable;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.fusesource.jansi.Ansi;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -41,6 +42,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
         versionProvider = VersionProvider.class)
 @Dependent
+@Unremovable
 public class ListCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     private final List<Fuzzer> fuzzersList;
