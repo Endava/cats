@@ -3,6 +3,7 @@ package com.endava.cats.command;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.util.VersionProvider;
+import io.quarkus.arc.Unremovable;
 import picocli.CommandLine;
 
 import jakarta.enterprise.context.Dependent;
@@ -26,6 +27,7 @@ import java.util.Optional;
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Dependent
+@Unremovable
 public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Inject

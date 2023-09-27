@@ -8,6 +8,7 @@ import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.quarkus.arc.Unremovable;
 import picocli.CommandLine;
 
 import jakarta.enterprise.context.Dependent;
@@ -32,6 +33,7 @@ import java.util.Map;
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Dependent
+@Unremovable
 public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RunCommand.class);
 

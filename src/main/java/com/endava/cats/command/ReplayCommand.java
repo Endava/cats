@@ -12,6 +12,7 @@ import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.quarkus.arc.Unremovable;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,7 @@ import java.util.Optional;
         description = "Replay previously executed CATS tests",
         versionProvider = VersionProvider.class)
 @Dependent
+@Unremovable
 public class ReplayCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ReplayCommand.class);
     private final ServiceCaller serviceCaller;
