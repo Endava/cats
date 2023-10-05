@@ -154,9 +154,9 @@ public class CustomFuzzerUtil {
                 }
             });
 
-            if (errorMessages.length() == 0 && ResponseCodeFamily.matchAsCodeOrRange(expectedResponseCode, response.responseCodeAsString())) {
+            if (errorMessages.isEmpty() && ResponseCodeFamily.matchAsCodeOrRange(expectedResponseCode, response.responseCodeAsString())) {
                 testCaseListener.reportResultInfo(log, data, "Response matches all 'verify' parameters");
-            } else if (errorMessages.length() == 0) {
+            } else if (errorMessages.isEmpty()) {
                 testCaseListener.reportResultWarn(log, data, "Returned response code not matching expected response code",
                         "Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]", expectedResponseCode, response.responseCodeAsString());
             } else {
