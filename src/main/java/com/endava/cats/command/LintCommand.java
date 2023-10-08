@@ -4,10 +4,8 @@ import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.util.VersionProvider;
 import io.quarkus.arc.Unremovable;
-import picocli.CommandLine;
-
-import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import picocli.CommandLine;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +24,6 @@ import java.util.Optional;
         exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
-@Dependent
 @Unremovable
 public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
 

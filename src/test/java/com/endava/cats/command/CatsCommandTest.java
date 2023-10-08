@@ -51,6 +51,7 @@ class CatsCommandTest {
         filterArguments = Mockito.mock(FilterArguments.class);
         ReflectionTestUtils.setField(catsMain, "filterArguments", filterArguments);
         Mockito.when(filterArguments.getHttpMethods()).thenReturn(HttpMethod.restMethods());
+        catsMain.initLogger();
     }
 
     @Test

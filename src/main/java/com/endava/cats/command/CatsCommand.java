@@ -28,7 +28,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
-import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -70,9 +69,8 @@ import static org.fusesource.jansi.Ansi.ansi;
                 TemplateFuzzCommand.class,
                 LintCommand.class
         })
-@Dependent
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
+    private PrettyLogger logger;
     private static final String SEPARATOR = StringUtils.repeat("-", 100);
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     @Inject
@@ -132,6 +130,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Override
     public void run() {
         try {
+            initLogger();
             Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
             this.doLogic();
@@ -145,6 +144,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             logger.debug("Stacktrace", e);
             exitCodeDueToErrors = 192;
         }
+    }
+
+    /**
+     * We postpone log initialization in order to be able to process arguments related to logging
+     * passed through the command line.
+     */
+    void initLogger() {
+        logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
     }
 
     void printVersion(Future<VersionChecker.CheckResult> newVersion) throws ExecutionException, InterruptedException {

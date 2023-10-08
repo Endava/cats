@@ -1,9 +1,9 @@
 package com.endava.cats.command;
 
-import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
@@ -18,13 +18,12 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
 import io.swagger.v3.oas.models.OpenAPI;
+import jakarta.enterprise.inject.Any;
+import jakarta.enterprise.inject.Instance;
 import org.fusesource.jansi.Ansi;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
-import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.inject.Any;
-import jakarta.enterprise.inject.Instance;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
@@ -41,7 +40,6 @@ import static org.fusesource.jansi.Ansi.ansi;
         exitCodeOnExecutionException = 192,
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
         versionProvider = VersionProvider.class)
-@Dependent
 @Unremovable
 public class ListCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
