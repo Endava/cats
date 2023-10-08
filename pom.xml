@@ -40,7 +40,7 @@
         <maven-project-info-reports-plugin.version>3.4.2</maven-project-info-reports-plugin.version>
         <spotbugs-maven-plugin.version>4.7.3.0</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.9.1.2184</sonar-maven-plugin.version>
-        <pretty-logger.version>1.15</pretty-logger.version>
+        <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.10</compiler.version>
         <json-path.version>2.8.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>

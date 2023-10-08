@@ -9,10 +9,9 @@ import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
+import jakarta.inject.Inject;
 import picocli.CommandLine;
 
-import jakarta.enterprise.context.Dependent;
-import jakarta.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +31,6 @@ import java.util.Map;
         exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
-@Dependent
 @Unremovable
 public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RunCommand.class);
