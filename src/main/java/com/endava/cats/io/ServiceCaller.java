@@ -22,7 +22,6 @@ import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.html.HtmlEscapers;
 import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
@@ -576,7 +575,7 @@ public class ServiceCaller {
      * @return the initial payload with reference data replaced and matching POST correlations for DELETE requests
      */
     String replacePayloadWithRefData(ServiceData data) {
-        if (!data.isReplaceRefData()) {
+        if (!data.isReplaceRefData() || "null".equals(data.getPayload())) {
             logger.note("Bypassing reference data replacement for path {}!", data.getRelativePath());
             return data.getPayload();
         } else {
