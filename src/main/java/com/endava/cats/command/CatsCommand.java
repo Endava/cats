@@ -29,6 +29,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Inject;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.AutoComplete;
@@ -122,6 +123,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     VersionChecker versionChecker;
 
+    @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
 
@@ -306,6 +308,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.processLogLevelArgument();
         filesArguments.loadConfig();
         apiArguments.validateRequired(spec);
+        apiArguments.setUserAgent(appVersion);
     }
 
     private void processLogLevelArgument() {
