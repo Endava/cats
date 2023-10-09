@@ -1,10 +1,9 @@
 package com.endava.cats.args;
 
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
-
-import jakarta.inject.Singleton;
 
 /**
  * Holds all arguments related to API details.
@@ -32,6 +31,10 @@ public class ApiArguments {
             defaultValue = "10")
     private int readTimeout = 10;
 
+    @CommandLine.Option(names = {"--userAgent"},
+            description = "The user agent to be set in the User-Agent HTTP header. Default: @|bold,underline cats/${app.version}|@")
+    private String userAgent;
+
     @Setter
     @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract")
@@ -51,6 +54,12 @@ public class ApiArguments {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
         } else if (this.server == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --server=<server>");
+        }
+    }
+
+    public void setUserAgent(String version) {
+        if (userAgent == null) {
+            userAgent = "cats/" + version;
         }
     }
 }

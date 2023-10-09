@@ -451,6 +451,7 @@ public class ServiceCaller {
         data.getHeaders().forEach(header -> headers.add(new KeyValuePair<>(header.getName(), header.getValue())));
         addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
         addIfNotPresent(HttpHeaders.CONTENT_TYPE, data.getContentType(), data, headers);
+        addIfNotPresent(HttpHeaders.USER_AGENT, apiArguments.getUserAgent(), data, headers);
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<KeyValuePair<String, Object>> headers) {
