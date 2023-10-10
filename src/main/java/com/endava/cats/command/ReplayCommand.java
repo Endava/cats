@@ -92,6 +92,17 @@ public class ReplayCommand implements Runnable {
         String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
         logger.complete("Response body: \n{}", responseBody);
         this.writeTestJsonsIfSupplied(testCase, response);
+        this.showResponseCodesDifferences(testCase, response);
+    }
+
+    private void showResponseCodesDifferences(CatsTestCase catsTestCase, CatsResponse response) {
+        logger.noFormat("");
+        logger.star("Old response code: {}", catsTestCase.getResponse().getResponseCode());
+        logger.star("New response code: {}", response.getResponseCode());
+        logger.noFormat("");
+        logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody().toString());
+        logger.star("New response body: {}", response.getBody());
+        logger.noFormat("");
     }
 
     private void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) {
