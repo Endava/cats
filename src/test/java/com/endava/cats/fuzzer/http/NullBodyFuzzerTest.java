@@ -42,19 +42,6 @@ class NullBodyFuzzerTest {
     }
 
     @Test
-    void givenAHttpMethodWithoutPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
-
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
-
-        nullBodyFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.anyString());
-    }
-
-    @Test
     void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
@@ -78,7 +65,7 @@ class NullBodyFuzzerTest {
     }
 
     @Test
-    void shouldNotSkipForAnyHttpMethod() {
-        Assertions.assertThat(nullBodyFuzzer.skipForHttpMethods()).isEmpty();
+    void shouldSkipForNonHttpBodyMethods() {
+        Assertions.assertThat(nullBodyFuzzer.skipForHttpMethods()).contains(HttpMethod.GET, HttpMethod.DELETE);
     }
 }

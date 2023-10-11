@@ -100,7 +100,7 @@ public class ReplayCommand implements Runnable {
         logger.star("Old response code: {}", catsTestCase.getResponse().getResponseCode());
         logger.star("New response code: {}", response.getResponseCode());
         logger.noFormat("");
-        logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody().toString());
+        logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody());
         logger.star("New response body: {}", response.getBody());
         logger.noFormat("");
     }

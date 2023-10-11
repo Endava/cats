@@ -8,6 +8,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
+import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -30,7 +31,10 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> headers;
     private Map<String, Map<String, Object>> queryParams;
     private Map<String, Map<String, Object>> refData;
+
+    @Getter
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
+    @Getter
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
 
     @CommandLine.Option(names = {"--urlParams"},
@@ -100,8 +104,9 @@ public class FilesArguments {
         if (securityFuzzerFile == null) {
             log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
         } else {
-            log.config("Security Fuzzer file {}", securityFuzzerFile.getAbsolutePath());
-            securityFuzzerDetails = this.parseYaml(securityFuzzerFile.getAbsolutePath());
+            log.config(Ansi.ansi().bold().a("Security Fuzzer file: {}").reset().toString(),
+                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(securityFuzzerFile.getCanonicalPath()));
+            securityFuzzerDetails = this.parseYaml(securityFuzzerFile.getCanonicalPath());
         }
     }
 
@@ -109,8 +114,9 @@ public class FilesArguments {
         if (customFuzzerFile == null) {
             log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
         } else {
-            log.config("Functional Fuzzer file supplied {}", customFuzzerFile.getAbsolutePath());
-            customFuzzerDetails = this.parseYaml(customFuzzerFile.getAbsolutePath());
+            log.config(Ansi.ansi().bold().a("Functional Fuzzer file: {}").reset().toString(),
+                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(customFuzzerFile.getCanonicalPath()));
+            customFuzzerDetails = this.parseYaml(customFuzzerFile.getCanonicalPath());
         }
     }
 
@@ -126,7 +132,8 @@ public class FilesArguments {
         if (params == null) {
             log.debug("No URL parameters provided!");
         } else {
-            log.config("URL parameters: {}", params);
+            log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
+                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(params));
         }
     }
 
@@ -204,24 +211,6 @@ public class FilesArguments {
         return getPathAndAll(queryParams, path);
     }
 
-    /**
-     * Returns a Map representation of the --customFuzzer. Map keys are test cases IDs.
-     *
-     * @return a Map representation of the --customFuzzer
-     */
-    public Map<String, Map<String, Object>> getCustomFuzzerDetails() {
-        return this.customFuzzerDetails;
-    }
-
-    /**
-     * Returns a Map representation of the --securityFuzzer. Map keys are test cases IDs.
-     *
-     * @return a Map representation of the --securityFuzzer
-     */
-    public Map<String, Map<String, Object>> getSecurityFuzzerDetails() {
-        return this.securityFuzzerDetails;
-    }
-
 
     static Map<String, Object> getPathAndAll(Map<String, Map<String, Object>> collection, String path) {
         return collection.entrySet().stream()
@@ -234,8 +223,9 @@ public class FilesArguments {
         if (file == null) {
             log.debug("No {} file provided!", fileType);
         } else {
-            log.config("{} file supplied {}", fileType, file.getAbsolutePath());
-            fromFile = this.parseYaml(file.getAbsolutePath());
+            log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
+                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(file.getCanonicalPath()));
+            fromFile = this.parseYaml(file.getCanonicalPath());
             log.debug("{} file loaded successfully: {}", fileType, fromFile);
         }
         return fromFile;

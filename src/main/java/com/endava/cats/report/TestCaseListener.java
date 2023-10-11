@@ -176,8 +176,13 @@ public class TestCaseListener {
         MDC.put(FUZZER, CatsUtil.FUZZER_KEY_DEFAULT);
         MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
 
-        logger.start("Starting {}, version {}, build-time {} UTC", ansi().fg(Ansi.Color.GREEN).a(appName.toUpperCase()), ansi().fg(Ansi.Color.GREEN).a(appVersion), ansi().fg(Ansi.Color.GREEN).a(appBuildTime).reset());
-        logger.config("{}", ansi().fgGreen().a("Processing configuration...").reset());
+        String osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
+
+        logger.start(ansi().bold().a("Starting {}-{}, build time {} UTC, platform {}").reset().toString(),
+                ansi().fg(Ansi.Color.GREEN).a(appName),
+                ansi().fg(Ansi.Color.GREEN).a(appVersion),
+                ansi().fg(Ansi.Color.GREEN).a(appBuildTime),
+                ansi().fg(Ansi.Color.GREEN).a(osDetails).reset());
     }
 
     public void initReportingPath() throws IOException {

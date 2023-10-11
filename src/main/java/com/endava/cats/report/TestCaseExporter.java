@@ -93,7 +93,7 @@ public abstract class TestCaseExporter {
     }
 
     private void deleteFiles(Path path) throws IOException {
-        logger.start("Start cleaning up cats-report folder ...");
+        logger.debug("Start cleaning up cats-report folder ...");
         File[] files = path.toFile().listFiles();
         if (files != null) {
             for (File file : files) {
@@ -102,7 +102,7 @@ public abstract class TestCaseExporter {
                 }
             }
         }
-        logger.complete("Cleanup complete!");
+        logger.debug("Cleanup complete!");
     }
 
     public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
