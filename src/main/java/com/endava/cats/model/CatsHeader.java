@@ -102,15 +102,6 @@ public class CatsHeader {
         return this.name;
     }
 
-    /**
-     * Concatenates the header name and value using the equal sign.
-     *
-     * @return the concatenated value
-     */
-    public String nameAndValue() {
-        return name + "=" + value;
-    }
-
     @Override
     public String toString() {
         return "{" + "required=" + required + ", name='" + name + '\'' + '}';

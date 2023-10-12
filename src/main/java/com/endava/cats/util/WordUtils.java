@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.UnaryOperator;
@@ -55,5 +56,10 @@ public abstract class WordUtils {
 
     public static String nullOrValueOf(Object obj) {
         return obj == null ? null : String.valueOf(obj);
+    }
+
+    public static boolean containsAsAlphanumeric(String string1, String string2) {
+        return string1.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT)
+                .contains(string2.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT));
     }
 }

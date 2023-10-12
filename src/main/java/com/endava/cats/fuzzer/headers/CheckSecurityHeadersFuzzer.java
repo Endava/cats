@@ -5,23 +5,23 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
-import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
-import java.util.ArrayList;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.endava.cats.util.WordUtils.containsAsAlphanumeric;
 
 /**
  * Check that responses include Content-Type, Content-Type-Options, X-Frame-Options: deny
@@ -32,15 +32,15 @@ import java.util.stream.Collectors;
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     protected static final String SECURITY_HEADERS_AS_STRING;
-    private static final Map<String, List<CatsHeader>> SECURITY_HEADERS = new HashMap<>();
+    public static final Map<String, List<KeyValuePair<String, String>>> SECURITY_HEADERS = new HashMap<>();
 
     static {
-        SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(CatsHeader.builder().name("Cache-Control").value("no-store").build()));
-        SECURITY_HEADERS.put("X-Content-Type-Options", Collections.singletonList(CatsHeader.builder().name("X-Content-Type-Options").value("nosniff").build()));
-        SECURITY_HEADERS.put("X-Frame-Options/Content-Security-Policy", List.of(CatsHeader.builder().name("X-Frame-Options").value("DENY").build(),
-                CatsHeader.builder().name("Content-Security-Policy").value("frame-ancestors 'none'").build()));
-        SECURITY_HEADERS.put("X-XSS-Protection", List.of(CatsHeader.builder().name("X-XSS-Protection").value("1; mode=block").build(),
-                CatsHeader.builder().name("X-XSS-Protection").value("0").build()));
+        SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(new KeyValuePair<>("Cache-Control", "no-store")));
+        SECURITY_HEADERS.put("X-Content-Type-Options", Collections.singletonList(new KeyValuePair<>("X-Content-Type-Options", "nosniff")));
+        SECURITY_HEADERS.put("X-Frame-Options/Content-Security-Policy", List.of(new KeyValuePair<>("X-Frame-Options", "DENY"),
+                new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'")));
+        SECURITY_HEADERS.put("X-XSS-Protection", List.of(new KeyValuePair<>("X-XSS-Protection", null),
+                new KeyValuePair<>("X-XSS-Protection", "0")));
 
         SECURITY_HEADERS_AS_STRING = new HashSet<>(SECURITY_HEADERS.keySet()).toString();
     }
@@ -70,34 +70,40 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     }
 
     private void checkResponse(CatsResponse response, FuzzingData data) {
-        List<CatsHeader> missingSecurityHeaders = this.getMissingSecurityHeaders(response);
+        List<KeyValuePair<String, String>> missingSecurityHeaders = this.getMissingSecurityHeaders(response);
         if (!missingSecurityHeaders.isEmpty()) {
             testCaseListener.reportResultError(log, data, "Missing recommended security headers",
-                    "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(CatsHeader::nameAndValue).collect(Collectors.toSet()));
+                    "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(pair -> pair.getKey() + "=" + pair.getValue()).collect(Collectors.toSet()));
         } else {
             testCaseListener.reportResult(log, data, response, ResponseCodeFamily.TWOXX);
         }
     }
 
-    private List<CatsHeader> getMissingSecurityHeaders(CatsResponse catsResponse) {
-        List<CatsHeader> notMatching = new ArrayList<>();
-        for (Map.Entry<String, List<CatsHeader>> securityHeaders : SECURITY_HEADERS.entrySet()) {
-            boolean noneMatch = catsResponse.getHeaders().stream()
-                    .noneMatch(catsHeader -> securityHeaders.getValue().stream()
-                            .anyMatch(securityHeader -> this.containsAsAlphanumeric(catsHeader.getKey(), securityHeader.getName())
-                                    && this.containsAsAlphanumeric(catsHeader.getValue(), securityHeader.getValue())));
-            if (noneMatch) {
-                notMatching.addAll(securityHeaders.getValue());
-            }
+    private List<KeyValuePair<String, String>> getMissingSecurityHeaders(CatsResponse catsResponse) {
+        return SECURITY_HEADERS.entrySet().stream()
+                .filter(entry -> {
+                    String headerName = entry.getKey();
+                    List<KeyValuePair<String, String>> possibleValues = entry.getValue();
+
+                    if (possibleValues.stream().noneMatch(possibleHeader -> catsResponse.containsHeader(possibleHeader.getKey()))) {
+                        return possibleValues.stream().noneMatch(keyPair -> keyPair.getValue() == null);
+                    }
+
+                    KeyValuePair<String, String> responseHeader = catsResponse.getHeader(headerName);
+                    return responseHeader != null &&
+                            possibleValues.stream().noneMatch(possibleHeader -> this.matchesSecurityHeader(possibleHeader, responseHeader));
+                }).flatMap(entry -> entry.getValue().stream())
+                .collect(Collectors.toList());
+    }
+
+    private boolean matchesSecurityHeader(KeyValuePair<String, String> expected, KeyValuePair<String, String> actual) {
+        if (expected.getValue() == null || actual.getValue() == null) {
+            return false;
         }
-
-        return notMatching;
+        return containsAsAlphanumeric(expected.getKey(), actual.getKey()) &&
+                containsAsAlphanumeric(expected.getValue(), actual.getValue());
     }
 
-    private boolean containsAsAlphanumeric(String string1, String string2) {
-        return string1.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT)
-                .contains(string2.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT));
-    }
 
     @Override
     public String toString() {

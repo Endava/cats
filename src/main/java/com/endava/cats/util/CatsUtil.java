@@ -99,7 +99,7 @@ public class CatsUtil {
             }
             Object valueToSet = fuzzingStrategyToApply.process(oldValue);
             if (mergeFuzzing) {
-                valueToSet = FuzzingStrategy.mergeFuzzing(this.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
+                valueToSet = FuzzingStrategy.mergeFuzzing(WordUtils.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
             }
             replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, valueToSet);
 
@@ -118,10 +118,6 @@ public class CatsUtil {
         } else {
             jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), valueToSet);
         }
-    }
-
-    private String nullOrValueOf(Object object) {
-        return object == null ? null : String.valueOf(object);
     }
 
 

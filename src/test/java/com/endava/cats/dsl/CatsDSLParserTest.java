@@ -79,17 +79,10 @@ class CatsDSLParserTest {
         Assertions.assertThat(actual).isEqualTo("not_found_$$cats");
     }
 
-    @Test
-    void shouldParseDateStringAsDate() {
-        String expression = "2023-02-02";
-        String actual = CatsDSLParser.parseAndGetResult(expression, Map.of("name", "john"));
-        Assertions.assertThat(actual).isEqualTo("2023-02-02");
-    }
-
-    @Test
-    void shouldParseDateStringAsMathExpression() {
-        String expression = "${2023-02-02}";
-        String actual = CatsDSLParser.parseAndGetResult(expression, Map.of("name", "john"));
-        Assertions.assertThat(actual).isEqualTo("2019");
+    @ParameterizedTest
+    @CsvSource({"2023-02-02,2023-02-02", "${2023-02-02},2019"})
+    void shouldParseDateStringAsDate(String input, String parsedOutput) {
+        String actual = CatsDSLParser.parseAndGetResult(input, Map.of("name", "john"));
+        Assertions.assertThat(actual).isEqualTo(parsedOutput);
     }
 }

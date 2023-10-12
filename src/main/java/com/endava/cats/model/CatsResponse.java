@@ -1,6 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.model.ann.Exclude;
+import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.Builder;
@@ -53,6 +54,17 @@ public class CatsResponse {
 
     public String responseCodeAsResponseRange() {
         return responseCodeAsString().charAt(0) + "XX";
+    }
+
+    public boolean containsHeader(String name) {
+        return headers.stream().anyMatch(header -> WordUtils.containsAsAlphanumeric(header.getKey(), name));
+    }
+
+    public KeyValuePair<String, String> getHeader(String name) {
+        return headers.stream()
+                .filter(header -> WordUtils.containsAsAlphanumeric(header.getKey(), name))
+                .findFirst()
+                .orElse(null);
     }
 
     public static class CatsResponseBuilder {
