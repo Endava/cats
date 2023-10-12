@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.endava.cats.fuzzer.headers.CheckSecurityHeadersFuzzer.SECURITY_HEADERS;
 import static com.endava.cats.fuzzer.headers.CheckSecurityHeadersFuzzer.SECURITY_HEADERS_AS_STRING;
 import static com.endava.cats.fuzzer.headers.UnsupportedAcceptHeadersFuzzerTest.HEADERS;
 
@@ -35,8 +36,7 @@ class CheckSecurityHeadersFuzzerTest {
     private static final List<KeyValuePair<String, String>> SOME_SECURITY_HEADERS = Arrays.asList(new KeyValuePair<>("Cache-Control", "no-store"),
             new KeyValuePair<>("X-Content-Type-Options", "nosniff"));
     private static final List<KeyValuePair<String, String>> MISSING_HEADERS = Arrays.asList(new KeyValuePair<>("X-Frame-Options", "DENY"),
-            new KeyValuePair<>("X-XSS-Protection", "1; mode=block"), new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'"),
-            new KeyValuePair<>("X-XSS-Protection", "0"));
+            new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'"));
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
@@ -114,5 +114,25 @@ class CheckSecurityHeadersFuzzerTest {
         checkSecurityHeadersFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
+    @Test
+    void shouldReportMismatchingXXSSProtection() {
+        FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
+                .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
+        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        List<KeyValuePair<String, String>> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
+        allHeaders.add(new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'"));
+        allHeaders.add(new KeyValuePair<>("X-XSS-Protection", "02"));
+
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(allHeaders).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        checkSecurityHeadersFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
+                Mockito.eq("Missing recommended Security Headers: {}"), AdditionalMatchers.aryEq(new Object[]{SECURITY_HEADERS.get("X-XSS-Protection").stream().map(Object::toString).collect(Collectors.toSet())}));
     }
 }
