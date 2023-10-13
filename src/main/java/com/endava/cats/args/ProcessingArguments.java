@@ -1,10 +1,10 @@
 package com.endava.cats.args;
 
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
 
-import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 
@@ -57,14 +57,14 @@ public class ProcessingArguments {
     }
 
     public enum TrimmingStrategy {
-        VALIDATE_AND_TRIM, TRIM_AND_VALIDATE;
+        VALIDATE_AND_TRIM, TRIM_AND_VALIDATE
     }
 
     public enum SanitizationStrategy {
-        VALIDATE_AND_SANITIZE, SANITIZE_AND_VALIDATE;
+        VALIDATE_AND_SANITIZE, SANITIZE_AND_VALIDATE
     }
 
     public enum SetFuzzingStrategy {
-        POWERSET, SIZE, ONEBYONE;
+        POWERSET, SIZE, ONEBYONE
     }
 }

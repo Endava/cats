@@ -19,6 +19,7 @@ import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ import static com.endava.cats.util.CatsDSLWords.*;
 @ApplicationScoped
 public class CustomFuzzerUtil {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
+    @Getter
     private final Map<String, String> variables = new HashMap<>();
     private final Map<String, Map<String, Object>> pathsWithInputVariables = new HashMap<>();
     private final CatsUtil catsUtil;
@@ -374,10 +376,6 @@ public class CustomFuzzerUtil {
 
     public boolean isVariable(String candidate) {
         return candidate.startsWith("${") && candidate.endsWith("}");
-    }
-
-    public Map<String, String> getVariables() {
-        return variables;
     }
 
     public void writeRefDataFileWithOutputVariables() throws IOException {

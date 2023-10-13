@@ -23,6 +23,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import jakarta.inject.Singleton;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -83,7 +84,7 @@ public class TemplateFuzzer implements Fuzzer {
     String replacePath(FuzzingData data, String withData, String targetField) {
         String finalPath = data.getPath();
         try {
-            URL url = new URL(data.getPath());
+            URL url = URI.create(data.getPath()).toURL();
             String replacedPath = Arrays.stream(url.getPath().split("/"))
                     .map(pathElement -> pathElement.equalsIgnoreCase(targetField) ? withData : pathElement)
                     .collect(Collectors.joining("/"));

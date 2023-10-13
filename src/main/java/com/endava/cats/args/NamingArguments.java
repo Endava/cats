@@ -1,9 +1,9 @@
 package com.endava.cats.args;
 
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import picocli.CommandLine;
 
-import jakarta.inject.Singleton;
 import java.util.regex.Pattern;
 
 @Singleton
@@ -35,6 +35,7 @@ public class NamingArguments {
     private Naming headersNaming = Naming.HTTP_HEADER;
 
 
+    @Getter
     public enum Naming {
         SNAKE("^[a-z]+((_)?[a-z])*+$", "snake_case"),
         KEBAB("^[a-z]+((-)?[a-z])*+$", "kebab-case"),
@@ -42,9 +43,7 @@ public class NamingArguments {
         PASCAL("^[A-Z][A-Za-z0-9]+$", "PascalCase"),
         CAMEL("^[a-z]+[A-Za-z0-9]+$", "camelCase");
 
-        @Getter
         private final Pattern pattern;
-        @Getter
         private final String description;
 
         Naming(String namingPattern, String description) {

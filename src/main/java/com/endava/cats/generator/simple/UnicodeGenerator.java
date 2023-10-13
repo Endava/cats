@@ -1,5 +1,7 @@
 package com.endava.cats.generator.simple;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -12,6 +14,7 @@ public abstract class UnicodeGenerator {
     private static final List<String> INVALID_REFERENCES = List.of("?", "??", "/?/", "\u0000", "\u200B", "%", "&", "/.. ;/",
             "../", ".. /", ".. ;/", "%5c..%5c.%5c", ".././", "%09", "..%00/", "..%0d/", "..%5c/", "..%ff/", ";.json", ".json");
     private static final String ZALGO_TEXT = " ̵̡̡̢̡̨̨̢͚̬̱̤̰̗͉͚̖͙͎͔͔̺̳͕̫̬͚̹͖̬̭̖̪̗͕̜̣̥̣̼͍͉̖͍̪͈̖͚̙͛͒͂̎̊̿̀̅̈͌͋̃̾̈̾̇͛͌͘͜͜͠͝ͅͅͅ ̷͕̗̇͛̅̀̑̇̈͗͌͛̐̀͆̐̊̅̋̈́̂̈́̈́͑̓͂͂̌̈́̽͌͐̐͂͐̈́̍̂͗̂͘͠͝͝͝ͅ ̷̨̢̧̢̡̨̛͕̯̭̹͖̮̘̤̩̥̟̖͈̯̠̖͈̜͈̥̫͔̘̭͉͎͇̤̦̯͙̹̠̼̮͕̲̖̟̲̦̣͇̳͖̳̭͇͓̭͌̓̀̅̋̋̀̈́̎̄͛̾̊͐̎̉̏͊͐̑͊͒̐̔̏̔̋̑̌͆̏̀̉͆̆́̓̆̉̀̒̆̆̉̀̂̎̈̔͗̔̕̕͘̕̚̚̕͘͜͝͝͝͝͝͠ͅ ̷̧̡̥͈͓͙͈̫͙͎͈̻̔̊̎̏̑̒̐̐̆̉̍͠͝͝ ̴̡̛̛͓͎͇̘͈͇̱̟̠̳͇̬̺̲̭̪̬̼̝̠̙̹̩̱̪͔͉͎̱͚͍̬͈̤͈͙͖̝̲̦̞̺̟̟̺͇̳͈̠̘̺̪̱̮̉̀̍̏̐̃̅̐̊̾͆̐͋͊̿̉̆̾͊̀͊͒͌̀͛̎́́͂̐͂̎͛̆͜͜͜͠ͅ ̶̧̧͖̻̥̝̺̼̙̫̩̹̣̲̩̲͍̺̘͕̤͉̹̥͉̮̮̟̘̥̺̯̗̠͈̬͚̦̦͚̫̫̦̉́̾̀̅͋̋̇̕̕͜͜͝ͅͅ ̶̧̛̛̝̟̤̬̙͔̻͙͚̹̣̳̳͔̥̘̠̗̦̠͚͎̖̮̳̗̥̫͚̯̬̩̎́̽͒̋̓̀͂̈́̓́̎͐͊͒̎͒͌̿̿̔͐̈́͑̊̄̓̎͐̓̓̍͘̕̚̚͜͜ ̶̢̡̡̨̡̡̘̫̫̠̟̻̳̻͈̲̖͚͇̼̩̥̥͎̥̯͚̞̘̼̞͍̮̗͈̱͚͙̠͔̞̮̱̭͍͍̪̲̜͓͍̣̯̲̠̲̤̅͊̑̇̆́̈́̓̿̄̐̓̐͐́͛̆͜͝͝͝͠ͅ ̶̧̡̨̧̡̧̥̥̱̪͇̞̭͙͚͔̜̠͓͈̞͈̣̹̝̩̦̟̻̰͙̯̼̜̞̮̬̝͚̺̟͎̻̱̙̦̜̭̲̰͎̳̣̈͜͜͜ͅ ̸̹̟̯̝͚̪̼͓͕͕̹͖̣̠͓̫͇͚͔̼̊́͑̊̊̅͗͠ͅ";
+    @Getter
     private static final List<String> spacesHeaders = Arrays.asList(" ", "\u0009");
     private static final List<String> whitespacesHeaders = Arrays.asList(
             "\u1680", "\u2000", "\u2001", "\u2002", "\u2003", "\u2004", "\u2005", "\u2006", "\u2007", "\u2008", "\u2009",
@@ -19,12 +22,14 @@ public abstract class UnicodeGenerator {
     private static final List<String> whitespacesFields = Arrays.asList(
             " ", "\u1680", "\u2000", "\u2001", "\u2002", "\u2003", "\u2004", "\u2005", "\u2006",
             "\u2007", "\u2008", "\u2009", "\u200A", "\u2028", "\u2029", "\u202F", "\u205F", "\u3000", "\u00A0");
+    @Getter
     private static final List<String> controlCharsHeaders = Arrays.asList(
             "\r\n", "\u0000", "\u0007", "\u0008", "\n", "\u000B", "\u000C", "\r", "\u200B", "\u200C", "\u200D", "\u200E",
             "\u200F", "\u202A", "\u202B", "\u202C", "\u202D", "\u202E", "\u2060", "\u2061", "\u2062", "\u2063", "\u2064", "\u206D", "\u0015",
             "\u0016", "\u0017", "\u0018", "\u0019", "\u001A", "\u001B", "\u001C", "\u001D", "\u001E", "\u001F", "\u007F", "\u0080", "\u0081",
             "\u0082", "\u0083", "\u0085", "\u0086", "\u0087", "\u0088", "\u008A", "\u008B", "\u008C", "\u008D", "\u0090", "\u0091", "\u0093",
             "\u0094", "\u0095", "\u0096", "\u0097", "\u0098", "\u0099", "\u009A", "\u009B", "\u009C", "\u009D", "\u009E", "\u009F", "\uFEFF", "\uFFFE", "\u00AD");
+    @Getter
     private static final List<String> controlCharsFields = Stream.concat(controlCharsHeaders.stream(), Stream.of("\u0009")).toList();
 
     private static final String BAD_PAYLOAD = "퀜\uD80C\uDE1B\uD859\uDCBC\uD872\uDC4F璫骋\uD85B\uDC0F\uD842\uDF46\uD85D\uDC7C\uD85C\uDC71\uD884\uDC2E\uD854\uDCA4\uD861\uDE98ྶ\uD85E\uDCD4ᠰ\uD86F\uDC65榬\uD849\uDC0D" +
@@ -67,9 +72,12 @@ public abstract class UnicodeGenerator {
             "\uD870\uDFBC\uD858\uDE7D\uD807\uDFEBᡨ\uD86C\uDE32⨪鍔\uD81F\uDFBF\uD85F\uDC4A\uD872\uDC7C뜕\uD85F\uDEE7踋\uD851\uDC1D\uD84D\uDFC0\uD82C\uDCCA\uD803\uDD1A譿\uD864\uDFA6\uD853\uDEF0\uD846" +
             "\uDC4E䢟\uD85A\uDF77\uD85F\uDD63\uD868\uDED4\uD86D\uDEC6룐\uD822\uDCEA\uD807\uDFCB\uD82C\uDC7C\uD83E\uDD2B";
 
+    @Getter
     private static final List<String> singleCodePointEmojis = Arrays.asList("\uD83E\uDD76", "\uD83D\uDC80", "\uD83D\uDC7B", "\uD83D\uDC7E");
+    @Getter
     private static final List<String> multiCodePointEmojis = Arrays.asList("\uD83D\uDC69\uD83C\uDFFE", "\uD83D\uDC68\u200D\uD83C\uDFED️", "\uD83D\uDC69\u200D\uD83D\uDE80");
 
+    @Getter
     private static final List<String> abugidasChars = List.of("జ్ఞ\u200Cా", "স্র\u200Cু");
 
     private UnicodeGenerator() {
@@ -104,18 +112,6 @@ public abstract class UnicodeGenerator {
         return result;
     }
 
-    public static List<String> getAbugidasChars() {
-        return abugidasChars;
-    }
-
-    public static List<String> getControlCharsFields() {
-        return controlCharsFields;
-    }
-
-    public static List<String> getControlCharsHeaders() {
-        return controlCharsHeaders;
-    }
-
     public static List<String> getSeparatorsFields() {
         return whitespacesFields;
     }
@@ -123,19 +119,6 @@ public abstract class UnicodeGenerator {
     public static List<String> getSeparatorsHeaders() {
         return whitespacesHeaders;
     }
-
-    public static List<String> getSpacesHeaders() {
-        return spacesHeaders;
-    }
-
-    public static List<String> getSingleCodePointEmojis() {
-        return singleCodePointEmojis;
-    }
-
-    public static List<String> getMultiCodePointEmojis() {
-        return multiCodePointEmojis;
-    }
-
 
     public static String getBadPayload() {
         return BAD_PAYLOAD;
