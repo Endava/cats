@@ -60,7 +60,7 @@ public class SimpleExecutor {
                 if (context.getResponseProcessor() != null) {
                     context.getResponseProcessor().accept(response, context.getFuzzingData());
                 } else {
-                    testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
+                    testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult());
                 }
             } else {
                 testCaseListener.skipTest(context.getLogger(), "Method %s not supported by %s".formatted(context.getFuzzingData().getMethod(), context.getFuzzer()));

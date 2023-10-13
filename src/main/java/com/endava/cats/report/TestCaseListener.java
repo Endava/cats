@@ -58,7 +58,7 @@ public class TestCaseListener {
     protected static final String ID_ANSI = "id_ansi";
     protected static final AtomicInteger TEST = new AtomicInteger(0);
     private static final String DEFAULT_ERROR = "####";
-    private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414");
+    private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501");
     public static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
@@ -364,6 +364,9 @@ public class TestCaseListener {
         } else if (isNotFound(response)) {
             this.logger.debug("NOT_FOUND response");
             this.reportError(logger, CatsResult.NOT_FOUND);
+        } else if (assertions.isResponseCodeUnimplemented()) {
+            this.logger.debug("Response code unimplemented");
+            this.reportResultWarn(logger, data, CatsResult.NOT_IMPLEMENTED.getReason(), CatsResult.NOT_IMPLEMENTED.getMessage());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.logger.debug("Response code expected and documented and but doesn't match response schema");
             this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA.withResponseCode(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
@@ -376,9 +379,6 @@ public class TestCaseListener {
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
             this.logger.debug("Response code documented but not expected");
             this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
-        } else if (assertions.isResponseCodeUnimplemented()) {
-            this.logger.debug("Response code unimplemented");
-            this.reportResultWarn(logger, data, CatsResult.NOT_IMPLEMENTED.getReason(), CatsResult.NOT_IMPLEMENTED.getMessage());
         } else {
             this.logger.debug("Unexpected behaviour");
             this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
@@ -519,9 +519,9 @@ public class TestCaseListener {
     private boolean matchesArrayElement(String responseSchema, JsonElement element) {
         JsonArray jsonArray = ((JsonArray) element);
 
-        if (jsonArray.size() == 0 && JsonParser.parseString(responseSchema).isJsonArray()) {
+        if (jsonArray.isEmpty() && JsonParser.parseString(responseSchema).isJsonArray()) {
             return true;
-        } else if (jsonArray.size() == 0) {
+        } else if (jsonArray.isEmpty()) {
             return false;
         }
 

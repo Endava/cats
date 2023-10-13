@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
@@ -60,5 +61,10 @@ class DummyContentTypeHeadersFuzzerTest {
         dummyContentTypeHeadersFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
         Mockito.verifyNoInteractions(simpleExecutor);
+    }
+
+    @Test
+    void shouldReturn4XXMTResponseCode() {
+        Assertions.assertThat(dummyContentTypeHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamily.FOURXX_MT);
     }
 }

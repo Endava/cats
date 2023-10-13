@@ -171,17 +171,11 @@ public class FuzzingData {
     public Set<Set<String>> getAllFields(SetFuzzingStrategy setFuzzingStrategy, int maxFieldsToRemove) {
         if (allFieldsSetOfSets == null) {
 
-            Set<Set<String>> sets;
-            switch (setFuzzingStrategy) {
-                case POWERSET:
-                    sets = SetFuzzingStrategy.powerSet(this.getAllFields());
-                    break;
-                case SIZE:
-                    sets = SetFuzzingStrategy.getAllSetsWithMinSize(this.getAllFields(), maxFieldsToRemove);
-                    break;
-                default:
-                    sets = SetFuzzingStrategy.removeOneByOne(this.getAllFields());
-            }
+            Set<Set<String>> sets = switch (setFuzzingStrategy) {
+                case POWERSET -> SetFuzzingStrategy.powerSet(this.getAllFields());
+                case SIZE -> SetFuzzingStrategy.getAllSetsWithMinSize(this.getAllFields(), maxFieldsToRemove);
+                default -> SetFuzzingStrategy.removeOneByOne(this.getAllFields());
+            };
             sets.remove(Collections.emptySet());
             allFieldsSetOfSets = sets;
         }

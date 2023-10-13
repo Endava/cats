@@ -141,6 +141,17 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return Collections.singletonList("000");
         }
+    },
+    FOUR00_FIVE01 {
+        @Override
+        public String asString() {
+            return "400|501";
+        }
+
+        @Override
+        public List<String> allowedResponseCodes() {
+            return List.of("400", "501");
+        }
     };
 
     public static final String XX = "XX";
