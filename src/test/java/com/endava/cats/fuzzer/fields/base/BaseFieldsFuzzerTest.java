@@ -4,11 +4,11 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.FuzzingResult;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.FuzzingResult;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.Schema;
@@ -59,14 +59,14 @@ class BaseFieldsFuzzerTest {
     }
 
     @Test
-    void givenAFieldWithASkipFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTestIsSkipped() {
+    void givenAFieldWithASkipFuzzingStrategy_whenTheFieldIsFuzzedAndNoExceptionOccurs_thenTestIsNotRun() {
         baseFieldsFuzzer = new MyBaseFieldsSkipFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Set<String> fields = Collections.singleton("field");
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq(""));
+        Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test

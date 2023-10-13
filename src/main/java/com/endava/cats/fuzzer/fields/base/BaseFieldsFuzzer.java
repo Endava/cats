@@ -60,7 +60,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             logger.skip("Skipped due to: no fields to fuzz!");
         } else {
             for (String fuzzedField : allFields) {
-                for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)) {
+                for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)
+                        .stream().filter(fuzzingStrategy -> !fuzzingStrategy.isSkip())
+                        .toList()) {
                     logger.debug("Running strategy {} for {}", fuzzingStrategy.name(), fuzzedField);
                     testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy));
                 }
