@@ -14,9 +14,9 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
-import java.net.URL;
+
+import java.net.URI;
 import java.util.List;
 
 @HttpFuzzer
@@ -68,7 +68,7 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
 
     static String getRelativePath(String url) {
         try {
-            return new URL(url).getPath();
+            return URI.create(url).toURL().getPath();
         } catch (Exception e) {
             return url;
         }

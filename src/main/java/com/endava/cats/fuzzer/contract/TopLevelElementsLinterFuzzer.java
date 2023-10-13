@@ -47,7 +47,7 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
         }
 
         if (!missingFieldsSet.isEmpty()) {
-            errorString.append(String.format("The following elements are missing: %s. ", missingFieldsSet.toString()));
+            errorString.append(String.format("The following elements are missing: %s. ", missingFieldsSet));
         }
 
         if (errorString.toString().isEmpty()) {

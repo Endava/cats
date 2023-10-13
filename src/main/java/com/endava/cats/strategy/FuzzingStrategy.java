@@ -3,6 +3,7 @@ package com.endava.cats.strategy;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.FuzzingData;
 import io.swagger.v3.oas.models.media.Schema;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
@@ -20,6 +21,7 @@ import java.util.regex.Pattern;
  * <li>NOOP - returns the given string</li>
  * </ul>
  */
+@Getter
 public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, NoopFuzzingStrategy,
         PrefixFuzzingStrategy, ReplaceFuzzingStrategy, SkipFuzzingStrategy, TrailFuzzingStrategy {
     private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]*$");
@@ -120,10 +122,6 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
     public FuzzingStrategy withData(Object inner) {
         this.data = inner;
         return this;
-    }
-
-    public Object getData() {
-        return this.data;
     }
 
     public boolean isSkip() {

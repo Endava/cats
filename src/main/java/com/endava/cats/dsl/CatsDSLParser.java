@@ -41,7 +41,7 @@ public class CatsDSLParser {
     }
 
     /**
-     * Transforms various ways of describing the expressions like: ${request.value} which is equivalent to request.value
+     * Transforms various ways of describing the expressions like: ${request.value} which is equivalent to 'request.value'
      * or request#value which is equivalent to request.value.
      *
      * @param expression the expression as supplied by the user
