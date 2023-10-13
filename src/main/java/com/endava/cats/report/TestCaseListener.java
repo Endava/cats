@@ -412,7 +412,7 @@ public class TestCaseListener {
     }
 
     public void skipTest(PrettyLogger logger, String skipReason) {
-        this.addExpectedResult(logger, "Test will be skipped!");
+        testCaseMap.get(MDC.get(ID)).setExpectedResult(replaceBrackets("Test will be skipped!"));
         this.reportSkipped(logger, skipReason);
     }
 
