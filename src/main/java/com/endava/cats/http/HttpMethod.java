@@ -22,7 +22,7 @@ public enum HttpMethod {
             BIND, UNBIND, REBIND, MKREDIRECTREF,
             UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT);
 
-    private static final EnumMap<HttpMethod, Function<PathItem, Operation>> OPERATIONS = new EnumMap<>(HttpMethod.class);
+    public static final EnumMap<HttpMethod, Function<PathItem, Operation>> OPERATIONS = new EnumMap<>(HttpMethod.class);
     private static final EnumMap<HttpMethod, List<String>> RECOMMENDED_CODES = new EnumMap<>(HttpMethod.class);
     private static final String TWOXX = "200|201|202|204";
 

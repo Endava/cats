@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -48,7 +47,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -324,21 +322,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         logger.config(ansi().bold().a("Total number of OpenAPI paths: {}").reset().toString(), ansi().fg(Ansi.Color.YELLOW).a(openAPI.getPaths().size()));
         logger.config(ansi().bold().a("HTTP methods in scope: {}").reset().toString(), ansi().fg(Ansi.Color.YELLOW).a(filterArguments.getHttpMethods()).reset());
 
-        int nofOfOperations = openAPI.getPaths()
-                .values()
-                .stream()
-                .mapToInt(CatsCommand::countPathOperations)
-                .sum();
+        int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
         logger.config(ansi().bold().a("Total number of OpenAPI operations: {}").reset().toString(), ansi().fg(Ansi.Color.YELLOW).a(nofOfOperations));
     }
 
-    private static int countPathOperations(PathItem pathItem) {
-        return Stream.of(pathItem.getGet(), pathItem.getPost(), pathItem.getPut(), pathItem.getDelete(),
-                        pathItem.getPatch(), pathItem.getOptions(), pathItem.getHead())
-                .filter(Objects::nonNull)
-                .mapToInt(sum -> 1)
-                .sum();
-    }
 
     private void processLogLevelArgument() {
         reportingArguments.processLogData();

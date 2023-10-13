@@ -7,8 +7,10 @@ import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
+import com.endava.cats.command.model.PathListEntry;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
@@ -26,9 +28,11 @@ import picocli.CommandLine;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -89,17 +93,49 @@ public class ListCommand implements Runnable {
     void listContractPaths() {
         try {
             OpenAPI openAPI = OpenApiUtils.readOpenApi(listCommandGroups.listContractOptions.contract);
+            PathListEntry pathListEntry = createPathEntryList(openAPI);
+
             if (json) {
-                PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(openAPI.getPaths().keySet()));
+                PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(pathListEntry));
             } else {
-                logger.noFormat("Available paths:");
-                openAPI.getPaths().keySet().stream().sorted().map(item -> " ◼ " + item).forEach(logger::noFormat);
+                logger.noFormat("{} paths and {} operations:", pathListEntry.getNumberOfPaths(), pathListEntry.getNumberOfOperations());
+                pathListEntry.getPathDetailsList()
+                        .stream()
+                        .sorted()
+                        .map(item -> " ◼ " + item.getPath() + ": " + item.getMethods())
+                        .forEach(logger::noFormat);
             }
         } catch (IOException e) {
             logger.debug("Exception while reading contract!", e);
             logger.error("Error while reading contract. The file might not exist or is not reachable: {}. Error message: {}",
                     listCommandGroups.listContractOptions.contract, e.getMessage());
         }
+    }
+
+    private static PathListEntry createPathEntryList(OpenAPI openAPI) {
+        int numberOfPaths = openAPI.getPaths().size();
+        int numberOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
+        List<PathListEntry.PathDetails> pathDetailsList = new ArrayList<>();
+
+        openAPI.getPaths()
+                .forEach((pathName, pathItem) -> {
+                    List<HttpMethod> httpMethods = HttpMethod.OPERATIONS.entrySet()
+                            .stream()
+                            .filter(entry -> entry.getValue().apply(pathItem) != null)
+                            .map(Map.Entry::getKey)
+                            .toList();
+
+                    pathDetailsList.add(PathListEntry.PathDetails
+                            .builder()
+                            .methods(httpMethods)
+                            .path(pathName)
+                            .build());
+                });
+        return PathListEntry.builder()
+                .numberOfPaths(numberOfPaths)
+                .numberOfOperations(numberOfOperations)
+                .pathDetailsList(pathDetailsList)
+                .build();
     }
 
     void listFuzzerStrategies() {

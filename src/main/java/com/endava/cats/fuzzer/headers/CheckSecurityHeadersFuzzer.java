@@ -32,7 +32,7 @@ import static com.endava.cats.util.WordUtils.containsAsAlphanumeric;
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
     protected static final String SECURITY_HEADERS_AS_STRING;
-    public static final Map<String, List<KeyValuePair<String, String>>> SECURITY_HEADERS = new HashMap<>();
+    protected static final Map<String, List<KeyValuePair<String, String>>> SECURITY_HEADERS = new HashMap<>();
 
     static {
         SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(new KeyValuePair<>("Cache-Control", "no-store")));
@@ -93,7 +93,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
                     return responseHeader != null &&
                             possibleValues.stream().noneMatch(possibleHeader -> this.matchesSecurityHeader(possibleHeader, responseHeader));
                 }).flatMap(entry -> entry.getValue().stream())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private boolean matchesSecurityHeader(KeyValuePair<String, String> expected, KeyValuePair<String, String> actual) {

@@ -4,6 +4,7 @@ import com.endava.cats.args.ProcessingArguments;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
@@ -21,7 +22,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public abstract class OpenApiUtils {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiUtils.class);
@@ -105,5 +108,21 @@ public abstract class OpenApiUtils {
                 .anyMatch(contentKey -> contentType.stream()
                         .anyMatch(contentItem -> contentKey.matches(contentItem) || contentKey.equalsIgnoreCase(contentItem))
                 );
+    }
+
+    public static int getNumberOfOperations(OpenAPI openAPI) {
+        return openAPI.getPaths()
+                .values()
+                .stream()
+                .mapToInt(OpenApiUtils::countPathOperations)
+                .sum();
+    }
+
+    private static int countPathOperations(PathItem pathItem) {
+        return Stream.of(pathItem.getGet(), pathItem.getPost(), pathItem.getPut(), pathItem.getDelete(),
+                        pathItem.getPatch(), pathItem.getOptions(), pathItem.getHead())
+                .filter(Objects::nonNull)
+                .mapToInt(sum -> 1)
+                .sum();
     }
 }
