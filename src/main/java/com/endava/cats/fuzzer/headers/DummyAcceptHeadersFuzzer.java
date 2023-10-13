@@ -4,6 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.headers.base.BaseSecurityChecksHeadersFuzzer;
 import com.endava.cats.generator.Cloner;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.google.common.net.HttpHeaders;
@@ -19,6 +20,11 @@ public class DummyAcceptHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
 
     public DummyAcceptHeadersFuzzer(SimpleExecutor simpleExecutor) {
         super(simpleExecutor);
+    }
+
+    @Override
+    public ResponseCodeFamily getResponseCodeFamily() {
+        return ResponseCodeFamily.FOURXX_MT;
     }
 
     @Override

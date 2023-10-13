@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.PathItem;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -22,8 +23,8 @@ public enum HttpMethod {
             BIND, UNBIND, REBIND, MKREDIRECTREF,
             UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT);
 
-    public static final EnumMap<HttpMethod, Function<PathItem, Operation>> OPERATIONS = new EnumMap<>(HttpMethod.class);
-    private static final EnumMap<HttpMethod, List<String>> RECOMMENDED_CODES = new EnumMap<>(HttpMethod.class);
+    public static final Map<HttpMethod, Function<PathItem, Operation>> OPERATIONS = new EnumMap<>(HttpMethod.class);
+    private static final Map<HttpMethod, List<String>> RECOMMENDED_CODES = new EnumMap<>(HttpMethod.class);
     private static final String TWOXX = "200|201|202|204";
 
     static {

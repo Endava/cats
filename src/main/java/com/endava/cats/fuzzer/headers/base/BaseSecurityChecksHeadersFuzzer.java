@@ -91,12 +91,20 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
                             .logger(log)
                             .fuzzingData(data)
                             .fuzzer(this)
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX_MT)
+                            .expectedResponseCode(this.getResponseCodeFamily())
                             .expectedSpecificResponseCode(this.getExpectedResponseCode())
+                            .matchResponseResult(false)
                             .headers(headers)
                             .build());
         }
     }
+
+    /**
+     * What is the expected list of response codes.
+     *
+     * @return a HTTP response code list
+     */
+    public abstract ResponseCodeFamily getResponseCodeFamily();
 
     /**
      * What is the expected response code.

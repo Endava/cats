@@ -42,7 +42,7 @@ public class CatsResponse {
     /**
      * Returns an empty response with default values.
      *
-     * @return a object which can be considered empty
+     * @return an object which can be considered empty
      */
     public static CatsResponse empty() {
         return CatsResponse.from(999, "{}", "", 0);

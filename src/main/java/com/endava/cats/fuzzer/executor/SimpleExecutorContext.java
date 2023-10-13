@@ -25,12 +25,13 @@ public class SimpleExecutorContext {
      * Fuzzer's logger.
      */
     PrettyLogger logger;
+
     @NonNull
     FuzzingData fuzzingData;
 
     String scenario;
     /**
-     * This is used to match again the response code received from the Service.
+     * This is used to match against the response code received from the Service.
      */
     ResponseCodeFamily expectedResponseCode;
     /**
@@ -96,6 +97,8 @@ public class SimpleExecutorContext {
      */
     String path;
 
+    @Builder.Default
+    boolean matchResponseResult = true;
 
     public String getPath() {
         if (path == null) {

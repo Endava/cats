@@ -18,19 +18,19 @@ import java.util.Set;
 import static com.endava.cats.fuzzer.headers.UnsupportedAcceptHeadersFuzzerTest.HEADERS;
 
 @QuarkusTest
-class DummyAcceptHeadersFuzzerTest {
-    private DummyAcceptHeadersFuzzer dummyAcceptHeadersFuzzer;
+class DummyTransferEncodingHeadersFuzzerTest {
+    private DummyTransferEncodingHeadersFuzzer dummyTransferEncodingHeadersFuzzer;
 
     @BeforeEach
     void setup() {
-        dummyAcceptHeadersFuzzer = new DummyAcceptHeadersFuzzer(Mockito.mock(SimpleExecutor.class));
+        dummyTransferEncodingHeadersFuzzer = new DummyTransferEncodingHeadersFuzzer(Mockito.mock(SimpleExecutor.class));
     }
 
     @Test
     void shouldProperlyOverrideParentMethods() {
-        Assertions.assertThat(dummyAcceptHeadersFuzzer.typeOfHeader()).isEqualTo("dummy");
-        Assertions.assertThat(dummyAcceptHeadersFuzzer.description()).isEqualTo("send a request with a dummy Accept header and expect to get 406 code");
-        Assertions.assertThat(dummyAcceptHeadersFuzzer).hasToString(dummyAcceptHeadersFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(dummyTransferEncodingHeadersFuzzer.typeOfHeader()).isEqualTo("dummy");
+        Assertions.assertThat(dummyTransferEncodingHeadersFuzzer.description()).isEqualTo("send a request with a dummy Transfer-Encoding header and expect to get 400|501 code");
+        Assertions.assertThat(dummyTransferEncodingHeadersFuzzer).hasToString(dummyTransferEncodingHeadersFuzzer.getClass().getSimpleName());
     }
 
     @Test
@@ -38,14 +38,14 @@ class DummyAcceptHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .responseContentTypes(Collections.singletonMap("200", Collections.singletonList("application/json"))).build();
 
-        List<Set<CatsHeader>> headers = dummyAcceptHeadersFuzzer.getHeaders(data);
+        List<Set<CatsHeader>> headers = dummyTransferEncodingHeadersFuzzer.getHeaders(data);
 
         Assertions.assertThat(headers).hasSize(1);
-        Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Accept").build());
+        Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Transfer-Encoding").build());
     }
 
     @Test
-    void shouldReturn4XXMTResponseCode() {
-        Assertions.assertThat(dummyAcceptHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamily.FOURXX_MT);
+    void shouldReturn400501ResponseCode() {
+        Assertions.assertThat(dummyTransferEncodingHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamily.FOUR00_FIVE01);
     }
 }
