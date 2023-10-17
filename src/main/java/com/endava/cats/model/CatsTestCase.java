@@ -26,6 +26,8 @@ public class CatsTestCase {
     private static final String CURL_BODY = " -d '%s'";
 
     private static final String CATS_REPLAY = "cats replay %s";
+    private static final String SKIPPED = "skipped";
+    public static final String SKIP_REPORTING = "skip_reporting";
 
     private String testId;
     private String scenario;
@@ -44,7 +46,11 @@ public class CatsTestCase {
     private boolean js;
 
     public boolean isNotSkipped() {
-        return !"skipped".equalsIgnoreCase(result);
+        return !SKIPPED.equalsIgnoreCase(result) && !SKIP_REPORTING.equalsIgnoreCase(result);
+    }
+
+    public void setResultSkipped() {
+        this.result = SKIPPED;
     }
 
     public boolean notIgnoredForExecutionStatistics() {

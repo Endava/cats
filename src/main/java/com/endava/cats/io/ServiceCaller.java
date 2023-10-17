@@ -382,8 +382,9 @@ public class ServiceCaller {
                     .fuzzedField(fuzzedFields.stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build();
 
-            logger.complete("Protocol: {}, Method: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}", response.protocol(),
-                    catsResponse.getHttpMethod(), catsResponse.responseCodeAsString(), endTime - startTime, catsResponse.getContentLengthInBytes());
+            logger.complete("Protocol: {}, Method: {}, ResponseCode: {}, ResponseTimeInMs: {}, ResponseLength: {}, ResponseWords: {}, ResponseLines: {}",
+                    response.protocol(), catsResponse.getHttpMethod(), catsResponse.responseCodeAsString(), endTime - startTime,
+                    catsResponse.getContentLengthInBytes(), catsResponse.getNumberOfWordsInResponse(), catsResponse.getNumberOfLinesInResponse());
 
             return catsResponse;
         }

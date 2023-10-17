@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.endava.cats.model.CatsTestCase.SKIP_REPORTING;
 import static org.fusesource.jansi.Ansi.ansi;
 
 /**
@@ -233,6 +234,7 @@ public class TestCaseListener {
         if (ignoreArguments.isSkipReportingForWarnings()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForWarnings is enabled"));
+            this.recordResult(message, params, SKIP_REPORTING, logger);
         } else if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting warn!");
             executionStatisticsListener.increaseWarns();
@@ -241,6 +243,7 @@ public class TestCaseListener {
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Some response elements were marked as ignored and --skipReportingForIgnoredCodes is enabled."));
+            this.recordResult(message, params, SKIP_REPORTING, logger);
         } else {
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
@@ -286,6 +289,7 @@ public class TestCaseListener {
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
+            this.recordResult(message, params, SKIP_REPORTING, logger);
         } else {
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
@@ -314,7 +318,7 @@ public class TestCaseListener {
         executionStatisticsListener.increaseSkipped();
         logger.skip("Skipped due to: {}", params);
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
-        testCase.setResult("skipped");
+        testCase.setResultSkipped();
         testCase.setResultDetails(replaceBrackets("Skipped due to: {}", params));
     }
 
@@ -323,9 +327,11 @@ public class TestCaseListener {
         if (ignoreArguments.isSkipReportingForSuccess()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForSuccess is enabled"));
+            this.recordResult(message, params, SKIP_REPORTING, logger);
         } else if (ignoreArguments.isIgnoredResponse(catsResponse) && ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
+            this.recordResult(message, params, SKIP_REPORTING, logger);
         } else {
             executionStatisticsListener.increaseSuccess();
             logger.success(message, params);
@@ -412,7 +418,7 @@ public class TestCaseListener {
     }
 
     public void skipTest(PrettyLogger logger, String skipReason) {
-        testCaseMap.get(MDC.get(ID)).setExpectedResult(replaceBrackets("Test will be skipped!"));
+        this.addExpectedResult(logger, skipReason);
         this.reportSkipped(logger, skipReason);
     }
 
@@ -420,11 +426,11 @@ public class TestCaseListener {
         return globalContext.getDiscriminators().stream().noneMatch(discriminator -> fuzzedField.endsWith(discriminator.getPropertyName()));
     }
 
-    private void recordResult(String message, Object[] params, String success, PrettyLogger logger) {
+    private void recordResult(String message, Object[] params, String result, PrettyLogger logger) {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
-        testCase.setResult(success);
+        testCase.setResult(result);
         testCase.setResultDetails(replaceBrackets(message, params));
-        logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), success);
+        logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), result);
         storeSuccessfulDelete(testCase);
     }
 
