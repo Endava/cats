@@ -24,6 +24,11 @@ public class InvalidContentLengthHeadersFuzzer extends BaseSecurityChecksHeaders
     }
 
     @Override
+    public ResponseCodeFamily getResponseCodeFamily() {
+        return ResponseCodeFamily.FOUR00_FIVE01;
+    }
+
+    @Override
     public String getExpectedResponseCode() {
         return "400";
     }
@@ -31,11 +36,6 @@ public class InvalidContentLengthHeadersFuzzer extends BaseSecurityChecksHeaders
     @Override
     public String typeOfHeader() {
         return "invalid";
-    }
-
-    @Override
-    public ResponseCodeFamily getResponseCodeFamily() {
-        return ResponseCodeFamily.FOUR00_FIVE01;
     }
 
     @Override

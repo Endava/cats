@@ -24,13 +24,13 @@ public class DummyContentLengthHeadersFuzzer extends BaseSecurityChecksHeadersFu
     }
 
     @Override
-    public String getExpectedResponseCode() {
-        return "400";
+    public String typeOfHeader() {
+        return "dummy";
     }
 
     @Override
-    public String typeOfHeader() {
-        return "dummy";
+    public String getExpectedResponseCode() {
+        return "400";
     }
 
     @Override
