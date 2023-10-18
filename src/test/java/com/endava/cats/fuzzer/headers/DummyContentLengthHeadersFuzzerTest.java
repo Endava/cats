@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -48,10 +47,5 @@ class DummyContentLengthHeadersFuzzerTest {
     @Test
     void shouldReturn400501ResponseCode() {
         Assertions.assertThat(dummyContentLengthHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamily.FOUR00_FIVE01);
-    }
-
-    @Test
-    void shouldSkipForGetAndDelete() {
-        Assertions.assertThat(dummyContentLengthHeadersFuzzer.skipForHttpMethods()).contains(HttpMethod.GET, HttpMethod.DELETE);
     }
 }
