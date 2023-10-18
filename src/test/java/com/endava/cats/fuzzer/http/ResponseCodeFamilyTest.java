@@ -172,4 +172,14 @@ class ResponseCodeFamilyTest {
 
         Assertions.assertThat(actualResult).isEqualTo(expectedResult);
     }
+
+    @Test
+    void shouldContain400And501() {
+        Assertions.assertThat(ResponseCodeFamily.FOUR00_FIVE01.allowedResponseCodes()).containsOnly("400", "501");
+    }
+
+    @Test
+    void shouldHave400501AsString() {
+        Assertions.assertThat(ResponseCodeFamily.FOUR00_FIVE01.asString()).isEqualTo("400|501");
+    }
 }
