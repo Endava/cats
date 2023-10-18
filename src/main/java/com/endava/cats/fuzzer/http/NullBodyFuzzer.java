@@ -24,7 +24,7 @@ public class NullBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     protected String getScenario() {
         return "Send a request with a NULL body";
     }
-    
+
     @Override
     public String description() {
         return "send a request with a NULL body";
