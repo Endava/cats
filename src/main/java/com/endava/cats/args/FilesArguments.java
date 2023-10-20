@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Holds all arguments related to different files used by CATS like: headers, reference data, etc.
+ */
 @Singleton
 public class FilesArguments {
     private static final String ALL = "all";
@@ -100,34 +103,57 @@ public class FilesArguments {
         loadQueryParams();
     }
 
+    /**
+     * Loads the supplied security fuzzer file into a Map.
+     *
+     * @throws IOException if something happens while reading the file
+     */
     public void loadSecurityFuzzerFile() throws IOException {
         if (securityFuzzerFile == null) {
             log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
         } else {
             log.config(Ansi.ansi().bold().a("Security Fuzzer file: {}").reset().toString(),
                     Ansi.ansi().fg(Ansi.Color.YELLOW).a(securityFuzzerFile.getCanonicalPath()));
-            securityFuzzerDetails = this.parseYaml(securityFuzzerFile.getCanonicalPath());
+            securityFuzzerDetails = parseYaml(securityFuzzerFile.getCanonicalPath());
         }
     }
 
+    /**
+     * Loads the supplied functional fuzzer file into a Map.
+     *
+     * @throws IOException if something happens while reading the file
+     */
     public void loadCustomFuzzerFile() throws IOException {
         if (customFuzzerFile == null) {
             log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
         } else {
             log.config(Ansi.ansi().bold().a("Functional Fuzzer file: {}").reset().toString(),
                     Ansi.ansi().fg(Ansi.Color.YELLOW).a(customFuzzerFile.getCanonicalPath()));
-            customFuzzerDetails = this.parseYaml(customFuzzerFile.getCanonicalPath());
+            customFuzzerDetails = parseYaml(customFuzzerFile.getCanonicalPath());
         }
     }
 
+    /**
+     * Loads the supplied reference data file into a Map.
+     *
+     * @throws IOException if something happens while reading the file
+     */
     public void loadRefData() throws IOException {
         this.refData = this.loadFileAsMapOfMapsOfStrings(refDataFile, "Reference Data");
     }
 
+    /**
+     * Loads the supplied query params file into a Map.
+     *
+     * @throws IOException if something happens while reading the file
+     */
     public void loadQueryParams() throws IOException {
         this.queryParams = this.loadFileAsMapOfMapsOfStrings(queryFile, "Query Params");
     }
 
+    /**
+     * Loads the supplied url params into a Map.
+     */
     public void loadURLParams() {
         if (params == null) {
             log.debug("No URL parameters provided!");
@@ -137,6 +163,12 @@ public class FilesArguments {
         }
     }
 
+    /**
+     * Loads the supplied headers file into a Map. The method also merges the headers supplied
+     * in the file with the ones supplied via the {@code -H} argument.
+     *
+     * @throws IOException if something happens while reading the file
+     */
     public void loadHeaders() throws IOException {
         this.headers = this.loadFileAsMapOfMapsOfStrings(headersFile, "Headers");
 
@@ -163,8 +195,8 @@ public class FilesArguments {
      * Replaces the current URL parameters with the {@code --urlParams} arguments supplied.
      * The URL parameters are expected to be included in curly brackets.
      *
-     * @param startingUrl the base url; http://localhost:8080/{petId}
-     * @return the initial URL with the parameters replaced with --urlParams supplied values
+     * @param startingUrl the base url: {@code http://localhost:8080/{petId}}
+     * @return the initial URL with the parameters replaced with --urlParams supplied values: {@code http://localhost:8080/123}
      */
     public String replacePathWithUrlParams(String startingUrl) {
         for (String line : this.getUrlParamsList()) {
@@ -185,7 +217,7 @@ public class FilesArguments {
      * @return a Map representation of the --headers file with paths being the Map keys
      */
     public Map<String, Object> getHeaders(String path) {
-        return getPathAndAll(headers, path);
+        return mergePathAndAll(headers, path);
     }
 
     /**
@@ -197,7 +229,7 @@ public class FilesArguments {
      * @return a Map with the supplied --refData
      */
     public Map<String, Object> getRefData(String currentPath) {
-        return getPathAndAll(refData, currentPath);
+        return mergePathAndAll(refData, currentPath);
     }
 
     /**
@@ -208,11 +240,11 @@ public class FilesArguments {
      * @return a key-value map with all additional query params
      */
     public Map<String, Object> getAdditionalQueryParamsForPath(String path) {
-        return getPathAndAll(queryParams, path);
+        return mergePathAndAll(queryParams, path);
     }
 
 
-    static Map<String, Object> getPathAndAll(Map<String, Map<String, Object>> collection, String path) {
+    static Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path) {
         return collection.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(ALL))
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
@@ -225,13 +257,13 @@ public class FilesArguments {
         } else {
             log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
                     Ansi.ansi().fg(Ansi.Color.YELLOW).a(file.getCanonicalPath()));
-            fromFile = this.parseYaml(file.getCanonicalPath());
+            fromFile = parseYaml(file.getCanonicalPath());
             log.debug("{} file loaded successfully: {}", fileType, fromFile);
         }
         return fromFile;
     }
 
-    public Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
+    static Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
         Map<String, Map<String, Object>> result = new LinkedHashMap<>();
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try (Reader reader = new InputStreamReader(new FileInputStream(yaml), StandardCharsets.UTF_8)) {

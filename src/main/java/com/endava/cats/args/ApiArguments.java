@@ -45,10 +45,20 @@ public class ApiArguments {
             description = "Base URL of the service")
     private String server;
 
+    /**
+     * Verifies if the supplied OpenAPI spec is from a local location or a http one.
+     *
+     * @return true if the contract is from a http location, false otherwise
+     */
     public boolean isRemoteContract() {
         return contract != null && contract.startsWith("http");
     }
 
+    /**
+     * Validates the required {@code --contract} and {@code --server} arguments are present.
+     *
+     * @param spec the PicoCli command spec
+     */
     public void validateRequired(CommandLine.Model.CommandSpec spec) {
         if (this.contract == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
@@ -57,6 +67,11 @@ public class ApiArguments {
         }
     }
 
+    /**
+     * Sets a custom user agent based on the CATS version.
+     *
+     * @param version the current CATS version
+     */
     public void setUserAgent(String version) {
         if (userAgent == null) {
             userAgent = "cats/" + version;

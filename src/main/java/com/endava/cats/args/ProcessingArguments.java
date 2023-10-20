@@ -40,7 +40,7 @@ public class ProcessingArguments {
 
     @Setter
     @CommandLine.Option(names = {"--contentType"},
-            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning.")
     private String contentType;
 
     public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
