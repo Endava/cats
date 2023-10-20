@@ -1,11 +1,11 @@
 package com.endava.cats.args;
 
-import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.ControlCharFuzzer;
 import com.endava.cats.annotations.EmojiFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.SanitizeAndValidate;
 import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.annotations.SpecialFuzzer;
@@ -15,13 +15,13 @@ import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
-import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,19 +70,40 @@ public class FilterArguments {
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
     private boolean dryRun;
 
-
+    /**
+     * Creates a list with the fuzzers to be skipped based on the supplied {@code --skipFuzzers} argument.
+     *
+     * @return the list of fuzzers to skip if any supplied, an empty list otherwise
+     */
     public List<String> getSkipFuzzers() {
         return Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList());
     }
 
+    /**
+     * Creates a list with the paths to be skipped based on the supplied {@code --skipPaths} argument.
+     *
+     * @return the list of paths to skip if any supplied, an empty list otherwise
+     */
     public List<String> getSkipPaths() {
         return Optional.ofNullable(this.skipPaths).orElse(Collections.emptyList());
     }
 
+    /**
+     * Creates a list with the fuzzers to be included based on the supplied {@code --fuzzers} argument.
+     * If no fuzzer is explicitly supplied, ALL fuzzers will be considered.
+     *
+     * @return the list of fuzzers to include if any supplied, an empty list otherwise
+     */
     public List<String> getSuppliedFuzzers() {
         return Optional.ofNullable(this.suppliedFuzzers).orElse(Collections.emptyList());
     }
 
+    /**
+     * Creates a list with the paths to be included based on the supplied {@code --paths} argument.
+     * If no path is explicitly supplied, ALL fuzzers will be considered.
+     *
+     * @return the list of paths to include if any supplied, an empty list otherwise
+     */
     public List<String> getPaths() {
         return Optional.ofNullable(this.paths).orElse(Collections.emptyList());
     }
@@ -131,6 +152,12 @@ public class FilterArguments {
         return !candidates.isEmpty() && new HashSet<>(specialFuzzers).containsAll(candidates);
     }
 
+
+    /**
+     * Returns a list with ALL registered fuzzers.
+     *
+     * @return a list with all the fuzzers
+     */
     public List<Fuzzer> getAllRegisteredFuzzers() {
         if (ALL_CATS_FUZZERS.isEmpty()) {
             List<String> interimFuzzersList = fuzzers.stream().map(Object::toString).toList();
@@ -145,7 +172,7 @@ public class FilterArguments {
         return ALL_CATS_FUZZERS;
     }
 
-    public List<String> removeBasedOnSanitizationStrategy(List<String> currentFuzzers) {
+    List<String> removeBasedOnSanitizationStrategy(List<String> currentFuzzers) {
         Class<? extends Annotation> filterAnnotation = processingArguments.getSanitizationStrategy() == ProcessingArguments.SanitizationStrategy.SANITIZE_AND_VALIDATE
                 ? ValidateAndSanitize.class : SanitizeAndValidate.class;
         List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, filterAnnotation);
@@ -153,7 +180,7 @@ public class FilterArguments {
         return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();
     }
 
-    public List<String> removeBasedOnTrimStrategy(List<String> currentFuzzers) {
+    List<String> removeBasedOnTrimStrategy(List<String> currentFuzzers) {
         Class<? extends Annotation> filterAnnotation = processingArguments.getEdgeSpacesStrategy() == ProcessingArguments.TrimmingStrategy.TRIM_AND_VALIDATE
                 ? ValidateAndTrim.class : TrimAndValidate.class;
         List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, filterAnnotation);
