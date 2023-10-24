@@ -35,7 +35,7 @@ import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
 @ApplicationScoped
 public class CatsUtil {
     public static final String FUZZER_KEY_DEFAULT = "*******";
-    public static final String TEST_KEY_DEFAULT = "**********";
+    public static final String TEST_KEY_DEFAULT = "******";
 
     public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, PrettyLogger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
         Map<Boolean, List<T>> results = collection.stream().collect(Collectors.partitioningBy(predicateToFilter));

@@ -23,6 +23,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import lombok.Builder;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
@@ -63,6 +64,7 @@ public class TestCaseListener {
     public static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
     protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
+    private static final String SEPARATOR = StringUtils.repeat("-", 120);
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final TestCaseExporter testCaseExporter;
     private final CatsGlobalContext globalContext;
@@ -121,9 +123,9 @@ public class TestCaseListener {
     }
 
     private void startTestCase() {
-        String testId = "Test " + TEST.incrementAndGet();
+        String testId = String.valueOf(TEST.incrementAndGet());
         MDC.put(ID, testId);
-        MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 10, Ansi.Color.MAGENTA));
+        MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 6, Ansi.Color.MAGENTA));
 
         testCaseMap.put(testId, new CatsTestCase());
         testCaseMap.get(testId).setTestId(testId);
@@ -170,6 +172,7 @@ public class TestCaseListener {
         }
         MDC.remove(ID);
         MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
+        logger.info(SEPARATOR);
     }
 
     public void startSession() {
@@ -430,7 +433,7 @@ public class TestCaseListener {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         testCase.setResult(result);
         testCase.setResultDetails(replaceBrackets(message, params));
-        logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), result);
+        logger.star("Test {}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), result);
         storeSuccessfulDelete(testCase);
     }
 
