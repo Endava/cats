@@ -83,13 +83,13 @@ class TestCaseListenerTest {
     void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> executionStatisticsListener.increaseSkipped());
 
-        Assertions.assertThat(testCaseListener.testCaseMap.get("Test 1")).isNotNull();
+        Assertions.assertThat(testCaseListener.testCaseMap.get("1")).isNotNull();
         Mockito.verify(testCaseExporter).writeTestCase(Mockito.any());
     }
 
     @Test
     void givenAFunction_whenExecutingATestCaseAndAddingDetails_thenTheDetailsAreCorrectlyAttachedToTheTestCase() {
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
 
         Assertions.assertThat(testCase).isNull();
 
@@ -102,7 +102,7 @@ class TestCaseListenerTest {
             testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
         });
 
-        testCase = testCaseListener.testCaseMap.get("Test 1");
+        testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase).isNotNull();
         Assertions.assertThat(testCase.getRequest()).isNotNull();
         Assertions.assertThat(testCase.getResponse()).isNotNull();
@@ -135,7 +135,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
 
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo(Level.WARN.toString().toLowerCase());
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Warn 1 happened");
     }
@@ -232,8 +232,8 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponses()).thenReturn(Map.of("300", Collections.emptyList()));
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
         Mockito.when(data.getPath()).thenReturn("/test");
-        MDC.put(TestCaseListener.ID, "Test 1");
-        testCaseListener.testCaseMap.put("Test 1", new CatsTestCase());
+        MDC.put(TestCaseListener.ID, "1");
+        testCaseListener.testCaseMap.put("1", new CatsTestCase());
         testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
 
         testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
@@ -306,7 +306,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
 
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo(Level.ERROR.toString().toLowerCase());
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Error 1 happened");
     }
@@ -323,7 +323,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
 
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo("success");
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Success 1 happened");
     }
@@ -337,7 +337,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
 
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo("skipped");
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Skipped due to: Skipper!");
     }
@@ -374,7 +374,7 @@ class TestCaseListenerTest {
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code");
     }
 
@@ -394,7 +394,7 @@ class TestCaseListenerTest {
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER");
     }
 
@@ -427,7 +427,7 @@ class TestCaseListenerTest {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
-        CatsTestCase testCase = testCaseListener.testCaseMap.get("Test 1");
+        CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Unexpected behaviour");
     }
 
@@ -676,6 +676,6 @@ class TestCaseListenerTest {
             testCaseListener.addPath("path");
             testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
         });
-        MDC.put(TestCaseListener.ID, "Test 1");
+        MDC.put(TestCaseListener.ID, "1");
     }
 }
