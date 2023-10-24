@@ -39,9 +39,9 @@ class RecommendedHttpCodesLinterFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"400,500,200;POST", "400,500,201;POST", "400,500,202;POST", "400,500,204;POST", "400,404,500,201;PUT", "400,404,500,202;GET", "404,200;HEAD",
-            "404,202;HEAD", "400,404,500,200;DELETE", "400,404,500,201;DELETE", "400,404,500,202;DELETE", "400,404,500,204;DELETE",
-            "400,404,500,200;PATCH", "400,404,500,201;PATCH", "400,404,500,202;PATCH", "400,404,500,204;PATCH", "400,500,200;TRACE"}, delimiter = ';')
+    @CsvSource(value = {"400,500,200;POST", "400,500,201;POST", "400,500,202;POST", "400,500,204;POST", "400,404,500,201;PUT", "404,500,202;GET", "404,200;HEAD",
+            "404,202;HEAD", "404,500,200;DELETE", "404,500,201;DELETE", "404,500,202;DELETE", "404,500,204;DELETE",
+            "400,404,500,200;PATCH", "400,404,500,201;PATCH", "400,404,500,202;PATCH", "400,404,500,204;PATCH", "500,200;TRACE"}, delimiter = ';')
     void shouldReportInfoWhenAllResponseCodesAreValid(String responseCode, HttpMethod method) {
         FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData("PetStore", method, responseCode.split(","));
 
@@ -52,8 +52,8 @@ class RecommendedHttpCodesLinterFuzzerTest {
 
     @ParameterizedTest
     @CsvSource(value = {"400,500;POST;200|201|202|204", "400,500;POST;200|201|202|204", "400,202;POST;500", "500,204;POST;400", "404,500,201;PUT;400", "400,500,202;GET;404", "200;HEAD;404",
-            "404;HEAD;200|202", "404,500,200;DELETE;400", "400,500,201;DELETE;404", "400,404,202;DELETE;500", "400,404,500;DELETE;200|201|202|204",
-            "404,500,200;PATCH;400", "400,500,201;PATCH;404", "400,404,202;PATCH;500", "400,404,500;PATCH;200|201|202|204", "500,200;TRACE;400", "400,200;TRACE;500"}, delimiter = ';')
+            "404;HEAD;200|202", "500,201;DELETE;404", "404,202;DELETE;500", "400,404,500;DELETE;200|201|202|204",
+            "404,500,200;PATCH;400", "400,500,201;PATCH;404", "400,404,202;PATCH;500", "400,404,500;PATCH;200|201|202|204", "500,400;TRACE;200", "400,200;TRACE;500"}, delimiter = ';')
     void shouldReportErrorWhenAllResponseCodesAreValid(String responseCode, HttpMethod method, String missing) {
         FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData("PetStore", method, responseCode.split(","));
 
