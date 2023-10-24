@@ -38,11 +38,11 @@ public enum HttpMethod {
 
         RECOMMENDED_CODES.put(HttpMethod.POST, Arrays.asList("400", "500", TWOXX));
         RECOMMENDED_CODES.put(HttpMethod.PUT, Arrays.asList("400", "404", "500", TWOXX));
-        RECOMMENDED_CODES.put(HttpMethod.GET, Arrays.asList("400", "404", "500", "200|202"));
+        RECOMMENDED_CODES.put(HttpMethod.GET, Arrays.asList("404", "500", "200|202"));
         RECOMMENDED_CODES.put(HttpMethod.HEAD, Arrays.asList("404", "200|202"));
-        RECOMMENDED_CODES.put(HttpMethod.DELETE, Arrays.asList("400", "404", "500", TWOXX));
+        RECOMMENDED_CODES.put(HttpMethod.DELETE, Arrays.asList("404", "500", TWOXX));
         RECOMMENDED_CODES.put(HttpMethod.PATCH, Arrays.asList("400", "404", "500", TWOXX));
-        RECOMMENDED_CODES.put(HttpMethod.TRACE, Arrays.asList("400", "500", "200"));
+        RECOMMENDED_CODES.put(HttpMethod.TRACE, Arrays.asList("500", "200"));
     }
 
     public static List<HttpMethod> nonRestMethods() {
