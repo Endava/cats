@@ -9,7 +9,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.CatsResult;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
@@ -113,10 +113,8 @@ public class TestCaseListener {
         try {
             s.run();
         } catch (Exception e) {
-            CatsResult catsResult = CatsResult.EXCEPTION
-                    .withDocumentedResponseCodes(Optional.ofNullable(e.getMessage()).orElse(""))
-                    .withExpectedResponseCodes(fuzzer.getClass().getSimpleName());
-            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).contractPath(DEFAULT_ERROR).build(), catsResult.getReason(), catsResult.getMessage());
+            CatsResultFactory.CatsResult catsResult = CatsResultFactory.createUnexpectedException(fuzzer.getClass().getSimpleName(), Optional.ofNullable(e.getMessage()).orElse(""));
+            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).contractPath(DEFAULT_ERROR).build(), catsResult.reason(), catsResult.message());
             externalLogger.error("Exception while processing: {}", e.getMessage());
             externalLogger.debug("Detailed stacktrace", e);
             this.checkForIOErrors(e);
@@ -214,9 +212,9 @@ public class TestCaseListener {
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
     }
 
-    private void setResultReason(CatsResult catsResult) {
+    private void setResultReason(CatsResultFactory.CatsResult catsResult) {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
-        testCase.setResultReason(catsResult.getReason());
+        testCase.setResultReason(catsResult.reason());
     }
 
     private void setResultReason(String reason) {
@@ -255,12 +253,12 @@ public class TestCaseListener {
         }
     }
 
-    private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, FuzzingData data, CatsResult catsResult, boolean ignoreCheck, Object... params) {
+    private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, FuzzingData data, CatsResultFactory.CatsResult catsResult, boolean ignoreCheck, Object... params) {
         if (ignoreCheck) {
             this.reportInfo(logger, catsResult, params);
             setResultReason(catsResult);
         } else {
-            this.reportResultWarn(logger, data, catsResult.getReason(), catsResult.getMessage(), params);
+            this.reportResultWarn(logger, data, catsResult.reason(), catsResult.message(), params);
         }
     }
 
@@ -269,8 +267,8 @@ public class TestCaseListener {
         setResultReason(reason);
     }
 
-    private void reportError(PrettyLogger logger, CatsResult catsResult, Object... params) {
-        this.reportError(logger, catsResult.getMessage(), params);
+    private void reportError(PrettyLogger logger, CatsResultFactory.CatsResult catsResult, Object... params) {
+        this.reportError(logger, catsResult.message(), params);
         setResultReason(catsResult);
     }
 
@@ -340,9 +338,7 @@ public class TestCaseListener {
         } else if (catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())) {
             this.logger.debug("Received response time exceeds --maxResponseTimeInMs: actual {}, max {}",
                     catsResponse.getResponseTimeInMs(), reportingArguments.getMaxResponseTime());
-            this.reportError(logger, CatsResult.RESPONSE_TIME_EXCEEDS_MAX
-                    .withResponseCode(String.valueOf(catsResponse.getResponseTimeInMs()))
-                    .withExpectedResponseCodes(String.valueOf(reportingArguments.getMaxResponseTime())));
+            this.reportError(logger, CatsResultFactory.createResponseTimeExceedsMax(catsResponse.getResponseTimeInMs(), reportingArguments.getMaxResponseTime()));
         } else {
             executionStatisticsListener.increaseSuccess();
             logger.success(message, params);
@@ -350,8 +346,8 @@ public class TestCaseListener {
         }
     }
 
-    private void reportInfo(PrettyLogger logger, CatsResult catsResult, Object... params) {
-        this.reportInfo(logger, catsResult.getMessage(), params);
+    private void reportInfo(PrettyLogger logger, CatsResultFactory.CatsResult catsResult, Object... params) {
+        this.reportInfo(logger, catsResult.message(), params);
     }
 
     public void reportResultInfo(PrettyLogger logger, FuzzingData data, String message, Object... params) {
@@ -377,28 +373,28 @@ public class TestCaseListener {
 
         if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
             this.logger.debug("Response code expected and documented and matches response schema");
-            this.reportInfo(logger, CatsResult.OK.withResponseCode(response.responseCodeAsString()));
+            this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
         } else if (isNotFound(response)) {
             this.logger.debug("NOT_FOUND response");
-            this.reportError(logger, CatsResult.NOT_FOUND);
+            this.reportError(logger, CatsResultFactory.createNotFound());
         } else if (assertions.isResponseCodeUnimplemented()) {
             this.logger.debug("Response code unimplemented");
-            this.reportResultWarn(logger, data, CatsResult.NOT_IMPLEMENTED.getReason(), CatsResult.NOT_IMPLEMENTED.getMessage());
+            CatsResultFactory.CatsResult notImplementedResult = CatsResultFactory.createNotImplemented();
+            this.reportResultWarn(logger, data, notImplementedResult.reason(), notImplementedResult.message());
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
             this.logger.debug("Response code expected and documented and but doesn't match response schema");
-            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResult.NOT_MATCHING_RESPONSE_SCHEMA.withResponseCode(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
+            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
-            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResult.UNDOCUMENTED_RESPONSE_CODE
-                    .withResponseCode(response.responseCodeAsString())
-                    .withDocumentedResponseCodes(data.getResponseCodes().toString())
-                    .withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()), ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
+            this.reportWarnOrInfoBasedOnCheck(logger, data,
+                    CatsResultFactory.createUndocumentedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString(), data.getResponseCodes().toString()),
+                    ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
             this.logger.debug("Response code documented but not expected");
-            this.reportError(logger, CatsResult.UNEXPECTED_RESPONSE_CODE.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
+            this.reportError(logger, CatsResultFactory.createUnexpectedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
         } else {
             this.logger.debug("Unexpected behaviour");
-            this.reportError(logger, CatsResult.UNEXPECTED_BEHAVIOUR.withResponseCode(response.responseCodeAsString()).withExpectedResponseCodes(expectedResultCode.allowedResponseCodes().toString()));
+            this.reportError(logger, CatsResultFactory.createUnexpectedBehaviour(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
         }
     }
 
