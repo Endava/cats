@@ -15,12 +15,13 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
-import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,6 +32,7 @@ import java.util.regex.Pattern;
 @Singleton
 public class NamingsLinterFuzzer extends BaseLinterFuzzer {
     private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_\\d*");
+    private static final Set<String> PROPERTIES_CHECKED = new HashSet<>();
     private static final String PLURAL_END = "s";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;
@@ -67,7 +69,7 @@ public class NamingsLinterFuzzer extends BaseLinterFuzzer {
 
         if (!errorString.toString().isEmpty()) {
             testCaseListener.reportResultError(log, data, "Paths not following recommended naming",
-                    "Path does not follow RESTful API naming good practices: {}", StringUtils.stripEnd(errorString.toString().trim(),","));
+                    "Path does not follow RESTful API naming good practices: {}", StringUtils.stripEnd(errorString.toString().trim(), ","));
         } else {
             testCaseListener.reportResultInfo(log, data, "Path follows the RESTful API naming good practices.");
         }
@@ -78,9 +80,11 @@ public class NamingsLinterFuzzer extends BaseLinterFuzzer {
         StringBuilder result = new StringBuilder();
         for (CatsField catsField : catsFields) {
             String[] props = catsField.getName().split("#");
-            result.append(this.check(props, property -> !namingArguments.getJsonPropertiesNaming().getPattern().matcher(property).matches(),
-                    "JSON properties not matching %s: %s, ", namingArguments.getJsonPropertiesNaming().getDescription()));
-
+            String propertyToCheck = props[props.length - 1];
+            if (!namingArguments.getJsonPropertiesNaming().getPattern().matcher(propertyToCheck).matches() && !PROPERTIES_CHECKED.contains(catsField.getName())) {
+                PROPERTIES_CHECKED.add(catsField.getName());
+                result.append("JSON properties not matching %s: %s, ".formatted(namingArguments.getJsonPropertiesNaming().getDescription(), catsField.getName()));
+            }
         }
         return result.toString();
     }
