@@ -53,7 +53,21 @@ import static org.fusesource.jansi.Ansi.ansi;
 @CommandLine.Command(
         name = "cats",
         mixinStandardHelpOptions = true,
-        header = "%n@|green cats - OpenAPI fuzzer and negative testing tool; version ${app.version}|@ %n",
+        header = {
+                "%n@|green cats - OpenAPI fuzzer and negative testing tool; version ${app.version}|@ %n",
+                """
+                        # # # # # # # # # # # # # # # # # # # # # # # # # #
+                        #             _____   ___ _____ _____             #
+                        #            /  __ \\ / _ \\_   _/  ___|            #
+                        #            | /  \\// /_\\ \\| | \\ `--.             #
+                        #            | |    |  _  || |  `--. \\            #
+                        #            | \\__/\\| | | || | /\\__/ /            #
+                        #             \\____/\\_| |_/\\_/ \\____/             #
+                        #           .. ...    -.-. --- --- .-..           #
+                        #                                                 #
+                        # # # # # # # # # # # # # # # # # # # # # # # # # #
+                        """
+        },
         usageHelpAutoWidth = true,
         versionProvider = VersionProvider.class,
         commandListHeading = "%n@|bold,underline Commands:|@%n",
