@@ -11,7 +11,8 @@ public enum CatsResult {
     NOT_IMPLEMENTED("Response HTTP code 501: you forgot to implement this functionality!", "Not Implemented"),
     NOT_FOUND("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", "Not Found"),
     UNEXPECTED_BEHAVIOUR("Unexpected behaviour: expected $expected_rc, actual [$code]", "Unexpected behaviour: $code"),
-    EXCEPTION("Fuzzer [$expected_rc] failed due to [$documented_rc]", "Unexpected Exception");
+    EXCEPTION("Fuzzer [$expected_rc] failed due to [$documented_rc]", "Unexpected Exception"),
+    RESPONSE_TIME_EXCEEDS_MAX("Test case executed successfully, but response time exceeds --maxResponseTimeInMs: actual $code, max $expected_rc", "Response time exceeds max");
 
     private final String message;
     private final String reason;

@@ -72,6 +72,9 @@ public class CatsResponse {
         return this.responseCode != INVALID_ERROR_CODE;
     }
 
+    public boolean exceedsExpectedResponseTime(long maxResponseTime) {
+        return maxResponseTime != 0 && responseTimeInMs > maxResponseTime;
+    }
 
     public static class CatsResponseBuilder {
         public CatsResponseBuilder withInvalidErrorCode() {

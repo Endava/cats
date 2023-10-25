@@ -30,7 +30,6 @@ public class ReportingArguments {
             description = "A list of log levels to include. For example you can choose to see only @|bold,underline fav|@ and @|bold,underline warning|@ levels, but leave the rest out", split = ",")
     private List<String> onlyLog;
 
-
     @CommandLine.Option(names = {"-D", "--debug"},
             description = "Set CATS log level to ALL. Useful for diagnose when raising bugs")
     private boolean debug;
@@ -66,6 +65,11 @@ public class ReportingArguments {
     @CommandLine.Option(names = {"--color"}, negatable = true,
             description = "If true enables coloured console output. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean color = true;
+
+    @CommandLine.Option(names = {"--maxResponseTimeInMs"},
+            description = "Sets a response time limit in milliseconds. If responses take longer than the provided value, they will get marked as @|bold error|@ with reason @|underline Response time exceeds max|@." +
+                    " The response time limit check is triggered only if the test case is considered successful i.e. response matches Fuzzer expectations")
+    private int maxResponseTime;
 
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());

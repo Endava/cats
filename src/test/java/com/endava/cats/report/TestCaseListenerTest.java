@@ -14,6 +14,8 @@ import com.endava.cats.model.FuzzingData;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Discriminator;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +27,6 @@ import org.slf4j.MDC;
 import org.slf4j.event.Level;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
@@ -41,7 +41,6 @@ class TestCaseListenerTest {
 
     ExecutionStatisticsListener executionStatisticsListener;
     IgnoreArguments ignoreArguments;
-    @Inject
     ReportingArguments reportingArguments;
     @Inject
     CatsGlobalContext catsGlobalContext;
@@ -55,7 +54,9 @@ class TestCaseListenerTest {
     void setup() {
         logger = Mockito.mock(PrettyLogger.class);
         fuzzer = Mockito.mock(Fuzzer.class);
+        reportingArguments = Mockito.mock(ReportingArguments.class);
         testCaseExporter = Mockito.mock(TestCaseExporterHtmlJs.class);
+        Mockito.when(reportingArguments.getReportFormat()).thenReturn(ReportingArguments.ReportFormat.HTML_JS);
         Mockito.when(testCaseExporter.reportFormat()).thenReturn(ReportingArguments.ReportFormat.HTML_JS);
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
@@ -566,6 +567,21 @@ class TestCaseListenerTest {
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
+    }
+
+    @Test
+    void shouldReportErrorWhenFuzzerSuccessfulButResponseTimeExceedsMax() {
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(ignoreArguments.isSkipReportingForSuccess()).thenReturn(false);
+        Mockito.when(ignoreArguments.isSkipReportingForIgnoredCodes()).thenReturn(false);
+        Mockito.when(reportingArguments.getMaxResponseTime()).thenReturn(10);
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addResponse(CatsResponse.builder().responseTimeInMs(100).build());
+            spyListener.reportInfo(logger, "Response code expected", "200");
+        });
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
+        Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "Test case executed successfully, but response time exceeds --maxResponseTimeInMs: actual 100, max 10");
     }
 
     @Test
