@@ -54,11 +54,11 @@ public class CatsTestCase {
     }
 
     public boolean notIgnoredForExecutionStatistics() {
-        return response.getResponseCode() != 999;
+        return response.isValidErrorCode();
     }
 
     public boolean hasRequestDetails() {
-        return response.getResponseCode() != 999;
+        return response.isValidErrorCode();
     }
 
     public String getHeaders() {

@@ -219,7 +219,7 @@ public class ServiceCaller {
             long duration = System.currentTimeMillis() - startTime;
             this.recordRequestAndResponse(catsRequest, CatsResponse.builder()
                     .body("empty response").httpMethod(catsRequest.getHttpMethod())
-                    .responseTimeInMs(duration).responseCode(999)
+                    .responseTimeInMs(duration).withInvalidErrorCode()
                     .jsonBody(new JsonPrimitive("empty response"))
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
