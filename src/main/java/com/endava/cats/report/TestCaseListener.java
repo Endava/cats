@@ -128,7 +128,7 @@ public class TestCaseListener {
         MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 6, Ansi.Color.MAGENTA));
 
         testCaseMap.put(testId, new CatsTestCase());
-        testCaseMap.get(testId).setTestId(testId);
+        testCaseMap.get(testId).setTestId("Test " + testId);
     }
 
     public void addScenario(PrettyLogger logger, String scenario, Object... params) {
@@ -433,7 +433,7 @@ public class TestCaseListener {
         CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
         testCase.setResult(result);
         testCase.setResultDetails(replaceBrackets(message, params));
-        logger.star("Test {}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), result);
+        logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), result);
         storeSuccessfulDelete(testCase);
     }
 

@@ -18,9 +18,9 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private double timeToExecuteInSec;
     private String httpMethod;
 
-    public static CatsTestCaseSummary fromCatsTestCase(String id, CatsTestCase testCase) {
+    public static CatsTestCaseSummary fromCatsTestCase(CatsTestCase testCase) {
         CatsTestCaseSummary summary = new CatsTestCaseSummary();
-        summary.id = id;
+        summary.id = testCase.getTestId();
         summary.scenario = testCase.getScenario();
         summary.result = testCase.getResult();
         summary.fuzzer = testCase.getFuzzer();

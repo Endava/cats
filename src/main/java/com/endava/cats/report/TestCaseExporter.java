@@ -211,9 +211,10 @@ public abstract class TestCaseExporter {
     }
 
     private CatsTestReport createTestReport(Map<String, CatsTestCase> testCaseMap, ExecutionStatisticsListener executionStatisticsListener) {
-        List<CatsTestCaseSummary> summaries = testCaseMap.entrySet().stream()
-                .filter(entry -> entry.getValue().isNotSkipped())
-                .map(testCase -> CatsTestCaseSummary.fromCatsTestCase(testCase.getKey(), testCase.getValue())).sorted()
+        List<CatsTestCaseSummary> summaries = testCaseMap.values().stream()
+                .filter(CatsTestCase::isNotSkipped)
+                .map(CatsTestCaseSummary::fromCatsTestCase)
+                .sorted()
                 .toList();
 
         return CatsTestReport.builder().testCases(summaries).errors(executionStatisticsListener.getErrors())

@@ -57,6 +57,10 @@ public class CatsTestCase {
         return response.getResponseCode() != 999;
     }
 
+    public boolean hasRequestDetails() {
+        return response.getResponseCode() != 999;
+    }
+
     public String getHeaders() {
         return JsonUtils.GSON.toJson(request.getHeaders());
     }
