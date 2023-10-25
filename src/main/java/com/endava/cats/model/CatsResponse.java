@@ -16,6 +16,7 @@ import java.util.List;
 @Builder
 @Getter
 public class CatsResponse {
+    private static final int INVALID_ERROR_CODE = 999;
     private final int responseCode;
     private final String httpMethod;
     private final long responseTimeInMs;
@@ -45,7 +46,7 @@ public class CatsResponse {
      * @return an object which can be considered empty
      */
     public static CatsResponse empty() {
-        return CatsResponse.from(999, "{}", "", 0);
+        return CatsResponse.from(INVALID_ERROR_CODE, "{}", "", 0);
     }
 
     public String responseCodeAsString() {
@@ -67,6 +68,15 @@ public class CatsResponse {
                 .orElse(null);
     }
 
+    public boolean isValidErrorCode() {
+        return this.responseCode != INVALID_ERROR_CODE;
+    }
+
+
     public static class CatsResponseBuilder {
+        public CatsResponseBuilder withInvalidErrorCode() {
+            this.responseCode = INVALID_ERROR_CODE;
+            return this;
+        }
     }
 }
