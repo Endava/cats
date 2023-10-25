@@ -69,6 +69,7 @@ public class TestCaseListener {
     private final TestCaseExporter testCaseExporter;
     private final CatsGlobalContext globalContext;
     private final IgnoreArguments ignoreArguments;
+    private final ReportingArguments reportingArguments;
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -85,6 +86,7 @@ public class TestCaseListener {
                 .orElseThrow();
         this.ignoreArguments = filterArguments;
         this.globalContext = catsGlobalContext;
+        this.reportingArguments = reportingArguments;
     }
 
     private static String replaceBrackets(String message, Object... params) {
@@ -284,7 +286,7 @@ public class TestCaseListener {
     void reportError(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
         CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
-        if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
+        if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors();
             logger.error(message, params);
@@ -335,6 +337,12 @@ public class TestCaseListener {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
             this.recordResult(message, params, SKIP_REPORTING, logger);
+        } else if (catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())) {
+            this.logger.debug("Received response time exceeds --maxResponseTimeInMs: actual {}, max {}",
+                    catsResponse.getResponseTimeInMs(), reportingArguments.getMaxResponseTime());
+            this.reportError(logger, CatsResult.RESPONSE_TIME_EXCEEDS_MAX
+                    .withResponseCode(String.valueOf(catsResponse.getResponseTimeInMs()))
+                    .withExpectedResponseCodes(String.valueOf(reportingArguments.getMaxResponseTime())));
         } else {
             executionStatisticsListener.increaseSuccess();
             logger.success(message, params);
