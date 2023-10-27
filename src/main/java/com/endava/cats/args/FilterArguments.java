@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,14 @@ public class FilterArguments {
     @Inject
     UserArguments userArguments;
 
+    public enum FieldType {
+        STRING, NUMBER, INTEGER, BOOLEAN;
+    }
+
+    public enum FormatType {
+        FLOAT, DOUBLE, INT32, INT64, DATE, DATE_TIME, PASSWORD, BYTE, BINARY, EMAIL, UUID, URI, URL, HOSTNAME, IPV4, IPV6
+    }
+
     @CommandLine.Option(names = {"-f", "--fuzzers"},
             description = "A comma separated list of fuzzers you want to run. You can use full or partial Fuzzer names. To list all available fuzzers run: @|bold cats list -f|@", split = ",")
     private List<String> suppliedFuzzers;
@@ -69,6 +78,54 @@ public class FilterArguments {
     @CommandLine.Option(names = {"-d", "--dryRun"},
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
     private boolean dryRun;
+    @CommandLine.Option(names = {"--fieldTypes"},
+            description = "A comma separated list of OpenAPI data types to include. It only supports standard types: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
+    private List<FieldType> fieldTypes;
+    @CommandLine.Option(names = {"--skipFieldTypes"},
+            description = "A comma separated list of OpenAPI data types to skip. It only supports standard types: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
+    private List<FieldType> skipFieldTypes;
+    @CommandLine.Option(names = {"--fieldFormats"},
+            description = "A comma separated list of OpenAPI data formats to include. It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
+    private List<FormatType> fieldFormats;
+    @CommandLine.Option(names = {"--skipFieldFormats"},
+            description = "A comma separated list of OpenAPI data formats to skip.  It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
+    private List<FormatType> skipFieldFormats;
+
+    /**
+     * Creates a list with the field data formats to be skipped based on the supplied {@code --skipFieldFormats} argument.
+     *
+     * @return the list of field data formats to skip if any supplied, an empty list otherwise
+     */
+    public List<String> getSkipFieldFormats() {
+        return mapToString(Optional.ofNullable(this.skipFieldFormats).orElse(Collections.emptyList()));
+    }
+
+    /**
+     * Creates a list with the field data formats to be included based on the supplied {@code --fieldFormats} argument.
+     *
+     * @return the list of field data formats to include if any supplied, an empty list otherwise
+     */
+    public List<String> getFieldFormats() {
+        return mapToString(Optional.ofNullable(this.fieldFormats).orElse(Collections.emptyList()));
+    }
+
+    /**
+     * Creates a list with the field data types to be skipped based on the supplied {@code --skipFieldTypes} argument.
+     *
+     * @return the list of field data types to skip if any supplied, an empty list otherwise
+     */
+    public List<String> getSkipFieldTypes() {
+        return mapToString(Optional.ofNullable(this.skipFieldTypes).orElse(Collections.emptyList()));
+    }
+
+    /**
+     * Creates a list with the field data types to be included based on the supplied {@code --fieldTypes} argument.
+     *
+     * @return the list of field type to include if any supplied, an empty list otherwise
+     */
+    public List<String> getFieldTypes() {
+        return mapToString(Optional.ofNullable(this.fieldTypes).orElse(Collections.emptyList()));
+    }
 
     /**
      * Creates a list with the fuzzers to be skipped based on the supplied {@code --skipFuzzers} argument.
@@ -253,5 +310,9 @@ public class FilterArguments {
         this.skipPaths = Collections.emptyList();
         this.httpMethods = HttpMethod.restMethods();
         this.dryRun = false;
+    }
+
+    public static <E extends Enum<E>> List<String> mapToString(List<E> fieldTypes) {
+        return fieldTypes.stream().map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
     }
 }
