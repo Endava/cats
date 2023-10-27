@@ -1,6 +1,7 @@
 package com.endava.cats.factory;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
@@ -36,15 +37,17 @@ class FuzzingDataFactoryTest {
     ValidDataFormat validDataFormat;
     private FilesArguments filesArguments;
     private ProcessingArguments processingArguments;
+    private FilterArguments filterArguments;
     private FuzzingDataFactory fuzzingDataFactory;
 
     @BeforeEach
     void setup() {
         filesArguments = Mockito.mock(FilesArguments.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
+        filterArguments = Mockito.mock(FilterArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of("application/json", "application/x-www-form-urlencoded"));
-        fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat);
+        fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
     }
 
     @Test

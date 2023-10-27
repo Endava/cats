@@ -6,7 +6,7 @@ package com.endava.cats.model;
 public abstract class CatsResultFactory {
 
     /**
-     * Creates a message and reason for the case when received response is documented and response body matches response schema.
+     * Creates a message and reason for the case when the received response is documented and response body matches response schema.
      *
      * @param receivedResponseCode the HTTP response code received from the service
      * @return a CatsResult to use in reports
@@ -19,7 +19,7 @@ public abstract class CatsResultFactory {
     }
 
     /**
-     * Creates a message and reason for the case when received response is documented, BUT response body doesn't matches response schema.
+     * Creates a message and reason for the case when the received response is documented, BUT response body doesn't match response schema.
      *
      * @param receivedResponseCode the HTTP response code received from the service
      * @return a CatsResult to use in reports
@@ -31,10 +31,20 @@ public abstract class CatsResultFactory {
         return new CatsResult(message, reason);
     }
 
+    /**
+     * Creates a message and reason for the case when the received response code is 501.
+     *
+     * @return a CatsResult to use in reports
+     */
     public static CatsResult createNotImplemented() {
         return new CatsResult("Response HTTP code 501: you forgot to implement this functionality!", "Not Implemented");
     }
 
+    /**
+     * Creates a message and reason for the case when the received response code is 404.
+     *
+     * @return a CatsResult to use in reports
+     */
     public static CatsResult createNotFound() {
         return new CatsResult("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", "Not Found");
     }

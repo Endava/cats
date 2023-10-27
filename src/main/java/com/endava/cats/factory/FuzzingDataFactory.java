@@ -1,6 +1,7 @@
 package com.endava.cats.factory;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
@@ -60,15 +61,16 @@ public class FuzzingDataFactory {
     private final FilesArguments filesArguments;
     private final ProcessingArguments processingArguments;
     private final CatsGlobalContext globalContext;
-
     private final ValidDataFormat validDataFormat;
+    private final FilterArguments filterArguments;
 
     @Inject
-    public FuzzingDataFactory(FilesArguments filesArguments, ProcessingArguments processingArguments, CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat) {
+    public FuzzingDataFactory(FilesArguments filesArguments, ProcessingArguments processingArguments, CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, FilterArguments filterArguments) {
         this.filesArguments = filesArguments;
         this.processingArguments = processingArguments;
         this.globalContext = catsGlobalContext;
         this.validDataFormat = validDataFormat;
+        this.filterArguments = filterArguments;
     }
 
     /**
@@ -220,6 +222,10 @@ public class FuzzingDataFactory {
                             .reqSchemaName(reqSchemaName)
                             .examples(examples)
                             .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
+                            .includeFieldTypes(filterArguments.getFieldTypes())
+                            .skipFieldTypes(filterArguments.getSkipFieldTypes())
+                            .includeFieldFormats(filterArguments.getFieldFormats())
+                            .skipFieldFormats(filterArguments.getSkipFieldFormats())
                             .build()).toList());
         }
 
@@ -268,7 +274,12 @@ public class FuzzingDataFactory {
                         .openApi(openAPI)
                         .tags(operation.getTags())
                         .reqSchemaName(SYNTH_SCHEMA_NAME)
-                        .selfReferenceDepth(processingArguments.getSelfReferenceDepth()).build())
+                        .selfReferenceDepth(processingArguments.getSelfReferenceDepth())
+                        .includeFieldTypes(filterArguments.getFieldTypes())
+                        .skipFieldTypes(filterArguments.getSkipFieldTypes())
+                        .includeFieldFormats(filterArguments.getFieldFormats())
+                        .skipFieldFormats(filterArguments.getSkipFieldFormats())
+                        .build())
                 .toList();
     }
 

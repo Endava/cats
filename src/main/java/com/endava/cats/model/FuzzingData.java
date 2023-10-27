@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 @Getter
 @ToString
 public class FuzzingData {
+    public static final String EMPTY = "";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingData.class);
     private final HttpMethod method;
     private final String contractPath;
@@ -53,6 +54,18 @@ public class FuzzingData {
     private String processedPayload;
     private Set<String> targetFields;
     private int selfReferenceDepth;
+
+    @Builder.Default
+    private List<String> includeFieldTypes = Collections.emptyList();
+
+    @Builder.Default
+    private List<String> skipFieldTypes = Collections.emptyList();
+
+    @Builder.Default
+    private List<String> includeFieldFormats = Collections.emptyList();
+
+    @Builder.Default
+    private List<String> skipFieldFormats = Collections.emptyList();
 
     @Builder.Default
     private Set<String> examples = new HashSet<>();
@@ -146,7 +159,15 @@ public class FuzzingData {
 
     public Set<CatsField> getAllFieldsAsCatsFields() {
         if (allFieldsAsCatsFields == null) {
-            allFieldsAsCatsFields = this.getFields(reqSchema, "");
+            allFieldsAsCatsFields = this.getFields(reqSchema, EMPTY);
+            if (!includeFieldTypes.isEmpty()) {
+                allFieldsAsCatsFields.removeIf(catsField -> !includeFieldTypes.contains(Optional.ofNullable(catsField.getSchema().getType()).orElse(EMPTY)));
+            }
+            if (!includeFieldFormats.isEmpty()) {
+                allFieldsAsCatsFields.removeIf(catsField -> !includeFieldFormats.contains(Optional.ofNullable(catsField.getSchema().getFormat()).orElse(EMPTY)));
+            }
+            allFieldsAsCatsFields.removeIf(catsField -> skipFieldTypes.contains(Optional.ofNullable(catsField.getSchema().getType()).orElse(EMPTY)));
+            allFieldsAsCatsFields.removeIf(catsField -> skipFieldFormats.contains(Optional.ofNullable(catsField.getSchema().getFormat()).orElse(EMPTY)));
         }
 
         return allFieldsAsCatsFields;
