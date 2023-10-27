@@ -25,4 +25,13 @@ class CatsResponseTest {
 
         Assertions.assertThat(actual).isEqualTo(expected);
     }
+
+    @ParameterizedTest
+    @CsvSource({"201,true", "999,false", "200,true"})
+    void shouldCheckValidErrorCode(int code, boolean expected) {
+        CatsResponse response = CatsResponse.builder().responseCode(code).build();
+        boolean actual = response.isValidErrorCode();
+
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
 }

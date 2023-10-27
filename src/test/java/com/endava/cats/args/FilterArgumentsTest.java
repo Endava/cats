@@ -246,4 +246,14 @@ class FilterArgumentsTest {
         filterArguments.customFilter("FunctionalFuzzer");
         Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("FunctionalFuzzer");
     }
+
+    @Test
+    void shouldHave4FieldTypes() {
+        Assertions.assertThat(FilterArguments.FieldType.values()).hasSize(4);
+    }
+
+    @Test
+    void shouldHave16FieldFormats() {
+        Assertions.assertThat(FilterArguments.FormatType.values()).hasSize(16);
+    }
 }
