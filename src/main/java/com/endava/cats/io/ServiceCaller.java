@@ -215,7 +215,7 @@ public class ServiceCaller {
 
             this.recordRequestAndResponse(catsRequest, response, data);
             return response;
-        } catch (IOException e) {
+        } catch (IOException | IllegalStateException e) {
             long duration = System.currentTimeMillis() - startTime;
             this.recordRequestAndResponse(catsRequest, CatsResponse.builder()
                     .body("empty response").httpMethod(catsRequest.getHttpMethod())
