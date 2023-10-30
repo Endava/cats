@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.executor;
 
-import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -8,10 +8,10 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-
+import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,13 +22,13 @@ public class HeadersIteratorExecutor {
     private final TestCaseListener testCaseListener;
     private final MatchArguments matchArguments;
 
-    private final IgnoreArguments ignoreArguments;
+    private final FilterArguments filterArguments;
 
-    public HeadersIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, MatchArguments ma, IgnoreArguments ia) {
+    public HeadersIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, MatchArguments ma, FilterArguments ia) {
         this.serviceCaller = serviceCaller;
         this.testCaseListener = testCaseListener;
         this.matchArguments = ma;
-        this.ignoreArguments = ia;
+        this.filterArguments = ia;
     }
 
     public void execute(HeadersIteratorExecutorContext context) {
@@ -40,7 +40,7 @@ public class HeadersIteratorExecutor {
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(headersWithoutAuth);
 
         for (CatsHeader header : clonedHeaders) {
-            if (ignoreArguments.getSkipHeaders().stream().noneMatch(ignoredHeader -> ignoredHeader.equalsIgnoreCase(header.getName()))) {
+            if (filterArguments.getSkipHeaders().stream().noneMatch(ignoredHeader -> ignoredHeader.equalsIgnoreCase(header.getName()))) {
                 for (FuzzingStrategy fuzzingStrategy : context.getFuzzValueProducer().get()) {
                     context.getLogger().debug("Fuzzing strategy {} for header {}", fuzzingStrategy.name(), header);
                     String previousHeaderValue = header.getValue();

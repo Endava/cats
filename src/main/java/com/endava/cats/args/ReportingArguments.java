@@ -89,7 +89,7 @@ public class ReportingArguments {
 
     public void processLogData() {
         for (String logLine : this.getLogData()) {
-            String[] log = logLine.strip().trim().split(":");
+            String[] log = logLine.strip().trim().split(":", -1);
             String level;
             String pkg = "com.endava.cats";
             if (log.length == 1) {

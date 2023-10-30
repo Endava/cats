@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 /**
@@ -81,7 +82,7 @@ public class CatsHeader {
             return UUID.randomUUID().toString();
         }
         if ("date-time".equalsIgnoreCase(schema.getFormat())) {
-            return OffsetDateTime.now().toString();
+            return OffsetDateTime.now(ZoneId.systemDefault()).toString();
         }
 
         if ("string".equalsIgnoreCase(schema.getType())) {

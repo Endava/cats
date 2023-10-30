@@ -79,7 +79,7 @@ public class NamingsLinterFuzzer extends BaseLinterFuzzer {
         Set<CatsField> catsFields = data.getAllFieldsAsCatsFields();
         StringBuilder result = new StringBuilder();
         for (CatsField catsField : catsFields) {
-            String[] props = catsField.getName().split("#");
+            String[] props = catsField.getName().split("#", -1);
             String propertyToCheck = props[props.length - 1];
             if (!namingArguments.getJsonPropertiesNaming().getPattern().matcher(propertyToCheck).matches() && !PROPERTIES_CHECKED.contains(catsField.getName())) {
                 PROPERTIES_CHECKED.add(catsField.getName());

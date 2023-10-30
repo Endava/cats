@@ -4,13 +4,13 @@ import com.endava.cats.annotations.ControlCharFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.TrimAndValidate;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.IgnoreArguments;
-import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.generator.simple.UnicodeGenerator;
+import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 
 @Singleton
@@ -19,7 +19,7 @@ import java.util.List;
 @TrimAndValidate
 public class OnlyControlCharsInFieldsTrimValidateFuzzer extends InvisibleCharsOnlyTrimValidateFuzzer {
 
-    public OnlyControlCharsInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, IgnoreArguments fa) {
+    public OnlyControlCharsInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp, fa);
     }
 

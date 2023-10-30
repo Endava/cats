@@ -200,7 +200,7 @@ public class FilesArguments {
      */
     public String replacePathWithUrlParams(String startingUrl) {
         for (String line : this.getUrlParamsList()) {
-            String[] urlParam = line.split(":");
+            String[] urlParam = line.split(":", -1);
             String pathVar = "{" + urlParam[0] + "}";
             if (startingUrl.contains(pathVar)) {
                 startingUrl = startingUrl.replace(pathVar, urlParam[1]);

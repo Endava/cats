@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -11,19 +11,19 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
-
 import jakarta.inject.Singleton;
+
 import java.util.Collections;
 import java.util.List;
 
 @Singleton
 @FieldFuzzer
 public class NullValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
-    private final IgnoreArguments ignoreArguments;
+    private final FilterArguments filterArguments;
 
-    public NullValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, IgnoreArguments fa) {
+    public NullValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp);
-        this.ignoreArguments = fa;
+        this.filterArguments = fa;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class NullValuesInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzz
 
     @Override
     public List<String> skipForFields() {
-        return ignoreArguments.getSkipFields();
+        return filterArguments.getSkipFields();
     }
 
     @Override

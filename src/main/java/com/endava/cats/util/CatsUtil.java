@@ -151,8 +151,8 @@ public class CatsUtil {
 
     private void setMapValues(DocumentContext jsonDoc, String additionalProperties, String prefix) {
         String mapValues = additionalProperties.replace(MAP_VALUES + "=", "").replace("{", "").replace("}", "");
-        for (String values : mapValues.split(",")) {
-            String[] entry = values.split("=");
+        for (String values : mapValues.split(",", -1)) {
+            String[] entry = values.split("=", -1);
             jsonDoc.put(JsonPath.compile(prefix), entry[0].trim(), CatsDSLParser.parseAndGetResult(entry[1].trim(), Map.of(Parser.REQUEST, jsonDoc.jsonString())));
         }
     }

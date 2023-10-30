@@ -1,22 +1,22 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
-import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -32,13 +32,13 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RemoveFieldsFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    private final IgnoreArguments ignoreArguments;
+    private final FilterArguments filterArguments;
     private final ProcessingArguments processingArguments;
 
-    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, IgnoreArguments fa, ProcessingArguments pa) {
+    public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilterArguments fa, ProcessingArguments pa) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
-        this.ignoreArguments = fa;
+        this.filterArguments = fa;
         this.processingArguments = pa;
     }
 
@@ -57,7 +57,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
     private Set<String> removeIfSkipped(Set<String> subset) {
         return subset.stream()
-                .filter(field -> !ignoreArguments.getSkipFields().contains(field))
+                .filter(field -> !filterArguments.getSkipFields().contains(field))
                 .collect(Collectors.toSet());
     }
 
