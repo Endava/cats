@@ -58,8 +58,7 @@ public abstract class WordUtils {
         return obj == null ? null : String.valueOf(obj);
     }
 
-    public static boolean containsAsAlphanumeric(String string1, String string2) {
-        return string1.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT)
-                .contains(string2.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT));
+    public static boolean matchesAsLowerCase(String string1, String string2) {
+        return string2.toLowerCase(Locale.ROOT).matches(string1.toLowerCase(Locale.ROOT));
     }
 }

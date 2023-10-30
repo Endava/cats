@@ -58,12 +58,12 @@ public class CatsResponse {
     }
 
     public boolean containsHeader(String name) {
-        return headers.stream().anyMatch(header -> WordUtils.containsAsAlphanumeric(header.getKey(), name));
+        return headers.stream().anyMatch(header -> WordUtils.matchesAsLowerCase(header.getKey(), name));
     }
 
     public KeyValuePair<String, String> getHeader(String name) {
         return headers.stream()
-                .filter(header -> WordUtils.containsAsAlphanumeric(header.getKey(), name))
+                .filter(header -> WordUtils.matchesAsLowerCase(header.getKey(), name))
                 .findFirst()
                 .orElse(null);
     }
