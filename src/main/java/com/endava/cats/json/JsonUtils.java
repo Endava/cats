@@ -34,7 +34,7 @@ public abstract class JsonUtils {
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";
     public static final JSONParser GENERIC_PERMISSIVE_PARSER = new JSONParser(JSONParser.MODE_PERMISSIVE);
-    public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_STRICTEST);
+    public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
 
     public static final Gson GSON = new GsonBuilder()
             .setLenient()
