@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.headers.base;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
@@ -18,21 +19,22 @@ import java.util.List;
 import java.util.function.Function;
 
 public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
-    private static final int NUMBER_OF_HEADERS = 10000;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BaseRandomHeadersFuzzer.class);
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
+    private final ProcessingArguments processingArguments;
 
-    protected BaseRandomHeadersFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener) {
+    protected BaseRandomHeadersFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, ProcessingArguments processingArguments) {
         this.simpleExecutor = simpleExecutor;
         this.testCaseListener = testCaseListener;
+        this.processingArguments = processingArguments;
     }
 
     @Override
     public void fuzz(FuzzingData data) {
         List<CatsHeader> headers = new ArrayList<>(data.getHeaders());
 
-        for (int i = 0; i < NUMBER_OF_HEADERS; i++) {
+        for (int i = 0; i < processingArguments.getRandomHeadersNumber(); i++) {
             headers.add(CatsHeader.builder()
                     .name(RandomStringUtils.randomAlphanumeric(10))
                     .required(false)
