@@ -44,6 +44,8 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "processingArguments", processingArguments);
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", Collections.emptyList());
+        ReflectionTestUtils.setField(filterArguments, "skipFields", Collections.emptyList());
+
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
         filterArguments.getUserArguments().words = null;
@@ -255,5 +257,23 @@ class FilterArgumentsTest {
     @Test
     void shouldHave16FieldFormats() {
         Assertions.assertThat(FilterArguments.FormatType.values()).hasSize(16);
+    }
+
+    @Test
+    void shouldReturnSkippedFields() {
+        ReflectionTestUtils.setField(filterArguments, "skipFields", List.of("field1", "field2"));
+
+        List<String> skipFields = filterArguments.getSkipFields();
+        Assertions.assertThat(skipFields).containsOnly("field1", "field2");
+    }
+
+    @Test
+    void shouldReturnEmptySkipFields() {
+        Assertions.assertThat(filterArguments.getSkipFields()).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmptySkipHeaders() {
+        Assertions.assertThat(filterArguments.getSkipHeaders()).isEmpty();
     }
 }

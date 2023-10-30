@@ -191,7 +191,7 @@ public abstract class JsonUtils {
     }
 
     public static boolean isCyclicReference(String currentProperty, int depth) {
-        String[] properties = currentProperty.split("#");
+        String[] properties = currentProperty.split("#", -1);
 
         if (properties.length < depth) {
             return false;

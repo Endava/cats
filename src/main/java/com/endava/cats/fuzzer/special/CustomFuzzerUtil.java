@@ -279,7 +279,7 @@ public class CustomFuzzerUtil {
     }
 
     public boolean wasOneOfSelectionReplaced(String oneOfSelection, FuzzingData data) {
-        String[] oneOfArray = oneOfSelection.replace("{", "").replace("}", "").split("=");
+        String[] oneOfArray = oneOfSelection.replace("{", "").replace("}", "").split("=", -1);
 
         String updatedJson = this.replaceElementWithCustomValue(new AbstractMap.SimpleEntry<>(oneOfArray[0], oneOfArray[1]), data.getPayload());
         return JsonUtils.equalAsJson(data.getPayload(), updatedJson);

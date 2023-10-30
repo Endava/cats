@@ -90,6 +90,22 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--skipFieldFormats"},
             description = "A comma separated list of OpenAPI data formats to skip.  It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FormatType> skipFieldFormats;
+    @CommandLine.Option(names = {"--skipFields"},
+            description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")
+    private List<String> skipFields;
+
+    @CommandLine.Option(names = {"--skipHeaders"},
+            description = "A comma separated list of headers that will be skipped by all Fuzzers", split = ",")
+    private List<String> skipHeaders;
+
+
+    public List<String> getSkipFields() {
+        return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList());
+    }
+
+    public List<String> getSkipHeaders() {
+        return Optional.ofNullable(this.skipHeaders).orElse(Collections.emptyList());
+    }
 
     /**
      * Creates a list with the field data formats to be skipped based on the supplied {@code --skipFieldFormats} argument.
@@ -191,7 +207,7 @@ public class FilterArguments {
         if (onlySpecialFuzzers(this.getSuppliedFuzzers())) {
             return Collections.emptyList();
         }
-        return SECOND_PHASE_FUZZERS_TO_BE_RUN;
+        return List.copyOf(SECOND_PHASE_FUZZERS_TO_BE_RUN);
     }
 
     private List<String> removeSpecialFuzzers(List<String> allowedFuzzers) {

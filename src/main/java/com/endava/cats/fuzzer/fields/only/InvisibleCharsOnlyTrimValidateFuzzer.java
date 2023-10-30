@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
@@ -13,11 +13,11 @@ import com.endava.cats.util.CatsUtil;
 import java.util.List;
 
 public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
-    private final IgnoreArguments ignoreArguments;
+    private final FilterArguments filterArguments;
 
-    protected InvisibleCharsOnlyTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, IgnoreArguments fa) {
+    protected InvisibleCharsOnlyTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp);
-        this.ignoreArguments = fa;
+        this.filterArguments = fa;
     }
 
     @Override
@@ -38,7 +38,7 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
      */
     @Override
     public List<String> skipForFields() {
-        return ignoreArguments.getSkipFields();
+        return filterArguments.getSkipFields();
     }
 
     @Override

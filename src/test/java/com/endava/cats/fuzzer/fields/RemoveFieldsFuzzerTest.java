@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -30,7 +30,7 @@ class RemoveFieldsFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private IgnoreArguments ignoreArguments;
+    private FilterArguments filterArguments;
     private ProcessingArguments processingArguments;
     private RemoveFieldsFuzzer removeFieldsFuzzer;
 
@@ -39,10 +39,10 @@ class RemoveFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        ignoreArguments = Mockito.mock(IgnoreArguments.class);
+        filterArguments = Mockito.mock(FilterArguments.class);
         processingArguments = Mockito.mock(ProcessingArguments.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, ignoreArguments, processingArguments);
+        removeFieldsFuzzer = new RemoveFieldsFuzzer(serviceCaller, testCaseListener, filterArguments, processingArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -51,7 +51,7 @@ class RemoveFieldsFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(ProcessingArguments.SetFuzzingStrategy.ONEBYONE);
         Mockito.when(data.getAllFields(Mockito.any(), Mockito.anyInt())).thenReturn(Collections.singleton(Collections.singleton("id")));
-        Mockito.when(ignoreArguments.getSkipFields()).thenReturn(Collections.singletonList("id"));
+        Mockito.when(filterArguments.getSkipFields()).thenReturn(Collections.singletonList("id"));
         removeFieldsFuzzer.fuzz(data);
 
         Mockito.verifyNoInteractions(testCaseListener);

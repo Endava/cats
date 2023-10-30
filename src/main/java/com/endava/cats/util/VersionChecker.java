@@ -54,8 +54,8 @@ public class VersionChecker {
     }
 
     public static int compare(String version1, String version2) {
-        String[] parts1 = version1.replace("-SNAPSHOT", "").split("\\.");
-        String[] parts2 = version2.replace("-SNAPSHOT", "").split("\\.");
+        String[] parts1 = version1.replace("-SNAPSHOT", "").split("\\.", -1);
+        String[] parts2 = version2.replace("-SNAPSHOT", "").split("\\.", -1);
 
         int length = Math.max(parts1.length, parts2.length);
 

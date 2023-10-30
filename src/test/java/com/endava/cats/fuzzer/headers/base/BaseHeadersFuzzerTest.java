@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.headers.base;
 
-import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -34,7 +34,7 @@ class BaseHeadersFuzzerTest {
 
     private BaseHeadersFuzzer baseHeadersFuzzer;
 
-    private IgnoreArguments ignoreArguments;
+    private FilterArguments filterArguments;
 
     private CatsResponse catsResponse;
 
@@ -42,8 +42,8 @@ class BaseHeadersFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        ignoreArguments = Mockito.mock(IgnoreArguments.class);
-        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class), ignoreArguments);
+        filterArguments = Mockito.mock(FilterArguments.class);
+        HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class), filterArguments);
         baseHeadersFuzzer = new MyBaseHeadersFuzzer(headersIteratorExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
         catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
@@ -79,7 +79,7 @@ class BaseHeadersFuzzerTest {
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
 
-        Mockito.when(ignoreArguments.getSkipHeaders()).thenReturn(List.of("skippedHeader"));
+        Mockito.when(filterArguments.getSkipHeaders()).thenReturn(List.of("skippedHeader"));
         baseHeadersFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
     }

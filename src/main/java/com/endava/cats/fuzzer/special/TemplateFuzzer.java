@@ -20,8 +20,8 @@ import com.endava.cats.util.ConsoleUtils;
 import com.jayway.jsonpath.JsonPathException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -106,7 +106,7 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     String replaceQueryParam(String targetField, String queryPair, String withValue) {
-        String[] queryPairArr = queryPair.split("=");
+        String[] queryPairArr = queryPair.split("=", -1);
         if (queryPairArr[0].equalsIgnoreCase(targetField) && queryPairArr.length == 2) {
             return queryPairArr[0] + "=" + withValue;
         } else if (queryPair.equalsIgnoreCase(targetField)) {
