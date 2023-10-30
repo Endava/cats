@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseExporter;
@@ -26,7 +27,9 @@ class LargeNumberOfRandomHeadersFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        largeNumberOfRandomHeadersFuzzer = new LargeNumberOfRandomHeadersFuzzer(simpleExecutor, testCaseListener);
+        ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
+        Mockito.when(processingArguments.getRandomHeadersNumber()).thenReturn(10000);
+        largeNumberOfRandomHeadersFuzzer = new LargeNumberOfRandomHeadersFuzzer(simpleExecutor, testCaseListener, processingArguments);
     }
 
     @Test

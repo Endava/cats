@@ -34,6 +34,10 @@ public class ProcessingArguments {
     @CommandLine.Option(names = {"--largeStringsSize"},
             description = "The size of the strings used by the Fuzzers sending large values like @|bold VeryLargeStringsFuzzer|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int largeStringsSize = 40000;
+    @CommandLine.Option(names = {"--randomHeadersNumber"},
+            description = "The number of random headers that will be sent by the @|bold LargeNumberOfRandomAlphanumericHeadersFuzzer and LargeNumberOfRandomHeadersFuzzer|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private int randomHeadersNumber = 10000;
+
     @CommandLine.Option(names = {"--selfReferenceDepth", "-L"},
             description = "Max depth for objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int selfReferenceDepth = 3;
