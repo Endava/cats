@@ -6,7 +6,7 @@ import org.fusesource.jansi.Ansi;
 public abstract class ConsoleUtils {
 
     private static final String QUARKUS_PROXY_SUFFIX = "_Subclass";
-    private static final String REGEX_TO_REMOVE_FROM_FUZZER_NAMES = "TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize|Fuzzer|Of";
+    private static final String REGEX_TO_REMOVE_FROM_FUZZER_NAMES = "TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize|Fuzzer";
 
     private ConsoleUtils() {
         //ntd
