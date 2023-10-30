@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.util.WordUtils.containsAsAlphanumeric;
+import static com.endava.cats.util.WordUtils.matchesAsLowerCase;
 
 /**
  * Check that responses include Content-Type, Content-Type-Options, X-Frame-Options: deny
@@ -35,7 +35,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     protected static final Map<String, List<KeyValuePair<String, String>>> SECURITY_HEADERS = new HashMap<>();
 
     static {
-        SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(new KeyValuePair<>("Cache-Control", "no-store")));
+        SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(new KeyValuePair<>("Cache-Control", ".*no-store.*")));
         SECURITY_HEADERS.put("X-Content-Type-Options", Collections.singletonList(new KeyValuePair<>("X-Content-Type-Options", "nosniff")));
         SECURITY_HEADERS.put("X-Frame-Options/Content-Security-Policy", List.of(new KeyValuePair<>("X-Frame-Options", "DENY"),
                 new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'")));
@@ -100,8 +100,8 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
         if (expected.getValue() == null || actual.getValue() == null) {
             return false;
         }
-        return containsAsAlphanumeric(expected.getKey(), actual.getKey()) &&
-                containsAsAlphanumeric(expected.getValue(), actual.getValue());
+        return matchesAsLowerCase(expected.getKey(), actual.getKey()) &&
+                matchesAsLowerCase(expected.getValue(), actual.getValue());
     }
 
 
