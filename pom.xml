@@ -34,7 +34,7 @@
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
             **/*HttpContent*.*, **/*MultipartProcessor*.*
         </sonar.coverage.exclusions>
-        <sonar.cpd.exclusions>**/*Generator*.*</sonar.cpd.exclusions>
+        <sonar.cpd.exclusions>**/*Generator*.*,**/*Fuzzer*.*</sonar.cpd.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.4.5</maven-project-info-reports-plugin.version>
