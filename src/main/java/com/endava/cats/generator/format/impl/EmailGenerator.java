@@ -38,7 +38,7 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of(EMAIL);
     }
 }

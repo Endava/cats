@@ -22,7 +22,7 @@ public class UnixtimeGenerator implements ValidDataFormatGenerator, OpenAPIForma
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("unix-time", "unixtime", "unix_time");
     }
 }

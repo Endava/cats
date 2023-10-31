@@ -9,5 +9,5 @@ public interface OpenAPIFormat {
      *
      * @return a list of OpenAPI formats
      */
-    List<String> marchingFormats();
+    List<String> matchingFormats();
 }

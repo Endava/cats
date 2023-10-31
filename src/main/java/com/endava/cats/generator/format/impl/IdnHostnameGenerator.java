@@ -22,7 +22,7 @@ public class IdnHostnameGenerator implements ValidDataFormatGenerator, OpenAPIFo
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("idn-hostname");
     }
 }

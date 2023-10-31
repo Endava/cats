@@ -23,7 +23,7 @@ public class Gtin8Generator implements ValidDataFormatGenerator, OpenAPIFormat {
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("gtin8", "ean8");
     }
 }

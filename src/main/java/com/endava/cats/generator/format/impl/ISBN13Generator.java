@@ -26,7 +26,7 @@ public class ISBN13Generator implements ValidDataFormatGenerator, OpenAPIFormat 
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of(ISBN_13);
     }
 }

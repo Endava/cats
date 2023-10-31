@@ -38,7 +38,7 @@ public class URIGenerator implements ValidDataFormatGenerator, InvalidDataFormat
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("url", "uri");
     }
 }

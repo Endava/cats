@@ -29,7 +29,7 @@ public class ISBN10Generator implements ValidDataFormatGenerator, OpenAPIFormat 
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of(ISBN_10, ISBN);
     }
 }
