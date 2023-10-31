@@ -20,23 +20,23 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 @QuarkusTest
-class NullBodyFuzzerTest {
+class RandomUnicodeBodyFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private NullBodyFuzzer nullBodyFuzzer;
+    private RandomUnicodeBodyFuzzer randomUnicodeBodyFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        nullBodyFuzzer = new NullBodyFuzzer(simpleExecutor);
+        randomUnicodeBodyFuzzer = new RandomUnicodeBodyFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test
     void shouldNotRunForEmptyPayload() {
-        nullBodyFuzzer.fuzz(Mockito.mock(FuzzingData.class));
+        randomUnicodeBodyFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
         Mockito.verifyNoInteractions(testCaseListener);
     }
@@ -50,27 +50,27 @@ class NullBodyFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
-        nullBodyFuzzer.fuzz(data);
+        randomUnicodeBodyFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
     }
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(nullBodyFuzzer).hasToString(nullBodyFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(randomUnicodeBodyFuzzer).hasToString(randomUnicodeBodyFuzzer.getClass().getSimpleName());
     }
 
     @Test
     void shouldHaveDescription() {
-        Assertions.assertThat(nullBodyFuzzer.description()).isNotBlank();
+        Assertions.assertThat(randomUnicodeBodyFuzzer.description()).isNotBlank();
     }
 
     @Test
     void shouldSkipForNonHttpBodyMethods() {
-        Assertions.assertThat(nullBodyFuzzer.skipForHttpMethods()).contains(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(randomUnicodeBodyFuzzer.skipForHttpMethods()).contains(HttpMethod.GET, HttpMethod.DELETE);
     }
 
     @Test
-    void shouldHaveNullPayload() {
-        Assertions.assertThat(nullBodyFuzzer.getPayload(null)).isEqualTo("null");
+    void shouldHaveRandomUnicodePayload() {
+        Assertions.assertThat(randomUnicodeBodyFuzzer.getPayload(null)).isNotBlank();
     }
 }

@@ -68,4 +68,9 @@ class EmptyBodyFuzzerTest {
     void shouldSkipForNonHttpBodyMethods() {
         Assertions.assertThat(emptyBodyFuzzer.skipForHttpMethods()).contains(HttpMethod.GET, HttpMethod.DELETE);
     }
+
+    @Test
+    void shouldHaveEmptyPayload() {
+        Assertions.assertThat(emptyBodyFuzzer.getPayload(null)).isEmpty();
+    }
 }
