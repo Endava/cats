@@ -24,7 +24,7 @@ class StringGeneratorTest {
     @Test
     void shouldGenerateRandomString() {
         String actual = StringGenerator.generateRandomString();
-        Assertions.assertThat(actual).isEqualTo(StringGenerator.FUZZ);
+        Assertions.assertThat(actual).startsWith(StringGenerator.FUZZ);
     }
 
     @Test

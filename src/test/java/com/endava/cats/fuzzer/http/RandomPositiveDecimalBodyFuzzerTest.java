@@ -20,23 +20,23 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 @QuarkusTest
-class NullBodyFuzzerTest {
+class RandomPositiveDecimalBodyFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private NullBodyFuzzer nullBodyFuzzer;
+    private RandomPositiveDecimalBodyFuzzer randomPositiveDecimalBodyFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        nullBodyFuzzer = new NullBodyFuzzer(simpleExecutor);
+        randomPositiveDecimalBodyFuzzer = new RandomPositiveDecimalBodyFuzzer(simpleExecutor);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test
     void shouldNotRunForEmptyPayload() {
-        nullBodyFuzzer.fuzz(Mockito.mock(FuzzingData.class));
+        randomPositiveDecimalBodyFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
         Mockito.verifyNoInteractions(testCaseListener);
     }
@@ -50,27 +50,27 @@ class NullBodyFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
-        nullBodyFuzzer.fuzz(data);
+        randomPositiveDecimalBodyFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
     }
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(nullBodyFuzzer).hasToString(nullBodyFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(randomPositiveDecimalBodyFuzzer).hasToString(randomPositiveDecimalBodyFuzzer.getClass().getSimpleName());
     }
 
     @Test
     void shouldHaveDescription() {
-        Assertions.assertThat(nullBodyFuzzer.description()).isNotBlank();
+        Assertions.assertThat(randomPositiveDecimalBodyFuzzer.description()).isNotBlank();
     }
 
     @Test
     void shouldSkipForNonHttpBodyMethods() {
-        Assertions.assertThat(nullBodyFuzzer.skipForHttpMethods()).contains(HttpMethod.GET, HttpMethod.DELETE);
+        Assertions.assertThat(randomPositiveDecimalBodyFuzzer.skipForHttpMethods()).contains(HttpMethod.GET, HttpMethod.DELETE);
     }
 
     @Test
-    void shouldHaveNullPayload() {
-        Assertions.assertThat(nullBodyFuzzer.getPayload(null)).isEqualTo("null");
+    void shouldHavePositiveDecimalPayload() {
+        Assertions.assertThat(randomPositiveDecimalBodyFuzzer.getPayload(null)).isEqualTo("987698769876.9876987698769876987698769876987698769876");
     }
 }

@@ -2,6 +2,7 @@ package com.endava.cats.generator.simple;
 
 import com.github.curiousoddman.rgxgen.RgxGen;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -20,7 +21,7 @@ public class StringGenerator {
     }
 
     public static String generateRandomString() {
-        return FUZZ;
+        return FUZZ + RandomStringUtils.randomAlphabetic(4);
     }
 
     public static String generateLargeString(int times) {
