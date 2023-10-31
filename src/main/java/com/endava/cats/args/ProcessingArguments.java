@@ -1,11 +1,13 @@
 package com.endava.cats.args;
 
+import com.endava.cats.json.JsonUtils;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 import picocli.CommandLine;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Singleton
@@ -47,7 +49,23 @@ public class ProcessingArguments {
             description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning.")
     private String contentType;
 
+    @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
+            description = "A @|bold name:value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
+                    " which result in multiple payloads for a single endpoint and http method.")
+    Map<String, String> xxxOfSelections;
+
     public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
+
+    public boolean matchesXxxSelection(String payload) {
+        if (xxxOfSelections != null) {
+            return xxxOfSelections.entrySet().stream().anyMatch(entry ->
+            {
+                String valueFromPayload = String.valueOf(JsonUtils.getVariableFromJson(payload, entry.getKey()));
+                return JsonUtils.isNotSet(valueFromPayload) || valueFromPayload.equalsIgnoreCase(entry.getValue());
+            });
+        }
+        return true;
+    }
 
     public List<String> getContentType() {
         if (contentType == null) {

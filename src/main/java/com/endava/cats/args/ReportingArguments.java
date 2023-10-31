@@ -71,6 +71,8 @@ public class ReportingArguments {
                     " The response time limit check is triggered only if the test case is considered successful i.e. response matches Fuzzer expectations")
     private int maxResponseTime;
 
+    private Verbosity verbosity;
+
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }
@@ -115,6 +117,10 @@ public class ReportingArguments {
 
     public enum ReportFormat {
         HTML_ONLY, HTML_JS, JUNIT
+    }
+
+    public enum Verbosity {
+        SUMMARY, DETAILED
     }
 
 }
