@@ -35,7 +35,7 @@ public class Bcp47Generator implements ValidDataFormatGenerator, InvalidDataForm
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("bcp47");
     }
 }

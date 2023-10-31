@@ -26,7 +26,7 @@ public class Gtin13Generator implements ValidDataFormatGenerator, OpenAPIFormat 
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("gtin13", "ean13");
     }
 }

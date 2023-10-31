@@ -38,7 +38,7 @@ public class CountryCodeAlpha2Generator implements ValidDataFormatGenerator, Inv
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("iso3166alpha2", "iso3166-alpha2", "iso3166_alpha2");
     }
 }

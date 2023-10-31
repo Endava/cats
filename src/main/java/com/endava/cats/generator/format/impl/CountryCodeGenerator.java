@@ -44,7 +44,7 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("iso3166", "countryCode", "country-code", "country_code");
     }
 }

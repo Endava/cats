@@ -20,7 +20,7 @@ public class RelativeJsonPointerGenerator implements ValidDataFormatGenerator, O
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("relative-json-pointer");
     }
 }

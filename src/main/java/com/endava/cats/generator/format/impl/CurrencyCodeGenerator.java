@@ -41,7 +41,7 @@ public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidD
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("iso4217", "currencyCode", "currency-code", "currency_code");
     }
 }

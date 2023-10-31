@@ -63,7 +63,7 @@ public class ListCommand implements Runnable {
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndSanitize.class) == null)
                 .toList();
-        this.formats = formats.stream().flatMap(format -> format.marchingFormats().stream()).toList();
+        this.formats = formats.stream().flatMap(format -> format.matchingFormats().stream()).toList();
     }
 
     @Override

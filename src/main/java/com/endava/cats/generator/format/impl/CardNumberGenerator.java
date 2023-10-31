@@ -43,7 +43,7 @@ public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDat
     }
 
     @Override
-    public List<String> marchingFormats() {
+    public List<String> matchingFormats() {
         return List.of("cardNumber", "card-number", "card_number");
     }
 }
