@@ -56,6 +56,10 @@ public abstract class JsonUtils {
         //ntd
     }
 
+    public static boolean isNotSet(String value) {
+        return NOT_SET.equalsIgnoreCase(value);
+    }
+
     public static String sanitizeToJsonPath(String input) {
         return input.replace("#", ".");
     }

@@ -359,12 +359,15 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered = fuzzingDataList.stream()
                 .filter(fuzzingData -> filterArguments.getHttpMethods().contains(fuzzingData.getMethod()))
                 .toList();
+        List<FuzzingData> fuzzingDataWithXxxOfSelectionFiltered = fuzzingDataListWithHttpMethodsFiltered.stream()
+                .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
+                .toList();
 
         List<Fuzzer> allFuzzersSorted = filterArguments.getAllRegisteredFuzzers();
         List<String> configuredFuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        this.runFuzzers(pathItemEntry, fuzzingDataListWithHttpMethodsFiltered, allFuzzersSorted, configuredFuzzers);
-        this.runFuzzers(pathItemEntry, fuzzingDataListWithHttpMethodsFiltered, allFuzzersSorted, filterArguments.getSecondPhaseFuzzers());
+        this.runFuzzers(pathItemEntry, fuzzingDataWithXxxOfSelectionFiltered, allFuzzersSorted, configuredFuzzers);
+        this.runFuzzers(pathItemEntry, fuzzingDataWithXxxOfSelectionFiltered, allFuzzersSorted, filterArguments.getSecondPhaseFuzzers());
     }
 
     private void runFuzzers(Map.Entry<String, PathItem> pathItemEntry, List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, List<Fuzzer> allFuzzersSorted, List<String> configuredFuzzers) {
