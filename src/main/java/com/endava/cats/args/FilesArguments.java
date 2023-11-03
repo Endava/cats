@@ -113,7 +113,7 @@ public class FilesArguments {
             log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
         } else {
             log.config(Ansi.ansi().bold().a("Security Fuzzer file: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(securityFuzzerFile.getCanonicalPath()));
+                    Ansi.ansi().fg(Ansi.Color.BLUE).a(securityFuzzerFile.getCanonicalPath()));
             securityFuzzerDetails = parseYaml(securityFuzzerFile.getCanonicalPath());
         }
     }
@@ -128,7 +128,7 @@ public class FilesArguments {
             log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
         } else {
             log.config(Ansi.ansi().bold().a("Functional Fuzzer file: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(customFuzzerFile.getCanonicalPath()));
+                    Ansi.ansi().fg(Ansi.Color.BLUE).a(customFuzzerFile.getCanonicalPath()));
             customFuzzerDetails = parseYaml(customFuzzerFile.getCanonicalPath());
         }
     }
@@ -159,7 +159,7 @@ public class FilesArguments {
             log.debug("No URL parameters provided!");
         } else {
             log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(params));
+                    Ansi.ansi().fg(Ansi.Color.BLUE).a(params));
         }
     }
 
@@ -256,7 +256,7 @@ public class FilesArguments {
             log.debug("No {} file provided!", fileType);
         } else {
             log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
-                    Ansi.ansi().fg(Ansi.Color.YELLOW).a(file.getCanonicalPath()));
+                    Ansi.ansi().fg(Ansi.Color.BLUE).a(file.getCanonicalPath()));
             fromFile = parseYaml(file.getCanonicalPath());
             log.debug("{} file loaded successfully: {}", fileType, fromFile);
         }

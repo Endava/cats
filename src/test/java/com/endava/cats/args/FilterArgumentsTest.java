@@ -3,6 +3,7 @@ package com.endava.cats.args;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.fields.UserDictionaryFieldsFuzzer;
 import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
+import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
@@ -238,12 +239,12 @@ class FilterArgumentsTest {
 
     @Test
     void shouldNotAddFirstPhaseFuzzersInSecondPhase() {
-        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).containsOnly("CheckDeletedResourcesNotAvailableFuzzer");
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasOnlyElementsOfType(CheckDeletedResourcesNotAvailableFuzzer.class);
     }
 
     @Test
     void shouldReturnEmptySecondPhaseWhenSpecialFuzzer() {
-        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).containsOnly("CheckDeletedResourcesNotAvailableFuzzer");
+        Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).hasOnlyElementsOfType(CheckDeletedResourcesNotAvailableFuzzer.class);
         filterArguments.customFilter("FunctionalFuzzer");
         Assertions.assertThat(filterArguments.getSecondPhaseFuzzers()).isEmpty();
     }
