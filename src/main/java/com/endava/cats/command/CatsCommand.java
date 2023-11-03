@@ -307,10 +307,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         logger.config(ansi().bold().a("{} configured paths out of {} total OpenAPI paths").bold().reset().toString(),
                 ansi().fg(Ansi.Color.BLUE).a(filterArguments.getPathsToRun(openAPI).size()).bold().reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(openAPI.getPaths().size()).reset().bold());
-        logger.config(ansi().bold().a("HTTP methods in scope: {}").reset().toString(), ansi().fg(Ansi.Color.YELLOW).a(filterArguments.getHttpMethods()).reset());
+        logger.config(ansi().bold().a("HTTP methods in scope: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(filterArguments.getHttpMethods()).reset());
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
-        logger.config(ansi().bold().a("Total number of OpenAPI operations: {}").reset().toString(), ansi().fg(Ansi.Color.YELLOW).a(nofOfOperations));
+        logger.config(ansi().bold().a("Total number of OpenAPI operations: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(nofOfOperations));
     }
 
 
@@ -329,34 +329,25 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             return;
         }
 
-        List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered = fuzzingDataList.stream()
-                .filter(fuzzingData -> filterArguments.getHttpMethods().contains(fuzzingData.getMethod()))
-                .toList();
-        List<FuzzingData> fuzzingDataWithXxxOfSelectionFiltered = fuzzingDataListWithHttpMethodsFiltered.stream()
+        List<FuzzingData> filteredFuzzingData = fuzzingDataList.stream()
+                .filter(fuzzingData -> filterArguments.isHttpMethodSupplied(fuzzingData.getMethod()))
                 .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
                 .toList();
 
-        List<Fuzzer> allFuzzersSorted = filterArguments.getAllRegisteredFuzzers();
-        List<String> configuredFuzzers = filterArguments.getFirstPhaseFuzzersForPath();
-
-        List<Fuzzer> fuzzersToRun = allFuzzersSorted.stream()
-                .filter(fuzzer -> configuredFuzzers.contains(fuzzer.toString()))
+        List<Fuzzer> fuzzersToRun = filterArguments.getFirstPhaseFuzzersAsFuzzers().stream()
                 .filter(fuzzer -> fuzzer.skipForHttpMethods()
                         .stream()
-                        .noneMatch(httpMethod -> fuzzingDataWithXxxOfSelectionFiltered
+                        .noneMatch(httpMethod -> filteredFuzzingData
                                 .stream()
                                 .map(FuzzingData::getMethod)
                                 .toList()
                                 .contains(httpMethod)))
                 .toList();
-        List<Fuzzer> secondPhaseFuzzers = allFuzzersSorted.stream()
-                .filter(fuzzer -> filterArguments.getSecondPhaseFuzzers().contains(fuzzer.toString()))
-                .toList();
 
-        testCaseListener.setTotalRunsPerPath(pathItemEntry.getKey(), fuzzersToRun.size() * fuzzingDataWithXxxOfSelectionFiltered.size());
+        testCaseListener.setTotalRunsPerPath(pathItemEntry.getKey(), fuzzersToRun.size() * filteredFuzzingData.size());
 
-        this.runFuzzers(fuzzingDataWithXxxOfSelectionFiltered, fuzzersToRun);
-        this.runFuzzers(fuzzingDataWithXxxOfSelectionFiltered, secondPhaseFuzzers);
+        this.runFuzzers(filteredFuzzingData, fuzzersToRun);
+        this.runFuzzers(filteredFuzzingData, filterArguments.getSecondPhaseFuzzers());
     }
 
     private void runFuzzers(List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, List<Fuzzer> configuredFuzzers) {

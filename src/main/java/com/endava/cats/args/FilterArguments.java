@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 @Getter
 public class FilterArguments {
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
-    static final List<String> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
+    static final List<Fuzzer> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
     static final List<String> PATHS_TO_INCLUDE = new ArrayList<>();
 
@@ -191,6 +191,12 @@ public class FilterArguments {
         return Optional.ofNullable(this.paths).orElse(Collections.emptyList());
     }
 
+    public List<Fuzzer> getFirstPhaseFuzzersAsFuzzers() {
+        return this.getAllRegisteredFuzzers().stream()
+                .filter(fuzzer -> this.getFirstPhaseFuzzersForPath().contains(fuzzer.toString()))
+                .toList();
+    }
+
     public List<String> getFirstPhaseFuzzersForPath() {
         if (FUZZERS_TO_BE_RUN.isEmpty()) {
             List<String> allowedFuzzers = processSuppliedFuzzers();
@@ -205,14 +211,17 @@ public class FilterArguments {
             FUZZERS_TO_BE_RUN.clear();
             FUZZERS_TO_BE_RUN.addAll(List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer"));
         } else {
-            FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers()::contains);
+            FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers().stream().map(Object::toString).toList()::contains);
         }
         return FUZZERS_TO_BE_RUN;
     }
 
-    public List<String> getSecondPhaseFuzzers() {
+    public List<Fuzzer> getSecondPhaseFuzzers() {
         if (SECOND_PHASE_FUZZERS_TO_BE_RUN.isEmpty()) {
-            SECOND_PHASE_FUZZERS_TO_BE_RUN.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class));
+            List<String> secondPhaseFuzzersAsString = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class);
+            SECOND_PHASE_FUZZERS_TO_BE_RUN.addAll(this.getAllRegisteredFuzzers().stream()
+                    .filter(fuzzer -> secondPhaseFuzzersAsString.contains(fuzzer.toString()))
+                    .toList());
         }
         if (onlySpecialFuzzers(this.getSuppliedFuzzers())) {
             return Collections.emptyList();
@@ -357,19 +366,19 @@ public class FilterArguments {
      * @return the list of paths from the contract matching the supplied list
      */
     public List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
-        List<String> suppliedPaths = this.matchWildCardPaths(this.getPaths(), openAPI);
+        List<String> allSuppliedPaths = matchWildCardPaths(this.getPaths(), openAPI);
         if (this.getPaths().isEmpty()) {
-            suppliedPaths.addAll(openAPI.getPaths().keySet());
+            allSuppliedPaths.addAll(openAPI.getPaths().keySet());
         }
-        List<String> skipPaths = this.matchWildCardPaths(this.getSkipPaths(), openAPI);
-        suppliedPaths = suppliedPaths.stream().filter(path -> !skipPaths.contains(path)).toList();
+        List<String> allSkippedPaths = matchWildCardPaths(this.getSkipPaths(), openAPI);
+        allSuppliedPaths = allSuppliedPaths.stream().filter(path -> !allSkippedPaths.contains(path)).toList();
 
-        logger.debug("Supplied paths before filtering {}", suppliedPaths);
-        suppliedPaths = CatsUtil.filterAndPrintNotMatching(suppliedPaths, path -> openAPI.getPaths().containsKey(path), logger,
+        logger.debug("Supplied paths before filtering {}", allSuppliedPaths);
+        allSuppliedPaths = CatsUtil.filterAndPrintNotMatching(allSuppliedPaths, path -> openAPI.getPaths().containsKey(path), logger,
                 "Supplied path is not matching the contract {}", Object::toString);
-        logger.debug("Supplied paths after filtering {}", suppliedPaths);
+        logger.debug("Supplied paths after filtering {}", allSuppliedPaths);
 
-        return suppliedPaths;
+        return allSuppliedPaths;
     }
 
     private List<String> matchWildCardPaths(List<String> paths, OpenAPI openAPI) {
@@ -390,5 +399,9 @@ public class FilterArguments {
 
         logger.debug("Final list of matching wildcard paths: {}", result);
         return result;
+    }
+
+    public boolean isHttpMethodSupplied(HttpMethod method) {
+        return this.httpMethods.contains(method);
     }
 }
