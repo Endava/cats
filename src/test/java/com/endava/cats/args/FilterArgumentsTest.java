@@ -6,6 +6,9 @@ import com.endava.cats.fuzzer.headers.UserDictionaryHeadersFuzzer;
 import com.endava.cats.fuzzer.http.HappyPathFuzzer;
 import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -13,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
@@ -48,6 +52,7 @@ class FilterArgumentsTest {
 
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
+        FilterArguments.PATHS_TO_INCLUDE.clear();
         filterArguments.getUserArguments().words = null;
     }
 
@@ -275,5 +280,62 @@ class FilterArgumentsTest {
     @Test
     void shouldReturnEmptySkipHeaders() {
         Assertions.assertThat(filterArguments.getSkipHeaders()).isEmpty();
+    }
+
+    @Test
+    void shouldNotFilter() {
+        Paths paths = new Paths();
+        paths.addPathItem("/path1", new PathItem());
+        paths.addPathItem("/path2", new PathItem());
+        OpenAPI openAPI = Mockito.mock(OpenAPI.class);
+        Mockito.when(openAPI.getPaths()).thenReturn(paths);
+
+        List<String> filteredPaths = filterArguments.getPathsToRun(openAPI);
+        Assertions.assertThat(filteredPaths).containsOnly("/path1", "/path2");
+    }
+
+    @Test
+    void shouldOnlyIncludeSuppliedPaths() {
+        Paths paths = new Paths();
+        paths.addPathItem("/path1", new PathItem());
+        paths.addPathItem("/path11", new PathItem());
+        paths.addPathItem("/path2", new PathItem());
+        ReflectionTestUtils.setField(filterArguments, "paths", List.of("/path1"));
+
+        OpenAPI openAPI = Mockito.mock(OpenAPI.class);
+        Mockito.when(openAPI.getPaths()).thenReturn(paths);
+
+        List<String> filteredPaths = filterArguments.getPathsToRun(openAPI);
+        Assertions.assertThat(filteredPaths).containsOnly("/path1");
+    }
+
+    @Test
+    void shouldExcludeSkipPaths() {
+        Paths paths = new Paths();
+        paths.addPathItem("/path1", new PathItem());
+        paths.addPathItem("/path2", new PathItem());
+        ReflectionTestUtils.setField(filterArguments, "skipPaths", List.of("/path1"));
+
+        OpenAPI openAPI = Mockito.mock(OpenAPI.class);
+        Mockito.when(openAPI.getPaths()).thenReturn(paths);
+
+        List<String> filteredPaths = filterArguments.getPathsToRun(openAPI);
+        Assertions.assertThat(filteredPaths).containsOnly("/path2");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"/path1*,/path11", "/path2*,/path2", "*path3,/another-path3", "*another*,/another-path3"})
+    void shouldIncludeWildcard(String wildcardPattern, String result) {
+        Paths paths = new Paths();
+        paths.addPathItem("/path11", new PathItem());
+        paths.addPathItem("/path2", new PathItem());
+        paths.addPathItem("/another-path3", new PathItem());
+        ReflectionTestUtils.setField(filterArguments, "paths", List.of(wildcardPattern));
+
+        OpenAPI openAPI = Mockito.mock(OpenAPI.class);
+        Mockito.when(openAPI.getPaths()).thenReturn(paths);
+
+        List<String> filteredPaths = filterArguments.getPathsToRun(openAPI);
+        Assertions.assertThat(filteredPaths).containsOnly(result);
     }
 }

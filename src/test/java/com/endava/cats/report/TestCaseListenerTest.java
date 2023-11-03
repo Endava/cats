@@ -131,10 +131,10 @@ class TestCaseListenerTest {
             testCaseListener.reportWarn(logger, "Warn {} happened", "1");
         });
 
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
 
         CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo(Level.WARN.toString().toLowerCase());
@@ -181,10 +181,10 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(response);
 
         testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         MDC.remove(TestCaseListener.ID);
     }
 
@@ -196,7 +196,7 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(response);
         testCaseListener.reportInfo(logger, "Something was good");
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
 
         MDC.remove(TestCaseListener.ID);
     }
@@ -208,7 +208,7 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(response);
         testCaseListener.reportInfo(logger, "Something was good");
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
 
         MDC.remove(TestCaseListener.ID);
     }
@@ -220,7 +220,7 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(response);
         testCaseListener.reportWarn(logger, "Something was good");
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
 
         MDC.remove(TestCaseListener.ID);
     }
@@ -258,10 +258,10 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(200).build());
 
         testCaseListener.reportError(logger, "Warn");
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         MDC.remove(TestCaseListener.ID);
     }
 
@@ -273,10 +273,10 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(200).build());
 
         testCaseListener.reportError(logger, "Error");
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         MDC.remove(TestCaseListener.ID);
     }
 
@@ -288,10 +288,10 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(CatsResponse.builder().responseCode(200).build());
 
         testCaseListener.reportWarn(logger, "Warn");
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         MDC.remove(TestCaseListener.ID);
     }
 
@@ -302,10 +302,10 @@ class TestCaseListenerTest {
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportError(logger, "Error {} happened", "1"));
 
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
 
         CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo(Level.ERROR.toString().toLowerCase());
@@ -319,10 +319,10 @@ class TestCaseListenerTest {
             testCaseListener.reportInfo(logger, "Success {} happened", "1");
         });
 
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
 
         CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo("success");
@@ -334,9 +334,9 @@ class TestCaseListenerTest {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.skipTest(logger, "Skipper!"));
 
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSkipped();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
 
         CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResult()).isEqualTo("skipped");
@@ -356,7 +356,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
     }
 
     @Test
@@ -373,8 +373,8 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code");
     }
@@ -393,8 +393,8 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER");
     }
@@ -410,8 +410,8 @@ class TestCaseListenerTest {
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
     }
 
     @Test
@@ -426,8 +426,8 @@ class TestCaseListenerTest {
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
-        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         CatsTestCase testCase = testCaseListener.testCaseMap.get("1");
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Unexpected behaviour");
     }
@@ -448,7 +448,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
@@ -468,7 +468,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
@@ -486,7 +486,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
@@ -505,7 +505,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
@@ -524,7 +524,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
@@ -544,7 +544,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
@@ -565,7 +565,7 @@ class TestCaseListenerTest {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
             spyListener.reportResult(logger, data, response, family);
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(response.responseCodeAsString()));
     }
 
@@ -580,7 +580,7 @@ class TestCaseListenerTest {
             testCaseListener.addResponse(CatsResponse.builder().responseTimeInMs(100).build());
             spyListener.reportInfo(logger, "Response code expected", "200");
         });
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "Test case executed successfully, but response time exceeds --maxResponseTimeInMs: actual 100, max 10");
     }
 
@@ -597,7 +597,7 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [%s], documented response codes: %s".formatted(ResponseCodeFamily.FOURXX.allowedResponseCodes().toString(), response.responseCodeAsString(), data.getResponseCodes().toString()));
     }
 
@@ -615,7 +615,7 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "Response HTTP code 404: you might need to provide business context using --refData or --urlParams");
     }
 
@@ -633,7 +633,7 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("501");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response HTTP code 501: you forgot to implement this functionality!");
     }
 

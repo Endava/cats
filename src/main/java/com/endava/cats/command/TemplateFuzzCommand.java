@@ -17,9 +17,8 @@ import com.google.common.net.HttpHeaders;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
-import picocli.CommandLine;
-
 import jakarta.inject.Inject;
+import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -121,15 +120,15 @@ public class TemplateFuzzCommand implements Runnable {
 
             beforeFuzz();
             templateFuzzer.fuzz(fuzzingData);
-            afterFuzz();
+            afterFuzz(fuzzingData.getContractPath(), fuzzingData.getMethod().name());
         } catch (IOException e) {
             logger.debug("Exception while fuzzing given data!", e);
             logger.error("Something went wrong while fuzzing. The data file does not exist or is not reachable: {}. Error message: {}", data, e.getMessage());
         }
     }
 
-    private void afterFuzz() {
-        testCaseListener.afterFuzz();
+    private void afterFuzz(String path, String method) {
+        testCaseListener.afterFuzz(path, method);
         testCaseListener.endSession();
     }
 

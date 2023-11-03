@@ -15,6 +15,10 @@ import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.util.CatsUtil;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -29,7 +33,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -40,9 +47,12 @@ import java.util.stream.Collectors;
 @Getter
 public class FilterArguments {
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
-
     static final List<String> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
+    static final List<String> PATHS_TO_INCLUDE = new ArrayList<>();
+
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FilterArguments.class);
+
     @Inject
     Instance<Fuzzer> fuzzers;
     @Inject
@@ -330,5 +340,55 @@ public class FilterArguments {
 
     public static <E extends Enum<E>> List<String> mapToString(List<E> fieldTypes) {
         return fieldTypes.stream().map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
+    }
+
+    public List<String> getPathsToRun(OpenAPI openAPI) {
+        if (PATHS_TO_INCLUDE.isEmpty()) {
+            PATHS_TO_INCLUDE.addAll(this.matchSuppliedPathsWithContractPaths(openAPI));
+        }
+
+        return PATHS_TO_INCLUDE;
+    }
+
+    /**
+     * Check if there are any supplied paths and match them against the contract
+     *
+     * @param openAPI the OpenAPI object parsed from the contract
+     * @return the list of paths from the contract matching the supplied list
+     */
+    public List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
+        List<String> suppliedPaths = this.matchWildCardPaths(this.getPaths(), openAPI);
+        if (this.getPaths().isEmpty()) {
+            suppliedPaths.addAll(openAPI.getPaths().keySet());
+        }
+        List<String> skipPaths = this.matchWildCardPaths(this.getSkipPaths(), openAPI);
+        suppliedPaths = suppliedPaths.stream().filter(path -> !skipPaths.contains(path)).toList();
+
+        logger.debug("Supplied paths before filtering {}", suppliedPaths);
+        suppliedPaths = CatsUtil.filterAndPrintNotMatching(suppliedPaths, path -> openAPI.getPaths().containsKey(path), logger,
+                "Supplied path is not matching the contract {}", Object::toString);
+        logger.debug("Supplied paths after filtering {}", suppliedPaths);
+
+        return suppliedPaths;
+    }
+
+    private List<String> matchWildCardPaths(List<String> paths, OpenAPI openAPI) {
+        Set<String> allContractPaths = openAPI.getPaths().keySet();
+        Map<Boolean, List<String>> pathsByWildcard = paths.stream().collect(Collectors.partitioningBy(path -> path.contains("*")));
+
+        List<String> result = new ArrayList<>(pathsByWildcard.get(false));
+
+        for (String wildCardPath : pathsByWildcard.get(true)) {
+            String regex = wildCardPath
+                    .replace("*", ".*");
+            Pattern pattern = Pattern.compile(regex);
+            result.addAll(allContractPaths
+                    .stream()
+                    .filter(path -> pattern.matcher(path).matches())
+                    .toList());
+        }
+
+        logger.debug("Final list of matching wildcard paths: {}", result);
+        return result;
     }
 }

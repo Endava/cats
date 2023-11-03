@@ -130,7 +130,7 @@ public class ServiceCaller {
                     .retryOnConnectionFailure(true)
                     .hostnameVerifier((hostname, session) -> true).build();
 
-            logger.config("Proxy configuration to be used: {}", authArguments.getProxy());
+            logger.debug("Proxy configuration to be used: {}", authArguments.getProxy());
         } catch (GeneralSecurityException | IOException e) {
             logger.warning("Failed to configure HTTP CLIENT: {}", e.getMessage());
             logger.debug("Stacktrace", e);
