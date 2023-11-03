@@ -70,6 +70,7 @@
         <okio.version>3.6.0</okio.version>
         <wiremock.version>3.2.0</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+        <jline.version>3.24.0</jline.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -523,5 +524,16 @@
             <artifactId>validation-api</artifactId>
             <version>${javax.validation-api.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-native</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
+
     </dependencies>
 </project>
