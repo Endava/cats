@@ -1,21 +1,27 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
-import lombok.Getter;
-
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.Getter;
+import org.fusesource.jansi.Ansi;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @ApplicationScoped
-@Getter
 @DryRun
 public class ExecutionStatisticsListener {
 
-    private int errors;
-    private int warns;
-    private int success;
+    private final Map<String, Integer> errors = new HashMap<>();
+    private final Map<String, Integer> warns = new HashMap<>();
+    private final Map<String, Integer> success = new HashMap<>();
+
+    @Getter
     private int skipped;
 
+    @Getter
     private int authErrors;
+    @Getter
     private int ioErrors;
 
     public void increaseAuthErrors() {
@@ -30,20 +36,32 @@ public class ExecutionStatisticsListener {
         this.skipped++;
     }
 
-    public void increaseErrors() {
-        this.errors++;
+    public void increaseErrors(String path) {
+        this.errors.merge(path, 1, Integer::sum);
     }
 
-    public void increaseWarns() {
-        this.warns++;
+    public void increaseWarns(String path) {
+        this.warns.merge(path, 1, Integer::sum);
     }
 
-    public void increaseSuccess() {
-        this.success++;
+    public void increaseSuccess(String path) {
+        this.success.merge(path, 1, Integer::sum);
+    }
+
+    public int getErrors() {
+        return this.errors.values().stream().reduce(0, Integer::sum);
+    }
+
+    public int getWarns() {
+        return this.warns.values().stream().reduce(0, Integer::sum);
+    }
+
+    public int getSuccess() {
+        return this.success.values().stream().reduce(0, Integer::sum);
     }
 
     public int getAll() {
-        return this.success + this.warns + this.errors;
+        return this.getSuccess() + this.getWarns() + this.getErrors();
     }
 
     public boolean areManyAuthErrors() {
@@ -52,6 +70,13 @@ public class ExecutionStatisticsListener {
 
     public boolean areManyIoErrors() {
         return ioErrors > this.getAll() / 2;
+    }
+
+    public String resultAsStringPerPath(String path) {
+        String errorsString = Ansi.ansi().fg(Ansi.Color.RED).a("E " + errors.getOrDefault(path, 0)).reset().toString();
+        String warnsString = Ansi.ansi().fg(Ansi.Color.YELLOW).a("W " + warns.getOrDefault(path, 0)).reset().toString();
+        String successString = Ansi.ansi().fg(Ansi.Color.GREEN).a("S " + success.getOrDefault(path, 0)).reset().toString();
+        return "%s, %s, %s".formatted(errorsString, warnsString, successString);
     }
 
 }

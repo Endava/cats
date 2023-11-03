@@ -4,14 +4,13 @@ import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
-
-import jakarta.inject.Inject;
 
 @QuarkusTest
 class TemplateFuzzCommandTest {
@@ -39,6 +38,7 @@ class TemplateFuzzCommandTest {
     @Test
     void shouldRunWithCommandLineData() {
         templateFuzzCommand.data = "{\"field\":\"value\"}";
+        templateFuzzCommand.url = "localhost";
         templateFuzzCommand.run();
         Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
     }
@@ -47,6 +47,7 @@ class TemplateFuzzCommandTest {
     void shouldRunWhenGetAndNoData() {
         templateFuzzCommand.data = null;
         templateFuzzCommand.httpMethod = HttpMethod.GET;
+        templateFuzzCommand.url = "localhost";
         templateFuzzCommand.run();
         Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
     }
@@ -54,6 +55,7 @@ class TemplateFuzzCommandTest {
     @Test
     void shouldRunWithFileData() {
         templateFuzzCommand.data = "@src/test/resources/dict.txt";
+        templateFuzzCommand.url = "localhost";
         templateFuzzCommand.run();
         Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
     }

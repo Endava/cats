@@ -78,6 +78,9 @@ public class TestCaseListener {
     @ConfigProperty(name = "app.timestamp", defaultValue = "1-1-1")
     String appBuildTime;
 
+    private final Map<String, Double> runPerPathListener = new HashMap<>();
+    private final Map<String, Integer> runTotals = new HashMap<>();
+
     public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, Instance<TestCaseExporter> exporters, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
         this.executionStatisticsListener = er;
         this.testCaseExporter = exporters.stream()
@@ -103,7 +106,10 @@ public class TestCaseListener {
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
     }
 
-    public void afterFuzz() {
+    public void afterFuzz(String path, String httpMethod) {
+        double chunkSize = 100d / runTotals.getOrDefault(path, 1) + 0.01;
+        this.notifySummaryObservers(path, httpMethod, chunkSize);
+
         MDC.put(FUZZER, CatsUtil.FUZZER_KEY_DEFAULT);
         MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
     }
@@ -129,6 +135,10 @@ public class TestCaseListener {
 
         testCaseMap.put(testId, new CatsTestCase());
         testCaseMap.get(testId).setTestId("Test " + testId);
+    }
+
+    public void setTotalRunsPerPath(String path, Integer totalToBeRun) {
+        this.runTotals.put(path, totalToBeRun);
     }
 
     public void addScenario(PrettyLogger logger, String scenario, Object... params) {
@@ -168,11 +178,26 @@ public class TestCaseListener {
     private void endTestCase() {
         testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get(FUZZER_KEY));
         if (testCaseMap.get(MDC.get(ID)).isNotSkipped()) {
-            testCaseExporter.writeTestCase(testCaseMap.get(MDC.get(ID)));
+            CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+            testCaseExporter.writeTestCase(testCase);
         }
         MDC.remove(ID);
         MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
         logger.info(SEPARATOR);
+    }
+
+    public void notifySummaryObservers(String path, String method, double chunkSize) {
+        if (reportingArguments.isSummaryInConsole()) {
+            double percentage = runPerPathListener.getOrDefault(path, 0d) + chunkSize;
+            String printPath = path + "  " + (percentage >= 100 ? executionStatisticsListener.resultAsStringPerPath(path) : method);
+
+            if (runPerPathListener.get(path) != null) {
+                ConsoleUtils.renderSameRow(printPath, percentage);
+            } else {
+                ConsoleUtils.renderNewRow(printPath, percentage);
+            }
+            runPerPathListener.merge(path, chunkSize, Double::sum);
+        }
     }
 
     public void startSession() {
@@ -182,6 +207,7 @@ public class TestCaseListener {
 
         String osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
 
+        ConsoleUtils.emptyLine();
         logger.start(ansi().bold().a("Starting {}-{}, build time {} UTC, platform {}").reset().toString(),
                 ansi().fg(Ansi.Color.GREEN).a(appName),
                 ansi().fg(Ansi.Color.GREEN).a(appVersion),
@@ -233,14 +259,15 @@ public class TestCaseListener {
      */
     void reportWarn(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
-        CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(TestCaseListener.ID)).getResponse()).orElse(CatsResponse.empty());
+        CatsTestCase testCase = testCaseMap.get(MDC.get(TestCaseListener.ID));
+        CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isSkipReportingForWarnings()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForWarnings is enabled"));
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else if (ignoreArguments.isNotIgnoredResponse(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting warn!");
-            executionStatisticsListener.increaseWarns();
+            executionStatisticsListener.increaseWarns(testCase.getContractPath());
             logger.warning(message, params);
             this.recordResult(message, params, Level.WARN.toString().toLowerCase(), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
@@ -283,10 +310,11 @@ public class TestCaseListener {
      */
     void reportError(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
-        CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
+        CatsTestCase testCase = testCaseMap.get(MDC.get(TestCaseListener.ID));
+        CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
-            executionStatisticsListener.increaseErrors();
+            executionStatisticsListener.increaseErrors(testCase.getPath());
             logger.error(message, params);
             this.recordResult(message, params, Level.ERROR.toString().toLowerCase(), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
@@ -326,7 +354,8 @@ public class TestCaseListener {
     }
 
     void reportInfo(PrettyLogger logger, String message, Object... params) {
-        CatsResponse catsResponse = Optional.ofNullable(testCaseMap.get(MDC.get(ID)).getResponse()).orElse(CatsResponse.empty());
+        CatsTestCase testCase = testCaseMap.get(MDC.get(TestCaseListener.ID));
+        CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isSkipReportingForSuccess()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForSuccess is enabled"));
@@ -340,7 +369,7 @@ public class TestCaseListener {
                     catsResponse.getResponseTimeInMs(), reportingArguments.getMaxResponseTime());
             this.reportError(logger, CatsResultFactory.createResponseTimeExceedsMax(catsResponse.getResponseTimeInMs(), reportingArguments.getMaxResponseTime()));
         } else {
-            executionStatisticsListener.increaseSuccess();
+            executionStatisticsListener.increaseSuccess(testCase.getContractPath());
             logger.success(message, params);
             this.recordResult(message, params, "success", logger);
         }

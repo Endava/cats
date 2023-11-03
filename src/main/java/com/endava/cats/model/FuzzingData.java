@@ -293,10 +293,10 @@ public class FuzzingData {
         public static Set<Set<String>> getAllSetsWithMinSize(Set<String> allFields, int maxFieldsToRemove) {
             Set<Set<String>> sets = new HashSet<>();
             if (maxFieldsToRemove == 0) {
-                LOGGER.config("fieldsSubsetMinSize is ZERO, the value will be changed to {}", allFields.size() / 2);
+                LOGGER.note("fieldsSubsetMinSize is ZERO, the value will be changed to {}", allFields.size() / 2);
                 maxFieldsToRemove = allFields.size() / 2;
             } else if (allFields.size() < maxFieldsToRemove) {
-                LOGGER.config("fieldsSubsetMinSize is bigger than the number of fields, the value will be changed to {}", allFields.size());
+                LOGGER.note("fieldsSubsetMinSize is bigger than the number of fields, the value will be changed to {}", allFields.size());
             }
             for (int i = maxFieldsToRemove; i >= 1; i--) {
                 sets.addAll(getAllSubsetsOfSize(new ArrayList<>(allFields), i));

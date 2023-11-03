@@ -24,7 +24,7 @@ class ExecutionStatisticsListenerTest {
     @Test
     void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfErrorTests_thenTheErrorTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
-        listener.increaseErrors();
+        listener.increaseErrors("test");
 
         Assertions.assertThat(listener.getErrors()).isOne();
         Assertions.assertThat(listener.getSkipped()).isZero();
@@ -34,7 +34,7 @@ class ExecutionStatisticsListenerTest {
     @Test
     void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfSuccessTests_thenTheSuccessTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
-        listener.increaseSuccess();
+        listener.increaseSuccess("test");
 
         Assertions.assertThat(listener.getSuccess()).isOne();
         Assertions.assertThat(listener.getSkipped()).isZero();
@@ -44,7 +44,7 @@ class ExecutionStatisticsListenerTest {
     @Test
     void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfWarnTests_thenTheWarnTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
-        listener.increaseWarns();
+        listener.increaseWarns("test");
 
         Assertions.assertThat(listener.getWarns()).isOne();
         Assertions.assertThat(listener.getSkipped()).isZero();
@@ -54,10 +54,10 @@ class ExecutionStatisticsListenerTest {
     @Test
     void givenAnExecutionStatisticsListener_whenIncreasingTheNumberOfAllTypesOfTestsTests_thenTheTotalNumberOfTestsAreReportedCorrectly() {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
-        listener.increaseWarns();
-        listener.increaseSuccess();
+        listener.increaseWarns("test");
+        listener.increaseSuccess("test");
         listener.increaseSkipped(); //these are ignored in the total count
-        listener.increaseErrors();
+        listener.increaseErrors("test");
 
         Assertions.assertThat(listener.getAll()).isEqualTo(3);
     }
@@ -67,7 +67,7 @@ class ExecutionStatisticsListenerTest {
     void shouldTestForAuthErrors(int authErrors, int all, boolean expected) {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         IntStream.range(0, authErrors).forEach(element -> listener.increaseAuthErrors());
-        IntStream.range(0, all).forEach(element -> listener.increaseErrors());
+        IntStream.range(0, all).forEach(element -> listener.increaseErrors("test"));
 
         Assertions.assertThat(listener.areManyAuthErrors()).isEqualTo(expected);
     }
@@ -77,7 +77,7 @@ class ExecutionStatisticsListenerTest {
     void shouldTestForIOErrors(int authErrors, int all, boolean expected) {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         IntStream.range(0, authErrors).forEach(element -> listener.increaseIoErrors());
-        IntStream.range(0, all).forEach(element -> listener.increaseErrors());
+        IntStream.range(0, all).forEach(element -> listener.increaseErrors("test"));
 
         Assertions.assertThat(listener.areManyIoErrors()).isEqualTo(expected);
     }

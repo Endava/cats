@@ -71,7 +71,9 @@ public class ReportingArguments {
                     " The response time limit check is triggered only if the test case is considered successful i.e. response matches Fuzzer expectations")
     private int maxResponseTime;
 
-    private Verbosity verbosity;
+    @CommandLine.Option(names = {"--verbosity"},
+            description = "Sets the verbosity of the console logging. If set to @|bold summary|@ CATS will only output a simple progress screen per path.  Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private Verbosity verbosity = Verbosity.DETAILED;
 
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
@@ -90,6 +92,18 @@ public class ReportingArguments {
 
 
     public void processLogData() {
+        if (verbosity == Verbosity.SUMMARY) {
+            prepareSummaryLogging();
+        } else {
+            prepareDetailedLogging();
+        }
+    }
+
+    private void prepareSummaryLogging() {
+        PrettyLogger.enableLevels(PrettyLevel.CONFIG);
+    }
+
+    private void prepareDetailedLogging() {
         for (String logLine : this.getLogData()) {
             String[] log = logLine.strip().trim().split(":", -1);
             String level;
@@ -113,6 +127,16 @@ public class ReportingArguments {
         if (this.skipLogs == null && this.onlyLog == null) {
             PrettyLogger.disableLevels(getAsPrettyLevelList(List.of("note", "skip")).toArray(new PrettyLevel[0]));
         }
+    }
+
+    public void enableStarIfSummary() {
+        if (this.isSummaryInConsole()) {
+            PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.NONE);
+        }
+    }
+
+    public boolean isSummaryInConsole() {
+        return verbosity == Verbosity.SUMMARY;
     }
 
     public enum ReportFormat {
