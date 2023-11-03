@@ -103,7 +103,6 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--skipFields"},
             description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")
     private List<String> skipFields;
-
     @CommandLine.Option(names = {"--skipHeaders"},
             description = "A comma separated list of headers that will be skipped by all Fuzzers", split = ",")
     private List<String> skipHeaders;
