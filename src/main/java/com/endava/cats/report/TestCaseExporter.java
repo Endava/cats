@@ -110,12 +110,11 @@ public abstract class TestCaseExporter {
         if (reportingArguments.isPrintExecutionStatistics()) {
             Map<String, List<CatsTestCase>> executionDetails = extractExecutionDetails(testCaseMap);
 
-            logger.noFormat(" ");
-            logger.info("---------------------------- Execution time details ----------------------------");
-            logger.noFormat(" ");
+            ConsoleUtils.renderHeader(" Execution time details ");
+            ConsoleUtils.emptyLine();
             executionDetails.forEach(this::writeExecutionTimesForPathAndHttpMethod);
-            logger.noFormat(" ");
         } else {
+            ConsoleUtils.emptyLine();
             logger.info("Skip printing time execution statistics. You can use --printExecutionStatistics to enable this feature!");
         }
     }
@@ -172,13 +171,12 @@ public abstract class TestCaseExporter {
     }
 
     public void printExecutionDetails(ExecutionStatisticsListener executionStatisticsListener) {
-        String catsFinished = ansi().fgBlue().a("CATS finished in {}. Total (excluding skipped) requests {}. ").toString();
+        String catsFinished = ansi().fgBlue().a("CATS finished in {}. Total requests {}. ").toString();
         String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
         String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
         String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
-        String skipped = ansi().fgCyan().bold().a("❯ skipped: {}. ").toString();
         String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + REPORT_HTML)).reset().toString();
-        String finalMessage = catsFinished + passed + warnings + errors + skipped + check;
+        String finalMessage = catsFinished + passed + warnings + errors + check;
         String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
 
         ConsoleUtils.emptyLine();
