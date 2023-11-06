@@ -191,7 +191,7 @@ function _picocli_cats() {
 
   local commands="generate-completion help list replay run fuzz lint"
   local flag_opts="-A --checkHeaders -F --checkFields -T --checkHttp -C --checkContract --includeContract --includeLinters -W --includeWhitespaces -E --includeEmojis -U --includeControlChars --createRefData -d --dryRun --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox --useExamples -D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color -h --help -V --version"
-  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --urlParams --headers -H --queryParams --refData --functionalFuzzerFile --securityFuzzerFile -f --fuzzers -p --paths --skipPaths --skipFuzzers --httpMethods --fieldTypes --skipFieldTypes --fieldFormats --skipFieldFormats -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --skipFields --skipHeaders --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --selfReferenceDepth -L --contentType -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
+  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --urlParams --headers -H --queryParams --refData --functionalFuzzerFile --securityFuzzerFile -f --fuzzers -p --paths --skipPaths --skipFuzzers --httpMethods --fieldTypes --skipFieldTypes --fieldFormats --skipFieldFormats --skipFields --skipHeaders -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT") # --httpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
   local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
@@ -201,6 +201,7 @@ function _picocli_cats() {
   local edgeSpacesStrategy_option_args=("VALIDATE_AND_TRIM" "TRIM_AND_VALIDATE") # --edgeSpacesStrategy values
   local sanitizationStrategy_option_args=("VALIDATE_AND_SANITIZE" "SANITIZE_AND_VALIDATE") # --sanitizationStrategy values
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT") # --reportFormat values
+  local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -323,6 +324,12 @@ function _picocli_cats() {
       COMPREPLY=( $( compReplyArray "${skipFieldFormats_option_args[@]}" ) )
       return $?
       ;;
+    --skipFields)
+      return
+      ;;
+    --skipHeaders)
+      return
+      ;;
     -i|--ignoreResponseCodes|--ic)
       return
       ;;
@@ -336,12 +343,6 @@ function _picocli_cats() {
       return
       ;;
     --ignoreResponseRegex|--ir)
-      return
-      ;;
-    --skipFields)
-      return
-      ;;
-    --skipHeaders)
       return
       ;;
     --fieldsFuzzingStrategy)
@@ -365,10 +366,16 @@ function _picocli_cats() {
     --largeStringsSize)
       return
       ;;
+    --randomHeadersNumber)
+      return
+      ;;
     --selfReferenceDepth|-L)
       return
       ;;
     --contentType)
+      return
+      ;;
+    --oneOfSelection|--anyOfSelection)
       return
       ;;
     -l|--log)
@@ -390,6 +397,11 @@ function _picocli_cats() {
       ;;
     --maxResponseTimeInMs)
       return
+      ;;
+    --verbosity)
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${verbosity_option_args[@]}" ) )
+      return $?
       ;;
     --words|-w)
       local IFS=$'\n'
@@ -551,8 +563,9 @@ function _picocli_cats_run() {
 
   local commands=""
   local flag_opts="-D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --createRefData --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox -h --help -V --version"
-  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --headers --queryParams -H --refData --contentType -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --skipFields --skipHeaders"
+  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --headers --queryParams -H --refData --contentType --oneOfSelection --anyOfSelection -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT") # --reportFormat values
+  local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
 
   type compopt &>/dev/null && compopt +o default
 
@@ -622,6 +635,11 @@ function _picocli_cats_run() {
     --maxResponseTimeInMs)
       return
       ;;
+    --verbosity)
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${verbosity_option_args[@]}" ) )
+      return $?
+      ;;
     --headers)
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
@@ -646,6 +664,9 @@ function _picocli_cats_run() {
     --contentType)
       return
       ;;
+    --oneOfSelection|--anyOfSelection)
+      return
+      ;;
     -i|--ignoreResponseCodes|--ic)
       return
       ;;
@@ -659,12 +680,6 @@ function _picocli_cats_run() {
       return
       ;;
     --ignoreResponseRegex|--ir)
-      return
-      ;;
-    --skipFields)
-      return
-      ;;
-    --skipHeaders)
       return
       ;;
   esac
@@ -693,8 +708,9 @@ function _picocli_cats_fuzz() {
 
   local commands=""
   local flag_opts="-D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox -h --help -V --version"
-  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --skipFields --skipHeaders --words -w --headers -H --data -d --httpMethod -X --targetFields -t"
+  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --words -w --headers -H --data -d --httpMethod -X --targetFields -t"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT") # --reportFormat values
+  local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT") # --httpMethod values
 
   type compopt &>/dev/null && compopt +o default
@@ -765,6 +781,11 @@ function _picocli_cats_fuzz() {
     --maxResponseTimeInMs)
       return
       ;;
+    --verbosity)
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${verbosity_option_args[@]}" ) )
+      return $?
+      ;;
     --matchResponseCodes|--mc)
       return
       ;;
@@ -793,12 +814,6 @@ function _picocli_cats_fuzz() {
       return
       ;;
     --ignoreResponseRegex|--ir)
-      return
-      ;;
-    --skipFields)
-      return
-      ;;
-    --skipHeaders)
       return
       ;;
     --words|-w)
@@ -840,8 +855,9 @@ function _picocli_cats_lint() {
 
   local commands=""
   local flag_opts="-D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color -h --help -V --version"
-  local arg_opts="-l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --pathNaming --pathVariablesNaming --queryParamsNaming --jsonObjectsNaming --jsonPropertiesNaming --headersNaming -c --contract --skipFuzzers"
+  local arg_opts="-l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --pathNaming --pathVariablesNaming --queryParamsNaming --jsonObjectsNaming --jsonPropertiesNaming --headersNaming -c --contract --skipFuzzers"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT") # --reportFormat values
+  local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local pathNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL") # --pathNaming values
   local pathVariablesNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL") # --pathVariablesNaming values
   local queryParamsNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL") # --queryParamsNaming values
@@ -871,6 +887,11 @@ function _picocli_cats_lint() {
       ;;
     --maxResponseTimeInMs)
       return
+      ;;
+    --verbosity)
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${verbosity_option_args[@]}" ) )
+      return $?
       ;;
     --pathNaming)
       local IFS=$'\n'
@@ -928,14 +949,3 @@ function _picocli_cats_lint() {
 # default Bash completions and the Readline default filename completions are performed.
 complete -F _complete_cats -o default cats cats.sh cats.bash
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # #
-#             _____   ___ _____ _____             #
-#            /  __ \ / _ \_   _/  ___|            #
-#            | /  \// /_\ \| | \ `--.             #
-#            | |    |  _  || |  `--. \            #
-#            | \__/\| | | || | /\__/ /            #
-#             \____/\_| |_/\_/ \____/             #
-#           .. ...    -.-. --- --- .-..           #
-#                                                 #
-# # # # # # # # # # # # # # # # # # # # # # # # # #
