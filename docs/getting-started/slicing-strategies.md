@@ -5,7 +5,7 @@ description: How to get meaningful results in a timely manner
 
 # Slicing Strategies
 
-CATS has a significant number of Fuzzers. Currently, **100+** and growing. Some Fuzzers are executing multiple tests for every given field within the request.
+CATS has more than **110** fuzzers at the moment. Some Fuzzers are executing multiple tests for every given field within the request.
 For example the `ControlCharsOnlyInFieldsFuzzer` has **63** control chars values that will be tried for each request field. If a request has 15 fields, this will result in **945 tests**.
 Considering that there are additional Fuzzers with the same magnitude, you can easily get to 20k tests being executed on a typical run. 
 This will result in huge reports and long-running times (i.e. minutes, rather than seconds).
@@ -13,7 +13,7 @@ This will result in huge reports and long-running times (i.e. minutes, rather th
 Below are some recommended strategies on how you can separate the tests in chunks which can be executed as stages in a deployment pipeline, one after the other.
 
 :::caution
-Running CATS with **all** Fuzzers will produce a significant amount of logging. 
+Running CATS with **all** Fuzzers and `--verbosity=detailed` (or without verbosity, before CATS 10.x) will produce a significant amount of logging. 
 Please make sure you have a purging strategy in place, especially when choosing to store the output in files. Additionally, you can control the logging level using the `--log` argument.
 :::
 

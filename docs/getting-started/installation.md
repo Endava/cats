@@ -52,7 +52,7 @@ You can build CATS from sources on you local box. You need [Java 17+](https://sd
 
 :::caution Before running the first build
 Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork ok [OKHttp](https://square.github.io/okhttp/) which will install locally
-under the `4.10.0-CATS` version, so don't worry about overriding the official versions.
+under the `4.11.0-CATS` version, so don't worry about overriding the official versions.
 :::
 
 You can use the following Maven command to build the project as an uberjar:
@@ -65,10 +65,6 @@ You will end up with a `cats-runner.jar` in the `target` folder. You can run it 
 You can also build native images using a [GraalVM Java version](https://www.graalvm.org/).
 
 `./mvnw package -Pnative`
-
-:::info
-You will need to configure Maven with a [Github PAT](https://docs.github.com/en/free-pro-team@latest/packages/guides/configuring-apache-maven-for-use-with-github-packages) with `read-packages` scope to get some dependencies for the build.
-:::
 
 ### Notes on Unit Tests
 
