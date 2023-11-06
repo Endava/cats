@@ -30,7 +30,6 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Inject;
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 import picocli.AutoComplete;
@@ -85,7 +84,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private PrettyLogger logger;
-    private static final String SEPARATOR = StringUtils.repeat("-", 120);
+    private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
@@ -320,8 +319,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
-        logger.noFormat(" ");
-        logger.start("Start fuzzing path {}", pathItemEntry.getKey());
+        String ansiString = ansi().bold().a("Start fuzzing path {}").reset().toString();
+        logger.start(ansiString, pathItemEntry.getKey());
         List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), openAPI);
 
         if (fuzzingDataList.isEmpty()) {
