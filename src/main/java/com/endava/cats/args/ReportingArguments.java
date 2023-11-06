@@ -72,8 +72,8 @@ public class ReportingArguments {
     private int maxResponseTime;
 
     @CommandLine.Option(names = {"--verbosity"},
-            description = "Sets the verbosity of the console logging. If set to @|bold summary|@ CATS will only output a simple progress screen per path.  Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private Verbosity verbosity = Verbosity.DETAILED;
+            description = "Sets the verbosity of the console logging. If set to @|bold summary|@ CATS will only output a simple progress screen per path. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private Verbosity verbosity = Verbosity.SUMMARY;
 
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());

@@ -51,7 +51,7 @@ public class ProcessingArguments {
 
     @Setter
     @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
-            description = "A @|bold name:value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
+            description = "A @|bold name=value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
                     " which result in multiple payloads for a single endpoint and http method.")
     Map<String, String> xxxOfSelections;
 
