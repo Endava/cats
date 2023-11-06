@@ -65,6 +65,12 @@ public abstract class ConsoleUtils {
         System.out.print(Ansi.ansi().bold().a(prefix + firstPart + ".".repeat(dots) + secondPart + "  " + percentage.intValue() + "%").reset().toString());
     }
 
+    public static int getConsoleColumns(int toSubtract) {
+        int columns = getTerminalWidth(120);
+
+        return columns - toSubtract;
+    }
+
     public static void renderHeader(String header) {
         LOGGER.noFormat(" ");
         int equalsNo = (getTerminalWidth(80) - header.length()) / 2;
