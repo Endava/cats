@@ -73,10 +73,9 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         FuzzingConstraints fuzzingConstraints = this.createFuzzingConstraints(data, fuzzingStrategy, fuzzedField);
 
-        testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
-                this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
-
         if (this.isFuzzingPossible(data, fuzzedField, fuzzingStrategy)) {
+            testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
+                    this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
             logger.debug("Fuzzing possible...");
             FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.fuzzedValue(), data, fuzzedField);
@@ -95,11 +94,13 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             logger.debug("Fuzzing not possible!");
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);
             testCaseListener.skipTest(logger, (String) strategy.process(""));
+            logger.info("{} " + strategy.getData().toString(), fuzzedField);
         }
     }
 
     private FuzzingStrategy createSkipStrategy(FuzzingStrategy fuzzingStrategy) {
-        return fuzzingStrategy.isSkip() ? fuzzingStrategy : FuzzingStrategy.skip().withData("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas");
+        return fuzzingStrategy.isSkip() ? fuzzingStrategy : FuzzingStrategy.skip().withData(
+                "field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator, is passed as refData or is not matching the Fuzzer schemas");
     }
 
     /**
