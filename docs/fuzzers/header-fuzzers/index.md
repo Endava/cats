@@ -1,13 +1,16 @@
 # Header Fuzzers
-CATS has currently 32 registered `Header`  Fuzzers:
+CATS has currently 35 registered `Header`  Fuzzers:
 - `AbugidasCharsInHeadersFuzzer` -  iterate through each header and send requests with abugidas chars in the targeted header
 - `CRLFHeaders` - iterate through each header and send CR & LF characters in the targeted header
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
 - `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code
 - `DummyContentTypeHeadersFuzzer` - send a request with a dummy Content-Type header and expect to get 415 code
+- `DummyContentLengthHeadersFuzzer` - send a request with a dummy Content-Length header and expect to get 400 code
+- `DummyTransferEncodingHeadersFuzzer` - send a request with a dummy Transfer-Encoding header and expect to get a 400 or 501 code
 - `DuplicateHeaderFuzzer` - send a 'happy' flow request and duplicate an existing header
 - `EmptyStringValuesInHeadersFuzzer` - iterate through each header and send requests with empty String values in the targeted header
 - `ExtraHeadersFuzzer` - send a 'happy' flow request and add an extra field inside the request called 'Cats-Fuzzy-Header'
+- `InvalidContentLengthHeadersFuzzer` - send a request with an invalid Content-Length header and expect to get 400 code
 - `LargeNumberRandomAlphanumericHeaders` - send a 'happy' flow request with 10 000 extra random alphanumeric headers
 - `LargeNumberRandomHeaders` - send a 'happy' flow request with 10 000 extra random headers
 - `LeadingControlCharsInHeadersFuzzer` - iterate through each header and prefix values with control chars
