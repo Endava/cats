@@ -40,16 +40,17 @@ class BaseBoundaryFieldFuzzerTest {
         filesArguments = Mockito.mock(FilesArguments.class);
     }
 
-    @Test
-    void givenABaseBoundaryFuzzerWithDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheReplaceStrategyIsBeingReturned() {
+    @ParameterizedTest
+    @CsvSource({"field,replace", "otherField,skip"})
+    void shouldReturnProperFuzzingStrategy(String field, String expectedStrategyAsString) {
+        FuzzingStrategy expectedStrategy = expectedStrategyAsString.equalsIgnoreCase("replace") ? FuzzingStrategy.replace() : FuzzingStrategy.skip();
         myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
 
         FuzzingData data = getMockFuzzingData();
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
-        Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.replace().name());
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, field).get(0);
+        Assertions.assertThat(strategy.name()).isEqualTo(expectedStrategy.name());
     }
-
 
     @Test
     void givenABaseBoundaryFuzzerWithNoDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
@@ -119,6 +120,7 @@ class BaseBoundaryFieldFuzzerTest {
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("field", new StringSchema());
         FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("{\"field\":\"value\"}");
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
         return data;
     }

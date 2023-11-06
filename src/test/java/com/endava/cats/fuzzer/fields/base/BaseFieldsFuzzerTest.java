@@ -55,7 +55,7 @@ class BaseFieldsFuzzerTest {
         Mockito.when(data.getPayload()).thenReturn("{}");
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas"));
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator, is passed as refData or is not matching the Fuzzer schemas"));
     }
 
     @Test
@@ -113,7 +113,7 @@ class BaseFieldsFuzzerTest {
         BaseFieldsFuzzer spyFuzzer = Mockito.spy(baseFieldsFuzzer);
         Mockito.when(spyFuzzer.isFuzzerWillingToFuzz(Mockito.eq(data), Mockito.anyString())).thenReturn(false);
         spyFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas"));
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator, is passed as refData or is not matching the Fuzzer schemas"));
     }
 
     @Test
@@ -122,7 +122,7 @@ class BaseFieldsFuzzerTest {
         BaseFieldsFuzzer spyFuzzer = Mockito.spy(baseFieldsFuzzer);
         Mockito.when(spyFuzzer.skipForFields()).thenReturn(List.of("field"));
         spyFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator or is not matching the Fuzzer schemas"));
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator, is passed as refData or is not matching the Fuzzer schemas"));
     }
 
     @ParameterizedTest
