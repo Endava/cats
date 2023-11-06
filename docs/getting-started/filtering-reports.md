@@ -3,7 +3,7 @@ sidebar_position: 6
 description: How to ignore specific HTTP response
 ---
 
-# Ignoring Results
+# Filtering Reports
 CATS reports can be huge. Opening a report with 20k tests it's not the best user experience. 
 Outside the typical [Slicing Strategies](slicing-strategies), you can also choose to ignore reporting for specific HTTP responses.
 
