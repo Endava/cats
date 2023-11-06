@@ -80,6 +80,11 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String contentType = "application/json";
+    @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
+            description = "A @|bold name:value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
+                    " which result in multiple payloads for a single endpoint and http method.")
+    Map<String, String> xxxOfSelections;
+
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
@@ -105,6 +110,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
             catsCommand.filesArguments.setRefDataFile(refDataFile);
             catsCommand.filesArguments.setQueryFile(queryFile);
             catsCommand.processingArguments.setContentType(this.contentType);
+            catsCommand.processingArguments.setXxxOfSelections(this.xxxOfSelections);
             catsCommand.run();
         } catch (IOException e) {
             logger.debug("Exception while processing file!", e);
