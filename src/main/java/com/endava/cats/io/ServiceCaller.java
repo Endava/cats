@@ -451,8 +451,12 @@ public class ServiceCaller {
     private void addMandatoryHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
         data.getHeaders().forEach(header -> headers.add(new KeyValuePair<>(header.getName(), header.getValue())));
         addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
-        addIfNotPresent(HttpHeaders.CONTENT_TYPE, data.getContentType(), data, headers);
+        addIfNotPresent(HttpHeaders.CONTENT_TYPE, this.getContentType(data.getHttpMethod(), data.getContentType()), data, headers);
         addIfNotPresent(HttpHeaders.USER_AGENT, apiArguments.getUserAgent(), data, headers);
+    }
+
+    private String getContentType(HttpMethod method, String defaultContentType) {
+        return method == HttpMethod.PATCH & processingArguments.isRfc7396() ? ProcessingArguments.JSON_PATCH : defaultContentType;
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<KeyValuePair<String, Object>> headers) {
