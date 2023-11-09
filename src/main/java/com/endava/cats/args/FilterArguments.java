@@ -106,6 +106,9 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--skipHeaders"},
             description = "A comma separated list of headers that will be skipped by all Fuzzers", split = ",")
     private List<String> skipHeaders;
+    @CommandLine.Option(names = {"--skipDeprecatedOperations"},
+            description = "Skip fuzzing deprecated API operations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean skipDeprecated;
 
 
     public List<String> getSkipFields() {

@@ -185,6 +185,10 @@ public class FuzzingDataFactory {
      * @return a list  of FuzzingData used to Fuzz
      */
     private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Operation operation, HttpMethod method, OpenAPI openAPI) {
+        if (this.isDeprecated(operation)) {
+            return Collections.emptyList();
+        }
+
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         MediaType mediaType = this.getMediaType(operation, openAPI);
 
@@ -232,6 +236,10 @@ public class FuzzingDataFactory {
         return List.copyOf(fuzzingDataList);
     }
 
+    private boolean isDeprecated(Operation operation) {
+        return operation.getDeprecated() != null && operation.getDeprecated();
+    }
+
     /**
      * A similar FuzzingData object will be created for GET or DELETE requests. The "payload" will be a JSON with all the query or path params.
      * In order to achieve this a synthetic object is created that will act as a root object holding all the query or path params as child schemas.
@@ -244,6 +252,11 @@ public class FuzzingDataFactory {
      * @return a list of FuzzingData objects
      */
     private List<FuzzingData> getFuzzDataForNonBodyMethods(String path, PathItem item, Operation operation, OpenAPI openAPI, HttpMethod method) {
+        if (this.isDeprecated(operation)) {
+            logger.debug("Skipping {} operation as deprecated and --skipDeprecatedOperations is true", operation.getOperationId());
+            return Collections.emptyList();
+        }
+
         ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
 
         globalContext.getSchemaMap().put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
