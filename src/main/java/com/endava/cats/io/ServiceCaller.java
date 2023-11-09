@@ -456,7 +456,7 @@ public class ServiceCaller {
     }
 
     private String getContentType(HttpMethod method, String defaultContentType) {
-        return method == HttpMethod.PATCH & processingArguments.isRfc7396() ? ProcessingArguments.JSON_PATCH : defaultContentType;
+        return method == HttpMethod.PATCH && processingArguments.isRfc7396() ? ProcessingArguments.JSON_PATCH : defaultContentType;
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<KeyValuePair<String, Object>> headers) {
