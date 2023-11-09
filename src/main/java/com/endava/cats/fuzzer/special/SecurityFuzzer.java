@@ -10,10 +10,10 @@ import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
-import jakarta.inject.Singleton;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -90,7 +91,11 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
         try {
             log.start("Parsing stringsFile...");
-            List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile));
+            List<String> nastyStrings = Files.readAllLines(Paths.get(stringsFile))
+                    .stream()
+                    .filter(Predicate.not(String::isBlank))
+                    .filter(Predicate.not(line -> line.startsWith("# ")))
+                    .toList();
             log.complete("stringsFile parsed successfully! Found {} entries", nastyStrings.size());
             List<String> targetFields = this.getTargetFields(individualTestConfig, data);
             this.fuzzFields(data, key, individualTestConfig, nastyStrings, targetFields);
