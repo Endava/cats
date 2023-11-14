@@ -5,9 +5,8 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
-import picocli.CommandLine;
-
 import jakarta.inject.Inject;
+import picocli.CommandLine;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -28,6 +27,7 @@ public class CatsMain implements QuarkusApplication {
 
     @Override
     public int run(String... args) {
+        System.setProperty("org.jline.terminal.dumb", "true");
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             logger.fatal("Something unexpected happened: {}", e.getMessage());
             logger.debug("Stacktrace", e);
@@ -39,7 +39,7 @@ public class CatsMain implements QuarkusApplication {
                 .execute(args);
     }
 
-    private void checkForConsoleColorsDisabled(String ... args) {
+    private void checkForConsoleColorsDisabled(String... args) {
         boolean colorsDisabled = Arrays.stream(args).anyMatch(arg -> arg.trim().toLowerCase(Locale.ROOT).equals("--no-color"));
         if (colorsDisabled) {
             PrettyLogger.disableColors();
