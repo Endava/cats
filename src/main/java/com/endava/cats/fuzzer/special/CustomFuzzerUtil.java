@@ -38,7 +38,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.json.JsonUtils.NOT_SET;
-import static com.endava.cats.util.CatsDSLWords.*;
+import static com.endava.cats.util.CatsDSLWords.CATS_HEADERS;
+import static com.endava.cats.util.CatsDSLWords.CHECKS;
+import static com.endava.cats.util.CatsDSLWords.DESCRIPTION;
+import static com.endava.cats.util.CatsDSLWords.EXPECTED_RESPONSE_CODE;
+import static com.endava.cats.util.CatsDSLWords.HTTP_METHOD;
+import static com.endava.cats.util.CatsDSLWords.ONE_OF_SELECTION;
+import static com.endava.cats.util.CatsDSLWords.OUTPUT;
+import static com.endava.cats.util.CatsDSLWords.RESERVED_WORDS;
+import static com.endava.cats.util.CatsDSLWords.VERIFY;
 
 @ApplicationScoped
 public class CustomFuzzerUtil {
@@ -209,10 +217,18 @@ public class CustomFuzzerUtil {
         //we make sure that "checkBoolean" is not marked as NOT_SET and set to TRUE so that is matched against the computed expression
         return result.entrySet()
                 .stream()
-                .map(entry -> entry.getKey().equalsIgnoreCase(CHECK) ? new AbstractMap.SimpleEntry<>(entry.getKey(), TRUE) : entry)
+                .map(CustomFuzzerUtil::remapCheckBoolean)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
+    private static Map.Entry<String, String> remapCheckBoolean(Map.Entry<String, String> entry) {
+        return CHECKS.entrySet()
+                .stream()
+                .filter(checkEntry -> entry.getKey().startsWith(checkEntry.getKey()))
+                .map(checkEntry -> new AbstractMap.SimpleEntry<>(entry.getKey(), checkEntry.getValue()))
+                .findFirst()
+                .orElseGet(() -> new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
+    }
 
     public String getTestScenario(String testName, Map<String, Object> currentPathValues) {
         String description = WordUtils.nullOrValueOf(currentPathValues.get(DESCRIPTION));

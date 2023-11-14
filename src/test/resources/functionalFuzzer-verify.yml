@@ -14,6 +14,9 @@
       id: 25
       $#length(): 3
       checkBoolean: T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))
+      checkTrue: T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))
+      checkFalse: T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))
+      checkTrue_2: T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(expiry.toString()))
   test_2:
     description: Second Test Case
     pet: ${resp}

@@ -1,6 +1,7 @@
 package com.endava.cats.util;
 
 import java.util.List;
+import java.util.Map;
 
 public abstract class CatsDSLWords {
     /**
@@ -17,10 +18,12 @@ public abstract class CatsDSLWords {
      */
     public static final String CHECK = "checkBoolean";
 
-    /**
-     * Self-explanatory.
-     */
-    public static final String TRUE = "true";
+    public static final String CHECK_TRUE = "checkTrue";
+
+    public static final String CHECK_FALSE = "checkFalse";
+
+    public static final Map<String, String> CHECKS = Map.of(CHECK, "true", CHECK_TRUE, "true", CHECK_FALSE, "false");
+
     /**
      * Reserved word used in CATS DSL files to specify the http method to be run.
      */
