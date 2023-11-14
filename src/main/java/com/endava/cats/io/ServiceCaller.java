@@ -460,8 +460,8 @@ public class ServiceCaller {
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<KeyValuePair<String, Object>> headers) {
-        boolean notAccept = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(headerName));
-        if (notAccept) {
+        boolean exists = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(headerName));
+        if (exists) {
             headers.add(new KeyValuePair<>(headerName, headerValue));
         }
     }
