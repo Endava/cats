@@ -129,8 +129,9 @@ public class SecurityFuzzer implements CustomFuzzerBase {
                 .filter(name -> !JsonUtils.getVariableFromJson(data.getPayload(), name).equals(JsonUtils.NOT_SET))
                 .collect(Collectors.toList());
 
-        /*we also add the HTTP headers in this list. the actual split logic will be handled in CustomFuzzerUtil*/
+        /*we also add the http_headers and http_body in this list. the actual split logic will be handled in CustomFuzzerUtil*/
         catsFields.add(Arrays.stream(targetFieldsTypes).filter(type -> type.equalsIgnoreCase(CatsDSLWords.CATS_HEADERS)).findFirst().orElse(""));
+        catsFields.add(Arrays.stream(targetFieldsTypes).filter(type -> type.equalsIgnoreCase(CatsDSLWords.CATS_BODY_FUZZ)).findFirst().orElse(""));
         catsFields.addAll(Arrays.asList(targetFields));
         catsFields.removeIf(StringUtils::isBlank);
 

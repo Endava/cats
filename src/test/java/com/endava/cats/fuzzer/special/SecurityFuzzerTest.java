@@ -122,6 +122,17 @@ class SecurityFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(88)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
+    @Test
+    void shouldConsiderHttpBodyFuzzingWhenRunningFuzzer() throws Exception {
+        FuzzingData data = setContext("src/test/resources/securityFuzzer-fieldTypes-http-body.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        data.getHeaders().add(CatsHeader.builder().name("header").value("value").build());
+        SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
+        filesArguments.loadSecurityFuzzerFile();
+        spySecurityFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
+
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
         Map<String, List<String>> responses = new HashMap<>();

@@ -38,15 +38,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.json.JsonUtils.NOT_SET;
-import static com.endava.cats.util.CatsDSLWords.CATS_HEADERS;
-import static com.endava.cats.util.CatsDSLWords.CHECKS;
-import static com.endava.cats.util.CatsDSLWords.DESCRIPTION;
-import static com.endava.cats.util.CatsDSLWords.EXPECTED_RESPONSE_CODE;
-import static com.endava.cats.util.CatsDSLWords.HTTP_METHOD;
-import static com.endava.cats.util.CatsDSLWords.ONE_OF_SELECTION;
-import static com.endava.cats.util.CatsDSLWords.OUTPUT;
-import static com.endava.cats.util.CatsDSLWords.RESERVED_WORDS;
-import static com.endava.cats.util.CatsDSLWords.VERIFY;
+import static com.endava.cats.util.CatsDSLWords.*;
 
 @ApplicationScoped
 public class CustomFuzzerUtil {
@@ -247,6 +239,10 @@ public class CustomFuzzerUtil {
     }
 
     public String getJsonWithCustomValuesFromFile(FuzzingData data, Map<String, Object> currentPathValues) {
+        if (currentPathValues.get(CATS_BODY_FUZZ) != null) {
+            return String.valueOf(currentPathValues.get(CATS_BODY_FUZZ));
+        }
+
         String payload = data.getPayload();
 
         for (Map.Entry<String, Object> entry : currentPathValues.entrySet()) {

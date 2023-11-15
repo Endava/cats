@@ -23,7 +23,7 @@ public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
 
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final SimpleExecutor simpleExecutor;
-    private static final List<String> PAYLOADS = List.of("{0},", "{0.0},", "[{}],", "{$},", "[]", "{}",
+    private static final List<String> PAYLOADS = List.of("{0},", "{0.0},", "[{}],", "{$},", "[],", "{},",
             """ 
                     {"circularRef": {"self": {"$ref": "#/circularRef"}}},
                     """,
