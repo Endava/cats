@@ -1,0 +1,8 @@
+/pets/{id}/move:
+  test1:
+    description: XSS strings
+    targetFieldTypes:
+      - http_body
+    stringsFile: xss.txt
+    httpMethod: POST
+    expectedResponseCode: 200
