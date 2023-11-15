@@ -3,7 +3,7 @@ sidebar_position: 6
 description: How CATS can help to automatically create reference data
 ---
 
-# Creating Ref Data Files
+# Creating Ref Data Files Dynamically
 You can leverage the fact that the `FunctionalFuzzer` can run functional flows in order to create dynamic `--refData` files which won't need manual setting the reference data values.
 The `--refData` file must be created with variables `${variable}` instead of fixed values and those variables must be output variables in the `functionalFuzzer.yml` file.
 In order for the `FunctionalFuzzer` to properly replace the variables names with their values you must supply the `--refData` file as an argument when the `FunctionalFuzzer` runs.
