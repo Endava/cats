@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,5 +90,20 @@ class CatsUtilTest {
                 """;
         FuzzingResult result = catsUtil.replaceField(payload, "arrayOfData", FuzzingStrategy.trail().withData("test"));
         Assertions.assertThat(result.json()).contains("test").contains("FAoe22OkDDln6qHyqALVI1test").contains("USA");
+    }
+
+    @Test
+    void shouldReplaceWithArray() {
+        CatsUtil catsUtil = new CatsUtil();
+        String payload = """
+                {
+                  "arrayWithInteger": [
+                    88,99
+                  ],
+                  "country": "USA"
+                }
+                """;
+        FuzzingResult result = catsUtil.replaceField(payload, "arrayWithInteger", FuzzingStrategy.replace().withData(List.of(55, 66)));
+        Assertions.assertThat(result.json()).contains("55").contains("66").contains("USA").doesNotContain("88").doesNotContain("99");
     }
 }
