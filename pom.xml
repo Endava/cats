@@ -28,7 +28,7 @@
         <lombok.version>1.18.30</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <openapi-generator.version>7.0.1</openapi-generator.version>
+        <openapi-generator.version>7.1.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -36,17 +36,17 @@
         </sonar.coverage.exclusions>
         <sonar.cpd.exclusions>**/*Generator*.*,**/*Fuzzer*.*</sonar.cpd.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
+        <maven-site-plugin.version>4.0.0-M11</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.4.5</maven-project-info-reports-plugin.version>
-        <spotbugs-maven-plugin.version>4.7.3.6</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.8.1.0</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.11</compiler.version>
         <json-path.version>2.8.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.4.3</quarkus.platform.version>
-        <surefire-plugin.version>3.1.2</surefire-plugin.version>
+        <quarkus.platform.version>3.5.1</quarkus.platform.version>
+        <surefire-plugin.version>3.2.2</surefire-plugin.version>
         <compiler-plugin.version>3.11.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <spring.version>6.0.13</spring.version>
@@ -56,21 +56,21 @@
         <spring-integration-core.version>6.1.4</spring-integration-core.version>
         <json.version>20231013</json.version>
         <error-prone.version>2.18.0</error-prone.version>
-        <archunit-junit5.version>1.1.0</archunit-junit5.version>
+        <archunit-junit5.version>1.2.0</archunit-junit5.version>
         <json-smart.version>2.5.0</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.6.0</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.6.2</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
         <okio.version>3.6.0</okio.version>
-        <wiremock.version>3.2.0</wiremock.version>
+        <wiremock.version>3.3.1</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
-        <jline.version>3.24.0</jline.version>
+        <jline.version>3.24.1</jline.version>
     </properties>
     <dependencyManagement>
         <dependencies>
