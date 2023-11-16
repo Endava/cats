@@ -57,12 +57,33 @@ all:
       stringsFile: xss.txt
 ```
 
-Instead of specifying the field names, you can broader the scope to target certain fields types. For example, if you want to test for XSS in all `string` fields, you can have the following `SecurityFuzzer` file:
+When using this fuzzer you must explicitly specify what is the target of fuzzing. You have multiple options.
+
+## Targeting specific fields
+You can target specific fields using the `targetFields` element:
 
 ```yaml
 all:
     test_1:
-      description: Run XSS scenarios
+      description: Run XSS scenarios on specific fields
+      name: "My Pet"
+      expectedResponseCode: 200
+      httpMethod: all
+      targetFields:
+        - pet#id
+        - pet#description
+      stringsFile: xss.txt
+```
+
+This will iterate through all fields mentioned in the `targetFields` elements and replace their value with each line from the `xss.txt` file. 
+
+## Targeting specific field types
+You can target specific fields using the `targetFieldTypes` element and specifying the [OpenAPI type](https://swagger.io/docs/specification/data-models/data-types/) you are willing to fuzz.
+
+```yaml
+all:
+    test_1:
+      description: Run XSS scenarios on string fields
       name: "My Pet"
       expectedResponseCode: 200
       httpMethod: all
@@ -70,6 +91,42 @@ all:
         - string
       stringsFile: xss.txt
 ```
+
+This will iterate through all the `string` fields and replace their values with each line from the `xss.txt` file.
+
+## Targeting http headers
+You can target HTTP headers using the `targetFieldTypes` element and specifying the `http_headers` keyword.
+
+```yaml
+all:
+    test_1:
+      description: Run XSS scenarios on http headers
+      name: "My Pet"
+      expectedResponseCode: 200
+      httpMethod: all
+      targetFieldTypes:
+        - http_headers
+      stringsFile: xss.txt
+```
+
+This will iterate through all http headers and replace their values with each line from the `xss.txt` file.
+
+## Targeting the entire http request body
+You can target the entire http request body (i.e. replace it entirely with another payload) using the `targetFieldTypes` element and specifying the `http_body` keyword:
+
+```yaml
+all:
+    test_1:
+      description: Run XSS scenarios on http body
+      name: "My Pet"
+      expectedResponseCode: 200
+      httpMethod: all
+      targetFieldTypes:
+        - http_body
+      stringsFile: xss.txt
+```
+
+This will cycle the entire http request body and replace it with each line from the `xss.txt` file.
 
 :::tip
 You can split the [nasty strings](https://github.com/minimaxir/big-list-of-naughty-strings) into multiple files.
