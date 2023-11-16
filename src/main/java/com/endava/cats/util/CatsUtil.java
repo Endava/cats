@@ -15,6 +15,7 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -110,6 +111,9 @@ public class CatsUtil {
 
     private static void replaceOldValueWithNewOne(String jsonPropertyForReplacement, DocumentContext jsonDocument, Object valueToSet) {
         if (JsonUtils.isValidJson(String.valueOf(valueToSet))) {
+            if (areBothPropertyToReplaceAndValueToReplaceArrays(jsonPropertyForReplacement, valueToSet)) {
+                jsonPropertyForReplacement = removeArrayTermination(jsonPropertyForReplacement);
+            }
             try {
                 jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), JsonUtils.GENERIC_PERMISSIVE_PARSER.parse(String.valueOf(valueToSet)));
             } catch (ParseException e) {
@@ -120,6 +124,14 @@ public class CatsUtil {
         }
     }
 
+    @NotNull
+    private static String removeArrayTermination(String jsonPropertyForReplacement) {
+        return jsonPropertyForReplacement.substring(0, jsonPropertyForReplacement.lastIndexOf("[*]"));
+    }
+
+    private static boolean areBothPropertyToReplaceAndValueToReplaceArrays(String jsonPropertyForReplacement, Object valueToSet) {
+        return jsonPropertyForReplacement.endsWith("[*]") && valueToSet instanceof List;
+    }
 
     /**
      * When parsing the custom fuzzer files the additionalProperties element will be parsed as:

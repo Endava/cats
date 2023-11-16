@@ -132,6 +132,16 @@ class SecurityFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
+    @Test
+    void shouldReplaceArraysFields() throws Exception {
+        FuzzingData data = setContext("src/test/resources/securityFuzzer-arrays.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+        data.getHeaders().add(CatsHeader.builder().name("header").value("value").build());
+        SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
+        filesArguments.loadSecurityFuzzerFile();
+        spySecurityFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+    }
+
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
@@ -148,7 +158,7 @@ class SecurityFuzzerTest {
         properties.put("email", email);
         ObjectSchema person = new ObjectSchema();
         person.setProperties(properties);
-        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue', 'firstName':'John','lastName':'Cats','email':'john@yahoo.com'}").
+        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue', 'firstName':'John','lastName':'Cats','email':'john@yahoo.com', 'arrayField':[5,4]}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(person).headers(new HashSet<>())
                 .requestContentTypes(List.of("application/json")).requestPropertyTypes(properties).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
