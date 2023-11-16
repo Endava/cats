@@ -3,18 +3,18 @@ package com.endava.cats.aop;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.apache.commons.lang3.StringUtils;
-
 import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -61,9 +61,9 @@ public class DryRunAspect {
     public Object endSession() {
         if (reportingArguments.isJson()) {
             List<DryRunEntry> pathTests = paths.entrySet().stream()
-                    .map(entry -> DryRunEntry.builder().path(entry.getKey().substring(0, entry.getKey().lastIndexOf("_")))
-                            .httpMethod(entry.getKey().substring(entry.getKey().lastIndexOf("_") + 1))
-                            .tests(String.valueOf(entry.getValue())).build())
+                    .map(entry -> new DryRunEntry(entry.getKey().substring(0, entry.getKey().lastIndexOf("_")),
+                            entry.getKey().substring(entry.getKey().lastIndexOf("_") + 1),
+                            String.valueOf(entry.getValue())))
                     .toList();
             logger.noFormat(JsonUtils.GSON.toJson(pathTests));
         } else {
