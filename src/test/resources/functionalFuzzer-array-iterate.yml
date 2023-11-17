@@ -1,0 +1,8 @@
+/pets/{id}/move:
+  test_1:
+    description: Create a new Key
+    pet: [ "dog","cat" ]
+    httpMethod: POST
+    expectedResponseCode: 2XX
+    verify:
+      $.size(): 0

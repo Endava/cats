@@ -47,7 +47,7 @@ class FunctionalFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments();
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener);
-        functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
+        functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil, Mockito.mock(TestCaseListener.class));
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -140,7 +140,7 @@ class FunctionalFuzzerTest {
         ReflectionTestUtils.setField(filesArguments, "customFuzzerDetails", createCustomFuzzerFile(customFieldValues));
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, mockCatsUtil, testCaseListener);
-        functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil);
+        functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil, Mockito.mock(TestCaseListener.class));
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));
 
         return data;
@@ -231,6 +231,17 @@ class FunctionalFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(3)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Response matches all 'verify' parameters"), Mockito.any());
     }
 
+    @ParameterizedTest
+    @CsvSource({"src/test/resources/functionalFuzzer-array-replace.yml,1","src/test/resources/functionalFuzzer-array-iterate.yml,2"})
+    void shouldReplaceArraysProperly(String file, int times) throws Exception {
+        FuzzingData data = setContext(file, "[]");
+        FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
+        filesArguments.loadCustomFuzzerFile();
+        spyFunctionalFuzzer.fuzz(data);
+        spyFunctionalFuzzer.executeCustomFuzzerTests();
+        Mockito.verify(testCaseListener, Mockito.times(times)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
     @Test
     void shouldVerifyWithRequestVariables() throws Exception {
         FuzzingData data = setContext("src/test/resources/functionalFuzzer-req-verify.yml", "{\"name\": {\"first\": \"Cats\"}, \"id\": \"25\", \"code\":\"150\",\"petName\":\"myPet\"}");
@@ -289,7 +300,7 @@ class FunctionalFuzzerTest {
         responses.put("200", Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
 
-        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\", \"name\":\"dodo\"}").
+        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\", \"name\":\"dodo\",\"key_ops\":[\"1\",\"2\"]}").
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST)
                 .headers(new HashSet<>())
                 .requestContentTypes(List.of("application/json")).build();
