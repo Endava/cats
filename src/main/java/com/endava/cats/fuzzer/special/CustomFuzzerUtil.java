@@ -20,6 +20,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Getter;
+import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -268,7 +269,7 @@ public class CustomFuzzerUtil {
 
         if (this.entryIsValid((Map<String, Object>) value) && isValidOneOf) {
             this.pathsWithInputVariables.put(data.getPath(), (Map<String, Object>) value);
-            List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value);
+            List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value, data.getPayload());
             for (Map<String, Object> testCase : individualTestCases) {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
             }
@@ -311,18 +312,20 @@ public class CustomFuzzerUtil {
      * @param testCase object from the custom fuzzer file
      * @return individual requests
      */
-    public List<Map<String, Object>> createIndividualRequest(Map<String, Object> testCase) {
+    public List<Map<String, Object>> createIndividualRequest(Map<String, Object> testCase, String payload) {
         Optional<Map.Entry<String, Object>> listOfValuesOptional = testCase.entrySet().stream().filter(entry -> entry.getValue() instanceof List).findFirst();
         List<Map<String, Object>> allValues = new ArrayList<>();
 
         if (listOfValuesOptional.isPresent()) {
             Map.Entry<String, Object> listOfValues = listOfValuesOptional.get();
-            for (Object value : (List<?>) listOfValues.getValue()) {
-                testCase.put(listOfValues.getKey(), value);
-                allValues.add(testCase.entrySet()
-                        .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+            if (!(JsonUtils.getVariableFromJson(payload, listOfValues.getKey()) instanceof JSONArray)) {
+                for (Object value : (List<?>) listOfValues.getValue()) {
+                    testCase.put(listOfValues.getKey(), value);
+                    allValues.add(testCase.entrySet()
+                            .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                }
+                return List.copyOf(allValues);
             }
-            return List.copyOf(allValues);
         }
 
         return Collections.singletonList(testCase.entrySet()
