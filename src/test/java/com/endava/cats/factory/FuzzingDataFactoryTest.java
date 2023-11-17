@@ -215,6 +215,19 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void testAnyOfPrimitiveTypes() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/mfm/v1/services/", "src/test/resources/issue86.json");
+
+        Assertions.assertThat(dataList).hasSize(5);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
+        List<String> responses = dataList.get(0).getResponses().get("422");
+        Assertions.assertThat(responses).hasSize(2);
+        String responsePayload = responses.get(0);
+        Assertions.assertThat(responsePayload).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF").contains("loc");
+    }
+
+    @Test
     void shouldGenerateValidResponseForOneOfNestedCombinations() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/api/groops/{groopId}/StartGroopitPaging", "src/test/resources/nswag_gen_oneof.json");
         Assertions.assertThat(dataList).hasSize(1);

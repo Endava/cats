@@ -147,7 +147,7 @@ public class OpenAPIModelGenerator {
         return property.getExample();
     }
 
-    private  Object resolveProperties(Schema<?> schema) {
+    private Object resolveProperties(Schema<?> schema) {
         if (schema.getProperties() != null) {
             Map<String, Object> result = new HashMap<>();
             for (Map.Entry<String, Schema> property : schema.getProperties().entrySet()) {
@@ -455,11 +455,11 @@ public class OpenAPIModelGenerator {
                 schemaRef = fullSchemaRef.substring(fullSchemaRef.lastIndexOf('/') + 1);
                 schemaToExample = this.globalContext.getSchemaMap().get(schemaRef);
             } else {
-                schemaRef = StringGenerator.generate("[A-Z]{5,10}", 5, 10);
+                schemaRef = schemaToExample.getType();
                 fullSchemaRef = "#" + schemaRef;
             }
             String propertyKey = propertyName.toString() + "_" + schemaRef;
-            String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1): currentProperty;
+            String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1) : currentProperty;
             values.put(keyToStore + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
         }
     }

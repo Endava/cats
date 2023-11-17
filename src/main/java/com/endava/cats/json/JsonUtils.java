@@ -13,6 +13,7 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
+import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.ParseContextImpl;
@@ -160,7 +161,8 @@ public abstract class JsonUtils {
             String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
             String replacementKey = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
             if (payload.contains("_OF")) {
-                String interimPayload = JsonPath.parse(payload).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
+                Configuration suppressExceptionsConfiguration = new Configuration.ConfigurationBuilder().options(Option.SUPPRESS_EXCEPTIONS).build();
+                String interimPayload = JsonPath.parse(payload, suppressExceptionsConfiguration).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
 
                 DocumentContext finalPayload = JsonPath.parse(interimPayload);
                 toEliminate.forEach(toEliminateKey -> {
