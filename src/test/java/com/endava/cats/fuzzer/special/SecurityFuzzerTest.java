@@ -112,36 +112,16 @@ class SecurityFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.never()).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
 
-    @Test
-    void shouldConsiderFieldsWithTypeStringWhenRunningFuzzer() throws Exception {
-        FuzzingData data = setContext("src/test/resources/securityFuzzer-fieldTypes.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
+    @ParameterizedTest
+    @CsvSource({"src/test/resources/securityFuzzer-fieldTypes.yml,88", "src/test/resources/securityFuzzer-fieldTypes-http-body.yml,22", "src/test/resources/securityFuzzer-arrays.yml,22"})
+    void shouldProperlyParseFieldTypesAndExecuteTests(String file, int expectedTestRuns) throws Exception {
+        FuzzingData data = setContext(file, "{'name': {'first': 'Cats'}, 'id': '25'}");
         data.getHeaders().add(CatsHeader.builder().name("header").value("value").build());
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(88)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(expectedTestRuns)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
     }
-
-    @Test
-    void shouldConsiderHttpBodyFuzzingWhenRunningFuzzer() throws Exception {
-        FuzzingData data = setContext("src/test/resources/securityFuzzer-fieldTypes-http-body.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
-        data.getHeaders().add(CatsHeader.builder().name("header").value("value").build());
-        SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
-        filesArguments.loadSecurityFuzzerFile();
-        spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
-    }
-
-    @Test
-    void shouldReplaceArraysFields() throws Exception {
-        FuzzingData data = setContext("src/test/resources/securityFuzzer-arrays.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
-        data.getHeaders().add(CatsHeader.builder().name("header").value("value").build());
-        SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
-        filesArguments.loadSecurityFuzzerFile();
-        spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
-    }
-
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
