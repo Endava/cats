@@ -5,13 +5,12 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.model.CustomFuzzerExecution;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLWords;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
-import org.slf4j.MDC;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,9 +31,12 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     private final CustomFuzzerUtil customFuzzerUtil;
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();
 
-    public FunctionalFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
+    private TestCaseListener testCaseListener;
+
+    public FunctionalFuzzer(FilesArguments cp, CustomFuzzerUtil cfu, TestCaseListener testCaseListener) {
         this.filesArguments = cp;
         this.customFuzzerUtil = cfu;
+        this.testCaseListener = testCaseListener;
     }
 
 
@@ -65,18 +67,17 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
      */
     public void executeCustomFuzzerTests() {
         logger.debug("Executing {} functional tests.", executions.size());
-        MDC.put("fuzzer", "FF");
-        MDC.put("fuzzerKey", "FunctionalFuzzer");
-
         Collections.sort(executions);
 
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))
-                    .forEach(customFuzzerExecution -> customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
-                            customFuzzerExecution.getTestEntry(), this));
+                    .forEach(customFuzzerExecution -> {
+                        testCaseListener.beforeFuzz(this.getClass());
+                        customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
+                                customFuzzerExecution.getTestEntry(), this);
+                        testCaseListener.afterFuzz(customFuzzerExecution.getFuzzingData().getPath(), customFuzzerExecution.getFuzzingData().getMethod().name());
+                    });
         }
-        MDC.put("fuzzer", CatsUtil.FUZZER_KEY_DEFAULT);
-        MDC.put("fuzzerKey", CatsUtil.FUZZER_KEY_DEFAULT);
     }
 
     public void replaceRefData() throws IOException {
