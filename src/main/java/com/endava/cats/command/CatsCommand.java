@@ -156,7 +156,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (IOException | ExecutionException e) {
-            logger.fatal("Something went wrong while running CATS: {}", e.getMessage());
+            logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace", e);
             exitCodeDueToErrors = 192;
         }
@@ -207,11 +207,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.renderHeaderIfSummary();
         this.startFuzzing(openAPI);
         this.executeCustomFuzzer();
-        this.enableStarIfSummary();
+        this.enableAdditionalLoggingIfSummary();
     }
 
-    private void enableStarIfSummary() {
-        reportingArguments.enableStarIfSummary();
+    private void enableAdditionalLoggingIfSummary() {
+        reportingArguments.enableAdditionalLoggingIfSummary();
     }
 
     private void renderHeaderIfSummary() {

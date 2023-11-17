@@ -100,7 +100,7 @@ public class ReportingArguments {
     }
 
     private void prepareSummaryLogging() {
-        PrettyLogger.enableLevels(PrettyLevel.CONFIG);
+        PrettyLogger.enableLevels(PrettyLevel.CONFIG, PrettyLevel.FATAL);
     }
 
     private void prepareDetailedLogging() {
@@ -129,9 +129,9 @@ public class ReportingArguments {
         }
     }
 
-    public void enableStarIfSummary() {
+    public void enableAdditionalLoggingIfSummary() {
         if (this.isSummaryInConsole()) {
-            PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.NONE, PrettyLevel.INFO, PrettyLevel.TIMER);
+            PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.NONE, PrettyLevel.INFO, PrettyLevel.TIMER, PrettyLevel.FATAL);
         }
     }
 
