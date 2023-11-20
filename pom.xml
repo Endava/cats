@@ -253,6 +253,30 @@
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.15.2</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>1.2.1</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <threads>1</threads>
+                    <jvmArgs>
+                        <jvmArg>-Xmx12G</jvmArg>
+                    </jvmArgs>
+                    <targetClasses>
+                        <param>com.endava.cats.*</param>
+                    </targetClasses>
+                    <targetTests>
+                        <param>com.endava.cats.*</param>
+                    </targetTests>
+                </configuration>
+            </plugin>
         </plugins>
         <pluginManagement>
             <plugins>
