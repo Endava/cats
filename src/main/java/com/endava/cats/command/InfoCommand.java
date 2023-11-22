@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -16,7 +17,7 @@ import picocli.CommandLine;
         usageHelpAutoWidth = true,
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
-        description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
+        description = "Get environment debug info to help in bug reports",
         versionProvider = VersionProvider.class)
 @Unremovable
 public class InfoCommand implements Runnable {
@@ -37,7 +38,11 @@ public class InfoCommand implements Runnable {
         String osName = System.getProperty("os.name");
         String osVersion = System.getProperty("os.version");
         String osArch = System.getProperty("os.arch");
-        CatsInfo catsInfo = new CatsInfo(osName, osVersion, osArch, appVersion, imageType, appBuildTime);
+        String terminalWidth = String.valueOf(ConsoleUtils.getTerminalWidth(1));
+        String terminalType = ConsoleUtils.getTerminalType();
+        String shell = ConsoleUtils.getShell();
+
+        CatsInfo catsInfo = new CatsInfo(osName, osVersion, osArch, appVersion, imageType, appBuildTime, terminalWidth, terminalType, shell);
 
         if (json) {
             displayJson(catsInfo);
@@ -60,9 +65,12 @@ public class InfoCommand implements Runnable {
         logger.noFormat("Binary Type   | " + catsInfo.imageType);
         logger.noFormat("Cats Version  | " + catsInfo.version);
         logger.noFormat("Cats Build    | " + catsInfo.buildTime);
+        logger.noFormat("Term Width    | " + catsInfo.terminalWidth);
+        logger.noFormat("Term Type     | " + catsInfo.terminalType);
+        logger.noFormat("Shell         | " + catsInfo.shell);
     }
 
     public record CatsInfo(String osName, String osVersion, String osArch, String version, String imageType,
-                           String buildTime) {
+                           String buildTime, String terminalWidth, String terminalType, String shell) {
     }
 }
