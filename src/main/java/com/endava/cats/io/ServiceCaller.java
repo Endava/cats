@@ -184,6 +184,8 @@ public class ServiceCaller {
      */
     @DryRun
     public CatsResponse call(ServiceData data) {
+        this.recordServiceData(data);
+
         String processedPayload = this.replacePayloadWithRefData(data);
         processedPayload = this.convertPayloadInSpecificContentType(processedPayload, data);
         logger.debug("Payload replaced with ref data: {}", processedPayload);
@@ -205,6 +207,7 @@ public class ServiceCaller {
             url = this.addAdditionalQueryParams(url, data.getRelativePath());
 
             catsRequest.setUrl(url);
+            this.recordRequest(catsRequest);
 
             logger.note("Final list of request headers: {}", headers);
             logger.note("Final payload: {}", processedPayload);
@@ -213,7 +216,7 @@ public class ServiceCaller {
             startTime = System.currentTimeMillis();
             CatsResponse response = this.callService(catsRequest, data.getFuzzedFields());
 
-            this.recordRequestAndResponse(catsRequest, response, data);
+            this.recordResponse(response);
             return response;
         } catch (IOException | IllegalStateException e) {
             long duration = System.currentTimeMillis() - startTime;
@@ -501,13 +504,25 @@ public class ServiceCaller {
         return "";
     }
 
-    private void recordRequestAndResponse(CatsRequest catsRequest, CatsResponse catsResponse, ServiceData serviceData) {
-        testCaseListener.addPath(serviceData.getRelativePath());
+    private void recordServiceData(ServiceData serviceData) {
+        testCaseListener.addPath(serviceData.getContractPath());
         testCaseListener.addContractPath(serviceData.getContractPath());
         testCaseListener.addServer(apiArguments.getServer());
+    }
+
+    private void recordRequest(CatsRequest catsRequest) {
         testCaseListener.addRequest(catsRequest);
-        testCaseListener.addResponse(catsResponse);
         testCaseListener.addFullRequestPath(catsRequest.getUrl());
+    }
+
+    private void recordResponse(CatsResponse catsResponse) {
+        testCaseListener.addResponse(catsResponse);
+    }
+
+    private void recordRequestAndResponse(CatsRequest catsRequest, CatsResponse catsResponse, ServiceData serviceData) {
+        this.recordServiceData(serviceData);
+        this.recordRequest(catsRequest);
+        this.recordResponse(catsResponse);
     }
 
     private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
