@@ -8,6 +8,7 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 public abstract class ConsoleUtils {
@@ -35,6 +36,20 @@ public abstract class ConsoleUtils {
 
     public static String removeTrimSanitize(String currentName) {
         return currentName.replaceAll(REGEX_TO_REMOVE_FROM_FUZZER_NAMES, "");
+    }
+
+    public static String getTerminalType() {
+        try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
+            return terminal.getType();
+
+        } catch (IOException e) {
+            LOGGER.debug("Unable to determine terminal type.");
+        }
+        return "unknown";
+    }
+
+    public static String getShell() {
+        return Optional.ofNullable(System.getenv("SHELL")).orElse("unknown");
     }
 
     public static int getTerminalWidth(int defaultWidth) {
@@ -73,8 +88,9 @@ public abstract class ConsoleUtils {
 
     public static void renderHeader(String header) {
         LOGGER.noFormat(" ");
+        int toAdd = header.length() % 2;
         int equalsNo = (getTerminalWidth(80) - header.length()) / 2;
-        LOGGER.noFormat(Ansi.ansi().bold().a("=".repeat(equalsNo) + header + "=".repeat(equalsNo)).reset().toString());
+        LOGGER.noFormat(Ansi.ansi().bold().a("=".repeat(equalsNo) + header + "=".repeat(equalsNo + toAdd)).reset().toString());
     }
 
     public static void emptyLine() {
