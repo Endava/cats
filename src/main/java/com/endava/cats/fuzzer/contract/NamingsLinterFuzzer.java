@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
 @Singleton
 public class NamingsLinterFuzzer extends BaseLinterFuzzer {
     private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_\\d*");
+    private static final List<String> VERSIONS = Arrays.asList("version\\d*\\.?", "v\\d+\\.?");
+
     private static final Set<String> PROPERTIES_CHECKED = new HashSet<>();
     private static final String PLURAL_END = "s";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -55,7 +57,11 @@ public class NamingsLinterFuzzer extends BaseLinterFuzzer {
         testCaseListener.addExpectedResult(log, expectedResult);
 
         StringBuilder errorString = new StringBuilder();
-        String[] pathElements = data.getPath().substring(1).split("/");
+        String[] pathElements = Arrays.stream(data.getPath().substring(1).split("/"))
+                .filter(pathElement -> VERSIONS
+                        .stream()
+                        .noneMatch(version -> Pattern.compile(version).matcher(pathElement).matches()))
+                .toArray(String[]::new);
 
         errorString.append(this.checkPlurals(pathElements));
         errorString.append(this.checkPathElements(pathElements));
