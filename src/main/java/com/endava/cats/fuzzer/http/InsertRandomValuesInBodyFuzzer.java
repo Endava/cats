@@ -67,7 +67,7 @@ public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
                                 .fuzzingData(data)
                                 .logger(logger)
                                 .replaceRefData(false)
-                                .scenario("Insert invalid data %s within a valid json request body".formatted(finalPayload))
+                                .scenario("Insert invalid data %s within a valid json request body".formatted(maliciousPayload))
                                 .fuzzer(this)
                                 .payload(finalPayload)
                                 .build());
