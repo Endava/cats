@@ -67,7 +67,7 @@ public class IgnoreArguments {
 
     public List<String> getIgnoreResponseCodes() {
         List<String> ignored = Optional.ofNullable(this.ignoreResponseCodes).orElse(Collections.emptyList());
-        List<String> fromBlackbox = blackbox ? List.of("2xx", "4xx") : Collections.emptyList();
+        List<String> fromBlackbox = blackbox ? List.of("2xx", "4xx", "501") : Collections.emptyList();
 
         return Stream.concat(ignored.stream(), fromBlackbox.stream()).toList();
     }
