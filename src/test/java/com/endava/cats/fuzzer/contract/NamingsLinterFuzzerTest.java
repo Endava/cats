@@ -55,7 +55,7 @@ class NamingsLinterFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/petsPath", "/pets_path", "/pets-path-link", "/pets/Paths", "/pets/complex-Paths", "/pets/{petid10-}", "/pets/{pet-id}", "/admin/admin/pets/admin"})
+    @CsvSource({"/v1/petsPath", "/pets_path", "/pets-path-link", "/pets/Paths", "/pets/complex-Paths", "/pets/{petid10-}", "/pets/{pet-id}", "/admin/admin/pets/admin"})
     void shouldReportError(String path) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
