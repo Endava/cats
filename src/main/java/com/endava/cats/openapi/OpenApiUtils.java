@@ -18,16 +18,19 @@ import io.swagger.v3.parser.core.models.ParseOptions;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public abstract class OpenApiUtils {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiUtils.class);
+    private static final List<String> VERSIONS = Arrays.asList("version\\d*\\.?", "v\\d+\\.?");
 
     private OpenApiUtils() {
         //ntd
@@ -109,6 +112,23 @@ public abstract class OpenApiUtils {
                         .anyMatch(contentItem -> contentKey.matches(contentItem) || contentKey.equalsIgnoreCase(contentItem))
                 );
     }
+
+    public static String[] getPathElements(String path) {
+        return Arrays.stream(path.substring(1).split("/"))
+                .filter(pathElement -> VERSIONS
+                        .stream()
+                        .noneMatch(version -> Pattern.compile(version).matcher(pathElement).matches()))
+                .toArray(String[]::new);
+    }
+
+    public static boolean isNotAPathVariable(String pathElement) {
+        return !isAPathVariable(pathElement);
+    }
+
+    public static boolean isAPathVariable(String pathElement) {
+        return pathElement.startsWith("{");
+    }
+
 
     public static int getNumberOfOperations(OpenAPI openAPI) {
         return openAPI.getPaths()

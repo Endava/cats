@@ -92,7 +92,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(124);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(129);
     }
 
     @Test
@@ -159,7 +159,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(128);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(133);
     }
 
     @Test
