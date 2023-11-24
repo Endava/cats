@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,7 +35,7 @@ class ContractFuzzerDataUtil {
         operation.setResponses(apiResponses);
         pathItem.setPost(operation);
         return FuzzingData.builder().path("/pets").method(method).pathItem(pathItem).reqSchemaName(schemaName).requestPropertyTypes(properties)
-                .reqSchema(new Schema().$ref(schemaName)).schemaMap(schemaMap).responseCodes(Set.of(responseCodes)).headers(Set.of()).build();
+                .reqSchema(new Schema().$ref(schemaName)).schemaMap(schemaMap).responseCodes(Set.of(responseCodes)).headers(new HashSet<>()).queryParams(new HashSet<>()).build();
     }
 
     public static FuzzingData prepareFuzzingData(String schemaName, String responseCode) {

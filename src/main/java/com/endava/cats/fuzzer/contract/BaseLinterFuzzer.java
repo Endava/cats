@@ -7,9 +7,11 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
@@ -22,6 +24,8 @@ public abstract class BaseLinterFuzzer implements Fuzzer {
     protected static final String IS_EMPTY = " is empty";
     protected static final String IS_TOO_SHORT = " is too short";
     protected static final String EMPTY = "";
+    public static final String N_A = "N/A";
+
     protected final TestCaseListener testCaseListener;
     protected final List<String> fuzzedPaths = new ArrayList<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -61,6 +65,26 @@ public abstract class BaseLinterFuzzer implements Fuzzer {
             return toReturn;
         }
         return EMPTY;
+    }
+
+    protected String check(String[] pathElements, Predicate<String> checkFunction) {
+        StringBuilder result = new StringBuilder();
+
+        for (String pathElement : pathElements) {
+            if (checkFunction.test(pathElement)) {
+                result.append(COMMA).append(pathElement);
+            }
+        }
+
+        if (!result.toString().isEmpty()) {
+            return StringUtils.stripStart(result.toString().trim(), ", ");
+        }
+
+        return N_A;
+    }
+
+    protected boolean hasErrors(String s) {
+        return !N_A.equals(s);
     }
 
     /**
