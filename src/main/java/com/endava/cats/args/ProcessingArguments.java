@@ -57,7 +57,7 @@ public class ProcessingArguments {
 
     @Setter
     @CommandLine.Option(names = {"--rfc7396"},
-            description = "When set to @\bold true|@ it will send Content-Type=application/merge-patch+json for PATCH requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "When set to @|bold true|@ it will send Content-Type=application/merge-patch+json for PATCH requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean rfc7396 = false;
 
     public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
