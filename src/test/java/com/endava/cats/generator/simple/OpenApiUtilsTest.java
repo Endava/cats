@@ -3,11 +3,14 @@ package com.endava.cats.generator.simple;
 import com.endava.cats.openapi.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import java.util.AbstractMap;
@@ -86,4 +89,174 @@ class OpenApiUtilsTest {
         Assertions.assertThat(badRequest).isNotNull();
         Assertions.assertThat(badRequest.getProperties()).isNull();
     }
+
+    @Test
+    void shouldReturnRequestBodies() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> requestBodies = OpenApiUtils.getRequestBodies(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("UserArray", "PetB");
+    }
+
+    @Test
+    void shouldReturnComponentsSchemas() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> requestBodies = OpenApiUtils.getSchemas(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("Order", "Category", "User", "Tag", "Pet", "ApiResponse", "body", "body_1");
+    }
+
+    @Test
+    void shouldReturnResponses() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/petstore.yml");
+        Set<String> requestBodies = OpenApiUtils.getResponses(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("BadRequest");
+    }
+
+    @Test
+    void shouldReturnSecuritySchemas() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> requestBodies = OpenApiUtils.getSecuritySchemes(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("petstore_auth", "api_key");
+    }
+
+    @Test
+    void shouldReturnAllParameters() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> requestBodies = OpenApiUtils.getParameters(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("offsetParam");
+    }
+
+    @Test
+    void shouldReturnHeadersFromComponents() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> requestBodies = OpenApiUtils.getHeaders(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("Custom-Header", "Another-Header");
+    }
+
+    @Test
+    void shouldReturnServers() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/petstore.yml");
+        Set<String> requestBodies = OpenApiUtils.getServers(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("http://petstore.swagger.io/api - missing description");
+    }
+
+    @Test
+    void shouldReturnDeprecatedHeaders() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> requestBodies = OpenApiUtils.getDeprecatedHeaders(openAPI);
+
+        Assertions.assertThat(requestBodies).containsExactly("X-Header-Dep");
+    }
+
+    @Test
+    void shouldGetInfo() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Info info = OpenApiUtils.getInfo(openAPI);
+
+        Assertions.assertThat(info.getTitle()).isEqualTo("OpenAPI Petstore");
+    }
+
+    @Test
+    void shouldDocumentationUrl() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        String url = OpenApiUtils.getDocumentationUrl(openAPI);
+
+        Assertions.assertThat(url).isEqualTo("https://openapi-generator.tech");
+    }
+
+    @Test
+    void shouldGetExtensions() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getExtensions(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("x-vendor");
+    }
+
+    @Test
+    void shouldReturnDeprecatedOperations() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getDeprecatedOperations(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("findPetsByTags");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"petstore.yml,0", "openapi.yml,1"})
+    void shouldReturnMonitoringEndpoints(String contract, int endpoints) throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/" + contract);
+        Set<String> extensions = OpenApiUtils.getMonitoringEndpoints(openAPI);
+
+        Assertions.assertThat(extensions).hasSize(endpoints);
+    }
+
+    @Test
+    void shouldReturnMissingPaginationSupport() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getPathsMissingPaginationSupport(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("/pet/findByStatus", "/user/login", "/pet/findByTags");
+    }
+
+    @Test
+    void shouldReturnAllProducesHeaders() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getAllProducesHeaders(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("application/xml", "application/json");
+    }
+
+    @Test
+    void shouldReturnAllConsumesHeaders() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getAllConsumesHeaders(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("application/json", "multipart/form-data", "application/x-www-form-urlencoded");
+    }
+
+    @Test
+    void shouldReturnAllResponseCodes() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getAllResponseCodes(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("200", "400", "404", "405", "default");
+    }
+
+    @Test
+    void shouldReturnAllHttpMethods() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getUsedHttpMethods(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("DELETE", "POST", "GET", "PUT", "PATCH");
+    }
+
+    @Test
+    void shouldSearchHeaders() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.searchHeader(openAPI, "apikey", "none");
+
+        Assertions.assertThat(extensions).containsExactly("api_key");
+    }
+
+    @Test
+    void shouldGetAllTags() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getAllTags(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("store", "user", "pet");
+    }
+
+    @Test
+    void shouldGetApiVersions() throws Exception {
+        OpenAPI openAPI = OpenApiUtils.readOpenApi("src/test/resources/openapi.yml");
+        Set<String> extensions = OpenApiUtils.getApiVersions(openAPI);
+
+        Assertions.assertThat(extensions).containsExactly("v3");
+    }
+
 }
