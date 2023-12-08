@@ -57,7 +57,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
 - `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
 - `--ignoreResponseBodyCheck` If supplied (not value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
-- `--blackbox` If supplied (no value needed) it will ignore all response codes except for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx"`
+- `--blackbox` If supplied (no value needed) it will ignore all response codes except for 5XX which will be returned as ERROR. This is similar to `--ignoreResponseCodes="2xx,4xx,501"`
 - `--contentType` A custom mime type if the OpenAPI spec uses content type negotiation versioning.
 - `--output=PATH` The path where the CATS report will be written. Default is `cats-report` in the current directory
 - `--skipReportingForIgnoredCodes` Skip reporting entirely for any of the ignored arguments provided in `--ignoreResponseXXX`
@@ -79,6 +79,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--fieldTypes=string,integer,etc.` A comma separated list of OpenAPI data types to include. It only supports standard types: https://swagger.io/docs/specification/data-models/data-types
 - `--fieldFormats=date,email,etc.` A comma separated list of OpenAPI data formats to include. It supports formats mentioned in the documentation: https://swagger.io/docs/specification/data-models/data-types
 - `--maxResponseTimeInMs` Sets a response time limit in milliseconds. If responses take longer than the provided value, they will get marked as error with reason `Response time exceeds max`. The response time limit check is triggered only if the test case is considered successful i.e. response matches Fuzzer expectations
+- `--rfc7396` When set to true it will send Content-Type=application/merge-patch+json for PATCH requests. Default: false`
 
 Next arguments are active only when supplying a custom dictionary via `--words`:
 - `--matchResponseCodes=<matchResponseCodes>[,<matchResponseCodes>...]` A comma separated list of HTTP response codes that will be matched as error. All other response codes will be ignored from the final report. If provided, all Contract Fuzzers will be skipped

@@ -13,13 +13,13 @@ Blackbox mode means that CATS doesn't need any specific context. You just need t
 cats --contract=openapi.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox
 ```
 
-In blackbox mode CATS will only report `errors` if the received HTTP response code is a `5XX`.
+In blackbox mode CATS will only report `errors` if the received HTTP response code is a `5XX` (except `501`).
 Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and CATS expects `200`) will be reported as `success`.
 
 The blackbox mode is similar to a smoke test. It will quickly tell you if the application has major bugs that must be addressed **immediately**.
 
 :::tip
-`--blackbox` is actually equivalent to `--ignoreResponseCodes=2XX,4XX`. If you want your final report to only contain the `5XX` errors, you can use `--skipReportingForIgnored`.
+`--blackbox` is actually equivalent to `--ignoreResponseCodes=2XX,4XX,501`. If you want your final report to only contain the `5XX` errors, you can use `--skipReportingForIgnored`.
 :::
 
 ## Context Mode
