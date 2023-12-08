@@ -17,10 +17,15 @@ Usually a good OpenAPI contract must follow several good practices in order to m
 - avoid using `xml` payload unless there is a really good reason (like documenting an old API for example)
 - json types and properties do not use the same naming (like having a `Pet` with a property named `pet`)
 
-CATS has currently 9 registered `Linter` Fuzzers or Linters:
+CATS has currently 14 registered `Linter` Fuzzers or Linters:
+- `HeadersCaseLinter` - verifies that HTTP headers follow naming conventions
 - `HttpStatusCodeInValidRangeFuzzer` -  verifies that all HTTP response codes are within the range of 100 to 599
-- `NamingsContractInfoFuzzer` - verifies that all OpenAPI contract elements follow REST API naming good practices
+- `JsonObjectsCaseLinter` - verifies that JSON elements follow naming conventions
+- `PathCaseLinter` - verifies that path elements follow naming conventions
+- `PathNounsLinter` - verifies that path elements use nouns to describe resources
+- `PathPluralsLinter` - verifies that path elements uses pluralization to describe resources
 - `PathTagsContractInfoFuzzer` - verifies that all OpenAPI paths contain tags elements and checks if the tags elements match the ones declared at the top level
+- `QueryParamsCaseLinter` - verifies that query params follow naming conventions
 - `RecommendedHeadersContractInfoFuzzer` - verifies that all OpenAPI contract paths contain recommended headers like: CorrelationId/TraceId, etc.
 - `RecommendedHttpCodesContractInfoFuzzer` - verifies that the current path contains all recommended HTTP response codes for all operations
 - `SecuritySchemesContractInfoFuzzer` - verifies if the OpenApi contract contains valid security schemas for all paths, either globally configured or per path
