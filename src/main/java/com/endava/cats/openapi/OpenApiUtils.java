@@ -3,13 +3,20 @@ package com.endava.cats.openapi;
 import com.endava.cats.args.ProcessingArguments;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.examples.Example;
+import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.tags.Tag;
 import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.converter.SwaggerConverter;
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
@@ -19,18 +26,28 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class OpenApiUtils {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiUtils.class);
     private static final List<String> VERSIONS = Arrays.asList("version\\d*\\.?", "v\\d+\\.?");
+
+    private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "sort", "perpage");
+
+    private static final Set<String> MONITORING_MATCHES = Set.of("[version\\d*\\.?|v\\d+\\.?]/status", "/status", ".*/health", ".*/monitoring/status", ".*/ping");
 
     private OpenApiUtils() {
         //ntd
@@ -131,11 +148,257 @@ public abstract class OpenApiUtils {
 
 
     public static int getNumberOfOperations(OpenAPI openAPI) {
-        return openAPI.getPaths()
+        return Optional.ofNullable(openAPI.getPaths()).orElse(new io.swagger.v3.oas.models.Paths())
                 .values()
                 .stream()
                 .mapToInt(OpenApiUtils::countPathOperations)
                 .sum();
+    }
+
+    public static Set<String> getRequestBodies(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getComponents().getRequestBodies())
+                .orElse(Collections.emptyMap()).keySet();
+    }
+
+    public static Set<String> getSchemas(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getComponents().getSchemas())
+                .orElse(new HashMap<>()).keySet();
+    }
+
+    public static Set<String> getResponses(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getComponents().getResponses())
+                .orElse(Collections.emptyMap()).keySet();
+    }
+
+    public static Set<String> getSecuritySchemes(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getComponents().getSecuritySchemes())
+                .orElse(Collections.emptyMap()).keySet();
+    }
+
+    public static Set<String> getParameters(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getComponents().getParameters())
+                .orElse(Collections.emptyMap()).keySet();
+    }
+
+    public static Set<String> getHeaders(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getComponents().getHeaders())
+                .orElse(Collections.emptyMap()).keySet();
+    }
+
+    public static Set<String> getServers(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getServers()).orElse(Collections.emptyList()).stream()
+                .map(server -> server.getUrl() + " - " + Optional.ofNullable(server.getDescription()).orElse("missing description"))
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> getDeprecatedHeaders(OpenAPI openAPI) {
+        return openAPI.getPaths().values().stream()
+                .flatMap(pathItem -> deprecatedHeadersFromOperations(pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
+                        pathItem.getHead(), pathItem.getPatch(), pathItem.getDelete(),
+                        pathItem.getOptions(), pathItem.getTrace()).stream())
+                .collect(Collectors.toSet());
+    }
+
+    public static Info getInfo(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getInfo()).orElse(defaultInfo());
+    }
+
+    public static String getDocumentationUrl(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getExternalDocs()).orElse(OpenApiUtils.defaultDocumentation()).getUrl();
+    }
+
+    public static Set<String> getExtensions(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getExtensions()).orElse(Collections.emptyMap()).keySet();
+    }
+
+    public static Set<String> getDeprecatedOperations(OpenAPI openAPI) {
+        return openAPI.getPaths().values().stream()
+                .flatMap(pathItem -> deprecatedOperations(
+                        pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
+                        pathItem.getHead(), pathItem.getPatch(), pathItem.getDelete(),
+                        pathItem.getOptions(), pathItem.getTrace()).stream())
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> deprecatedOperations(Operation... operations) {
+        return Arrays.stream(operations)
+                .filter(Objects::nonNull)
+                .filter(operation -> operation.getDeprecated() != null && operation.getDeprecated())
+                .map(Operation::getOperationId)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> getMonitoringEndpoints(OpenAPI openAPI) {
+        return openAPI.getPaths().keySet().stream()
+                .filter(path -> MONITORING_MATCHES.stream().anyMatch(toMatch -> {
+                            Pattern pattern = Pattern.compile(toMatch);
+                            return pattern.matcher(path).matches();
+                        }
+                )).collect(Collectors.toSet());
+    }
+
+    public static Set<String> getPathsMissingPaginationSupport(OpenAPI openAPI) {
+        return openAPI.getPaths().entrySet()
+                .stream().filter(entry -> !entry.getKey().substring(entry.getKey().lastIndexOf("/")).contains("{"))
+                .filter(entry -> entry.getValue().getGet() != null)
+                .filter(entry -> entry.getValue().getGet().getParameters() != null)
+                .filter(entry -> entry.getValue().getGet()
+                        .getParameters()
+                        .stream()
+                        .filter(parameter -> parameter.getIn().equals("query"))
+                        .filter(parameter -> PAGINATION.contains(parameter.getName()
+                                .replaceAll("[-_]", "")
+                                .toLowerCase(Locale.ROOT)))
+                        .count() < 2)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> getAllProducesHeaders(OpenAPI openAPI) {
+        return openAPI.getPaths().values().stream()
+                .flatMap(pathItem -> responseContentTypeFromOperation(pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
+                        pathItem.getHead(), pathItem.getPatch(), pathItem.getDelete(),
+                        pathItem.getOptions(), pathItem.getTrace()).stream())
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> getAllConsumesHeaders(OpenAPI openAPI) {
+        return openAPI.getPaths().values().stream()
+                .flatMap(pathItem -> requestContentTypeFromOperation(pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
+                        pathItem.getHead(), pathItem.getPatch(), pathItem.getDelete(),
+                        pathItem.getOptions(), pathItem.getTrace()).stream())
+                .collect(Collectors.toSet());
+    }
+
+
+    public static Set<String> responseContentTypeFromOperation(Operation... operations) {
+        return Arrays.stream(operations)
+                .filter(Objects::nonNull)
+                .map(Operation::getResponses)
+                .filter(Objects::nonNull)
+                .flatMap(apiResponses -> apiResponses.values().stream())
+                .map(ApiResponse::getContent)
+                .filter(Objects::nonNull)
+                .flatMap(content -> content.keySet().stream())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> requestContentTypeFromOperation(Operation... operations) {
+        return Arrays.stream(operations)
+                .filter(Objects::nonNull)
+                .map(Operation::getRequestBody)
+                .filter(Objects::nonNull)
+                .map(RequestBody::getContent)
+                .filter(Objects::nonNull)
+                .flatMap(content -> content.keySet().stream())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> getAllResponseCodes(OpenAPI openAPI) {
+        return openAPI.getPaths().values().stream()
+                .flatMap(pathItem -> responseCodesFromOperations(pathItem.getGet(),
+                        pathItem.getPut(), pathItem.getPost(),
+                        pathItem.getHead(), pathItem.getPatch(), pathItem.getDelete(),
+                        pathItem.getOptions(), pathItem.getTrace()).stream())
+                .sorted()
+                .collect(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
+    }
+
+    public static Set<String> responseCodesFromOperations(Operation... operations) {
+        return Arrays.stream(operations)
+                .filter(Objects::nonNull)
+                .map(Operation::getResponses)
+                .filter(Objects::nonNull)
+                .flatMap(apiResponses -> apiResponses.keySet().stream())
+                .collect(Collectors.toSet());
+
+    }
+
+    public static Set<String> getUsedHttpMethods(OpenAPI openAPI) {
+        return openAPI.getPaths().values().stream().flatMap(
+                        pathItem -> pathItem.readOperationsMap().keySet().stream())
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> searchHeader(OpenAPI openAPI, String... containsHeaderNames) {
+        Set<String> result = getHeaders(openAPI).stream()
+                .filter(header -> Arrays.stream(containsHeaderNames)
+                        .anyMatch(headerNameToContain -> header.toLowerCase(Locale.ROOT)
+                                .replaceAll("[_-]", "")
+                                .contains(headerNameToContain)))
+                .collect(HashSet::new, HashSet::add, HashSet::addAll);
+
+        result.addAll(openAPI.getPaths().values().stream()
+                .flatMap(pathItem -> headersFromOperation(containsHeaderNames, pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
+                        pathItem.getHead(), pathItem.getPatch(), pathItem.getDelete(),
+                        pathItem.getOptions(), pathItem.getTrace()).stream())
+                .collect(Collectors.toSet()));
+
+        return result;
+    }
+
+    public static Set<String> getAllTags(OpenAPI openAPI) {
+        return Optional.ofNullable(openAPI.getTags())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(Tag::getName)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> headersFromOperation(String[] headerNames, Operation... operations) {
+        return Arrays.stream(operations)
+                .filter(Objects::nonNull)
+                .map(Operation::getParameters)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(parameter -> parameter.getIn().equals("header"))
+                .map(Parameter::getName)
+                .filter(Objects::nonNull)
+                .filter(parameter ->
+                        Arrays.stream(headerNames)
+                                .anyMatch(headerNameToContain -> parameter.toLowerCase(Locale.ROOT)
+                                        .replaceAll("[_-]", "")
+                                        .contains(headerNameToContain)))
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> deprecatedHeadersFromOperations(Operation... operations) {
+        return Arrays.stream(operations)
+                .filter(Objects::nonNull)
+                .map(Operation::getParameters)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(parameter -> parameter.getIn().equals("header"))
+                .filter(parameter -> parameter.getDeprecated() != null && parameter.getDeprecated())
+                .map(Parameter::getName)
+                .collect(Collectors.toSet());
+    }
+
+    public static Set<String> getApiVersions(OpenAPI openAPI) {
+        Set<String> versions = openAPI.getPaths().keySet()
+                .stream()
+                .flatMap(path -> Arrays.stream(path.split("/"))
+                        .filter(pathElement -> VERSIONS.stream()
+                                .anyMatch(version -> Pattern.compile(version).matcher(pathElement).matches())))
+                .collect(Collectors.toSet());
+
+        openAPI.getServers().forEach(server ->
+                versions.addAll(Arrays.stream(server.getUrl().split("/"))
+                        .filter(pathElement -> VERSIONS.stream().anyMatch(version -> Pattern.compile(version).matcher(pathElement).matches()))
+                        .toList()));
+
+        return versions;
+    }
+
+    public static Info defaultInfo() {
+        return new Info().description("missing description").version("missing version").title("missing title");
+    }
+
+    public static ExternalDocumentation defaultDocumentation() {
+        return new ExternalDocumentation().url("missing url");
     }
 
     private static int countPathOperations(PathItem pathItem) {
@@ -145,4 +408,6 @@ public abstract class OpenApiUtils {
                 .mapToInt(sum -> 1)
                 .sum();
     }
+
+
 }

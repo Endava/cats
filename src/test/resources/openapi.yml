@@ -13,6 +13,8 @@ info:
 externalDocs:
   description: Find out more about OpenAPI generator
   url: 'https://openapi-generator.tech'
+x-vendor:
+  custom-property: "This is a custom vendor extension"
 servers:
   - url: /v3
     description: This is the production server
@@ -24,12 +26,30 @@ tags:
   - name: user
     description: Operations about the user
 paths:
+  /monitoring/status:
+    get:
+      tags:
+        - monitoring
+      operationId: health
+      responses:
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Pet not found
+        '405':
+          description: Validation exception
   /pet:
     put:
       tags:
         - pet
       summary: Update an existing pet
       operationId: updatePet
+      parameters:
+        - name: X-Header-Dep
+          in: header
+          deprecated: true
+          schema:
+            type: string
       requestBody:
         $ref: '#/components/requestBodies/PetB'
       responses:
@@ -623,6 +643,30 @@ paths:
       x-tags:
         - tag: user
 components:
+  parameters:
+    offsetParam:
+      name: offset
+      in: query
+      description: Number of items to skip before returning the results.
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+  headers:
+    Custom-Header:
+      description: Custom header for the API
+      required: true
+      deprecated: true
+      schema:
+        type: string
+        format: uuid
+    Another-Header:
+      description: Another custom header
+      required: false
+      schema:
+        type: string
   schemas:
     Order:
       title: Pet Order
