@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.api;
 
-import com.endava.cats.generator.format.impl.VoidGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 import jakarta.enterprise.inject.Instance;

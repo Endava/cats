@@ -1,7 +1,5 @@
-package com.endava.cats.generator.format.impl;
+package com.endava.cats.generator.format.api;
 
-import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
-import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
 
 public class VoidGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator {
