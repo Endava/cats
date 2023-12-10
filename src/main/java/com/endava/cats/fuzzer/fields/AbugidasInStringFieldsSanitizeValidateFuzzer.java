@@ -13,8 +13,8 @@ import com.endava.cats.strategy.CommonWithinMethods;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 
 @Singleton
@@ -28,7 +28,8 @@ public class AbugidasInStringFieldsSanitizeValidateFuzzer extends ExpectOnly2XXB
 
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        return CommonWithinMethods.getFuzzingStrategies(data, fuzzedField, UnicodeGenerator.getAbugidasChars(), false);
+        Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        return CommonWithinMethods.getFuzzingStrategies(fuzzedFieldSchema, UnicodeGenerator.getAbugidasChars(), false);
     }
 
     @Override
