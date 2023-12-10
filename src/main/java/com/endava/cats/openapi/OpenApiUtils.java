@@ -37,13 +37,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class OpenApiUtils {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiUtils.class);
-    private static final List<String> VERSIONS = Arrays.asList("version\\d*\\.?", "v\\d+\\.?");
+    private static final Pattern VERSION_PATH = Pattern.compile("(?:v|version)(\\d+\\.?\\d*\\.?\\d*)");
+
+    private static final Pattern VERSION_HEADER = Pattern.compile("(v\\d+)");
 
     private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "sort", "perpage");
 
@@ -132,9 +135,7 @@ public abstract class OpenApiUtils {
 
     public static String[] getPathElements(String path) {
         return Arrays.stream(path.substring(1).split("/"))
-                .filter(pathElement -> VERSIONS
-                        .stream()
-                        .noneMatch(version -> Pattern.compile(version).matcher(pathElement).matches()))
+                .filter(pathElement -> !VERSION_PATH.matcher(pathElement).matches())
                 .toArray(String[]::new);
     }
 
@@ -392,14 +393,25 @@ public abstract class OpenApiUtils {
         Set<String> versions = openAPI.getPaths().keySet()
                 .stream()
                 .flatMap(path -> Arrays.stream(path.split("/"))
-                        .filter(pathElement -> VERSIONS.stream()
-                                .anyMatch(version -> Pattern.compile(version).matcher(pathElement).matches())))
+                        .filter(pathElement -> VERSION_PATH.matcher(pathElement).matches()))
                 .collect(Collectors.toSet());
 
         openAPI.getServers().forEach(server ->
                 versions.addAll(Arrays.stream(server.getUrl().split("/"))
-                        .filter(pathElement -> VERSIONS.stream().anyMatch(version -> Pattern.compile(version).matcher(pathElement).matches()))
+                        .filter(pathElement ->
+                                VERSION_PATH.matcher(pathElement).matches())
                         .toList()));
+
+        Set<String> versionHeaders = new HashSet<>();
+        versionHeaders.addAll(getAllConsumesHeaders(openAPI));
+        versionHeaders.addAll(getAllProducesHeaders(openAPI));
+
+        versionHeaders.forEach(header -> {
+            Matcher matcher = VERSION_HEADER.matcher(header);
+            if (matcher.find()) {
+                versions.add(matcher.group(1));
+            }
+        });
 
         return versions;
     }
