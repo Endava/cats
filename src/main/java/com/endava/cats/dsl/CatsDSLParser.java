@@ -24,7 +24,7 @@ public class CatsDSLParser {
 
     /**
      * Gets the appropriate parser based on the {@code valueFromFile} and runs it against the given payload.
-     * If no Parser is found, it will default to {@link SpringELParser}.
+     * If no Parser is found, it will default to {@link NoOpParser}.
      *
      * @param valueFromFile the expression retrieved from the CATS files
      * @param context       a given context: JSON request or response, a Map of values
