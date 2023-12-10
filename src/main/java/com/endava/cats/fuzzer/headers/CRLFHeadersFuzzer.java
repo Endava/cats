@@ -10,9 +10,18 @@ import jakarta.inject.Singleton;
 
 import java.util.stream.Stream;
 
+/**
+ * Fuzzes HTTP headers by injecting CR and LF characters.
+ */
 @Singleton
 @HeaderFuzzer
 public class CRLFHeadersFuzzer extends BaseHeadersFuzzer {
+
+    /**
+     * Creates a new instance.
+     *
+     * @param headersIteratorExecutor executor used to run the fuzzing logic
+     */
     protected CRLFHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

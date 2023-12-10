@@ -16,9 +16,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Adds an invalid value for the Content-Length header.
+ */
 @Singleton
 @HeaderFuzzer
 public class InvalidContentLengthHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
+
+    /**
+     * Creates a new instance.
+     *
+     * @param simpleExecutor executor used to run the fuzz logic
+     */
     public InvalidContentLengthHeadersFuzzer(SimpleExecutor simpleExecutor) {
         super(simpleExecutor);
     }

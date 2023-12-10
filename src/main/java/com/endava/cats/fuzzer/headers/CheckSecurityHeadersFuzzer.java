@@ -49,6 +49,12 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     private final TestCaseListener testCaseListener;
     private final SimpleExecutor simpleExecutor;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param lr             listener used to report test cases progress
+     * @param simpleExecutor executor used to run the fuzz logic
+     */
     public CheckSecurityHeadersFuzzer(TestCaseListener lr, SimpleExecutor simpleExecutor) {
         this.testCaseListener = lr;
         this.simpleExecutor = simpleExecutor;

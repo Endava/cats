@@ -14,11 +14,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Sends dummy Transfer-Encoding headers.
+ */
 @Singleton
 @HeaderFuzzer
 public class DummyTransferEncodingHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
     private static final String DUMMY_TRANSFER = "cats";
 
+    /**
+     * Creates a new instance.
+     *
+     * @param simpleExecutor executor used to run the fuzz logic.
+     */
     public DummyTransferEncodingHeadersFuzzer(SimpleExecutor simpleExecutor) {
         super(simpleExecutor);
     }

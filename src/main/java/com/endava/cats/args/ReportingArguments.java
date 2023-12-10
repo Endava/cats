@@ -79,6 +79,12 @@ public class ReportingArguments {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }
 
+    /**
+     * Return the give log list as PrettyLogger levels.
+     *
+     * @param logsAsString the list of logs
+     * @return a list of PrettyLogger levels
+     */
     public static List<PrettyLevel> getAsPrettyLevelList(List<String> logsAsString) {
         return Optional.ofNullable(logsAsString).orElse(Collections.emptyList())
                 .stream()
@@ -91,6 +97,9 @@ public class ReportingArguments {
     }
 
 
+    /**
+     * Processes log data based on --verbosity.
+     */
     public void processLogData() {
         if (verbosity == Verbosity.SUMMARY) {
             prepareSummaryLogging();
@@ -129,12 +138,20 @@ public class ReportingArguments {
         }
     }
 
+    /**
+     * Enables additional logging typically needed to log statistical data after fuzzing is performed.
+     */
     public void enableAdditionalLoggingIfSummary() {
         if (this.isSummaryInConsole()) {
             PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.NONE, PrettyLevel.INFO, PrettyLevel.TIMER, PrettyLevel.FATAL);
         }
     }
 
+    /**
+     * Check --verbosity.
+     *
+     * @return true if --verbosity=SUMMARY, false otherwise
+     */
     public boolean isSummaryInConsole() {
         return verbosity == Verbosity.SUMMARY;
     }

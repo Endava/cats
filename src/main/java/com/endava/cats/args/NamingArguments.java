@@ -35,6 +35,9 @@ public class NamingArguments {
     private Naming headersNaming = Naming.HTTP_HEADER;
 
 
+    /**
+     * Keeps a mapping between case naming and check patterns.
+     */
     @Getter
     public enum Naming {
         SNAKE("^[a-z]+((_)?[a-z])*+$", "snake_case"),

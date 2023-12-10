@@ -10,10 +10,18 @@ import jakarta.inject.Singleton;
 
 import java.util.Collections;
 
+/**
+ * Sends empty string in all HTTP headers declared in the OpenAPI spec.
+ */
 @Singleton
 @HeaderFuzzer
 public class EmptyStringsInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new instance.
+     *
+     * @param headersIteratorExecutor executor used to run the fuzz logic
+     */
     public EmptyStringsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

@@ -61,7 +61,7 @@ class CommonWithinMethodsTest {
     void shouldInsertWithoutReplaceWhenEnums() {
         StringSchema schema = new StringSchema();
         schema.setEnum(List.of("ENUM"));
-      
+
         List<FuzzingStrategy> fuzzingStrategyList = CommonWithinMethods.getFuzzingStrategies(schema, List.of(YY), false);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);

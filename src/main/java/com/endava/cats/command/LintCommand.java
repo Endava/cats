@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * This is responsible to run all @ContractFuzzers
+ * This is responsible to run all @ContractFuzzers.
  */
 @CommandLine.Command(
         name = "lint",

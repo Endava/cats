@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.executor.HeadersIteratorExecutorContext;
 import com.endava.cats.model.FuzzingData;
@@ -11,7 +11,6 @@ import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 

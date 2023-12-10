@@ -18,12 +18,17 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * dummy content type
+ * Sends dummy Content-Type headers.
  */
 @Singleton
 @HeaderFuzzer
 public class DummyContentTypeHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
 
+    /**
+     * Creates a new instance.
+     *
+     * @param simpleExecutor executor used to run the fuzz logic
+     */
     public DummyContentTypeHeadersFuzzer(SimpleExecutor simpleExecutor) {
         super(simpleExecutor);
     }
