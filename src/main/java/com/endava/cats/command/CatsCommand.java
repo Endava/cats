@@ -144,10 +144,13 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private int exitCodeDueToErrors;
 
 
+    public CatsCommand() {
+        logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
+    }
+
     @Override
     public void run() {
         try {
-            initLogger();
             Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
             this.doLogic();
@@ -161,14 +164,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             logger.debug("Stacktrace", e);
             exitCodeDueToErrors = 192;
         }
-    }
-
-    /**
-     * We postpone log initialization in order to be able to process arguments related to logging
-     * passed through the command line.
-     */
-    void initLogger() {
-        logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
     }
 
     void printVersion(Future<VersionChecker.CheckResult> newVersion) throws ExecutionException, InterruptedException {
@@ -330,6 +325,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             return;
         }
 
+        /* If certain HTTP methods are skipped, we remove corresponding FuzzingData */
+        /* If request uses oneOf/anyOf we only keep the one supplied through --oneOfSelection/--anyOfSelection */
         List<FuzzingData> filteredFuzzingData = fuzzingDataList.stream()
                 .filter(fuzzingData -> filterArguments.isHttpMethodSupplied(fuzzingData.getMethod()))
                 .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))

@@ -50,7 +50,6 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(catsMain, "filterArguments", filterArguments);
         Mockito.when(filterArguments.getHttpMethods()).thenReturn(HttpMethod.restMethods());
         ReflectionTestUtils.setField(reportingArguments, "verbosity", ReportingArguments.Verbosity.DETAILED);
-        catsMain.initLogger();
     }
 
     @Test
