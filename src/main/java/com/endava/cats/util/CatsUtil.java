@@ -15,7 +15,6 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.logmanager.LogContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -124,7 +123,6 @@ public class CatsUtil {
         }
     }
 
-    @NotNull
     private static String removeArrayTermination(String jsonPropertyForReplacement) {
         return jsonPropertyForReplacement.substring(0, jsonPropertyForReplacement.lastIndexOf("[*]"));
     }
