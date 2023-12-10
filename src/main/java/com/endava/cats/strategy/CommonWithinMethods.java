@@ -1,7 +1,6 @@
 package com.endava.cats.strategy;
 
 import com.endava.cats.generator.simple.StringGenerator;
-import com.endava.cats.model.FuzzingData;
 import io.swagger.v3.oas.models.media.Schema;
 import org.springframework.util.CollectionUtils;
 
@@ -14,8 +13,7 @@ public final class CommonWithinMethods {
         //ntd
     }
 
-    public static List<FuzzingStrategy> getFuzzingStrategies(FuzzingData data, String fuzzedField, List<String> invisibleChars, boolean maintainSize) {
-        Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+    public static List<FuzzingStrategy> getFuzzingStrategies(Schema<?> fuzzedFieldSchema, List<String> invisibleChars, boolean maintainSize) {
         if (!"string".equalsIgnoreCase(fuzzedFieldSchema.getType())
                 || "binary".equalsIgnoreCase(fuzzedFieldSchema.getFormat())
                 || "byte".equalsIgnoreCase(fuzzedFieldSchema.getFormat())) {
