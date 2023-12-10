@@ -15,10 +15,10 @@ import java.util.List;
 
 @Singleton
 @Getter
+@Setter
 public class UserArguments {
     @CommandLine.Option(names = {"--words", "-w"},
             description = "Specifies the user dictionary used by the @|bold TemplateFuzzer|@ to fuzz the specified fields and/or headers")
-    @Setter
     File words;
 
     public List<String> getWordsAsList() {

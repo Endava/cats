@@ -63,7 +63,7 @@ public class FilterArguments {
     UserArguments userArguments;
 
     public enum FieldType {
-        STRING, NUMBER, INTEGER, BOOLEAN;
+        STRING, NUMBER, INTEGER, BOOLEAN
     }
 
     public enum FormatType {
