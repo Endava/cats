@@ -377,6 +377,17 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    public static Set<String> queryParametersFromOperations(Operation... operations) {
+        return Arrays.stream(operations)
+                .filter(Objects::nonNull)
+                .map(Operation::getParameters)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .filter(parameter -> parameter.getIn().equals("query"))
+                .map(Parameter::getName)
+                .collect(Collectors.toSet());
+    }
+
     public static Set<String> getApiVersions(OpenAPI openAPI) {
         Set<String> versions = openAPI.getPaths().keySet()
                 .stream()
