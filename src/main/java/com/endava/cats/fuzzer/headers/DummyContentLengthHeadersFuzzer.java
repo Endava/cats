@@ -14,11 +14,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Sends dummy Content-Length headers.
+ */
 @Singleton
 @HeaderFuzzer
 public class DummyContentLengthHeadersFuzzer extends BaseSecurityChecksHeadersFuzzer {
     private static final String DUMMY_LENGTH = "cats";
 
+    /**
+     * Creates a new instance.
+     *
+     * @param simpleExecutor executor used to run the fuzz logic
+     */
     public DummyContentLengthHeadersFuzzer(SimpleExecutor simpleExecutor) {
         super(simpleExecutor);
     }

@@ -21,6 +21,12 @@ import java.util.Collections;
 public class VeryLargeStringsInHeadersFuzzer extends BaseHeadersFuzzer {
     private final ProcessingArguments processingArguments;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param headersIteratorExecutor executor used to run the fuzz logic
+     * @param pa                      used to get the size of the strings
+     */
     public VeryLargeStringsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor, ProcessingArguments pa) {
         super(headersIteratorExecutor);
         this.processingArguments = pa;

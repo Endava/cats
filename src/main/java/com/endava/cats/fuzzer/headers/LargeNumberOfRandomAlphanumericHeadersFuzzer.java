@@ -10,11 +10,20 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.function.Function;
 
+/**
+ * Sends a large number of random headers with alphanumeric names and values.
+ */
 @Singleton
 @HeaderFuzzer
 public class LargeNumberOfRandomAlphanumericHeadersFuzzer extends BaseRandomHeadersFuzzer {
 
-
+    /**
+     * Creates a new instance.
+     *
+     * @param simpleExecutor      the executor used to run the fuzz logic
+     * @param testCaseListener    listener used to report test case progress
+     * @param processingArguments used to hold configuration for how many headers to send
+     */
     public LargeNumberOfRandomAlphanumericHeadersFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, ProcessingArguments processingArguments) {
         super(simpleExecutor, testCaseListener, processingArguments);
     }

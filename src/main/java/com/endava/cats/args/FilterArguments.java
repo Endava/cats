@@ -193,12 +193,22 @@ public class FilterArguments {
         return Optional.ofNullable(this.paths).orElse(Collections.emptyList());
     }
 
+    /**
+     * Returns the fuzzers to be run initially as a group as list of {@code Fuzzer}.
+     *
+     * @return a list of fuzzers to be run in phase 1
+     */
     public List<Fuzzer> getFirstPhaseFuzzersAsFuzzers() {
         return this.getAllRegisteredFuzzers().stream()
                 .filter(fuzzer -> this.getFirstPhaseFuzzersForPath().contains(fuzzer.toString()))
                 .toList();
     }
 
+    /**
+     * Returns the fuzzers to be run initially as a group as list of fuzzer names.
+     *
+     * @return a list of fuzzers to be run in phase 1
+     */
     public List<String> getFirstPhaseFuzzersForPath() {
         if (FUZZERS_TO_BE_RUN.isEmpty()) {
             List<String> allowedFuzzers = processSuppliedFuzzers();
@@ -218,6 +228,11 @@ public class FilterArguments {
         return FUZZERS_TO_BE_RUN;
     }
 
+    /**
+     * Returns a list of fuzzers to be run as a group in phase 2.
+     *
+     * @return a list of fuzzers to be run in phase 2
+     */
     public List<Fuzzer> getSecondPhaseFuzzers() {
         if (SECOND_PHASE_FUZZERS_TO_BE_RUN.isEmpty()) {
             List<String> secondPhaseFuzzersAsString = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class);
@@ -340,6 +355,11 @@ public class FilterArguments {
                 .toList();
     }
 
+    /**
+     * Configures only one fuzzer to be run.
+     *
+     * @param specialFuzzer the name of the special fuzzer to be run
+     */
     public void customFilter(String specialFuzzer) {
         this.suppliedFuzzers = List.of(specialFuzzer);
         this.paths = Collections.emptyList();
@@ -349,10 +369,23 @@ public class FilterArguments {
         this.dryRun = false;
     }
 
+    /**
+     * Convert list of enums to list of strings.
+     *
+     * @param fieldTypes types of fields
+     * @param <E>        type of enum
+     * @return a list of strings with enum names
+     */
     public static <E extends Enum<E>> List<String> mapToString(List<E> fieldTypes) {
         return fieldTypes.stream().map(value -> value.name().toLowerCase(Locale.ROOT)).toList();
     }
 
+    /**
+     * Returns the paths to be run considering --paths and --skipPaths arguments.
+     *
+     * @param openAPI the OpenAPI spec
+     * @return a list of paths to be run
+     */
     public List<String> getPathsToRun(OpenAPI openAPI) {
         if (PATHS_TO_INCLUDE.isEmpty()) {
             PATHS_TO_INCLUDE.addAll(this.matchSuppliedPathsWithContractPaths(openAPI));
@@ -403,6 +436,12 @@ public class FilterArguments {
         return result;
     }
 
+    /**
+     * Checks if the supplied http method was supplied through arguments.
+     *
+     * @param method the HTTP method to check
+     * @return true if the http method is supplied, false otherwise
+     */
     public boolean isHttpMethodSupplied(HttpMethod method) {
         return this.httpMethods.contains(method);
     }

@@ -64,6 +64,12 @@ public class ProcessingArguments {
     public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
     public static final String JSON_PATCH = "application/merge-patch+json";
 
+    /**
+     * Checks if the payload matches any of the supplied --oneOfSelection or --anyOfSelection argument
+     *
+     * @param payload the request payload
+     * @return true if payload matches on the arguments, false otherwise
+     */
     public boolean matchesXxxSelection(String payload) {
         if (xxxOfSelections != null) {
             return xxxOfSelections.entrySet().stream().anyMatch(entry ->
@@ -75,6 +81,11 @@ public class ProcessingArguments {
         return true;
     }
 
+    /**
+     * Gets the supplied content type of "application/json" and "application/x-www-form-urlencoded" if not supplied.
+     *
+     * @return the --contentType argument if supplied, or a default list otherwise.
+     */
     public List<String> getContentType() {
         if (contentType == null) {
             return List.of(JSON_WILDCARD, "application/x-www-form-urlencoded");
@@ -82,19 +93,60 @@ public class ProcessingArguments {
         return List.of(contentType);
     }
 
+    /**
+     * Returns the supplied --contentType or "application/json" if not supplied.
+     *
+     * @return supplied --contentType or "application/json" if not supplied
+     */
     public String getDefaultContentType() {
         return Optional.ofNullable(contentType).orElse("application/json");
     }
 
+    /**
+     * The possible strategies used by services to handle trimming.
+     */
     public enum TrimmingStrategy {
-        VALIDATE_AND_TRIM, TRIM_AND_VALIDATE
+        /**
+         * Services will first validate then trim.
+         */
+        VALIDATE_AND_TRIM,
+        /**
+         * Services will first trim then validate. This is default.
+         */
+        TRIM_AND_VALIDATE
     }
 
+    /**
+     * The possible strategies used by services to handle sanitization.
+     */
     public enum SanitizationStrategy {
-        VALIDATE_AND_SANITIZE, SANITIZE_AND_VALIDATE
+        /**
+         * Services will first validate and then sanitize.
+         */
+        VALIDATE_AND_SANITIZE,
+
+        /**
+         * Services will first sanitize and then validate. This is default.
+         */
+        SANITIZE_AND_VALIDATE
     }
 
+    /**
+     * Fuzzing strategy when removing fields.
+     */
     public enum SetFuzzingStrategy {
-        POWERSET, SIZE, ONEBYONE
+        /**
+         * Use all possible combinations.
+         */
+        POWERSET,
+
+        /**
+         * Use possible combinations up to a size.
+         */
+        SIZE,
+        /**
+         * Remove one by one.
+         */
+        ONEBYONE
     }
 }

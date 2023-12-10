@@ -58,6 +58,11 @@ public class DryRunAspect {
         return null;
     }
 
+    /**
+     * Logic to be executed instead of TestCaseListener.endSession()
+     *
+     * @return nothing
+     */
     public Object endSession() {
         if (reportingArguments.isJson()) {
             List<DryRunEntry> pathTests = paths.entrySet().stream()
@@ -75,6 +80,12 @@ public class DryRunAspect {
         return null;
     }
 
+    /**
+     * Logic to be executed instead of TestCaseListener.reportXXX methods.
+     *
+     * @param context invocation context
+     * @return nothing
+     */
     public Object report(InvocationContext context) {
         Object data = context.getParameters()[1];
 
@@ -88,6 +99,13 @@ public class DryRunAspect {
         return null;
     }
 
+    /**
+     * Intercepts all calls annotated with DryRun
+     *
+     * @param context invocation context
+     * @return mostly nothing
+     * @throws Exception in case something happens
+     */
     @AroundInvoke
     public Object intercept(InvocationContext context) throws Exception {
         if (filterArguments.isDryRun()) {

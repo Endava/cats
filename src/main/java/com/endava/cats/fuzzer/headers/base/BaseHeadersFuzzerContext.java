@@ -7,6 +7,9 @@ import lombok.Getter;
 
 import java.util.List;
 
+/**
+ * Holds context information for headers fuzzing.
+ */
 @Getter
 @Builder
 public class BaseHeadersFuzzerContext {

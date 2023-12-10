@@ -1,27 +1,35 @@
 package com.endava.cats.fuzzer.headers;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
-import com.endava.cats.util.CatsDSLWords;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Send duplicate headers either duplicating an existing header or duplicating a dummy one.
+ */
 @Singleton
 @HeaderFuzzer
 public class DuplicateHeadersFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(DuplicateHeadersFuzzer.class);
     private final SimpleExecutor simpleExecutor;
 
+    /**
+     * Creates a new instance.
+     *
+     * @param simpleExecutor executor used to run the fuzz logic
+     */
     public DuplicateHeadersFuzzer(SimpleExecutor simpleExecutor) {
         this.simpleExecutor = simpleExecutor;
     }

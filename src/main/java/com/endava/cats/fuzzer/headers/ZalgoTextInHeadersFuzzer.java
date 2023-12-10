@@ -11,10 +11,18 @@ import jakarta.inject.Singleton;
 
 import java.util.Collections;
 
+/**
+ * Sends zalgo text in headers.
+ */
 @HeaderFuzzer
 @Singleton
 public class ZalgoTextInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new instance.
+     *
+     * @param headersIteratorExecutor executor used to execute the fuzz logic
+     */
     public ZalgoTextInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

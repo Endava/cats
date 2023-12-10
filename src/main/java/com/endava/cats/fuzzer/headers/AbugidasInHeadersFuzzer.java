@@ -9,10 +9,18 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Sends abugidas characters in HTTP headers.
+ */
 @HeaderFuzzer
 @Singleton
 public class AbugidasInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new instance.
+     *
+     * @param headersIteratorExecutor executor used to run the fuzz logic
+     */
     public AbugidasInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

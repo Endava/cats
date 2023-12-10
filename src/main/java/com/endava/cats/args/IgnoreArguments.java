@@ -65,6 +65,11 @@ public class IgnoreArguments {
 
     private boolean blackbox;
 
+    /**
+     * Returns a list with all response codes.
+     *
+     * @return a list of response codes to ignore
+     */
     public List<String> getIgnoreResponseCodes() {
         List<String> ignored = Optional.ofNullable(this.ignoreResponseCodes).orElse(Collections.emptyList());
         List<String> fromBlackbox = blackbox ? List.of("2xx", "4xx", "501") : Collections.emptyList();
@@ -72,27 +77,63 @@ public class IgnoreArguments {
         return Stream.concat(ignored.stream(), fromBlackbox.stream()).toList();
     }
 
+    /**
+     * Checks if the supplied response code is ignored.
+     *
+     * @param receivedResponseCode the response code to check
+     * @return true if the response code should be ignored, false otherwise
+     */
     public boolean isIgnoredResponseCode(String receivedResponseCode) {
         return StringUtils.isNotBlank(receivedResponseCode) &&
                 getIgnoreResponseCodes().stream().anyMatch(code -> ResponseCodeFamily.matchAsCodeOrRange(code, receivedResponseCode));
     }
 
+    /**
+     * Checks if the response length received in response are not ignored.
+     *
+     * @param length the length of the http response
+     * @return true if the length of the response does not match the --ignoreResponseSizes argument, false otherwise
+     */
     public boolean isNotIgnoredResponseLength(long length) {
         return !Optional.ofNullable(ignoreResponseSizes).orElse(Collections.emptyList()).contains(length);
     }
 
+    /**
+     * Checks if the numbers of words received in response are not ignored.
+     *
+     * @param words the number of words received in the response
+     * @return true if the number of words in the response to not match the --ignoreResponseWords argument, false otherwise
+     */
     public boolean isNotIgnoredResponseWords(long words) {
         return !Optional.ofNullable(ignoreResponseWords).orElse(Collections.emptyList()).contains(words);
     }
 
+    /**
+     * Checks if the numbers of lines received in response are not ignored.
+     *
+     * @param lines the number of lines received in the response
+     * @return true if the number of lines in the response to not match the --ignoreResponseLines argument, false otherwise
+     */
     public boolean isNotIgnoredResponseLines(long lines) {
         return !Optional.ofNullable(ignoreResponseLines).orElse(Collections.emptyList()).contains(lines);
     }
 
+    /**
+     * Checks the --ignoreResponseRegex against the response body.
+     *
+     * @param body the http response body
+     * @return true if the regex is not found in the body, false otherwise
+     */
     public boolean isNotIgnoredRegex(String body) {
         return !body.matches(Optional.ofNullable(ignoreResponseRegex).orElse("cats_body"));
     }
 
+    /**
+     * Check the response is not ignored based on response code, size, number of lines or number of words.
+     *
+     * @param catsResponse the response received from the service
+     * @return true if the response should not be ignored, false otherwise
+     */
     public boolean isNotIgnoredResponse(CatsResponse catsResponse) {
         return !this.isIgnoredResponseCode(catsResponse.responseCodeAsString()) &&
                 this.isNotIgnoredResponseLength(catsResponse.getContentLengthInBytes()) &&
@@ -101,6 +142,12 @@ public class IgnoreArguments {
                 this.isNotIgnoredRegex(catsResponse.getBody());
     }
 
+    /**
+     * Check the response is ignored based on response code, size, number of lines or number of words.
+     *
+     * @param catsResponse the response received from the service
+     * @return true if the response should be ignored, false otherwise
+     */
     public boolean isIgnoredResponse(CatsResponse catsResponse) {
         return !this.isNotIgnoredResponse(catsResponse);
     }
