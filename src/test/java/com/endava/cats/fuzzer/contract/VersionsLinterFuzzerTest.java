@@ -9,6 +9,9 @@ import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseExporterHtmlJs;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import jakarta.enterprise.inject.Instance;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,7 +19,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
-import jakarta.enterprise.inject.Instance;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 @QuarkusTest
@@ -35,29 +39,33 @@ class VersionsLinterFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/path/{version}/user", "/path/v1/user", "/path/version1.3/user"})
-    void shouldReportError(String path) {
-        FuzzingData data = FuzzingData.builder().path(path).build();
+    @CsvSource({"src/test/resources/openapi.yml", "src/test/resources/issue86.json"})
+    void shouldReportError(String contractPath) throws Exception {
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get(contractPath)), null, null).getOpenAPI();
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         versionsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Path contains versioning information"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("OpenAPI contract contains versioning information"));
     }
 
     @Test
-    void shouldReportInfo() {
-        FuzzingData data = FuzzingData.builder().path("/path/user").build();
+    void shouldReportInfo() throws Exception {
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, null).getOpenAPI();
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         versionsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path does not contain versioning information"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Versioning information not found"),
+                Mockito.eq("OpenAPI contract does not contain versioning information"));
     }
 
     @Test
-    void shouldNotRunOnSecondAttempt() {
-        FuzzingData data = FuzzingData.builder().path("/path/user").build();
+    void shouldNotRunOnSecondAttempt() throws Exception {
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, null).getOpenAPI();
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).build();
         versionsContractInfoFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path does not contain versioning information"));
-
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Versioning information not found"),
+                Mockito.eq("OpenAPI contract does not contain versioning information"));
         Mockito.reset(testCaseListener);
         versionsContractInfoFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(0)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Path does not contain versioning information"));
