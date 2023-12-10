@@ -7,6 +7,7 @@ import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
+import com.endava.cats.command.model.PathDetailsEntry;
 import com.endava.cats.command.model.PathListEntry;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
@@ -20,6 +21,8 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import org.fusesource.jansi.Ansi;
@@ -33,9 +36,13 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
+/**
+ * List various information such as: OpenAPI paths, fuzzers list, format supported by CATS and so on.
+ */
 @CommandLine.Command(
         name = "list",
         mixinStandardHelpOptions = true,
@@ -93,22 +100,73 @@ public class ListCommand implements Runnable {
     void listContractPaths() {
         try {
             OpenAPI openAPI = OpenApiUtils.readOpenApi(listCommandGroups.listContractOptions.contract);
-            PathListEntry pathListEntry = createPathEntryList(openAPI);
-
-            if (json) {
-                PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(pathListEntry));
+            if (listCommandGroups.listContractOptions.path == null) {
+                this.listAllPaths(openAPI);
             } else {
-                logger.noFormat("{} paths and {} operations:", pathListEntry.getNumberOfPaths(), pathListEntry.getNumberOfOperations());
-                pathListEntry.getPathDetailsList()
-                        .stream()
-                        .sorted()
-                        .map(item -> " ◼ " + item.getPath() + ": " + item.getMethods())
-                        .forEach(logger::noFormat);
+                this.listPath(openAPI, listCommandGroups.listContractOptions.path);
             }
         } catch (IOException e) {
             logger.debug("Exception while reading contract!", e);
             logger.error("Error while reading contract. The file might not exist or is not reachable: {}. Error message: {}",
                     listCommandGroups.listContractOptions.contract, e.getMessage());
+        }
+    }
+
+    private void listPath(OpenAPI openAPI, String path) {
+        PathItem pathItem = openAPI.getPaths().entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(path))
+                .map(Map.Entry::getValue)
+                .findFirst().orElseThrow();
+        List<PathDetailsEntry.OperationDetails> operations = new ArrayList<>();
+        for (Map.Entry<PathItem.HttpMethod, Operation> entry : pathItem.readOperationsMap().entrySet()) {
+            PathItem.HttpMethod httpMethod = entry.getKey();
+            Operation operation = entry.getValue();
+            Set<String> responseCodes = OpenApiUtils.responseCodesFromOperations(operation);
+            Set<String> headers = OpenApiUtils.headersFromOperation(new String[]{""}, operation);
+            Set<String> queryParams = OpenApiUtils.queryParametersFromOperations(operation);
+
+            PathDetailsEntry.OperationDetails operationDetails = PathDetailsEntry.OperationDetails.builder()
+                    .operationId(operation.getOperationId())
+                    .queryParams(queryParams)
+                    .responses(responseCodes)
+                    .headers(headers)
+                    .httpMethod(httpMethod.name())
+                    .build();
+
+            operations.add(operationDetails);
+        }
+        PathDetailsEntry pathDetailsEntry = PathDetailsEntry.builder()
+                .path(path)
+                .operations(operations)
+                .build();
+
+        if (json) {
+            logger.noFormat(JsonUtils.GSON.toJson(pathDetailsEntry));
+        } else {
+            logger.noFormat(path);
+            for (PathDetailsEntry.OperationDetails operation : pathDetailsEntry.getOperations()) {
+                logger.noFormat("  ");
+                logger.noFormat(" ◼ Operation: " + operation.getOperationId());
+                logger.noFormat(" ◼ HTTP Method: " + operation.getHttpMethod());
+                logger.noFormat(" ◼ Response Codes: " + operation.getResponses());
+                logger.noFormat(" ◼ HTTP Headers: " + operation.getHeaders());
+                logger.noFormat(" ◼ Query Params: " + operation.getQueryParams());
+            }
+        }
+    }
+
+    private void listAllPaths(OpenAPI openAPI) {
+        PathListEntry pathListEntry = createPathEntryList(openAPI);
+
+        if (json) {
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(pathListEntry));
+        } else {
+            logger.noFormat("{} paths and {} operations:", pathListEntry.getNumberOfPaths(), pathListEntry.getNumberOfOperations());
+            pathListEntry.getPathDetailsList()
+                    .stream()
+                    .sorted()
+                    .map(item -> " ◼ " + item.getPath() + ": " + item.getMethods())
+                    .forEach(logger::noFormat);
         }
     }
 
@@ -224,6 +282,10 @@ public class ListCommand implements Runnable {
                 description = "Display all paths from the OpenAPI contract",
                 required = true)
         boolean paths;
+
+        @CommandLine.Option(names = {"--path"},
+                description = "A path to display more info")
+        private String path;
 
         @CommandLine.Option(
                 names = {"-c", "--contract"},
