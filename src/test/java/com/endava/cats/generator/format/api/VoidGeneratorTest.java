@@ -1,6 +1,5 @@
 package com.endava.cats.generator.format.api;
 
-import com.endava.cats.generator.format.impl.VoidGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;

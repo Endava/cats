@@ -1,7 +1,6 @@
 package com.endava.cats.strategy;
 
 import com.endava.cats.generator.simple.StringGenerator;
-import com.endava.cats.model.FuzzingData;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -144,8 +143,8 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         return this.name();
     }
 
-    public static FuzzingStrategy getFuzzStrategyWithRepeatedCharacterReplacingValidValue(FuzzingData data, String fuzzedField, String characterToRepeat) {
-        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
+    public static FuzzingStrategy getFuzzStrategyWithRepeatedCharacterReplacingValidValue(Schema<?> schema, String characterToRepeat) {
+        ;
         String spaceValue = characterToRepeat;
         if (schema != null && schema.getMinLength() != null) {
             spaceValue = StringUtils.repeat(spaceValue, (schema.getMinLength() / spaceValue.length()) + 1);
