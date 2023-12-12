@@ -6,18 +6,18 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
+
 import java.util.Arrays;
 import java.util.List;
 
 @LinterFuzzer
 @Singleton
-public class RecommendedHeadersLinterFuzzer extends BaseLinterFuzzer {
-    static final List<String> HEADERS = Arrays.asList("correlationid", "traceid");
+public class TracingHeadersLinterFuzzer extends BaseLinterFuzzer {
+    static final List<String> HEADERS = Arrays.asList("traceid", "correlationid", "requestid", "sessionid");
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
-    public RecommendedHeadersLinterFuzzer(TestCaseListener tcl) {
+    public TracingHeadersLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
 
