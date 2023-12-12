@@ -2,12 +2,16 @@ package com.endava.cats.report;
 
 import com.endava.cats.args.ReportingArguments;
 import com.github.mustachejava.Mustache;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
-@ApplicationScoped
+@Singleton
 @Named("junit")
 public class TestCaseExporterJunit extends TestCaseExporter {
+
+    public TestCaseExporterJunit(ReportingArguments reportingArguments) {
+        super(reportingArguments);
+    }
 
     @Override
     public String[] getSpecificHelperFiles() {

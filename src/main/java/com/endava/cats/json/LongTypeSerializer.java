@@ -1,4 +1,4 @@
-package com.endava.cats.model.util;
+package com.endava.cats.json;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;

@@ -1,7 +1,6 @@
 package com.endava.cats.json;
 
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
-import com.endava.cats.model.util.LongTypeSerializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -37,6 +36,9 @@ public abstract class JsonUtils {
     public static final JSONParser GENERIC_PERMISSIVE_PARSER = new JSONParser(JSONParser.MODE_PERMISSIVE);
     public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
 
+    /**
+     * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
+     */
     public static final Gson GSON = new GsonBuilder()
             .setLenient()
             .setPrettyPrinting()

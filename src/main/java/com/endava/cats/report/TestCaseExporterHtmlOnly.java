@@ -2,12 +2,16 @@ package com.endava.cats.report;
 
 import com.endava.cats.args.ReportingArguments;
 import com.github.mustachejava.Mustache;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 
-@ApplicationScoped
+@Singleton
 @Named("htmlOnly")
 public class TestCaseExporterHtmlOnly extends TestCaseExporter {
+
+    public TestCaseExporterHtmlOnly(ReportingArguments reportingArguments) {
+        super(reportingArguments);
+    }
 
     @Override
     public String[] getSpecificHelperFiles() {
