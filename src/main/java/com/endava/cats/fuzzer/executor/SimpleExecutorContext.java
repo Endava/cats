@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 
 @Builder
 @Value
@@ -47,12 +46,6 @@ public class SimpleExecutorContext {
      */
     @Builder.Default
     boolean replaceRefData = true;
-
-    /**
-     * This filter will be used to decide if the test will be executed or not. If the Predicate is true, the test will be executed.
-     */
-    @Builder.Default
-    Predicate<HttpMethod> runFilter = method -> true;
 
     /**
      * Any headers that will get removed before calling the service.
