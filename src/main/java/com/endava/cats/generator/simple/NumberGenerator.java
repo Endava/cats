@@ -5,7 +5,11 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Random;
 
+/**
+ * Utility class to generate random numbers.
+ */
 public class NumberGenerator {
 
     public static final BigDecimal MOST_NEGATIVE_DECIMAL = new BigDecimal("-999999999999999999999999999999999999999999.99999999999").multiply(BigDecimal.valueOf(Double.MAX_VALUE));
@@ -23,18 +27,54 @@ public class NumberGenerator {
         //ntd
     }
 
+    /**
+     * Generates a new random long number between min and max boundaries
+     *
+     * @param min the left boundary
+     * @param max the right boundary
+     * @return a random long matching the given boundaries
+     */
+    public static long generateRandomLong(long min, long max) {
+        Random random = new Random();
+        return min + (long) (random.nextDouble() * (max - min));
+    }
+
+    /**
+     * Generates a left boundary integer value lower than schema's min value.
+     *
+     * @param schema the OpenAPI schema
+     * @return a integer lower than schema's min value
+     */
     public static Number generateLeftBoundaryIntegerValue(Schema schema) {
         return generateLeftBoundaryIntegerValue(schema, TEN_THOUSANDS);
     }
 
+    /**
+     * Generates a left boundary decimal value lower than schema's min value.
+     *
+     * @param schema the OpenAPI schema
+     * @return a decimal lower than schema's min value
+     */
     public static Number generateLeftBoundaryDecimalValue(Schema schema) {
         return generateLeftBoundaryValue(schema, DECIMAL_CONSTANT);
     }
 
+    /**
+     * Generates a right boundary decimal value higher than schema's max value.
+     *
+     * @param schema the OpenAPI schema
+     * @return a decimal higher than schema's max value
+     */
     public static Number generateRightBoundaryDecimalValue(Schema schema) {
         return generateRightBoundaryValue(schema, DECIMAL_CONSTANT);
     }
 
+    /**
+     * Generates a right boundary integer value higher than schema's max value.
+     *
+     * @param schema the OpenAPI schema
+     * @return a integer higher than schema's max value
+     */
     public static Number generateRightBoundaryIntegerValue(Schema schema) {
         return generateRightBoundaryIntegerValue(schema, TEN_THOUSANDS);
     }
@@ -81,6 +121,12 @@ public class NumberGenerator {
         return BigDecimal.valueOf(Double.MIN_VALUE).subtract(BigDecimal.valueOf(Double.MAX_VALUE));
     }
 
+    /**
+     * Generates a large negative number based on Schema type.
+     *
+     * @param schema the OpenAPI schema
+     * @return {@code Long.MIN_VALUE} if Schema is integer, {@code NumberGenerator.MOST_NEGATIVE_INTEGER} otherwise
+     */
     public static Number getExtremeNegativeIntegerValue(Schema schema) {
         if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase(INT_32)) {
             return Long.MIN_VALUE;
@@ -88,6 +134,12 @@ public class NumberGenerator {
         return MOST_NEGATIVE_INTEGER;
     }
 
+    /**
+     * Generates a large positive number based on Schema type.
+     *
+     * @param schema the OpenAPI schema
+     * @return {@code Long.MAX_VALUE} if Schema is integer, {@code NumberGenerator.MOST_POSITIVE_INTEGER} otherwise
+     */
     public static Number getExtremePositiveIntegerValue(Schema schema) {
         if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase(INT_32)) {
             return Long.MAX_VALUE;
@@ -95,6 +147,12 @@ public class NumberGenerator {
         return MOST_POSITIVE_INTEGER;
     }
 
+    /**
+     * Generates a large positive decimal based on Schema type.
+     *
+     * @param schema the OpenAPI schema
+     * @return {@code Double.MAX_VALUE} if Schema is float, {@code MOST_POSITIVE_DECIMAL} if format is null, {@code 2 * Double.MAX_VALUE} otherwise
+     */
     public static Number getExtremePositiveDecimalValue(Schema schema) {
         if (schema.getFormat() == null) {
             return MOST_POSITIVE_DECIMAL;
@@ -104,6 +162,12 @@ public class NumberGenerator {
         return BigDecimal.valueOf(Double.MAX_VALUE).add(BigDecimal.valueOf(Double.MAX_VALUE));
     }
 
+    /**
+     * Generates a large negative decimal based on Schema type.
+     *
+     * @param schema the OpenAPI schema
+     * @return {@code -Double.MAX_VALUE} if Schema is float, {@code MOST_NEGATIVE_DECIMAL} if format is null, {@code 2 * -Double.MAX_VALUE} otherwise
+     */
     public static Number getExtremeNegativeDecimalValue(Schema schema) {
         if (schema.getFormat() == null) {
             return MOST_NEGATIVE_DECIMAL;
@@ -113,6 +177,12 @@ public class NumberGenerator {
         return BigDecimal.valueOf(-Double.MAX_VALUE).add(BigDecimal.valueOf(-Double.MAX_VALUE));
     }
 
+    /**
+     * Generates a random decimal value.
+     *
+     * @param schema the OpenAPI schema
+     * @return a random decimal
+     */
     public static Number generateDecimalValue(Schema schema) {
         BigDecimal minimum = BigDecimal.ZERO;
 
@@ -124,10 +194,23 @@ public class NumberGenerator {
         return randomBigDecimal.doubleValue();
     }
 
+    /**
+     * Generates the "9876" number repeated the number of {@code times}.
+     *
+     * @param times the number of times to repeat "9876"
+     * @return "9876" number repeated the number of {@code times}
+     */
     public static String generateVeryLargeInteger(int times) {
         return StringUtils.repeat(NINE_EIGHT_SEVEN_SIX, times);
     }
 
+
+    /**
+     * Generates the "9876" number repeated the number of {@code times} with 40 decimals.
+     *
+     * @param times the number of times to repeat "9876"
+     * @return "9876" number repeated the number of {@code times} with 40 decimals
+     */
     public static String generateVeryLargeDecimal(int times) {
         return StringUtils.repeat(NINE_EIGHT_SEVEN_SIX, times) + "." + StringUtils.repeat(NINE_EIGHT_SEVEN_SIX, 10);
     }

@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Singleton
 @Getter
@@ -74,6 +75,10 @@ public class ReportingArguments {
     @CommandLine.Option(names = {"--verbosity"},
             description = "Sets the verbosity of the console logging. If set to @|bold summary|@ CATS will only output a simple progress screen per path. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Verbosity verbosity = Verbosity.SUMMARY;
+
+    @CommandLine.Option(names = {"--maskHeaders"},
+            description = "A list of headers to mask when logging into console or in report files. Headers will be replaced with @|underline $$headerName|@ so that test cases can be replayed with environment variables", split = ",")
+    private Set<String> maskHeaders;
 
     public List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
@@ -145,6 +150,16 @@ public class ReportingArguments {
         if (this.isSummaryInConsole()) {
             PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.NONE, PrettyLevel.INFO, PrettyLevel.TIMER, PrettyLevel.FATAL);
         }
+    }
+
+
+    /**
+     * Returns the maskedHeaders list or an empty collection if maskedHeaders is null;
+     *
+     * @return the masked headers list
+     */
+    public Set<String> getMaskedHeaders() {
+        return Optional.ofNullable(maskHeaders).orElse(Collections.emptySet());
     }
 
     /**

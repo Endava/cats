@@ -2,16 +2,21 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
+import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
+import com.endava.cats.json.KeyValueSerializer;
+import com.endava.cats.json.LongTypeSerializer;
 import com.endava.cats.util.ConsoleUtils;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
@@ -66,7 +71,6 @@ public abstract class TestCaseExporter {
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
-    @Inject
     ReportingArguments reportingArguments;
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
@@ -74,6 +78,21 @@ public abstract class TestCaseExporter {
 
     private Path reportingPath;
     private long t0;
+    private final Gson maskingSerializer;
+
+    @Inject
+    public TestCaseExporter(ReportingArguments reportingArguments) {
+        this.reportingArguments = reportingArguments;
+        maskingSerializer = new GsonBuilder()
+                .setLenient()
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .setExclusionStrategies(new ExcludeTestCaseStrategy())
+                .registerTypeAdapter(Long.class, new LongTypeSerializer())
+                .registerTypeAdapter(KeyValuePair.class, new KeyValueSerializer(reportingArguments.getMaskedHeaders()))
+                .serializeNulls()
+                .create();
+    }
 
     public void initPath(String folder) throws IOException {
         String outputFolder = reportingArguments.getOutputReportFolder();
@@ -162,7 +181,7 @@ public abstract class TestCaseExporter {
             logger.noFormat(" ");
         }
         try {
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), JsonUtils.GSON.toJson(timeExecutionDetails));
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), maskingSerializer.toJson(timeExecutionDetails));
         } catch (IOException e) {
             logger.warning("There was an issue writing the execution_times.js: {}. Please check if CATS has proper right to write in the report location: {}",
                     e.getMessage(), reportingPath.toFile().getAbsolutePath());
@@ -202,7 +221,7 @@ public abstract class TestCaseExporter {
         try {
             writer.flush();
             Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString());
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), JsonUtils.GSON.toJson(report));
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), maskingSerializer.toJson(report));
         } catch (IOException e) {
             logger.error("There was an error writing the report summary: {}. Please check if CATS has proper right to write in the report location: {}",
                     e.getMessage(), reportingPath.toFile().getAbsolutePath());
@@ -268,7 +287,7 @@ public abstract class TestCaseExporter {
     private void writeJsonTestCase(CatsTestCase testCase) {
         String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
         try {
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), JsonUtils.GSON.toJson(testCase));
+            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), maskingSerializer.toJson(testCase));
         } catch (IOException e) {
             logger.error("There was a problem writing test case {}: {}. Please check if CATS has proper right to write in the report location: {}",
                     testCase.getTestId(), e.getMessage(), reportingPath.toFile().getAbsolutePath());
@@ -280,6 +299,7 @@ public abstract class TestCaseExporter {
         StringWriter stringWriter = new StringWriter();
         Map<String, Object> context = new HashMap<>();
         testCase.setJs(this.isJavascript());
+        testCase.setMaskingSerializer(maskingSerializer);
         context.put("TEST_CASE", testCase);
         context.put("TIMESTAMP", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME));
         context.put("VERSION", this.version);

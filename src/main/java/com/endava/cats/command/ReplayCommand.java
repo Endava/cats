@@ -15,7 +15,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -119,7 +118,6 @@ public class ReplayCommand implements Runnable {
         headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
     }
 
-    @NotNull
     private CatsTestCase loadTestCaseFile(String testCaseFileName) throws IOException {
         String testCaseFile = Files.readString(Paths.get(testCaseFileName));
         logger.config("Loaded content: \n" + testCaseFile);
