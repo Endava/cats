@@ -1,4 +1,4 @@
-package com.endava.cats.util;
+package com.endava.cats.json;
 
 import com.endava.cats.json.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
