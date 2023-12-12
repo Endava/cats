@@ -3,15 +3,14 @@ package com.endava.cats.command;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import picocli.CommandLine;
-
-import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
 
 @QuarkusTest
 class ListCommandTest {
@@ -62,6 +61,14 @@ class ListCommandTest {
         CommandLine commandLine = new CommandLine(spyListCommand);
         commandLine.execute("-p", "-j", "-c", "src/test/resources/openapi.yml");
         Mockito.verify(spyListCommand, Mockito.times(1)).listContractPaths();
+    }
+
+    @Test
+    void shouldListPathDetails() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("-p", "-j", "-c", "src/test/resources/openapi.yml", "--path", "/pet");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listPath(Mockito.any(), Mockito.eq("/pet"));
     }
 
     @Test
