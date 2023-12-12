@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 
 public abstract class OpenApiUtils {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiUtils.class);
-    private static final Pattern VERSION_PATH = Pattern.compile("(?:v|version)(\\d+\\.?\\d*\\.?\\d*)");
+    private static final Pattern VERSION_PATH = Pattern.compile("(?:v|version)(\\d+(?:\\.\\d+){0,2})");
 
     private static final Pattern VERSION_HEADER = Pattern.compile("(v\\d+)");
 
