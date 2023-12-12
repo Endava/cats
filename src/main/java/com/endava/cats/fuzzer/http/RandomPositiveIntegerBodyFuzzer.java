@@ -22,7 +22,7 @@ public class RandomPositiveIntegerBodyFuzzer extends BaseHttpWithPayloadSimpleFu
 
     @Override
     protected String getScenario() {
-        return "Send a request with an random positive integer body";
+        return "Send a request with a random positive integer body";
     }
 
     @Override
