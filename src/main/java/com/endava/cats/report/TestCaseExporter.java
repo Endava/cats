@@ -2,6 +2,8 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.json.KeyValueSerializer;
+import com.endava.cats.json.LongTypeSerializer;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
@@ -9,8 +11,6 @@ import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
-import com.endava.cats.json.KeyValueSerializer;
-import com.endava.cats.json.LongTypeSerializer;
 import com.endava.cats.util.ConsoleUtils;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
@@ -81,7 +81,7 @@ public abstract class TestCaseExporter {
     private final Gson maskingSerializer;
 
     @Inject
-    public TestCaseExporter(ReportingArguments reportingArguments) {
+    protected TestCaseExporter(ReportingArguments reportingArguments) {
         this.reportingArguments = reportingArguments;
         maskingSerializer = new GsonBuilder()
                 .setLenient()
