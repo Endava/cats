@@ -23,6 +23,8 @@ public class NumberGenerator {
     public static final String INT_32 = "int32";
     public static final String FLOAT = "float";
 
+    private static final Random RANDOM = new Random();
+
     private NumberGenerator() {
         //ntd
     }
@@ -35,8 +37,7 @@ public class NumberGenerator {
      * @return a random long matching the given boundaries
      */
     public static long generateRandomLong(long min, long max) {
-        Random random = new Random();
-        return min + (long) (random.nextDouble() * (max - min));
+        return min + RANDOM.nextLong(max - min);
     }
 
     /**
