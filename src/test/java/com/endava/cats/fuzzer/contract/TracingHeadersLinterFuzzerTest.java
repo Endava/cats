@@ -23,9 +23,9 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 @QuarkusTest
-class RecommendedHeadersLinterFuzzerTest {
+class TracingHeadersLinterFuzzerTest {
     private TestCaseListener testCaseListener;
-    private RecommendedHeadersLinterFuzzer recommendedHeadersContractInfoFuzzer;
+    private TracingHeadersLinterFuzzer recommendedHeadersContractInfoFuzzer;
 
     @BeforeEach
     void setup() {
@@ -34,7 +34,7 @@ class RecommendedHeadersLinterFuzzerTest {
         Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        recommendedHeadersContractInfoFuzzer = new RecommendedHeadersLinterFuzzer(testCaseListener);
+        recommendedHeadersContractInfoFuzzer = new TracingHeadersLinterFuzzer(testCaseListener);
     }
 
     @ParameterizedTest
