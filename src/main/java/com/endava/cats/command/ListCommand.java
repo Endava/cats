@@ -112,7 +112,7 @@ public class ListCommand implements Runnable {
         }
     }
 
-    private void listPath(OpenAPI openAPI, String path) {
+    void listPath(OpenAPI openAPI, String path) {
         PathItem pathItem = openAPI.getPaths().entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(path))
                 .map(Map.Entry::getValue)
