@@ -55,7 +55,7 @@ class RandomResourcesFuzzerTest {
     void shouldRunForPathsWithVariables(String payload) {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}").
                 reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\":12345}");
+        ReflectionTestUtils.setField(data, "processedPayload", payload);
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(404).build();
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
