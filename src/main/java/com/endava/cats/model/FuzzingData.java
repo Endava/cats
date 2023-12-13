@@ -70,6 +70,9 @@ public class FuzzingData {
     @Builder.Default
     private Set<String> examples = new HashSet<>();
 
+    @Builder.Default
+    private Map<String, Set<String>> responseHeaders = Collections.emptyMap();
+
     public boolean isQueryParam(String field) {
         return this.queryParams.contains(field);
     }
@@ -303,5 +306,15 @@ public class FuzzingData {
             }
             return sets;
         }
+    }
+
+    /**
+     * Returns the list of content types corresponding to the response code.
+     *
+     * @param responseCode the http response code
+     * @return associated content types as defined in the contract
+     */
+    public List<String> getContentTypesByResponseCode(String responseCode) {
+        return Optional.ofNullable(responseContentTypes.get(responseCode)).orElse(List.of("application/json"));
     }
 }

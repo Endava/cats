@@ -201,9 +201,10 @@ public class FuzzingDataFactory {
 
         Set<String> examples = this.extractExamples(mediaType);
 
-        Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet());
-        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
+        Map<String, List<String>> responses = this.getResponsePayloads(operation);
+        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
+        Map<String, Set<String>> responseHeaders = this.getResponseHeaders(operation);
         logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
         for (String reqSchemaName : reqSchemaNames) {
@@ -230,6 +231,7 @@ public class FuzzingDataFactory {
                             .skipFieldTypes(filterArguments.getSkipFieldTypes())
                             .includeFieldFormats(filterArguments.getFieldFormats())
                             .skipFieldFormats(filterArguments.getSkipFieldFormats())
+                            .responseHeaders(responseHeaders)
                             .build()).toList());
         }
 
@@ -264,9 +266,11 @@ public class FuzzingDataFactory {
         logger.debug("Query params for path {}, method {}: {}", path, method, queryParams);
 
         List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId());
-        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation, operation.getResponses().keySet());
-        Map<String, List<String>> responses = this.getResponsePayloads(operation, operation.getResponses().keySet());
+        Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
+        Map<String, List<String>> responses = this.getResponsePayloads(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
+        Map<String, Set<String>> responseHeaders = this.getResponseHeaders(operation);
+
         logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
         return payloadSamples.stream()
@@ -292,6 +296,7 @@ public class FuzzingDataFactory {
                         .skipFieldTypes(filterArguments.getSkipFieldTypes())
                         .includeFieldFormats(filterArguments.getFieldFormats())
                         .skipFieldFormats(filterArguments.getSkipFieldFormats())
+                        .responseHeaders(responseHeaders)
                         .build())
                 .toList();
     }
@@ -589,9 +594,26 @@ public class FuzzingDataFactory {
         return defaultContent;
     }
 
-    private Map<String, List<String>> getResponseContentTypes(Operation operation, Set<String> responseCodes) {
+    private Map<String, Set<String>> getResponseHeaders(Operation operation) {
+        Map<String, Set<String>> responses = new HashMap<>();
+        for (String responseCode : operation.getResponses().keySet()) {
+            ApiResponse apiResponse = operation.getResponses().get(responseCode);
+
+            responses.put(responseCode, Optional.ofNullable(apiResponse.getHeaders()).orElse(Collections.emptyMap())
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue().getDeprecated() == null || !entry.getValue().getDeprecated())
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet()));
+        }
+
+        return responses;
+    }
+
+
+    private Map<String, List<String>> getResponseContentTypes(Operation operation) {
         Map<String, List<String>> responses = new HashMap<>();
-        for (String responseCode : responseCodes) {
+        for (String responseCode : operation.getResponses().keySet()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             Content defaultContent = buildDefaultContent();
             responses.put(responseCode, new ArrayList<>(Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent).keySet()));
@@ -603,14 +625,13 @@ public class FuzzingDataFactory {
     /**
      * We need to get JSON structural samples for each response code documented into the contract. This includes ONE_OF or ANY_OF combinations.
      *
-     * @param operation     the current OpenAPI operation
-     * @param responseCodes the list of response codes associated to the current Operation
+     * @param operation the current OpenAPI operation
      * @return a list if response payloads associated to each response code
      */
-    private Map<String, List<String>> getResponsePayloads(Operation operation, Set<String> responseCodes) {
+    private Map<String, List<String>> getResponsePayloads(Operation operation) {
         Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(), processingArguments.getSelfReferenceDepth());
-        for (String responseCode : responseCodes) {
+        for (String responseCode : operation.getResponses().keySet()) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
                 String respSchemaName = this.getSchemaName(responseSchemaRef);

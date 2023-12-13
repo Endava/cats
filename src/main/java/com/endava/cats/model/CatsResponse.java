@@ -25,6 +25,7 @@ public class CatsResponse {
     private final long contentLengthInBytes;
     private final JsonElement jsonBody;
     private final List<KeyValuePair<String, String>> headers;
+    private final String responseContentType;
 
     @Exclude
     private final String path;

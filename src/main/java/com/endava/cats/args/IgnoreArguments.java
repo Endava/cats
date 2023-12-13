@@ -28,6 +28,10 @@ public class IgnoreArguments {
             description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseBodyCheck;
 
+    @CommandLine.Option(names = {"--ignoreResponseContentTypeCheck", "--it"},
+            description = "Don't check if the response content type received from the service matches the one supplied inside the contract. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
+    private boolean ignoreResponseContentTypeCheck;
+
     @CommandLine.Option(names = {"-i", "--ignoreResponseCodes", "--ic"},
             description = "A comma separated list of HTTP response codes that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped", split = ",")
     private List<String> ignoreResponseCodes;

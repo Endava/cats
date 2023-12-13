@@ -391,15 +391,21 @@ public class TestCaseListener {
         boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
+        boolean isResponseContentTypeMatching = this.isResponseContentTypeMatching(response, data);
 
         this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}", matchesResponseSchema, responseCodeExpected, responseCodeDocumented);
         this.storeRequestOnPostOrRemoveOnDelete(data, response);
 
         ResponseAssertions assertions = ResponseAssertions.builder().matchesResponseSchema(matchesResponseSchema)
                 .responseCodeDocumented(responseCodeDocumented).responseCodeExpected(responseCodeExpected).
-                responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode())).build();
+                responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode()))
+                .matchesContentType(isResponseContentTypeMatching).build();
 
-        if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
+        if (assertions.isNotMatchingContentType() && !ignoreArguments.isIgnoreResponseContentTypeCheck()) {
+            this.logger.debug("Response content type not matching contract");
+            CatsResultFactory.CatsResult contentTypeNotMatching = CatsResultFactory.createNotMatchingContentType(data.getContentTypesByResponseCode(response.responseCodeAsString()), response.getResponseContentType());
+            this.reportResultWarn(logger, data, contentTypeNotMatching.reason(), contentTypeNotMatching.message());
+        } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
             this.logger.debug("Response code expected and documented and matches response schema");
             this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
         } else if (isNotFound(response)) {
@@ -424,6 +430,13 @@ public class TestCaseListener {
             this.logger.debug("Unexpected behaviour");
             this.reportError(logger, CatsResultFactory.createUnexpectedBehaviour(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
         }
+    }
+
+    private boolean isResponseContentTypeMatching(CatsResponse response, FuzzingData data) {
+        return (data.getResponseContentTypes().get(response.responseCodeAsString()) == null && response.getResponseContentType() == null) ||
+                data.getContentTypesByResponseCode(response.getResponseContentType())
+                        .stream()
+                        .anyMatch(contentType -> contentType.equalsIgnoreCase(response.getResponseContentType()));
     }
 
     private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
@@ -590,6 +603,11 @@ public class TestCaseListener {
         private final boolean responseCodeExpected;
         private final boolean responseCodeDocumented;
         private final boolean responseCodeUnimplemented;
+        private final boolean matchesContentType;
+
+        private boolean isNotMatchingContentType() {
+            return !matchesContentType;
+        }
 
         private boolean isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema() {
             return matchesResponseSchema && responseCodeDocumented && responseCodeExpected;
