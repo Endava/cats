@@ -1,5 +1,5 @@
 # Header Fuzzers
-CATS has currently 35 registered `Header`  Fuzzers:
+CATS has currently 36 registered `Header`  Fuzzers:
 - `AbugidasCharsInHeadersFuzzer` -  iterate through each header and send requests with abugidas chars in the targeted header
 - `CRLFHeaders` - iterate through each header and send CR & LF characters in the targeted header
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
@@ -24,6 +24,7 @@ CATS has currently 35 registered `Header`  Fuzzers:
 - `OnlyMultiCodePointEmojisInHeaders` - iterate through each header and send values replaced by multi code point emojis in the targeted header
 - `OnlySingleCodePointEmojisInHeaders` - iterate through each header and send values replaced by single code point emojis in the targeted header
 - `OnlyWhitespacesInHeadersFuzzer` - iterate through each header and replace value with unicode separators
+- `ResponseHeadersMatchContractHeaders` - send a request with all fields and headers populated and checks if the response headers match the ones defined in the contract
 - `TrailingSpacesInHeadersFuzzer` - iterate through each header and send requests with trailing spaces in the targeted header
 - `TrailingControlCharsInHeadersFuzzer` - iterate through each header and trail values with control chars
 - `TrailingMultiCodePointEmojisHeaders` - iterate through each header and send values suffixed with multi code point emojis in the targeted header

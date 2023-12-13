@@ -24,14 +24,14 @@ CATS has currently 14 registered `Linter` Fuzzers or Linters:
 - `PathCaseLinter` - verifies that path elements follow naming conventions
 - `PathNounsLinter` - verifies that path elements use nouns to describe resources
 - `PathPluralsLinter` - verifies that path elements uses pluralization to describe resources
-- `PathTagsContractInfoFuzzer` - verifies that all OpenAPI paths contain tags elements and checks if the tags elements match the ones declared at the top level
+- `PathTagsLinterFuzzer` - verifies that all OpenAPI paths contain tags elements and checks if the tags elements match the ones declared at the top level
 - `QueryParamsCaseLinter` - verifies that query params follow naming conventions
-- `RecommendedHeadersContractInfoFuzzer` - verifies that all OpenAPI contract paths contain recommended headers like: CorrelationId/TraceId, etc.
-- `RecommendedHttpCodesContractInfoFuzzer` - verifies that the current path contains all recommended HTTP response codes for all operations
-- `SecuritySchemesContractInfoFuzzer` - verifies if the OpenApi contract contains valid security schemas for all paths, either globally configured or per path
-- `TopLevelElementsContractInfoFuzzer` - verifies that all OpenAPI contract level elements are present and provide meaningful information: API description, documentation, title, version, etc.
-- `VersionsContractInfoFuzzer` - verifies that a given path doesn't contain versioning information
-- `XmlContentTypeContractInfoFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
+- `RecommendedHeadersLinterFuzzer` - verifies that all OpenAPI contract paths contain recommended headers like: CorrelationId/TraceId, etc.
+- `RecommendedHttpCodesLinterFuzzer` - verifies that the current path contains all recommended HTTP response codes for all operations
+- `SecuritySchemesLinterFuzzer` - verifies if the OpenApi contract contains valid security schemas for all paths, either globally configured or per path
+- `TopLevelElementsLinterFuzzer` - verifies that all OpenAPI contract level elements are present and provide meaningful information: API description, documentation, title, version, etc.
+- `VersionsLinterFuzzer` - verifies that a given path doesn't contain versioning information
+- `XmlContentTypeLinterFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
 
 You can run only these Fuzzers using `cats lint --contract=CONTRACT`.
 

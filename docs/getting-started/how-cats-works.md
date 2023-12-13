@@ -14,6 +14,11 @@ Depending on the matching outcome, CATS will report as follows:
 - `warn` is expected but undocumented behaviour or some misalignment between the contract and the service. This will **ideally** be actioned.
 - `error` is abnormal/unexpected behaviour. This **must** be actioned.
 
+What data goes into the report is also influenced by the arguments supplied, particularly `--ignoreXXX` arguments. 
+The below diagram shows all decision points that are considered when reporting a test case:
+
+![run result](img/cats_reporting.png)
+
 CATS will iterate through **all endpoints**, **all HTTP methods** and **all the associated requests bodies and parameters** (including multiple combinations when dealing with `oneOf`/`anyOf` elements) 
 and fuzz their values considering their defined data type and constraints.
 The actual fuzzing depends on the specific Fuzzer executed. Please check the [list of fuzzers](/docs/fuzzers) for the specific behaviour.

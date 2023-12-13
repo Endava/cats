@@ -1,5 +1,5 @@
 # HTTP Fuzzers
-CATS has currently 23 registered `HTTP` Fuzzers:
+CATS has currently 24 registered `HTTP` Fuzzers:
 - `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
 - `CheckDeletedResourcesNotAvailableFuzzer` - checks that resources are not available through `GET` after a successful `DELETE`
 - `DummyRequestFuzzer` - send a dummy json request {'cats': 'cats'}
@@ -19,6 +19,7 @@ CATS has currently 23 registered `HTTP` Fuzzers:
 - `RandomNegativeIntegerBodyFuzzer` - send a request with a random negative integer body
 - `RandomPositiveDecimalBodyFuzzer` - send a request with a random positive decimal body
 - `RandomPositiveIntegerBodyFuzzer` - send a request with a random positive integer body
+- `RandomResourcesFuzzer` - iterate through each path variable and send random resource identifiers
 - `RandomStringBodyFuzzer` - send a request with a random string body
 - `RandomUnicodeBodyFuzzer` - send a request with a random unicode string body
 - `ZeroDecimalBodyFuzzer` - send a request with decimal 0.0 as body
