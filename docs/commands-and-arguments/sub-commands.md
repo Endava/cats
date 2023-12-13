@@ -33,6 +33,8 @@ All available subcommands are listed below:
 
 - `cats info` will print debug information that are useful when submitting bug reports
 
+- `cats stats` will display basic statistics about a given OpenAPI contract like number of paths, operations, versioning, etc.
+
 :::tip
 Each sub-command has its own help. You can run `cats sub-command -h` to check all available arguments: `cats fuzz -h`.
 :::
