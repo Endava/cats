@@ -38,6 +38,7 @@ import net.minidev.json.JSONValue;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -221,9 +222,9 @@ public class ServiceCaller {
         } catch (IOException | IllegalStateException e) {
             long duration = System.currentTimeMillis() - startTime;
             this.recordRequestAndResponse(catsRequest, CatsResponse.builder()
-                    .body("empty response").httpMethod(catsRequest.getHttpMethod())
+                    .body("no body due to error").httpMethod(catsRequest.getHttpMethod())
                     .responseTimeInMs(duration).withInvalidErrorCode()
-                    .jsonBody(new JsonPrimitive("empty response"))
+                    .jsonBody(new JsonPrimitive("no body due to error"))
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build(), data);
@@ -400,7 +401,9 @@ public class ServiceCaller {
                 .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().get(0))).toList();
 
         String rawResponse = this.getAsRawString(response);
-        String jsonResponse = this.getAsJsonString(rawResponse);
+        String jsonResponse = getAsJsonString(rawResponse);
+        String responseContentType = this.getResponseContentType(response);
+
         int numberOfWords = new StringTokenizer(rawResponse).countTokens();
         int numberOfLines = rawResponse.split("[\r|\n]").length;
 
@@ -414,7 +417,16 @@ public class ServiceCaller {
                 .jsonBody(JsonParser.parseString(jsonResponse))
                 .numberOfLinesInResponse(numberOfLines)
                 .contentLengthInBytes(rawResponse.getBytes(StandardCharsets.UTF_8).length)
+                .responseContentType(responseContentType)
                 .numberOfWordsInResponse(numberOfWords);
+    }
+
+    private String getResponseContentType(Response response) {
+        MediaType defaultResponseMediaType = MediaType.parse("unknown/unknown");
+        if (response.body() != null) {
+            return String.valueOf(Optional.ofNullable(response.body().contentType()).orElse(defaultResponseMediaType));
+        }
+        return String.valueOf(defaultResponseMediaType);
     }
 
     private void addBasicAuth(List<KeyValuePair<String, Object>> headers) {
@@ -489,7 +501,7 @@ public class ServiceCaller {
         return queryParams;
     }
 
-    public String getAsJsonString(String rawResponse) {
+    public static String getAsJsonString(String rawResponse) {
         if (JsonUtils.isValidJson(rawResponse)) {
             return rawResponse;
         }

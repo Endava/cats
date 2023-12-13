@@ -88,7 +88,7 @@ public class ReplayCommand implements Runnable {
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         this.loadHeadersIfSupplied(testCase);
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
-        String responseBody = JsonUtils.GSON.toJson(response.getBody().isBlank() ? "empty response" : response.getJsonBody());
+        String responseBody = ServiceCaller.getAsJsonString(response.getBody());
         logger.complete("Response body: \n{}", responseBody);
         this.writeTestJsonsIfSupplied(testCase, response);
         this.showResponseCodesDifferences(testCase, response);
@@ -100,7 +100,7 @@ public class ReplayCommand implements Runnable {
         logger.star("New response code: {}", response.getResponseCode());
         logger.noFormat("");
         logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody());
-        logger.star("New response body: {}", response.getBody());
+        logger.star("New response body: {}", ServiceCaller.getAsJsonString(response.getBody()));
         logger.noFormat("");
     }
 
