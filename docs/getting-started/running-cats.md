@@ -45,9 +45,11 @@ Skipped tests are not included in the final report.
 
 ## Notes on Console Output
 :::caution
-CATS produces a significant amount of logging.
+When running with `--verbosity DETAILED` CATS produces a significant amount of logging.
 If the output is redirected to a file please make sure you do proper cleanup when not needing it.
-A simple run can produce tens of MB of data. You can control the logging level using the `--log` argument. For example   `--log=error` will only log errors.
+A simple run can produce tens of MB of data. 
+You have several options to control the logging level using: `--log, --skipLog, --onlyLog` arguments. 
+For example `--log=error` will only log errors. Or you can keep the default `--verbosity SUMMARY` which has a very condensed output. 
 :::
 
 :::tip
