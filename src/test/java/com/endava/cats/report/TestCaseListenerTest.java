@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
 @QuarkusTest
@@ -82,7 +83,8 @@ class TestCaseListenerTest {
 
     @Test
     void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
-        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {});
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
+        });
 
         Assertions.assertThat(testCaseListener.testCaseMap.get("1")).isNotNull();
         Mockito.verify(testCaseExporter).writeTestCase(Mockito.any());
@@ -591,7 +593,7 @@ class TestCaseListenerTest {
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
-        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "401"));
+        Mockito.when(data.getResponseCodes()).thenReturn(new TreeSet<>(Set.of("200", "401")));
         Mockito.when(data.getResponses()).thenReturn(Map.of("401", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
