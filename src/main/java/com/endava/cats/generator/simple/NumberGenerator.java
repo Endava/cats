@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Utility class to generate random numbers.
@@ -23,8 +23,6 @@ public class NumberGenerator {
     public static final String INT_32 = "int32";
     public static final String FLOAT = "float";
 
-    private static final Random RANDOM = new Random();
-
     private NumberGenerator() {
         //ntd
     }
@@ -37,7 +35,7 @@ public class NumberGenerator {
      * @return a random long matching the given boundaries
      */
     public static long generateRandomLong(long min, long max) {
-        return min + RANDOM.nextLong(max - min);
+        return min + ThreadLocalRandom.current().nextLong(max - min);
     }
 
     /**
