@@ -16,13 +16,13 @@ Steps to reproduce the behaviour:
 2. Using which OpenAPI file (or redacted version/section of it)
 3. And any additional headers provided using `-H` or `--headers`
 4. And any relevant other arguments
-5. See error
+5. And details about the error/issue you are facing
 
 **Expected behaviour**
 A clear and concise description of what you expected to happen.
 
 **Environment:**
-* Provide the output of: `cats info` or `java -jar cats.jar`
+* Provide the output of: `cats info` or `java -jar cats.jar info`
 * OpenAPI file: it would be great if you can provide the OpenAPI file used, a redacted version of it or just the section related to the bug
 * FunctionalFuzzer file: if the issue is related to running `cats run ...` using the [FunctionalFuzzer](https://endava.github.io/cats/docs/fuzzers/special-fuzzers/functional-fuzzer/)
 * SecurityFuzzer file: if the issue is related to running `cars run ...` using the [SecurityFuzzer](https://endava.github.io/cats/docs/fuzzers/special-fuzzers/security-fuzzer/)
