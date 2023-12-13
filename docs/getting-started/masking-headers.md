@@ -5,8 +5,8 @@ description: Masking Authentication Headers
 
 # Masking Authentication Headers
 
-While executing CATS without utilizing production credentials, it is advisable to refrain from incorporating authentication headers within report
-files, encompassing both .html and .json formats.
+While most of the times you'll be executing CATS without production credentials, it is advisable to refrain from incorporating authentication headers 
+within report files, for both .html and .json formats.
 This precautionary measure is essential as test cases could become appended to bug reports, potentially leading to the inadvertent exposure of
 sensitive credentials to unintended recipients.
 
