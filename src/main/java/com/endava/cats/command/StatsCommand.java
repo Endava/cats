@@ -13,6 +13,11 @@ import lombok.ToString;
 import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @CommandLine.Command(
@@ -37,6 +42,44 @@ public class StatsCommand implements Runnable {
     @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract", required = true)
     private String contract;
+
+    @CommandLine.Option(names = {"-s", "--skip"},
+            description = "Details to skip printing on console. JSON output will still include them.", split = ",")
+    private List<Details> skip = Collections.emptyList();
+
+    public enum Details {
+        TITLE("API title: {}", "title"),
+        DESCRIPTION("API description: {}", "description"),
+        VERSION("API version: {}", "version"),
+        DOCS("API docs url: {}", "docsUrl"),
+        OPENAPI_VERSION("OpenAPI spec version: {}", "openApiVersion"),
+        PATHS("Total number of paths: {}", "pathSize"),
+        OPERATIONS("Total number of operations: {}", "operationSize"),
+        DEPRECATED_OPERATIONS("{} deprecated operations: {}", "deprecatedOperations"),
+        DEPRECATED_HEADERS("{} deprecated headers: {}", "deprecatedHeaders"),
+        SERVERS("Servers: {}", "servers"),
+        SECURITY_SCHEMES("{} global security schemes: {}", "securitySchemes"),
+        TAGS("{} global tags: {}", "tags"),
+        VERSIONING("API versioning: {}", "apiVersions"),
+        CONSUMES("Consumes content types: {}", "consumesContentTypes"),
+        PRODUCES("Produces content types: {}", "producesContentTypes"),
+        HTTP_METHODS("Used HTTP methods: {}", "usedHttpMethods"),
+        RATE_LIMIT("Rate Limiting headers identified: {}", "rateLimitHeaders"),
+        TRACING("Tracing headers identified: {}", "traceIdHeaders"),
+        RESPONSE_CODES("All response codes: {}", "responseCodes"),
+        EXTENSIONS("Global extensions: {}", "extensions"),
+        PAGINATION("Paths potentially missing pagination support: {}", "pathsMissingPagination"),
+        MONITORING("Possible monitoring endpoints: {}", "monitoringEndpoints");
+
+        private final String text;
+        private final String property;
+
+        Details(String text, String property) {
+            this.text = text;
+            this.property = property;
+        }
+
+    }
 
     @Override
     public void run() {
@@ -87,7 +130,6 @@ public class StatsCommand implements Runnable {
             }
         } catch (Exception e) {
             logger.fatal("Something went wrong while running stats {}", e.toString());
-            logger.debug("Exception details {}", e);
         }
     }
 
@@ -97,54 +139,20 @@ public class StatsCommand implements Runnable {
 
 
     void displayText(Stats stats) {
-        logger.config(Ansi.ansi().bold().a("API title: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.title));
-        logger.config(Ansi.ansi().bold().a("API description: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.description));
-        logger.config(Ansi.ansi().bold().a("API version: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.version));
-        logger.config(Ansi.ansi().bold().a("API docs url: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.docsUrl));
-        logger.config(Ansi.ansi().bold().a("OpenAPI spec version: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.openApiVersion));
-        logger.config(Ansi.ansi().bold().a("Total number of paths: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.pathSize));
-        logger.config(Ansi.ansi().bold().a("Total number of operations: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.operationSize));
-        logger.config(Ansi.ansi().bold().a("{} deprecated operations: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.deprecatedOperations.size()), Ansi.ansi().fgBlue().a(stats.deprecatedOperations));
-        logger.config(Ansi.ansi().bold().a("{} deprecated headers: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.deprecatedHeaders.size()), Ansi.ansi().fgBlue().a(stats.deprecatedHeaders));
-        logger.config(Ansi.ansi().bold().a("Servers: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.servers));
-        logger.config(Ansi.ansi().bold().a("{} global {} schemes: {}").reset().toString(),
-                stats.securitySchemes.size(),
-                Ansi.ansi().fgBlue().a("security").reset().bold().toString(),
-                stats.securitySchemes);
-        logger.config(Ansi.ansi().bold().a("{} global {}: {}").reset().toString(),
-                stats.tags.size(),
-                Ansi.ansi().fgBlue().a("tags").reset().bold().toString(),
-                stats.tags);
-        logger.config(Ansi.ansi().bold().a("API versioning: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.apiVersions));
-        logger.config(Ansi.ansi().bold().a("Consumes content types: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.consumesContentTypes));
-        logger.config(Ansi.ansi().bold().a("Produces content types: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.producesContentTypes));
-        logger.config(Ansi.ansi().bold().a("Used HTTP methods: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.usedHttpMethods));
-        logger.config(Ansi.ansi().bold().a("Rate Limiting headers identified: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.rateLimitHeaders));
-        logger.config(Ansi.ansi().bold().a("Tracing headers identified: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.traceIdHeaders));
-        logger.config(Ansi.ansi().bold().a("All response codes: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.responseCodes));
-        logger.config(Ansi.ansi().bold().a("Global extensions: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.extensions));
-        logger.config(Ansi.ansi().bold().a("Paths potentially missing pagination support: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.pathsMissingPagination));
-        logger.config(Ansi.ansi().bold().a("Possible monitoring endpoints: {}").reset().toString(),
-                Ansi.ansi().fgBlue().a(stats.monitoringEndpoints));
+        List<Details> toDisplay = Arrays.stream(Details.values())
+                .filter(details -> !skip.contains(details))
+                .toList();
+
+        for (Details details : toDisplay) {
+            if (details.text.startsWith("{}")) {
+                logger.config(Ansi.ansi().bold().a(details.text).reset().toString(),
+                        Ansi.ansi().fgBlue().a(this.getFieldSize(stats, details.property)).reset().bold(),
+                        Ansi.ansi().fgBlue().a(this.getField(stats, details.property)).reset().bold());
+            } else {
+                logger.config(Ansi.ansi().bold().a(details.text).reset().toString(),
+                        Ansi.ansi().fgBlue().a(this.getField(stats, details.property)).reset().bold());
+            }
+        }
 
         this.renderComponentSection("requestBodies", stats.requestBodies);
         this.renderComponentSection("responses", stats.responses);
@@ -152,7 +160,24 @@ public class StatsCommand implements Runnable {
         this.renderComponentSection("headers", stats.headers);
         this.renderComponentSection("schemas", stats.schemas);
         this.renderComponentSection("examples", stats.examples);
+    }
 
+    private Object getField(Object obj, String fieldName) {
+        try {
+            Class<?> objClass = obj.getClass();
+            Field field = objClass.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            logger.fatal("Field not available {}", fieldName);
+        }
+        return "";
+    }
+
+    private int getFieldSize(Object obj, String fieldName) {
+        Collection<?> collection = (Collection<?>) this.getField(obj, fieldName);
+        return collection.size();
     }
 
     void renderComponentSection(String textToPrint, Set<String> componentsSection) {
