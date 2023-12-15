@@ -26,7 +26,7 @@ public class QueryParamsCaseLinterFuzzer extends BaseLinterFuzzer {
     @Override
     public void process(FuzzingData data) {
         String expectedResult = "Query params must follow %s naming".formatted(namingArguments.getQueryParamsNaming().getDescription());
-        testCaseListener.addScenario(log, "Check if query params follow % naming", namingArguments.getQueryParamsNaming().getDescription());
+        testCaseListener.addScenario(log, "Check if query params follow {} naming", namingArguments.getQueryParamsNaming().getDescription());
         testCaseListener.addExpectedResult(log, expectedResult);
 
         String errors = this.checkQueryParams(data);
