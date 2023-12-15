@@ -26,7 +26,10 @@ import java.util.regex.Pattern;
 @LinterFuzzer
 @Singleton
 public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
-    private static final Pattern GENERATED_BODY_OBJECTS = Pattern.compile("body_\\d*");
+    private static final Pattern GENERATED_BODY_OBJECTS_1 = Pattern.compile("body_\\d*");
+    private static final Pattern GENERATED_BODY_OBJECTS_2 = Pattern.compile("^(?:\\w+_)*\\w+_body$");
+    private static final Pattern INLINE_BODY_OBJECTS = Pattern.compile("^inline_response(?:_\\d+)+$");
+    private static final List<Pattern> PATTERNS_TO_IGNORE = List.of(GENERATED_BODY_OBJECTS_1, GENERATED_BODY_OBJECTS_2, INLINE_BODY_OBJECTS);
     private static final Set<String> PROPERTIES_CHECKED = new HashSet<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;
@@ -99,8 +102,10 @@ public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
             }
 
         }
-        return this.check(stringToCheck.toArray(new String[0]), jsonObject -> !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()
-                && !GENERATED_BODY_OBJECTS.matcher(jsonObject).matches() && !NoMediaType.EMPTY_BODY.matches(jsonObject));
+        return this.check(stringToCheck.toArray(new String[0]), jsonObject ->
+                !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()
+                        && PATTERNS_TO_IGNORE.stream().noneMatch(pattern -> pattern.matcher(jsonObject).matches())
+                        && !NoMediaType.EMPTY_BODY.matches(jsonObject));
     }
 
     @Override

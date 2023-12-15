@@ -43,7 +43,7 @@ class JsonObjectsCaseLinterFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"first_payload,SNAKE", "SecondPayload,PASCAL", "third-payload,KEBAB", "body_120,KEBAB"})
+    @CsvSource({"first_payload,SNAKE", "SecondPayload,PASCAL", "third-payload,KEBAB", "body_120,KEBAB", "test_body,KEBAB", "inline_response_200,KEBAB"})
     void shouldMatchRestNamingStandards(String schemaName, NamingArguments.Naming naming) {
         ReflectionTestUtils.setField(namingArguments, "jsonObjectsNaming", naming);
         FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData(schemaName, "200");
