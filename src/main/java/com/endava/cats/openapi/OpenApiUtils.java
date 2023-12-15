@@ -48,9 +48,9 @@ public abstract class OpenApiUtils {
 
     private static final Pattern VERSION_HEADER = Pattern.compile("(v\\d+)");
 
-    private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "sort", "perpage");
+    private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "sort", "perpage", "datefrom", "dateto", "datestart", "dateend");
 
-    private static final Set<String> MONITORING_MATCHES = Set.of("[version\\d*\\.?|v\\d+\\.?]/status", "/status", ".*/health", ".*/monitoring/status", ".*/ping");
+    private static final Set<String> MONITORING_MATCHES = Set.of("[version\\d*\\.?|v\\d+\\.?]/status", "/status", ".*/health", ".*/monitoring/status", ".*/ping", ".*/healthz");
 
     private OpenApiUtils() {
         //ntd
@@ -213,19 +213,11 @@ public abstract class OpenApiUtils {
     }
 
     public static Set<String> getDeprecatedOperations(OpenAPI openAPI) {
-        return openAPI.getPaths().values().stream()
-                .flatMap(pathItem -> deprecatedOperations(
-                        pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
-                        pathItem.getHead(), pathItem.getPatch(), pathItem.getDelete(),
-                        pathItem.getOptions(), pathItem.getTrace()).stream())
-                .collect(Collectors.toSet());
-    }
-
-    public static Set<String> deprecatedOperations(Operation... operations) {
-        return Arrays.stream(operations)
-                .filter(Objects::nonNull)
-                .filter(operation -> operation.getDeprecated() != null && operation.getDeprecated())
-                .map(Operation::getOperationId)
+        return openAPI.getPaths().entrySet().stream()
+                .flatMap(entry -> entry.getValue().readOperationsMap().entrySet().stream()
+                        .filter(operationEntry -> operationEntry.getValue().getDeprecated() != null && operationEntry.getValue().getDeprecated())
+                        .map(operationEntry -> Optional.ofNullable(operationEntry.getValue().getOperationId()).orElse(operationEntry.getKey() + " " + entry.getKey()))
+                        .collect(Collectors.toSet()).stream())
                 .collect(Collectors.toSet());
     }
 
@@ -240,13 +232,15 @@ public abstract class OpenApiUtils {
 
     public static Set<String> getPathsMissingPaginationSupport(OpenAPI openAPI) {
         return openAPI.getPaths().entrySet()
-                .stream().filter(entry -> !entry.getKey().substring(entry.getKey().lastIndexOf("/")).contains("{"))
+                .stream()
+                .filter(entry -> entry.getKey().contains("/"))
+                .filter(entry -> !entry.getKey().substring(entry.getKey().lastIndexOf("/")).contains("{"))
                 .filter(entry -> entry.getValue().getGet() != null)
                 .filter(entry -> entry.getValue().getGet().getParameters() != null)
                 .filter(entry -> entry.getValue().getGet()
                         .getParameters()
                         .stream()
-                        .filter(parameter -> parameter.getIn().equals("query"))
+                        .filter(parameter -> "query".equalsIgnoreCase(parameter.getIn()))
                         .filter(parameter -> PAGINATION.contains(parameter.getName()
                                 .replaceAll("[-_]", "")
                                 .toLowerCase(Locale.ROOT)))
