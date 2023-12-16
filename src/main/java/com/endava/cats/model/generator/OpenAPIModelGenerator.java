@@ -378,6 +378,7 @@ public class OpenAPIModelGenerator {
     }
 
     private void populateWithComposedSchema(Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
+
         if (composedSchema.getAllOf() != null) {
             addXXXOfExamples(values, propertyName, composedSchema.getAllOf(), "ALL_OF");
             String newKey = "ALL_OF";
@@ -401,16 +402,34 @@ public class OpenAPIModelGenerator {
             }
             this.createMergedSchema(propertyName, composedSchema.getAllOf());
         }
-
-        if (composedSchema.getAnyOf() != null) {
-            mapDiscriminator(composedSchema, composedSchema.getAnyOf());
-            addXXXOfExamples(values, propertyName, composedSchema.getAnyOf(), "ANY_OF");
+        List<Schema> anyOfNonNullSchemas = this.excludeNullSchemas(composedSchema.getAnyOf());
+        if (anyOfNonNullSchemas.size() == 1) {
+            values.put(propertyName, resolveModelToExample(propertyName, anyOfNonNullSchemas.get(0)));
+        } else if (composedSchema.getAnyOf() != null) {
+            mapDiscriminator(composedSchema, anyOfNonNullSchemas);
+            addXXXOfExamples(values, propertyName, anyOfNonNullSchemas, "ANY_OF");
         }
 
-        if (composedSchema.getOneOf() != null) {
-            mapDiscriminator(composedSchema, composedSchema.getOneOf());
-            addXXXOfExamples(values, propertyName, composedSchema.getOneOf(), "ONE_OF");
+        List<Schema> oneOfNonNullSchemas = this.excludeNullSchemas(composedSchema.getOneOf());
+        if (oneOfNonNullSchemas.size() == 1) {
+            values.put(propertyName, resolveModelToExample(propertyName, oneOfNonNullSchemas.get(0)));
+        } else if (composedSchema.getOneOf() != null) {
+            mapDiscriminator(composedSchema, oneOfNonNullSchemas);
+            addXXXOfExamples(values, propertyName, oneOfNonNullSchemas, "ONE_OF");
         }
+    }
+
+    /**
+     * Some Swagger generators will add anyOf/oneOf for the majority of fields, even though there are not 2 types of request bodies.
+     *
+     * @param xxxOfSchemas the list of xxxOf schemas
+     * @return a list with all schemas that don't have a null type
+     */
+    private List<Schema> excludeNullSchemas(List<Schema> xxxOfSchemas) {
+        return Optional.ofNullable(xxxOfSchemas).orElse(Collections.emptyList())
+                .stream()
+                .filter(schema -> schema.getType() != null || schema.get$ref() != null)
+                .toList();
     }
 
     private void createMergedSchema(String schemaName, List<Schema> allOfSchema) {
@@ -444,19 +463,29 @@ public class OpenAPIModelGenerator {
     }
 
     private void addXXXOfExamples(Map<String, Object> values, Object propertyName, Collection<Schema> allOf, String of) {
+        Set<String> storedSchemaRefs = new HashSet<>();
+        int i = 0;
+
         for (Schema allOfSchema : allOf) {
             String fullSchemaRef = allOfSchema.get$ref();
             String schemaRef;
+
             if (allOfSchema instanceof ArraySchema arraySchema) {
                 fullSchemaRef = arraySchema.getItems().get$ref();
             }
+
             Schema schemaToExample = allOfSchema;
             if (fullSchemaRef != null) {
                 schemaRef = fullSchemaRef.substring(fullSchemaRef.lastIndexOf('/') + 1);
                 schemaToExample = this.globalContext.getSchemaMap().get(schemaRef);
             } else {
                 schemaRef = schemaToExample.getType();
+
+                if (storedSchemaRefs.contains(schemaRef)) {
+                    schemaRef = schemaRef + ++i;
+                }
                 fullSchemaRef = "#" + schemaRef;
+                storedSchemaRefs.add(schemaRef);
             }
             String propertyKey = propertyName.toString() + "_" + schemaRef;
             String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1) : currentProperty;
