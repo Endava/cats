@@ -21,8 +21,6 @@ public class VersionsLinterFuzzer extends BaseLinterFuzzer {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(log, "Check if the contract contains versioning information");
         testCaseListener.addExpectedResult(log, "Paths should contain versioning information either through paths, servers definition or versioning headers");
-        testCaseListener.addPath("NA");
-        testCaseListener.addContractPath("NA");
 
         boolean hasVersioning = !OpenApiUtils.getApiVersions(data.getOpenApi()).isEmpty();
 
@@ -31,6 +29,9 @@ public class VersionsLinterFuzzer extends BaseLinterFuzzer {
         } else {
             testCaseListener.reportResultError(log, data, "Versioning information not found", "OpenAPI contract does not contain versioning information");
         }
+
+        testCaseListener.addPath("NA");
+        testCaseListener.addContractPath("NA");
     }
 
     @Override
