@@ -9,10 +9,10 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
-import jakarta.inject.Singleton;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,8 +32,6 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(log, "Check if the OpenAPI contract defines elements such as tags, info, external docs and servers");
         testCaseListener.addExpectedResult(log, "Elements should be present and provide meaningful information");
-        testCaseListener.addPath("NA");
-        testCaseListener.addContractPath("NA");
         StringBuilder errorString = new StringBuilder();
 
         Set<String> missingFieldsSet = this.checkInfo(data.getOpenApi().getInfo());
@@ -55,6 +53,8 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
         } else {
             testCaseListener.reportResultError(log, data, "Missing top level elements", errorString.toString());
         }
+        testCaseListener.addPath("NA");
+        testCaseListener.addContractPath("NA");
     }
 
     private String checkElement(String element, String errors) {
