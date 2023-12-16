@@ -75,6 +75,15 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldIgnoreOneOfAnyOfWhenAdditionalSchemaIsNull() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/path1", "src/test/resources/oneOf_with_null_additional.yml");
+        Assertions.assertThat(data).hasSize(1);
+
+        Assertions.assertThat(data.get(0).getPayload()).contains("dateFrom");
+        Assertions.assertThat(data.get(0).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
+    }
+
+    @Test
     void shouldLoadExamples() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml");
         Assertions.assertThat(data.get(0).getExamples()).hasSize(2);

@@ -1,0 +1,50 @@
+openapi: "3.0.0"
+info:
+  version: 1
+  title: Some Title
+  description: Some Description
+paths:
+  /path1:
+    post:
+      summary: Creates a new resource
+      operationId: createResource
+      requestBody:
+        description: Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestIn'
+        required: true
+      responses:
+        '201':
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOut'
+components:
+  schemas:
+    RequestIn:
+      required:
+        - age
+        - dateFrom
+      properties:
+        dateFrom:
+          description: The date from
+          example: 2022-02-20T19:41:07.736Z
+          oneOf:
+            - type: string
+              format: date-time
+            - nullable: true
+        age:
+          type: string
+    ResponseOut:
+      required:
+        - data
+      properties:
+        data:
+          type: string
+        expiry:
+          type: string
+          format: date
+          example: "2021-07-31"
