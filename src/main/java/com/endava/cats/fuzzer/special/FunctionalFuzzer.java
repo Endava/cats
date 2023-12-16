@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 @SpecialFuzzer
@@ -30,8 +31,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();
-
-    private TestCaseListener testCaseListener;
+    private final TestCaseListener testCaseListener;
 
     public FunctionalFuzzer(FilesArguments cp, CustomFuzzerUtil cfu, TestCaseListener testCaseListener) {
         this.filesArguments = cp;
@@ -68,6 +68,9 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     public void executeCustomFuzzerTests() {
         logger.debug("Executing {} functional tests.", executions.size());
         Collections.sort(executions);
+
+        executions.stream().collect(Collectors.groupingBy(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath(), Collectors.counting()))
+                .forEach((s, aLong) -> testCaseListener.setTotalRunsPerPath(s, aLong.intValue()));
 
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))
