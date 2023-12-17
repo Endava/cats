@@ -33,10 +33,13 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -170,12 +173,22 @@ public class ListCommand implements Runnable {
         }
     }
 
-    private static PathListEntry createPathEntryList(OpenAPI openAPI) {
-        int numberOfPaths = openAPI.getPaths().size();
-        int numberOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
+    private PathListEntry createPathEntryList(OpenAPI openAPI) {
+        Map<String, PathItem> filteredPaths = Optional.ofNullable(openAPI.getPaths()).orElse(new io.swagger.v3.oas.models.Paths())
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().readOperationsMap().values()
+                        .stream()
+                        .anyMatch(operation -> listCommandGroups.listContractOptions.tag == null ||
+                                Optional.ofNullable(operation.getTags()).orElse(Collections.emptyList())
+                                        .contains(listCommandGroups.listContractOptions.tag)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        int numberOfPaths = filteredPaths.size();
+        int numberOfOperations = filteredPaths.values().stream().mapToInt(OpenApiUtils::countPathOperations).sum();
         List<PathListEntry.PathDetails> pathDetailsList = new ArrayList<>();
 
-        openAPI.getPaths()
+        filteredPaths
                 .forEach((pathName, pathItem) -> {
                     List<HttpMethod> httpMethods = HttpMethod.OPERATIONS.entrySet()
                             .stream()
@@ -286,6 +299,10 @@ public class ListCommand implements Runnable {
         @CommandLine.Option(names = {"--path"},
                 description = "A path to display more info")
         private String path;
+
+        @CommandLine.Option(names = {"--tag"},
+                description = "Tag to filter paths")
+        private String tag;
 
         @CommandLine.Option(
                 names = {"-c", "--contract"},

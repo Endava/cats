@@ -166,7 +166,6 @@ public class StatsCommand implements Runnable {
         try {
             Class<?> objClass = obj.getClass();
             Field field = objClass.getDeclaredField(fieldName);
-            field.setAccessible(true);
             return field.get(obj);
 
         } catch (NoSuchFieldException | IllegalAccessException e) {
