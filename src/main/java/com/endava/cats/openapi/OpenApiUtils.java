@@ -40,7 +40,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class OpenApiUtils {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiUtils.class);
@@ -418,13 +417,7 @@ public abstract class OpenApiUtils {
         return new ExternalDocumentation().url("missing url");
     }
 
-    private static int countPathOperations(PathItem pathItem) {
-        return Stream.of(pathItem.getGet(), pathItem.getPost(), pathItem.getPut(), pathItem.getDelete(),
-                        pathItem.getPatch(), pathItem.getOptions(), pathItem.getHead())
-                .filter(Objects::nonNull)
-                .mapToInt(sum -> 1)
-                .sum();
+    public static int countPathOperations(PathItem pathItem) {
+        return pathItem.readOperationsMap().size();
     }
-
-
 }
