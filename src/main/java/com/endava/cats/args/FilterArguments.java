@@ -109,6 +109,12 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--skipDeprecatedOperations"},
             description = "Skip fuzzing deprecated API operations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean skipDeprecated;
+    @CommandLine.Option(names = {"-t", "--tags"},
+            description = "A comma separated list of tags to include. If no tag is supplied, all tags will be considered. To list all available tags run: @|bold cats stats -c api.yml|@", split = ",")
+    private List<String> tags;
+    @CommandLine.Option(names = {"--skipTags"},
+            description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. To list all available tags run: @|bold cats stats -c api.yml|@", split = ",")
+    private List<String> skipTags;
 
 
     public List<String> getSkipFields() {
@@ -184,10 +190,30 @@ public class FilterArguments {
     }
 
     /**
+     * Creates a list of tags to be included based on the supplied {@code --tags} argument.
+     * If no tag is supplied, all tags will be considered.
+     *
+     * @return the list of tags to include if any supplied, or an empty list otherwise
+     */
+    public List<String> getTags() {
+        return Optional.ofNullable(this.tags).orElse(Collections.emptyList());
+    }
+
+    /**
+     * Creates a list of tags to be skipped based on the supplied {@code --skipTags} argument.
+     * If no tag is supplied, all tags will be considered.
+     *
+     * @return the list of tags to skip if any supplied, or an empty list otherwise
+     */
+    public List<String> getSkippedTags() {
+        return Optional.ofNullable(this.skipTags).orElse(Collections.emptyList());
+    }
+
+    /**
      * Creates a list with the paths to be included based on the supplied {@code --paths} argument.
      * If no path is explicitly supplied, ALL fuzzers will be considered.
      *
-     * @return the list of paths to include if any supplied, an empty list otherwise
+     * @return the list of paths to include if any supplied, or an empty list otherwise
      */
     public List<String> getPaths() {
         return Optional.ofNullable(this.paths).orElse(Collections.emptyList());
@@ -412,6 +438,7 @@ public class FilterArguments {
         allSuppliedPaths = CatsUtil.filterAndPrintNotMatching(allSuppliedPaths, path -> openAPI.getPaths().containsKey(path), logger,
                 "Supplied path is not matching the contract {}", Object::toString);
         logger.debug("Supplied paths after filtering {}", allSuppliedPaths);
+
 
         return allSuppliedPaths;
     }
