@@ -4,6 +4,10 @@ import com.github.curiousoddman.rgxgen.RgxGen;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.cornutum.regexpgen.RandomGen;
+import org.cornutum.regexpgen.RegExpGen;
+import org.cornutum.regexpgen.js.Provider;
+import org.cornutum.regexpgen.random.RandomBoundsGen;
 import org.springframework.util.CollectionUtils;
 
 import java.security.SecureRandom;
@@ -33,14 +37,14 @@ public class StringGenerator {
      * When patterns have length inside, for example {@code "\\d{6,10}" }, the generated value
      * will have a variable length, in the case of the example between 6 and 10.
      *
-     * @param pattern the given  pattern
-     * @param length  the desired length
+     * @param regex  the given  pattern
+     * @param length the desired length
      * @return a generated value of exact length provided
      */
-    public static String generateExactLength(String pattern, int length) {
-        StringBuilder initialValue = new StringBuilder(generate(pattern, length, length));
+    public static String generateExactLength(String regex, int length) {
+        StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(regex, length, length)));
         if (initialValue.length() != length) {
-            int startingAt = initialValue.length() / 2;
+            int startingAt = initialValue.length() - 1;
             String toRepeat = initialValue.substring(startingAt);
             initialValue.append(toRepeat);
             while (initialValue.length() < length) {
@@ -65,16 +69,27 @@ public class StringGenerator {
             return initialVersion;
         }
 
-        String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", 10, 15);
-        return composeString(secondVersionBase, min, max);
+        try {
+            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", 10, 15);
+            return composeString(secondVersionBase, min, max);
+        } catch (Exception e) {
+            RegExpGen generator = Provider.forEcmaScript().matchingExact(pattern);
+            RandomGen random = new RandomBoundsGen();
+
+            return generator.generate(random, min, max);
+        }
     }
 
     private static String generateUsingRgxGenerator(String pattern, int min, int max) {
-        String generatedValue = new RgxGen(pattern).generate();
-        if (pattern.endsWith("}") || pattern.endsWith("}$")) {
-            return generatedValue;
+        try {
+            String generatedValue = new RgxGen(pattern).generate();
+            if (pattern.endsWith("}") || pattern.endsWith("}$")) {
+                return generatedValue;
+            }
+            return composeString(generatedValue, min, max);
+        } catch (Exception e) {
+            return "";
         }
-        return composeString(generatedValue, min, max);
     }
 
     public static String composeString(String initial, int min, int max) {
