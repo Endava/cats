@@ -434,7 +434,7 @@ public class TestCaseListener {
 
     private boolean isResponseContentTypeMatching(CatsResponse response, FuzzingData data) {
         return (data.getResponseContentTypes().get(response.responseCodeAsString()) == null && response.getResponseContentType() == null) ||
-                data.getContentTypesByResponseCode(response.getResponseContentType())
+                data.getContentTypesByResponseCode(response.responseCodeAsString())
                         .stream()
                         .anyMatch(contentType -> contentType.equalsIgnoreCase(response.getResponseContentType()));
     }

@@ -29,6 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -187,6 +188,42 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @Test
+    void shouldReportNotMatchingContentType() {
+        Mockito.when(ignoreArguments.isIgnoreResponseContentTypeCheck()).thenReturn(false);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).responseContentType("application/json").build();
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getContentTypesByResponseCode("200")).thenReturn(List.of("application/csv"));
+        prepareTestCaseListenerSimpleSetup(response);
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
+        MDC.remove(TestCaseListener.ID);
+    }
+
+    @Test
+    void shouldReturnUnexpectedButDocumentedResponseCode() {
+        Mockito.when(ignoreArguments.isIgnoreResponseContentTypeCheck()).thenReturn(true);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).build();
+
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200"));
+
+        prepareTestCaseListenerSimpleSetup(response);
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
+        Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
         MDC.remove(TestCaseListener.ID);
     }
 
