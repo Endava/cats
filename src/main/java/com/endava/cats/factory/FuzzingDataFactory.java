@@ -250,7 +250,7 @@ public class FuzzingDataFactory {
     private boolean isNotIncludedTag(Operation operation) {
         boolean isNotIncluded = !filterArguments.getTags().isEmpty() &&
                 (operation.getTags() == null || operation.getTags().stream().noneMatch(tag -> filterArguments.getTags().contains(tag)));
-        
+
         boolean isSkipped = !filterArguments.getSkippedTags().isEmpty() && operation.getTags() != null &&
                 operation.getTags()
                         .stream()
