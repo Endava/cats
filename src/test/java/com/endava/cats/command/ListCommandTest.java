@@ -2,6 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 @QuarkusTest
@@ -66,9 +68,18 @@ class ListCommandTest {
     @Test
     void shouldListPathDetails() {
         ListCommand spyListCommand = Mockito.spy(listCommand);
+        PrettyLogger spyLogger = Mockito.spy(PrettyLogger.class);
+        ReflectionTestUtils.setField(spyListCommand, "logger", spyLogger);
         CommandLine commandLine = new CommandLine(spyListCommand);
         commandLine.execute("-p", "-j", "-c", "src/test/resources/openapi.yml", "--path", "/pet");
         Mockito.verify(spyListCommand, Mockito.times(1)).listPath(Mockito.any(), Mockito.eq("/pet"));
+        Mockito.verify(spyLogger, Mockito.times(1)).noFormat(Mockito.any());
+
+        Mockito.reset(spyListCommand, spyLogger);
+        commandLine.execute("-p", "-c", "src/test/resources/openapi.yml", "--path", "/pet");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listPath(Mockito.any(), Mockito.eq("/pet"));
+        Mockito.verify(spyLogger, Mockito.times(19)).noFormat(Mockito.any());
+
     }
 
     @Test
