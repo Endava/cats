@@ -20,6 +20,8 @@ import java.util.function.Function;
 
 public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
+    private String generated;
+
     protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
@@ -67,7 +69,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
         }
 
-        return StringGenerator.sanitize(generated).substring(0, fromSchemaLength);
+        return generated.substring(0, fromSchemaLength);
     }
 
     @Override

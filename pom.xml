@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
@@ -71,6 +72,7 @@
         <wiremock.version>3.3.1</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <jline.version>3.24.1</jline.version>
+        <regexp-gen.version>2.0.1</regexp-gen.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -558,6 +560,10 @@
             <artifactId>jline-native</artifactId>
             <version>${jline.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.cornutum.regexp</groupId>
+            <artifactId>regexp-gen</artifactId>
+            <version>${regexp-gen.version}</version>
+        </dependency>
     </dependencies>
 </project>
