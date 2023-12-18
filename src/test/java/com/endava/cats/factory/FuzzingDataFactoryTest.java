@@ -214,13 +214,47 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void testAgain() throws Exception {
+    void shouldProperlyGenerateOneOfAnyOfPayloads() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/pets-batch", "src/test/resources/petstore.yml");
 
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData firstData = dataList.get(0);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         Assertions.assertThat(JsonParser.parseString(firstData.getPayload()).isJsonArray()).isTrue();
+    }
+
+    @Test
+    void shouldFilterDeprecatedOperations() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+
+        Assertions.assertThat(dataList).hasSize(3);
+        Assertions.assertThat(dataList.get(0).getMethod()).isEqualTo(HttpMethod.POST);
+        Assertions.assertThat(dataList.get(1).getMethod()).isEqualTo(HttpMethod.POST);
+        Assertions.assertThat(dataList.get(2).getMethod()).isEqualTo(HttpMethod.GET);
+
+        Mockito.when(filterArguments.isSkipDeprecated()).thenReturn(true);
+        List<FuzzingData> secondTimeFuzzDataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+        Assertions.assertThat(secondTimeFuzzDataList).hasSize(1);
+        Assertions.assertThat(secondTimeFuzzDataList.get(0).getMethod()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
+    void shouldOnlyIncludeProvidedTags() throws Exception {
+        Mockito.when(filterArguments.getTags()).thenReturn(List.of("pets"));
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.get(0).getMethod()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
+    void shouldSkipProvidedTags() throws Exception {
+        Mockito.when(filterArguments.getSkippedTags()).thenReturn(List.of("pets"));
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+
+        Assertions.assertThat(dataList).hasSize(2);
+        Assertions.assertThat(dataList.get(0).getMethod()).isEqualTo(HttpMethod.POST);
+        Assertions.assertThat(dataList.get(1).getMethod()).isEqualTo(HttpMethod.POST);
     }
 
     @Test

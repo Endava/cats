@@ -186,6 +186,11 @@ public class FuzzingDataFactory {
      */
     private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Operation operation, HttpMethod method, OpenAPI openAPI) {
         if (this.isDeprecated(operation)) {
+            logger.info("Operation {} {} is deprecated and --skipDeprecatedOperations is on", path, method);
+            return Collections.emptyList();
+        }
+        if (this.isNotIncludedTag(operation)) {
+            logger.info("Operation {} {} will be skipped as tag is not included", path, method);
             return Collections.emptyList();
         }
 
@@ -239,7 +244,19 @@ public class FuzzingDataFactory {
     }
 
     private boolean isDeprecated(Operation operation) {
-        return operation.getDeprecated() != null && operation.getDeprecated();
+        return operation.getDeprecated() != null && operation.getDeprecated() && filterArguments.isSkipDeprecated();
+    }
+
+    private boolean isNotIncludedTag(Operation operation) {
+        boolean isNotIncluded = !filterArguments.getTags().isEmpty() &&
+                (operation.getTags() == null || operation.getTags().stream().noneMatch(tag -> filterArguments.getTags().contains(tag)));
+        
+        boolean isSkipped = !filterArguments.getSkippedTags().isEmpty() && operation.getTags() != null &&
+                operation.getTags()
+                        .stream()
+                        .anyMatch(tag -> filterArguments.getSkippedTags().contains(tag));
+
+        return isNotIncluded || isSkipped;
     }
 
     /**
@@ -255,7 +272,11 @@ public class FuzzingDataFactory {
      */
     private List<FuzzingData> getFuzzDataForNonBodyMethods(String path, PathItem item, Operation operation, OpenAPI openAPI, HttpMethod method) {
         if (this.isDeprecated(operation)) {
-            logger.debug("Skipping {} operation as deprecated and --skipDeprecatedOperations is true", operation.getOperationId());
+            logger.info("Operation {} {} is deprecated and --skipDeprecatedOperations is on; skipping", path, method);
+            return Collections.emptyList();
+        }
+        if (this.isNotIncludedTag(operation)) {
+            logger.info("Operation {} {} will be skipped as tag is not included", path, method);
             return Collections.emptyList();
         }
 
