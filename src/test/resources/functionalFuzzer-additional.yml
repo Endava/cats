@@ -7,10 +7,15 @@
     httpMethod: POST
     oneOfSelection:
       test#test: "mumu"
-    additionalProperties:
+    additionalProperties_1:
       topElement: "metadata"
       mapValues:
         "test": "value1"
         "anotherTest": "value2"
+    additionalProperties_2:
+      topElement: "otherElement"
+      mapValues:
+        "test": "different"
+        "anotherTest": "anotherDifferent"
     output:
       resp: code

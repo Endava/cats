@@ -615,8 +615,9 @@ public class ServiceCaller {
             Map<String, Object> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
 
-            Map<String, Object> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet().stream()
-                    .filter(stringStringEntry -> !stringStringEntry.getKey().equalsIgnoreCase(ADDITIONAL_PROPERTIES))
+            Map<String, Object> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet()
+                    .stream()
+                    .filter(stringStringEntry -> !stringStringEntry.getKey().matches(ADDITIONAL_PROPERTIES))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             String payload = data.getPayload();
 

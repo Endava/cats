@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -140,23 +141,29 @@ public class CatsUtil {
      * @return a payload with additionalProperties added
      */
     public String setAdditionalPropertiesToPayload(Map<String, Object> currentPathValues, String payload) {
-        String additionalProperties = WordUtils.nullOrValueOf(currentPathValues.get(ADDITIONAL_PROPERTIES));
-        if (additionalProperties != null && StringUtils.isNotBlank(payload)) {
-            DocumentContext jsonDoc = JsonPath.parse(payload);
-            String mapValues = additionalProperties;
-            String prefix = "$";
-            if (additionalProperties.contains(ELEMENT)) {
-                String[] elements = additionalProperties.split(",", 2);
-                String topElement = elements[0].replace(ELEMENT + "=", "").replace("{", "");
-                mapValues = elements[1];
-                jsonDoc.put(JsonPath.compile(prefix), topElement, new LinkedHashMap<>());
-                prefix = prefix + "." + topElement;
-            }
-            setMapValues(jsonDoc, mapValues, prefix);
+        Set<String> additionalPropertiesKeys = currentPathValues.keySet().stream().filter(
+                key -> key.matches(ADDITIONAL_PROPERTIES)).collect(Collectors.toSet());
+        String result = payload;
 
-            return jsonDoc.jsonString();
+        for (String additionalPropertiesKey : additionalPropertiesKeys) {
+            String additionalProperties = WordUtils.nullOrValueOf(currentPathValues.get(additionalPropertiesKey));
+            if (additionalProperties != null && StringUtils.isNotBlank(result)) {
+                DocumentContext jsonDoc = JsonPath.parse(result);
+                String mapValues = additionalProperties;
+                String prefix = "$";
+                if (additionalProperties.contains(ELEMENT)) {
+                    String[] elements = additionalProperties.split(",", 2);
+                    String topElement = elements[0].replace(ELEMENT + "=", "").replace("{", "");
+                    mapValues = elements[1];
+                    jsonDoc.put(JsonPath.compile(prefix), topElement, new LinkedHashMap<>());
+                    prefix = prefix + "." + topElement;
+                }
+                setMapValues(jsonDoc, mapValues, prefix);
+
+                result = jsonDoc.jsonString();
+            }
         }
-        return payload;
+        return result;
     }
 
     private void setMapValues(DocumentContext jsonDoc, String additionalProperties, String prefix) {
