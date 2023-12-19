@@ -19,9 +19,7 @@ import java.util.List;
 import java.util.function.Function;
 
 public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer {
-
-    private String generated;
-
+    
     protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }
