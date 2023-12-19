@@ -59,6 +59,9 @@ public class RandomResourcesFuzzer implements Fuzzer {
                 String updatePayload = null;
                 for (String pathVar : pathVariables) {
                     Object existingValue = JsonUtils.getVariableFromJson(data.getPayload(), pathVar);
+                    if (JsonUtils.isNotSet(String.valueOf(existingValue))) {
+                        throw new IllegalStateException("OpenAPI spec is missing definition for " + pathVar);
+                    }
                     Object newValue = generateNewValue(existingValue);
 
                     updatePayload = catsUtil.justReplaceField(data.getPayload(), pathVar, newValue).json();
