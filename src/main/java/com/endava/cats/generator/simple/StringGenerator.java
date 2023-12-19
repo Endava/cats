@@ -14,20 +14,49 @@ import java.security.SecureRandom;
 import java.util.regex.Pattern;
 
 public class StringGenerator {
+    /**
+     * Constant use to prefix certain fuzz values.
+     */
     public static final String FUZZ = "fuzz";
+
+    /**
+     * Default max length when no maxLength is specified for a schema.
+     */
     public static final int DEFAULT_MAX_LENGTH = 10000;
+
+    /**
+     * Default alphanumeric pattern.
+     */
     public static final String ALPHANUMERIC_PLUS = "[a-zA-Z0-9]+";
+
+    /**
+     * Default alphanumeric pattern.
+     */
     public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
+
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    private static final int MAX_ATTEMPTS_GENERATE = 10;
 
     private StringGenerator() {
         //ntd
     }
 
+    /**
+     * Generates a random alphanumeric string prefixed with string "fuzz"
+     *
+     * @return a random alphanumeric string
+     */
     public static String generateRandomString() {
         return FUZZ + RandomStringUtils.randomAlphabetic(4);
     }
 
+    /**
+     * Repeats the string "fuzz" the number of {@code times}.
+     *
+     * @param times the number of times to repeat string "fuzz"
+     * @return a string of length times * 4
+     */
     public static String generateLargeString(int times) {
         return StringUtils.repeat(FUZZ, times);
     }
@@ -43,6 +72,7 @@ public class StringGenerator {
      */
     public static String generateExactLength(String regex, int length) {
         StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(regex, length, length)));
+
         if (initialValue.length() != length) {
             int startingAt = initialValue.length() - 1;
             String toRepeat = initialValue.substring(startingAt);
@@ -70,20 +100,43 @@ public class StringGenerator {
         }
 
         try {
-            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", 10, 15);
-            return composeString(secondVersionBase, min, max);
+            return generateUsingCatsRegexGenerator(pattern, min, max);
         } catch (Exception e) {
-            RegExpGen generator = Provider.forEcmaScript().matchingExact(pattern);
-            RandomGen random = new RandomBoundsGen();
-
-            return generator.generate(random, min, max);
+            return generateUsingRegexpGen(pattern, min, max);
         }
+    }
+
+    private static String generateUsingRegexpGen(String pattern, int min, int max) {
+        RegExpGen generator = Provider.forEcmaScript().matchingExact(pattern);
+        RandomGen random = new RandomBoundsGen();
+
+        for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
+            String generated = generator.generate(random, min, max);
+
+            if (generated.matches(pattern) && generated.length() >= min && generated.length() <= max) {
+                return generated;
+            }
+        }
+
+        return Provider.forEcmaScript().matchingExact(ALPHANUMERIC_PLUS).generate(random, min, max);
+    }
+
+    private static String generateUsingCatsRegexGenerator(String pattern, int min, int max) {
+        for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
+            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", 10, 15);
+            String generatedString = composeString(secondVersionBase, min, max);
+
+            if (generatedString.matches(pattern) && generatedString.length() >= min && generatedString.length() <= max) {
+                return generatedString;
+            }
+        }
+        throw new IllegalStateException("Could not generate regex ");
     }
 
     private static String generateUsingRgxGenerator(String pattern, int min, int max) {
         try {
             String generatedValue = new RgxGen(pattern).generate();
-            if (pattern.endsWith("}") || pattern.endsWith("}$")) {
+            if ((pattern.endsWith("}") || pattern.endsWith("}$") && generatedValue.matches(pattern))) {
                 return generatedValue;
             }
             return composeString(generatedValue, min, max);
@@ -92,7 +145,7 @@ public class StringGenerator {
         }
     }
 
-    public static String composeString(String initial, int min, int max) {
+    private static String composeString(String initial, int min, int max) {
         if (min == 0 && max == 0) {
             return initial;
         }
@@ -122,6 +175,12 @@ public class StringGenerator {
         return StringUtils.repeat('a', (int) minLength);
     }
 
+    /**
+     * Generates a string larger than schema's max length. If schema has no maxLength it will default to DEFAULT_MAX_LENGTH.
+     *
+     * @param schema the OpenAPI schema
+     * @return a string larger than Schema's maxLength
+     */
     public static long getRightBoundaryLength(Schema<?> schema) {
         long minLength = schema.getMaxLength() != null ? schema.getMaxLength().longValue() + 10 : DEFAULT_MAX_LENGTH;
 
@@ -131,6 +190,12 @@ public class StringGenerator {
         return minLength;
     }
 
+    /**
+     * Generates a string smaller than schema's min length. If schema has no minLength it will default to 0.
+     *
+     * @param schema the OpenAPI schema
+     * @return a string smaller than Schema's minLength
+     */
     public static String generateLeftBoundString(Schema<?> schema) {
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
 
@@ -142,6 +207,11 @@ public class StringGenerator {
         return new RgxGen(pattern).generate();
     }
 
+    /**
+     * Generates a random unicode string.
+     *
+     * @return a random unicode string
+     */
     public static String generateRandomUnicode() {
         StringBuilder builder = new StringBuilder(UnicodeGenerator.getBadPayload().length() + 1000);
         builder.append(UnicodeGenerator.getBadPayload());
@@ -162,6 +232,13 @@ public class StringGenerator {
         return builder.toString();
     }
 
+    /**
+     * Generates a string value with size between  minLength and maxLength.
+     * If the field is an enum, it will return the first element in the enum.
+     *
+     * @param property the OpenAPI schema
+     * @return a random string with size between minLength adn maxLength
+     */
     public static String generateValueBasedOnMinMax(Schema<?> property) {
         if (!CollectionUtils.isEmpty(property.getEnum())) {
             return String.valueOf(property.getEnum().get(0));
@@ -175,6 +252,12 @@ public class StringGenerator {
         return StringGenerator.generate(pattern, minLength, maxLength);
     }
 
+    /**
+     * Sanitizes the given input string by removing special Unicode characters.
+     *
+     * @param input the given string
+     * @return a sanitized version of the given string
+     */
     public static String sanitize(String input) {
         return input
                 .replaceAll("(^[\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+)|([\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+$)", "")
