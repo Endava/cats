@@ -37,7 +37,6 @@ public class FuzzingData {
     private final PathItem pathItem;
     private final Map<String, Schema> schemaMap;
     private final Map<String, List<String>> responses;
-    private final Map<String, List<String>> responseContentTypes;
     private final Map<String, Schema> requestPropertyTypes;
     private final List<String> requestContentTypes;
     private final Set<String> queryParams;
@@ -55,6 +54,9 @@ public class FuzzingData {
     private Set<String> targetFields;
     private int selfReferenceDepth;
 
+    @Builder.Default
+    private final Map<String, List<String>> responseContentTypes = Collections.emptyMap();
+    
     @Builder.Default
     private List<String> includeFieldTypes = Collections.emptyList();
 
