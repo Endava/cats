@@ -197,7 +197,7 @@ function _picocli_cats() {
 
   local commands="generate-completion help list replay run fuzz lint info stats"
   local flag_opts="-A --checkHeaders -F --checkFields -T --checkHttp -C --checkContract --includeContract --includeLinters -W --includeWhitespaces -E --includeEmojis -U --includeControlChars --createRefData -d --dryRun --skipDeprecatedOperations --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox --useExamples --rfc7396 -D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color -h --help -V --version"
-  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --urlParams --headers -H --queryParams --refData --functionalFuzzerFile --securityFuzzerFile -f --fuzzers -p --paths --skipPaths --skipFuzzers --httpMethods --fieldTypes --skipFieldTypes --fieldFormats --skipFieldFormats --skipFields --skipHeaders -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
+  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --urlParams --headers -H --queryParams --refData --functionalFuzzerFile --securityFuzzerFile -f --fuzzers -p --paths --skipPaths --skipFuzzers --httpMethods --fieldTypes --skipFieldTypes --fieldFormats --skipFieldFormats --skipFields --skipHeaders -t --tags --skipTags -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT") # --httpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
   local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
@@ -334,6 +334,12 @@ function _picocli_cats() {
       return
       ;;
     --skipHeaders)
+      return
+      ;;
+    -t|--tags)
+      return
+      ;;
+    --skipTags)
       return
       ;;
     -i|--ignoreResponseCodes|--ic)
@@ -488,12 +494,15 @@ function _picocli_cats_list() {
 
   local commands=""
   local flag_opts="-p --paths paths -f --fuzzers fuzzers -s --fieldsFuzzerStrategies fieldsFuzzerStrategies --formats formats -j --json -h --help -V --version"
-  local arg_opts="--path -c --contract"
+  local arg_opts="--path --tag -c --contract"
 
   type compopt &>/dev/null && compopt +o default
 
   case ${prev_word} in
     --path)
+      return
+      ;;
+    --tag)
       return
       ;;
     -c|--contract)
@@ -987,13 +996,19 @@ function _picocli_cats_stats() {
 
   local commands=""
   local flag_opts="-j --json -d --detailed -h --help -V --version"
-  local arg_opts="-c --contract"
+  local arg_opts="-c --contract -s --skip"
+  local skip_option_args=("TITLE" "DESCRIPTION" "VERSION" "DOCS" "OPENAPI_VERSION" "PATHS" "OPERATIONS" "DEPRECATED_OPERATIONS" "DEPRECATED_HEADERS" "SERVERS" "SECURITY_SCHEMES" "TAGS" "VERSIONING" "CONSUMES" "PRODUCES" "HTTP_METHODS" "RATE_LIMIT" "TRACING" "RESPONSE_CODES" "EXTENSIONS" "PAGINATION" "MONITORING") # --skip values
 
   type compopt &>/dev/null && compopt +o default
 
   case ${prev_word} in
     -c|--contract)
       return
+      ;;
+    -s|--skip)
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${skip_option_args[@]}" ) )
+      return $?
       ;;
   esac
 
