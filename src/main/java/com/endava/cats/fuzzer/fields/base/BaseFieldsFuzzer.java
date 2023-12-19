@@ -162,13 +162,16 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * @return true if the fuzzed value matches the pattern, false otherwise
      */
     private boolean isFuzzedValueMatchingPattern(Object fieldValue, FuzzingData data, String fuzzedField) {
-        Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        if (fieldSchema.getPattern() == null || fieldSchema instanceof ByteArraySchema) {
-            return true;
-        }
-        Pattern pattern = Pattern.compile(fieldSchema.getPattern());
+        if (this.shouldCheckForFuzzedValueMatchingPattern()) {
+            Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+            if (fieldSchema.getPattern() == null || fieldSchema instanceof ByteArraySchema) {
+                return true;
+            }
+            Pattern pattern = Pattern.compile(fieldSchema.getPattern());
 
-        return fieldValue == null || pattern.matcher(this.sanitizeString(fieldValue)).matches();
+            return fieldValue == null || pattern.matcher(this.sanitizeString(fieldValue)).matches();
+        }
+        return true;
     }
 
     /**
@@ -191,6 +194,16 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         return mandatoryFieldsFuzzed ? this.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() : this.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed();
     }
 
+
+    /**
+     * Sometimes you might not want to check if the fuzzed value is still matching field's pattern.
+     * Override this to return false to avoid checking.
+     *
+     * @return true if the fuzzer should check if the fuzzed values matches field's pattern, false otherwise
+     */
+    protected boolean shouldCheckForFuzzedValueMatchingPattern() {
+        return true;
+    }
 
     /**
      * A simple description of the current data being sent to the service. This will be used as a description in the final report.
