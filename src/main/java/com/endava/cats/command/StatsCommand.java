@@ -66,6 +66,8 @@ public class StatsCommand implements Runnable {
         HTTP_METHODS("Used HTTP methods: {}", "usedHttpMethods"),
         RATE_LIMIT("Rate Limiting headers identified: {}", "rateLimitHeaders"),
         TRACING("Tracing headers identified: {}", "traceIdHeaders"),
+        IDEMPOTENCY("Idempotency headers identified: {}", "idempotencyHeaders"),
+        AUTHENTICATION("Authentication headers identified: {}", "authenticationHeaders"),
         RESPONSE_CODES("All response codes: {}", "responseCodes"),
         EXTENSIONS("Global extensions: {}", "extensions"),
         PAGINATION("Paths potentially missing pagination support: {}", "pathsMissingPagination"),
@@ -101,6 +103,8 @@ public class StatsCommand implements Runnable {
             Set<String> producesContentTypes = OpenApiUtils.getAllProducesHeaders(openAPI);
             Set<String> rateLimitHeaders = OpenApiUtils.searchHeader(openAPI, "ratelimit");
             Set<String> traceIdHeaders = OpenApiUtils.searchHeader(openAPI, "traceid", "correlationid", "requestid", "sessionid");
+            Set<String> idempotencyHeaders = OpenApiUtils.searchHeader(openAPI, "idempotency");
+            Set<String> authenticationHeaders = OpenApiUtils.searchHeader(openAPI, "authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
             Set<String> tags = OpenApiUtils.getAllTags(openAPI);
             Set<String> responseCodes = OpenApiUtils.getAllResponseCodes(openAPI);
             Set<String> deprecatedHeaders = OpenApiUtils.getDeprecatedHeaders(openAPI);
@@ -121,6 +125,7 @@ public class StatsCommand implements Runnable {
                     .responseCodes(responseCodes).deprecatedHeaders(deprecatedHeaders).examples(examples)
                     .docsUrl(docsUrl).extensions(extensions).pathsMissingPagination(pathsMissingPagination)
                     .monitoringEndpoints(possibleMonitoringEndpoints).usedHttpMethods(usedHttpMethods)
+                    .authenticationHeaders(authenticationHeaders).idempotencyHeaders(idempotencyHeaders)
                     .build();
 
             if (json) {
@@ -211,6 +216,8 @@ public class StatsCommand implements Runnable {
         Set<String> producesContentTypes;
         Set<String> rateLimitHeaders;
         Set<String> traceIdHeaders;
+        Set<String> idempotencyHeaders;
+        Set<String> authenticationHeaders;
         Set<String> tags;
         Set<String> responseCodes;
         Set<String> deprecatedHeaders;
