@@ -44,7 +44,7 @@ public abstract class CatsDSLWords {
     public static final String TARGET_FIELDS = "targetFields";
     public static final String TARGET_FIELDS_TYPES = "targetFieldTypes";
     public static final String ONE_OF_SELECTION = "oneOfSelection";
-    public static final String ADDITIONAL_PROPERTIES = "additionalProperties";
+    public static final String ADDITIONAL_PROPERTIES = "additionalProperties.*";
     public static final String ELEMENT = "topElement";
     public static final String MAP_VALUES = "mapValues";
     public static final String NEW_FIELD = "catsFuzzyField";
