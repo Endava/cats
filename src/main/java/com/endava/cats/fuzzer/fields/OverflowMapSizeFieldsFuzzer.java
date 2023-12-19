@@ -44,7 +44,8 @@ public class OverflowMapSizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
                 .replaceWith("overflow dictionary/hashmap")
                 .skipMessage("Fuzzer only runs for dictionaries/hashmaps")
                 .fieldFilter(field -> data.getRequestPropertyTypes().get(field).getAdditionalProperties() != null
-                        && !JsonUtils.NOT_SET.equals(JsonUtils.getVariableFromJson(data.getPayload(), field)))
+                        && !JsonUtils.NOT_SET.equals(JsonUtils.getVariableFromJson(data.getPayload(), field))
+                        && JsonUtils.getVariableFromJson(data.getPayload(), field + ".keys()") != null)
                 .fuzzValueProducer(fuzzValueProducer)
                 .build();
     }
