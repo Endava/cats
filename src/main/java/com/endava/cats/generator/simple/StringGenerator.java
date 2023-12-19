@@ -12,6 +12,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.security.SecureRandom;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class StringGenerator {
     /**
@@ -36,7 +37,7 @@ public class StringGenerator {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private static final int MAX_ATTEMPTS_GENERATE = 10;
+    private static final int MAX_ATTEMPTS_GENERATE = 5;
 
     private StringGenerator() {
         //ntd
@@ -107,26 +108,30 @@ public class StringGenerator {
     }
 
     private static String generateUsingRegexpGen(String pattern, int min, int max) {
-        RegExpGen generator = Provider.forEcmaScript().matchingExact(pattern);
         RandomGen random = new RandomBoundsGen();
 
-        for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
-            String generated = generator.generate(random, min, max);
+        try {
+            RegExpGen generator = Provider.forEcmaScript().matchingExact(pattern);
 
-            if (generated.matches(pattern) && generated.length() >= min && generated.length() <= max) {
-                return generated;
+            for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
+                String generated = generator.generate(random, min, max);
+
+                if (generated.matches(pattern)) {
+                    return generated;
+                }
             }
+        } catch (Exception e) {
+            return Provider.forEcmaScript().matchingExact(ALPHANUMERIC_PLUS).generate(random, min, max);
         }
-
-        return Provider.forEcmaScript().matchingExact(ALPHANUMERIC_PLUS).generate(random, min, max);
+        return "";
     }
 
     private static String generateUsingCatsRegexGenerator(String pattern, int min, int max) {
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
-            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", 10, 15);
+            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", min, max);
             String generatedString = composeString(secondVersionBase, min, max);
 
-            if (generatedString.matches(pattern) && generatedString.length() >= min && generatedString.length() <= max) {
+            if (generatedString.matches(pattern)) {
                 return generatedString;
             }
         }
@@ -136,7 +141,7 @@ public class StringGenerator {
     private static String generateUsingRgxGenerator(String pattern, int min, int max) {
         try {
             String generatedValue = new RgxGen(pattern).generate();
-            if ((pattern.endsWith("}") || pattern.endsWith("}$") && generatedValue.matches(pattern))) {
+            if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(pattern)) {
                 return generatedValue;
             }
             return composeString(generatedValue, min, max);
@@ -145,8 +150,29 @@ public class StringGenerator {
         }
     }
 
+    private static boolean isSetOfAlternatives(String regex) {
+        try {
+            String[] alternatives = regex.split("\\|");
+
+            if (alternatives.length > 1) {
+                for (String alternative : alternatives) {
+                    Pattern.compile(alternative);
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } catch (PatternSyntaxException e) {
+            return false;
+        }
+    }
+
+    private static boolean hasLengthInline(String pattern) {
+        return pattern.endsWith("}") || pattern.endsWith("}$");
+    }
+
     private static String composeString(String initial, int min, int max) {
-        if (min == 0 && max == 0) {
+        if (min <= 0 && max <= 0) {
             return initial;
         }
         String trimmed = initial.trim().replaceAll("\\p{Z}+", "") + (initial.isEmpty() ? "a" : initial.charAt(0));
@@ -243,12 +269,13 @@ public class StringGenerator {
         if (!CollectionUtils.isEmpty(property.getEnum())) {
             return String.valueOf(property.getEnum().get(0));
         }
-        int minLength = property.getMinLength() != null ? property.getMinLength() : 5;
-        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 10;
+        int minLength = property.getMinLength() != null ? property.getMinLength() : -1;
+        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : -1;
         String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         if (maxLength < minLength) {
             maxLength = minLength;
         }
+
         return StringGenerator.generate(pattern, minLength, maxLength);
     }
 
