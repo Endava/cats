@@ -1,6 +1,8 @@
 package com.endava.cats.generator.simple;
 
 import com.github.curiousoddman.rgxgen.RgxGen;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +40,12 @@ public class StringGenerator {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private static final int MAX_ATTEMPTS_GENERATE = 5;
+    public static final String EMPTY = "";
+
+    private static final RandomGen REGEXPGEN_RANDOM = new RandomBoundsGen();
+    private static final org.cornutum.regexpgen.Provider REGEXPGEN_PROVIDER = Provider.forEcmaScript();
+
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(StringGenerator.class);
 
     private StringGenerator() {
         //ntd
@@ -97,41 +105,41 @@ public class StringGenerator {
     public static String generate(String pattern, int min, int max) {
         String initialVersion = generateUsingRgxGenerator(pattern, min, max);
         if (initialVersion.matches(pattern)) {
+            LOGGER.debug("RGX generated value {} matched {}", initialVersion, pattern);
             return initialVersion;
         }
 
         try {
             return generateUsingCatsRegexGenerator(pattern, min, max);
         } catch (Exception e) {
+            LOGGER.debug("Generation using CATS failed, using REGEXP generator");
             return generateUsingRegexpGen(pattern, min, max);
         }
     }
 
     private static String generateUsingRegexpGen(String pattern, int min, int max) {
-        RandomGen random = new RandomBoundsGen();
+        RegExpGen generator = REGEXPGEN_PROVIDER.matchingExact(pattern);
 
-        try {
-            RegExpGen generator = Provider.forEcmaScript().matchingExact(pattern);
+        for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
+            String generated = generator.generate(REGEXPGEN_RANDOM, min, max);
 
-            for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
-                String generated = generator.generate(random, min, max);
-
-                if (generated.matches(pattern)) {
-                    return generated;
-                }
+            if (generated.matches(pattern)) {
+                LOGGER.debug("Generated using REGEXP {} matches {}", generated, pattern);
+                return generated;
             }
-        } catch (Exception e) {
-            return Provider.forEcmaScript().matchingExact(ALPHANUMERIC_PLUS).generate(random, min, max);
         }
-        return "";
+
+        LOGGER.debug("Returning alphanumeric random string using REGEXP");
+        return REGEXPGEN_PROVIDER.matchingExact(ALPHANUMERIC_PLUS).generate(REGEXPGEN_RANDOM, min, max);
     }
 
     private static String generateUsingCatsRegexGenerator(String pattern, int min, int max) {
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
-            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), "", min, max);
+            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), EMPTY, min, max);
             String generatedString = composeString(secondVersionBase, min, max);
 
             if (generatedString.matches(pattern)) {
+                LOGGER.debug("Generated using CATS generator {} and matches {}", generatedString, pattern);
                 return generatedString;
             }
         }
@@ -139,15 +147,23 @@ public class StringGenerator {
     }
 
     private static String generateUsingRgxGenerator(String pattern, int min, int max) {
+        int attempts = 0;
+        String generatedValue;
         try {
-            String generatedValue = new RgxGen(pattern).generate();
-            if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(pattern)) {
-                return generatedValue;
-            }
-            return composeString(generatedValue, min, max);
+            do {
+                generatedValue = new RgxGen(pattern).generate();
+                if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(pattern)) {
+                    return generatedValue;
+                }
+                generatedValue = composeString(generatedValue, min, max);
+                attempts++;
+            } while (attempts < MAX_ATTEMPTS_GENERATE && !generatedValue.matches(pattern));
         } catch (Exception e) {
-            return "";
+            LOGGER.debug("RGX generator failed, returning empty.");
+            return EMPTY;
         }
+        LOGGER.debug("Generated using RGX {}", generatedValue);
+        return generatedValue;
     }
 
     private static boolean isSetOfAlternatives(String regex) {
@@ -175,7 +191,7 @@ public class StringGenerator {
         if (min <= 0 && max <= 0) {
             return initial;
         }
-        String trimmed = initial.trim().replaceAll("\\p{Z}+", "") + (initial.isEmpty() ? "a" : initial.charAt(0));
+        String trimmed = initial.trim() + (initial.isEmpty() ? "a" : initial.charAt(0));
         if (trimmed.length() < min) {
             return composeString(trimmed + trimmed, min, max);
         } else if (trimmed.length() > max) {
@@ -226,7 +242,7 @@ public class StringGenerator {
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
 
         if (minLength <= 0) {
-            return "";
+            return EMPTY;
         }
         String pattern = ALPHANUMERIC + "{" + (minLength - 1) + "," + minLength + "}";
 
@@ -287,7 +303,7 @@ public class StringGenerator {
      */
     public static String sanitize(String input) {
         return input
-                .replaceAll("(^[\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+)|([\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+$)", "")
-                .replaceAll("[\\p{C}\\p{So}\\p{M}\\p{Sk}\r\n]+", "");
+                .replaceAll("(^[\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+)|([\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+$)", EMPTY)
+                .replaceAll("[\\p{C}\\p{So}\\p{M}\\p{Sk}\r\n]+", EMPTY);
     }
 }
