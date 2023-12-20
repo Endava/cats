@@ -39,4 +39,9 @@ class VeryLargeUnicodeStringsInFieldsFuzzerTest {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20);
         Assertions.assertThat(veryLargeUnicodeStringsInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData().toString()).hasSize(20 + "cats".length());
     }
+
+    @Test
+    void shouldOverrideToNotMatchPatterns() {
+        Assertions.assertThat(veryLargeUnicodeStringsInFieldsFuzzer.shouldCheckForFuzzedValueMatchingPattern()).isFalse();
+    }
 }

@@ -31,4 +31,9 @@ class VeryLargeStringsInFieldsFuzzerTest {
 
         Assertions.assertThat(veryLargeStringsInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0).getData().toString()).hasSize(20000);
     }
+
+    @Test
+    void shouldOverrideToNotMatchPatterns() {
+        Assertions.assertThat(veryLargeStringsInFieldsFuzzer.shouldCheckForFuzzedValueMatchingPattern()).isFalse();
+    }
 }
