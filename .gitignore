@@ -14,7 +14,6 @@ examples
 rules
 __pycache__
 pom_native.xml
-cats-macos
-cats-linux
+cats*.tar.gz
 refData_custom.yml
 referenceFields_replaced.yml
