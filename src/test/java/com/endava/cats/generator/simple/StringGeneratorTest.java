@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.util.regex.Pattern;
-
 @QuarkusTest
 class StringGeneratorTest {
 
@@ -101,7 +99,7 @@ class StringGeneratorTest {
     void shouldGenerateStringForSpecificRegexes(String regex) {
         String generated = StringGenerator.generate(regex, 2048, 2048);
 
-        Assertions.assertThat(generated).matches(Pattern.compile(regex)).hasSizeBetween(2048, 2048);
+        Assertions.assertThat(generated).matches(regex).hasSizeBetween(2048, 2048);
     }
 
     @ParameterizedTest
@@ -120,7 +118,8 @@ class StringGeneratorTest {
     }
 
     @Test
-    void shouldGenerate() {
-        StringGenerator.generate("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", -1, -1);
+    void shouldGenerateWhenNegativeLength() {
+        String generated = StringGenerator.generate("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", -1, -1);
+        Assertions.assertThat(generated).hasSize(17).matches("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");
     }
 }
