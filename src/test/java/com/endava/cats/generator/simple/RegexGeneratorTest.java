@@ -27,7 +27,7 @@ class RegexGeneratorTest {
     void shouldReturnDefaultWhenPrefixMatchesPatternButNotLength() {
         String result = RegexGenerator.generate(Pattern.compile("test"), "test", 10, 10);
 
-        Assertions.assertThat(result).isEqualTo("test");
+        Assertions.assertThat(result).isEqualTo("DEFAULT_CATS");
     }
 
     @Test
