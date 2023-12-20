@@ -110,7 +110,7 @@ class StringGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"^\\+?[1-9]\\d{6,15}$;16", "[A-Z]+;20", "[A-Z0-9]{13,18};18", "[0-9]+;10", "^(?=[^\\s])(?=.*[^\\s]$)(?=^(?:(?!<|>|%3e|%3c).)*$).*$;2048"}, delimiterString = ";")
+    @CsvSource(value = {"^\\+?[1-9]\\d{6,15}$;16", "[A-Z]+;20", "[A-Z0-9]{13,18};18", "[0-9]+;10", "^(?=[^\\s])(?=.*[^\\s]$)(?=^(?:(?!<|>|%3e|%3c).)*$).*$;2048", "M|F;1"}, delimiterString = ";")
     void shouldGenerateFixedLength(String pattern, int length) {
         String fixedLengthGenerated = StringGenerator.generateExactLength(pattern, length);
 

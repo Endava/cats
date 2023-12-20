@@ -339,4 +339,15 @@ class FilterArgumentsTest {
         List<String> filteredPaths = filterArguments.getPathsToRun(openAPI);
         Assertions.assertThat(filteredPaths).containsOnly(result);
     }
+
+    @Test
+    void shouldHaveDefaultHttpMethods() {
+        Assertions.assertThat(filterArguments.isHttpMethodSupplied(HttpMethod.POST)).isTrue();
+        Assertions.assertThat(filterArguments.isHttpMethodSupplied(HttpMethod.BIND)).isFalse();
+    }
+
+    @Test
+    void shouldReturnFuzzersAsClasses() {
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(90);
+    }
 }

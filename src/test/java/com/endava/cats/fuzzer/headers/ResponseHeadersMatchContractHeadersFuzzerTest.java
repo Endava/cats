@@ -50,6 +50,22 @@ class ResponseHeadersMatchContractHeadersFuzzerTest {
 
 
     @Test
+    void shouldNotRunWhenNoResponseHeaders() {
+        FuzzingData data = FuzzingData.builder().responseHeaders(Collections.emptyMap())
+                .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
+        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Collections.emptyList()).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        responseHeadersMatchContractHeadersFuzzer.fuzz(data);
+
+        Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
     void shouldReportMissingHeaders() {
         FuzzingData data = FuzzingData.builder().responseHeaders(Map.of("200", Set.of("missingHeader", "anotherMissingHeader")))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
