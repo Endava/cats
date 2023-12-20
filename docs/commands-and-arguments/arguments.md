@@ -82,6 +82,8 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--maxResponseTimeInMs` Sets a response time limit in milliseconds. If responses take longer than the provided value, they will get marked as error with reason `Response time exceeds max`. The response time limit check is triggered only if the test case is considered successful i.e. response matches Fuzzer expectations
 - `--rfc7396` When set to true it will send Content-Type=application/merge-patch+json for PATCH requests. Default: false`
 - `--maskHeaders` A comma separated list of headers to mask to protect sensitive info such as login credentials to be written in report files. Masked headers will be replaced with `$$HeaderName` so that test cases can be replayed using environment variables
+- `--tags`  A comma separated list of tags to include. If no tag is supplied, all tags will be considered. To list all available tags run: `cats stats -c api.yml`
+- `--skipTags` A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. To list all available tags run: `cats stats -c  api.yml`
 
 Next arguments are active only when supplying a custom dictionary via `--words`:
 - `--matchResponseCodes=<matchResponseCodes>[,<matchResponseCodes>...]` A comma separated list of HTTP response codes that will be matched as error. All other response codes will be ignored from the final report. If provided, all Contract Fuzzers will be skipped
