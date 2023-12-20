@@ -24,9 +24,16 @@ class RegexGeneratorTest {
     }
 
     @Test
-    void shouldReturnDefaultWhenPrefixNotMatchingPattern() {
+    void shouldReturnDefaultWhenPrefixMatchesPatternButNotLength() {
         String result = RegexGenerator.generate(Pattern.compile("test"), "test", 10, 10);
 
-        Assertions.assertThat(result).isEqualTo(RegexGenerator.DEFAULT);
+        Assertions.assertThat(result).isEqualTo("test");
+    }
+
+    @Test
+    void shouldGenerateFromRegexAndSize() {
+        String result = RegexGenerator.generate(Pattern.compile("test+"), "test", 10, 10);
+
+        Assertions.assertThat(result).isEqualTo("testtttttttttt");
     }
 }
