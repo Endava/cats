@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class RegexGenerator {
     public static final String DEFAULT = "DEFAULT_CATS";
@@ -34,7 +35,9 @@ public class RegexGenerator {
         List<Character> candidates = new ArrayList<>();
         generateCandidates(candidates, pattern, prefix);
         Collections.shuffle(candidates);
-        return verifyAndReturn(pattern, prefix, min, max, candidates);
+        return generateString(pattern, prefix + candidates.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining()), min - 1, max - 1);
     }
 
     private static void generateCandidates(List<Character> candidates, Pattern p, String prefix) {
@@ -44,15 +47,5 @@ public class RegexGenerator {
                 candidates.add(c);
             }
         }
-    }
-
-    private static String verifyAndReturn(Pattern p, String prefix, int min, int max, List<Character> candidates) {
-        for (char candidate : candidates) {
-            String match = generateString(p, prefix + candidate, min - 1, max - 1);
-            if (match != null) {
-                return match;
-            }
-        }
-        return DEFAULT;
     }
 }
