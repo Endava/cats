@@ -451,7 +451,9 @@ public class FilterArguments {
 
         for (String wildCardPath : pathsByWildcard.get(true)) {
             String regex = wildCardPath
-                    .replace("*", ".*");
+                    .replace("*", ".*")
+                    .replace("{", "\\{")
+                    .replace("}", "\\}");
             Pattern pattern = Pattern.compile(regex);
             result.addAll(allContractPaths
                     .stream()
