@@ -67,6 +67,15 @@ class RandomResourcesFuzzerTest {
     }
 
     @Test
+    void shouldThrowIllegalStateExceptionWhenPathParamNotDeclared() {
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}").
+                reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{}");
+
+        Assertions.assertThatThrownBy(() -> randomResourcesFuzzer.fuzz(data)).isInstanceOf(IllegalStateException.class).hasMessage("OpenAPI spec is missing definition for id");
+    }
+
+    @Test
     void shouldHaveToString() {
         Assertions.assertThat(randomResourcesFuzzer).hasToString(randomResourcesFuzzer.getClass().getSimpleName());
     }
