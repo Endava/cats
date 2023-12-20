@@ -105,6 +105,47 @@ The above example will output the following json (considering also the above exa
 }
 ```
 
+You can have multiple `additionalProperties` entries that can be suffixed. For example:
+
+```yaml
+/path/0.1/auth:
+    address#street: "My Street"
+    name: "John"
+    additionalProperties_1:
+      topElement: metadata
+      mapValues:
+        test: "value1"
+        anotherTest: "value2"
+    additionalProperties_2:
+      topElement: genericData
+      mapValues:
+        myKey: "myData"
+        anotherKey: "anotherData"
+```
+
+Which will output:
+
+```json
+{
+    "address": {
+        "phone": "123",
+        "postCode": "408",
+        "street": "My Street"    
+    },
+    "name": "John",
+    "metadata": {
+        "test": "value1",
+        "anotherTest": "value2"
+    },
+    "genericData": {
+        "myKey": "myData",
+        "anotherKey": "anotherData"
+    }
+}
+```
+
+
+
 ## Sending Reference Data for ALL Paths
 You can also have the ability to send the same reference data for ALL paths (just like you do with the headers). You can achieve this by using `all` as a key in the `--refData` file:
 
