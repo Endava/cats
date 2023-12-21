@@ -31,6 +31,7 @@ public class OverflowMapSizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
             Object allMapKeys = JsonUtils.getVariableFromJson(data.getPayload(), field + ".keys()");
             String firstKey = allMapKeys instanceof String s ? s : ((Set<String>) allMapKeys).iterator().next();
             Object firstKeyValue = JsonUtils.getVariableFromJson(data.getPayload(), field + "." + firstKey);
+
             Map<String, Object> finalResult = new HashMap<>();
             int arraySize = schema.getMaxProperties() != null ? schema.getMaxProperties() + 10 : processingArguments.getLargeStringsSize();
             for (int i = 0; i < arraySize; i++) {
@@ -44,8 +45,7 @@ public class OverflowMapSizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
                 .replaceWith("overflow dictionary/hashmap")
                 .skipMessage("Fuzzer only runs for dictionaries/hashmaps")
                 .fieldFilter(field -> data.getRequestPropertyTypes().get(field).getAdditionalProperties() != null
-                        && !JsonUtils.NOT_SET.equals(JsonUtils.getVariableFromJson(data.getPayload(), field))
-                        && JsonUtils.getVariableFromJson(data.getPayload(), field + ".keys()") != null)
+                        && JsonUtils.isValidMap(data.getPayload(), field))
                 .fuzzValueProducer(fuzzValueProducer)
                 .build();
     }
