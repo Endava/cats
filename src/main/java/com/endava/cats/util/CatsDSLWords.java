@@ -18,8 +18,13 @@ public abstract class CatsDSLWords {
      */
     public static final String CHECK = "checkBoolean";
 
+    /**
+     * Reserved word used in CATS DSL files to verify a boolean expression.
+     */
     public static final String CHECK_TRUE = "checkTrue";
-
+    /**
+     * Reserved word used in CATS DSL files to verify a boolean expression.
+     */
     public static final String CHECK_FALSE = "checkFalse";
 
     public static final Map<String, String> CHECKS = Map.of(CHECK, "true", CHECK_TRUE, "true", CHECK_FALSE, "false");
@@ -40,17 +45,50 @@ public abstract class CatsDSLWords {
      * Reserved word used in CATS DSL files to verify different assertions.
      */
     public static final String VERIFY = "verify";
+    /**
+     * Reserved word used in CATS DSL files to supply a custom file.
+     */
     public static final String STRINGS_FILE = "stringsFile";
+    /**
+     * Reserved word used in CATS DSL files to specify the target fields.
+     */
     public static final String TARGET_FIELDS = "targetFields";
+    /**
+     * Reserved word used in CATS DSL files to specify the target field types.
+     */
     public static final String TARGET_FIELDS_TYPES = "targetFieldTypes";
+    /**
+     * Reserved word used in CATS DSL files to specify anyOf/oneOf selections.
+     */
     public static final String ONE_OF_SELECTION = "oneOfSelection";
+    /**
+     * Reserved word used in CATS DSL files to specify additional properties fields.
+     */
     public static final String ADDITIONAL_PROPERTIES = "additionalProperties.*";
+    /**
+     * Reserved word used in CATS DSL files to specify the top element from additionalProperties.
+     */
     public static final String ELEMENT = "topElement";
+    /**
+     * Reserved word used in CATS DSL files to specify the map values from additionalProperties.
+     */
     public static final String MAP_VALUES = "mapValues";
+    /**
+     * Reserved word used in CATS DSL files to specify new fields added to the payloads.
+     */
     public static final String NEW_FIELD = "catsFuzzyField";
+    /**
+     * Reserved word used in CATS DSL files to specify HTTP headers as targets.
+     */
     public static final String CATS_HEADERS = "http_headers";
+    /**
+     * Reserved word used in CATS DSL files to specify request body as target.
+     */
     public static final String CATS_BODY_FUZZ = "http_body";
 
+    /**
+     * Returns a list with all the reserved words used by the SpecialFuzzers.
+     */
     public static final List<String> RESERVED_WORDS = List.of(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION,
             ADDITIONAL_PROPERTIES, ELEMENT, MAP_VALUES, TARGET_FIELDS_TYPES);
     public static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
@@ -59,6 +97,12 @@ public abstract class CatsDSLWords {
         //ntd
     }
 
+    /**
+     * Checks if the given field was added by CATS.
+     *
+     * @param key the field name
+     * @return true if the field was added by CATS, false otherwise
+     */
     public static boolean isExtraField(String key) {
         return NEW_FIELD.equalsIgnoreCase(key);
     }
