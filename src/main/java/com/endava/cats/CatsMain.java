@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 /**
- * We need to print the build version and build time
+ * Main application entry point.
  */
 @QuarkusMain
 public class CatsMain implements QuarkusApplication {

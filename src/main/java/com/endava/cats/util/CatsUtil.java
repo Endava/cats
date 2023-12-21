@@ -33,10 +33,11 @@ import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
 import static com.endava.cats.util.CatsDSLWords.ELEMENT;
 import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
 
+/**
+ * Some utility methods that don't fit in other classes.
+ */
 @ApplicationScoped
 public class CatsUtil {
-    public static final String FUZZER_KEY_DEFAULT = "*******";
-    public static final String TEST_KEY_DEFAULT = "******";
 
     public static <T> List<T> filterAndPrintNotMatching(Collection<T> collection, Predicate<T> predicateToFilter, PrettyLogger logger, String messageWhenNotMatching, Function<T, String> functionToApplyToLoggedItems, String... params) {
         Map<Boolean, List<T>> results = collection.stream().collect(Collectors.partitioningBy(predicateToFilter));

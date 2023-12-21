@@ -12,7 +12,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -53,6 +52,8 @@ import static org.fusesource.jansi.Ansi.ansi;
 @ApplicationScoped
 @DryRun
 public class TestCaseListener {
+    private static final String FUZZER_KEY_DEFAULT = "*******";
+    private static final String TEST_KEY_DEFAULT = "******";
     public static final String ID = "id";
     public static final String FUZZER_KEY = "fuzzerKey";
     public static final String FUZZER = "fuzzer";
@@ -101,7 +102,7 @@ public class TestCaseListener {
 
     public void beforeFuzz(Class<?> fuzzer) {
         String clazz = ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()).replaceAll("[a-z]", "");
-        MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, CatsUtil.FUZZER_KEY_DEFAULT.length(), Ansi.Color.MAGENTA));
+        MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, FUZZER_KEY_DEFAULT.length(), Ansi.Color.MAGENTA));
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
     }
 
@@ -109,8 +110,8 @@ public class TestCaseListener {
         double chunkSize = 100d / runTotals.getOrDefault(path, 1) + 0.01;
         this.notifySummaryObservers(path, httpMethod, chunkSize);
 
-        MDC.put(FUZZER, CatsUtil.FUZZER_KEY_DEFAULT);
-        MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
+        MDC.put(FUZZER, FUZZER_KEY_DEFAULT);
+        MDC.put(FUZZER_KEY, FUZZER_KEY_DEFAULT);
     }
 
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
@@ -181,7 +182,7 @@ public class TestCaseListener {
             testCaseExporter.writeTestCase(testCase);
         }
         MDC.remove(ID);
-        MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
+        MDC.put(ID_ANSI, TEST_KEY_DEFAULT);
         logger.info(SEPARATOR);
     }
 
@@ -200,9 +201,9 @@ public class TestCaseListener {
     }
 
     public void startSession() {
-        MDC.put(ID_ANSI, CatsUtil.TEST_KEY_DEFAULT);
-        MDC.put(FUZZER, CatsUtil.FUZZER_KEY_DEFAULT);
-        MDC.put(FUZZER_KEY, CatsUtil.FUZZER_KEY_DEFAULT);
+        MDC.put(ID_ANSI, TEST_KEY_DEFAULT);
+        MDC.put(FUZZER, FUZZER_KEY_DEFAULT);
+        MDC.put(FUZZER_KEY, FUZZER_KEY_DEFAULT);
 
         String osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
 

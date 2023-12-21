@@ -93,6 +93,19 @@ public abstract class JsonUtils {
 
 
     /**
+     * Checks if the given field is a valid map and has elements.
+     *
+     * @param payload the given payload
+     * @param field   the field
+     * @return true if the field is a map, false otherwise
+     */
+    public static boolean isValidMap(String payload, String field) {
+        Object fieldValue = JsonUtils.getVariableFromJson(payload, field + ".keys()");
+
+        return fieldValue != null && !isNotSet(String.valueOf(fieldValue)) && !"[]".equals(String.valueOf(fieldValue));
+    }
+
+    /**
      * Replaces "#" with "." inside the given path.
      *
      * @param input the input path

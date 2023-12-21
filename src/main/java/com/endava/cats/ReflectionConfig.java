@@ -181,6 +181,9 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Base64;
 
+/**
+ * Classes which must be registered for reflection in order to GraalVM to include them in the final image.
+ */
 @RegisterForReflection(targets = {
         JsonDeserializer.class, JsonStreamParser.class, Gson.class, FieldNamingStrategy.class, JsonSerializer.class, JsonNull.class, InstanceCreator.class, JsonSerializationContext.class,
         JsonElement.class, JsonReader.class, JsonToken.class, MalformedJsonException.class, JsonWriter.class, JsonIOException.class, TypeToken.class, TypeAdapter.class, JsonPrimitive.class, ConstructorConstructor.class,
