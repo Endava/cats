@@ -74,7 +74,7 @@ public abstract class ConsoleUtils {
     public static void renderRow(String prefix, String path, Double percentage) {
         String withoutAnsi = ANSI_REMOVE_PATTERN.matcher(path).replaceAll("");
         int consoleWidth = getTerminalWidth(80);
-        int dots = consoleWidth - withoutAnsi.length() - String.valueOf(percentage.intValue()).length() - 2;
+        int dots = Math.max(consoleWidth - withoutAnsi.length() - String.valueOf(percentage.intValue()).length() - 2, 1);
         String firstPart = path.substring(0, path.indexOf("  "));
         String secondPart = path.substring(path.indexOf("  ") + 1);
         System.out.print(Ansi.ansi().bold().a(prefix + firstPart + ".".repeat(dots) + secondPart + "  " + percentage.intValue() + "%").reset().toString());
