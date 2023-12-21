@@ -82,6 +82,7 @@ class OverflowMapSizeFieldsFuzzerTest {
     void shouldRunIfFieldDictionary(Integer maxItems) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Schema mapSchema = new MapSchema().maxProperties(maxItems).additionalProperties(true);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(200).build());
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("mapField"));
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("mapField", mapSchema));
         Mockito.when(data.getPayload()).thenReturn("""

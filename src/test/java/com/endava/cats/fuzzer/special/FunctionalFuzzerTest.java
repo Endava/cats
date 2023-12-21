@@ -136,10 +136,9 @@ class FunctionalFuzzerTest {
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST)
                 .headers(new HashSet<>()).requestContentTypes(List.of("application/json")).build();
 
-        CatsUtil mockCatsUtil = Mockito.mock(CatsUtil.class);
         ReflectionTestUtils.setField(filesArguments, "customFuzzerDetails", createCustomFuzzerFile(customFieldValues));
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, mockCatsUtil, testCaseListener);
+        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, new CatsUtil() , testCaseListener);
         functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil, Mockito.mock(TestCaseListener.class));
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("custom"));
 

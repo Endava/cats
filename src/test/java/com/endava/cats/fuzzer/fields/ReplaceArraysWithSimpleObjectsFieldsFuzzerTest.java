@@ -69,6 +69,7 @@ class ReplaceArraysWithSimpleObjectsFieldsFuzzerTest {
     @Test
     void shouldRunIfFieldArray() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(200).build());
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("arrayField"));
         Mockito.when(data.getPayload()).thenReturn("""
                    {"arrayField": [{

@@ -36,6 +36,7 @@ class RandomDummyInvalidJsonBodyFuzzerTest {
 
     @Test
     void shouldRunForEmptyPayload() {
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(200).build());
         randomDummyInvalidJsonBodyFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
         Mockito.verify(testCaseListener, Mockito.times(12)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
