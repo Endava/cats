@@ -236,7 +236,7 @@ public abstract class JsonUtils {
                 DocumentContext finalPayload = JsonPath.parse(interimPayload);
                 toEliminate.forEach(toEliminateKey -> {
                     try {
-                        String nodeToDelete = getNodeKey(toEliminateKey, pathTowardsReplacement);
+                        String nodeToDelete = pathTowardsReplacement + "." + getNodeKey(toEliminateKey);
                         LOGGER.debug("to delete {}", nodeToDelete);
                         finalPayload.delete(JsonPath.compile(nodeToDelete).getPath());
                     } catch (PathNotFoundException ex) {
@@ -253,16 +253,14 @@ public abstract class JsonUtils {
      * Creates a node key based on the supplied strings in the form of {@code toEliminate.pathTowardsReplacement}.
      * If any of the given input strings contains a space, it will enclose the final key in [''].
      *
-     * @param toEliminateKey         start of the node key
-     * @param pathTowardsReplacement end of the node key
+     * @param toEliminateKey start of the node key
      * @return a node key combining the given input
      */
-    private static String getNodeKey(String toEliminateKey, String pathTowardsReplacement) {
-        String nodeToDelete = pathTowardsReplacement + "." + toEliminateKey;
-        if (nodeToDelete.contains(" ")) {
-            nodeToDelete = "['" + pathTowardsReplacement + "." + toEliminateKey + "']";
+    private static String getNodeKey(String toEliminateKey) {
+        if (toEliminateKey.contains(" ")) {
+            return "['" + toEliminateKey + "']";
         }
-        return nodeToDelete;
+        return toEliminateKey;
     }
 
     public static Object getVariableFromJson(String jsonPayload, String value) {
