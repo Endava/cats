@@ -464,8 +464,15 @@ public class FuzzingDataFactory {
                     interimCombinationList.forEach(payload ->
                             result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, value.toString(), anyOfOrOneOf.keySet()))));
         });
-
-        return result;
+        if (result.stream().anyMatch(json -> json.contains(ANY_OF) || json.contains(ONE_OF))) {
+            List<String> newResult = new ArrayList<>();
+            for (String json : result) {
+                newResult.addAll(addNewCombination(JsonParser.parseString(json)));
+            }
+            return newResult;
+        } else {
+            return result;
+        }
     }
 
     private Map<String, Map<String, JsonElement>> joinCommonOneAndAnyOfs(Map<String, Map<String, JsonElement>> startingOneAnyOfs) {
