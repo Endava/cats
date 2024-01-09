@@ -1,0 +1,6 @@
+/pets:
+  field: "newValue"
+  name: "cats_remove_field"
+all:
+  allField: "allValue"
+  anotherAllField: "anotherAllValue"

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -43,7 +44,14 @@ public class FilesArguments {
     @CommandLine.Option(names = {"--urlParams"},
             description = "A comma separated list of @|bold name:value|@ pairs of parameters to be replaced inside the URLs", split = ",")
     @Getter
+    @Setter
     private List<String> params;
+
+    @CommandLine.Option(names = {"-P"},
+            description = "Specifies the url/path params to be replaced in request paths.")
+    @Setter
+    @Getter
+    Map<String, Object> urlParamsArguments;
 
     @CommandLine.Option(names = {"--headers"},
             description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example")
@@ -63,12 +71,27 @@ public class FilesArguments {
     @Setter
     private File queryFile;
 
+    @CommandLine.Option(names = {"-Q"},
+            description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params. When supplied it will be applied to ALL paths. " +
+                    "For per-path control use the `--queryParams` argument.")
+    @Getter
+    @Setter
+    Map<String, Object> queryParamsArguments;
+
     @CommandLine.Option(names = {"--refData"},
             description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
                     "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
     @Getter
     @Setter
     private File refDataFile;
+
+    @CommandLine.Option(names = {"-R"},
+            description = "Specifies fields that must have a fixed value in order for requests to succeed. When supplied it will be applied to ALL paths. " +
+                    "For per-path control use the `--refData` argument.")
+    @Getter
+    @Setter
+    Map<String, Object> refDataArguments;
+
 
     @CommandLine.Option(names = {"--functionalFuzzerFile"},
             description = "Specifies the file used by the @|bold FunctionalFuzzer|@ that will be used to create user-supplied payloads and tests")
@@ -140,6 +163,10 @@ public class FilesArguments {
      */
     public void loadRefData() throws IOException {
         this.refData = this.loadFileAsMapOfMapsOfStrings(refDataFile, "Reference Data");
+        this.refData.merge(ALL, Optional.ofNullable(refDataArguments).orElse(Collections.emptyMap()), (existingValue, newValue) -> {
+            existingValue.putAll(newValue);
+            return existingValue;
+        });
     }
 
     /**
@@ -149,6 +176,10 @@ public class FilesArguments {
      */
     public void loadQueryParams() throws IOException {
         this.queryParams = this.loadFileAsMapOfMapsOfStrings(queryFile, "Query Params");
+        this.queryParams.merge(ALL, Optional.ofNullable(queryParamsArguments).orElse(Collections.emptyMap()), (existingValue, newValue) -> {
+            existingValue.putAll(newValue);
+            return existingValue;
+        });
     }
 
     /**
@@ -188,7 +219,12 @@ public class FilesArguments {
      * @return a name:value list of url params to be replaced when calling the service
      */
     public List<String> getUrlParamsList() {
-        return Optional.ofNullable(this.params).orElse(Collections.emptyList());
+        List<String> localParams = new ArrayList<>(Optional.ofNullable(this.params).orElse(Collections.emptyList()));
+        localParams.addAll(Optional.ofNullable(urlParamsArguments).orElse(Collections.emptyMap()).entrySet()
+                .stream()
+                .map(entry -> entry.getKey() + ":" + entry.getValue())
+                .toList());
+        return localParams;
     }
 
     /**

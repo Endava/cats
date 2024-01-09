@@ -125,4 +125,43 @@ class FilesArgumentsTest {
         org.assertj.core.api.Assertions.assertThat(yaml.get("all")).isNotNull();
         org.assertj.core.api.Assertions.assertThat(yaml.get("all").get("Authorization")).isNotNull();
     }
+
+    @Test
+    void shouldLoadRefData() throws Exception {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setRefDataFile(new File("src/test/resources/refFields_with_all.yml"));
+        filesArguments.setRefDataArguments(Map.of("argRefData", "argValue", "anotherArgRefData", "anotherValue"));
+        filesArguments.loadRefData();
+        Map<String, Object> refDataForPets = filesArguments.getRefData("/pets");
+        org.assertj.core.api.Assertions.assertThat(refDataForPets).containsOnlyKeys("argRefData", "anotherArgRefData", "allField", "anotherAllField", "field", "name");
+    }
+
+    @Test
+    void shouldLoadQueryParams() throws Exception {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setQueryFile(new File("src/test/resources/refFields_with_all.yml"));
+        filesArguments.setQueryParamsArguments(Map.of("argRefData", "argValue", "anotherArgRefData", "anotherValue"));
+        filesArguments.loadQueryParams();
+        Map<String, Object> queryParamsForPets = filesArguments.getAdditionalQueryParamsForPath("/pets");
+        org.assertj.core.api.Assertions.assertThat(queryParamsForPets).containsOnlyKeys("argRefData", "anotherArgRefData", "allField", "anotherAllField", "field", "name");
+    }
+
+    @Test
+    void shouldLoadUrlParams() {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setParams(List.of("param1:value1", "param2:value2"));
+        filesArguments.setUrlParamsArguments(Map.of("param3", "value3", "param4", "value4"));
+        filesArguments.loadURLParams();
+        List<String> urlParams = filesArguments.getUrlParamsList();
+        org.assertj.core.api.Assertions.assertThat(urlParams).containsOnly("param1:value1", "param2:value2", "param3:value3", "param4:value4");
+    }
+
+    @Test
+    void shouldLoadUrlParamsFromArgsOnly() {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setUrlParamsArguments(Map.of("param3", "value3", "param4", "value4"));
+        filesArguments.loadURLParams();
+        List<String> urlParams = filesArguments.getUrlParamsList();
+        org.assertj.core.api.Assertions.assertThat(urlParams).containsOnly("param3:value3", "param4:value4");
+    }
 }
