@@ -353,22 +353,23 @@ public class FuzzingDataFactory {
      */
     private List<String> getCurrentRequestSchemaName(MediaType mediaType) {
         List<String> reqSchemas = new ArrayList<>();
-        String currentRequestSchema = mediaType.getSchema().get$ref();
+        if (mediaType.getSchema() != null) {
+            String currentRequestSchema = mediaType.getSchema().get$ref();
 
-        if (currentRequestSchema == null && mediaType.getSchema() instanceof ArraySchema arraySchema) {
-            currentRequestSchema = arraySchema.getItems().get$ref();
-        }
-        if (currentRequestSchema != null) {
-            reqSchemas.add(this.getSchemaName(currentRequestSchema));
-        } else if (mediaType.getSchema() instanceof ComposedSchema composedSchema) {
-            if (composedSchema.getAnyOf() != null) {
-                composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+            if (currentRequestSchema == null && mediaType.getSchema() instanceof ArraySchema arraySchema) {
+                currentRequestSchema = arraySchema.getItems().get$ref();
             }
-            if (composedSchema.getOneOf() != null) {
-                composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+            if (currentRequestSchema != null) {
+                reqSchemas.add(this.getSchemaName(currentRequestSchema));
+            } else if (mediaType.getSchema() instanceof ComposedSchema composedSchema) {
+                if (composedSchema.getAnyOf() != null) {
+                    composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+                }
+                if (composedSchema.getOneOf() != null) {
+                    composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+                }
             }
         }
-
         return reqSchemas;
     }
 
