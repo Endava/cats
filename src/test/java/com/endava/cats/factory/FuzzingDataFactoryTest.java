@@ -84,6 +84,13 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldNotGenerateRequestBodyWhenPostButSchemaEmpty() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore_empty_body.json");
+        Assertions.assertThat(data).hasSize(1);
+        Assertions.assertThat(data.get(0).getMethod()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
     void shouldLoadExamples() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml");
         Assertions.assertThat(data.get(0).getExamples()).hasSize(2);
