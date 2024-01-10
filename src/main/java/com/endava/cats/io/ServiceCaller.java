@@ -24,10 +24,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.net.HttpHeaders;
 import com.google.common.util.concurrent.RateLimiter;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -614,12 +617,42 @@ public class ServiceCaller {
         } else {
             Map<String, Object> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
+			// logger.debug("Payload before data incomming: {}", data);
 
             Map<String, Object> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet()
                     .stream()
                     .filter(stringStringEntry -> !stringStringEntry.getKey().matches(ADDITIONAL_PROPERTIES))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+			HttpMethod httpMethod = data.getHttpMethod();
+			String jsonString = null;
+			if (httpMethod==HttpMethod.GET) {
+				jsonString = refDataWithoutAdditionalProperties.get("get");
+				// logger.debug("Payload refDataWithoutAdditionalProperties.get : {}", jsonString);
+			} else if (httpMethod==HttpMethod.POST) {
+				jsonString = refDataWithoutAdditionalProperties.get("post");
+				// logger.debug("Payload refDataWithoutAdditionalProperties.get : {}",jsonString);
+			} else if (httpMethod==HttpMethod.PUT) {
+				jsonString = refDataWithoutAdditionalProperties.get("put");
+				// logger.debug("Payload refDataWithoutAdditionalProperties.get : {}",jsonString);
+			} else if (httpMethod==HttpMethod.DELETE) {
+				jsonString = refDataWithoutAdditionalProperties.get("delete");
+				// logger.debug("Payload refDataWithoutAdditionalProperties.get : {}", jsonString);
+			}
+			if (jsonString!=null) {
+				JsonElement jsonElement = JsonParser.parseString(jsonString);
+				JsonObject jsonObject = jsonElement.getAsJsonObject();
+				Gson gson = new Gson();
+				Type type = new TypeToken<Map<String, String>>(){}.getType();
+				Map<String, String> map = gson.fromJson(jsonObject, type);
+				map = gson.fromJson(jsonObject, type);
+				refDataWithoutAdditionalProperties = map;
+			}
+			// if (refDataWithoutAdditionalProperties.get(data.getHttpMethod().toString()) != null) {
+			// 	logger.debug("Payload refDataWithoutAdditionalProperties.get(data.getPayload()): {}", refDataWithoutAdditionalProperties.get(data.getPayload()));
+			// }
             String payload = data.getPayload();
+			// logger.note("Payload before refData replacement: {}", payload);
+			// logger.note("refDataWithoutAdditionalProperties: {}", refDataWithoutAdditionalProperties);
 
             /*this will override refData for DELETE requests in order to provide valid entities that will get deleted*/
             refDataWithoutAdditionalProperties.putAll(this.getPathParamFromCorrespondingPostIfDelete(data));

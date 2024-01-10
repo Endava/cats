@@ -236,9 +236,12 @@ public class OpenAPIModelGenerator {
 
     private Object getExampleFromArraySchema(String propertyName, Schema property) {
         Schema innerType = ((ArraySchema) property).getItems();
+		// add logs
+		// logger.info("Array property {}", propertyName);
         if (innerType.get$ref() != null) {
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
+		// logger.info("Array property {} with inner type {}", property, innerType);
         if (innerType != null) {
             int arrayLength = null == property.getMaxItems() ? 2 : property.getMaxItems();
             arrayLength = null == property.getMinItems() ? arrayLength : property.getMinItems();
@@ -247,6 +250,7 @@ public class OpenAPIModelGenerator {
             for (int i = 0; i < arrayLength; i++) {
                 objectProperties[i] = resolveModelToExample(propertyName, innerType);
             }
+			// logger.info("Array property {} with {} items", propertyName, arrayLength);
             return objectProperties;
         }
         return null;

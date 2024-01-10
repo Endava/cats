@@ -17,3 +17,4 @@ pom_native.xml
 cats*.tar.gz
 refData_custom.yml
 referenceFields_replaced.yml
+.git

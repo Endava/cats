@@ -110,6 +110,22 @@
                             <packaging>jar</packaging>
                         </configuration>
                     </execution>
+					<execution>
+                        <phase>pre-clean</phase>
+                        <id>pretty-logger-jar</id>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>lib/pretty-logger-1.11.jar</file>
+                            <groupId>io.github.ludovicianul</groupId>
+                            <artifactId>pretty-logger</artifactId>
+                            <version>4.10.0-CATS</version>
+                            <sources>lib/pretty-logger-1.11.jar</sources>
+                            <pomFile>lib/pretty-logger-1.11.pom</pomFile>
+                            <packaging>jar</packaging>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>

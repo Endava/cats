@@ -389,6 +389,7 @@ public class TestCaseListener {
     }
 
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema) {
+		// this.logger.debug("asdf response data {}", data);
         boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
@@ -503,21 +504,39 @@ public class TestCaseListener {
     }
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
-        JsonReader reader = new JsonReader(new StringReader(response.getBody()));
-        reader.setLenient(true);
-        JsonElement jsonElement = JsonParser.parseReader(reader);
-        List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
-        return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
-                || isResponseEmpty(response, responses)
-                || isNotTypicalDocumentedResponseCode(response)
-                || isEmptyArray(jsonElement);
-    }
+		// this.logger.debug("matchesResponseSchema - response: {}, data: {}", response, data);
+		// this.logger.debug("new StringReader(response.getBody()) {} {}", response.getBody(), response.responseCodeAsString());
+
+		JsonReader reader = new JsonReader(new StringReader(response.getBody()));
+		reader.setLenient(true);
+		JsonElement jsonElement = JsonParser.parseReader(reader);
+		// this.logger.debug("Parsed jsonElement: {}", jsonElement);
+
+		List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
+		// this.logger.debug("Expected responses: {}", responses);
+
+		boolean actualMatchesDocumented = isActualResponseMatchingDocumentedResponses(response, jsonElement, responses);
+		// this.logger.debug("Actual response matches documented responses: {}", actualMatchesDocumented);
+
+		boolean responseEmpty = isResponseEmpty(response, responses);
+		// this.logger.debug("Response is empty: {}", responseEmpty);
+
+		boolean notTypicalDocumentedResponseCode = isNotTypicalDocumentedResponseCode(response);
+		// this.logger.debug("Response has a non-typical documented response code: {}", notTypicalDocumentedResponseCode);
+
+		boolean emptyArray = isEmptyArray(jsonElement);
+		// this.logger.debug("Json element is an empty array: {}", emptyArray);
+
+		return actualMatchesDocumented || responseEmpty || notTypicalDocumentedResponseCode || emptyArray;
+	}
+
 
     private boolean isEmptyArray(JsonElement jsonElement) {
         return jsonElement.isJsonArray() && isEmptyBody(jsonElement.toString());
     }
 
     private List<String> getExpectedResponsesByResponseCode(CatsResponse response, FuzzingData data) {
+		// this.logger.debug("getExpectedResponsesByResponseCode - response: {}", data.getResponses());
         List<String> responses = data.getResponses().get(response.responseCodeAsString());
 
         if (CollectionUtils.isEmpty(responses)) {
@@ -529,9 +548,36 @@ public class TestCaseListener {
     }
 
     private boolean isActualResponseMatchingDocumentedResponses(CatsResponse response, JsonElement jsonElement, List<String> responses) {
-        return responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement))
-                && ((isErrorResponse(response) && isFuzzedFieldPresentInResponse(response)) || isNotErrorResponse(response));
-    }
+		// this.logger.debug("isActualResponseMatchingDocumentedResponses - response: {}, jsonElement: {}, responses: {}", response, jsonElement, responses);
+
+		if (responses == null) {
+			// this.logger.debug("Responses are null, returning false");
+			return false;
+		}
+
+		boolean anyMatch = responses.stream().anyMatch(responseSchema -> {
+			boolean matches = matchesElement(responseSchema, jsonElement);
+			// this.logger.debug("Checking if responseSchema {} matches jsonElement {}: {}", responseSchema, jsonElement, matches);
+			return matches;
+		});
+
+		// this.logger.debug("Any match found in responses: {}", anyMatch);
+
+		if (!anyMatch) {
+			return false;
+		}
+
+		boolean isErrorResponse = isErrorResponse(response);
+		// this.logger.debug("Is error response: {}", isErrorResponse);
+
+		if (isErrorResponse) {
+			boolean isFuzzedFieldPresentInResponse = isFuzzedFieldPresentInResponse(response);
+			// this.logger.debug("Is fuzzed field present in response: {}", isFuzzedFieldPresentInResponse);
+			return isFuzzedFieldPresentInResponse;
+		}
+
+		return true;
+	}
 
     private boolean isErrorResponse(CatsResponse response) {
         return ResponseCodeFamily.FOURXX.matchesAllowedResponseCodes(response.responseCodeAsString());
