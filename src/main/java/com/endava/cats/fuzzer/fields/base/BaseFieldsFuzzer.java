@@ -88,8 +88,8 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             testCaseListener.addExpectedResult(logger, "Should return [{}]", expectedResponseCodeBasedOnConstraints.asString());
 
             CatsResponse response = serviceCaller.call(serviceData);
-            ResponseCodeFamily expectedResponseCode = testCaseListener.getExpectedResponseCodeConfigured(this, expectedResponseCodeBasedOnConstraints);
-            testCaseListener.reportResult(logger, data, response, expectedResponseCode);
+
+            testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints);
         } else {
             logger.debug("Fuzzing not possible!");
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);

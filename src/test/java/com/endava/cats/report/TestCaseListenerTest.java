@@ -724,25 +724,9 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void shouldReturnResultCodeFromFuzzersConfigFile() {
-        catsGlobalContext.getFuzzersConfiguration().put("Dummy.expectedResponseCode", "999");
-        String resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfigured(new DummyFuzzer());
-
-        Assertions.assertThat(resultCodeFromFile).isEqualTo("999");
-    }
-
-    @Test
-    void shouldReturnNullResponseCodeWhenConfigNotFound() {
-        catsGlobalContext.getFuzzersConfiguration().put("AnotherDummy.expectedResponseCode", "999");
-        String resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfigured(new DummyFuzzer());
-
-        Assertions.assertThat(resultCodeFromFile).isNull();
-    }
-
-    @Test
     void shouldReturnResultCodeFamilyFromFuzzersConfigFile() {
         catsGlobalContext.getFuzzersConfiguration().put("Dummy.expectedResponseCode", "4XX");
-        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfigured(new DummyFuzzer(), ResponseCodeFamily.TWOXX);
+        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfiguredFor("Dummy", ResponseCodeFamily.TWOXX);
 
         Assertions.assertThat(resultCodeFromFile).isEqualTo(ResponseCodeFamily.FOURXX_GENERIC);
     }
@@ -750,8 +734,8 @@ class TestCaseListenerTest {
     @Test
     void shouldReturnDefaultResponseCodeFamilyWhenConfigNotFound() {
         catsGlobalContext.getFuzzersConfiguration().put("AnotherDummy.expectedResponseCode", "999");
-        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfigured(new DummyFuzzer(), ResponseCodeFamily.TWOXX);
-        
+        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfiguredFor("Dummy", ResponseCodeFamily.TWOXX);
+
         Assertions.assertThat(resultCodeFromFile).isEqualTo(ResponseCodeFamily.TWOXX);
     }
 
@@ -765,18 +749,5 @@ class TestCaseListenerTest {
             testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
         });
         MDC.put(TestCaseListener.ID, "1");
-    }
-
-    class DummyFuzzer implements Fuzzer {
-
-        @Override
-        public void fuzz(FuzzingData data) {
-            //nothing
-        }
-
-        @Override
-        public String description() {
-            return null;
-        }
     }
 }
