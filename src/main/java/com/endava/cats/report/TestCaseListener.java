@@ -13,6 +13,7 @@ import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
+import com.google.common.net.MediaType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -383,7 +384,6 @@ public class TestCaseListener {
         this.reportInfo(logger, message, params);
     }
 
-
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
         this.reportResult(logger, data, response, expectedResultCode, true);
     }
@@ -437,7 +437,8 @@ public class TestCaseListener {
         return (data.getResponseContentTypes().get(response.responseCodeAsString()) == null && response.getResponseContentType() == null) ||
                 data.getContentTypesByResponseCode(response.responseCodeAsString())
                         .stream()
-                        .anyMatch(contentType -> contentType.equalsIgnoreCase(response.getResponseContentType()));
+                        .anyMatch(contentType -> MediaType.parse(contentType).withoutParameters().is(MediaType.parse(response.getResponseContentType()).withoutParameters()) ||
+                                MediaType.parse(response.getResponseContentType()).withoutParameters().is(MediaType.parse(contentType).withoutParameters()));
     }
 
     private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
@@ -473,6 +474,35 @@ public class TestCaseListener {
 
     public boolean isFieldNotADiscriminator(String fuzzedField) {
         return globalContext.getDiscriminators().stream().noneMatch(discriminator -> fuzzedField.endsWith(discriminator.getPropertyName()));
+    }
+
+    /**
+     * Returns the expected HTTP response code from the --fuzzConfig file
+     *
+     * @param fuzzer the name of the fuzzer
+     * @return the value of the property if found or null otherwise
+     */
+    public String getExpectedResponseCodeConfigured(Fuzzer fuzzer) {
+        String keyToLookup = ConsoleUtils.removeTrimSanitize(fuzzer.getClass().getSimpleName()) + "." + "expectedResponseCode";
+        String valueFound = globalContext.getExpectedResponseCodeConfigured(keyToLookup);
+        logger.debug("Configuration key {}, value {}", keyToLookup, valueFound);
+
+        return valueFound;
+    }
+
+    /**
+     * Returns the expected HTTP response code from the --fuzzConfig file
+     *
+     * @param fuzzer       the name of the fuzzer
+     * @param defaultValue default value when property is not found
+     * @return the value of the property if found or null otherwise
+     */
+    public ResponseCodeFamily getExpectedResponseCodeConfigured(Fuzzer fuzzer, ResponseCodeFamily defaultValue) {
+        String keyToLookup = ConsoleUtils.removeTrimSanitize(fuzzer.getClass().getSimpleName()) + "." + "expectedResponseCode";
+        String valueFound = globalContext.getExpectedResponseCodeConfigured(keyToLookup);
+        logger.debug("Configuration key {}, value {}", keyToLookup, valueFound);
+
+        return valueFound != null ? ResponseCodeFamily.from(valueFound) : defaultValue;
     }
 
     private void recordResult(String message, Object[] params, String result, PrettyLogger logger) {

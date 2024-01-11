@@ -54,7 +54,8 @@ public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
                 .collect(Collectors.toCollection(TreeSet::new));
 
         if (notReturnedHeaders.isEmpty()) {
-            testCaseListener.reportResult(logger, fuzzingData, catsResponse, ResponseCodeFamily.TWOXX);
+            ResponseCodeFamily expectedResponseCode = testCaseListener.getExpectedResponseCodeConfigured(this, ResponseCodeFamily.TWOXX);
+            testCaseListener.reportResult(logger, fuzzingData, catsResponse, expectedResponseCode);
         } else {
             testCaseListener.reportResultError(logger, fuzzingData, "Missing response headers",
                     "The following response headers defined in the contract are missing: {}", notReturnedHeaders.toArray());

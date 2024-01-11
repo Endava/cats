@@ -250,6 +250,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         globalContext.getSchemaMap().putAll(allSchemasFromOpenApi);
         globalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
         globalContext.getExampleMap().putAll(OpenApiUtils.getExamples(openAPI));
+        globalContext.getFuzzersConfiguration().putAll(filesArguments.getFuzzConfigProperties());
+
+        logger.debug("Fuzzers custom configuration: {}", globalContext.getFuzzersConfiguration());
         logger.debug("Schemas: {}", allSchemasFromOpenApi.keySet());
     }
 
