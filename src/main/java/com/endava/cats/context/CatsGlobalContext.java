@@ -39,15 +39,4 @@ public class CatsGlobalContext {
     public String getExpectedResponseCodeConfigured(String fuzzer) {
         return this.fuzzersConfiguration.getProperty(fuzzer);
     }
-
-    /**
-     * Returns the expected HTTP response code from the --fuzzConfig file
-     *
-     * @param fuzzer       the name of the fuzzer
-     * @param defaultValue a default value if the config is not found
-     * @return the value of the property if found or null otherwise
-     */
-    public String getExpectedResponseCodeConfigured(String fuzzer, String defaultValue) {
-        return this.fuzzersConfiguration.getProperty(fuzzer, defaultValue);
-    }
 }
