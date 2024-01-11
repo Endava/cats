@@ -14,6 +14,7 @@ import picocli.CommandLine;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * Holds all arguments related to different files used by CATS like: headers, reference data, etc.
@@ -37,9 +39,16 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> refData;
 
     @Getter
+    private Properties fuzzConfigProperties;
+    @Getter
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     @Getter
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
+
+    @CommandLine.Option(names = {"--fuzzersConfig", "--fc"},
+            description = "A properties file with Fuzzer configuration that changes default behaviour. Configuration keys are prefixed with the fully qualified Fuzzer name")
+    @Setter
+    private File fuzzersConfig;
 
     @CommandLine.Option(names = {"--urlParams"},
             description = "A comma separated list of @|bold name:value|@ pairs of parameters to be replaced inside the URLs", split = ",")
@@ -124,6 +133,7 @@ public class FilesArguments {
         loadURLParams();
         loadHeaders();
         loadQueryParams();
+        loadFuzzConfigProperties();
     }
 
     /**
@@ -277,6 +287,19 @@ public class FilesArguments {
      */
     public Map<String, Object> getAdditionalQueryParamsForPath(String path) {
         return mergePathAndAll(queryParams, path);
+    }
+
+    public void loadFuzzConfigProperties() throws IOException {
+        fuzzConfigProperties = new Properties();
+        if (fuzzersConfig != null) {
+            log.config(Ansi.ansi().bold().a("Fuzzers custom configuration: {}").reset().toString(),
+                    Ansi.ansi().fg(Ansi.Color.BLUE).a(fuzzersConfig));
+            try (InputStream stream = new FileInputStream(fuzzersConfig)) {
+                fuzzConfigProperties.load(stream);
+            }
+        } else {
+            log.debug("No Fuzzer custom configuration provided!");
+        }
     }
 
 

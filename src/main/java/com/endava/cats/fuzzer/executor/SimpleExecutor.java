@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.executor;
 
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -39,7 +40,11 @@ public class SimpleExecutor {
     public void execute(SimpleExecutorContext context) {
         testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> {
             testCaseListener.addScenario(context.getLogger(), context.getScenario());
-            testCaseListener.addExpectedResult(context.getLogger(), "Should return {}" + context.getExpectedResult(), context.getExpectedSpecificResponseCode());
+            String expectedResultCodeFromUser = testCaseListener.getExpectedResponseCodeConfigured(context.getFuzzer());
+            String expectedResultCodeAsString = expectedResultCodeFromUser != null ? expectedResultCodeFromUser : context.getExpectedSpecificResponseCode();
+            ResponseCodeFamily expectedResponseCode = testCaseListener.getExpectedResponseCodeConfigured(context.getFuzzer(), context.getExpectedResponseCode());
+
+            testCaseListener.addExpectedResult(context.getLogger(), "Should return {}" + context.getExpectedResult(), expectedResultCodeAsString);
 
             CatsResponse response = serviceCaller.call(
                     ServiceData.builder()
@@ -58,7 +63,7 @@ public class SimpleExecutor {
             if (context.getResponseProcessor() != null) {
                 context.getResponseProcessor().accept(response, context.getFuzzingData());
             } else {
-                testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult());
+                testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode, context.isMatchResponseResult());
             }
         });
     }

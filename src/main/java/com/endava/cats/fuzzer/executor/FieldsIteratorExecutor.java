@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.executor;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -83,9 +84,11 @@ public class FieldsIteratorExecutor {
         FuzzingStrategy strategy = context.getFuzzingStrategy().withData(currentValue);
         context.getLogger().debug("Applying [{}] for field [{}]", strategy, fuzzedField);
 
+        ResponseCodeFamily expectedResponseCodeFamily = testCaseListener.getExpectedResponseCodeConfigured(context.getFuzzer(), context.getExpectedResponseCode());
+
         testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current field [{}] [{}]", fuzzedField, strategy);
         testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
-                context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a valid response");
+                expectedResponseCodeFamily != null ? expectedResponseCodeFamily.asString() : "a valid response");
 
         FuzzingResult fuzzingResult = this.getFuzzingResult(context, fuzzedField, strategy);
 
@@ -101,8 +104,8 @@ public class FieldsIteratorExecutor {
                         .replaceRefData(context.isReplaceRefData())
                         .build());
 
-        if (context.getExpectedResponseCode() != null) {
-            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
+        if (expectedResponseCodeFamily != null) {
+            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCodeFamily);
         } else if (!matchArguments.isAnyMatchArgumentSupplied() || matchArguments.isMatchResponse(response)) {
             testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
         } else {

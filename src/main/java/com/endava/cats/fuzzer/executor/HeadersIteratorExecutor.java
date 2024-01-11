@@ -21,7 +21,6 @@ public class HeadersIteratorExecutor {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final MatchArguments matchArguments;
-
     private final FilterArguments filterArguments;
 
     public HeadersIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, MatchArguments ma, FilterArguments ia) {
@@ -48,7 +47,8 @@ public class HeadersIteratorExecutor {
                     try {
                         testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> {
                             boolean isRequiredHeaderFuzzed = clonedHeaders.stream().filter(CatsHeader::isRequired).toList().contains(header);
-                            ResponseCodeFamily expectedResponseCode = this.getExpectedResultCode(isRequiredHeaderFuzzed, context);
+                            ResponseCodeFamily expectedResponseCodeFromContext = this.getExpectedResultCode(isRequiredHeaderFuzzed, context);
+                            ResponseCodeFamily expectedResponseCode = testCaseListener.getExpectedResponseCodeConfigured(context.getFuzzer(), expectedResponseCodeFromContext);
 
                             testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current header [{}] [{}]", header.getName(), fuzzingStrategy);
                             testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]", expectedResponseCode != null ? expectedResponseCode.asString() : "a valid response");
