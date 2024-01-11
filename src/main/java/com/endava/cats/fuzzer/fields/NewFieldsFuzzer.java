@@ -1,14 +1,14 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
@@ -17,6 +17,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+
 import jakarta.inject.Singleton;
 
 import static com.endava.cats.util.CatsDSLWords.NEW_FIELD;
@@ -49,8 +50,6 @@ public class NewFieldsFuzzer implements Fuzzer {
         if (HttpMethod.requiresBody(data.getMethod())) {
             expectedResultCode = ResponseCodeFamily.FOURXX;
         }
-        expectedResultCode = testCaseListener.getExpectedResponseCodeConfigured(this, expectedResultCode);
-
         testCaseListener.addScenario(logger, "Add new field inside the request: name [{}], value [{}]. All other details are similar to a happy flow", NEW_FIELD, NEW_FIELD);
         testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", expectedResultCode.asString());
 

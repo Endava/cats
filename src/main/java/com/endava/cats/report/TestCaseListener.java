@@ -389,6 +389,7 @@ public class TestCaseListener {
     }
 
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema) {
+        expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), expectedResultCode);
         boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
@@ -479,26 +480,12 @@ public class TestCaseListener {
     /**
      * Returns the expected HTTP response code from the --fuzzConfig file
      *
-     * @param fuzzer the name of the fuzzer
-     * @return the value of the property if found or null otherwise
-     */
-    public String getExpectedResponseCodeConfigured(Fuzzer fuzzer) {
-        String keyToLookup = ConsoleUtils.removeTrimSanitize(fuzzer.getClass().getSimpleName()) + "." + "expectedResponseCode";
-        String valueFound = globalContext.getExpectedResponseCodeConfigured(keyToLookup);
-        logger.debug("Configuration key {}, value {}", keyToLookup, valueFound);
-
-        return valueFound;
-    }
-
-    /**
-     * Returns the expected HTTP response code from the --fuzzConfig file
-     *
      * @param fuzzer       the name of the fuzzer
      * @param defaultValue default value when property is not found
      * @return the value of the property if found or null otherwise
      */
-    public ResponseCodeFamily getExpectedResponseCodeConfigured(Fuzzer fuzzer, ResponseCodeFamily defaultValue) {
-        String keyToLookup = ConsoleUtils.removeTrimSanitize(fuzzer.getClass().getSimpleName()) + "." + "expectedResponseCode";
+    public ResponseCodeFamily getExpectedResponseCodeConfiguredFor(String fuzzer, ResponseCodeFamily defaultValue) {
+        String keyToLookup = fuzzer + "." + "expectedResponseCode";
         String valueFound = globalContext.getExpectedResponseCodeConfigured(keyToLookup);
         logger.debug("Configuration key {}, value {}", keyToLookup, valueFound);
 

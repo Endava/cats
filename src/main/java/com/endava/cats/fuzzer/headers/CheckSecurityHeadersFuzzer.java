@@ -81,8 +81,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
             testCaseListener.reportResultError(log, data, "Missing recommended security headers",
                     "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(pair -> pair.getKey() + "=" + pair.getValue()).collect(Collectors.toSet()));
         } else {
-            ResponseCodeFamily expectedResponseCode = testCaseListener.getExpectedResponseCodeConfigured(this, ResponseCodeFamily.TWOXX);
-            testCaseListener.reportResult(log, data, response, expectedResponseCode);
+            testCaseListener.reportResult(log, data, response, ResponseCodeFamily.TWOXX);
         }
     }
 
