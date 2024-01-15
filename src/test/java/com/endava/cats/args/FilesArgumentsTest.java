@@ -15,6 +15,18 @@ import java.util.Map;
 class FilesArgumentsTest {
 
     @Test
+    void shouldLoadFuzzConfig() throws IOException {
+        FilesArguments filesArguments = new FilesArguments();
+        ReflectionTestUtils.setField(filesArguments, "fuzzersConfig", new File("src/test/resources/fuzzConfig.properties"));
+        filesArguments.loadFuzzConfigProperties();
+        String existingProperty = filesArguments.getFuzzConfigProperties().getProperty("DummyAcceptHeaders.expectedResponseCode");
+        String nonExistingProperty = filesArguments.getFuzzConfigProperties().getProperty("DummyAcceptHeaders.expectedScenario");
+
+        org.assertj.core.api.Assertions.assertThat(existingProperty).isEqualTo("403");
+        org.assertj.core.api.Assertions.assertThat(nonExistingProperty).isNull();
+    }
+
+    @Test
     void shouldReturnSameUrlWhenUrlParamsEmpty() {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "params", Collections.emptyList());
@@ -163,5 +175,22 @@ class FilesArgumentsTest {
         filesArguments.loadURLParams();
         List<String> urlParams = filesArguments.getUrlParamsList();
         org.assertj.core.api.Assertions.assertThat(urlParams).containsOnly("param3:value3", "param4:value4");
+    }
+
+    @Test
+    void shouldReturnEmptyUrlParamValueWhenNotSupplied() {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.loadURLParams();
+        String urlParamValue = filesArguments.getUrlParam("myParam");
+        org.assertj.core.api.Assertions.assertThat(urlParamValue).isEmpty();
+    }
+
+    @Test
+    void shouldReturnUrlParamValue() {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setUrlParamsArguments(Map.of("param3", "value3", "param4", "value4"));
+        filesArguments.loadURLParams();
+        String urlParamValue = filesArguments.getUrlParam("param3");
+        org.assertj.core.api.Assertions.assertThat(urlParamValue).isEqualTo("value3");
     }
 }
