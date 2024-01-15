@@ -438,8 +438,14 @@ public class TestCaseListener {
         return (data.getResponseContentTypes().get(response.responseCodeAsString()) == null && response.getResponseContentType() == null) ||
                 data.getContentTypesByResponseCode(response.responseCodeAsString())
                         .stream()
-                        .anyMatch(contentType -> MediaType.parse(contentType).withoutParameters().is(MediaType.parse(response.getResponseContentType()).withoutParameters()) ||
-                                MediaType.parse(response.getResponseContentType()).withoutParameters().is(MediaType.parse(contentType).withoutParameters()));
+                        .anyMatch(contentType -> areContentTypesEquivalent(response.getResponseContentType(), contentType));
+    }
+
+    static boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {
+        MediaType firstMediaType = MediaType.parse(firstContentType).withoutParameters();
+        MediaType secondMediaType = MediaType.parse(secondContentType).withoutParameters();
+        return firstMediaType.is(secondMediaType) || secondMediaType.is(firstMediaType) || (firstMediaType.type().equalsIgnoreCase(secondMediaType.type()) &&
+                ((firstMediaType.subtype().endsWith(secondMediaType.subtype()) || secondMediaType.subtype().endsWith(firstMediaType.subtype()))));
     }
 
     private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
