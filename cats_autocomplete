@@ -197,7 +197,7 @@ function _picocli_cats() {
 
   local commands="generate-completion help list replay run fuzz lint info stats"
   local flag_opts="-A --checkHeaders -F --checkFields -T --checkHttp -C --checkContract --includeContract --includeLinters -W --includeWhitespaces -E --includeEmojis -U --includeControlChars --createRefData -d --dryRun --skipDeprecatedOperations --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox --useExamples --rfc7396 -D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color -h --help -V --version"
-  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --urlParams --headers -H --queryParams --refData --functionalFuzzerFile --securityFuzzerFile -f --fuzzers -p --paths --skipPaths --skipFuzzers --httpMethods --fieldTypes --skipFieldTypes --fieldFormats --skipFieldFormats --skipFields --skipHeaders -t --tags --skipTags -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
+  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --fuzzersConfig --fc --urlParams -P --headers -H --queryParams -Q --refData -R --functionalFuzzerFile --securityFuzzerFile -f --fuzzers -p --paths --skipPaths --skipFuzzers --httpMethods --fieldTypes --skipFieldTypes --fieldFormats --skipFieldFormats --skipFields --skipHeaders -t --tags --skipTags -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT") # --httpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
   local skipFieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --skipFieldTypes values
@@ -257,7 +257,16 @@ function _picocli_cats() {
     --authRefreshInterval|--ari)
       return
       ;;
+    --fuzzersConfig|--fc)
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
     --urlParams)
+      return
+      ;;
+    -P)
       return
       ;;
     --headers)
@@ -275,11 +284,17 @@ function _picocli_cats() {
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
       ;;
+    -Q)
+      return
+      ;;
     --refData)
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
       return $?
+      ;;
+    -R)
+      return
       ;;
     --functionalFuzzerFile)
       local IFS=$'\n'
@@ -997,7 +1012,7 @@ function _picocli_cats_stats() {
   local commands=""
   local flag_opts="-j --json -d --detailed -h --help -V --version"
   local arg_opts="-c --contract -s --skip"
-  local skip_option_args=("TITLE" "DESCRIPTION" "VERSION" "DOCS" "OPENAPI_VERSION" "PATHS" "OPERATIONS" "DEPRECATED_OPERATIONS" "DEPRECATED_HEADERS" "SERVERS" "SECURITY_SCHEMES" "TAGS" "VERSIONING" "CONSUMES" "PRODUCES" "HTTP_METHODS" "RATE_LIMIT" "TRACING" "RESPONSE_CODES" "EXTENSIONS" "PAGINATION" "MONITORING") # --skip values
+  local skip_option_args=("TITLE" "DESCRIPTION" "VERSION" "DOCS" "OPENAPI_VERSION" "PATHS" "OPERATIONS" "DEPRECATED_OPERATIONS" "DEPRECATED_HEADERS" "SERVERS" "SECURITY_SCHEMES" "TAGS" "VERSIONING" "CONSUMES" "PRODUCES" "HTTP_METHODS" "RATE_LIMIT" "TRACING" "IDEMPOTENCY" "AUTHENTICATION" "RESPONSE_CODES" "EXTENSIONS" "PAGINATION" "MONITORING") # --skip values
 
   type compopt &>/dev/null && compopt +o default
 
