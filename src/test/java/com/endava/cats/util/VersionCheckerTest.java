@@ -77,4 +77,13 @@ class VersionCheckerTest {
         Assertions.assertThat(result.getVersion()).isEqualTo("not_valid");
         Assertions.assertThat(result.getReleaseNotes()).isNull();
     }
+
+    @Test
+    void shouldBeSameVersion() {
+        String version1 = "1.1.1";
+        String version2 = "1.1.1";
+
+        int result = VersionChecker.compare(version1, version2);
+        Assertions.assertThat(result).isEqualTo(0);
+    }
 }
