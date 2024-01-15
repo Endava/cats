@@ -739,6 +739,15 @@ class TestCaseListenerTest {
         Assertions.assertThat(resultCodeFromFile).isEqualTo(ResponseCodeFamily.TWOXX);
     }
 
+    @ParameterizedTest
+    @CsvSource({"application/json,application/v1+json,true", "application/v2+json,application/v3+json,false", "application/v3+json,application/json,true",
+            "application/vnd+json,application/json,true", "application/json,application/xml,false", "application/json; charset=utf,application/json; charset=iso,true",
+            "*/*,application/json,true"})
+    void shouldCheckContentTypesEquivalence(String firstContentType, String secondContentType, boolean expected) {
+        boolean result = TestCaseListener.areContentTypesEquivalent(firstContentType, secondContentType);
+        Assertions.assertThat(result).isEqualTo(expected);
+    }
+
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build) {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addScenario(logger, "Given a {} field", "string");

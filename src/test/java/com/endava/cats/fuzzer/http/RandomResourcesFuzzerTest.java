@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -23,6 +24,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.argThat;
+
 @QuarkusTest
 class RandomResourcesFuzzerTest {
 
@@ -30,6 +33,7 @@ class RandomResourcesFuzzerTest {
     private CatsUtil catsUtil;
 
     private ServiceCaller serviceCaller;
+    private FilesArguments filesArguments;
     @InjectSpy
     private TestCaseListener testCaseListener;
 
@@ -38,8 +42,9 @@ class RandomResourcesFuzzerTest {
     @BeforeEach
     public void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        randomResourcesFuzzer = new RandomResourcesFuzzer(catsUtil, simpleExecutor);
+        randomResourcesFuzzer = new RandomResourcesFuzzer(catsUtil, simpleExecutor, filesArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -48,6 +53,21 @@ class RandomResourcesFuzzerTest {
         randomResourcesFuzzer.fuzz(FuzzingData.builder().path("/test").build());
 
         Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
+    void shouldNotReplaceUrlParams() {
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}/another/{urlParam}").
+                reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"id\":\"d46df8b7-7d69-4bb4-b63b-88c3ebe0e1b8\"}");
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(404).build();
+
+        Mockito.when(filesArguments.getUrlParam(Mockito.eq("urlParam"))).thenReturn("urlParamValue");
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+        Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+        randomResourcesFuzzer.fuzz(data);
+        Mockito.verify(serviceCaller, Mockito.times(10)).call(argThat(serviceData -> !serviceData.getPayload().contains("urlParamValue")));
+        Mockito.verify(testCaseListener, Mockito.times(10)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX_NF), Mockito.anyBoolean());
     }
 
     @ParameterizedTest

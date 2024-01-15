@@ -22,6 +22,8 @@ public class ServiceData {
     private final String contentType;
     @Builder.Default
     private final boolean replaceRefData = true;
+    @Builder.Default
+    private final boolean replaceUrlParams = true;
     /**
      * Set to true if headers supplied by the user will be added or false otherwise.
      * There are Fuzzers which needs this level of control.

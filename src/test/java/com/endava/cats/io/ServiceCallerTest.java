@@ -5,7 +5,6 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
-import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
@@ -16,15 +15,17 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import jakarta.inject.Inject;
 import java.io.File;
 import java.net.Proxy;
 import java.util.ArrayDeque;
@@ -62,6 +63,7 @@ class ServiceCallerTest {
         wireMockServer.stubFor(WireMock.put("/pets").willReturn(WireMock.aResponse().withBody("{'result':'OK'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1?limit=2").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
+        wireMockServer.stubFor(WireMock.get("/pets/999?id=1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.delete("/pets/1").willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.head(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.trace(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
@@ -83,7 +85,7 @@ class ServiceCallerTest {
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("src/test/resources/refFields.yml"));
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/headers.yml"));
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("src/test/resources/queryParamsEmpty.yml"));
-        ReflectionTestUtils.setField(filesArguments, "params", List.of("id=1", "test=2"));
+        ReflectionTestUtils.setField(filesArguments, "params", List.of("gid:1", "test:2"));
         ReflectionTestUtils.setField(authArguments, "sslKeystore", null);
         ReflectionTestUtils.setField(authArguments, "proxyHost", null);
         ReflectionTestUtils.setField(authArguments, "proxyPort", 0);
@@ -446,5 +448,19 @@ class ServiceCallerTest {
 
         Map<String, String> cachedPost = serviceCaller.getPathParamFromCorrespondingPostIfDelete(data);
         Assertions.assertThat(cachedPost).containsEntry("testId", "23");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"999,true,/pets/999?id=1", "1,false,/pets/1"})
+    void shouldReplaceUrlParams(String id, boolean replaceUrlParams, String expectedUrl) {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+        ReflectionTestUtils.setField(filesArguments, "params", List.of("id:" + id, "test:2"));
+
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
+                .httpMethod(HttpMethod.GET).headers(Collections.singleton(CatsHeader.builder().name("header").value("header")
+                        .build())).contentType("application/json").replaceUrlParams(replaceUrlParams).build());
+
+        wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo(expectedUrl)));
     }
 }

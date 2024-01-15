@@ -36,6 +36,12 @@ public class SimpleExecutor {
         this.serviceCaller = serviceCaller;
     }
 
+    /**
+     * Executes the logic considering the given context.
+     * This method will do the actual HTTP call to the service and match the response against expected behaviour.
+     *
+     * @param context the executor context
+     */
     public void execute(SimpleExecutorContext context) {
         testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> {
             testCaseListener.addScenario(context.getLogger(), context.getScenario());
@@ -53,6 +59,7 @@ public class SimpleExecutor {
                             .replaceRefData(context.isReplaceRefData())
                             .skippedHeaders(context.getSkippedHeaders())
                             .addUserHeaders(context.isAddUserHeaders())
+                            .replaceUrlParams(context.isReplaceUrlParams())
                             .build());
 
             if (context.getResponseProcessor() != null) {
