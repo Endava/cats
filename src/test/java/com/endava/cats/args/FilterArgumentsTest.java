@@ -50,6 +50,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFuzzers", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "skipFields", Collections.emptyList());
+        ReflectionTestUtils.setField(filterArguments, "paths", Collections.emptyList());
 
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
@@ -293,6 +294,29 @@ class FilterArgumentsTest {
 
         List<String> filteredPaths = filterArguments.getPathsToRun(openAPI);
         Assertions.assertThat(filteredPaths).containsOnly("/path1", "/path2");
+    }
+
+    @Test
+    void shouldCachePathsToRun() {
+        Paths paths = new Paths();
+        paths.addPathItem("/path1", new PathItem());
+        paths.addPathItem("/path11", new PathItem());
+        paths.addPathItem("/path2", new PathItem());
+        ReflectionTestUtils.setField(filterArguments, "paths", List.of("/path1"));
+
+        OpenAPI openAPI = Mockito.mock(OpenAPI.class);
+        Mockito.when(openAPI.getPaths()).thenReturn(paths);
+
+        List<String> filteredPaths = filterArguments.getPathsToRun(openAPI);
+        Assertions.assertThat(filteredPaths).containsOnly("/path1");
+        ReflectionTestUtils.setField(filterArguments, "paths", List.of("/path1", "/path11", "/path2"));
+
+        List<String> secondTimeFilteredPaths = filterArguments.getPathsToRun(openAPI);
+        Assertions.assertThat(secondTimeFilteredPaths).containsOnly("/path1");
+
+        FilterArguments.PATHS_TO_INCLUDE.clear();
+        List<String> thirdTimeFilteredPaths = filterArguments.getPathsToRun(openAPI);
+        Assertions.assertThat(thirdTimeFilteredPaths).containsOnly("/path1", "/path11", "/path2");
     }
 
     @Test
