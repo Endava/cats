@@ -78,6 +78,12 @@ public class SimpleExecutorContext {
     boolean addUserHeaders = true;
 
     /**
+     * Whether to replace the path variables with the {@code --urlParams} supplied.
+     */
+    @Builder.Default
+    boolean replaceUrlParams = true;
+
+    /**
      * If populated, this will get appended after the "Should return XXX" text.
      */
     @Builder.Default

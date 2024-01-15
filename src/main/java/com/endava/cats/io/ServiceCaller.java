@@ -199,13 +199,7 @@ public class ServiceCaller {
 
         long startTime = System.currentTimeMillis();
         try {
-            String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
-
-            if (!HttpMethod.requiresBody(data.getHttpMethod())) {
-                url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
-                url = this.addUriParams(processedPayload, data, url);
-            }
-            url = this.addAdditionalQueryParams(url, data.getRelativePath());
+            String url = this.constructUrl(data, processedPayload);
 
             catsRequest.setUrl(url);
             this.recordRequest(catsRequest);
@@ -230,6 +224,30 @@ public class ServiceCaller {
                     .build(), data);
             throw new CatsException(e);
         }
+    }
+
+    /**
+     * Final url is being constructed by replacing path variables with the supplied urlParams or refData.
+     * It also adds supplied query params if any.
+     *
+     * @param data             the service data context
+     * @param processedPayload current payload
+     * @return a url with path params replaced by urlParams or refData + additional query params
+     */
+    private String constructUrl(ServiceData data, String processedPayload) {
+        if (!data.isReplaceUrlParams()) {
+            String actualUrl = this.replacePathParams(apiArguments.getServer() + data.getRelativePath(), processedPayload, data);
+            return this.replaceRemovedParams(actualUrl);
+        }
+
+        String url = this.getPathWithRefDataReplacedForHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
+
+        if (!HttpMethod.requiresBody(data.getHttpMethod())) {
+            url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
+            url = this.addUriParams(processedPayload, data, url);
+        }
+        url = this.addAdditionalQueryParams(url, data.getRelativePath());
+        return url;
     }
 
     String addAdditionalQueryParams(String startingUrl, String currentPath) {

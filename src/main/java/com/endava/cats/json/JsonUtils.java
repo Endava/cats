@@ -319,4 +319,19 @@ public abstract class JsonUtils {
 
         return false;
     }
+
+    /**
+     * Adds a new element inside the given JSON.
+     *
+     * @param initialPayload the initial JSON payload
+     * @param newKey         the new element key
+     * @param newValue       the new element value
+     * @return a new payload starting with the initial JSON as base and with the new key and value
+     */
+    public static String addNewElement(String initialPayload, String newKey, String newValue) {
+        DocumentContext documentContext = JsonPath.parse(initialPayload);
+        documentContext.put("$", newKey, newValue);
+
+        return documentContext.jsonString();
+    }
 }

@@ -238,6 +238,21 @@ public class FilesArguments {
     }
 
     /**
+     * Gets a specific value of the provided url param name provided through the {@code --urlParams} argument.
+     * If the url parameter is not found, an empty string will be returned.
+     *
+     * @param urlParamName the name of the URL parameter
+     * @return the value of the url parameter if provided or empty string otherwise
+     */
+    public String getUrlParam(String urlParamName) {
+        return this.getUrlParamsList().stream()
+                .filter(param -> param.startsWith(urlParamName))
+                .findFirst()
+                .orElse(":")
+                .split(":", 2)[1];
+    }
+
+    /**
      * Replaces the current URL parameters with the {@code --urlParams} arguments supplied.
      * The URL parameters are expected to be included in curly brackets.
      *
@@ -289,6 +304,11 @@ public class FilesArguments {
         return mergePathAndAll(queryParams, path);
     }
 
+    /**
+     * Loads the content of the file provided as argument in the {@code --fuzzersConfig} argument.
+     *
+     * @throws IOException if something goes wrong
+     */
     public void loadFuzzConfigProperties() throws IOException {
         fuzzConfigProperties = new Properties();
         if (fuzzersConfig != null) {

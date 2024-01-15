@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
@@ -16,6 +17,7 @@ import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -33,6 +35,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final CatsUtil catsUtil;
     private final SimpleExecutor simpleExecutor;
+    private final FilesArguments filesArguments;
     private static final int ITERATIONS = 10;
 
     /**
@@ -41,9 +44,10 @@ public class RandomResourcesFuzzer implements Fuzzer {
      * @param catsUtil       utility class
      * @param simpleExecutor executor used to run the fuzz logic
      */
-    public RandomResourcesFuzzer(CatsUtil catsUtil, SimpleExecutor simpleExecutor) {
+    public RandomResourcesFuzzer(CatsUtil catsUtil, SimpleExecutor simpleExecutor, FilesArguments filesArguments) {
         this.catsUtil = catsUtil;
         this.simpleExecutor = simpleExecutor;
+        this.filesArguments = filesArguments;
     }
 
     @Override
@@ -56,15 +60,22 @@ public class RandomResourcesFuzzer implements Fuzzer {
 
         if (!pathVariables.isEmpty()) {
             for (int i = 0; i < ITERATIONS; i++) {
-                String updatePayload = null;
+                String updatePayload = data.getPayload();
                 for (String pathVar : pathVariables) {
-                    Object existingValue = JsonUtils.getVariableFromJson(data.getPayload(), pathVar);
+                    String pathVarValueFromUrlParamsList = filesArguments.getUrlParam(pathVar);
+                    boolean isPathVarPassedAsUrlParam = StringUtils.isNotBlank(pathVarValueFromUrlParamsList);
+
+                    if (isPathVarPassedAsUrlParam) {
+                        // when path variable is passed as URL param it won't be fuzzed -> won't be part of the payload, so we add it
+                        updatePayload = JsonUtils.addNewElement(data.getPayload(), pathVar, pathVarValueFromUrlParamsList);
+                    }
+                    Object existingValue = JsonUtils.getVariableFromJson(updatePayload, pathVar);
                     if (JsonUtils.isNotSet(String.valueOf(existingValue))) {
                         throw new IllegalStateException("OpenAPI spec is missing definition for " + pathVar);
                     }
                     Object newValue = generateNewValue(existingValue);
 
-                    updatePayload = catsUtil.justReplaceField(data.getPayload(), pathVar, newValue).json();
+                    updatePayload = catsUtil.justReplaceField(updatePayload, pathVar, newValue).json();
 
                 }
                 payloads.add(updatePayload);
@@ -80,6 +91,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
                                 .scenario("Send random values in path variables")
                                 .fuzzer(this)
                                 .payload(payload)
+                                .replaceUrlParams(false)
                                 .build()
                 );
             }

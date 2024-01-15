@@ -47,6 +47,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      description: Returns a user based on a single ID, if the user does not have access to the pet
+      operationId: delete pet by id
+      deprecated: true
+      parameters:
+        - name: id
+          in: path
+          description: ID of pet to fetch
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 78
+        - name: page
+          in: query
+          description: Page number
+          required: true
+          schema:
+            type: string
+            example: test
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /pets:
     get:
       summary: List all pets
