@@ -182,4 +182,12 @@ class ResponseCodeFamilyTest {
     void shouldHave400501AsString() {
         Assertions.assertThat(ResponseCodeFamily.FOUR00_FIVE01.asString()).isEqualTo("400|501");
     }
+
+    @ParameterizedTest
+    @CsvSource({"true,were", "false,were not"})
+    void shouldReturnProperWordingBasedOnRequired(boolean required, String expected) {
+        Object[] result = ResponseCodeFamily.getExpectedWordingBasedOnRequiredFields(required);
+
+        Assertions.assertThat(result[1]).isEqualTo(expected);
+    }
 }
