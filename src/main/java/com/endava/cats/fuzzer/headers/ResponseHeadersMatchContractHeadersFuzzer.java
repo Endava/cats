@@ -14,6 +14,8 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -47,7 +49,8 @@ public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
     }
 
     private void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {
-        Set<String> expectedResponseHeaders = fuzzingData.getResponseHeaders().get(catsResponse.responseCodeAsString());
+        Set<String> expectedResponseHeaders = Optional.ofNullable(fuzzingData.getResponseHeaders().get(catsResponse.responseCodeAsString()))
+                .orElse(Collections.emptySet());
 
         Set<String> notReturnedHeaders = expectedResponseHeaders.stream()
                 .filter(name -> !catsResponse.containsHeader(name))
