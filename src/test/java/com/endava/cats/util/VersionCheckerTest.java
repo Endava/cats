@@ -84,6 +84,6 @@ class VersionCheckerTest {
         String version2 = "1.1.1";
 
         int result = VersionChecker.compare(version1, version2);
-        Assertions.assertThat(result).isEqualTo(0);
+        Assertions.assertThat(result).isZero();
     }
 }

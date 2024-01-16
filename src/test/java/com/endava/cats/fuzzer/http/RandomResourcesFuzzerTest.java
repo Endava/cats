@@ -62,7 +62,7 @@ class RandomResourcesFuzzerTest {
         ReflectionTestUtils.setField(data, "processedPayload", "{\"id\":\"d46df8b7-7d69-4bb4-b63b-88c3ebe0e1b8\"}");
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(404).build();
 
-        Mockito.when(filesArguments.getUrlParam(Mockito.eq("urlParam"))).thenReturn("urlParamValue");
+        Mockito.when(filesArguments.getUrlParam("urlParam")).thenReturn("urlParamValue");
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
         randomResourcesFuzzer.fuzz(data);
