@@ -73,6 +73,20 @@ import static org.fusesource.jansi.Ansi.ansi;
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
         resourceBundle = "version",
+        abbreviateSynopsis = true,
+        synopsisHeading = "Usage:%n",
+        customSynopsis = {"@|bold cats|@ @|fg(yellow) -c|@ <CONTRACT> @|fg(yellow) -s|@ <SERVER> [ADDITIONAL OPTIONS]",
+                "@|bold cats (list | replay | run | fuzz | lint | info | stats)|@ [OPTIONS]", "%n"},
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command",
+                "@|bold ERR|@:Where ERR is the number of errors reported by cats"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Run CATS in blackbox mode and only report 500 http error codes:",
+                "    cats -c openapi.yml -s http://localhost:8080 -b -k",
+                "", "  Run CATS with authentication headers from an environment variable called TOKEN:",
+                "    cats -c openapi.yml -s http://localhost:8080 -H API-Token=$$TOKEN"},
         subcommands = {
                 AutoComplete.GenerateCompletion.class,
                 CommandLine.HelpCommand.class,
@@ -376,4 +390,5 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public int getExitCode() {
         return exitCodeDueToErrors + executionStatisticsListener.getErrors();
     }
+
 }
