@@ -14,6 +14,7 @@ import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonArray;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -402,7 +403,11 @@ public class FuzzingDataFactory {
     }
 
     private List<String> generateSample(String reqSchemaName, OpenAPIModelGenerator generator) {
+        long t0 = System.currentTimeMillis();
+        logger.debug("Starting to generate example for schema name {}", reqSchemaName);
         Map<String, String> examples = generator.generate(reqSchemaName);
+        logger.debug("Finish generating example for schema name {}, took {}ms", reqSchemaName, (System.currentTimeMillis() - t0));
+
         if (examples.isEmpty()) {
             throw new IllegalArgumentException("Scheme is not declared: " + reqSchemaName);
         }
@@ -507,22 +512,25 @@ public class FuzzingDataFactory {
     private Map<String, Map<String, JsonElement>> getAnyOrOneOffElements(String jsonElementKey, JsonElement jsonElement) {
         Map<String, Map<String, JsonElement>> anyOrOneOfs = new HashMap<>();
         JsonObject jsonObject;
-        if (jsonElement.isJsonArray()) {
-            jsonObject = jsonElement.getAsJsonArray().get(0).getAsJsonObject();
-        } else {
+        if(jsonElement.isJsonObject()) {
             jsonObject = jsonElement.getAsJsonObject();
-        }
-        for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
-            if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull()) {
-                anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
-            } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
-                anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
-                        Map.of(elementEntry.getKey(), elementEntry.getValue()), this.mergeMapsBiFunction());
-            } else if (isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ONE_OF) || isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ANY_OF)) {
-                anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
-                        elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this.mergeMapsBiFunction());
-            } else if (isAnyOrOneOfInChildren(elementEntry.getValue(), ANY_OF, ONE_OF)) {
-                anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
+            for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
+                if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull()) {
+                    anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
+                } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
+                    anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
+                            Map.of(elementEntry.getKey(), elementEntry.getValue()), this.mergeMapsBiFunction());
+                } else if (isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ONE_OF) || isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ANY_OF)) {
+                    anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
+                            elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this.mergeMapsBiFunction());
+                } else if (isAnyOrOneOfInChildren(elementEntry.getValue(), ANY_OF, ONE_OF)) {
+                    anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
+                }
+            }
+        } else if (jsonElement.isJsonArray()) {
+            JsonArray ja = jsonElement.getAsJsonArray();
+            if (!ja.isEmpty() && !ja.get(0).isJsonNull() && !ja.get(0).isJsonPrimitive()) {
+                getAnyOrOneOffElements(jsonElementKey, ja.get(0));
             }
         }
 
