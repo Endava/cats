@@ -51,7 +51,8 @@ public class HeadersIteratorExecutor {
                             ResponseCodeFamily expectedResponseCode = this.getExpectedResultCode(isRequiredHeaderFuzzed, context);
 
                             testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current header [{}] [{}]", header.getName(), fuzzingStrategy);
-                            testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]", expectedResponseCode != null ? expectedResponseCode.asString() : "a valid response");
+                            testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
+                                    expectedResponseCode != null ? expectedResponseCode.asString() : "a response that doesn't match" + matchArguments.getMatchString());
 
                             ServiceData serviceData = ServiceData.builder()
                                     .relativePath(context.getFuzzingData().getPath())
@@ -80,7 +81,7 @@ public class HeadersIteratorExecutor {
         if (expectedResponseCode != null) {
             testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode, context.isMatchResponseSchema());
         } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
-            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
+            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Response matches arguments", "Response matches" + matchArguments.getMatchString());
         } else {
             testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
         }

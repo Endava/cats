@@ -78,21 +78,21 @@ public class MatchArguments {
     public String getMatchString() {
         StringBuilder builder = new StringBuilder();
         if (!this.getMatchResponseCodes().isEmpty()) {
-            builder.append(", match the following response codes: ").append(this.getMatchResponseCodes());
+            builder.append(", response codes: ").append(this.getMatchResponseCodes());
         }
         if (this.matchResponseRegex != null) {
-            builder.append(", match the regex: ").append(this.matchResponseRegex);
+            builder.append(", regex: ").append(this.matchResponseRegex);
         }
-        if (!this.getMatchResponseLines().isEmpty()) {
-            builder.append(", match the number of lines: ").append(this.getMatchResponseLines());
+        if (this.matchResponseLines != null) {
+            builder.append(", number of lines: ").append(this.getMatchResponseLines());
         }
-        if (!this.getMatchResponseWords().isEmpty()) {
-            builder.append(", match the number of words: ").append(this.getMatchResponseWords());
+        if (this.matchResponseWords != null) {
+            builder.append(", number of words: ").append(this.getMatchResponseWords());
         }
-        if (!this.getMatchResponseSizes().isEmpty()) {
-            builder.append(", match the response sizes of: ").append(this.getMatchResponseSizes());
+        if (this.matchResponseSizes != null) {
+            builder.append(", response sizes: ").append(this.getMatchResponseSizes());
         }
 
-        return StringUtils.stripStart(",", builder.toString());
+        return StringUtils.stripStart(builder.toString(), ",");
     }
 }
