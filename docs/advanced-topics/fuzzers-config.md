@@ -2,6 +2,7 @@
 sidebar_position: 7
 description: Customizing the Default Expected HTTP Response Code for Fuzzers
 ---
+# Customizing the Default Expected HTTP Response Code for Fuzzers
 
 When you explore the [Fuzzers](https://endava.github.io/cats/docs/fuzzers/) page, you'll notice that each fuzzer is associated 
 with an expected HTTP response code. 
