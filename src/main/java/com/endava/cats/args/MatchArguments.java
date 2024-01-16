@@ -2,14 +2,15 @@ package com.endava.cats.args;
 
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
+import jakarta.inject.Singleton;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
 
-import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Singleton
 @Getter
@@ -33,7 +34,6 @@ public class MatchArguments {
     @CommandLine.Option(names = {"--matchResponseRegex", "--mr"},
             description = "A regex that will match against the response that will be matched as @|bold,underline error|@. All other response body matches will be ignored from the final report. If provided, all Contract Fuzzers will be skipped")
     private String matchResponseRegex;
-
 
     public boolean isAnyMatchArgumentSupplied() {
         return matchResponseCodes != null || matchResponseSizes != null
@@ -59,7 +59,8 @@ public class MatchArguments {
     }
 
     public boolean isMatchedResponseRegex(String body) {
-        return body.matches(Optional.ofNullable(matchResponseRegex).orElse(""));
+        Pattern pattern = Pattern.compile(Optional.ofNullable(matchResponseRegex).orElse(""), Pattern.DOTALL);
+        return pattern.matcher(body).matches();
     }
 
     public List<String> getMatchResponseCodes() {
@@ -72,5 +73,26 @@ public class MatchArguments {
                 isMatchedResponseLines(response.getNumberOfLinesInResponse()) ||
                 isMatchedResponseSize(response.getContentLengthInBytes()) ||
                 isMatchedResponseRegex(response.getBody());
+    }
+
+    public String getMatchString() {
+        StringBuilder builder = new StringBuilder();
+        if (!this.getMatchResponseCodes().isEmpty()) {
+            builder.append(", match the following response codes: ").append(this.getMatchResponseCodes());
+        }
+        if (this.matchResponseRegex != null) {
+            builder.append(", match the regex: ").append(this.matchResponseRegex);
+        }
+        if (!this.getMatchResponseLines().isEmpty()) {
+            builder.append(", match the number of lines: ").append(this.getMatchResponseLines());
+        }
+        if (!this.getMatchResponseWords().isEmpty()) {
+            builder.append(", match the number of words: ").append(this.getMatchResponseWords());
+        }
+        if (!this.getMatchResponseSizes().isEmpty()) {
+            builder.append(", match the response sizes of: ").append(this.getMatchResponseSizes());
+        }
+
+        return StringUtils.stripStart(",", builder.toString());
     }
 }

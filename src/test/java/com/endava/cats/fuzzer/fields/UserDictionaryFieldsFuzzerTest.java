@@ -58,7 +58,7 @@ class UserDictionaryFieldsFuzzerTest {
         Mockito.when(userArguments.getWords()).thenReturn(new File("test"));
         userDictionaryFieldsFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
-        Mockito.verify(prettyLogger, Mockito.times(1)).error("Skipping fuzzer as no --m* argument was provided!");
+        Mockito.verify(prettyLogger, Mockito.times(1)).error("Skipping fuzzer as no --matchXXX argument was provided!");
         Mockito.verifyNoInteractions(catsExecutor);
     }
 
