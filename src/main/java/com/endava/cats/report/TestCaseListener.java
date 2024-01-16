@@ -445,7 +445,7 @@ public class TestCaseListener {
         MediaType firstMediaType = MediaType.parse(firstContentType).withoutParameters();
         MediaType secondMediaType = MediaType.parse(secondContentType).withoutParameters();
         return firstMediaType.is(secondMediaType) || secondMediaType.is(firstMediaType) || (firstMediaType.type().equalsIgnoreCase(secondMediaType.type()) &&
-                ((firstMediaType.subtype().endsWith(secondMediaType.subtype()) || secondMediaType.subtype().endsWith(firstMediaType.subtype()))));
+                (firstMediaType.subtype().endsWith(secondMediaType.subtype()) || secondMediaType.subtype().endsWith(firstMediaType.subtype())));
     }
 
     private void storeRequestOnPostOrRemoveOnDelete(FuzzingData data, CatsResponse response) {
