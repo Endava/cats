@@ -35,7 +35,10 @@ public class CatsMain implements QuarkusApplication {
         checkForConsoleColorsDisabled(args);
 
         return new CommandLine(catsCommand, factory)
-                .setCaseInsensitiveEnumValuesAllowed(true).setColorScheme(colorScheme())
+                .setCaseInsensitiveEnumValuesAllowed(true)
+                .setColorScheme(colorScheme())
+                .setAbbreviatedOptionsAllowed(true)
+                .setAbbreviatedSubcommandsAllowed(true)
                 .execute(args);
     }
 
