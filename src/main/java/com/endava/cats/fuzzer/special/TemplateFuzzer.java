@@ -170,7 +170,7 @@ public class TemplateFuzzer implements Fuzzer {
 
     private void process(FuzzingData data, CatsRequest catsRequest, String targetField, String fuzzValued) {
         testCaseListener.addScenario(logger, "Replace request field, header or path/query param [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzValued).truncatedValue());
-        testCaseListener.addExpectedResult(logger, "Should get a valid response from the service");
+        testCaseListener.addExpectedResult(logger, "Should get a response that doesn't match given arguments");
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addPath(catsRequest.getUrl());
         testCaseListener.addContractPath(catsRequest.getUrl());
@@ -180,7 +180,7 @@ public class TemplateFuzzer implements Fuzzer {
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
             if (matchArguments.isMatchResponse(catsResponse) || !matchArguments.isAnyMatchArgumentSupplied()) {
                 testCaseListener.addResponse(catsResponse);
-                testCaseListener.reportResultError(logger, data, "Check response details", "Service call completed. Please check response details.");
+                testCaseListener.reportResultError(logger, data, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
             } else {
                 testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
             }

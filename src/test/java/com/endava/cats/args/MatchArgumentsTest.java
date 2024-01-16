@@ -162,4 +162,43 @@ class MatchArgumentsTest {
 
         Assertions.assertThat(matchArguments.isMatchResponse(catsResponse)).isTrue();
     }
+
+    @Test
+    void shouldReturnMatchRegexString() {
+        ReflectionTestUtils.setField(matchArguments, "matchResponseRegex", "*");
+        String expected = matchArguments.getMatchString();
+        Assertions.assertThat(expected).isEqualTo(" regex: *");
+    }
+
+    @Test
+    void shouldReturnMatchResponseCodesString() {
+        ReflectionTestUtils.setField(matchArguments, "matchResponseCodes", List.of("200"));
+        String expected = matchArguments.getMatchString();
+        Assertions.assertThat(expected).isEqualTo(" response codes: [200]");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"matchResponseSizes,200,response sizes", "matchResponseLines,200,number of lines", "matchResponseWords,200,number of words"})
+    void shouldReturnMatchSizesString(String field, int size, String expectedWord) {
+        ReflectionTestUtils.setField(matchArguments, field, List.of(size));
+        String expected = matchArguments.getMatchString();
+        Assertions.assertThat(expected).isEqualTo(" " + expectedWord + ": [200]");
+    }
+
+    @Test
+    void shouldReturnEmptyMatchString() {
+        String expected = matchArguments.getMatchString();
+        Assertions.assertThat(expected).isEmpty();
+    }
+
+    @Test
+    void shouldReturnAllMatchStrings() {
+        ReflectionTestUtils.setField(matchArguments, "matchResponseSizes", List.of(200L));
+        ReflectionTestUtils.setField(matchArguments, "matchResponseWords", List.of(200L));
+        ReflectionTestUtils.setField(matchArguments, "matchResponseLines", List.of(200L));
+        ReflectionTestUtils.setField(matchArguments, "matchResponseCodes", List.of("200"));
+        ReflectionTestUtils.setField(matchArguments, "matchResponseRegex", "*");
+        String expected = matchArguments.getMatchString();
+        Assertions.assertThat(expected).isEqualTo(" response codes: [200], regex: *, number of lines: [200], number of words: [200], response sizes: [200]");
+    }
 }

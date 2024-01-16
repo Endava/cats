@@ -85,7 +85,7 @@ public class FieldsIteratorExecutor {
 
         testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current field [{}] [{}]", fuzzedField, strategy);
         testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
-                context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a valid response");
+                context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a response that doesn't match" + matchArguments.getMatchString());
 
         FuzzingResult fuzzingResult = this.getFuzzingResult(context, fuzzedField, strategy);
 
@@ -104,7 +104,7 @@ public class FieldsIteratorExecutor {
         if (context.getExpectedResponseCode() != null) {
             testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
         } else if (!matchArguments.isAnyMatchArgumentSupplied() || matchArguments.isMatchResponse(response)) {
-            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Check response details", "Service call completed. Please check response details");
+            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Response matches arguments", "Response matches" + matchArguments.getMatchString());
         } else {
             testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
         }
