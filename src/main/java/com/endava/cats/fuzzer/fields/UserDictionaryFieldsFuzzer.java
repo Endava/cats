@@ -36,7 +36,7 @@ public class UserDictionaryFieldsFuzzer implements Fuzzer {
         if (userArguments.getWords() == null) {
             logger.error("Skipping fuzzer as --words was not provided!");
         } else if (!matchArguments.isAnyMatchArgumentSupplied()) {
-            logger.error("Skipping fuzzer as no --m* argument was provided!");
+            logger.error("Skipping fuzzer as no --matchXXX argument was provided!");
         } else {
             BiFunction<Schema<?>, String, List<String>> fuzzedValueProducer = (schema, field) -> userArguments.getWordsAsList();
 

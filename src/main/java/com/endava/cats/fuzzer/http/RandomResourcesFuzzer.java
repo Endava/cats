@@ -81,20 +81,24 @@ public class RandomResourcesFuzzer implements Fuzzer {
                 payloads.add(updatePayload);
             }
 
-            for (String payload : payloads) {
-                simpleExecutor.execute(
-                        SimpleExecutorContext.builder()
-                                .expectedResponseCode(ResponseCodeFamily.FOURXX_NF)
-                                .fuzzingData(data)
-                                .logger(logger)
-                                .replaceRefData(false)
-                                .scenario("Send random values in path variables")
-                                .fuzzer(this)
-                                .payload(payload)
-                                .replaceUrlParams(false)
-                                .build()
-                );
-            }
+            this.executeTests(data, payloads);
+        }
+    }
+
+    private void executeTests(FuzzingData data, Set<String> payloads) {
+        for (String payload : payloads) {
+            simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF)
+                            .fuzzingData(data)
+                            .logger(logger)
+                            .replaceRefData(false)
+                            .scenario("Send random values in path variables")
+                            .fuzzer(this)
+                            .payload(payload)
+                            .replaceUrlParams(false)
+                            .build()
+            );
         }
     }
 
