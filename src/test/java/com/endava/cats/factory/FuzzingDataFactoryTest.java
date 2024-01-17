@@ -205,8 +205,8 @@ class FuzzingDataFactoryTest {
     void shouldCorrectlyParseRefOneOf() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/pet-types", "src/test/resources/petstore.yml");
         Assertions.assertThat(dataList).hasSize(2);
-        Assertions.assertThat(dataList.get(0).getPayload()).contains("\"petType\":{\"breedType\"");
-        Assertions.assertThat(dataList.get(1).getPayload()).contains("\"petType\":{\"breedType\"");
+        Assertions.assertThat(dataList.get(0).getPayload()).contains("\"petType\":{\"breedType\":\"Husky");
+        Assertions.assertThat(dataList.get(1).getPayload()).contains("\"petType\":{\"breedType\":\"Labrador");
     }
 
     @Test

@@ -213,6 +213,9 @@ components:
             id:
               type: string
               format: time
+            colors:
+              type: array
+              items: {}
             breed:
               description: Sensitive data that will be kept encrypted in the vault, associated with the Token
               oneOf:
@@ -315,6 +318,11 @@ components:
       oneOf:
         - $ref: '#/components/schemas/Husky'
         - $ref: '#/components/schemas/Labrador'
+      discriminator:
+        propertyName: breedType
+        mapping:
+          "Husky": '#/components/schemas/Husky'
+          "Labrador": '#/components/schemas/Labrador'
     Husky:
       required:
         - breedType

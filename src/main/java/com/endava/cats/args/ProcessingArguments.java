@@ -61,6 +61,11 @@ public class ProcessingArguments {
             description = "When set to @|bold true|@ it will send Content-Type=application/merge-patch+json for PATCH requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean rfc7396 = false;
 
+    @Setter
+    @CommandLine.Option(names = {"--allowInvalidEnumValues"},
+            description = "When set to @|bold true|@ the InvalidValuesInEnumsFieldsFuzzer will be disabled. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean allowInvalidEnumValues = false;
+
     public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
     public static final String JSON_PATCH = "application/merge-patch+json";
 

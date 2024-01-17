@@ -2,23 +2,27 @@ package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 
 @Singleton
 @FieldFuzzer
 public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
+    final ProcessingArguments processingArguments;
 
-    public InvalidValuesInEnumsFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    public InvalidValuesInEnumsFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, ProcessingArguments processingArguments) {
         super(sc, lr, cu, cp);
+        this.processingArguments = processingArguments;
     }
 
     @Override
@@ -49,5 +53,20 @@ public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
     @Override
     public String description() {
         return "iterate through each ENUM field and send invalid values";
+    }
+
+    @Override
+    public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
+        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamily.TWOXX : ResponseCodeFamily.FOURXX;
+    }
+
+    @Override
+    public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
+        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamily.TWOXX : ResponseCodeFamily.FOURXX;
+    }
+
+    @Override
+    public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
+        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamily.TWOXX : ResponseCodeFamily.FOURXX;
     }
 }
