@@ -245,7 +245,12 @@ public class OpenAPIModelGenerator {
             Object[] objectProperties = new Object[arrayLength];
 
             for (int i = 0; i < arrayLength; i++) {
-                objectProperties[i] = resolveModelToExample(propertyName, innerType);
+                boolean isNullSchema = innerType.getType() == null && innerType.get$ref() == null && !(innerType instanceof ComposedSchema) && innerType.getProperties() == null;
+                if (isNullSchema) {
+                    objectProperties[i] = StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
+                } else {
+                    objectProperties[i] = resolveModelToExample(propertyName, innerType);
+                }
             }
             return objectProperties;
         }
