@@ -5,6 +5,7 @@ import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
@@ -64,6 +65,11 @@ class JsonObjectsCaseLinterFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
                 Mockito.eq("JSON elements do not follow naming conventions: {}"),
                 Mockito.contains(schemaName));
+    }
+
+    @Test
+    void shouldSkipForNonBodyMethods() {
+        Assertions.assertThat(jsonObjectsCaseLinterFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Test

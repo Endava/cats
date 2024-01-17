@@ -114,6 +114,11 @@ public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
     }
 
     @Override
+    public List<HttpMethod> skipForHttpMethods() {
+        return List.of(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+    }
+
+    @Override
     public String description() {
         return "verifies that JSON elements follow naming conventions";
     }
