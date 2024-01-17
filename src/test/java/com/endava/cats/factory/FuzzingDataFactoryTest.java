@@ -234,10 +234,11 @@ class FuzzingDataFactoryTest {
     void shouldFilterDeprecatedOperations() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
 
-        Assertions.assertThat(dataList).hasSize(3);
+        Assertions.assertThat(dataList).hasSize(4);
         Assertions.assertThat(dataList.get(0).getMethod()).isEqualTo(HttpMethod.POST);
         Assertions.assertThat(dataList.get(1).getMethod()).isEqualTo(HttpMethod.POST);
         Assertions.assertThat(dataList.get(2).getMethod()).isEqualTo(HttpMethod.GET);
+        Assertions.assertThat(dataList.get(3).getMethod()).isEqualTo(HttpMethod.DELETE);
 
         Mockito.when(filterArguments.isSkipDeprecated()).thenReturn(true);
         List<FuzzingData> secondTimeFuzzDataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
@@ -250,8 +251,9 @@ class FuzzingDataFactoryTest {
         Mockito.when(filterArguments.getTags()).thenReturn(List.of("pets"));
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
 
-        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList).hasSize(2);
         Assertions.assertThat(dataList.get(0).getMethod()).isEqualTo(HttpMethod.GET);
+        Assertions.assertThat(dataList.get(1).getMethod()).isEqualTo(HttpMethod.DELETE);
     }
 
     @Test
@@ -286,6 +288,18 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(firstData.getResponses().get("200")).hasSize(9);
         String firstResponse = firstData.getResponses().get("200").get(0);
         Assertions.assertThat(firstResponse).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
+    }
+
+    @Test
+    void shouldGenerateValidDataWhenPrimitiveArrays() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue94.json");
+        Assertions.assertThat(dataList).hasSize(2);
+        FuzzingData firstData = dataList.get(0);
+        Map<String, List<String>> responses = firstData.getResponses();
+        Assertions.assertThat(responses).hasSize(2);
+        String defaultResponses = responses.get("default").get(0);
+        boolean isArray = JsonUtils.isArray(defaultResponses, "$.code");
+        Assertions.assertThat(isArray).isTrue();
     }
 
     @Test

@@ -189,26 +189,25 @@ class FuzzingDataTest {
     void shouldReturnSetOfSetsWithHalfSize() {
         Set<String> fields = Set.of("a", "b", "c", "d");
         Set<Set<String>> allSets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(fields, 0);
-        Assertions.assertThat(allSets).hasSize(10);
-        Assertions.assertThat(allSets).contains(Set.of("a"), Set.of("b"), Set.of("a", "b"));
-        Assertions.assertThat(allSets).doesNotContain(Set.of("a", "b", "c", "d"));
+        Assertions.assertThat(allSets).hasSize(10)
+                .contains(Set.of("a"), Set.of("b"), Set.of("a", "b"))
+                .doesNotContain(Set.of("a", "b", "c", "d"));
     }
 
     @Test
     void shouldReturnSizeOfInitialSetWhenMaxFieldToRemoveBiggerThanSize() {
         Set<String> fields = Set.of("a", "b", "c", "d");
         Set<Set<String>> allSets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(fields, 10);
-        Assertions.assertThat(allSets).hasSize(15);
-        Assertions.assertThat(allSets).contains(Set.of("a"), Set.of("b"), Set.of("a", "b", "c", "d"));
+        Assertions.assertThat(allSets).hasSize(15).contains(Set.of("a"), Set.of("b"), Set.of("a", "b", "c", "d"));
     }
 
     @Test
     void shouldReturnSetsUpToMaxFieldToRemove() {
         Set<String> fields = Set.of("a", "b", "c", "d");
         Set<Set<String>> allSets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(fields, 3);
-        Assertions.assertThat(allSets).hasSize(14);
-        Assertions.assertThat(allSets).contains(Set.of("a"), Set.of("b"), Set.of("a", "b", "c"));
-        Assertions.assertThat(allSets).doesNotContain(Set.of("a", "b", "c", "d"));
+        Assertions.assertThat(allSets).hasSize(14)
+                .contains(Set.of("a"), Set.of("b"), Set.of("a", "b", "c"))
+                .doesNotContain(Set.of("a", "b", "c", "d"));
     }
 
     public Map<String, Schema> getBasePropertiesRequired() {

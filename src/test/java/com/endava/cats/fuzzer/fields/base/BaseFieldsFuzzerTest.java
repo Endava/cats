@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -9,6 +10,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.FuzzingResult;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.Schema;
@@ -56,6 +58,19 @@ class BaseFieldsFuzzerTest {
 
         baseFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("field could not be fuzzed. Possible reasons: field is not a primitive, is a discriminator, is passed as refData or is not matching the Fuzzer schemas"));
+    }
+
+    @Test
+    void shouldSkipFuzzerWhenSkipStrategy() {
+        baseFieldsFuzzer = new MyBaseFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Set<String> fields = Collections.singleton("field");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
+        Mockito.when(data.getPayload()).thenReturn("{}");
+        testCaseListener.createAndExecuteTest(Mockito.mock(PrettyLogger.class), Mockito.mock(Fuzzer.class), () -> {
+            baseFieldsFuzzer.process(data, "field", FuzzingStrategy.skip().withData("Skipping test"));
+        });
+        Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Skipping test"));
     }
 
     @Test
