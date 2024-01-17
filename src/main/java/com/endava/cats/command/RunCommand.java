@@ -30,6 +30,16 @@ import java.util.Map;
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command",
+                "@|bold ERR|@:Where ERR is the number of errors reported by cats"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Run custom payloads using the SecurityFuzzer:",
+                "    cats run -c openapi.yml -s http://localhost:8080 securityFuzzer.yml",
+                "", "  Run a set of functional tests using the FunctionalFuzzer:",
+                "    cats run -c openapi.yml -s http://localhost:8080 functionalTests.yml"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {

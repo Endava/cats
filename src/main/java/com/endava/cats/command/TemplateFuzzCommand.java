@@ -42,6 +42,16 @@ import java.util.stream.Collectors;
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
         synopsisHeading = "%nUsage: ",
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command",
+                "@|bold ERR|@:Where ERR is the number of errors reported by cats"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Run fuzz tests for a given POST request:",
+                "    cats fuzz -H header=value -X POST -d '{\"field1\":\"value1\",\"field2\":\"value2\",\"field3\":\"value3\"}' -t \"field1,field2,header\" -i \"2XX,4XX\" http://service-url ",
+                "", "  Run fuzz tests for a given GET request:",
+                "    cats fuzz -X GET -t \"path1,query1\" -i \"2XX,4XX\" http://service-url/paths1?query1=test&query2"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class TemplateFuzzCommand implements Runnable {

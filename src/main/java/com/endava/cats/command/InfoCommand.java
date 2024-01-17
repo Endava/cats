@@ -17,6 +17,15 @@ import picocli.CommandLine;
         usageHelpAutoWidth = true,
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Get info about current environment:",
+                "    cats info",
+                "", "  Get info about current environment in json format:",
+                "    cats info -j"},
         description = "Get environment debug info to help in bug reports",
         versionProvider = VersionProvider.class)
 @Unremovable

@@ -53,6 +53,15 @@ import static org.fusesource.jansi.Ansi.ansi;
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
         description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  List all paths for an OpenAPI contract:",
+                "    cats list --paths -c openapi.yml",
+                "", "  List all available fuzzers:",
+                "    cats list --fuzzers"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class ListCommand implements Runnable {
