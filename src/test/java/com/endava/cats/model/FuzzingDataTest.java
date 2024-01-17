@@ -169,6 +169,48 @@ class FuzzingDataTest {
         Assertions.assertThat(setOfFields).hasSize(expected);
     }
 
+    @Test
+    void shouldReturnContentTypeWhenPresent() {
+        FuzzingData data = FuzzingData.builder().responseContentTypes(Map.of("200", List.of("application/json", "application/v2+json"))).build();
+        List<String> contentTypes = data.getContentTypesByResponseCode("200");
+
+        Assertions.assertThat(contentTypes).containsOnly("application/json", "application/v2+json");
+    }
+
+    @Test
+    void shouldReturnDefaultContentType() {
+        FuzzingData data = FuzzingData.builder().responseContentTypes(Map.of("200", List.of("application/json", "application/v2+json"))).build();
+        List<String> contentTypes = data.getContentTypesByResponseCode("300");
+
+        Assertions.assertThat(contentTypes).containsOnly("application/json");
+    }
+
+    @Test
+    void shouldReturnSetOfSetsWithHalfSize() {
+        Set<String> fields = Set.of("a", "b", "c", "d");
+        Set<Set<String>> allSets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(fields, 0);
+        Assertions.assertThat(allSets).hasSize(10);
+        Assertions.assertThat(allSets).contains(Set.of("a"), Set.of("b"), Set.of("a", "b"));
+        Assertions.assertThat(allSets).doesNotContain(Set.of("a", "b", "c", "d"));
+    }
+
+    @Test
+    void shouldReturnSizeOfInitialSetWhenMaxFieldToRemoveBiggerThanSize() {
+        Set<String> fields = Set.of("a", "b", "c", "d");
+        Set<Set<String>> allSets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(fields, 10);
+        Assertions.assertThat(allSets).hasSize(15);
+        Assertions.assertThat(allSets).contains(Set.of("a"), Set.of("b"), Set.of("a", "b", "c", "d"));
+    }
+
+    @Test
+    void shouldReturnSetsUpToMaxFieldToRemove() {
+        Set<String> fields = Set.of("a", "b", "c", "d");
+        Set<Set<String>> allSets = FuzzingData.SetFuzzingStrategy.getAllSetsWithMinSize(fields, 3);
+        Assertions.assertThat(allSets).hasSize(14);
+        Assertions.assertThat(allSets).contains(Set.of("a"), Set.of("b"), Set.of("a", "b", "c"));
+        Assertions.assertThat(allSets).doesNotContain(Set.of("a", "b", "c", "d"));
+    }
+
     public Map<String, Schema> getBasePropertiesRequired() {
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("address", new StringSchema());

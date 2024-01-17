@@ -49,7 +49,7 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
 
     @Test
     void shouldReturn4XXIfNotAllowInvalidEnumValues() {
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
     }
@@ -57,7 +57,7 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
     @Test
     void shouldReturn2XXIfAllowInvalidEnumValues() {
         Mockito.when(processingArguments.isAllowInvalidEnumValues()).thenReturn(true);
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
     }
