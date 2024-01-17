@@ -313,7 +313,7 @@ public class TestCaseListener {
         this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
         CatsTestCase testCase = testCaseMap.get(MDC.get(TestCaseListener.ID));
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
-        if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())) {
+        if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime()) || isException(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors(testCase.getPath());
             logger.error(message, params);
@@ -327,6 +327,10 @@ public class TestCaseListener {
             this.reportInfo(logger, message, params);
         }
         recordAuthErrors(catsResponse);
+    }
+
+    private boolean isException(CatsResponse catsResponse) {
+        return !catsResponse.isValidErrorCode();
     }
 
     private void recordAuthErrors(CatsResponse catsResponse) {
