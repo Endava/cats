@@ -27,6 +27,15 @@ import java.util.Set;
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
         description = "Prints statistics about and OpenAPI spec file",
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Print stats for an OpenAPI contract:",
+                "    cats stats -c openapi.yml",
+                "", "  Print stats for an OpenAPI contract, but exclude description:",
+                "    cats stats -c openapi.yml --skip DESCRIPTION"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class StatsCommand implements Runnable {

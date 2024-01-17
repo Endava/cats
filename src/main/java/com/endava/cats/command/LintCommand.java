@@ -22,6 +22,16 @@ import java.util.Optional;
         abbreviateSynopsis = true,
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command",
+                "@|bold ERR|@:Where ERR is the number of errors reported by cats"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Lint an OpenAPI contract:",
+                "    cats lint -c openapi.yml",
+                "", "  Lint an OpenAPI contract and set expected naming convention for JSON objects to camelCase:",
+                "    cats lint -c openapi.yml --jsonObjectsNaming CAMEL"},
         synopsisHeading = "%nUsage: ",
         versionProvider = VersionProvider.class)
 @Unremovable

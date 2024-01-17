@@ -37,6 +37,15 @@ import java.util.Optional;
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
         description = "Replay previously executed CATS tests",
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Replay Test 1 from the default reporting folder:",
+                "    cats replay Test1",
+                "", "  Replay Test 1 from the default reporting folder and write the new output in another folder",
+                "    cats replay Test1 --output path/to/new/folder"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class ReplayCommand implements Runnable {
