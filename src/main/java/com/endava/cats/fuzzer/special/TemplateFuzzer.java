@@ -178,7 +178,7 @@ public class TemplateFuzzer implements Fuzzer {
         testCaseListener.addFullRequestPath(catsRequest.getUrl());
         try {
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
-            if (matchArguments.isMatchResponse(catsResponse) || !matchArguments.isAnyMatchArgumentSupplied()) {
+            if (matchArguments.isMatchResponse(catsResponse) || matchArguments.isInputReflected(catsResponse, fuzzValued) || !matchArguments.isAnyMatchArgumentSupplied()) {
                 testCaseListener.addResponse(catsResponse);
                 testCaseListener.reportResultError(logger, data, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
             } else {
