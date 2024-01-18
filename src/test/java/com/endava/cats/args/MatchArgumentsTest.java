@@ -127,13 +127,15 @@ class MatchArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"1,0,0,0,null", "0,1,0,0,null", "0,0,1,0,null", "0,0,0,1,null", "0,0,0,0,regex"}, nullValues = "null")
-    void shouldReturnMatchArgumentSupplied(long words, long sizes, long lines, long code, String regex) {
+    @CsvSource(value = {"1,0,0,0,null,false", "0,1,0,0,null,false", "0,0,1,0,null,false", "0,0,0,1,null,false", "0,0,0,0,regex,false", "0,0,0,0,null,true"}, nullValues = "null")
+    void shouldReturnMatchArgumentSupplied(long words, long sizes, long lines, long code, String regex, boolean inputMatch) {
         ReflectionTestUtils.setField(matchArguments, "matchResponseSizes", sizes != 0 ? List.of(sizes) : null);
         ReflectionTestUtils.setField(matchArguments, "matchResponseWords", words != 0 ? List.of(words) : null);
         ReflectionTestUtils.setField(matchArguments, "matchResponseLines", lines != 0 ? List.of(lines) : null);
         ReflectionTestUtils.setField(matchArguments, "matchResponseCodes", code != 0 ? List.of(String.valueOf(code)) : null);
         ReflectionTestUtils.setField(matchArguments, "matchResponseRegex", regex);
+        ReflectionTestUtils.setField(matchArguments, "matchInput", inputMatch);
+
 
         Assertions.assertThat(matchArguments.isAnyMatchArgumentSupplied()).isTrue();
     }
@@ -200,5 +202,14 @@ class MatchArgumentsTest {
         ReflectionTestUtils.setField(matchArguments, "matchResponseRegex", "*");
         String expected = matchArguments.getMatchString();
         Assertions.assertThat(expected).isEqualTo(" response codes: [200], regex: *, number of lines: [200], number of words: [200], response sizes: [200]");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,cool,true", "true,uncool,false", "false,cool,false", "false,uncool,false"})
+    void shouldMatchInput(boolean matchInputFlag, String reflectedValue, boolean expected) {
+        ReflectionTestUtils.setField(matchArguments, "matchInput", matchInputFlag);
+        CatsResponse response = CatsResponse.builder().body("i'm a cool body").build();
+        boolean reflected = matchArguments.isInputReflected(response, reflectedValue);
+        Assertions.assertThat(reflected).isEqualTo(expected);
     }
 }

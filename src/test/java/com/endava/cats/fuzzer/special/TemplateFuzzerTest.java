@@ -84,10 +84,20 @@ class TemplateFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true,true", "false,false", "false,true"})
-    void shouldRunWhenMatchArgumentsAndResponseMatched(boolean isAnyMatch, boolean isResponseMatch) throws Exception {
+    @CsvSource({
+            "true,true,true",
+            "true,true,false",
+            "true,false,true",
+            "false,true,true",
+            "false,true,false",
+            "false,false,true",
+            "false,false,false"
+    })
+    void shouldRunWhenMatchArgumentsAndResponseMatched(boolean isAnyMatch, boolean isResponseMatch, boolean isInputMatch) throws Exception {
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(isAnyMatch);
         Mockito.when(matchArguments.isMatchResponse(Mockito.any())).thenReturn(isResponseMatch);
+        Mockito.when(matchArguments.isInputReflected(Mockito.any(), Mockito.any())).thenReturn(isInputMatch);
+        Mockito.when(matchArguments.getMatchString()).thenReturn(" arguments");
         Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("field"))
