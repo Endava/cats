@@ -4,6 +4,9 @@ import picocli.CommandLine;
 
 import java.util.Properties;
 
+/**
+ * Provides information about application version to PicoCli.
+ */
 public class VersionProvider implements CommandLine.IVersionProvider {
 
     @Override

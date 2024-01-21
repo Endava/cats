@@ -3,6 +3,9 @@ package com.endava.cats.util;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Holds constants referring CATS reserved words.
+ */
 public abstract class CatsDSLWords {
     /**
      * Typically used to flag that user selected all fuzzers or paths.

@@ -41,6 +41,13 @@ public class DryRunAspect {
 
     private int counter;
 
+    /**
+     * Intercepts the startSession from the TestCaseListener.
+     *
+     * @param context invocation context
+     * @return result of the real method
+     * @throws Exception if something goes wrong
+     */
     public Object startSession(InvocationContext context) throws Exception {
         if (reportingArguments.isJson()) {
             CatsUtil.setCatsLogLevel("OFF");
@@ -50,10 +57,20 @@ public class DryRunAspect {
         return result;
     }
 
+    /**
+     * Doesn't do anything.
+     *
+     * @return empty CatsResponse
+     */
     public Object dontInvokeService() {
         return CatsResponse.empty();
     }
 
+    /**
+     * Prevents test files from being written.
+     *
+     * @return null
+     */
     public Object dontWriteTestCase() {
         return null;
     }

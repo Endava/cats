@@ -85,14 +85,14 @@ public class ReplayCommand implements Runnable {
         this.testCaseListener = testCaseListener;
     }
 
-    public List<String> parseTestCases() {
+    private List<String> parseTestCases() {
         return Arrays.stream(tests)
                 .map(testCase -> testCase.trim().strip())
                 .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
                 .toList();
     }
 
-    public void executeTestCase(String testCaseFileName) throws IOException {
+    private void executeTestCase(String testCaseFileName) throws IOException {
         CatsTestCase testCase = this.loadTestCaseFile(testCaseFileName);
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         this.loadHeadersIfSupplied(testCase);

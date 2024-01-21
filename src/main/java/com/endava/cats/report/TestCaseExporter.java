@@ -94,6 +94,12 @@ public abstract class TestCaseExporter {
                 .create();
     }
 
+    /**
+     * Initializes the reporting path for the test reports.
+     *
+     * @param folder The custom output folder path. If not provided (or blank), the default folder from reporting arguments is used.
+     * @throws IOException If an I/O error occurs during file or directory operations.
+     */
     public void initPath(String folder) throws IOException {
         String outputFolder = reportingArguments.getOutputReportFolder();
         if (!StringUtils.isBlank(folder)) {

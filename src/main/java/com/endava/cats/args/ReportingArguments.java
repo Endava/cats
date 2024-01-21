@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Holds all arguments relate to how CATS handles output.
+ */
 @Singleton
 @Getter
 public class ReportingArguments {

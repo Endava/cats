@@ -6,6 +6,9 @@ import picocli.CommandLine;
 
 import java.util.regex.Pattern;
 
+/**
+ * Holds arguments related to naming conventions when linting OpenAPI specs.
+ */
 @Singleton
 @Getter
 public class NamingArguments {

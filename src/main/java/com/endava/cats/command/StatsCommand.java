@@ -20,6 +20,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Gets stats about an OpenAPI spec.
+ */
 @CommandLine.Command(
         name = "stats",
         mixinStandardHelpOptions = true,

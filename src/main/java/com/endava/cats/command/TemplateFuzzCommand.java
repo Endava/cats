@@ -148,7 +148,7 @@ public class TemplateFuzzCommand implements Runnable {
         testCaseListener.beforeFuzz(templateFuzzer.getClass());
     }
 
-    public Set<CatsHeader> getHeaders() {
+    private Set<CatsHeader> getHeaders() {
         return headers.entrySet()
                 .stream()
                 .map(entry -> CatsHeader.builder()

@@ -245,6 +245,7 @@ public class FilterArguments {
 
             FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
         }
+
         if (userArguments.getWords() != null) {
             FUZZERS_TO_BE_RUN.clear();
             FUZZERS_TO_BE_RUN.addAll(List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer"));
@@ -355,11 +356,14 @@ public class FilterArguments {
     }
 
     private void removeIfNotSupplied(boolean includeArgument, Class<? extends Annotation> annotation, List<String> currentFuzzers) {
-        if (!includeArgument) {
-            for (Fuzzer fuzzer : fuzzers) {
-                if (AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null) {
-                    currentFuzzers.remove(fuzzer.toString());
-                }
+        if (includeArgument) {
+            // if special characters fuzzers are included, we exit and don't remove them
+            return;
+        }
+
+        for (Fuzzer fuzzer : fuzzers) {
+            if (AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null) {
+                currentFuzzers.remove(fuzzer.toString());
             }
         }
     }
