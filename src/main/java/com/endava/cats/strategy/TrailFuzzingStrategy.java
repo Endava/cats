@@ -1,5 +1,8 @@
 package com.endava.cats.strategy;
 
+/**
+ * Fuzzing strategy that trails valid data with fuzzed values.
+ */
 public final class TrailFuzzingStrategy extends FuzzingStrategy {
     @Override
     public Object process(Object value) {

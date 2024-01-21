@@ -1,5 +1,8 @@
 package com.endava.cats.strategy;
 
+/**
+ * Fuzzing strategy that replaces valid data with fuzzed values.
+ */
 public final class ReplaceFuzzingStrategy extends FuzzingStrategy {
 
     @Override

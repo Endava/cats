@@ -1,5 +1,8 @@
 package com.endava.cats.strategy;
 
+/**
+ * Fuzzing strategy that inserts fuzzed values into valid data.
+ */
 public final class InsertFuzzingStrategy extends FuzzingStrategy {
     @Override
     public Object process(Object value) {

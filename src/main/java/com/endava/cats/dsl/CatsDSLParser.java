@@ -8,6 +8,9 @@ import com.endava.cats.dsl.impl.SpringELParser;
 
 import java.util.Map;
 
+/**
+ * Allows parsing of different type of dynamic values through different parsers.
+ */
 public class CatsDSLParser {
     private static final Parser DEFAULT_PARSER = new NoOpParser();
     private static final Parser SPRING_EL_PARSER = new SpringELParser();

@@ -13,6 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Holds user specific input such as custom dictionaries.
+ */
 @Singleton
 @Getter
 @Setter
@@ -21,6 +24,11 @@ public class UserArguments {
             description = "Specifies the user dictionary used by the @|bold TemplateFuzzer|@ to fuzz the specified fields and/or headers")
     File words;
 
+    /**
+     * Gets the custom provided dictionary as a list of strings where each row is an item.
+     *
+     * @return a list with all the custom dictionary words
+     */
     public List<String> getWordsAsList() {
         try {
             return Files.readAllLines(Path.of(words.getAbsolutePath()), StandardCharsets.UTF_8);

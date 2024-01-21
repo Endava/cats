@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Holds arguments related to different customizations supported by CATS when running the Fuzzers.
+ */
 @Singleton
 @Getter
 public class ProcessingArguments {

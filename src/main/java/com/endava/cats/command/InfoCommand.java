@@ -11,6 +11,9 @@ import lombok.Getter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
+/**
+ * Display info relate to the environment where CATS is running.
+ */
 @CommandLine.Command(
         name = "info",
         mixinStandardHelpOptions = true,

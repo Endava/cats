@@ -144,11 +144,12 @@ public class FilesArguments {
     public void loadSecurityFuzzerFile() throws IOException {
         if (securityFuzzerFile == null) {
             log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
-        } else {
-            log.config(Ansi.ansi().bold().a("Security Fuzzer file: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.BLUE).a(securityFuzzerFile.getCanonicalPath()));
-            securityFuzzerDetails = parseYaml(securityFuzzerFile.getCanonicalPath());
+            return;
         }
+
+        log.config(Ansi.ansi().bold().a("Security Fuzzer file: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(securityFuzzerFile.getCanonicalPath()));
+        securityFuzzerDetails = parseYaml(securityFuzzerFile.getCanonicalPath());
     }
 
     /**
@@ -159,11 +160,13 @@ public class FilesArguments {
     public void loadCustomFuzzerFile() throws IOException {
         if (customFuzzerFile == null) {
             log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
-        } else {
-            log.config(Ansi.ansi().bold().a("Functional Fuzzer file: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.BLUE).a(customFuzzerFile.getCanonicalPath()));
-            customFuzzerDetails = parseYaml(customFuzzerFile.getCanonicalPath());
+            return;
         }
+
+        log.config(Ansi.ansi().bold().a("Functional Fuzzer file: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(customFuzzerFile.getCanonicalPath()));
+        customFuzzerDetails = parseYaml(customFuzzerFile.getCanonicalPath());
+
     }
 
     /**
@@ -198,10 +201,11 @@ public class FilesArguments {
     public void loadURLParams() {
         if (params == null) {
             log.debug("No URL parameters provided!");
-        } else {
-            log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.BLUE).a(params));
+            return;
         }
+
+        log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(params));
     }
 
     /**
@@ -311,14 +315,15 @@ public class FilesArguments {
      */
     public void loadFuzzConfigProperties() throws IOException {
         fuzzConfigProperties = new Properties();
-        if (fuzzersConfig != null) {
-            log.config(Ansi.ansi().bold().a("Fuzzers custom configuration: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.BLUE).a(fuzzersConfig));
-            try (InputStream stream = new FileInputStream(fuzzersConfig)) {
-                fuzzConfigProperties.load(stream);
-            }
-        } else {
+        if (fuzzersConfig == null) {
             log.debug("No Fuzzer custom configuration provided!");
+            return;
+        }
+
+        log.config(Ansi.ansi().bold().a("Fuzzers custom configuration: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(fuzzersConfig));
+        try (InputStream stream = new FileInputStream(fuzzersConfig)) {
+            fuzzConfigProperties.load(stream);
         }
     }
 
@@ -329,16 +334,18 @@ public class FilesArguments {
                 .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
     }
 
-    private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
-        Map<String, Map<String, Object>> fromFile = new HashMap<>();
+    private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws
+            IOException {
         if (file == null) {
             log.debug("No {} file provided!", fileType);
-        } else {
-            log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
-                    Ansi.ansi().fg(Ansi.Color.BLUE).a(file.getCanonicalPath()));
-            fromFile = parseYaml(file.getCanonicalPath());
-            log.debug("{} file loaded successfully: {}", fileType, fromFile);
+            return new HashMap<>();
         }
+
+        log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(file.getCanonicalPath()));
+        Map<String, Map<String, Object>> fromFile = parseYaml(file.getCanonicalPath());
+        log.debug("{} file loaded successfully: {}", fileType, fromFile);
+
         return fromFile;
     }
 

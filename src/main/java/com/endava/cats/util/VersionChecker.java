@@ -26,6 +26,12 @@ public class VersionChecker {
             .readTimeout(2, TimeUnit.SECONDS)
             .build();
 
+    /**
+     * Checks if a new version is available compared to the current version.
+     *
+     * @param currentVersion the current semantic version
+     * @return a CheckResult with information about the new version, if present
+     */
     public CheckResult checkForNewVersion(String currentVersion) {
         boolean updateAvailable = false;
         String downloadLink = null;
@@ -53,7 +59,7 @@ public class VersionChecker {
                 .build();
     }
 
-    public static int compare(String version1, String version2) {
+    static int compare(String version1, String version2) {
         String[] parts1 = version1.replace("-SNAPSHOT", "").split("\\.", -1);
         String[] parts2 = version2.replace("-SNAPSHOT", "").split("\\.", -1);
 
