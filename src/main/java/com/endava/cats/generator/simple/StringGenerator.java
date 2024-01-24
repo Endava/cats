@@ -121,6 +121,9 @@ public class StringGenerator {
         RegExpGen generator = REGEXPGEN_PROVIDER.matchingExact(pattern);
 
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
+            if(min == max) {
+                min -= max;
+            }
             String generated = generator.generate(REGEXPGEN_RANDOM, min, max);
 
             if (generated.matches(pattern)) {
