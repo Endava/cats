@@ -46,6 +46,16 @@ class ExactValuesInFieldsFuzzerTest {
     }
 
     @Test
+    void shouldGetBoundaryValueForSchemaWithPatternUsingRegexGen() {
+        Schema<String> schema = new StringSchema();
+        schema.setPattern("^(A-\\d{1,12})$");
+        schema.setMaxLength(14);
+        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).matches("^(A-\\d{1,12})$");
+    }
+
+    @Test
     void shouldGetNullBoundaryValueWhenNoBoundaries() {
         Schema<String> schema = new StringSchema();
         String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
