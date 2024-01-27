@@ -96,7 +96,8 @@ import static org.fusesource.jansi.Ansi.ansi;
                 TemplateFuzzCommand.class,
                 LintCommand.class,
                 InfoCommand.class,
-                StatsCommand.class
+                StatsCommand.class,
+                ValidateCommand.class
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private PrettyLogger logger;
