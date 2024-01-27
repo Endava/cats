@@ -21,6 +21,7 @@ import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.converter.SwaggerConverter;
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
 import io.swagger.v3.parser.core.models.ParseOptions;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,6 +42,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Holds operations for interacting with OpenAPI objects.
+ */
 public abstract class OpenApiUtils {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiUtils.class);
     private static final Pattern VERSION_PATH = Pattern.compile("(?:v|version)(\\d+(?:\\.\\d+){0,2})");
@@ -55,26 +59,44 @@ public abstract class OpenApiUtils {
         //ntd
     }
 
+    /**
+     * Reads an OpenAPI spec file. Can parse both 2.x as well as 3.x specs.
+     *
+     * @param location the location of the OpenAPI spec
+     * @return an OpenAPI object with all details from the OpenAPI spec
+     * @throws IOException if there is a problem accessing the spec file
+     */
     public static OpenAPI readOpenApi(String location) throws IOException {
+        return readAsParseResult(location).getOpenAPI();
+    }
+
+    /**
+     * Reads an OpenAPI spec file. Can parse both 2.x and 3.x specs.
+     *
+     * @param location the location of the OpenAPI spec
+     * @return an SwaggerParseResult having both OpenAPI spec details and parse result error messages
+     * @throws IOException if there is a problem accessing the spec file
+     */
+    public static SwaggerParseResult readAsParseResult(String location) throws IOException {
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
         options.setFlatten(true);
 
-        OpenAPI openAPI = getOpenAPI(new OpenAPIV3Parser(), location, options);
+        SwaggerParseResult parseResult = getOpenAPI(new OpenAPIV3Parser(), location, options);
 
-        if (openAPI == null) {
-            openAPI = getOpenAPI(new SwaggerConverter(), location, options);
+        if (parseResult == null) {
+            parseResult = getOpenAPI(new SwaggerConverter(), location, options);
         }
-        return openAPI;
+        return parseResult;
     }
 
-    public static OpenAPI getOpenAPI(SwaggerParserExtension parserExtension, String location, ParseOptions options) throws IOException {
+    private static SwaggerParseResult getOpenAPI(SwaggerParserExtension parserExtension, String location, ParseOptions options) throws IOException {
         if (location.startsWith("http")) {
             LOGGER.debug("Load remote contract {}", location);
-            return parserExtension.readLocation(location, null, options).getOpenAPI();
+            return parserExtension.readLocation(location, null, options);
         } else {
             LOGGER.debug("Load local contract {}", location);
-            return parserExtension.readContents(Files.readString(Paths.get(location)), null, options).getOpenAPI();
+            return parserExtension.readContents(Files.readString(Paths.get(location)), null, options);
         }
     }
 

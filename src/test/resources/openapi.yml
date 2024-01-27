@@ -71,7 +71,7 @@ paths:
       tags:
         - pet
       summary: Update an existing pet
-      operationId: updatePet
+      operationId: updatePetWithPatch
       requestBody:
         $ref: '#/components/requestBodies/PetB'
       responses:
