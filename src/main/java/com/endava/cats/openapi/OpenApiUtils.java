@@ -67,7 +67,7 @@ public abstract class OpenApiUtils {
      * @throws IOException if there is a problem accessing the spec file
      */
     public static OpenAPI readOpenApi(String location) throws IOException {
-        return readAsParseResult(location).getOpenAPI();
+        return readAsParseResult(location).getSwaggerParseResult().getOpenAPI();
     }
 
     /**
@@ -77,17 +77,22 @@ public abstract class OpenApiUtils {
      * @return an SwaggerParseResult having both OpenAPI spec details and parse result error messages
      * @throws IOException if there is a problem accessing the spec file
      */
-    public static SwaggerParseResult readAsParseResult(String location) throws IOException {
+    public static OpenApiParseResult readAsParseResult(String location) throws IOException {
+        OpenApiParseResult openApiParseResult = new OpenApiParseResult();
         ParseOptions options = new ParseOptions();
         options.setResolve(true);
         options.setFlatten(true);
 
         SwaggerParseResult parseResult = getOpenAPI(new OpenAPIV3Parser(), location, options);
 
-        if (parseResult == null) {
+        if (parseResult.getOpenAPI() == null) {
             parseResult = getOpenAPI(new SwaggerConverter(), location, options);
+            openApiParseResult.setVersion(OpenApiParseResult.OpenApiVersion.V20);
+        } else {
+            openApiParseResult.setVersion(OpenApiParseResult.OpenApiVersion.fromSwaggerVersion(parseResult.getOpenAPI().getSpecVersion()));
         }
-        return parseResult;
+        openApiParseResult.setSwaggerParseResult(parseResult);
+        return openApiParseResult;
     }
 
     private static SwaggerParseResult getOpenAPI(SwaggerParserExtension parserExtension, String location, ParseOptions options) throws IOException {
