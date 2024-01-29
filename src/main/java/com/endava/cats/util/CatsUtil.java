@@ -14,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import net.minidev.json.JSONArray;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jboss.logmanager.LogContext;
 
 import java.io.File;
@@ -189,5 +190,22 @@ public class CatsUtil {
         }
 
         return String.valueOf(obj);
+    }
+
+    /**
+     * Converts the given initial value to an appropriate type, if possible.
+     * <p>
+     * This method checks if the initial value can be converted to a numeric type (such as Integer, Long, Double, etc.)
+     * using the {@link org.apache.commons.lang3.math.NumberUtils#isCreatable(String)} method. If the conversion is
+     * possible, it returns the converted numeric value; otherwise, it returns the initial value as is.
+     * </p>
+     *
+     * @param initialValue the initial value to be converted
+     * @return the converted numeric value if possible; otherwise, the initial value as a String
+     * @see org.apache.commons.lang3.math.NumberUtils#isCreatable(String)
+     * @see org.apache.commons.lang3.math.NumberUtils#createNumber(String)
+     */
+    public static Object getAsAppropriateType(String initialValue) {
+        return NumberUtils.isCreatable(initialValue) ? NumberUtils.createNumber(initialValue) : initialValue;
     }
 }
