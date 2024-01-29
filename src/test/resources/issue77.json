@@ -1,0 +1,3273 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "4.8.2",
+    "title": "Dependency-Track API"
+  },
+  "basePath": "/api",
+  "tags": [
+    {
+      "name": "version"
+    },
+    {
+      "name": "acl"
+    },
+    {
+      "name": "analysis"
+    },
+    {
+      "name": "badge"
+    },
+    {
+      "name": "bom"
+    },
+    {
+      "name": "calculator"
+    },
+    {
+      "name": "component"
+    },
+    {
+      "name": "configProperty"
+    },
+    {
+      "name": "cwe"
+    },
+    {
+      "name": "finding"
+    },
+    {
+      "name": "ldap"
+    },
+    {
+      "name": "licenseGroup"
+    },
+    {
+      "name": "license"
+    },
+    {
+      "name": "metrics"
+    },
+    {
+      "name": "oidc"
+    },
+    {
+      "name": "ecosystem"
+    },
+    {
+      "name": "permission"
+    },
+    {
+      "name": "policyCondition"
+    },
+    {
+      "name": "policy"
+    },
+    {
+      "name": "violation"
+    },
+    {
+      "name": "projectProperty"
+    },
+    {
+      "name": "project"
+    },
+    {
+      "name": "repository"
+    },
+    {
+      "name": "search"
+    },
+    {
+      "name": "service"
+    },
+    {
+      "name": "tag"
+    },
+    {
+      "name": "team"
+    },
+    {
+      "name": "user"
+    },
+    {
+      "name": "vex"
+    },
+    {
+      "name": "violationanalysis"
+    },
+    {
+      "name": "vulnerability"
+    }
+  ],
+  "paths": {
+    "/authentication/token": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "operationId": "createAccessToken",
+        "parameters": [
+          {
+            "name": "grant_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "username",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "X-Api-Key": {
+      "type": "apiKey",
+      "name": "X-Api-Key",
+      "in": "header"
+    }
+  },
+  "definitions": {
+    "About": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "systemUuid": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string"
+        },
+        "application": {
+          "type": "string"
+        },
+        "framework": {
+          "$ref": "#/definitions/Framework"
+        }
+      }
+    },
+    "Framework": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string"
+        }
+      }
+    },
+    "AclMappingRequest": {
+      "type": "object",
+      "required": [
+        "project",
+        "team"
+      ],
+      "properties": {
+        "team": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "project": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      }
+    },
+    "Analysis": {
+      "type": "object",
+      "required": [
+        "analysisDetails",
+        "analysisJustification",
+        "analysisResponse",
+        "analysisState"
+      ],
+      "properties": {
+        "analysisState": {
+          "type": "string",
+          "enum": [
+            "EXPLOITABLE",
+            "IN_TRIAGE",
+            "FALSE_POSITIVE",
+            "NOT_AFFECTED",
+            "RESOLVED",
+            "NOT_SET"
+          ]
+        },
+        "analysisJustification": {
+          "type": "string",
+          "enum": [
+            "CODE_NOT_PRESENT",
+            "CODE_NOT_REACHABLE",
+            "REQUIRES_CONFIGURATION",
+            "REQUIRES_DEPENDENCY",
+            "REQUIRES_ENVIRONMENT",
+            "PROTECTED_BY_COMPILER",
+            "PROTECTED_AT_RUNTIME",
+            "PROTECTED_AT_PERIMETER",
+            "PROTECTED_BY_MITIGATING_CONTROL",
+            "NOT_SET"
+          ]
+        },
+        "analysisResponse": {
+          "type": "string",
+          "enum": [
+            "CAN_NOT_FIX",
+            "WILL_NOT_FIX",
+            "UPDATE",
+            "ROLLBACK",
+            "WORKAROUND_AVAILABLE",
+            "NOT_SET"
+          ]
+        },
+        "analysisDetails": {
+          "type": "string"
+        },
+        "analysisComments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AnalysisComment"
+          }
+        },
+        "isSuppressed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AnalysisComment": {
+      "type": "object",
+      "required": [
+        "comment",
+        "timestamp"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "commenter": {
+          "type": "string"
+        }
+      }
+    },
+    "AnalysisRequest": {
+      "type": "object",
+      "required": [
+        "component",
+        "vulnerability"
+      ],
+      "properties": {
+        "project": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "component": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "vulnerability": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "analysisState": {
+          "type": "string",
+          "readOnly": true,
+          "enum": [
+            "EXPLOITABLE",
+            "IN_TRIAGE",
+            "FALSE_POSITIVE",
+            "NOT_AFFECTED",
+            "RESOLVED",
+            "NOT_SET"
+          ]
+        },
+        "analysisJustification": {
+          "type": "string",
+          "readOnly": true,
+          "enum": [
+            "CODE_NOT_PRESENT",
+            "CODE_NOT_REACHABLE",
+            "REQUIRES_CONFIGURATION",
+            "REQUIRES_DEPENDENCY",
+            "REQUIRES_ENVIRONMENT",
+            "PROTECTED_BY_COMPILER",
+            "PROTECTED_AT_RUNTIME",
+            "PROTECTED_AT_PERIMETER",
+            "PROTECTED_BY_MITIGATING_CONTROL",
+            "NOT_SET"
+          ]
+        },
+        "analysisResponse": {
+          "type": "string",
+          "readOnly": true,
+          "enum": [
+            "CAN_NOT_FIX",
+            "WILL_NOT_FIX",
+            "UPDATE",
+            "ROLLBACK",
+            "WORKAROUND_AVAILABLE",
+            "NOT_SET"
+          ]
+        },
+        "analysisDetails": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "comment": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "suppressed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ExternalReference": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "vcs",
+            "issue-tracker",
+            "website",
+            "advisories",
+            "bom",
+            "mailing-list",
+            "social",
+            "chat",
+            "documentation",
+            "support",
+            "distribution",
+            "license",
+            "build-meta",
+            "build-system",
+            "release-notes",
+            "other"
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        }
+      }
+    },
+    "PackageURL": {
+      "type": "object",
+      "properties": {
+        "scheme": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "qualifiers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "subpath": {
+          "type": "string"
+        },
+        "coordinates": {
+          "type": "string"
+        }
+      }
+    },
+    "Project": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "author": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "publisher": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "group": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "description": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "classifier": {
+          "type": "string",
+          "enum": [
+            "APPLICATION",
+            "FRAMEWORK",
+            "LIBRARY",
+            "CONTAINER",
+            "OPERATING_SYSTEM",
+            "DEVICE",
+            "FIRMWARE",
+            "FILE"
+          ]
+        },
+        "cpe": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "(cpe:2\\.3:[aho\\*\\-](:(((\\?*|\\*?)([a-zA-Z0-9\\-\\._]|(\\\\[\\\\\\*\\?!\"#$$%&'\\(\\)\\+,/:;<=>@\\[\\]\\^`\\{\\|}~]))+(\\?*|\\*?))|[\\*\\-])){5}(:(([a-zA-Z]{2,3}(-([a-zA-Z]{2}|[0-9]{3}))?)|[\\*\\-]))(:(((\\?*|\\*?)([a-zA-Z0-9\\-\\._]|(\\\\[\\\\\\*\\?!\"#$$%&'\\(\\)\\+,/:;<=>@\\[\\]\\^`\\{\\|}~]))+(\\?*|\\*?))|[\\*\\-])){4})|([c][pP][eE]:/[AHOaho]?(:[A-Za-z0-9\\._\\-~%]*){0,6})"
+        },
+        "purl": {
+          "$ref": "#/definitions/PackageURL"
+        },
+        "swidTagId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "directDependencies": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "parent": {
+          "$ref": "#/definitions/Project"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          }
+        },
+        "properties": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ProjectProperty"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Tag"
+          }
+        },
+        "lastBomImport": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastBomImportFormat": {
+          "type": "string"
+        },
+        "lastInheritedRiskScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "externalReferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExternalReference"
+          }
+        },
+        "metrics": {
+          "$ref": "#/definitions/ProjectMetrics"
+        }
+      }
+    },
+    "ProjectMetrics": {
+      "type": "object",
+      "required": [
+        "critical",
+        "firstOccurrence",
+        "high",
+        "lastOccurrence",
+        "low",
+        "medium",
+        "project"
+      ],
+      "properties": {
+        "project": {
+          "$ref": "#/definitions/Project"
+        },
+        "critical": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "high": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "medium": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "low": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "unassigned": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vulnerabilities": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "vulnerableComponents": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "components": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "suppressed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "inheritedRiskScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "policyViolationsFail": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsWarn": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsInfo": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "firstOccurrence": {
+          "type": "number"
+        },
+        "lastOccurrence": {
+          "type": "number"
+        }
+      }
+    },
+    "ProjectProperty": {
+      "type": "object",
+      "required": [
+        "propertyType"
+      ],
+      "properties": {
+        "project": {
+          "$ref": "#/definitions/Project"
+        },
+        "groupName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "propertyName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "propertyValue": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "propertyType": {
+          "type": "string",
+          "enum": [
+            "BOOLEAN",
+            "INTEGER",
+            "NUMBER",
+            "STRING",
+            "ENCRYPTEDSTRING",
+            "TIMESTAMP",
+            "URL",
+            "UUID"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        }
+      }
+    },
+    "Tag": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        }
+      }
+    },
+    "BomUploadResponse": {
+      "type": "object",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Token used to check task progress"
+        }
+      }
+    },
+    "BodyPart": {
+      "type": "object",
+      "properties": {
+        "contentDisposition": {
+          "$ref": "#/definitions/ContentDisposition"
+        },
+        "entity": {
+          "type": "object"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "mediaType": {
+          "$ref": "#/definitions/MediaType"
+        },
+        "messageBodyWorkers": {
+          "$ref": "#/definitions/MessageBodyWorkers"
+        },
+        "parent": {
+          "$ref": "#/definitions/MultiPart"
+        },
+        "providers": {
+          "$ref": "#/definitions/Providers"
+        },
+        "parameterizedHeaders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ParameterizedHeader"
+            }
+          }
+        }
+      }
+    },
+    "ContentDisposition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "creationDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modificationDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "readDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "FormDataBodyPart": {
+      "type": "object",
+      "properties": {
+        "contentDisposition": {
+          "$ref": "#/definitions/ContentDisposition"
+        },
+        "entity": {
+          "type": "object"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "mediaType": {
+          "$ref": "#/definitions/MediaType"
+        },
+        "messageBodyWorkers": {
+          "$ref": "#/definitions/MessageBodyWorkers"
+        },
+        "parent": {
+          "$ref": "#/definitions/MultiPart"
+        },
+        "providers": {
+          "$ref": "#/definitions/Providers"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "formDataContentDisposition": {
+          "$ref": "#/definitions/FormDataContentDisposition"
+        },
+        "simple": {
+          "type": "boolean"
+        },
+        "parameterizedHeaders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ParameterizedHeader"
+            }
+          }
+        }
+      }
+    },
+    "FormDataContentDisposition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "creationDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "modificationDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "readDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "FormDataMultiPart": {
+      "type": "object",
+      "properties": {
+        "contentDisposition": {
+          "$ref": "#/definitions/ContentDisposition"
+        },
+        "entity": {
+          "type": "object"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "mediaType": {
+          "$ref": "#/definitions/MediaType"
+        },
+        "messageBodyWorkers": {
+          "$ref": "#/definitions/MessageBodyWorkers"
+        },
+        "parent": {
+          "$ref": "#/definitions/MultiPart"
+        },
+        "providers": {
+          "$ref": "#/definitions/Providers"
+        },
+        "bodyParts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BodyPart"
+          }
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/FormDataBodyPart"
+            }
+          }
+        },
+        "parameterizedHeaders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ParameterizedHeader"
+            }
+          }
+        }
+      }
+    },
+    "MediaType": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "subtype": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "wildcardType": {
+          "type": "boolean"
+        },
+        "wildcardSubtype": {
+          "type": "boolean"
+        }
+      }
+    },
+    "MessageBodyWorkers": {
+      "type": "object"
+    },
+    "MultiPart": {
+      "type": "object",
+      "properties": {
+        "contentDisposition": {
+          "$ref": "#/definitions/ContentDisposition"
+        },
+        "entity": {
+          "type": "object"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "mediaType": {
+          "$ref": "#/definitions/MediaType"
+        },
+        "messageBodyWorkers": {
+          "$ref": "#/definitions/MessageBodyWorkers"
+        },
+        "parent": {
+          "$ref": "#/definitions/MultiPart"
+        },
+        "providers": {
+          "$ref": "#/definitions/Providers"
+        },
+        "bodyParts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BodyPart"
+          }
+        },
+        "parameterizedHeaders": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ParameterizedHeader"
+            }
+          }
+        }
+      }
+    },
+    "ParameterizedHeader": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Providers": {
+      "type": "object"
+    },
+    "BomSubmitRequest": {
+      "type": "object",
+      "required": [
+        "bom",
+        "project"
+      ],
+      "properties": {
+        "project": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "projectName": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "projectVersion": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "autoCreate": {
+          "type": "boolean",
+          "readOnly": true
+        },
+        "parentUUID": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "parentName": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "parentVersion": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "bom": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        }
+      }
+    },
+    "IsTokenBeingProcessedResponse": {
+      "type": "object",
+      "required": [
+        "processing"
+      ],
+      "properties": {
+        "processing": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Score": {
+      "type": "object",
+      "properties": {
+        "likelihoodScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "technicalImpactScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "businessImpactScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "likelihood": {
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW"
+          ]
+        },
+        "technicalImpact": {
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW"
+          ]
+        },
+        "businessImpact": {
+          "type": "string",
+          "enum": [
+            "HIGH",
+            "MEDIUM",
+            "LOW"
+          ]
+        }
+      }
+    },
+    "AffectedComponent": {
+      "type": "object",
+      "properties": {
+        "identityType": {
+          "type": "string",
+          "enum": [
+            "CPE",
+            "PURL"
+          ]
+        },
+        "identity": {
+          "type": "string"
+        },
+        "versionType": {
+          "type": "string",
+          "enum": [
+            "EXACT",
+            "RANGE"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "versionEndExcluding": {
+          "type": "string"
+        },
+        "versionEndIncluding": {
+          "type": "string"
+        },
+        "versionStartExcluding": {
+          "type": "string"
+        },
+        "versionStartIncluding": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "affectedVersionAttributions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AffectedVersionAttribution"
+          }
+        }
+      }
+    },
+    "AffectedVersionAttribution": {
+      "type": "object",
+      "properties": {
+        "firstSeen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastSeen": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "NVD",
+            "NPM",
+            "GITHUB",
+            "VULNDB",
+            "OSSINDEX",
+            "RETIREJS",
+            "INTERNAL",
+            "OSV",
+            "SNYK"
+          ]
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "Component": {
+      "type": "object",
+      "required": [
+        "project",
+        "uuid"
+      ],
+      "properties": {
+        "author": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "publisher": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "group": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "classifier": {
+          "type": "string",
+          "enum": [
+            "APPLICATION",
+            "FRAMEWORK",
+            "LIBRARY",
+            "CONTAINER",
+            "OPERATING_SYSTEM",
+            "DEVICE",
+            "FIRMWARE",
+            "FILE"
+          ]
+        },
+        "filename": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{Alnum}:/\\\\!@#$%^&{}\\[\\]()_+\\-=,.~'` ]{1,255}$"
+        },
+        "extension": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{Alnum}!@#$%^&{}\\[\\]()_+\\-=,.~'` ]{1,255}$"
+        },
+        "md5": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{32}$"
+        },
+        "sha1": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{40}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$"
+        },
+        "sha384": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{96}$"
+        },
+        "sha512": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{128}$"
+        },
+        "sha3_256": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$"
+        },
+        "sha3_384": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{96}$"
+        },
+        "sha3_512": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{128}$"
+        },
+        "blake2b_256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "blake2b_384": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{96}$"
+        },
+        "blake2b_512": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{128}$"
+        },
+        "blake3": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]*$"
+        },
+        "cpe": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "(cpe:2\\.3:[aho\\*\\-](:(((\\?*|\\*?)([a-zA-Z0-9\\-\\._]|(\\\\[\\\\\\*\\?!\"#$$%&'\\(\\)\\+,/:;<=>@\\[\\]\\^`\\{\\|}~]))+(\\?*|\\*?))|[\\*\\-])){5}(:(([a-zA-Z]{2,3}(-([a-zA-Z]{2}|[0-9]{3}))?)|[\\*\\-]))(:(((\\?*|\\*?)([a-zA-Z0-9\\-\\._]|(\\\\[\\\\\\*\\?!\"#$$%&'\\(\\)\\+,/:;<=>@\\[\\]\\^`\\{\\|}~]))+(\\?*|\\*?))|[\\*\\-])){4})|([c][pP][eE]:/[AHOaho]?(:[A-Za-z0-9\\._\\-~%]*){0,6})"
+        },
+        "purl": {
+          "$ref": "#/definitions/PackageURL"
+        },
+        "purlCoordinates": {
+          "$ref": "#/definitions/PackageURL"
+        },
+        "swidTagId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "copyright": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "license": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "licenseUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^((((https?|ftps?|sftp|imap|rtsp|rtmp|sip|sips|git|ssh|telnet|nntp|file)://)|(mailto:|news:))(%[0-9A-Fa-f]{2}|[-()_.!~*';/?:@&=+$,A-Za-z0-9])+)([).!';/?:,][[:blank:]])?$"
+        },
+        "resolvedLicense": {
+          "$ref": "#/definitions/License"
+        },
+        "directDependencies": {
+          "type": "string"
+        },
+        "externalReferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExternalReference"
+          }
+        },
+        "parent": {
+          "$ref": "#/definitions/Component"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Component"
+          }
+        },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Vulnerability"
+          }
+        },
+        "project": {
+          "$ref": "#/definitions/Project"
+        },
+        "lastInheritedRiskScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "bomRef": {
+          "type": "string"
+        },
+        "metrics": {
+          "$ref": "#/definitions/DependencyMetrics"
+        },
+        "repositoryMeta": {
+          "$ref": "#/definitions/RepositoryMetaComponent"
+        },
+        "usedBy": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "dependencyGraph": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "expandDependencyGraph": {
+          "type": "boolean"
+        },
+        "isInternal": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Cwe": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "cweId": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        }
+      }
+    },
+    "DataClassification": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": [
+            "INBOUND",
+            "OUTBOUND",
+            "BI_DIRECTIONAL",
+            "UNKNOWN"
+          ]
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "DependencyMetrics": {
+      "type": "object",
+      "required": [
+        "component",
+        "firstOccurrence",
+        "lastOccurrence",
+        "project"
+      ],
+      "properties": {
+        "project": {
+          "$ref": "#/definitions/Project"
+        },
+        "component": {
+          "$ref": "#/definitions/Component"
+        },
+        "critical": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "high": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "medium": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "low": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "unassigned": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vulnerabilities": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "suppressed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "inheritedRiskScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "policyViolationsFail": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsWarn": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsInfo": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "firstOccurrence": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastOccurrence": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "FindingAttribution": {
+      "type": "object",
+      "required": [
+        "attributedOn",
+        "component",
+        "uuid",
+        "vulnerability"
+      ],
+      "properties": {
+        "attributedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "analyzerIdentity": {
+          "type": "string",
+          "enum": [
+            "INTERNAL_ANALYZER",
+            "OSSINDEX_ANALYZER",
+            "NPM_AUDIT_ANALYZER",
+            "VULNDB_ANALYZER",
+            "SNYK_ANALYZER",
+            "NONE"
+          ]
+        },
+        "component": {
+          "$ref": "#/definitions/Component"
+        },
+        "vulnerability": {
+          "$ref": "#/definitions/Vulnerability"
+        },
+        "alternateIdentifier": {
+          "type": "string"
+        },
+        "referenceUrl": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "License": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "licenseGroups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LicenseGroup"
+          }
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "licenseText": {
+          "type": "string"
+        },
+        "standardLicenseTemplate": {
+          "type": "string"
+        },
+        "standardLicenseHeader": {
+          "type": "string"
+        },
+        "licenseComments": {
+          "type": "string"
+        },
+        "licenseId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-zA-Z0-9_.\\-+]*$"
+        },
+        "isOsiApproved": {
+          "type": "boolean"
+        },
+        "isFsfLibre": {
+          "type": "boolean"
+        },
+        "isDeprecatedLicenseId": {
+          "type": "boolean"
+        },
+        "isCustomLicense": {
+          "type": "boolean"
+        },
+        "seeAlso": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "LicenseGroup": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "licenses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/License"
+          }
+        },
+        "riskWeight": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "OrganizationalContact": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        }
+      }
+    },
+    "OrganizationalEntity": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "urls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "contacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrganizationalContact"
+          }
+        }
+      }
+    },
+    "RepositoryMetaComponent": {
+      "type": "object",
+      "required": [
+        "lastCheck",
+        "latestVersion",
+        "name",
+        "repositoryType"
+      ],
+      "properties": {
+        "repositoryType": {
+          "type": "string",
+          "enum": [
+            "CPAN",
+            "MAVEN",
+            "NPM",
+            "GEM",
+            "PYPI",
+            "NUGET",
+            "HEX",
+            "COMPOSER",
+            "CARGO",
+            "GO_MODULES",
+            "UNSUPPORTED"
+          ]
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "latestVersion": {
+          "type": "string"
+        },
+        "published": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastCheck": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ServiceComponent": {
+      "type": "object",
+      "required": [
+        "project",
+        "uuid"
+      ],
+      "properties": {
+        "provider": {
+          "$ref": "#/definitions/OrganizationalEntity"
+        },
+        "group": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "authenticated": {
+          "type": "boolean"
+        },
+        "crossesTrustBoundary": {
+          "type": "boolean"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DataClassification"
+          }
+        },
+        "externalReferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExternalReference"
+          }
+        },
+        "parent": {
+          "$ref": "#/definitions/ServiceComponent"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServiceComponent"
+          }
+        },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Vulnerability"
+          }
+        },
+        "project": {
+          "$ref": "#/definitions/Project"
+        },
+        "lastInheritedRiskScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "bomRef": {
+          "type": "string"
+        }
+      }
+    },
+    "Vulnerability": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "vulnId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "friendlyVulnId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "title": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "subTitle": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "description": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "detail": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "recommendation": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "references": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "credits": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "published": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cwes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "cvssV2BaseScore": {
+          "type": "number"
+        },
+        "cvssV2ImpactSubScore": {
+          "type": "number"
+        },
+        "cvssV2ExploitabilitySubScore": {
+          "type": "number"
+        },
+        "cvssV2Vector": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "cvssV3BaseScore": {
+          "type": "number"
+        },
+        "cvssV3ImpactSubScore": {
+          "type": "number"
+        },
+        "cvssV3ExploitabilitySubScore": {
+          "type": "number"
+        },
+        "cvssV3Vector": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "owaspRRLikelihoodScore": {
+          "type": "number"
+        },
+        "owaspRRTechnicalImpactScore": {
+          "type": "number"
+        },
+        "owaspRRBusinessImpactScore": {
+          "type": "number"
+        },
+        "owaspRRVector": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "severity": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$",
+          "enum": [
+            "CRITICAL",
+            "HIGH",
+            "MEDIUM",
+            "LOW",
+            "INFO",
+            "UNASSIGNED"
+          ]
+        },
+        "vulnerableVersions": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "patchedVersions": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "epssScore": {
+          "type": "number"
+        },
+        "epssPercentile": {
+          "type": "number"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Component"
+          }
+        },
+        "serviceComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ServiceComponent"
+          }
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "affectedProjectCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingAttribution": {
+          "$ref": "#/definitions/FindingAttribution"
+        },
+        "affectedComponents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AffectedComponent"
+          }
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityAlias"
+          }
+        },
+        "cwe": {
+          "$ref": "#/definitions/Cwe"
+        }
+      }
+    },
+    "VulnerabilityAlias": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "internalId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "cveId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "ghsaId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "sonatypeId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "osvId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "snykId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "gsdId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "vulnDbId": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "ConfigProperty": {
+      "type": "object",
+      "required": [
+        "propertyType"
+      ],
+      "properties": {
+        "groupName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "propertyName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "propertyValue": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "propertyType": {
+          "type": "string",
+          "enum": [
+            "BOOLEAN",
+            "INTEGER",
+            "NUMBER",
+            "STRING",
+            "ENCRYPTEDSTRING",
+            "TIMESTAMP",
+            "URL",
+            "UUID"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        }
+      }
+    },
+    "Finding": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "vulnerability": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "analysis": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "attribution": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "matrix": {
+          "type": "string"
+        }
+      }
+    },
+    "MappedLdapGroup": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "dn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "MappedLdapGroupRequest": {
+      "type": "object",
+      "required": [
+        "dn",
+        "team"
+      ],
+      "properties": {
+        "team": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "dn": {
+          "type": "string",
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        }
+      }
+    },
+    "VulnerabilityMetrics": {
+      "type": "object",
+      "required": [
+        "measuredAt"
+      ],
+      "properties": {
+        "year": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "month": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "measuredAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "PortfolioMetrics": {
+      "type": "object",
+      "required": [
+        "critical",
+        "firstOccurrence",
+        "high",
+        "lastOccurrence",
+        "low",
+        "medium"
+      ],
+      "properties": {
+        "critical": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "high": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "medium": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "low": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "unassigned": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vulnerabilities": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "projects": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vulnerableProjects": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "components": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vulnerableComponents": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "suppressed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "findingsUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "inheritedRiskScore": {
+          "type": "number",
+          "format": "double"
+        },
+        "policyViolationsFail": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsWarn": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsInfo": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsSecurityUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsLicenseUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalTotal": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalAudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "policyViolationsOperationalUnaudited": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "firstOccurrence": {
+          "type": "number"
+        },
+        "lastOccurrence": {
+          "type": "number"
+        }
+      }
+    },
+    "NotificationPublisher": {
+      "type": "object",
+      "required": [
+        "name",
+        "publisherClass",
+        "templateMimeType",
+        "uuid"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "description": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024
+        },
+        "publisherClass": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "template": {
+          "type": "string"
+        },
+        "templateMimeType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "defaultPublisher": {
+          "type": "boolean"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "ApiKey": {
+      "type": "object",
+      "required": [
+        "key"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 32,
+          "maxLength": 255,
+          "pattern": "^\\p{Alnum}*$"
+        }
+      }
+    },
+    "LdapUser": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "dn": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Team"
+          }
+        },
+        "email": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Permission"
+          }
+        }
+      }
+    },
+    "ManagedUser": {
+      "type": "object",
+      "required": [
+        "lastPasswordChange"
+      ],
+      "properties": {
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "newPassword": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "confirmPassword": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "lastPasswordChange": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "fullname": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "suspended": {
+          "type": "boolean"
+        },
+        "forcePasswordChange": {
+          "type": "boolean"
+        },
+        "nonExpiryPassword": {
+          "type": "boolean"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Team"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Permission"
+          }
+        }
+      }
+    },
+    "MappedOidcGroup": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "group": {
+          "$ref": "#/definitions/OidcGroup"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "NotificationRule": {
+      "type": "object",
+      "required": [
+        "name",
+        "scope",
+        "uuid"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "notifyChildren": {
+          "type": "boolean"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "SYSTEM",
+            "PORTFOLIO"
+          ]
+        },
+        "notificationLevel": {
+          "type": "string",
+          "enum": [
+            "INFORMATIONAL",
+            "WARNING",
+            "ERROR"
+          ]
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          }
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Team"
+          }
+        },
+        "notifyOn": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "CONFIGURATION",
+              "DATASOURCE_MIRRORING",
+              "REPOSITORY",
+              "INTEGRATION",
+              "INDEXING_SERVICE",
+              "FILE_SYSTEM",
+              "ANALYZER",
+              "NEW_VULNERABILITY",
+              "NEW_VULNERABLE_DEPENDENCY",
+              "PROJECT_AUDIT_CHANGE",
+              "BOM_CONSUMED",
+              "BOM_PROCESSED",
+              "BOM_PROCESSING_FAILED",
+              "VEX_CONSUMED",
+              "VEX_PROCESSED",
+              "POLICY_VIOLATION",
+              "PROJECT_CREATED"
+            ]
+          }
+        },
+        "message": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1024,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "publisher": {
+          "$ref": "#/definitions/NotificationPublisher"
+        },
+        "publisherConfig": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "OidcGroup": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        }
+      }
+    },
+    "OidcUser": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "subjectIdentifier": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Team"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Permission"
+          }
+        }
+      }
+    },
+    "Permission": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[a-zA-Z_0-9]*$"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "Team": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "[\\P{Cc}]+"
+        },
+        "apiKeys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApiKey"
+          }
+        },
+        "ldapUsers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LdapUser"
+          }
+        },
+        "managedUsers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManagedUser"
+          }
+        },
+        "oidcUsers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OidcUser"
+          }
+        },
+        "mappedLdapGroups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MappedLdapGroup"
+          }
+        },
+        "mappedOidcGroups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MappedOidcGroup"
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Permission"
+          }
+        }
+      }
+    },
+    "MappedOidcGroupRequest": {
+      "type": "object",
+      "required": [
+        "group",
+        "team"
+      ],
+      "properties": {
+        "team": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "group": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      }
+    },
+    "UserPrincipal": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Permission"
+          }
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "teams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Team"
+          }
+        },
+        "username": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "Policy": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "operator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$",
+          "enum": [
+            "ALL",
+            "ANY"
+          ]
+        },
+        "violationState": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$",
+          "enum": [
+            "INFO",
+            "WARN",
+            "FAIL"
+          ]
+        },
+        "policyConditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PolicyCondition"
+          }
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Tag"
+          }
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "includeChildren": {
+          "type": "boolean"
+        },
+        "global": {
+          "type": "boolean"
+        }
+      }
+    },
+    "PolicyCondition": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "policy": {
+          "$ref": "#/definitions/Policy"
+        },
+        "operator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$",
+          "enum": [
+            "IS",
+            "IS_NOT",
+            "MATCHES",
+            "NO_MATCH",
+            "NUMERIC_GREATER_THAN",
+            "NUMERIC_LESS_THAN",
+            "NUMERIC_EQUAL",
+            "NUMERIC_NOT_EQUAL",
+            "NUMERIC_GREATER_THAN_OR_EQUAL",
+            "NUMERIC_LESSER_THAN_OR_EQUAL",
+            "CONTAINS_ALL",
+            "CONTAINS_ANY"
+          ]
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$",
+          "enum": [
+            "AGE",
+            "COORDINATES",
+            "CPE",
+            "LICENSE",
+            "LICENSE_GROUP",
+            "PACKAGE_URL",
+            "SEVERITY",
+            "SWID_TAGID",
+            "VERSION",
+            "COMPONENT_HASH",
+            "CWE",
+            "VULNERABILITY_ID"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "PolicyViolation": {
+      "type": "object",
+      "required": [
+        "uuid"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "LICENSE",
+            "SECURITY",
+            "OPERATIONAL"
+          ]
+        },
+        "project": {
+          "$ref": "#/definitions/Project"
+        },
+        "component": {
+          "$ref": "#/definitions/Component"
+        },
+        "policyCondition": {
+          "$ref": "#/definitions/PolicyCondition"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "analysis": {
+          "$ref": "#/definitions/ViolationAnalysis"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "ViolationAnalysis": {
+      "type": "object",
+      "required": [
+        "analysisState"
+      ],
+      "properties": {
+        "analysisState": {
+          "type": "string",
+          "enum": [
+            "APPROVED",
+            "REJECTED",
+            "NOT_SET"
+          ]
+        },
+        "analysisComments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ViolationAnalysisComment"
+          }
+        },
+        "isSuppressed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ViolationAnalysisComment": {
+      "type": "object",
+      "required": [
+        "comment",
+        "timestamp"
+      ],
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "commenter": {
+          "type": "string"
+        }
+      }
+    },
+    "CloneProjectRequest": {
+      "type": "object",
+      "required": [
+        "project",
+        "version"
+      ],
+      "properties": {
+        "project": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "version": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        }
+      }
+    },
+    "Repository": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "internal",
+        "resolutionOrder",
+        "type",
+        "uuid"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "CPAN",
+            "MAVEN",
+            "NPM",
+            "GEM",
+            "PYPI",
+            "NUGET",
+            "HEX",
+            "COMPOSER",
+            "CARGO",
+            "GO_MODULES",
+            "UNSUPPORTED"
+          ]
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "resolutionOrder": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "internal": {
+          "type": "boolean"
+        },
+        "username": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "SearchResult": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "TeamSelfResponse": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Permission"
+          }
+        }
+      }
+    },
+    "IdentifiableObject": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        }
+      }
+    },
+    "VexSubmitRequest": {
+      "type": "object",
+      "required": [
+        "project",
+        "vex"
+      ],
+      "properties": {
+        "project": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "projectName": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "projectVersion": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}]*$"
+        },
+        "vex": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        }
+      }
+    },
+    "ViolationAnalysisRequest": {
+      "type": "object",
+      "required": [
+        "component",
+        "policyViolation"
+      ],
+      "properties": {
+        "component": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "policyViolation": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "analysisState": {
+          "type": "string",
+          "readOnly": true,
+          "enum": [
+            "APPROVED",
+            "REJECTED",
+            "NOT_SET"
+          ]
+        },
+        "comment": {
+          "type": "string",
+          "readOnly": true,
+          "pattern": "^[\\p{IsWhite_Space}\\p{L}\\p{M}\\p{S}\\p{N}\\p{P}\\n\\r\\t]*$"
+        },
+        "suppressed": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

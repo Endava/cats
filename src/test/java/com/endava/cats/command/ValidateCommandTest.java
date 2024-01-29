@@ -40,6 +40,17 @@ class ValidateCommandTest {
                 !validContractEntry.valid() && validContractEntry.reasons().get(0).contains("NoSuchFileException")));
     }
 
+    @Test
+    void shouldValidateSwagger2() {
+        ValidateCommand validateCommandSpy = Mockito.spy(validateCommand);
+        CommandLine commandLine = new CommandLine(validateCommandSpy);
+        commandLine.execute("--contract", "src/test/resources/issue77.json", "--detailed");
+        Mockito.verify(validateCommandSpy, Mockito.times(1)).displayText(ArgumentMatchers.argThat(validContractEntry ->
+                !validContractEntry.valid() && validContractEntry.reasons().get(0).contains("attribute paths.'/authentication/token'(post).[grant_type].schema is unexpected")
+                        && validContractEntry.reasons().size() == 11));
+        Mockito.verify(validateCommandSpy, Mockito.times(1)).displayReasonLine(Mockito.any(ValidContractEntry.class));
+    }
+
     @ParameterizedTest
     @CsvSource({"true,1", "false,0"})
     void shouldBeInvalidWhenContractInvalid(boolean detailed, int times) {

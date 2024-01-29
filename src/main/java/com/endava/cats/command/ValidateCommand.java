@@ -2,12 +2,12 @@ package com.endava.cats.command;
 
 import com.endava.cats.command.model.ValidContractEntry;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.openapi.OpenApiParseResult;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
-import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import picocli.CommandLine;
 
 import java.util.List;
@@ -52,12 +52,12 @@ public class ValidateCommand implements Runnable {
         List<String> reasons = List.of("valid");
         String version = "N/A";
         try {
-            SwaggerParseResult parseResult = OpenApiUtils.readAsParseResult(contract);
-            version = parseResult.getOpenAPI().getSpecVersion().name();
+            OpenApiParseResult parseResult = OpenApiUtils.readAsParseResult(contract);
+            version = parseResult.getVersion().name();
 
-            if (!parseResult.getMessages().isEmpty()) {
+            if (!parseResult.getSwaggerParseResult().getMessages().isEmpty()) {
                 isValid = false;
-                reasons = parseResult.getMessages();
+                reasons = parseResult.getSwaggerParseResult().getMessages();
             }
         } catch (Exception e) {
             isValid = false;
