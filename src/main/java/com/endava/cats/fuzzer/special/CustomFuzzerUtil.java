@@ -379,7 +379,7 @@ public class CustomFuzzerUtil {
                 log.error("Supplied variable was not found [{}]", propertyValue);
             } else {
                 log.note("Variable [{}] found. Will be replaced with [{}]", propertyValue, variableValue);
-                propertyValue = variableValue;
+                propertyValue = CatsUtil.getAsAppropriateType(variableValue);
             }
         }
         return propertyValue;

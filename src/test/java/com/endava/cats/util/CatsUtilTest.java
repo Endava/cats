@@ -106,4 +106,12 @@ class CatsUtilTest {
         FuzzingResult result = catsUtil.replaceField(payload, "arrayWithInteger", FuzzingStrategy.replace().withData(List.of(55, 66)));
         Assertions.assertThat(result.json()).contains("55").contains("66").contains("USA").doesNotContain("88").doesNotContain("99");
     }
+
+    @ParameterizedTest
+    @CsvSource({"test,java.lang.String", "10,java.lang.Integer", "20L,java.lang.Long", "20.34,java.lang.Float"})
+    void shouldConvertToAppropriateType(String value, String typeName) throws ClassNotFoundException {
+        Class<?> expectedType = Class.forName(typeName);
+        Object result = CatsUtil.getAsAppropriateType(value);
+        Assertions.assertThat(result).isInstanceOf(expectedType);
+    }
 }
