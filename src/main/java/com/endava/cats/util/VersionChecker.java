@@ -79,14 +79,31 @@ public class VersionChecker {
         return 0;
     }
 
+    /**
+     * Represents the result of a version check operation.
+     */
     @Builder
     @Getter
     @ToString
     public static class CheckResult {
+        /**
+         * Indicates whether a new version is available.
+         */
         private boolean newVersion;
+
+        /**
+         * The version information.
+         */
         private String version;
+
+        /**
+         * The download URL for the new version.
+         */
         private String downloadUrl;
 
+        /**
+         * The release notes for the new version.
+         */
         private String releaseNotes;
     }
 }

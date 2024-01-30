@@ -8,11 +8,19 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 
+/**
+ * Checks if OpenAPI specifies any versioning information.
+ */
 @LinterFuzzer
 @Singleton
 public class VersionsLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new VersionsLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public VersionsLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

@@ -129,6 +129,13 @@ public class MatchArguments {
                 isMatchedResponseRegex(response.getBody());
     }
 
+    /**
+     * Checks if the provided input value is reflected in the body of a Cats response.
+     *
+     * @param catsResponse the Cats response to analyze
+     * @param inputValue   the input value to check for reflection
+     * @return {@code true} if the input value is reflected in the response body, {@code false} otherwise
+     */
     public boolean isInputReflected(CatsResponse catsResponse, String inputValue) {
         return matchInput && catsResponse.getBody().contains(inputValue);
     }

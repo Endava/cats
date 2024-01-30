@@ -17,6 +17,11 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
     private final HeadersIteratorExecutor headersIteratorExecutor;
     private BaseHeadersFuzzerContext fuzzerContext;
 
+    /**
+     * Creates a new instance of BaseHeadersFuzzer subclass.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     protected BaseHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         this.headersIteratorExecutor = headersIteratorExecutor;
     }
@@ -37,6 +42,14 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
                         .build());
     }
 
+    /**
+     * Retrieves the context for the base headers fuzzer.
+     *
+     * <p>This method returns the existing fuzzer context if it has already been created; otherwise, it creates a new
+     * fuzzer context using the {@code createFuzzerContext} method and caches it for subsequent invocations.</p>
+     *
+     * @return The BaseHeadersFuzzerContext representing the context for the base headers fuzzer.
+     */
     public BaseHeadersFuzzerContext getFuzzerContext() {
         if (fuzzerContext == null) {
             fuzzerContext = createFuzzerContext();

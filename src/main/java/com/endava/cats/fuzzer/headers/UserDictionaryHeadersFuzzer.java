@@ -14,6 +14,9 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that uses a custom user dictionary for fuzzing.
+ */
 @Singleton
 @HeaderFuzzer
 public class UserDictionaryHeadersFuzzer implements Fuzzer {
@@ -23,6 +26,16 @@ public class UserDictionaryHeadersFuzzer implements Fuzzer {
 
     private final UserArguments userArguments;
 
+    /**
+     * Constructs a new instance of UserDictionaryHeadersFuzzer with injected dependencies.
+     *
+     * <p>This fuzzer is designed to iterate over headers using the provided HeadersIteratorExecutor and
+     * fuzz headers based on matching arguments from MatchArguments and user-specific arguments from UserArguments.</p>
+     *
+     * @param headersIteratorExecutor The HeadersIteratorExecutor responsible for iterating over headers during fuzzing.
+     * @param matchArguments          The MatchArguments providing criteria for matching headers during fuzzing.
+     * @param userArguments           The UserArguments containing user-specific parameters for header fuzzing.
+     */
     @Inject
     public UserDictionaryHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor, MatchArguments matchArguments, UserArguments userArguments) {
         this.headersIteratorExecutor = headersIteratorExecutor;

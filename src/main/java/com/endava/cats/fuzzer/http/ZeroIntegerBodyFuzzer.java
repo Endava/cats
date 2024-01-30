@@ -6,9 +6,18 @@ import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that sends the zero integer as a body.
+ */
 @Singleton
 @HttpFuzzer
 public class ZeroIntegerBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
+
+    /**
+     * Creates a new ZeroIntegerBodyFuzzer instance.
+     *
+     * @param executor the executor
+     */
     @Inject
     public ZeroIntegerBodyFuzzer(SimpleExecutor executor) {
         super(executor);

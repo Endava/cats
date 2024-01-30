@@ -15,6 +15,12 @@ public class Cloner {
         //ntd
     }
 
+    /**
+     * Creates a new set containing cloned copies of the provided collection of CatsHeader objects.
+     *
+     * @param items The collection of CatsHeader objects to clone.
+     * @return A new set containing cloned copies of the provided CatsHeader objects.
+     */
     public static Set<CatsHeader> cloneMe(Collection<CatsHeader> items) {
         Set<CatsHeader> clones = new HashSet<>();
 

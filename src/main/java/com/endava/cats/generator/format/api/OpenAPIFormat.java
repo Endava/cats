@@ -2,6 +2,9 @@ package com.endava.cats.generator.format.api;
 
 import java.util.List;
 
+/**
+ * Marks forms supported by a specific format generator.
+ */
 public interface OpenAPIFormat {
 
     /**

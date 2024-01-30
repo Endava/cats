@@ -13,11 +13,19 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fuzzer that trails headers with control chars.
+ */
 @Singleton
 @HeaderFuzzer
 @ControlCharFuzzer
 public class TrailingControlCharsInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new TrailingControlCharsInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     public TrailingControlCharsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

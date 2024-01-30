@@ -83,7 +83,7 @@ public class ReportingArguments {
             description = "A list of headers to mask when logging into console or in report files. Headers will be replaced with @|underline $$headerName|@ so that test cases can be replayed with environment variables", split = ",")
     private Set<String> maskHeaders;
 
-    public List<String> getLogData() {
+    private List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }
 
@@ -174,12 +174,37 @@ public class ReportingArguments {
         return verbosity == Verbosity.SUMMARY;
     }
 
+    /**
+     * Enumerates different formats for generating reports.
+     */
     public enum ReportFormat {
-        HTML_ONLY, HTML_JS, JUNIT
+
+        /**
+         * Generates a report in HTML format without JavaScript.
+         */
+        HTML_ONLY,
+        /**
+         * Generates a report in HTML format with JavaScript support.
+         */
+        HTML_JS,
+        /**
+         * Generates a report in JUnit format.
+         */
+        JUNIT
     }
 
+    /**
+     * Enumerates different levels of verbosity for displaying information.
+     */
     public enum Verbosity {
-        SUMMARY, DETAILED
+        /**
+         * Provides a summary level of information.
+         */
+        SUMMARY,
+        /**
+         * Provides a detailed level of information.
+         */
+        DETAILED
     }
 
 }

@@ -26,13 +26,12 @@ import static com.endava.cats.util.WordUtils.matchesAsLowerCase;
 /**
  * Check that responses include Content-Type, Content-Type-Options, X-Frame-Options: deny
  */
-
 @Singleton
 @HeaderFuzzer
 public class CheckSecurityHeadersFuzzer implements Fuzzer {
 
-    protected static final String SECURITY_HEADERS_AS_STRING;
-    protected static final Map<String, List<KeyValuePair<String, String>>> SECURITY_HEADERS = new HashMap<>();
+    static final String SECURITY_HEADERS_AS_STRING;
+    static final Map<String, List<KeyValuePair<String, String>>> SECURITY_HEADERS = new HashMap<>();
 
     static {
         SECURITY_HEADERS.put("Cache-Control", Collections.singletonList(new KeyValuePair<>("Cache-Control", ".*no-store.*")));

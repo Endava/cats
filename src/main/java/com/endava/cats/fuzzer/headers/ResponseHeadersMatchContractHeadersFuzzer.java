@@ -20,6 +20,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+/**
+ * Fuzzer that checks if response headers match the ones defined in the contract.
+ */
 @Singleton
 @HeaderFuzzer
 public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
@@ -27,6 +30,15 @@ public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
 
+    /**
+     * Constructs a new instance of ResponseHeadersMatchContractHeadersFuzzer.
+     *
+     * <p>This fuzzer is designed to match response headers against contract headers and utilizes a SimpleExecutor
+     * for executing fuzzing. The provided TestCaseListener is used for handling test case events.</p>
+     *
+     * @param testCaseListener The TestCaseListener instance responsible for handling test case events.
+     * @param simpleExecutor   The SimpleExecutor responsible for executing fuzzing with response headers matching contract headers.
+     */
     @Inject
     public ResponseHeadersMatchContractHeadersFuzzer(TestCaseListener testCaseListener, SimpleExecutor simpleExecutor) {
         this.simpleExecutor = simpleExecutor;

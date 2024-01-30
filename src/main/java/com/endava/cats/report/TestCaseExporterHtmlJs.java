@@ -5,10 +5,21 @@ import com.github.mustachejava.Mustache;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 
+/**
+ * A concrete implementation of TestCaseExporter for exporting test case results in HTML format with JavaScript.
+ * This class extends the base TestCaseExporter and provides specific functionality for HTML with JavaScript reporting.
+ *
+ * @see TestCaseExporter
+ */
 @Singleton
 @Named("htmlJs")
 public class TestCaseExporterHtmlJs extends TestCaseExporter {
 
+    /**
+     * Constructs a new instance of TestCaseExporterHtmlJs with the specified reporting arguments.
+     *
+     * @param reportingArguments the reporting arguments for configuring the TestCaseExporterHtmlJs
+     */
     public TestCaseExporterHtmlJs(ReportingArguments reportingArguments) {
         super(reportingArguments);
     }

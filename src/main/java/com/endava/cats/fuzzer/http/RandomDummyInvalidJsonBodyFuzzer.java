@@ -16,10 +16,13 @@ import jakarta.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Fuzzer that sends dummy invalid JSON bodies.
+ */
 @Singleton
 @HttpFuzzer
 public class RandomDummyInvalidJsonBodyFuzzer implements Fuzzer {
-    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final SimpleExecutor simpleExecutor;
     private static final List<String> PAYLOADS = List.of("{0}", "{0.0}", "[{}]", "{$}",
             """ 
@@ -47,6 +50,11 @@ public class RandomDummyInvalidJsonBodyFuzzer implements Fuzzer {
                     {␀:␀}
                     """);
 
+    /**
+     * Create a new RandomDummyInvalidJsonBodyFuzzer instance.
+     *
+     * @param ce the executor
+     */
     @Inject
     RandomDummyInvalidJsonBodyFuzzer(SimpleExecutor ce) {
         this.simpleExecutor = ce;

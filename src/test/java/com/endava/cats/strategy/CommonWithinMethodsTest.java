@@ -1,8 +1,6 @@
-package com.endava.cats.fuzzer.fields.within;
+package com.endava.cats.strategy;
 
 import com.endava.cats.generator.simple.UnicodeGenerator;
-import com.endava.cats.strategy.CommonWithinMethods;
-import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;

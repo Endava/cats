@@ -24,6 +24,9 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * Fuzzer that will perform fuzzing based on user supplied payloads that also support response verification.
+ */
 @Singleton
 @SpecialFuzzer
 public class SecurityFuzzer implements CustomFuzzerBase {
@@ -31,6 +34,12 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     private final FilesArguments filesArguments;
     private final CustomFuzzerUtil customFuzzerUtil;
 
+    /**
+     * Constructs a new SecurityFuzzer instance.
+     *
+     * @param cp  The FilesArguments object containing the files to be fuzzed.
+     * @param cfu The CustomFuzzerUtil object used to perform custom fuzzing operations.
+     */
     public SecurityFuzzer(FilesArguments cp, CustomFuzzerUtil cfu) {
         this.filesArguments = cp;
         this.customFuzzerUtil = cfu;

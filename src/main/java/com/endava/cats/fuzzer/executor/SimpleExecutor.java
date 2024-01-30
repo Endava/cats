@@ -30,6 +30,15 @@ public class SimpleExecutor {
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
 
+    /**
+     * Constructs a new instance of SimpleExecutor.
+     *
+     * <p>This executor is designed to simplify the execution of test cases by relying on a provided
+     * TestCaseListener for handling events and a ServiceCaller for making service calls during execution.</p>
+     *
+     * @param testCaseListener The TestCaseListener instance responsible for handling test case events.
+     * @param serviceCaller    The ServiceCaller instance responsible for making service calls during execution.
+     */
     @Inject
     public SimpleExecutor(TestCaseListener testCaseListener, ServiceCaller serviceCaller) {
         this.testCaseListener = testCaseListener;

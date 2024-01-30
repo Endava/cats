@@ -11,12 +11,20 @@ import jakarta.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Checks if OpenAPI contract defines tracing information.
+ */
 @LinterFuzzer
 @Singleton
 public class TracingHeadersLinterFuzzer extends BaseLinterFuzzer {
     static final List<String> HEADERS = Arrays.asList("traceid", "correlationid", "requestid", "sessionid");
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new TracingHeadersLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public TracingHeadersLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

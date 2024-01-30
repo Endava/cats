@@ -12,10 +12,18 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fuzzer that prefixes headers with spaces.
+ */
 @Singleton
 @HeaderFuzzer
 public class LeadingSpacesInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new LeadingSpacesInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     protected LeadingSpacesInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

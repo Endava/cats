@@ -7,9 +7,17 @@ import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer used to send negative integers as body.
+ */
 @Singleton
 @HttpFuzzer
 public class RandomNegativeIntegerBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
+    /**
+     * Creates a new RandomNegativeIntegerBodyFuzzer instance.
+     *
+     * @param executor the executor
+     */
     @Inject
     public RandomNegativeIntegerBodyFuzzer(SimpleExecutor executor) {
         super(executor);

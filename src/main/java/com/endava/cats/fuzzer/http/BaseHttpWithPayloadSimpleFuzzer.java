@@ -19,7 +19,7 @@ import java.util.List;
  * It expects a 4XX within the response.
  */
 public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
-    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final SimpleExecutor simpleExecutor;
 
     BaseHttpWithPayloadSimpleFuzzer(SimpleExecutor ce) {

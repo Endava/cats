@@ -9,10 +9,18 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that sends only spaces in headers.
+ */
 @Singleton
 @HeaderFuzzer
 public class OnlySpacesInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new OnlySpacesInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     protected OnlySpacesInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

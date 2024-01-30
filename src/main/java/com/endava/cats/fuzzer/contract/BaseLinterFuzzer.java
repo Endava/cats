@@ -24,7 +24,7 @@ public abstract class BaseLinterFuzzer implements Fuzzer {
     protected static final String IS_EMPTY = " is empty";
     protected static final String IS_TOO_SHORT = " is too short";
     protected static final String EMPTY = "";
-    public static final String N_A = "N/A";
+    private static final String N_A = "N/A";
 
     protected final TestCaseListener testCaseListener;
     protected final List<String> fuzzedPaths = new ArrayList<>();

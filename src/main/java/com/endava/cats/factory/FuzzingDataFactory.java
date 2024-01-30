@@ -11,10 +11,10 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonArray;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -32,7 +32,6 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +64,15 @@ public class FuzzingDataFactory {
     private final ValidDataFormat validDataFormat;
     private final FilterArguments filterArguments;
 
+    /**
+     * Constructs a new {@code FuzzingDataFactory} with the specified arguments.
+     *
+     * @param filesArguments      the arguments related to files and paths
+     * @param processingArguments the arguments related to data processing
+     * @param catsGlobalContext   the global context for Cats
+     * @param validDataFormat     the valid data format for fuzzing
+     * @param filterArguments     the arguments for filtering data
+     */
     @Inject
     public FuzzingDataFactory(FilesArguments filesArguments, ProcessingArguments processingArguments, CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, FilterArguments filterArguments) {
         this.filesArguments = filesArguments;
@@ -512,7 +520,7 @@ public class FuzzingDataFactory {
     private Map<String, Map<String, JsonElement>> getAnyOrOneOffElements(String jsonElementKey, JsonElement jsonElement) {
         Map<String, Map<String, JsonElement>> anyOrOneOfs = new HashMap<>();
         JsonObject jsonObject;
-        if(jsonElement.isJsonObject()) {
+        if (jsonElement.isJsonObject()) {
             jsonObject = jsonElement.getAsJsonObject();
             for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
                 if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull()) {
@@ -545,7 +553,6 @@ public class FuzzingDataFactory {
         return false;
     }
 
-    @NotNull
     private BiFunction<Map<String, JsonElement>, Map<String, JsonElement>, Map<String, JsonElement>> mergeMapsBiFunction() {
         return (firstMap, secondMap) -> {
             Map<String, JsonElement> newMap = new HashMap<>();
@@ -567,7 +574,6 @@ public class FuzzingDataFactory {
         return jsonElementKey + "." + elementEntry;
     }
 
-    @NotNull
     private String createArrayKey(String jsonElementKey, String nextKey) {
         return jsonElementKey + "." + nextKey + "[*]";
     }

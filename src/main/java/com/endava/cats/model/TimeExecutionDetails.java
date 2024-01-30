@@ -6,6 +6,9 @@ import lombok.ToString;
 
 import java.util.List;
 
+/**
+ * Entity holding details about time execution details for test cases.
+ */
 @Builder
 @Getter
 @ToString

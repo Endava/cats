@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
+/**
+ * Context used by the FieldsIteratorExecutor.
+ */
 @Builder
 @Value
 public class FieldsIteratorExecutorContext {

@@ -15,9 +15,18 @@ public class OpenApiParseResult {
     private OpenApiVersion version;
     private SwaggerParseResult swaggerParseResult;
 
+    /**
+     * Holds version of OpenAPI Specs.
+     */
     public enum OpenApiVersion {
         V30, V31, V20;
 
+        /**
+         * Converts a Swagger specification version to an equivalent OpenAPI version.
+         *
+         * @param specVersion the Swagger specification version to convert
+         * @return the equivalent OpenAPI version
+         */
         public static OpenApiVersion fromSwaggerVersion(SpecVersion specVersion) {
             return switch (specVersion) {
                 case V30 -> OpenApiVersion.V30;

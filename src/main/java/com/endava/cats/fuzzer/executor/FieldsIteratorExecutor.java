@@ -49,6 +49,19 @@ public class FieldsIteratorExecutor {
     private final MatchArguments matchArguments;
     private final FilesArguments filesArguments;
 
+    /**
+     * Constructs a new instance of FieldsIteratorExecutor.
+     *
+     * <p>This executor is designed to iterate over fields, leveraging the provided ServiceCaller to make service calls,
+     * TestCaseListener for handling test case events, CatsUtil for working with Cats DSL and configurations,
+     * MatchArguments for specifying criteria for matching fields, and FilesArguments for handling files-related parameters.</p>
+     *
+     * @param serviceCaller    The ServiceCaller instance responsible for making service calls during field iteration.
+     * @param testCaseListener The TestCaseListener instance responsible for handling test case events.
+     * @param catsUtil         The CatsUtil instance providing utility methods for working with Cats DSL and configurations.
+     * @param ma               The MatchArguments providing criteria for matching fields during iteration.
+     * @param fa               The FilesArguments containing parameters related to working with files during iteration.
+     */
     @Inject
     public FieldsIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil, MatchArguments ma, FilesArguments fa) {
         this.serviceCaller = serviceCaller;
@@ -58,6 +71,16 @@ public class FieldsIteratorExecutor {
         this.filesArguments = fa;
     }
 
+    /**
+     * Executes field iteration based on the provided FieldsIteratorExecutorContext.
+     *
+     * <p>This method processes field iteration by obtaining all fields associated with the HTTP method from the provided
+     * FuzzingData. It logs information about all available fields and identifies fields marked for removal based on
+     * reference data. The identified fields are then excluded from fuzzing, and additional processing is performed.</p>
+     *
+     * @param context The FieldsIteratorExecutorContext containing information for field iteration execution,
+     *                including FuzzingData, logger, and other relevant parameters.
+     */
     public void execute(FieldsIteratorExecutorContext context) {
         Set<String> allFields = context.getFuzzingData().getAllFieldsByHttpMethod();
         context.getLogger().debug("All fields: {}", allFields);
@@ -117,6 +140,16 @@ public class FieldsIteratorExecutor {
         return catsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
     }
 
+    /**
+     * Checks if a given field is not a discriminator based on information provided by the associated TestCaseListener.
+     *
+     * <p>This method delegates the determination of whether a field is not a discriminator to the TestCaseListener.
+     * It returns true if the associated TestCaseListener confirms that the specified field is not a discriminator;
+     * otherwise, it returns false.</p>
+     *
+     * @param field The field to check for being not a discriminator.
+     * @return {@code true} if the field is confirmed not to be a discriminator, {@code false} otherwise.
+     */
     public boolean isFieldNotADiscriminator(String field) {
         return this.testCaseListener.isFieldNotADiscriminator(field);
     }

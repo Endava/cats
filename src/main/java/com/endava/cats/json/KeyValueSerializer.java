@@ -10,12 +10,17 @@ import java.lang.reflect.Type;
 import java.util.Set;
 
 /**
- * Masks headers marked for masking.
+ * Custom Gson serializer for key-value pairs. Masks specific keys during serialization.
  */
 public class KeyValueSerializer implements JsonSerializer<KeyValuePair<String, Object>> {
 
     private final Set<String> toMask;
 
+    /**
+     * Constructs a new instance of KeyValueSerializer with the specified keys to mask.
+     *
+     * @param keysToMask The set of keys to be masked during serialization.
+     */
     public KeyValueSerializer(Set<String> keysToMask) {
         this.toMask = keysToMask;
     }

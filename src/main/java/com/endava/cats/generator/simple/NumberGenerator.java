@@ -11,16 +11,41 @@ import java.util.concurrent.ThreadLocalRandom;
  * Utility class to generate random numbers.
  */
 public class NumberGenerator {
-
+    /**
+     * The most negative BigDecimal value representable.
+     */
     public static final BigDecimal MOST_NEGATIVE_DECIMAL = new BigDecimal("-999999999999999999999999999999999999999999.99999999999").multiply(BigDecimal.valueOf(Double.MAX_VALUE));
+    /**
+     * The most positive BigDecimal value representable.
+     */
     public static final BigDecimal MOST_POSITIVE_DECIMAL = new BigDecimal("999999999999999999999999999999999999999999.99999999999").multiply(BigDecimal.valueOf(Double.MAX_VALUE));
+    /**
+     * The most positive BigInteger value representable.
+     */
     public static final BigInteger MOST_POSITIVE_INTEGER = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.valueOf(Long.MAX_VALUE));
+    /**
+     * The most negative BigInteger value representable.
+     */
     public static final BigInteger MOST_NEGATIVE_INTEGER = BigInteger.valueOf(Long.MIN_VALUE).add(BigInteger.valueOf(Long.MIN_VALUE));
+    /**
+     * A constant representing 10,000.
+     */
     public static final int TEN_THOUSANDS = 10000;
-
+    /**
+     * A constant representing the string "9876".
+     */
     public static final String NINE_EIGHT_SEVEN_SIX = "9876";
+    /**
+     * A constant representing the BigDecimal value 45,555,3333.543543543.
+     */
     public static final BigDecimal DECIMAL_CONSTANT = new BigDecimal("455553333.543543543");
+    /**
+     * A constant representing the string "int32".
+     */
     public static final String INT_32 = "int32";
+    /**
+     * A constant representing the string "float".
+     */
     public static final String FLOAT = "float";
 
     private NumberGenerator() {

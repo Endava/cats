@@ -6,10 +6,18 @@ import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that send am empty json body.
+ */
 @Singleton
 @HttpFuzzer
 public class EmptyJsonBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
+    /**
+     * Creates a new EmptyJsonBodyFuzzer instance.
+     *
+     * @param executor the executor
+     */
     @Inject
     public EmptyJsonBodyFuzzer(SimpleExecutor executor) {
         super(executor);

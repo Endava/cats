@@ -7,9 +7,17 @@ import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that sends a random string as a body.
+ */
 @Singleton
 @HttpFuzzer
 public class RandomStringBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
+    /**
+     * Creates a RandomStringBodyFuzzer instance.
+     *
+     * @param executor the executor
+     */
     @Inject
     public RandomStringBodyFuzzer(SimpleExecutor executor) {
         super(executor);

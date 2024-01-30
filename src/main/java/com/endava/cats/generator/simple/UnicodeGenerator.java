@@ -9,6 +9,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+/**
+ * Holds fuzzing payloads focused on unicode characters fuzzing.
+ */
 public abstract class UnicodeGenerator {
 
     private static final List<String> INVALID_REFERENCES = List.of("?", "??", "/?/", "\u0000", "\u200B", "%", "&", "/.. ;/",
@@ -112,22 +115,47 @@ public abstract class UnicodeGenerator {
         return result;
     }
 
+    /**
+     * Gets a list of payload with unicode separators for field fuzzing.
+     *
+     * @return A list of payloads with unicode separators to be used for field fuzzing.
+     */
     public static List<String> getSeparatorsFields() {
         return whitespacesFields;
     }
 
+    /**
+     * Gets a list of payload with unicode separators for headers fuzzing.
+     *
+     * @return A list of payloads with unicode separators to be used for headers fuzzing.
+     */
     public static List<String> getSeparatorsHeaders() {
         return whitespacesHeaders;
     }
 
+    /**
+     * A payload with specific unicode characters.
+     *
+     * @return A payload with specific unicode characters.
+     */
     public static String getBadPayload() {
         return BAD_PAYLOAD;
     }
 
+    /**
+     * Gets a list of payload with invalid references for field fuzzing.
+     *
+     * @return A list of payloads with invalid references to be used for field fuzzing.
+     */
     public static List<String> getInvalidReferences() {
         return INVALID_REFERENCES;
     }
 
+    /**
+     * Gets the Zalgo text without spaces.
+     *
+     * @return The Zalgo text without spaces.
+     */
     public static String getZalgoText() {
         return ZALGO_TEXT.replace(" ", "");
     }

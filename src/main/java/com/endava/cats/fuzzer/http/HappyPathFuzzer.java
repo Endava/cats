@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamily;
@@ -9,7 +9,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
@@ -22,6 +21,11 @@ public class HappyPathFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HappyPathFuzzer.class);
     private final SimpleExecutor simpleExecutor;
 
+    /**
+     * Creates a new HappyPathFuzzer instance.
+     *
+     * @param simpleExecutor the executor
+     */
     @Inject
     public HappyPathFuzzer(SimpleExecutor simpleExecutor) {
         this.simpleExecutor = simpleExecutor;

@@ -48,6 +48,9 @@ import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
+/**
+ * Main application command.
+ */
 @CommandLine.Command(
         name = "cats",
         mixinStandardHelpOptions = true,
@@ -159,6 +162,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private int exitCodeDueToErrors;
 
 
+    /**
+     * Creates a new instance of CatsCommand.
+     */
     public CatsCommand() {
         logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
     }
@@ -209,7 +215,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
     }
 
-    public void doLogic() throws IOException {
+    private void doLogic() throws IOException {
         this.doEarlyOperations();
         OpenAPI openAPI = this.createOpenAPI();
         testCaseListener.initReportingPath();
@@ -271,7 +277,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         logger.debug("Schemas: {}", allSchemasFromOpenApi.keySet());
     }
 
-    public void startFuzzing(OpenAPI openAPI) {
+    void startFuzzing(OpenAPI openAPI) {
         List<String> suppliedPaths = filterArguments.getPathsToRun(openAPI);
 
         for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
@@ -296,7 +302,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
     }
 
-    public OpenAPI createOpenAPI() throws IOException {
+    OpenAPI createOpenAPI() throws IOException {
         String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
         long t0 = System.currentTimeMillis();
         OpenAPI openAPI = OpenApiUtils.readOpenApi(apiArguments.getContract());
@@ -332,7 +338,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         reportingArguments.processLogData();
     }
 
-    public void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
+    private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
         String ansiString = ansi().bold().a("Start fuzzing path {}").reset().toString();
         logger.start(ansiString, pathItemEntry.getKey());

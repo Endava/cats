@@ -79,6 +79,14 @@ public class OpenAPIModelGenerator {
     private final int selfReferenceDepth;
     private String currentProperty = "";
 
+    /**
+     * Constructs an OpenAPIModelGenerator with the specified configuration.
+     *
+     * @param catsGlobalContext   The global context for CATS.
+     * @param validDataFormat     The format to use for generating valid data.
+     * @param useExamplesArgument Flag indicating whether to use examples from the OpenAPI specification.
+     * @param selfReferenceDepth  The maximum depth for generating self-referencing models.
+     */
     public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth) {
         this.globalContext = catsGlobalContext;
         this.random = ThreadLocalRandom.current();
@@ -88,6 +96,14 @@ public class OpenAPIModelGenerator {
     }
 
 
+    /**
+     * Generates an example map for the specified model name.
+     *
+     * @param modelName The name of the OpenAPI model.
+     * @return A map containing the example JSON representation of the model.
+     * The map key is "example" and the value is the pretty-printed JSON.
+     * Returns an empty map if the model is not found or an example cannot be generated.
+     */
     public Map<String, String> generate(String modelName) {
         Map<String, String> kv = new HashMap<>();
         if (modelName != null) {
@@ -383,7 +399,6 @@ public class OpenAPIModelGenerator {
     }
 
     private void populateWithComposedSchema(Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
-
         if (composedSchema.getAllOf() != null) {
             addXXXOfExamples(values, propertyName, composedSchema.getAllOf(), "ALL_OF");
             String newKey = "ALL_OF";

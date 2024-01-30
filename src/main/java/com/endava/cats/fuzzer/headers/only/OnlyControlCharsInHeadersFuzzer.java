@@ -10,11 +10,19 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that sends only control chars characters in headers.
+ */
 @Singleton
 @HeaderFuzzer
 @ControlCharFuzzer
 public class OnlyControlCharsInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new OnlyControlCharsInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     public OnlyControlCharsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

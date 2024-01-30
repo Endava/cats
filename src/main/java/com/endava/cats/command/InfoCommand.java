@@ -82,6 +82,20 @@ public class InfoCommand implements Runnable {
         logger.noFormat("Shell         | " + catsInfo.shell);
     }
 
+    /**
+     * A record representing information about Cats, including details about the operating system,
+     * Cats version, image type, build time, terminal properties, and shell information.
+     *
+     * @param osName        the name of the operating system
+     * @param osVersion     the version of the operating system
+     * @param osArch        the architecture of the operating system
+     * @param version       the version of Cats
+     * @param imageType     the type of the Cats image
+     * @param buildTime     the build time of the Cats image
+     * @param terminalWidth the width of the terminal
+     * @param terminalType  the type of the terminal
+     * @param shell         the shell used by Cats
+     */
     public record CatsInfo(String osName, String osVersion, String osArch, String version, String imageType,
                            String buildTime, String terminalWidth, String terminalType, String shell) {
     }

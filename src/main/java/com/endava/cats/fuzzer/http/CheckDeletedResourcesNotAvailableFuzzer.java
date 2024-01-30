@@ -19,6 +19,9 @@ import jakarta.inject.Singleton;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Fuzzer that checks if deleted resources are still available.
+ */
 @HttpFuzzer
 @SecondPhaseFuzzer
 @Singleton
@@ -28,6 +31,13 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
     private final CatsGlobalContext catsGlobalContext;
     private final TestCaseListener testCaseListener;
 
+    /**
+     * Creates a new CheckDeletedResourcesNotAvailableFuzzer instance.
+     *
+     * @param simpleExecutor    the executor
+     * @param catsGlobalContext the cats global context
+     * @param testCaseListener  the test case listener
+     */
     public CheckDeletedResourcesNotAvailableFuzzer(SimpleExecutor simpleExecutor, CatsGlobalContext catsGlobalContext, TestCaseListener testCaseListener) {
         this.simpleExecutor = simpleExecutor;
         this.catsGlobalContext = catsGlobalContext;

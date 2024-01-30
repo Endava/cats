@@ -10,11 +10,19 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that prefixes headers with control chars.
+ */
 @Singleton
 @HeaderFuzzer
 @ControlCharFuzzer
 public class LeadingControlCharsInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new LeadingControlCharsInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     public LeadingControlCharsInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

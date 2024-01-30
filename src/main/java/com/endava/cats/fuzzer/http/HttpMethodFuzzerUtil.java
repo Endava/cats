@@ -10,10 +10,12 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Utility class executing common logic for fuzzers sending undocumented HTTP methods.
+ */
 @Singleton
 public class HttpMethodFuzzerUtil {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(HttpMethodFuzzerUtil.class);
@@ -21,12 +23,29 @@ public class HttpMethodFuzzerUtil {
 
     private final SimpleExecutor simpleExecutor;
 
+    /**
+     * Creates a new HttpMethodFuzzerUtil instance.
+     *
+     * @param tcl the test case listener
+     * @param se  the executor
+     */
     @Inject
     public HttpMethodFuzzerUtil(TestCaseListener tcl, SimpleExecutor se) {
         this.testCaseListener = tcl;
         this.simpleExecutor = se;
     }
 
+    /**
+     * Processes fuzzing for a specific HTTP method using the provided fuzzer and FuzzingData.
+     *
+     * <p>This method utilizes a SimpleExecutor to execute fuzzing based on the given fuzzer, FuzzingData,
+     * and HTTP method. It configures the execution context with the necessary parameters, including the logger,
+     * expected response code, payload, scenario description, response processor, and additional fuzzing-related details.</p>
+     *
+     * @param fuzzer     The Fuzzer instance responsible for generating test cases and payloads during fuzzing.
+     * @param data       The FuzzingData containing information about the path, method, payload, and headers.
+     * @param httpMethod The HTTP method for which fuzzing is being performed.
+     */
     public void process(Fuzzer fuzzer, FuzzingData data, HttpMethod httpMethod) {
         simpleExecutor.execute(
                 SimpleExecutorContext.builder()
@@ -42,7 +61,7 @@ public class HttpMethodFuzzerUtil {
         );
     }
 
-    public void checkResponse(CatsResponse response, FuzzingData data) {
+    private void checkResponse(CatsResponse response, FuzzingData data) {
         if (response.getResponseCode() == 405) {
             testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
