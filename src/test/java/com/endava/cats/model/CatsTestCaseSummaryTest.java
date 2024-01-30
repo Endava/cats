@@ -1,9 +1,5 @@
-package com.endava.cats.model.report;
+package com.endava.cats.model;
 
-import com.endava.cats.model.CatsRequest;
-import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.CatsTestCase;
-import com.endava.cats.model.CatsTestCaseSummary;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

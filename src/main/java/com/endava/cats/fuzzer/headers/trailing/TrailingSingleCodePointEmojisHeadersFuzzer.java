@@ -10,11 +10,19 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that trails headers with single conde point emojis.
+ */
 @Singleton
 @HeaderFuzzer
 @EmojiFuzzer
 public class TrailingSingleCodePointEmojisHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new TrailingSingleCodePointEmojisHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     public TrailingSingleCodePointEmojisHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

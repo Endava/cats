@@ -166,6 +166,13 @@ public abstract class JsonUtils {
         return testFunction.test(jsonNode);
     }
 
+    /**
+     * Checks if the specified property in the JSON payload is a primitive type.
+     *
+     * @param payload  The JSON payload.
+     * @param property The property to check for being a primitive type.
+     * @return {@code true} if the specified property is a primitive type, {@code false} otherwise.
+     */
     public static boolean isPrimitive(String payload, String property) {
         try {
             return testForPrimitiveOrThrow(payload, property);
@@ -174,6 +181,13 @@ public abstract class JsonUtils {
         }
     }
 
+    /**
+     * Checks if the specified property in the JSON payload is an object type.
+     *
+     * @param payload  The JSON payload.
+     * @param property The property to check for being an object type.
+     * @return {@code true} if the specified property is an object type, {@code false} otherwise.
+     */
     public static boolean isObject(String payload, String property) {
         try {
             return !testForPrimitiveOrThrow(payload, property);
@@ -182,6 +196,13 @@ public abstract class JsonUtils {
         }
     }
 
+    /**
+     * Checks if the specified property in the JSON payload is an array.
+     *
+     * @param payload  The JSON payload.
+     * @param property The property to check for being an array.
+     * @return {@code true} if the specified property is an array, {@code false} otherwise.
+     */
     public static boolean isArray(String payload, String property) {
         try {
             return testForPredicateOrThrow(payload, property, JsonNode::isArray);
@@ -190,10 +211,23 @@ public abstract class JsonUtils {
         }
     }
 
+    /**
+     * Checks if the specified JSON payload represents a JSON array.
+     *
+     * @param payload The JSON payload to check.
+     * @return {@code true} if the JSON payload is a JSON array, {@code false} otherwise.
+     */
     public static boolean isJsonArray(String payload) {
         return JsonPath.parse(payload).read("$") instanceof JSONArray;
     }
 
+    /**
+     * Deletes the specified JSON node from the given JSON payload.
+     *
+     * @param payload The JSON payload from which to delete the node.
+     * @param node    The JSON node to be deleted. Use JSONPath notation to specify the node.
+     * @return The modified JSON payload after deleting the specified node.
+     */
     public static String deleteNode(String payload, String node) {
         if (StringUtils.isNotBlank(payload)) {
             try {
@@ -263,6 +297,13 @@ public abstract class JsonUtils {
         return toEliminateKey;
     }
 
+    /**
+     * Retrieves the value of the specified JSON variable from the given JSON payload.
+     *
+     * @param jsonPayload The JSON payload from which to retrieve the variable.
+     * @param value       The JSON variable to retrieve. Use JSONPath notation to specify the variable.
+     * @return The value of the specified JSON variable. Returns {@code NOT_SET} if the variable is not found.
+     */
     public static Object getVariableFromJson(String jsonPayload, String value) {
         try {
             DocumentContext jsonDoc = JsonPath.parse(jsonPayload);

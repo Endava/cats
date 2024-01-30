@@ -18,12 +18,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Base class for random headers fuzzers.
+ */
 public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BaseRandomHeadersFuzzer.class);
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
     private final ProcessingArguments processingArguments;
 
+    /**
+     * Constructs a new instance of BaseRandomHeadersFuzzer with protected access.
+     *
+     * <p>This base fuzzer is intended for fuzzing scenarios involving random headers.
+     * It utilizes a SimpleExecutor for executing fuzzing, relies on a TestCaseListener for handling test case events,
+     * and takes ProcessingArguments into account for additional processing.</p>
+     *
+     * @param simpleExecutor      The SimpleExecutor responsible for executing fuzzing with random headers.
+     * @param testCaseListener    The TestCaseListener instance responsible for handling test case events.
+     * @param processingArguments The ProcessingArguments containing additional parameters for header fuzzing.
+     */
     protected BaseRandomHeadersFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, ProcessingArguments processingArguments) {
         this.simpleExecutor = simpleExecutor;
         this.testCaseListener = testCaseListener;
@@ -54,7 +68,7 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
         );
     }
 
-    public void checkResponse(CatsResponse response, FuzzingData data) {
+    private void checkResponse(CatsResponse response, FuzzingData data) {
         if (ResponseCodeFamily.is2xxCode(response.getResponseCode()) || ResponseCodeFamily.is4xxCode(response.getResponseCode())) {
             testCaseListener.reportResultInfo(logger, data, "Request returned as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());

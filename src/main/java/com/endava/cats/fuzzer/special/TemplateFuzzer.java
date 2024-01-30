@@ -35,6 +35,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Fuzzer that will do fuzzing based on a supplied template, rather than an OpenAPI Spec.
+ */
 @Singleton
 @SpecialFuzzer
 public class TemplateFuzzer implements Fuzzer {
@@ -45,6 +48,15 @@ public class TemplateFuzzer implements Fuzzer {
     private final UserArguments userArguments;
     private final MatchArguments matchArguments;
 
+    /**
+     * Constructs a new TemplateFuzzer instance.
+     *
+     * @param sc The service caller used to make requests to the service under test.
+     * @param lr The test case listener used to report test case results and progress.
+     * @param cu The CatsUtil object used to perform common utility tasks.
+     * @param ua The UserArguments object containing the user-specified arguments for the fuzzer.
+     * @param ma The MatchArguments object containing the match criteria for identifying valid responses.
+     */
     public TemplateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, UserArguments ua, MatchArguments ma) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

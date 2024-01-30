@@ -6,10 +6,18 @@ import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that sends a malformed JSON request.
+ */
 @Singleton
 @HttpFuzzer
 public class MalformedJsonFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
+    /**
+     * Creates a new MalformedJsonFuzzer instance.
+     *
+     * @param executor the executor
+     */
     @Inject
     public MalformedJsonFuzzer(SimpleExecutor executor) {
         super(executor);

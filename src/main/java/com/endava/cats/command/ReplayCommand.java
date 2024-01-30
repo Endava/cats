@@ -79,6 +79,12 @@ public class ReplayCommand implements Runnable {
     private String outputReportFolder;
 
 
+    /**
+     * Constructs a new instance of the {@code ReplayCommand} class.
+     *
+     * @param serviceCaller    the service caller used for invoking services during replay
+     * @param testCaseListener the test case listener used for handling test case events during replay
+     */
     @Inject
     public ReplayCommand(ServiceCaller serviceCaller, TestCaseListener testCaseListener) {
         this.serviceCaller = serviceCaller;

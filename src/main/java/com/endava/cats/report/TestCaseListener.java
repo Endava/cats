@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,15 +56,15 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class TestCaseListener {
     private static final String FUZZER_KEY_DEFAULT = "*******";
     private static final String TEST_KEY_DEFAULT = "******";
-    public static final String ID = "id";
-    public static final String FUZZER_KEY = "fuzzerKey";
-    public static final String FUZZER = "fuzzer";
-    protected static final String ID_ANSI = "id_ansi";
-    protected static final AtomicInteger TEST = new AtomicInteger(0);
+    static final String ID = "id";
+    private static final String FUZZER_KEY = "fuzzerKey";
+    private static final String FUZZER = "fuzzer";
+    private static final String ID_ANSI = "id_ansi";
+    static final AtomicInteger TEST = new AtomicInteger(0);
     private static final String DEFAULT_ERROR = "####";
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501");
-    public static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
-    protected final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
+    private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
+    final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private final ExecutionStatisticsListener executionStatisticsListener;
@@ -82,6 +83,16 @@ public class TestCaseListener {
     private final Map<String, Double> runPerPathListener = new HashMap<>();
     private final Map<String, Integer> runTotals = new HashMap<>();
 
+    /**
+     * Constructs a TestCaseListener with the provided dependencies and configuration.
+     *
+     * @param catsGlobalContext  the global context for Cats
+     * @param er                 the listener for execution statistics
+     * @param exporters          the available TestCaseExporter instances
+     * @param filterArguments    the arguments for filtering test cases
+     * @param reportingArguments the arguments for reporting test cases
+     * @throws NoSuchElementException if no matching exporter is found for the specified report format
+     */
     public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, Instance<TestCaseExporter> exporters, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
         this.executionStatisticsListener = er;
         this.testCaseExporter = exporters.stream()
@@ -101,12 +112,23 @@ public class TestCaseListener {
         return message;
     }
 
+    /**
+     * Performs setup actions before fuzzing for the specified fuzzer class.
+     *
+     * @param fuzzer the class representing the fuzzer
+     */
     public void beforeFuzz(Class<?> fuzzer) {
         String clazz = ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()).replaceAll("[a-z]", "");
         MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, FUZZER_KEY_DEFAULT.length(), Ansi.Color.MAGENTA));
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
     }
 
+    /**
+     * Performs cleanup actions after fuzzing for a specific path and HTTP method.
+     *
+     * @param path       the path for which fuzzing has been completed
+     * @param httpMethod the HTTP method for which fuzzing has been completed
+     */
     public void afterFuzz(String path, String httpMethod) {
         double chunkSize = 100d / runTotals.getOrDefault(path, 1) + 0.01;
         this.notifySummaryObservers(path, httpMethod, chunkSize);
@@ -115,6 +137,14 @@ public class TestCaseListener {
         MDC.put(FUZZER_KEY, FUZZER_KEY_DEFAULT);
     }
 
+    /**
+     * Creates and executes a test by running the provided runnable.
+     * Logs test start, catches exceptions during execution, logs results, and performs necessary cleanup.
+     *
+     * @param externalLogger the external logger for logging test-related information
+     * @param fuzzer         the fuzzer associated with the test
+     * @param s              the runnable representing the test logic
+     */
     public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
         this.startTestCase();
         try {
@@ -138,40 +168,96 @@ public class TestCaseListener {
         testCaseMap.get(testId).setTestId("Test " + testId);
     }
 
+    /**
+     * Sets the total number of runs to be executed for a specific path.
+     *
+     * @param path         the path for which the total runs are being set
+     * @param totalToBeRun the total number of runs to be executed for the specified path
+     */
     public void setTotalRunsPerPath(String path, Integer totalToBeRun) {
         this.runTotals.put(path, totalToBeRun);
     }
 
+    /**
+     * Adds a scenario to the test case and logs it using the provided logger.
+     *
+     * @param logger   the logger used to log the scenario
+     * @param scenario the scenario description template
+     * @param params   the parameters to replace placeholders in the scenario description
+     */
     public void addScenario(PrettyLogger logger, String scenario, Object... params) {
         logger.info(scenario, params);
         testCaseMap.get(MDC.get(ID)).setScenario(replaceBrackets(scenario, params));
     }
 
+    /**
+     * Adds an expected result to the test case and logs it using the provided logger.
+     *
+     * @param logger         the logger used to log the expected result
+     * @param expectedResult the expected result description template
+     * @param params         the parameters to replace placeholders in the expected result description
+     */
     public void addExpectedResult(PrettyLogger logger, String expectedResult, Object... params) {
         logger.note(expectedResult, params);
         testCaseMap.get(MDC.get(ID)).setExpectedResult(replaceBrackets(expectedResult, params));
     }
 
+    /**
+     * Adds the specified path information to the current test case in the test case map.
+     * The path is associated with the ongoing test case using the Mapped Diagnostic Context (MDC) identifier.
+     *
+     * @param path the path to be associated with the current test case
+     */
     public void addPath(String path) {
         testCaseMap.get(MDC.get(ID)).setPath(path);
     }
 
+    /**
+     * Adds the specified contract path information to the current test case in the test case map.
+     * The contract path is associated with the ongoing test case using the Mapped Diagnostic Context (MDC) identifier.
+     *
+     * @param path the contract path to be associated with the current test case
+     */
     public void addContractPath(String path) {
         testCaseMap.get(MDC.get(ID)).setContractPath(path);
     }
 
+    /**
+     * Adds the specified server information to the current test case in the test case map.
+     * The server information is associated with the ongoing test case using the Mapped Diagnostic Context (MDC) identifier.
+     *
+     * @param server the server information to be associated with the current test case
+     */
     public void addServer(String server) {
         testCaseMap.get(MDC.get(ID)).setServer(server);
     }
 
+    /**
+     * Adds the specified CatsRequest to the current test case in the test case map.
+     * The CatsRequest is associated with the ongoing test case using the Mapped Diagnostic Context (MDC) identifier.
+     *
+     * @param request the CatsRequest to be associated with the current test case
+     */
     public void addRequest(CatsRequest request) {
         testCaseMap.get(MDC.get(ID)).setRequest(request);
     }
 
+    /**
+     * Adds the specified CatsResponse to the current test case in the test case map.
+     * The CatsResponse is associated with the ongoing test case using the Mapped Diagnostic Context (MDC) identifier.
+     *
+     * @param response the CatsResponse to be associated with the current test case
+     */
     public void addResponse(CatsResponse response) {
         testCaseMap.get(MDC.get(ID)).setResponse(response);
     }
 
+    /**
+     * Adds the specified full request path information to the current test case in the test case map.
+     * The full request path is associated with the ongoing test case using the Mapped Diagnostic Context (MDC) identifier.
+     *
+     * @param fullRequestPath the full request path to be associated with the current test case
+     */
     public void addFullRequestPath(String fullRequestPath) {
         testCaseMap.get(MDC.get(ID)).setFullRequestPath(fullRequestPath);
     }
@@ -187,6 +273,14 @@ public class TestCaseListener {
         logger.info(SEPARATOR);
     }
 
+    /**
+     * Notifies summary observers about the progress of a specific path and HTTP method during the testing session.
+     * If configured to display summaries in the console, this method renders the progress dynamically.
+     *
+     * @param path      the path for which the progress is being reported
+     * @param method    the HTTP method associated with the path
+     * @param chunkSize the chunk size representing the progress
+     */
     public void notifySummaryObservers(String path, String method, double chunkSize) {
         if (reportingArguments.isSummaryInConsole()) {
             double percentage = runPerPathListener.getOrDefault(path, 0d) + chunkSize;
@@ -201,6 +295,11 @@ public class TestCaseListener {
         }
     }
 
+    /**
+     * Starts a new testing session, initializing necessary configurations and logging session information.
+     * This method sets default values for identifiers and logs session details such as application name,
+     * version, build time, and platform.
+     */
     public void startSession() {
         MDC.put(ID_ANSI, TEST_KEY_DEFAULT);
         MDC.put(FUZZER, FUZZER_KEY_DEFAULT);
@@ -216,22 +315,46 @@ public class TestCaseListener {
                 ansi().fg(Ansi.Color.GREEN).a(osDetails).reset());
     }
 
+    /**
+     * Initializes the reporting path using the associated test case exporter.
+     *
+     * @throws IOException if an I/O error occurs during the initialization process
+     */
     public void initReportingPath() throws IOException {
         testCaseExporter.initPath(null);
     }
 
+    /**
+     * Initializes the reporting path using the associated test case exporter.
+     *
+     * @param folder the folder path where the reporting should be initialized
+     * @throws IOException if an I/O error occurs during the initialization process
+     */
     public void initReportingPath(String folder) throws IOException {
         testCaseExporter.initPath(folder);
     }
 
+    /**
+     * Writes an individual test case using the associated test case exporter.
+     *
+     * @param catsTestCase the CatsTestCase to be written
+     */
     public void writeIndividualTestCase(CatsTestCase catsTestCase) {
         testCaseExporter.writeTestCase(catsTestCase);
     }
 
+    /**
+     * Writes helper files using the associated test case exporter.
+     * This method delegates the task of writing helper files to the underlying test case exporter.
+     */
     public void writeHelperFiles() {
         testCaseExporter.writeHelperFiles();
     }
 
+    /**
+     * Ends the test session by performing necessary actions such as writing summaries, helper files, and performance reports.
+     * Additionally, prints execution details using the associated logger.
+     */
     public void endSession() {
         testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener);
         testCaseExporter.writeHelperFiles();
@@ -290,6 +413,16 @@ public class TestCaseListener {
         }
     }
 
+
+    /**
+     * Reports a warning result for a test using the provided logger, reason, message, and parameters.
+     *
+     * @param logger  the logger used to log result-related information
+     * @param data    the fuzzing data associated with the test
+     * @param reason  the reason for the warning result
+     * @param message the warning message to be reported
+     * @param params  additional parameters to be formatted into the message
+     */
     public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
         this.reportWarn(logger, message, params);
         setResultReason(reason);
@@ -345,6 +478,15 @@ public class TestCaseListener {
         }
     }
 
+    /**
+     * Reports an error result for a test using the provided logger, reason, message, and parameters.
+     *
+     * @param logger  the logger used to log result-related information
+     * @param data    the fuzzing data associated with the test
+     * @param reason  the reason for the error result
+     * @param message the error message to be reported
+     * @param params  additional parameters to be formatted into the message
+     */
     public void reportResultError(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
         this.reportError(logger, message, params);
         setResultReason(reason);
@@ -384,14 +526,40 @@ public class TestCaseListener {
         this.reportInfo(logger, catsResult.message(), params);
     }
 
+    /**
+     * Reports an informational result for a test using the provided logger, message, and parameters.
+     *
+     * @param logger  the logger used to log result-related information
+     * @param data    the fuzzing data associated with the test
+     * @param message the informational message to be reported
+     * @param params  additional parameters to be formatted into the message
+     */
     public void reportResultInfo(PrettyLogger logger, FuzzingData data, String message, Object... params) {
         this.reportInfo(logger, message, params);
     }
 
+    /**
+     * Reports the result of a test based on the provided parameters, including response code, schema matching, and content type.
+     * It also performs checks if response body matches schema.
+     *
+     * @param logger             the logger used to log result-related information
+     * @param data               the fuzzing data associated with the test
+     * @param response           the response received from the test
+     * @param expectedResultCode the expected response code family
+     */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
         this.reportResult(logger, data, response, expectedResultCode, true);
     }
 
+    /**
+     * Reports the result of a test based on the provided parameters, including response code, schema matching, and content type.
+     *
+     * @param logger                      the logger used to log result-related information
+     * @param data                        the fuzzing data associated with the test
+     * @param response                    the response received from the test
+     * @param expectedResultCode          the expected response code family
+     * @param shouldMatchToResponseSchema a flag indicating whether the response should match the expected schema
+     */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema) {
         expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), expectedResultCode);
         boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
@@ -478,11 +646,23 @@ public class TestCaseListener {
         return documentedResponseCodes.stream().anyMatch(code -> code.equalsIgnoreCase(receivedResponseCode));
     }
 
+    /**
+     * Skips the current test, adds the skip reason to the expected results, and reports the test as skipped using the provided logger.
+     *
+     * @param logger     the logger used to log skip-related information
+     * @param skipReason the reason for skipping the test
+     */
     public void skipTest(PrettyLogger logger, String skipReason) {
         this.addExpectedResult(logger, skipReason);
         this.reportSkipped(logger, skipReason);
     }
 
+    /**
+     * Checks if a fuzzed field is not a discriminator based on the configured discriminators in the global context.
+     *
+     * @param fuzzedField the fuzzed field to check
+     * @return true if the fuzzed field is not a discriminator, false otherwise
+     */
     public boolean isFieldNotADiscriminator(String fuzzedField) {
         return globalContext.getDiscriminators().stream().noneMatch(discriminator -> fuzzedField.endsWith(discriminator.getPropertyName()));
     }

@@ -11,6 +11,9 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * DTO holding all data needed to do a call to a service.
+ */
 @Builder
 @Getter
 public class ServiceData {
@@ -44,6 +47,11 @@ public class ServiceData {
     @Builder.Default
     private final Set<String> queryParams = new HashSet<>();
 
+    /**
+     * Checks if the content type of the response is JSON.
+     *
+     * @return {@code true} if the content type matches the pattern "application/.*[+]?json;?.*", {@code false} otherwise.
+     */
     public boolean isJsonContentType() {
         return this.contentType.toLowerCase(Locale.ROOT).matches("application/.*[+]?json;?.*");
     }

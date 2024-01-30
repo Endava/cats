@@ -99,6 +99,17 @@ public class ServiceCaller {
 
     private RateLimiter rateLimiter;
 
+    /**
+     * Constructs a new {@code ServiceCaller} with the specified parameters.
+     *
+     * @param context             The global context for CATS.
+     * @param lr                  The listener for test cases.
+     * @param cu                  The CATS utility.
+     * @param filesArguments      The arguments related to files.
+     * @param authArguments       The authentication arguments.
+     * @param apiArguments        The API arguments.
+     * @param processingArguments The processing arguments.
+     */
     @Inject
     public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
         this.testCaseListener = lr;
@@ -110,11 +121,17 @@ public class ServiceCaller {
         this.catsGlobalContext = context;
     }
 
+    /**
+     * Inits the rate limiter with the value received in the {@code --maxRequestsPerMinute} argument.
+     */
     @PostConstruct
     public void initRateLimiter() {
         rateLimiter = RateLimiter.create(1.0 * apiArguments.getMaxRequestsPerMinute() / 60);
     }
 
+    /**
+     * Inits the OkHttpClient with the configuration passed through the CLI arguments.
+     */
     @PostConstruct
     public void initHttpClient() {
         try {
@@ -377,6 +394,14 @@ public class ServiceCaller {
         return path.replaceAll("\\{(.*?)}", "");
     }
 
+    /**
+     * Calls the service with the provided {@code catsRequest} and set of fuzzed fields.
+     *
+     * @param catsRequest  The CATS request to be sent to the service.
+     * @param fuzzedFields The set of fuzzed fields for the request.
+     * @return The CATS response received from the service.
+     * @throws IOException If an I/O error occurs during the service call.
+     */
     public CatsResponse callService(CatsRequest catsRequest, Set<String> fuzzedFields) throws IOException {
         rateLimiter.acquire();
         long startTime = System.currentTimeMillis();
@@ -519,6 +544,15 @@ public class ServiceCaller {
         return queryParams;
     }
 
+    /**
+     * Converts the provided raw response to a JSON-formatted string.
+     * If the raw response is already a valid JSON, it is returned as is. Otherwise,
+     * a simplified JSON representation is created, including the first 500 characters
+     * of the raw response.
+     *
+     * @param rawResponse The raw response string to be converted to JSON.
+     * @return The JSON-formatted string representing the response.
+     */
     public static String getAsJsonString(String rawResponse) {
         if (JsonUtils.isValidJson(rawResponse)) {
             return rawResponse;
@@ -526,6 +560,14 @@ public class ServiceCaller {
         return "{\"notAJson\": \"" + JSONValue.escape(rawResponse.substring(0, Math.min(500, rawResponse.length()))) + "\"}";
     }
 
+    /**
+     * Retrieves the raw response body as a string from the provided HTTP response.
+     * If the response body is null, an empty string is returned.
+     *
+     * @param response The HTTP response containing the body to be extracted.
+     * @return The raw response body as a string, or an empty string if the body is null.
+     * @throws IOException If an I/O error occurs while reading the response body.
+     */
     public String getAsRawString(Response response) throws IOException {
         if (response.body() != null) {
             return response.body().string();

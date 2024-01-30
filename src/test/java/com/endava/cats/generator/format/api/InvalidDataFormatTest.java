@@ -1,13 +1,10 @@
-package com.endava.cats.generator.format;
+package com.endava.cats.generator.format.api;
 
-import com.endava.cats.generator.format.api.InvalidDataFormat;
-import com.endava.cats.generator.format.api.VoidGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import jakarta.inject.Inject;
 
 @QuarkusTest
 class InvalidDataFormatTest {

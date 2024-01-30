@@ -16,6 +16,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+/**
+ * Context used by the SimpleExecutor to execute fuzzing logic.
+ */
 @Builder
 @Value
 public class SimpleExecutorContext {

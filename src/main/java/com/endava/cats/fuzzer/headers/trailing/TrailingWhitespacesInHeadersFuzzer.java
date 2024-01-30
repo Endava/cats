@@ -10,11 +10,19 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that adds trailing whitespaces in headers.
+ */
 @Singleton
 @HeaderFuzzer
 @WhitespaceFuzzer
 public class TrailingWhitespacesInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new TrailingWhitespacesInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     public TrailingWhitespacesInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

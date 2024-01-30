@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Executes functional tests written in Cats DSL.
+ */
 @Singleton
 @SpecialFuzzer
 public class FunctionalFuzzer implements CustomFuzzerBase {
@@ -33,12 +36,18 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     private final List<CustomFuzzerExecution> executions = new ArrayList<>();
     private final TestCaseListener testCaseListener;
 
+    /**
+     * Constructs a new FunctionalFuzzer instance.
+     *
+     * @param cp               The FilesArguments object containing the files to be fuzzed.
+     * @param cfu              The CustomFuzzerUtil object used to perform custom fuzzing operations.
+     * @param testCaseListener The TestCaseListener object used to report test case results and progress.
+     */
     public FunctionalFuzzer(FilesArguments cp, CustomFuzzerUtil cfu, TestCaseListener testCaseListener) {
         this.filesArguments = cp;
         this.customFuzzerUtil = cfu;
         this.testCaseListener = testCaseListener;
     }
-
 
     @Override
     public void fuzz(FuzzingData data) {
@@ -47,7 +56,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
         }
     }
 
-    protected void processCustomFuzzerFile(FuzzingData data) {
+    void processCustomFuzzerFile(FuzzingData data) {
         Map<String, Object> currentPathValues = filesArguments.getCustomFuzzerDetails().get(data.getPath());
         if (currentPathValues != null) {
             currentPathValues.entrySet().stream()
@@ -83,6 +92,13 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
         }
     }
 
+    /**
+     * Replaces variables in the reference data file (refData.yml) with output variables generated
+     * by the FunctionalFuzzer. If no reference data file exists, or if `filesArguments.isCreateRefData()`
+     * is `true`, a new reference data file will be created.
+     *
+     * @throws IOException if an I/O error occurs
+     */
     public void replaceRefData() throws IOException {
         if (filesArguments.getRefDataFile() != null) {
             logger.debug("Replacing variables in refData file with output variables from FunctionalFuzzer!");

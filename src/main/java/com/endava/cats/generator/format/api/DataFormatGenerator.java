@@ -1,5 +1,9 @@
 package com.endava.cats.generator.format.api;
 
+/**
+ * This interface defines an abstract class for data format generators.
+ * A data format generator is responsible for generating data in a specific format.
+ */
 public interface DataFormatGenerator {
     /**
      * Returns a Predicate to check if the Generator applies to the given format or propertyName

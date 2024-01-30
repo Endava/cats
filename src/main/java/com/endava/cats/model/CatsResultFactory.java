@@ -33,6 +33,13 @@ public interface CatsResultFactory {
         return new CatsResult(message, reason);
     }
 
+    /**
+     * Creates a CatsResult indicating that the response content type does not match the contract.
+     *
+     * @param expected The list of expected content types.
+     * @param actual   The actual content type received in the response.
+     * @return A CatsResult indicating the mismatch in content types.
+     */
     static CatsResult createNotMatchingContentType(List<String> expected, String actual) {
         String message = "Response content type not matching the contract: expected %s, actual [%s]".formatted(expected, actual);
         String reason = "Response content type not matching the contract";

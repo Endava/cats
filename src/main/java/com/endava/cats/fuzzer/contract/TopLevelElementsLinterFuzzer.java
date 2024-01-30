@@ -19,11 +19,19 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * Checks if specific top level elements are present in the OpenAPI spec.
+ */
 @LinterFuzzer
 @Singleton
 public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new TopLevelElementsLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public TopLevelElementsLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
@@ -65,7 +73,7 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
         return EMPTY;
     }
 
-    public String inspectServers(List<Server> servers) {
+    private String inspectServers(List<Server> servers) {
         StringBuilder builder = new StringBuilder();
 
         for (Server server : servers) {
@@ -78,7 +86,7 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
         return StringUtils.stripStart(builder.toString().trim(), ",");
     }
 
-    public String inspectTags(List<Tag> tags) {
+    private String inspectTags(List<Tag> tags) {
         StringBuilder builder = new StringBuilder();
 
         for (Tag tag : tags) {
@@ -123,7 +131,7 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
                 .map(field -> "info." + field).collect(Collectors.toSet());
     }
 
-    public Set<String> checkContact(Contact contact) {
+    private Set<String> checkContact(Contact contact) {
         if (contact == null) {
             return Set.of("contact.email", "contact.name", "contact.url");
         }

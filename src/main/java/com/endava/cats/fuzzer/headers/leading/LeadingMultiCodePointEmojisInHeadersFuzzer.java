@@ -10,11 +10,19 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that prefixes headers with multi code point emojis.
+ */
 @Singleton
 @HeaderFuzzer
 @EmojiFuzzer
 public class LeadingMultiCodePointEmojisInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a LeadingMultiCodePointEmojisInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     public LeadingMultiCodePointEmojisInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

@@ -59,6 +59,9 @@ public class StatsCommand implements Runnable {
             description = "Details to skip printing on console. JSON output will still include them.", split = ",")
     private List<Details> skip = Collections.emptyList();
 
+    /**
+     * Holds the type of details extracted from OpenAPI.
+     */
     public enum Details {
         TITLE("API title: {}", "title"),
         DESCRIPTION("API description: {}", "description"),
@@ -205,6 +208,9 @@ public class StatsCommand implements Runnable {
         logger.config(outputMessage, componentsSection.size(), componentsSection);
     }
 
+    /**
+     * Entity to hold what data is extracted from OpenAPI spec.
+     */
     @Builder
     @ToString
     public static class Stats {

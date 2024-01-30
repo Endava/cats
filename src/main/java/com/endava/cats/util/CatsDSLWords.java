@@ -94,6 +94,10 @@ public abstract class CatsDSLWords {
      */
     public static final List<String> RESERVED_WORDS = List.of(DESCRIPTION, HTTP_METHOD, EXPECTED_RESPONSE_CODE, OUTPUT, VERIFY, STRINGS_FILE, TARGET_FIELDS, ONE_OF_SELECTION,
             ADDITIONAL_PROPERTIES, ELEMENT, MAP_VALUES, TARGET_FIELDS_TYPES);
+    /**
+     * Represents the name of the header used to indicate the Cats Fuzzy Header in HTTP requests.
+     * The Cats Fuzzy Header is used for specifying custom behavior related to fuzzing in Cats tests.
+     */
     public static final String CATS_FUZZY_HEADER = "Cats-Fuzzy-Header";
 
     private CatsDSLWords() {

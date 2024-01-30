@@ -1,4 +1,4 @@
-package com.endava.cats.model;
+package com.endava.cats.strategy;
 
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.strategy.NoopFuzzingStrategy;

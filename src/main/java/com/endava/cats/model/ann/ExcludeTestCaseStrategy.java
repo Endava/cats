@@ -3,6 +3,9 @@ package com.endava.cats.model.ann;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 
+/**
+ * Gson exclusion strategy that excludes fields and classes annotated with {@code Exclude}.
+ */
 public class ExcludeTestCaseStrategy implements ExclusionStrategy {
 
     @Override

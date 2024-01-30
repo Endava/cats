@@ -4,7 +4,6 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.LinterFuzzer;
-import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
@@ -17,7 +16,7 @@ import static com.tngtech.archunit.library.GeneralCodingRules.DEPRECATED_API_SHO
 import static com.tngtech.archunit.library.GeneralCodingRules.testClassesShouldResideInTheSamePackageAsImplementation;
 
 @QuarkusTest
-@AnalyzeClasses(packages = "com.endava.cats", importOptions = ImportOption.DoNotIncludeTests.class)
+@AnalyzeClasses(packages = "com.endava.cats")
 public class DependencyRulesTest {
 
     @ArchTest

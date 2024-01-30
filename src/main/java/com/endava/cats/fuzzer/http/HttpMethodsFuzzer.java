@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -9,13 +9,16 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Fuzzer that sends undocumented HTTP methods.
+ */
 @Singleton
 @HttpFuzzer
 public class HttpMethodsFuzzer implements Fuzzer {
@@ -23,6 +26,11 @@ public class HttpMethodsFuzzer implements Fuzzer {
     private final List<String> fuzzedPaths = new ArrayList<>();
     private final HttpMethodFuzzerUtil httpMethodFuzzerUtil;
 
+    /**
+     * Creates a new HttpMethodsFuzzer instance.
+     *
+     * @param hmfu the utility class used to execute the actual logic
+     */
     @Inject
     public HttpMethodsFuzzer(HttpMethodFuzzerUtil hmfu) {
         this.httpMethodFuzzerUtil = hmfu;

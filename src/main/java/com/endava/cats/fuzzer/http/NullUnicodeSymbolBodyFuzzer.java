@@ -6,10 +6,18 @@ import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that sends the null unicode symbol as body.
+ */
 @Singleton
 @HttpFuzzer
 public class NullUnicodeSymbolBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
+    /**
+     * Creates a new NullUnicodeSymbolBodyFuzzer instance.
+     *
+     * @param executor the executor
+     */
     @Inject
     public NullUnicodeSymbolBodyFuzzer(SimpleExecutor executor) {
         super(executor);

@@ -10,11 +10,19 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer that sends only single code point emojis in headers.
+ */
 @Singleton
 @HeaderFuzzer
 @EmojiFuzzer
 public class OnlySingleCodePointEmojisInHeadersFuzzer extends BaseHeadersFuzzer {
 
+    /**
+     * Creates a new OnlySingleCodePointEmojisInHeadersFuzzer instance.
+     *
+     * @param headersIteratorExecutor the executor
+     */
     public OnlySingleCodePointEmojisInHeadersFuzzer(HeadersIteratorExecutor headersIteratorExecutor) {
         super(headersIteratorExecutor);
     }

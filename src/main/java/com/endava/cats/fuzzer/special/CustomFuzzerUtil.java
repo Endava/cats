@@ -41,6 +41,9 @@ import java.util.stream.Collectors;
 import static com.endava.cats.json.JsonUtils.NOT_SET;
 import static com.endava.cats.util.CatsDSLWords.*;
 
+/**
+ * Common methods used by the FunctionalFuzzer and SecurityFuzzer.
+ */
 @ApplicationScoped
 public class CustomFuzzerUtil {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(CustomFuzzerUtil.class);
@@ -51,6 +54,17 @@ public class CustomFuzzerUtil {
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
 
+    /**
+     * Constructs a new instance of CustomFuzzerUtil with the provided dependencies.
+     *
+     * <p>This utility class is used for custom fuzzing operations and requires instances of ServiceCaller,
+     * CatsUtil, and TestCaseListener to perform its functions. The provided instances of these dependencies
+     * are stored internally for use within the CustomFuzzerUtil.</p>
+     *
+     * @param sc  The ServiceCaller instance responsible for making service calls during custom fuzzing.
+     * @param cu  The CatsUtil instance providing utility methods for working with Cats DSL and configurations.
+     * @param tcl The TestCaseListener instance handling test case events and notifications.
+     */
     public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl) {
         this.serviceCaller = sc;
         catsUtil = cu;
@@ -58,6 +72,17 @@ public class CustomFuzzerUtil {
     }
 
 
+    /**
+     * Processes and executes fuzzing tests based on the provided FuzzingData, test name, and current path values.
+     *
+     * <p>This method determines the number of iterations for test execution based on headers and performs
+     * fuzzing tests accordingly. It considers headers fuzzing if CATS_HEADERS are present in the current path values.
+     * The expected response code is retrieved from the current path values for each iteration.</p>
+     *
+     * @param data              The FuzzingData containing information about the path, method, payload, and headers.
+     * @param testName          The name of the test being executed.
+     * @param currentPathValues The current path values, including information about headers and expected response code.
+     */
     public void process(FuzzingData data, String testName, Map<String, Object> currentPathValues) {
         int howManyTests = this.getNumberOfIterationsBasedOnHeaders(data, currentPathValues);
         boolean isHeadersFuzzing = currentPathValues.get(CATS_HEADERS) != null;
@@ -223,7 +248,7 @@ public class CustomFuzzerUtil {
                 .orElseGet(() -> new AbstractMap.SimpleEntry<>(entry.getKey(), entry.getValue()));
     }
 
-    public String getTestScenario(String testName, Map<String, Object> currentPathValues) {
+    private String getTestScenario(String testName, Map<String, Object> currentPathValues) {
         String description = WordUtils.nullOrValueOf(currentPathValues.get(DESCRIPTION));
         if (StringUtils.isNotBlank(description)) {
             return description;
@@ -233,12 +258,23 @@ public class CustomFuzzerUtil {
     }
 
 
-    public void startCustomTest(String testName, Map<String, Object> currentPathValues, String expectedResponseCode) {
+    private void startCustomTest(String testName, Map<String, Object> currentPathValues, String expectedResponseCode) {
         String testScenario = this.getTestScenario(testName, currentPathValues);
         testCaseListener.addScenario(log, "Scenario: {}", testScenario);
         testCaseListener.addExpectedResult(log, "Should return [{}]", expectedResponseCode);
     }
 
+    /**
+     * Retrieves JSON with custom values from a file based on the provided FuzzingData and current path values.
+     *
+     * <p>This method checks if custom body fuzzing data is available in the current path values.
+     * If present, it returns the JSON string representing the custom body fuzz data. Otherwise, it performs
+     * additional processing or returns a default value based on the specific use case.</p>
+     *
+     * @param data              The FuzzingData containing information about the path, method, and payload.
+     * @param currentPathValues The current path values, which may include custom body fuzzing data.
+     * @return The JSON string with custom values from the file, or a default value if not found.
+     */
     public String getJsonWithCustomValuesFromFile(FuzzingData data, Map<String, Object> currentPathValues) {
         if (currentPathValues.get(CATS_BODY_FUZZ) != null) {
             return String.valueOf(currentPathValues.get(CATS_BODY_FUZZ));
@@ -259,10 +295,23 @@ public class CustomFuzzerUtil {
         return payload;
     }
 
-    public boolean isCatsRemove(Map.Entry<String, Object> keyValue) {
+    private boolean isCatsRemove(Map.Entry<String, Object> keyValue) {
         return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(keyValue.getValue()));
     }
 
+    /**
+     * Executes test cases based on provided FuzzingData, key, value, and a custom fuzzer.
+     *
+     * <p>This method logs information about the path, method, and custom data before processing.
+     * It validates the custom data, ensures it is a valid "oneOf" entry, and then populates the
+     * input variables map with the processed data. Subsequently, it generates individual test cases
+     * and performs further processing for each case.</p>
+     *
+     * @param data   The FuzzingData containing information about the path, method, and payload.
+     * @param key    The key associated with the custom data in the FuzzingData.
+     * @param value  The custom data associated with the provided key.
+     * @param fuzzer The custom fuzzer used for generating individual test cases.
+     */
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
         log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getPath(), data.getMethod(), value);
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
@@ -291,7 +340,7 @@ public class CustomFuzzerUtil {
         return true;
     }
 
-    public boolean wasOneOfSelectionReplaced(String oneOfSelection, FuzzingData data) {
+    private boolean wasOneOfSelectionReplaced(String oneOfSelection, FuzzingData data) {
         String[] oneOfArray = oneOfSelection.replace("{", "").replace("}", "").split("=", -1);
 
         String updatedJson = this.replaceElementWithCustomValue(new AbstractMap.SimpleEntry<>(oneOfArray[0], oneOfArray[1]), data.getPayload());
@@ -312,7 +361,7 @@ public class CustomFuzzerUtil {
      * @param testCase object from the custom fuzzer file
      * @return individual requests
      */
-    public List<Map<String, Object>> createIndividualRequest(Map<String, Object> testCase, String payload) {
+    private List<Map<String, Object>> createIndividualRequest(Map<String, Object> testCase, String payload) {
         Optional<Map.Entry<String, Object>> listOfValuesOptional = testCase.entrySet().stream().filter(entry -> entry.getValue() instanceof List).findFirst();
         List<Map<String, Object>> allValues = new ArrayList<>();
 
@@ -332,7 +381,7 @@ public class CustomFuzzerUtil {
                 .stream().collect(HashMap::new, (m, v) -> m.put(v.getKey(), v.getValue()), HashMap::putAll));
     }
 
-    public String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, Object> currentPathValues) {
+    private String replacePathVariablesWithCustomValues(FuzzingData data, Map<String, Object> currentPathValues) {
         String newPath = data.getPath();
         if (HttpMethod.requiresBody(data.getMethod())) {
             for (Map.Entry<String, Object> entry : currentPathValues.entrySet()) {
@@ -385,14 +434,42 @@ public class CustomFuzzerUtil {
         return propertyValue;
     }
 
+    /**
+     * Extracts the variable name from a Cats variable string.
+     *
+     * <p>The Cats variable string is expected to be in the format "${variableName}". This method
+     * removes the "${" prefix and "}" suffix to retrieve the actual variable name.</p>
+     *
+     * @param catsVariable The Cats variable string to extract the variable name from.
+     * @return The variable name extracted from the Cats variable string.
+     */
     public String getVariableName(String catsVariable) {
         return catsVariable.replace("${", "").replace("}", "");
     }
 
+    /**
+     * Checks if the given string is a variable by examining its format.
+     *
+     * <p>A variable is considered valid if it starts with "${" and ends with "}".</p>
+     *
+     * @param candidate The string to be checked for being a variable.
+     * @return {@code true} if the string is a valid variable, {@code false} otherwise.
+     */
     public boolean isVariable(String candidate) {
         return candidate.startsWith("${") && candidate.endsWith("}");
     }
 
+    /**
+     * Writes a reference data file with output variables based on the available input variables.
+     *
+     * <p>This method processes the input variables associated with different paths, filtering out reserved words
+     * and removing non-output variables. It then generates a reference data file with the remaining output variables.</p>
+     *
+     * <p>The generated reference data file includes a mapping of path names to the corresponding output variables,
+     * and it is written to an external file.</p>
+     *
+     * @throws IOException If an I/O error occurs while writing the reference data file.
+     */
     public void writeRefDataFileWithOutputVariables() throws IOException {
         Map<String, Map<String, Object>> possibleVariables = this.pathsWithInputVariables.entrySet().stream()
                 .filter(entry -> !RESERVED_WORDS.contains(entry.getKey()))
@@ -410,6 +487,15 @@ public class CustomFuzzerUtil {
         log.complete("Finish writing refData_custom.yml");
     }
 
+    /**
+     * Checks if the provided HTTP method matches the one specified in a YAML file.
+     *
+     * @param currentValues An object representing the current values, expected to be a Map of (String, Object)
+     *                      containing information about the YAML file, including the HTTP method.
+     * @param httpMethod    The HTTP method to compare against the one specified in the YAML file.
+     * @return {@code true} if the YAML file does not specify an HTTP method or if the specified
+     * HTTP method matches the provided one, {@code false} otherwise.
+     */
     public boolean isMatchingHttpMethod(Object currentValues, HttpMethod httpMethod) {
         Map<String, Object> currentPathValues = (Map<String, Object>) currentValues;
         Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CatsDSLWords.HTTP_METHOD)));

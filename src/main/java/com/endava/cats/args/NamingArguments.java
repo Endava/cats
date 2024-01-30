@@ -39,19 +39,40 @@ public class NamingArguments {
 
 
     /**
-     * Keeps a mapping between case naming and check patterns.
+     * Enumerates different naming conventions along with their corresponding regular expression patterns and descriptions.
      */
     @Getter
     public enum Naming {
+        /**
+         * Represents the snake_case naming convention.
+         */
         SNAKE("^[a-z]+((_)?[a-z])*+$", "snake_case"),
+        /**
+         * Represents the kebab-case naming convention.
+         */
         KEBAB("^[a-z]+((-)?[a-z])*+$", "kebab-case"),
+        /**
+         * Represents the HTTP header naming convention.
+         */
         HTTP_HEADER("^[A-Z][-a-zA-Z0-9]*(?<!-)$", "Http-Case"),
+        /**
+         * Represents the PascalCase naming convention.
+         */
         PASCAL("^[A-Z][A-Za-z0-9]+$", "PascalCase"),
+        /**
+         * Represents the camelCase naming convention.
+         */
         CAMEL("^[a-z]+[A-Za-z0-9]+$", "camelCase");
 
         private final Pattern pattern;
         private final String description;
 
+        /**
+         * Constructs a new instance of the {@code Naming} enum with the specified naming pattern and description.
+         *
+         * @param namingPattern the regular expression pattern for the naming convention
+         * @param description   the human-readable description of the naming convention
+         */
         Naming(String namingPattern, String description) {
             this.pattern = Pattern.compile(namingPattern);
             this.description = description;

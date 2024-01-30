@@ -1,4 +1,4 @@
-package com.endava.cats.model.strategy;
+package com.endava.cats.strategy;
 
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;

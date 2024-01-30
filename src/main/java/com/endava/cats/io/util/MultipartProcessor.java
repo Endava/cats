@@ -8,6 +8,9 @@ import java.io.PrintWriter;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 
+/**
+ * HTTP Multipart processor.
+ */
 public class MultipartProcessor {
     private final String boundary;
     private static final String LINE_BREAK = "\r\n";

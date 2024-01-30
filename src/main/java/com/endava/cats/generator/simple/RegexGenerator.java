@@ -6,7 +6,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Generates strings based on regexes.
+ */
 public class RegexGenerator {
+    /**
+     * Represents the string "DEFAULT_CATS"
+     */
     public static final String DEFAULT = "DEFAULT_CATS";
     private static final int MAX_ITERATIONS = 10;
 
@@ -14,6 +20,17 @@ public class RegexGenerator {
         //ntd
     }
 
+    /**
+     * Generates a string based on the specified pattern, prefix, minimum, and maximum length.
+     *
+     * @param pattern The pattern to generate the string.
+     * @param prefix  The prefix to prepend to the generated string.
+     * @param min     The minimum length of the generated string.
+     * @param max     The maximum length of the generated string.
+     * @return The generated string based on the given pattern, prefix, minimum, and maximum length.
+     * If the generated string is equal to the default value and the number of iterations
+     * is within the maximum limit, it retries generating the string.
+     */
     public static String generate(Pattern pattern, String prefix, int min, int max) {
         String result = generateString(pattern, prefix, min, max);
         int interations = 0;

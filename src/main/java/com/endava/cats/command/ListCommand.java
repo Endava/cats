@@ -76,7 +76,12 @@ public class ListCommand implements Runnable {
             description = "Output to console in JSON format.")
     private boolean json;
 
-
+    /**
+     * Constructs a new instance of the {@code ListCommand} class.
+     *
+     * @param fuzzersList an instance containing a list of fuzzers, excluding those annotated with {@code ValidateAndTrim} or {@code ValidateAndSanitize}
+     * @param formats     an instance containing a list of OpenAPI formats, including their matching formats
+     */
     public ListCommand(@Any Instance<Fuzzer> fuzzersList, @Any Instance<OpenAPIFormat> formats) {
         this.fuzzersList = fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)

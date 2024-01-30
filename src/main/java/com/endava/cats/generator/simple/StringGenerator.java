@@ -16,6 +16,9 @@ import java.security.SecureRandom;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * Generates strings based on different criteria.
+ */
 public class StringGenerator {
     /**
      * Constant use to prefix certain fuzz values.
@@ -40,6 +43,9 @@ public class StringGenerator {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private static final int MAX_ATTEMPTS_GENERATE = 5;
+    /**
+     * Represents an empty string.
+     */
     public static final String EMPTY = "";
 
     private static final RandomGen REGEXPGEN_RANDOM = new RandomBoundsGen();
@@ -121,7 +127,7 @@ public class StringGenerator {
         RegExpGen generator = REGEXPGEN_PROVIDER.matchingExact(pattern);
 
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
-            if(min == max) {
+            if (min == max) {
                 min -= max;
             }
             String generated = generator.generate(REGEXPGEN_RANDOM, min, max);

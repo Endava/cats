@@ -66,7 +66,7 @@ public class FilterArguments {
         STRING, NUMBER, INTEGER, BOOLEAN
     }
 
-    public enum FormatType {
+    enum FormatType {
         FLOAT, DOUBLE, INT32, INT64, DATE, DATE_TIME, PASSWORD, BYTE, BINARY, EMAIL, UUID, URI, URL, HOSTNAME, IPV4, IPV6
     }
 
@@ -117,10 +117,20 @@ public class FilterArguments {
     private List<String> skipTags;
 
 
+    /**
+     * Gets the list of fields to skip during processing. If the list is not set, an empty list is returned.
+     *
+     * @return the list of fields to skip, or an empty list if not set
+     */
     public List<String> getSkipFields() {
         return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList());
     }
 
+    /**
+     * Gets the list of headers to skip during processing. If the list is not set, an empty list is returned.
+     *
+     * @return the list of headers to skip, or an empty list if not set
+     */
     public List<String> getSkipHeaders() {
         return Optional.ofNullable(this.skipHeaders).orElse(Collections.emptyList());
     }

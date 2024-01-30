@@ -32,6 +32,10 @@ public class CatsTestCase {
 
     private static final String CATS_REPLAY = "cats replay %s";
     private static final String SKIPPED = "skipped";
+
+    /**
+     * Constant marking test case which are skipped from reporting.
+     */
     public static final String SKIP_REPORTING = "skip_reporting";
 
     private String testId;
@@ -54,7 +58,11 @@ public class CatsTestCase {
     @Exclude
     private Gson maskingSerializer;
 
-
+    /**
+     * Checks if the test result is not marked as skipped.
+     *
+     * @return True if the result is not skipped, false otherwise.
+     */
     public boolean isNotSkipped() {
         return !SKIPPED.equalsIgnoreCase(result) && !SKIP_REPORTING.equalsIgnoreCase(result);
     }
@@ -107,6 +115,11 @@ public class CatsTestCase {
         return request.getPayload();
     }
 
+    /**
+     * Serializes the response object to JSON format using a masking serializer.
+     *
+     * @return The JSON representation of the response object with applied masking.
+     */
     public String getResponseJson() {
         return maskingSerializer.toJson(response);
     }

@@ -1,7 +1,7 @@
 package com.endava.cats.io.util;
 
-import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.model.KeyValuePair;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,12 +16,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * HTTP form encoder.
+ */
 public final class FormEncoder {
 
     private FormEncoder() {
         //ntd
     }
 
+    /**
+     * Creates an HTTP content object based on the provided parameters. If the parameters map is
+     * null, an empty HttpContent object is created to include the Content-Type header.
+     *
+     * @param params A map representing the parameters to be included in the HTTP content.
+     * @return An HttpContent object containing the specified parameters, or an empty HttpContent if
+     * the params map is null.
+     * @throws IOException If an I/O error occurs while creating the HTTP content.
+     */
     public static HttpContent createHttpContent(Map<String, Object> params) throws IOException {
         // If params is null, we create an empty HttpContent because we still want to send the
         // Content-Type header.

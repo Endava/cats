@@ -56,19 +56,17 @@ import static org.fusesource.jansi.Ansi.ansi;
 
 public abstract class TestCaseExporter {
 
-    protected static final String REPORT_HTML = "index.html";
-    protected static final String JUNIT_XML = "junit.xml";
-    protected static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
-    protected static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
-    protected static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
+    static final String REPORT_HTML = "index.html";
+    static final String JUNIT_XML = "junit.xml";
+    static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
+    static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
+    static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
     private static final String REPORT_JS = "cats-summary-report.json";
-
     private static final String EXECUTION_TIME_REPORT = "execution_times.json";
     private static final String HTML = ".html";
     private static final String JSON = ".json";
     private static final Mustache TEST_CASE_MUSTACHE = mustacheFactory.compile("test-case.mustache");
-    public static final String STACKTRACE = "Stacktrace";
-
+    private static final String STACKTRACE = "Stacktrace";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
     ReportingArguments reportingArguments;
@@ -80,6 +78,11 @@ public abstract class TestCaseExporter {
     private long t0;
     private final Gson maskingSerializer;
 
+    /**
+     * Constructs a new instance of TestCaseExporter with the specified reporting arguments.
+     *
+     * @param reportingArguments the reporting arguments for configuring the TestCaseExporter
+     */
     @Inject
     protected TestCaseExporter(ReportingArguments reportingArguments) {
         this.reportingArguments = reportingArguments;
@@ -131,6 +134,12 @@ public abstract class TestCaseExporter {
         logger.debug("Cleanup complete!");
     }
 
+    /**
+     * Writes performance statistics for the executed test cases, including execution time details.
+     * The method checks if printing execution statistics is enabled in the reporting arguments before generating and printing the report.
+     *
+     * @param testCaseMap a map containing the executed test cases
+     */
     public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
         if (reportingArguments.isPrintExecutionStatistics()) {
             Map<String, List<CatsTestCase>> executionDetails = extractExecutionDetails(testCaseMap);
@@ -195,6 +204,12 @@ public abstract class TestCaseExporter {
         }
     }
 
+    /**
+     * Prints the execution details including the overall CATS execution time, the total number of requests, and statistics on passed, warnings, and errors.
+     * It also provides a message with a link to the generated report if available.
+     *
+     * @param executionStatisticsListener the listener providing statistics on CATS execution
+     */
     public void printExecutionDetails(ExecutionStatisticsListener executionStatisticsListener) {
         String catsFinished = ansi().fgBlue().a("CATS finished in {}. Total requests {}. ").toString();
         String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
@@ -209,6 +224,14 @@ public abstract class TestCaseExporter {
     }
 
 
+    /**
+     * Writes a summary report based on the provided test case map and execution statistics.
+     * It creates a CatsTestReport and extracts information such as warnings, success, errors, and total tests.
+     * The gathered information is stored in a context map.
+     *
+     * @param testCaseMap                 the map containing CATS test cases
+     * @param executionStatisticsListener the listener providing statistics on CATS execution
+     */
     public void writeSummary(Map<String, CatsTestCase> testCaseMap, ExecutionStatisticsListener executionStatisticsListener) {
         CatsTestReport report = this.createTestReport(testCaseMap, executionStatisticsListener);
 
@@ -249,6 +272,11 @@ public abstract class TestCaseExporter {
                 .catsVersion(this.version).build();
     }
 
+    /**
+     * Writes helper files, such as assets and specific files, to the reporting path.
+     * It includes assets and copies specific helper files from the classpath to the reporting path.
+     * The specific helper files are determined by the implementation of getSpecificHelperFiles method.
+     */
     public void writeHelperFiles() {
         try {
             writeAssets();
@@ -264,6 +292,12 @@ public abstract class TestCaseExporter {
         }
     }
 
+    /**
+     * Writes assets to the reporting path. Assets are stored in a directory named "assets"
+     * within the reporting path. It creates the "assets" directory if it doesn't exist.
+     *
+     * @throws IOException if an I/O error occurs while creating directories
+     */
     public void writeAssets() throws IOException {
         Path assetsPath = Paths.get(reportingPath.toFile().getAbsolutePath(), "assets");
         Files.createDirectories(assetsPath);
@@ -321,15 +355,40 @@ public abstract class TestCaseExporter {
         }
     }
 
+    /**
+     * Indicates whether the report format involves JavaScript functionality.
+     *
+     * @return {@code true} if the report format requires JavaScript, {@code false} otherwise.
+     */
     protected boolean isJavascript() {
         return false;
     }
 
+    /**
+     * Retrieves an array of specific helper files required for the reporting format.
+     *
+     * @return An array of file names representing the specific helper files.
+     */
     public abstract String[] getSpecificHelperFiles();
 
+    /**
+     * Retrieves the report format associated with the exporter.
+     *
+     * @return The report format of the exporter.
+     */
     public abstract ReportingArguments.ReportFormat reportFormat();
 
+    /**
+     * Retrieves the Mustache template used for generating the summary section of the report.
+     *
+     * @return The Mustache template for the summary section.
+     */
     public abstract Mustache getSummaryTemplate();
 
+    /**
+     * Retrieves the title for the summary report.
+     *
+     * @return The title for the summary report.
+     */
     public abstract String getSummaryReportTitle();
 }

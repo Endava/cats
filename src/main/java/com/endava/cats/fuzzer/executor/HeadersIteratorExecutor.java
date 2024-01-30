@@ -91,7 +91,7 @@ public class HeadersIteratorExecutor {
         return required ? context.getExpectedResponseCodeForRequiredHeaders() : context.getExpectedResponseCodeForOptionalHeaders();
     }
 
-    public Set<CatsHeader> getHeadersWithoutAuthHeaders(HeadersIteratorExecutorContext context) {
+    private Set<CatsHeader> getHeadersWithoutAuthHeaders(HeadersIteratorExecutorContext context) {
         if (context.isSkipAuthHeaders()) {
             Set<CatsHeader> headersWithoutAuth = context.getFuzzingData().getHeaders().stream()
                     .filter(catsHeader -> !serviceCaller.isAuthenticationHeader(catsHeader.getName()))

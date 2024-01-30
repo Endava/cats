@@ -20,6 +20,9 @@ import java.util.Set;
  * Base class used to send different values in Accept and Content-Type headers.
  */
 public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
+    /**
+     * Constant for a Cats specific Accept header.
+     */
     protected static final String CATS_ACCEPT = "application/cats";
     private static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
             "application/javascript",
@@ -54,6 +57,11 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
 
     private final SimpleExecutor simpleExecutor;
 
+    /**
+     * Creates a new instance of subclass.
+     *
+     * @param simpleExecutor the executor
+     */
     protected BaseSecurityChecksHeadersFuzzer(SimpleExecutor simpleExecutor) {
         this.simpleExecutor = simpleExecutor;
     }

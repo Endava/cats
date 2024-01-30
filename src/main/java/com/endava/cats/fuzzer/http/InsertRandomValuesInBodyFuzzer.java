@@ -17,11 +17,13 @@ import jakarta.inject.Singleton;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Fuzzer that inserts random values in request bodies.
+ */
 @HttpFuzzer
 @Singleton
 public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
-
-    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final SimpleExecutor simpleExecutor;
     private static final List<String> PAYLOADS = List.of("{0},", "{0.0},", "[{}],", "{$},", "[],", "{},",
             """ 
@@ -49,6 +51,11 @@ public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
                     {␀:␀},
                     """);
 
+    /**
+     * Creates a new InsertRandomValuesInBodyFuzzer instance.
+     *
+     * @param ce the executor
+     */
     @Inject
     InsertRandomValuesInBodyFuzzer(SimpleExecutor ce) {
         this.simpleExecutor = ce;

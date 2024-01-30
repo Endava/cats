@@ -5,15 +5,22 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
 
+/**
+ * Linter that checks the OpenAPI spec does not accept application/xml requests.
+ */
 @LinterFuzzer
 @Singleton
 public class XmlContentTypeLinterFuzzer extends BaseLinterFuzzer {
     private static final String APPLICATION_XML = "application/xml";
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new XmlContentTypeLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public XmlContentTypeLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }
