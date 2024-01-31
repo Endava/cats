@@ -46,7 +46,7 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.6.7</quarkus.platform.version>
+        <quarkus.platform.version>3.6.8</quarkus.platform.version>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
         <compiler-plugin.version>3.12.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -243,6 +243,12 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <additionalOptions>Xwerror</additionalOptions>
+                    <additionalOptions>-Xdoclint:-missing</additionalOptions>
+                    <failOnWarnings>false</failOnWarnings>
+                    <quiet>true</quiet>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
