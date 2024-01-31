@@ -43,6 +43,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
      *
      * @param catsUtil       utility class
      * @param simpleExecutor executor used to run the fuzz logic
+     * @param filesArguments files argument
      */
     public RandomResourcesFuzzer(CatsUtil catsUtil, SimpleExecutor simpleExecutor, FilesArguments filesArguments) {
         this.catsUtil = catsUtil;

@@ -4,11 +4,15 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 import java.util.Random;
 
+/**
+ * A generator class implementing various interfaces for generating valid and invalid data formats
+ * based on BCP 47 language tags. It also implements the OpenAPIFormat interface.
+ */
 @Singleton
 public class Bcp47Generator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     private final Random random = new Random();

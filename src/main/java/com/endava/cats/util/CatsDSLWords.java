@@ -30,6 +30,9 @@ public abstract class CatsDSLWords {
      */
     public static final String CHECK_FALSE = "checkFalse";
 
+    /**
+     * Reserved word for elements used for boolean checks.
+     */
     public static final Map<String, String> CHECKS = Map.of(CHECK, "true", CHECK_TRUE, "true", CHECK_FALSE, "false");
 
     /**

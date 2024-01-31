@@ -5,17 +5,25 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Checks if the OpenAPI contract paths have the recommended http response codes.
+ */
 @LinterFuzzer
 @Singleton
 public class RecommendedHttpCodesLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new RecommendedHttpCodesLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public RecommendedHttpCodesLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

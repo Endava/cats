@@ -9,6 +9,9 @@ import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+/**
+ * Parser used to run the authentication script to supply credentials to the fuzzers.
+ */
 public class AuthScriptProviderParser implements Parser {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(AuthScriptProviderParser.class);
     private long t0 = System.currentTimeMillis();

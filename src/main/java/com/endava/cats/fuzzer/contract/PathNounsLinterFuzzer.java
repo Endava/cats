@@ -12,6 +12,9 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+/**
+ * Checks that paths are using nouns rather than verbs.
+ */
 @LinterFuzzer
 @Singleton
 public class PathNounsLinterFuzzer extends BaseLinterFuzzer {
@@ -19,6 +22,11 @@ public class PathNounsLinterFuzzer extends BaseLinterFuzzer {
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new PathNounsLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public PathNounsLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

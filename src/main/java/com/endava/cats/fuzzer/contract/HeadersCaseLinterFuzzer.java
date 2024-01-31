@@ -12,12 +12,21 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Set;
 
+/**
+ * Checks that the headers are consistently following the same naming convention.
+ */
 @Singleton
 @LinterFuzzer
 public class HeadersCaseLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final NamingArguments namingArguments;
 
+    /**
+     * Creates a new HeadersCaseLinterFuzzer instance.
+     *
+     * @param tcl      the test case listener
+     * @param nameArgs used to retrieve the naming convention
+     */
     public HeadersCaseLinterFuzzer(TestCaseListener tcl, NamingArguments nameArgs) {
         super(tcl);
         this.namingArguments = nameArgs;

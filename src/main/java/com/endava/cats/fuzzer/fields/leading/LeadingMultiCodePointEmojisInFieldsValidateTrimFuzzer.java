@@ -8,15 +8,25 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
-
 import jakarta.inject.Singleton;
 
+/**
+ * Fuzzer prefixing valid field values with multi code point emojis.
+ */
 @Singleton
 @FieldFuzzer
 @EmojiFuzzer
 @ValidateAndTrim
 public class LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzer extends LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer {
 
+    /**
+     * Creates a new LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzer instance.
+     *
+     * @param sc The {@link ServiceCaller} used to make service calls
+     * @param lr The {@link TestCaseListener} for reporting test case events
+     * @param cu The {@link CatsUtil} for utility functions related to CATS
+     * @param cp The {@link FilesArguments} for file-related arguments
+     */
     protected LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

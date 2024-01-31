@@ -5,13 +5,17 @@ import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 
+/**
+ * A generator class implementing various interfaces for generating valid and invalid country code (alpha-2) data formats.
+ * It also implements the OpenAPIFormat interface.
+ */
 @Singleton
 public class CountryCodeAlpha2Generator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     private final Random random = new Random();

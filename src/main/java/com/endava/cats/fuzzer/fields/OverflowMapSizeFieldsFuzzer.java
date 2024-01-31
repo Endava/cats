@@ -15,11 +15,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+/**
+ * Fuzzer that overflows maps.
+ */
 @FieldFuzzer
 @Singleton
 public class OverflowMapSizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
     private final ProcessingArguments processingArguments;
 
+    /**
+     * Creates a new OverflowMapSizeFieldsFuzzer instance.
+     *
+     * @param ce the executor
+     * @param pa to get the size of the overflow size
+     */
     public OverflowMapSizeFieldsFuzzer(FieldsIteratorExecutor ce, ProcessingArguments pa) {
         super(ce);
         this.processingArguments = pa;

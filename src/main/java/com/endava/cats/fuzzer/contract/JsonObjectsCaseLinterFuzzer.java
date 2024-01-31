@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+/**
+ * Checks if JSON objects are consistently following the same naming convention.
+ */
 @LinterFuzzer
 @Singleton
 public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
@@ -35,6 +38,13 @@ public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
     private final ProcessingArguments processingArguments;
     private final NamingArguments namingArguments;
 
+    /**
+     * Creates a new JsonObjectsCaseLinterFuzzer instance.
+     *
+     * @param tcl      the test case listener
+     * @param proc     used to retrieve any user provided content type
+     * @param nameArgs used to get the naming convention
+     */
     public JsonObjectsCaseLinterFuzzer(TestCaseListener tcl, ProcessingArguments proc, NamingArguments nameArgs) {
         super(tcl);
         this.processingArguments = proc;

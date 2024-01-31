@@ -418,7 +418,7 @@ public class CustomFuzzerUtil {
         }
     }
 
-    public Object getPropertyValueToReplaceInBody(Map.Entry<String, Object> keyValue) {
+    private Object getPropertyValueToReplaceInBody(Map.Entry<String, Object> keyValue) {
         Object propertyValue = keyValue.getValue();
 
         if (this.isVariable(String.valueOf(propertyValue))) {

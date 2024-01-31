@@ -52,7 +52,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         }
     }
 
-    protected void processSecurityFuzzerFile(FuzzingData data) {
+    private void processSecurityFuzzerFile(FuzzingData data) {
         Map<String, Object> currentPathValues = this.getCurrentPathValues(data);
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
@@ -61,7 +61,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         }
     }
 
-    public List<String> getMissingRequiredKeywords(Map<String, Object> currentTestCase) {
+    private List<String> getMissingRequiredKeywords(Map<String, Object> currentTestCase) {
         List<String> missing = getRequiredKeywords().stream().filter(keyword -> currentTestCase.get(keyword) == null).collect(Collectors.toList());
         if (currentTestCase.get(CatsDSLWords.TARGET_FIELDS_TYPES) == null && currentTestCase.get(CatsDSLWords.TARGET_FIELDS) == null) {
             missing.add(CatsDSLWords.TARGET_FIELDS + " or " + CatsDSLWords.TARGET_FIELDS_TYPES);

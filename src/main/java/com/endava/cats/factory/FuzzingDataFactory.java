@@ -86,8 +86,9 @@ public class FuzzingDataFactory {
      * Creates a list of FuzzingData objects that will be used to fuzz the provided PathItems. The reason there is more than one FuzzingData object is due
      * to cases when the contract uses OneOf or AnyOf composite objects which causes the payload to have more than one variation.
      *
-     * @param path the path from the contract
-     * @param item the PathItem containing the details about the interaction with the path
+     * @param path    the path from the contract
+     * @param item    the PathItem containing the details about the interaction with the path
+     * @param openAPI the OpenAPI object
      * @return a list of FuzzingData items representing a template that will be used to apply the Fuzzers on
      */
     public List<FuzzingData> fromPathItem(String path, PathItem item, OpenAPI openAPI) {

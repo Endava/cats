@@ -9,9 +9,17 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
+/**
+ * Fuzzer that replaces JSON arrays with primitive values.
+ */
 @Singleton
 @FieldFuzzer
 public class ReplaceArraysWithPrimitivesFieldsFuzzer extends BaseReplaceFieldsFuzzer {
+    /**
+     * Creates a new ReplaceArraysWithPrimitivesFieldsFuzzer instance.
+     *
+     * @param ce the executor
+     */
     public ReplaceArraysWithPrimitivesFieldsFuzzer(FieldsIteratorExecutor ce) {
         super(ce);
     }

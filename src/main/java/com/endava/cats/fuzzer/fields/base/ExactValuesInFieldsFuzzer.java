@@ -18,8 +18,21 @@ import java.util.Base64;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Abstract base class for fuzzers targeting exact values in fields.
+ * Extends the {@link BaseBoundaryFieldFuzzer} class and provides a constructor
+ * to initialize common dependencies for fuzzing exact values in fields.
+ */
 public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
+    /**
+     * Constructor for initializing common dependencies for fuzzing exact values in fields.
+     *
+     * @param sc The {@link ServiceCaller} used to make service calls.
+     * @param lr The {@link TestCaseListener} for reporting test case events.
+     * @param cu The {@link CatsUtil} for utility functions related to CATS (Compliance and Testing Suite).
+     * @param cp The {@link FilesArguments} for file-related arguments.
+     */
     protected ExactValuesInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

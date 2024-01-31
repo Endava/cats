@@ -12,12 +12,21 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Collections;
 import java.util.Optional;
 
+/**
+ * Checks that query params are consistently following the same naming convention.
+ */
 @LinterFuzzer
 @Singleton
 public class QueryParamsCaseLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final NamingArguments namingArguments;
 
+    /**
+     * Creates a new QueryParamsCaseLinterFuzzer instance.
+     *
+     * @param tcl      the test case listener
+     * @param nameArgs naming arguments used to get expected naming case
+     */
     public QueryParamsCaseLinterFuzzer(TestCaseListener tcl, NamingArguments nameArgs) {
         super(tcl);
         this.namingArguments = nameArgs;

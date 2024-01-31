@@ -13,11 +13,20 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.List;
 import java.util.function.BiFunction;
 
+/**
+ * Fuzzer that overflows arrays.
+ */
 @Singleton
 @FieldFuzzer
 public class OverflowArraySizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
     private final ProcessingArguments processingArguments;
 
+    /**
+     * Creates a new OverflowArraySizeFieldsFuzzer instance.
+     *
+     * @param ce the executor
+     * @param pa to get the size of the overflow size
+     */
     public OverflowArraySizeFieldsFuzzer(FieldsIteratorExecutor ce, ProcessingArguments pa) {
         super(ce);
         this.processingArguments = pa;

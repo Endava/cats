@@ -7,6 +7,8 @@ import java.util.Optional;
 
 /**
  * An abstract class that represents a data format.
+ *
+ * @param <T> The type of {@code DataFormatGenerator} associated with this data format.
  */
 public abstract class DataFormat<T extends DataFormatGenerator> {
 

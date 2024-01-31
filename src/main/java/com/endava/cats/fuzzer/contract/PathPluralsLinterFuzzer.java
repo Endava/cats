@@ -11,6 +11,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.stream.IntStream;
 
+/**
+ * Checks that paths follow plural naming conventions.
+ */
 @LinterFuzzer
 @Singleton
 public class PathPluralsLinterFuzzer extends BaseLinterFuzzer {
@@ -18,6 +21,11 @@ public class PathPluralsLinterFuzzer extends BaseLinterFuzzer {
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new PathPluralsLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public PathPluralsLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

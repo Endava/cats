@@ -17,11 +17,22 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
+/**
+ * Fuzzer that sends abugidas characters in string fields for services following the sanitize then validate strategy.
+ */
 @Singleton
 @FieldFuzzer
 @SanitizeAndValidate
 public class AbugidasInStringFieldsSanitizeValidateFuzzer extends ExpectOnly2XXBaseFieldsFuzzer {
 
+    /**
+     * Creates a new AbugidasInStringFieldsSanitizeValidateFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     */
     protected AbugidasInStringFieldsSanitizeValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

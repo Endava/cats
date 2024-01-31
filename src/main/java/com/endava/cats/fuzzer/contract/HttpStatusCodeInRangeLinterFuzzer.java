@@ -5,16 +5,24 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
+
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Checks that http response codes are valid (between 100 and 599).
+ */
 @LinterFuzzer
 @Singleton
 public class HttpStatusCodeInRangeLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new HttpStatusCodeInRangeLinterFuzzer instance/
+     *
+     * @param tcl the test case listener
+     */
     public HttpStatusCodeInRangeLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

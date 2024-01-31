@@ -4,11 +4,15 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * A generator class implementing interfaces for generating valid and invalid UUID (Universally Unique Identifier) data formats.
+ * It also implements the OpenAPIFormat interface.
+ */
 @Singleton
 public class UUIDGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 

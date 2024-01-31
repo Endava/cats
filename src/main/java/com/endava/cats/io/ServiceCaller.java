@@ -84,6 +84,9 @@ import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
 @ApplicationScoped
 @SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
+    /**
+     * Marker for fields to be removed before calling the service.
+     */
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
@@ -628,6 +631,12 @@ public class ServiceCaller {
         return data.getHeaders().stream().anyMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(suppliedHeader.getKey()));
     }
 
+    /**
+     * Checks if the given header is an authentication header.
+     *
+     * @param header the header name
+     * @return true if the header is an authentication header, false otherwise
+     */
     public boolean isAuthenticationHeader(String header) {
         return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().contains(authHeader));
     }

@@ -102,6 +102,11 @@ public class SimpleExecutorContext {
     @Builder.Default
     boolean matchResponseResult = true;
 
+    /**
+     * Gets the path. If the path is not set, it returns the path from the associated fuzzing data.
+     *
+     * @return The path, or the path from the associated fuzzing data if the path is not set.
+     */
     public String getPath() {
         if (path == null) {
             return fuzzingData.getPath();

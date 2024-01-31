@@ -26,6 +26,9 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
     private static final Pattern ALL = Pattern.compile("^[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+[\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]*$");
     private static final Pattern WITHIN = Pattern.compile("([\\p{C}\\p{Z}\\p{So}\\p{Sk}\\p{M}]+|జ్ఞ\u200Cా|স্র\u200Cু)");
 
+    /**
+     * The actual data to be fuzzed.
+     */
     protected Object data;
 
     /**

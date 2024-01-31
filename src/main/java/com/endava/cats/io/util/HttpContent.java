@@ -56,6 +56,8 @@ public final class HttpContent {
 
     /**
      * The request's content, as a string.
+     *
+     * @return the content as string
      */
     public String stringContent() {
         return new String(this.byteArrayContent, StandardCharsets.UTF_8);
@@ -68,6 +70,7 @@ public final class HttpContent {
      * @param nameValueCollection the collection of name/value tuples to encode
      * @return the encoded HttpContent instance
      * @throws IllegalArgumentException if nameValueCollection is null
+     * @throws IOException              if some IO exception happens
      */
     public static HttpContent buildMultipartFormDataContent(Collection<KeyValuePair<String, Object>> nameValueCollection) throws IOException {
         String boundary = UUID.randomUUID().toString();
@@ -82,6 +85,7 @@ public final class HttpContent {
      * @param boundary            the boundary
      * @return the encoded HttpContent instance
      * @throws IllegalArgumentException if nameValueCollection is null
+     * @throws IOException              if some IO exception happens
      */
     public static HttpContent buildMultipartFormDataContent(Collection<KeyValuePair<String, Object>> nameValueCollection, String boundary) throws IOException {
         requireNonNull(nameValueCollection);

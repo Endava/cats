@@ -15,12 +15,24 @@ import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Fuzzer that sends very large  strings in string fields. Size of the large
+ * strings is controlled by the {@code --largeStringsSize} argument.
+ */
 @Singleton
 @FieldFuzzer
 public class VeryLargeStringsInFieldsFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
-
     private final ProcessingArguments processingArguments;
 
+    /**
+     * Creates a new VeryLargeStringsInFieldsFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     * @param pa to get the size of the large strings
+     */
     public VeryLargeStringsInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, ProcessingArguments pa) {
         super(sc, lr, cu, cp);
         this.processingArguments = pa;

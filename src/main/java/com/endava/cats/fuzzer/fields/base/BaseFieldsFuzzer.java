@@ -29,13 +29,33 @@ import java.util.regex.Pattern;
  * This class performs the actual fuzzing. It can be extended to provide expected result codes based on different fuzzing scenarios.
  */
 public abstract class BaseFieldsFuzzer implements Fuzzer {
-    public static final String CATS_REMOVE_FIELD = "cats_remove_field";
+    private static final String CATS_REMOVE_FIELD = "cats_remove_field";
+    /**
+     * Utility class.
+     */
     protected final CatsUtil catsUtil;
+    /**
+     * The logger used by all subclasses.
+     */
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
+    /**
+     * The test case listener to report test events.
+     */
     protected final TestCaseListener testCaseListener;
+    /**
+     * Files arguments.
+     */
     protected final FilesArguments filesArguments;
     private final ServiceCaller serviceCaller;
 
+    /**
+     * Constructor for initializing common dependencies for fuzzing fields.
+     *
+     * @param sc The {@link ServiceCaller} used to make service calls
+     * @param lr The {@link TestCaseListener} for reporting test case events
+     * @param cu The {@link CatsUtil} for utility functions
+     * @param cp The {@link FilesArguments} for file-related arguments
+     */
     protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
@@ -70,6 +90,13 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
         }
     }
 
+    /**
+     * Does the actual fuzzing logic.
+     *
+     * @param data            data with all the fuzzing context
+     * @param fuzzedField     the field being fuzzed
+     * @param fuzzingStrategy the strategy applied for fuzzing
+     */
     protected void process(FuzzingData data, String fuzzedField, FuzzingStrategy fuzzingStrategy) {
         FuzzingConstraints fuzzingConstraints = this.createFuzzingConstraints(data, fuzzingStrategy, fuzzedField);
 

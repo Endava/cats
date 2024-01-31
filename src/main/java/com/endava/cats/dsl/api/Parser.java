@@ -7,9 +7,21 @@ import java.util.Map;
  * environment variables to dynamic expression (like Spring EL).
  */
 public interface Parser {
+    /**
+     * Holds the name of the request object.
+     */
     String REQUEST = "request";
+    /**
+     * Holds the name for the response object.
+     */
     String RESPONSE = "response";
+    /**
+     * Holds the name for the auth script name variable.
+     */
     String AUTH_SCRIPT = "auth_script";
+    /**
+     * Holds the name for the auth script refresh interval variable.
+     */
     String AUTH_REFRESH = "auth_refresh";
 
     /**

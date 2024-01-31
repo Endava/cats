@@ -15,15 +15,25 @@ import jakarta.inject.Singleton;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Executor used to execute logic when fuzzing headers.
+ */
 @Singleton
 public class HeadersIteratorExecutor {
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
     private final MatchArguments matchArguments;
-
     private final FilterArguments filterArguments;
 
+    /**
+     * Creates a new HeadersIteratorExecutor instance.
+     *
+     * @param serviceCaller    the service caller
+     * @param testCaseListener the test case listener
+     * @param ma               matching arguments
+     * @param ia               filter arguments
+     */
     public HeadersIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, MatchArguments ma, FilterArguments ia) {
         this.serviceCaller = serviceCaller;
         this.testCaseListener = testCaseListener;
@@ -31,6 +41,11 @@ public class HeadersIteratorExecutor {
         this.filterArguments = ia;
     }
 
+    /**
+     * Executes the actual fuzzing logic.
+     *
+     * @param context the context used for fuzzing
+     */
     public void execute(HeadersIteratorExecutorContext context) {
         Set<CatsHeader> headersWithoutAuth = this.getHeadersWithoutAuthHeaders(context);
         if (headersWithoutAuth.isEmpty()) {

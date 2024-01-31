@@ -9,14 +9,25 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 
+/**
+ * Fuzzer that sends right boundary values in decimal fields.
+ */
 @Singleton
 @FieldFuzzer
 public class DecimalFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
+    /**
+     * Creates a new DecimalFieldsRightBoundaryFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param fa files arguments
+     */
     public DecimalFieldsRightBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments fa) {
         super(sc, lr, cu, fa);
     }

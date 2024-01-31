@@ -105,6 +105,14 @@ public abstract class OpenApiUtils {
         }
     }
 
+    /**
+     * Retrieves the media type from the given content based on the specified content type.
+     * The content is a map where keys are content types, and values are associated media types.
+     *
+     * @param content     The content map containing content types and associated media types.
+     * @param contentType The content type for which the media type is to be retrieved.
+     * @return The media type associated with the specified content type, or the default media type if not found.
+     */
     public static MediaType getMediaTypeFromContent(Content content, String contentType) {
         content.forEach((key, value) -> LOGGER.debug("key {} contentType {}", key, contentType));
         return content.entrySet().stream()
@@ -114,6 +122,14 @@ public abstract class OpenApiUtils {
                 .orElseGet(() -> content.get(contentType));
     }
 
+    /**
+     * Retrieves and aggregates schemas from the specified OpenAPI definition based on the provided content types.
+     * The method considers schemas from request bodies and responses in the OpenAPI definition.
+     *
+     * @param openAPI         The OpenAPI definition containing components such as schemas, request bodies, and responses.
+     * @param contentTypeList A list of content types for which schemas should be retrieved.
+     * @return A map of schemas, where keys are schema names and values are corresponding Schema objects.
+     */
     public static Map<String, Schema> getSchemas(OpenAPI openAPI, List<String> contentTypeList) {
         Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas()).orElseGet(HashMap::new);
 
@@ -125,6 +141,12 @@ public abstract class OpenApiUtils {
         return schemas;
     }
 
+    /**
+     * Retrieves the examples from the specified OpenAPI definition.
+     *
+     * @param openAPI The OpenAPI definition containing components such as examples.
+     * @return A map of examples, where keys are example names and values are corresponding Example objects.
+     */
     public static Map<String, Example> getExamples(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getComponents().getExamples()).orElse(Collections.emptyMap());
     }
@@ -152,6 +174,13 @@ public abstract class OpenApiUtils {
         schemas.put(schemaName, schemaToAdd);
     }
 
+    /**
+     * Checks if the provided Content object contains any of the specified content types.
+     *
+     * @param content     The Content object to check for content types.
+     * @param contentType A list of content types to search for in the Content object.
+     * @return true if any of the specified content types are found, false otherwise.
+     */
     public static boolean hasContentType(Content content, List<String> contentType) {
         return content != null && content.keySet().stream()
                 .anyMatch(contentKey -> contentType.stream()
@@ -159,21 +188,44 @@ public abstract class OpenApiUtils {
                 );
     }
 
+    /**
+     * Extracts path elements from the given path, excluding version path elements.
+     *
+     * @param path The path from which to extract elements.
+     * @return An array of path elements excluding version path elements.
+     */
     public static String[] getPathElements(String path) {
         return Arrays.stream(path.substring(1).split("/"))
                 .filter(pathElement -> !VERSION_PATH.matcher(pathElement).matches())
                 .toArray(String[]::new);
     }
 
+    /**
+     * Checks if the given path element is not a path variable.
+     *
+     * @param pathElement The path element to check.
+     * @return true if the path element is not a path variable, false otherwise.
+     */
     public static boolean isNotAPathVariable(String pathElement) {
         return !isAPathVariable(pathElement);
     }
 
+    /**
+     * Checks if the given path element represents a path variable.
+     *
+     * @param pathElement The path element to check.
+     * @return true if the path element represents a path variable, false otherwise.
+     */
     public static boolean isAPathVariable(String pathElement) {
         return pathElement.startsWith("{");
     }
 
-
+    /**
+     * Retrieves the total number of operations (HTTP methods) defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path information.
+     * @return The total number of operations across all paths.
+     */
     public static int getNumberOfOperations(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getPaths()).orElse(new io.swagger.v3.oas.models.Paths())
                 .values()
@@ -182,42 +234,90 @@ public abstract class OpenApiUtils {
                 .sum();
     }
 
+    /**
+     * Retrieves a set of names representing the request bodies defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing components such as request bodies.
+     * @return A set of names representing the request bodies.
+     */
     public static Set<String> getRequestBodies(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getComponents().getRequestBodies())
                 .orElse(Collections.emptyMap()).keySet();
     }
 
+    /**
+     * Retrieves a set of names representing the schemas defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing components such as schemas.
+     * @return A set of names representing the schemas.
+     */
     public static Set<String> getSchemas(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getComponents().getSchemas())
                 .orElse(new HashMap<>()).keySet();
     }
 
+    /**
+     * Retrieves a set of names representing the responses defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing components such as responses.
+     * @return A set of names representing the responses.
+     */
     public static Set<String> getResponses(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getComponents().getResponses())
                 .orElse(Collections.emptyMap()).keySet();
     }
 
+    /**
+     * Retrieves a set of names representing the security schemes defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing components such as security schemes.
+     * @return A set of names representing the security schemes.
+     */
     public static Set<String> getSecuritySchemes(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getComponents().getSecuritySchemes())
                 .orElse(Collections.emptyMap()).keySet();
     }
 
+    /**
+     * Retrieves a set of names representing the parameters defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing components such as parameters.
+     * @return A set of names representing the parameters.
+     */
     public static Set<String> getParameters(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getComponents().getParameters())
                 .orElse(Collections.emptyMap()).keySet();
     }
 
+    /**
+     * Retrieves a set of header names defined in the components section of the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing components information.
+     * @return A set of header names defined in the components section.
+     */
     public static Set<String> getHeaders(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getComponents().getHeaders())
                 .orElse(Collections.emptyMap()).keySet();
     }
 
+    /**
+     * Retrieves a set of formatted server information from the OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing server information.
+     * @return A set of formatted server information, including URL and description.
+     */
     public static Set<String> getServers(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getServers()).orElse(Collections.emptyList()).stream()
                 .map(server -> server.getUrl() + " - " + Optional.ofNullable(server.getDescription()).orElse("missing description"))
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves a set of deprecated headers from the operations defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing paths and operations.
+     * @return A set of deprecated headers across all operations.
+     */
     public static Set<String> getDeprecatedHeaders(OpenAPI openAPI) {
         return openAPI.getPaths().values().stream()
                 .flatMap(pathItem -> deprecatedHeadersFromOperations(pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
@@ -226,18 +326,44 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves the information (metadata) from the given OpenAPI specification.
+     * If information is not present, a default information object is returned.
+     *
+     * @param openAPI The OpenAPI specification containing information about the API.
+     * @return The information object from the OpenAPI specification or a default information object.
+     */
     public static Info getInfo(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getInfo()).orElse(defaultInfo());
     }
 
+    /**
+     * Retrieves the documentation URL from the external documentation section of the given OpenAPI specification.
+     * If the external documentation section is not present, a default documentation URL is returned.
+     *
+     * @param openAPI The OpenAPI specification containing external documentation information.
+     * @return The documentation URL from the OpenAPI specification or a default documentation URL.
+     */
     public static String getDocumentationUrl(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getExternalDocs()).orElse(OpenApiUtils.defaultDocumentation()).getUrl();
     }
 
+    /**
+     * Retrieves a set of extension keys from the extensions section of the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing extension information.
+     * @return A set of extension keys from the OpenAPI specification.
+     */
     public static Set<String> getExtensions(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getExtensions()).orElse(Collections.emptyMap()).keySet();
     }
 
+    /**
+     * Retrieves a set of identifiers for deprecated operations from the paths defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A set of identifiers for deprecated operations.
+     */
     public static Set<String> getDeprecatedOperations(OpenAPI openAPI) {
         return openAPI.getPaths().entrySet().stream()
                 .flatMap(entry -> entry.getValue().readOperationsMap().entrySet().stream()
@@ -247,6 +373,12 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves a set of monitoring endpoints from the paths defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path information.
+     * @return A set of monitoring endpoints based on predefined matches.
+     */
     public static Set<String> getMonitoringEndpoints(OpenAPI openAPI) {
         return openAPI.getPaths().keySet().stream()
                 .filter(path -> MONITORING_MATCHES.stream().anyMatch(toMatch -> {
@@ -256,6 +388,12 @@ public abstract class OpenApiUtils {
                 )).collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves a set of paths that are missing proper pagination support in the GET operation parameters.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A set of paths missing pagination support in the GET operation parameters.
+     */
     public static Set<String> getPathsMissingPaginationSupport(OpenAPI openAPI) {
         return openAPI.getPaths().entrySet()
                 .stream()
@@ -275,6 +413,12 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves a set of all produces headers from the operations defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A set of all produces headers across all operations.
+     */
     public static Set<String> getAllProducesHeaders(OpenAPI openAPI) {
         return openAPI.getPaths().values().stream()
                 .flatMap(pathItem -> responseContentTypeFromOperation(pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
@@ -283,6 +427,12 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves a set of all consumes headers from the operations defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A set of all consumes headers across all operations.
+     */
     public static Set<String> getAllConsumesHeaders(OpenAPI openAPI) {
         return openAPI.getPaths().values().stream()
                 .flatMap(pathItem -> requestContentTypeFromOperation(pathItem.getGet(), pathItem.getPut(), pathItem.getPost(),
@@ -291,8 +441,7 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
-
-    public static Set<String> responseContentTypeFromOperation(Operation... operations) {
+    private static Set<String> responseContentTypeFromOperation(Operation... operations) {
         return Arrays.stream(operations)
                 .filter(Objects::nonNull)
                 .map(Operation::getResponses)
@@ -305,7 +454,7 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
-    public static Set<String> requestContentTypeFromOperation(Operation... operations) {
+    private static Set<String> requestContentTypeFromOperation(Operation... operations) {
         return Arrays.stream(operations)
                 .filter(Objects::nonNull)
                 .map(Operation::getRequestBody)
@@ -317,6 +466,12 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves a sorted set of all response codes from the operations defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A sorted set of all response codes across all operations.
+     */
     public static Set<String> getAllResponseCodes(OpenAPI openAPI) {
         return openAPI.getPaths().values().stream()
                 .flatMap(pathItem -> responseCodesFromOperations(pathItem.getGet(),
@@ -327,6 +482,12 @@ public abstract class OpenApiUtils {
                 .collect(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
     }
 
+    /**
+     * Retrieves a set of response codes from the given operations.
+     *
+     * @param operations The operations to extract response codes from.
+     * @return A set of response codes from the specified operations.
+     */
     public static Set<String> responseCodesFromOperations(Operation... operations) {
         return Arrays.stream(operations)
                 .filter(Objects::nonNull)
@@ -337,6 +498,12 @@ public abstract class OpenApiUtils {
 
     }
 
+    /**
+     * Retrieves a set of used HTTP methods from the operations defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A set of used HTTP methods across all operations.
+     */
     public static Set<String> getUsedHttpMethods(OpenAPI openAPI) {
         return openAPI.getPaths().values().stream().flatMap(
                         pathItem -> pathItem.readOperationsMap().keySet().stream())
@@ -344,6 +511,13 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Searches for headers in the OpenAPI specification that contain specified header names.
+     *
+     * @param openAPI             The OpenAPI specification containing path and operation information.
+     * @param containsHeaderNames The header names to search for.
+     * @return A set of headers that contain the specified header names.
+     */
     public static Set<String> searchHeader(OpenAPI openAPI, String... containsHeaderNames) {
         Set<String> result = getHeaders(openAPI).stream()
                 .filter(header -> Arrays.stream(containsHeaderNames)
@@ -361,6 +535,12 @@ public abstract class OpenApiUtils {
         return result;
     }
 
+    /**
+     * Retrieves a set of all tags from the OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing tag information.
+     * @return A set of all tag names.
+     */
     public static Set<String> getAllTags(OpenAPI openAPI) {
         return Optional.ofNullable(openAPI.getTags())
                 .orElse(Collections.emptyList())
@@ -369,6 +549,13 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves headers from the given operations that match specified header names.
+     *
+     * @param headerNames The header names to match.
+     * @param operations  The operations to extract headers from.
+     * @return A set of headers from the specified operations that match the specified header names.
+     */
     public static Set<String> headersFromOperation(String[] headerNames, Operation... operations) {
         return Arrays.stream(operations)
                 .filter(Objects::nonNull)
@@ -386,7 +573,7 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
-    public static Set<String> deprecatedHeadersFromOperations(Operation... operations) {
+    private static Set<String> deprecatedHeadersFromOperations(Operation... operations) {
         return Arrays.stream(operations)
                 .filter(Objects::nonNull)
                 .map(Operation::getParameters)
@@ -398,6 +585,12 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves query parameters from the given operations.
+     *
+     * @param operations The operations to extract query parameters from.
+     * @return A set of query parameter names from the specified operations.
+     */
     public static Set<String> queryParametersFromOperations(Operation... operations) {
         return Arrays.stream(operations)
                 .filter(Objects::nonNull)
@@ -409,6 +602,12 @@ public abstract class OpenApiUtils {
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Retrieves API versions from the paths and servers defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path and server information.
+     * @return A set of API versions extracted from paths and servers.
+     */
     public static Set<String> getApiVersions(OpenAPI openAPI) {
         Set<String> versions = openAPI.getPaths().keySet()
                 .stream()
@@ -436,14 +635,20 @@ public abstract class OpenApiUtils {
         return versions;
     }
 
-    public static Info defaultInfo() {
+    private static Info defaultInfo() {
         return new Info().description("missing description").version("missing version").title("missing title");
     }
 
-    public static ExternalDocumentation defaultDocumentation() {
+    private static ExternalDocumentation defaultDocumentation() {
         return new ExternalDocumentation().url("missing url");
     }
 
+    /**
+     * Counts the number of operations defined in the given PathItem.
+     *
+     * @param pathItem The PathItem containing operations.
+     * @return The number of operations defined in the specified PathItem.
+     */
     public static int countPathOperations(PathItem pathItem) {
         return pathItem.readOperationsMap().size();
     }

@@ -18,6 +18,15 @@ import java.util.List;
  * The assumption is that expected response is a 4XX code when sending out of boundary values for the fuzzed fields.
  */
 public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
+
+    /**
+     * Constructor for initializing common dependencies for fuzzing boundary fields.
+     *
+     * @param sc The {@link ServiceCaller} used to make service calls
+     * @param lr The {@link TestCaseListener} for reporting test case events
+     * @param cu The {@link CatsUtil} for utility functions
+     * @param cp The {@link FilesArguments} for file-related arguments
+     */
     protected BaseBoundaryFieldFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

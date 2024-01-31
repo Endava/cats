@@ -4,12 +4,16 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * A generator class implementing interfaces for generating valid and invalid URI (Uniform Resource Identifier) data formats.
+ * It also implements the OpenAPIFormat interface.
+ */
 @Singleton
 public class URIGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     private static final String URL = "url";

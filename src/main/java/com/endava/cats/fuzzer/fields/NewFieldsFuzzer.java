@@ -1,14 +1,14 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.gson.JsonArray;
@@ -17,11 +17,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
 
 import static com.endava.cats.util.CatsDSLWords.NEW_FIELD;
 
+/**
+ * Fuzzer that adds new fields in requests.
+ */
 @Singleton
 @FieldFuzzer
 public class NewFieldsFuzzer implements Fuzzer {
@@ -29,6 +31,12 @@ public class NewFieldsFuzzer implements Fuzzer {
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 
+    /**
+     * Creates a new NewFieldsFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     */
     public NewFieldsFuzzer(ServiceCaller sc, TestCaseListener lr) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
@@ -59,7 +67,7 @@ public class NewFieldsFuzzer implements Fuzzer {
         testCaseListener.reportResult(logger, data, response, expectedResultCode);
     }
 
-    protected JsonElement addNewField(FuzzingData data) {
+    JsonElement addNewField(FuzzingData data) {
         JsonElement jsonElement = JsonParser.parseString(data.getPayload());
 
         if (jsonElement instanceof JsonObject jsonObject) {

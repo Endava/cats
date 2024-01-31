@@ -39,6 +39,11 @@ public class LeadingSpacesInHeadersFuzzer extends BaseHeadersFuzzer {
                 .build();
     }
 
+    /**
+     * Returns a list of invisible chars to be used for fuzzing.
+     *
+     * @return a list of values to be used for fuzzing
+     */
     public List<String> getInvisibleChars() {
         List<String> leadingChars = new ArrayList<>(UnicodeGenerator.getSpacesHeaders());
         leadingChars.remove("\r");
