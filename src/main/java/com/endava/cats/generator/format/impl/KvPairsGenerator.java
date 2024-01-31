@@ -3,11 +3,15 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A generator class implementing interfaces for generating valid key-value pairs data formats.
+ * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ */
 @Singleton
 public class KvPairsGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
 

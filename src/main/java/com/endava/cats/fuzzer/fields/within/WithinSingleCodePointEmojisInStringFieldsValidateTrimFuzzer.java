@@ -18,12 +18,23 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
+/**
+ * Fuzzer that inserts single code point emojis in valid field values.
+ */
 @Singleton
 @FieldFuzzer
 @EmojiFuzzer
 @ValidateAndSanitize
 public class WithinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
 
+    /**
+     * Creates a new WithinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     */
     protected WithinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

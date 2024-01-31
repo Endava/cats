@@ -5,15 +5,19 @@ import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import jakarta.inject.Singleton;
 import java.util.List;
 
+/**
+ * A generator class implementing various interfaces for generating valid and invalid email data formats.
+ * It also implements the OpenAPIFormat interface.
+ */
 @Singleton
 public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 
-    public static final String EMAIL = "email";
+    private static final String EMAIL = "email";
 
     @Override
     public Object generate(Schema<?> schema) {

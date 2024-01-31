@@ -14,10 +14,125 @@ import java.util.function.Function;
  * Enumeration with HTTP methods.
  */
 public enum HttpMethod {
-    POST, PUT, GET, TRACE, DELETE, PATCH, HEAD, CONNECT, COPY, MOVE,
-    PROPPATCH, PROPFIND, MKCOL, LOCK, UNLOCK, SEARCH,
-    BIND, UNBIND, REBIND, MKREDIRECTREF,
-    UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT;
+    /**
+     * HTTP POST method.
+     */
+    POST,
+
+    /**
+     * HTTP PUT method.
+     */
+    PUT,
+
+    /**
+     * HTTP GET method.
+     */
+    GET,
+
+    /**
+     * HTTP TRACE method.
+     */
+    TRACE,
+
+    /**
+     * HTTP DELETE method.
+     */
+    DELETE,
+
+    /**
+     * HTTP PATCH method.
+     */
+    PATCH,
+
+    /**
+     * HTTP HEAD method.
+     */
+    HEAD,
+
+    /**
+     * HTTP CONNECT method.
+     */
+    CONNECT,
+
+    /**
+     * HTTP COPY method.
+     */
+    COPY,
+
+    /**
+     * HTTP MOVE method.
+     */
+    MOVE,
+
+    /**
+     * HTTP PROPPATCH method.
+     */
+    PROPPATCH,
+
+    /**
+     * HTTP PROPFIND method.
+     */
+    PROPFIND,
+
+    /**
+     * HTTP MKCOL method.
+     */
+    MKCOL,
+
+    /**
+     * HTTP LOCK method.
+     */
+    LOCK,
+
+    /**
+     * HTTP UNLOCK method.
+     */
+    UNLOCK,
+
+    /**
+     * HTTP SEARCH method.
+     */
+    SEARCH,
+
+    /**
+     * HTTP BIND method.
+     */
+    BIND,
+
+    /**
+     * HTTP UNBIND method.
+     */
+    UNBIND,
+
+    /**
+     * HTTP REBIND method.
+     */
+    REBIND,
+
+    /**
+     * HTTP MKREDIRECTREF method.
+     */
+    MKREDIRECTREF,
+
+    /**
+     * HTTP UPDATEREDIRECTREF method.
+     */
+    UPDATEREDIRECTREF,
+
+    /**
+     * HTTP ORDERPATCH method.
+     */
+    ORDERPATCH,
+
+    /**
+     * HTTP ACL method.
+     */
+    ACL,
+
+    /**
+     * HTTP REPORT method.
+     */
+    REPORT;
 
     private static final List<HttpMethod> REST_METHODS = Arrays.asList(POST, PUT, GET, TRACE, DELETE, PATCH, HEAD);
 
@@ -26,6 +141,9 @@ public enum HttpMethod {
             BIND, UNBIND, REBIND, MKREDIRECTREF,
             UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT);
 
+    /**
+     * Holds a mapping between OpenAPI paths and HTTP methods.
+     */
     public static final Map<HttpMethod, Function<PathItem, Operation>> OPERATIONS = new EnumMap<>(HttpMethod.class);
     private static final Map<HttpMethod, List<String>> RECOMMENDED_CODES = new EnumMap<>(HttpMethod.class);
     private static final String TWOXX = "200|201|202|204";

@@ -10,6 +10,9 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Checks that paths consistently follow the same naming conventions.
+ */
 @LinterFuzzer
 @Singleton
 public class PathCaseLinterFuzzer extends BaseLinterFuzzer {
@@ -17,6 +20,12 @@ public class PathCaseLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final NamingArguments namingArguments;
 
+    /**
+     * Creates a new PathCaseLinterFuzzer instance.
+     *
+     * @param tcl      the test case listener
+     * @param nameArgs naming arguments used to get expected naming case
+     */
     public PathCaseLinterFuzzer(TestCaseListener tcl, NamingArguments nameArgs) {
         super(tcl);
         this.namingArguments = nameArgs;

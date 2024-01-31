@@ -20,6 +20,13 @@ public class InvalidDataFormat extends DataFormat<InvalidDataFormatGenerator> {
         super(generators);
     }
 
+    /**
+     * Returns the proper generator for the provided schema and/or property name.
+     *
+     * @param schema       the field schema
+     * @param propertyName the name of the property
+     * @return a generator for the given schema and property name
+     */
     public InvalidDataFormatGenerator generator(Schema<?> schema, String propertyName) {
         return super.getGenerator(schema, propertyName).orElse(new VoidGenerator());
     }

@@ -69,7 +69,13 @@ public class ProcessingArguments {
             description = "When set to @|bold true|@ the InvalidValuesInEnumsFieldsFuzzer will be disabled. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean allowInvalidEnumValues = false;
 
+    /**
+     * Represents a wildcard pattern for JSON content type with optional parameters.
+     */
     public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
+    /**
+     * Represents the JSON Patch content type.
+     */
     public static final String JSON_PATCH = "application/merge-patch+json";
 
     /**

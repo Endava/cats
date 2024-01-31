@@ -9,14 +9,27 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 
+/**
+ * Fuzzer class targeting right boundary conditions for string fields.
+ * Extends the {@link BaseBoundaryFieldFuzzer} class and provides a constructor
+ * to initialize common dependencies for fuzzing string fields with the expectation of right boundary conditions.
+ */
 @Singleton
 @FieldFuzzer
 public class StringFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
+    /**
+     * Constructor for initializing common dependencies for fuzzing string fields with the expectation of right boundary conditions.
+     *
+     * @param sc The {@link ServiceCaller} used to make service calls.
+     * @param lr The {@link TestCaseListener} for reporting test case events.
+     * @param cu The {@link CatsUtil} for utility functions related to CATS (Compliance and Testing Suite).
+     * @param cp The {@link FilesArguments} for file-related arguments.
+     */
     public StringFieldsRightBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

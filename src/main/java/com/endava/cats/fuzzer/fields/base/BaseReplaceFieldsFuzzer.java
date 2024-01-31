@@ -17,9 +17,21 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
+/**
+ * Base class for fuzzers that replace valid field values with fuzzed values.
+ */
 public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
+    /**
+     * Logger used across all sub-classes.
+     */
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final FieldsIteratorExecutor catsExecutor;
+
+    /**
+     * Constructor for initializing common dependencies for fuzzing fields.
+     *
+     * @param ce the executor
+     */
     protected BaseReplaceFieldsFuzzer(FieldsIteratorExecutor ce) {
         this.catsExecutor = ce;
     }
@@ -58,6 +70,9 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
         return List.of(HttpMethod.HEAD, HttpMethod.GET, HttpMethod.DELETE);
     }
 
+    /**
+     * Context for subclasses to provide.
+     */
     @Builder
     public static class BaseReplaceFieldsContext {
         private final String replaceWhat;
@@ -67,5 +82,11 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
         private final BiFunction<Schema<?>, String, List<String>> fuzzValueProducer;
     }
 
+    /**
+     * Override to provide the actual context for the fuzzer to run.
+     *
+     * @param data the fuzzing data object
+     * @return context for the fuzzer to run
+     */
     public abstract BaseReplaceFieldsContext getContext(FuzzingData data);
 }

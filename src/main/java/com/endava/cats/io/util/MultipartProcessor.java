@@ -19,6 +19,10 @@ public class MultipartProcessor {
 
     /**
      * Constructs a new multipart body builder.
+     *
+     * @param outputStream the output stream
+     * @param boundary     the boundary element
+     * @param charset      the charset
      */
     public MultipartProcessor(OutputStream outputStream, String boundary, Charset charset) {
         this.boundary = boundary;
@@ -92,6 +96,8 @@ public class MultipartProcessor {
 
     /**
      * Adds the final boundary to the multipart message and closes streams.
+     *
+     * @throws IOException Thrown on errors reading / writing.
      */
     public void finish() throws IOException {
         writer.append("--").append(boundary).append("--").append(LINE_BREAK);

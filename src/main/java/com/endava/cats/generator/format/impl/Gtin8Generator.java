@@ -5,10 +5,14 @@ import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import com.endava.cats.generator.simple.StringGenerator;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 
+/**
+ * A generator class implementing interfaces for generating valid GTIN-8 (Global Trade Item Number) data formats.
+ * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ */
 @Singleton
 public class Gtin8Generator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override

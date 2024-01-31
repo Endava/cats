@@ -17,12 +17,23 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
+/**
+ * Fuzzer that adds control chars in valid fields values.
+ */
 @Singleton
 @FieldFuzzer
 @ControlCharFuzzer
 @SanitizeAndValidate
 public class WithinControlCharsInStringFieldsSanitizeValidateFuzzer extends InvisibleCharsBaseTrimValidateFuzzer {
 
+    /**
+     * Creates a new WithinControlCharsInStringFieldsSanitizeValidateFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     */
     protected WithinControlCharsInStringFieldsSanitizeValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

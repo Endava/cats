@@ -9,9 +9,18 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
+/**
+ * Fuzzer that replace JSON arrays with simple objects.
+ */
 @FieldFuzzer
 @Singleton
 public class ReplaceArraysWithSimpleObjectsFieldsFuzzer extends BaseReplaceFieldsFuzzer {
+
+    /**
+     * Creates a new ReplaceArraysWithSimpleObjectsFieldsFuzzer instance.
+     *
+     * @param ce the executor
+     */
     public ReplaceArraysWithSimpleObjectsFieldsFuzzer(FieldsIteratorExecutor ce) {
         super(ce);
     }

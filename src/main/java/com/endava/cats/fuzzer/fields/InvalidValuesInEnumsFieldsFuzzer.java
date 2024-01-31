@@ -15,11 +15,24 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
+/**
+ * Fuzzer that sends invalid values in enums. There is an argument {@code --allowInvalidEnumValues}
+ * which will influence the expected response codes by this fuzzer.
+ */
 @Singleton
 @FieldFuzzer
 public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
     final ProcessingArguments processingArguments;
 
+    /**
+     * Creates a new InvalidValuesInEnumsFieldsFuzzer instance.
+     *
+     * @param sc                  the service caller
+     * @param lr                  the test case listener
+     * @param cu                  utility class
+     * @param cp                  files arguments
+     * @param processingArguments to get the {@code --allowInvalidEnumValues} argument value
+     */
     public InvalidValuesInEnumsFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, ProcessingArguments processingArguments) {
         super(sc, lr, cu, cp);
         this.processingArguments = processingArguments;

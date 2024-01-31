@@ -16,11 +16,23 @@ import jakarta.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Fuzzer that sends empty values in string fields.
+ */
 @Singleton
 @FieldFuzzer
 public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
     private final FilterArguments filterArguments;
 
+    /**
+     * Creates a new EmptyStringsInFieldsFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     * @param fa filter arguments
+     */
     public EmptyStringsInFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp);
         this.filterArguments = fa;

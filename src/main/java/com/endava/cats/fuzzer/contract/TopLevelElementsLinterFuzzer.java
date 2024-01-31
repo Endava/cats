@@ -26,6 +26,9 @@ import java.util.stream.Collectors;
 @Singleton
 public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
+    private static final String DESCRIPTION = "description";
+    private static final String IS_EMPTY = " is empty";
+    private static final String IS_TOO_SHORT = " is too short";
 
     /**
      * Creates a new TopLevelElementsLinterFuzzer instance.
@@ -143,6 +146,13 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
 
         return missingFields.stream().filter(field -> !field.isEmpty())
                 .map(field -> "contact." + field).collect(Collectors.toSet());
+    }
+
+    private <T> String getOrEmpty(Supplier<T> function, String toReturn) {
+        if (function.get() == null) {
+            return toReturn;
+        }
+        return EMPTY;
     }
 
     @Override

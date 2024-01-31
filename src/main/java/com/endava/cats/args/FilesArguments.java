@@ -279,6 +279,7 @@ public class FilesArguments {
      * <p>
      * The map keys are the contract paths or {@code all} if headers are applied to all paths.
      *
+     * @param path the current path
      * @return a Map representation of the --headers file with paths being the Map keys
      */
     public Map<String, Object> getHeaders(String path) {

@@ -62,7 +62,7 @@ public class StatsCommand implements Runnable {
     /**
      * Holds the type of details extracted from OpenAPI.
      */
-    public enum Details {
+    enum Details {
         TITLE("API title: {}", "title"),
         DESCRIPTION("API description: {}", "description"),
         VERSION("API version: {}", "version"),

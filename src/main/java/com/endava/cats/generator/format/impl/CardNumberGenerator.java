@@ -5,12 +5,16 @@ import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+/**
+ * A generator class implementing various interfaces for generating valid and invalid card number data formats.
+ * It also implements the OpenAPIFormat interface.
+ */
 @Singleton
 public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
 

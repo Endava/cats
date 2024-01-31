@@ -6,19 +6,27 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.tags.Tag;
+import jakarta.inject.Singleton;
 import org.springframework.util.CollectionUtils;
 
-import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Checks if path tags are also defined at global level.
+ */
 @LinterFuzzer
 @Singleton
 public class PathTagsLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
+    /**
+     * Creates a new PathTagsLinterFuzzer instance.
+     *
+     * @param tcl the test case listener
+     */
     public PathTagsLinterFuzzer(TestCaseListener tcl) {
         super(tcl);
     }

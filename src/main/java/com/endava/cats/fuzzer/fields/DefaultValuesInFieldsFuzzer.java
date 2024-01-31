@@ -17,13 +17,20 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
+/**
+ * Fuzzer that send default values for each field, if defined.
+ */
 @Singleton
 @FieldFuzzer
 public class DefaultValuesInFieldsFuzzer implements Fuzzer {
-    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final FieldsIteratorExecutor catsExecutor;
 
-
+    /**
+     * Creates a new DefaultValuesInFieldsFuzzer instance.
+     *
+     * @param ce the executor
+     */
     public DefaultValuesInFieldsFuzzer(FieldsIteratorExecutor ce) {
         this.catsExecutor = ce;
     }

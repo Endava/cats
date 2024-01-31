@@ -35,6 +35,15 @@ public class RemoveFieldsFuzzer implements Fuzzer {
     private final FilterArguments filterArguments;
     private final ProcessingArguments processingArguments;
 
+
+    /**
+     * Creates a new RemoveFieldsFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param fa filter arguments
+     * @param pa to get the number of max fields to remove at once
+     */
     public RemoveFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilterArguments fa, ProcessingArguments pa) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;

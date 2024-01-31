@@ -62,7 +62,7 @@ public class FilterArguments {
     @Inject
     UserArguments userArguments;
 
-    public enum FieldType {
+    enum FieldType {
         STRING, NUMBER, INTEGER, BOOLEAN
     }
 

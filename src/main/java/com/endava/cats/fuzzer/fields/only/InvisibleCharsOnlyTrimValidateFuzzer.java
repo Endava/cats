@@ -13,9 +13,21 @@ import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.List;
 
+/**
+ * Base class for fuzzers sending only invisible chars in fields.
+ */
 public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForRequiredBaseFieldsFuzzer {
     private final FilterArguments filterArguments;
 
+    /**
+     * Constructor for initializing common dependencies for fuzzing fields with invisible chars.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     * @param fa filter arguments
+     */
     protected InvisibleCharsOnlyTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp);
         this.filterArguments = fa;
@@ -48,5 +60,10 @@ public abstract class InvisibleCharsOnlyTrimValidateFuzzer extends Expect4XXForR
         return "iterate through each field and send  " + this.typeOfDataSentToTheService();
     }
 
+    /**
+     * Returns the actual list of invisible chars to be used for fuzzing.
+     *
+     * @return a list of invisible chars to be used for fuzzing.
+     */
     abstract List<String> getInvisibleChars();
 }

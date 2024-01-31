@@ -8,11 +8,11 @@ import org.fusesource.jansi.Ansi;
 import java.util.HashMap;
 import java.util.Map;
 
-@ApplicationScoped
-@DryRun
 /**
  * Listener for tracking execution statistics of CATS tests, including errors, warnings, successes, and skipped tests.
  */
+@ApplicationScoped
+@DryRun
 public class ExecutionStatisticsListener {
 
     /**

@@ -17,14 +17,24 @@ import jakarta.inject.Singleton;
 import java.util.List;
 import java.util.function.BiFunction;
 
+/**
+ * Fuzzer that uses a user dictionary for fuzzing request fields.
+ */
 @Singleton
 @FieldFuzzer
 public class UserDictionaryFieldsFuzzer implements Fuzzer {
-    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final FieldsIteratorExecutor catsExecutor;
     private final UserArguments userArguments;
     private final MatchArguments matchArguments;
 
+    /**
+     * Creates a new UserDictionaryFieldsFuzzer instance.
+     *
+     * @param ce the executor
+     * @param ua to get the user dictionary
+     * @param ma to get matching criteria for responses
+     */
     public UserDictionaryFieldsFuzzer(FieldsIteratorExecutor ce, UserArguments ua, MatchArguments ma) {
         this.catsExecutor = ce;
         this.userArguments = ua;

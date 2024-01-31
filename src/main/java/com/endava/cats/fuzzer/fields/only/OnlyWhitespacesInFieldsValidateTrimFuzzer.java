@@ -13,12 +13,24 @@ import jakarta.inject.Singleton;
 
 import java.util.List;
 
+/**
+ * Fuzzer that sends only whitespaces in fields.
+ */
 @Singleton
 @FieldFuzzer
 @WhitespaceFuzzer
 @ValidateAndTrim
 public class OnlyWhitespacesInFieldsValidateTrimFuzzer extends InvisibleCharsOnlyValidateTrimFuzzer {
 
+    /**
+     * Creates a new OnlyWhitespacesInFieldsValidateTrimFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     * @param fa filter arguments
+     */
     public OnlyWhitespacesInFieldsValidateTrimFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
         super(sc, lr, cu, cp, fa);
     }

@@ -4,16 +4,20 @@ import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import jakarta.inject.Singleton;
 import java.util.List;
 
+/**
+ * A generator class implementing interfaces for generating valid ISBN-10 (International Standard Book Number) data formats.
+ * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ */
 @Singleton
 public class ISBN10Generator implements ValidDataFormatGenerator, OpenAPIFormat {
 
-    public static final String ISBN_10 = "isbn10";
-    public static final String ISBN = "isbn";
+    private static final String ISBN_10 = "isbn10";
+    private static final String ISBN = "isbn";
 
     @Override
     public Object generate(Schema<?> schema) {

@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 @Getter
 @ToString
 public class FuzzingData {
+    /**
+     * Represents an empty string.
+     */
     public static final String EMPTY = "";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingData.class);
     private final HttpMethod method;
@@ -78,6 +81,12 @@ public class FuzzingData {
     @Builder.Default
     private Map<String, Set<String>> responseHeaders = Collections.emptyMap();
 
+    /**
+     * Checks if the given field is a query param.
+     *
+     * @param field the name of the field
+     * @return true if field is query param, false otherwise
+     */
     public boolean isQueryParam(String field) {
         return this.queryParams.contains(field);
     }
@@ -266,6 +275,11 @@ public class FuzzingData {
         return allFieldsSetOfSets;
     }
 
+    /**
+     * Returns the first element from the content types.
+     *
+     * @return the first element from the content types.
+     */
     public String getFirstRequestContentType() {
         return requestContentTypes.get(0);
     }

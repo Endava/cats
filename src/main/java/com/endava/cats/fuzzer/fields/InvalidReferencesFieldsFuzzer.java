@@ -1,21 +1,21 @@
 package com.endava.cats.fuzzer.fields;
 
-import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilesArguments;
+import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-
 import jakarta.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,16 +24,26 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Fuzzer that sends invalid references in fields.
+ */
 @Singleton
 @FieldFuzzer
 public class InvalidReferencesFieldsFuzzer implements Fuzzer {
-    public static final Pattern VARIABLES_PATTERN = Pattern.compile("\\{([^{]*)}");
+    private static final Pattern VARIABLES_PATTERN = Pattern.compile("\\{([^{]*)}");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(InvalidReferencesFieldsFuzzer.class);
 
     private final FilesArguments filesArguments;
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
 
+    /**
+     * Creates a new InvalidReferencesFieldsFuzzer instance.
+     *
+     * @param filesArguments   files arguments
+     * @param simpleExecutor   the executor
+     * @param testCaseListener the test case listener
+     */
     public InvalidReferencesFieldsFuzzer(FilesArguments filesArguments, SimpleExecutor simpleExecutor, TestCaseListener testCaseListener) {
         this.filesArguments = filesArguments;
         this.simpleExecutor = simpleExecutor;

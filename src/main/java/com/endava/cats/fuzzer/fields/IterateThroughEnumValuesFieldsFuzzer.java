@@ -18,13 +18,20 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
+/**
+ * Fields that iterates through enum values and sends one request per each value.
+ */
 @Singleton
 @FieldFuzzer
 public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
-    protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final FieldsIteratorExecutor catsExecutor;
 
-
+    /**
+     * Creates a new IterateThroughEnumValuesFieldsFuzzer instance.
+     *
+     * @param ce the executor
+     */
     public IterateThroughEnumValuesFieldsFuzzer(FieldsIteratorExecutor ce) {
         this.catsExecutor = ce;
     }

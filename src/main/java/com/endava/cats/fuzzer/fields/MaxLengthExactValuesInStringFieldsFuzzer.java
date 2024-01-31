@@ -7,14 +7,25 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.util.function.Function;
 
+/**
+ * Fuzzer that sends max length exact values in string fields if they have 'maxLength' defined.
+ */
 @Singleton
 @FieldFuzzer
 public class MaxLengthExactValuesInStringFieldsFuzzer extends ExactValuesInFieldsFuzzer {
 
+    /**
+     * Creates a new MaxLengthExactValuesInStringFieldsFuzzer instance.
+     *
+     * @param sc the service caller
+     * @param lr the test case listener
+     * @param cu utility class
+     * @param cp files arguments
+     */
     public MaxLengthExactValuesInStringFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
         super(sc, lr, cu, cp);
     }

@@ -3,12 +3,16 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import io.swagger.v3.oas.models.media.Schema;
-
 import jakarta.inject.Singleton;
+
 import java.time.Period;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * A generator class implementing interfaces for generating valid Period data formats.
+ * It implements the ValidDataFormatGenerator and OpenAPIFormat interfaces.
+ */
 @Singleton
 public class PeriodGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     private final Random random = new Random();
