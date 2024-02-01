@@ -131,6 +131,7 @@ public class MatchArguments {
 
     /**
      * Checks if the provided input value is reflected in the body of a Cats response.
+     * Check is done only if {@code --matchInput} is supplied.
      *
      * @param catsResponse the Cats response to analyze
      * @param inputValue   the input value to check for reflection

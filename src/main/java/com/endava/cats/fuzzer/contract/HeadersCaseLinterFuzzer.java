@@ -5,6 +5,7 @@ import com.endava.cats.args.NamingArguments;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -50,7 +51,7 @@ public class HeadersCaseLinterFuzzer extends BaseLinterFuzzer {
 
     private String checkHeaders(FuzzingData data) {
         Set<CatsHeader> headers = data.getHeaders();
-        return this.check(headers.stream().map(CatsHeader::getName).toArray(String[]::new), header ->
+        return CatsUtil.check(headers.stream().map(CatsHeader::getName).toArray(String[]::new), header ->
                 !namingArguments.getHeadersNaming().getPattern().matcher(header).matches());
     }
 

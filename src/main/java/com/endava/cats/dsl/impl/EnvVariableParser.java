@@ -12,7 +12,7 @@ public class EnvVariableParser implements Parser {
 
     @Override
     public String parse(String expression, Map<String, String> context) {
-        String result = System.getenv(expression.substring(2));
+        String result = System.getenv(expression.replace("$", ""));
         return result == null ? ENV_VARIABLE_NOT_FOUND + expression : result;
     }
 }

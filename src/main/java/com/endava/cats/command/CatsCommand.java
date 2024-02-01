@@ -216,8 +216,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void doLogic() throws IOException {
-        this.doEarlyOperations();
+        this.doFirst();
         OpenAPI openAPI = this.createOpenAPI();
+        //reporting path is initialized only if OpenAPI spec is successfully parsed
         testCaseListener.initReportingPath();
         this.printConfiguration(openAPI);
         this.initGlobalData(openAPI);
@@ -310,7 +311,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         return openAPI;
     }
 
-    void doEarlyOperations() throws IOException {
+    void doFirst() throws IOException {
         this.processLogLevelArgument();
         filesArguments.loadConfig();
         apiArguments.validateRequired(spec);
@@ -356,6 +357,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
                 .toList();
 
+        // excludes Fuzzers whose HTTP methods do not match the FuzzingData http method
         List<Fuzzer> fuzzersToRun = filterArguments.getFirstPhaseFuzzersAsFuzzers().stream()
                 .filter(fuzzer -> fuzzer.skipForHttpMethods()
                         .stream()
@@ -376,8 +378,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
 
         for (Fuzzer fuzzer : configuredFuzzers) {
-            List<FuzzingData> filteredData = CatsUtil.filterAndPrintNotMatching(fuzzingDataListWithHttpMethodsFiltered, data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
-                    logger, "HTTP method {} is not supported by {}", t -> t.getMethod().toString(), fuzzer.toString());
+            List<FuzzingData> filteredData = CatsUtil.filterAndPrintNotMatching(
+                    fuzzingDataListWithHttpMethodsFiltered,
+                    data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
+                    logger,
+                    "HTTP method {} is not supported by {}",
+                    t -> t.getMethod().toString(), fuzzer.toString());
             filteredData.forEach(data -> {
                 logger.start("Starting Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
                 logger.debug("Fuzzing payload: {}", data.getPayload());

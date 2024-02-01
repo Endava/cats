@@ -7,30 +7,16 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 
 /**
  * Base class for all Contract Fuzzers. If you need additional behaviour please make sure you don't break existing Fuzzers.
  * Contract Fuzzers are only focused on contract following best practices without calling the actual service.
  */
 public abstract class BaseLinterFuzzer implements Fuzzer {
-    /**
-     * Represents a comma followed by a space.
-     */
-    protected static final String COMMA = ", ";
-    /**
-     * Represents "" string.
-     */
-    protected static final String EMPTY = "";
-    /**
-     * Represents the N/A string.
-     */
     private static final String N_A = "N/A";
-
     /**
      * The test case listener.
      */
@@ -49,11 +35,12 @@ public abstract class BaseLinterFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (!fuzzedPaths.contains(this.runKey(data))) {
-            testCaseListener.createAndExecuteTest(log, this, () -> addDefaultsAndProcess(data));
-
-            fuzzedPaths.add(this.runKey(data));
+        if (fuzzedPaths.contains(this.runKey(data))) {
+            return;
         }
+
+        testCaseListener.createAndExecuteTest(log, this, () -> addDefaultsAndProcess(data));
+        fuzzedPaths.add(this.runKey(data));
     }
 
     /**
@@ -66,37 +53,12 @@ public abstract class BaseLinterFuzzer implements Fuzzer {
         testCaseListener.addPath(data.getPath());
         testCaseListener.addContractPath(data.getContractPath());
         testCaseListener.addFullRequestPath("NA");
+
         CatsRequest request = CatsRequest.empty();
         request.setHttpMethod(String.valueOf(data.getMethod()));
         testCaseListener.addRequest(request);
 
         this.process(data);
-    }
-
-    /**
-     * Checks each element in the given array against a specified predicate and constructs a comma-separated
-     * string of elements that satisfy the predicate. The resulting string is stripped of leading commas and spaces.
-     *
-     * @param pathElements  The array of strings to be checked.
-     * @param checkFunction The predicate used to test each element in the array.
-     *                      Elements that satisfy the predicate will be included in the result.
-     * @return A comma-separated string of elements that satisfy the predicate,
-     * or {@code N_A} if no elements meet the criteria.
-     */
-    protected String check(String[] pathElements, Predicate<String> checkFunction) {
-        StringBuilder result = new StringBuilder();
-
-        for (String pathElement : pathElements) {
-            if (checkFunction.test(pathElement)) {
-                result.append(COMMA).append(pathElement);
-            }
-        }
-
-        if (!result.toString().isEmpty()) {
-            return StringUtils.stripStart(result.toString().trim(), ", ");
-        }
-
-        return N_A;
     }
 
     /**

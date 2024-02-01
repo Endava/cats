@@ -49,7 +49,7 @@ public class DryRunAspect {
      * @throws Exception if something goes wrong
      */
     public Object startSession(InvocationContext context) throws Exception {
-        if (reportingArguments.isJson()) {
+        if (reportingArguments.isJsonOutput()) {
             CatsUtil.setCatsLogLevel("OFF");
         }
         Object result = context.proceed();
@@ -81,11 +81,15 @@ public class DryRunAspect {
      * @return nothing
      */
     public Object endSession() {
-        if (reportingArguments.isJson()) {
+        if (reportingArguments.isJsonOutput()) {
             List<DryRunEntry> pathTests = paths.entrySet().stream()
-                    .map(entry -> new DryRunEntry(entry.getKey().substring(0, entry.getKey().lastIndexOf("_")),
-                            entry.getKey().substring(entry.getKey().lastIndexOf("_") + 1),
-                            String.valueOf(entry.getValue())))
+                    .map(entry -> {
+                        int splitIndex = entry.getKey().lastIndexOf("_");
+                        String path = entry.getKey().substring(0, splitIndex);
+                        String httpMethod = entry.getKey().substring(splitIndex + 1);
+
+                        return new DryRunEntry(path, httpMethod, String.valueOf(entry.getValue()));
+                    })
                     .toList();
             logger.noFormat(JsonUtils.GSON.toJson(pathTests));
         } else {
@@ -107,7 +111,9 @@ public class DryRunAspect {
         Object data = context.getParameters()[1];
 
         if (data instanceof FuzzingData fuzzingData) {
-            if (counter % 10000 == 0 && !reportingArguments.isJson()) {
+            boolean tenThousandsTestsSimulated = counter % 10000 == 0;
+
+            if (tenThousandsTestsSimulated && !reportingArguments.isJsonOutput()) {
                 logger.noFormat(StringUtils.repeat("..", 1 + (counter / 10000)));
             }
             paths.merge(fuzzingData.getPath() + "_" + fuzzingData.getMethod(), 1, Integer::sum);

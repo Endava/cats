@@ -456,6 +456,7 @@ class ServiceCallerTest {
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();
         ReflectionTestUtils.setField(filesArguments, "params", List.of("id:" + id, "test:2"));
+        filesArguments.loadURLParams();
 
         CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath("/pets/{id}").payload("{'id':'1'}")
                 .httpMethod(HttpMethod.GET).headers(Collections.singleton(CatsHeader.builder().name("header").value("header")

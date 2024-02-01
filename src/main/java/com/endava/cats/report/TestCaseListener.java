@@ -767,7 +767,11 @@ public class TestCaseListener {
     }
 
     private boolean isEmptyBody(String body) {
-        return body.trim().isEmpty() || body.trim().equalsIgnoreCase("[]") || body.trim().equalsIgnoreCase("{}");
+        boolean isEmptyString = body.trim().isEmpty();
+        boolean isEmptyArray = body.trim().equalsIgnoreCase("[]");
+        boolean isEmptyJson = body.trim().equalsIgnoreCase("{}");
+
+        return isEmptyString || isEmptyArray || isEmptyJson;
     }
 
     private boolean matchesElement(String responseSchema, JsonElement element) {
@@ -792,17 +796,26 @@ public class TestCaseListener {
     }
 
     private boolean matchesSingleElement(String responseSchema, JsonElement element, String name) {
-        boolean result = true;
         if (element.isJsonObject() && globalContext.getAdditionalProperties().contains(name)) {
             return true;
-        } else if (element.isJsonObject()) {
-            for (Map.Entry<String, JsonElement> inner : element.getAsJsonObject().entrySet()) {
-                result = result && matchesSingleElement(responseSchema, inner.getValue(), inner.getKey());
-            }
-        } else {
-            return responseSchema != null && responseSchema.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT));
         }
-        return result || responseSchema == null || responseSchema.isEmpty();
+        if (doesNotHaveAResponseSchema(responseSchema)) {
+            return true;
+        }
+        if (!element.isJsonObject()) {
+            return responseSchema.toLowerCase(Locale.ROOT).contains(name.toLowerCase(Locale.ROOT));
+        }
+
+        boolean matches = true;
+        for (Map.Entry<String, JsonElement> inner : element.getAsJsonObject().entrySet()) {
+            matches = matches && matchesSingleElement(responseSchema, inner.getValue(), inner.getKey());
+        }
+
+        return matches;
+    }
+
+    private static boolean doesNotHaveAResponseSchema(String responseSchema) {
+        return responseSchema == null || responseSchema.isEmpty();
     }
 
     @Builder

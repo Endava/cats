@@ -256,10 +256,12 @@ public class FilterArguments {
             FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
         }
 
-        if (userArguments.getWords() != null) {
+        if (userArguments.isUserDictionarySupplied()) {
             FUZZERS_TO_BE_RUN.clear();
+            // if a custom dictionary is supplied, we only keep these 2 fuzzers
             FUZZERS_TO_BE_RUN.addAll(List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer"));
         } else {
+            //second phase fuzzers are removed
             FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers().stream().map(Object::toString).toList()::contains);
         }
         return FUZZERS_TO_BE_RUN;
@@ -380,8 +382,10 @@ public class FilterArguments {
 
     private List<String> filterFuzzersByAnnotationWhenCheckArgumentSupplied(boolean checkArgument, Class<? extends Annotation> annotation) {
         if (checkArgument) {
-            return fuzzers.stream().filter(fuzzer -> AnnotationUtils.isAnnotationDeclaredLocally(annotation, fuzzer.getClass()))
-                    .map(Object::toString).toList();
+            return fuzzers.stream()
+                    .filter(fuzzer -> AnnotationUtils.isAnnotationDeclaredLocally(annotation, fuzzer.getClass()))
+                    .map(Object::toString)
+                    .toList();
         }
         return Collections.emptyList();
     }
@@ -449,8 +453,12 @@ public class FilterArguments {
         allSuppliedPaths = allSuppliedPaths.stream().filter(path -> !allSkippedPaths.contains(path)).toList();
 
         logger.debug("Supplied paths before filtering {}", allSuppliedPaths);
-        allSuppliedPaths = CatsUtil.filterAndPrintNotMatching(allSuppliedPaths, path -> openAPI.getPaths().containsKey(path), logger,
-                "Supplied path is not matching the contract {}", Object::toString);
+        allSuppliedPaths = CatsUtil.filterAndPrintNotMatching(
+                allSuppliedPaths,
+                path -> openAPI.getPaths().containsKey(path),
+                logger,
+                "Supplied path is not matching the contract {}",
+                Object::toString);
         logger.debug("Supplied paths after filtering {}", allSuppliedPaths);
 
 
@@ -461,9 +469,12 @@ public class FilterArguments {
         Set<String> allContractPaths = openAPI.getPaths().keySet();
         Map<Boolean, List<String>> pathsByWildcard = paths.stream().collect(Collectors.partitioningBy(path -> path.contains("*")));
 
-        List<String> result = new ArrayList<>(pathsByWildcard.get(false));
+        List<String> pathsWithoutWildcard = pathsByWildcard.get(false);
+        List<String> pathsWithWildcard = pathsByWildcard.get(true);
 
-        for (String wildCardPath : pathsByWildcard.get(true)) {
+        List<String> result = new ArrayList<>(pathsWithoutWildcard);
+
+        for (String wildCardPath : pathsWithWildcard) {
             String regex = wildCardPath
                     .replace("*", ".*")
                     .replace("{", "\\{")

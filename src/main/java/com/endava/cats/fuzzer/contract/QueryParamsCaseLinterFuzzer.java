@@ -4,6 +4,7 @@ import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -49,7 +50,7 @@ public class QueryParamsCaseLinterFuzzer extends BaseLinterFuzzer {
     }
 
     private String checkQueryParams(FuzzingData data) {
-        return this.check(Optional.ofNullable(data.getQueryParams()).orElse(Collections.emptySet()).toArray(new String[0]), queryParam ->
+        return CatsUtil.check(Optional.ofNullable(data.getQueryParams()).orElse(Collections.emptySet()).toArray(new String[0]), queryParam ->
                 !namingArguments.getQueryParamsNaming().getPattern().matcher(queryParam).matches());
     }
 

@@ -39,6 +39,8 @@ import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
  */
 @ApplicationScoped
 public class CatsUtil {
+    private static final String COMMA = ", ";
+    private static final String N_A = "N/A";
 
     /**
      * Filters a collection based on a specified predicate and prints items that do not match the predicate using a logger.
@@ -255,5 +257,31 @@ public class CatsUtil {
      */
     public static Object getAsAppropriateType(String initialValue) {
         return NumberUtils.isCreatable(initialValue) ? NumberUtils.createNumber(initialValue) : initialValue;
+    }
+
+    /**
+     * Checks each element in the given array against a specified predicate and constructs a comma-separated
+     * string of elements that satisfy the predicate. The resulting string is stripped of leading commas and spaces.
+     *
+     * @param pathElements  The array of strings to be checked.
+     * @param checkFunction The predicate used to test each element in the array.
+     *                      Elements that satisfy the predicate will be included in the result.
+     * @return A comma-separated string of elements that satisfy the predicate,
+     * or {@code N_A} if no elements meet the criteria.
+     */
+    public static String check(String[] pathElements, Predicate<String> checkFunction) {
+        StringBuilder result = new StringBuilder();
+
+        for (String pathElement : pathElements) {
+            if (checkFunction.test(pathElement)) {
+                result.append(COMMA).append(pathElement);
+            }
+        }
+
+        if (!result.toString().isEmpty()) {
+            return StringUtils.stripStart(result.toString().trim(), ", ");
+        }
+
+        return N_A;
     }
 }

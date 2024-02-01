@@ -36,4 +36,14 @@ public class UserArguments {
             throw new CatsException("Unable to process the --words file. Either the file does not exist or it's not reachable", e);
         }
     }
+
+    /**
+     * Checks if a user dictionary was supplied through the arguments.
+     *
+     * @return true if a use dictionary is supplied, false otherwise
+     */
+    public boolean isUserDictionarySupplied() {
+        return this.words != null;
+    }
+
 }

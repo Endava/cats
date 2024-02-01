@@ -29,6 +29,8 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
     private static final String DESCRIPTION = "description";
     private static final String IS_EMPTY = " is empty";
     private static final String IS_TOO_SHORT = " is too short";
+    private static final String COMMA = ", ";
+    private static final String EMPTY = "";
 
     /**
      * Creates a new TopLevelElementsLinterFuzzer instance.

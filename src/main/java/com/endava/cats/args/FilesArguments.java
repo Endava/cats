@@ -37,6 +37,7 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> headers;
     private Map<String, Map<String, Object>> queryParams;
     private Map<String, Map<String, Object>> refData;
+    private List<String> urlParams;
 
     @Getter
     private Properties fuzzConfigProperties;
@@ -166,7 +167,6 @@ public class FilesArguments {
         log.config(Ansi.ansi().bold().a("Functional Fuzzer file: {}").reset().toString(),
                 Ansi.ansi().fg(Ansi.Color.BLUE).a(customFuzzerFile.getCanonicalPath()));
         customFuzzerDetails = parseYaml(customFuzzerFile.getCanonicalPath());
-
     }
 
     /**
@@ -199,10 +199,11 @@ public class FilesArguments {
      * Loads the supplied url params into a Map.
      */
     public void loadURLParams() {
-        if (params == null) {
-            log.debug("No URL parameters provided!");
-            return;
-        }
+        urlParams = new ArrayList<>(Optional.ofNullable(this.params).orElse(new ArrayList<>()));
+        urlParams.addAll(Optional.ofNullable(urlParamsArguments).orElse(Collections.emptyMap()).entrySet()
+                .stream()
+                .map(entry -> entry.getKey() + ":" + entry.getValue())
+                .toList());
 
         log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
                 Ansi.ansi().fg(Ansi.Color.BLUE).a(params));
@@ -233,12 +234,7 @@ public class FilesArguments {
      * @return a name:value list of url params to be replaced when calling the service
      */
     public List<String> getUrlParamsList() {
-        List<String> localParams = new ArrayList<>(Optional.ofNullable(this.params).orElse(Collections.emptyList()));
-        localParams.addAll(Optional.ofNullable(urlParamsArguments).orElse(Collections.emptyMap()).entrySet()
-                .stream()
-                .map(entry -> entry.getKey() + ":" + entry.getValue())
-                .toList());
-        return localParams;
+        return this.urlParams;
     }
 
     /**
@@ -256,6 +252,12 @@ public class FilesArguments {
                 .split(":", 2)[1];
     }
 
+    public boolean isNotUrlParam(String parameter) {
+        return this.getUrlParamsList()
+                .stream()
+                .noneMatch(urlParam -> urlParam.startsWith(parameter));
+    }
+
     /**
      * Replaces the current URL parameters with the {@code --urlParams} arguments supplied.
      * The URL parameters are expected to be included in curly brackets.
@@ -267,9 +269,8 @@ public class FilesArguments {
         for (String line : this.getUrlParamsList()) {
             String[] urlParam = line.split(":", -1);
             String pathVar = "{" + urlParam[0] + "}";
-            if (startingUrl.contains(pathVar)) {
-                startingUrl = startingUrl.replace(pathVar, urlParam[1]);
-            }
+
+            startingUrl = startingUrl.replace(pathVar, urlParam[1]);
         }
         return startingUrl;
     }

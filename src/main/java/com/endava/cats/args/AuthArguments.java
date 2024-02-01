@@ -62,7 +62,7 @@ public class AuthArguments {
     }
 
     /**
-     * Checks is basic auth details were supplied via the {@code --basicAuth} argument.
+     * Checks if basic auth details were supplied via the {@code --basicAuth} argument.
      *
      * @return true if basic auth details were supplied, false otherwise
      */

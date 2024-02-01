@@ -55,12 +55,9 @@ import static org.fusesource.jansi.Ansi.ansi;
  */
 
 public abstract class TestCaseExporter {
-
     static final String REPORT_HTML = "index.html";
-    static final String JUNIT_XML = "junit.xml";
     static final MustacheFactory mustacheFactory = new DefaultMustacheFactory();
     static final Mustache SUMMARY_MUSTACHE = mustacheFactory.compile("summary.mustache");
-    static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
     private static final String REPORT_JS = "cats-summary-report.json";
     private static final String EXECUTION_TIME_REPORT = "execution_times.json";
     private static final String HTML = ".html";
