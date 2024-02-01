@@ -5,6 +5,7 @@ import com.endava.cats.args.NamingArguments;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -61,12 +62,12 @@ public class PathCaseLinterFuzzer extends BaseLinterFuzzer {
     }
 
     private String checkPathVariables(String[] pathElements) {
-        return this.check(pathElements, pathElement -> OpenApiUtils.isAPathVariable(pathElement)
+        return CatsUtil.check(pathElements, pathElement -> OpenApiUtils.isAPathVariable(pathElement)
                 && !namingArguments.getPathVariablesNaming().getPattern().matcher(pathElement.replace("{", "").replace("}", "")).matches());
     }
 
     private String checkPathElements(String[] pathElements) {
-        return this.check(pathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement)
+        return CatsUtil.check(pathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement)
                 && !namingArguments.getPathNaming().getPattern().matcher(pathElement).matches());
     }
 

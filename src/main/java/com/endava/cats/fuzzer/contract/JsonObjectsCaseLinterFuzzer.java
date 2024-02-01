@@ -9,6 +9,7 @@ import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
@@ -112,7 +113,7 @@ public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
             }
 
         }
-        return this.check(stringToCheck.toArray(new String[0]), jsonObject ->
+        return CatsUtil.check(stringToCheck.toArray(new String[0]), jsonObject ->
                 !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()
                         && PATTERNS_TO_IGNORE.stream().noneMatch(pattern -> pattern.matcher(jsonObject).matches())
                         && !NoMediaType.EMPTY_BODY.matches(jsonObject));

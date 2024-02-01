@@ -4,6 +4,7 @@ import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -47,7 +48,7 @@ public class PathNounsLinterFuzzer extends BaseLinterFuzzer {
     }
 
     private String checkNouns(String[] pathElements) {
-        return this.check(pathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement) && COMMON_VERBS_PATTERN.matcher(pathElement.toLowerCase(Locale.ROOT)).matches());
+        return CatsUtil.check(pathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement) && COMMON_VERBS_PATTERN.matcher(pathElement.toLowerCase(Locale.ROOT)).matches());
     }
 
     @Override

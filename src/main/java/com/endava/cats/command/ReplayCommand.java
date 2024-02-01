@@ -103,7 +103,7 @@ public class ReplayCommand implements Runnable {
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         this.loadHeadersIfSupplied(testCase);
         CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
-        String responseBody = ServiceCaller.getAsJsonString(response.getBody());
+        String responseBody = JsonUtils.getAsJsonString(response.getBody());
         logger.complete("Response body: \n{}", responseBody);
         this.writeTestJsonsIfSupplied(testCase, response);
         this.showResponseCodesDifferences(testCase, response);
@@ -113,23 +113,32 @@ public class ReplayCommand implements Runnable {
         logger.noFormat("");
         logger.star("Old response code: {}", catsTestCase.getResponse().getResponseCode());
         logger.star("New response code: {}", response.getResponseCode());
+
         logger.noFormat("");
         logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody());
-        logger.star("New response body: {}", ServiceCaller.getAsJsonString(response.getBody()));
+        logger.star("New response body: {}", JsonUtils.getAsJsonString(response.getBody()));
         logger.noFormat("");
     }
 
     private void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) {
-        if (!StringUtils.isBlank(this.outputReportFolder)) {
-            catsTestCase.setResponse(response);
-            testCaseListener.writeIndividualTestCase(catsTestCase);
+        if (StringUtils.isBlank(this.outputReportFolder)) {
+            return;
         }
+
+        catsTestCase.setResponse(response);
+        testCaseListener.writeIndividualTestCase(catsTestCase);
     }
 
     private void loadHeadersIfSupplied(CatsTestCase testCase) {
         List<KeyValuePair<String, Object>> headersFromFile = new java.util.ArrayList<>(Optional.ofNullable(testCase.getRequest().getHeaders()).orElse(Collections.emptyList()));
+
+        //remove old headers
         headersFromFile.removeIf(header -> headersMap.containsKey(header.getKey()));
+
+        //add new headers
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
+
+        //see if any header is dynamic and it needs a parser
         headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
     }
 
@@ -142,11 +151,13 @@ public class ReplayCommand implements Runnable {
     }
 
     private void initReportingPath() {
+        if (StringUtils.isBlank(this.outputReportFolder)) {
+            return;
+        }
+
         try {
-            if (!StringUtils.isBlank(this.outputReportFolder)) {
-                testCaseListener.initReportingPath(this.outputReportFolder);
-                testCaseListener.writeHelperFiles();
-            }
+            testCaseListener.initReportingPath(this.outputReportFolder);
+            testCaseListener.writeHelperFiles();
         } catch (IOException e) {
             logger.error("There was an issue creating the output folder: {}", e.getMessage());
             logger.debug("Stacktrace:", e);

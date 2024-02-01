@@ -14,6 +14,8 @@ import jakarta.inject.Singleton;
 @Singleton
 @Named("junit")
 public class TestCaseExporterJunit extends TestCaseExporter {
+    private static final Mustache JUNIT_SUMMARY_MUSTACHE = mustacheFactory.compile("junit_summary.mustache");
+    private static final String JUNIT_XML = "junit.xml";
 
     /**
      * Constructs a new instance of TestCaseExporterJunit with the specified reporting arguments.

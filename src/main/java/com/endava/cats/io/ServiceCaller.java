@@ -34,7 +34,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import net.minidev.json.JSONValue;
 import okhttp3.ConnectionPool;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -447,7 +446,7 @@ public class ServiceCaller {
                 .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().get(0))).toList();
 
         String rawResponse = this.getAsRawString(response);
-        String jsonResponse = getAsJsonString(rawResponse);
+        String jsonResponse = JsonUtils.getAsJsonString(rawResponse);
         String responseContentType = this.getResponseContentType(response);
 
         int numberOfWords = new StringTokenizer(rawResponse).countTokens();
@@ -545,22 +544,6 @@ public class ServiceCaller {
             }
         }
         return queryParams;
-    }
-
-    /**
-     * Converts the provided raw response to a JSON-formatted string.
-     * If the raw response is already a valid JSON, it is returned as is. Otherwise,
-     * a simplified JSON representation is created, including the first 500 characters
-     * of the raw response.
-     *
-     * @param rawResponse The raw response string to be converted to JSON.
-     * @return The JSON-formatted string representing the response.
-     */
-    public static String getAsJsonString(String rawResponse) {
-        if (JsonUtils.isValidJson(rawResponse)) {
-            return rawResponse;
-        }
-        return "{\"notAJson\": \"" + JSONValue.escape(rawResponse.substring(0, Math.min(500, rawResponse.length()))) + "\"}";
     }
 
     /**

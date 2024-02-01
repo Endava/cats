@@ -33,16 +33,16 @@ public class SpringELParser implements Parser {
     @Override
     public String parse(String expression, Map<String, String> context) {
         log.trace("Parsing {}", expression);
-        Object result = parseContext(expression, context);
+        Object result = parseExpressionWithContext(expression, context);
 
         if (expression.equalsIgnoreCase(String.valueOf(result))) {
-            result = parseContext(expression, context.getOrDefault(Parser.RESPONSE, null));
+            result = parseExpressionWithContext(expression, context.getOrDefault(Parser.RESPONSE, null));
         }
 
         return result == null ? expression : String.valueOf(result);
     }
 
-    private Object parseContext(String expression, Object context) {
+    private Object parseExpressionWithContext(String expression, Object context) {
         try {
             StandardEvaluationContext evaluationContext = new StandardEvaluationContext(context);
             evaluationContext.setPropertyAccessors(List.of(new MapAccessor(), new JsonPropertyAccessor()));

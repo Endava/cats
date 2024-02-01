@@ -4,6 +4,7 @@ import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -51,7 +52,7 @@ public class PathPluralsLinterFuzzer extends BaseLinterFuzzer {
                 .mapToObj(i -> pathElements[i])
                 .toArray(String[]::new);
 
-        return this.check(filteredPathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END));
+        return CatsUtil.check(filteredPathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END));
     }
 
     @Override

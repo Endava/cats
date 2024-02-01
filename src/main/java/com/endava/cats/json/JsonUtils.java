@@ -21,6 +21,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONArray;
+import net.minidev.json.JSONValue;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
@@ -374,5 +375,21 @@ public abstract class JsonUtils {
         documentContext.put("$", newKey, newValue);
 
         return documentContext.jsonString();
+    }
+
+    /**
+     * Converts the provided raw response to a JSON-formatted string.
+     * If the raw response is already a valid JSON, it is returned as is. Otherwise,
+     * a simplified JSON representation is created, including the first 500 characters
+     * of the raw response.
+     *
+     * @param rawResponse The raw response string to be converted to JSON.
+     * @return The JSON-formatted string representing the response.
+     */
+    public static String getAsJsonString(String rawResponse) {
+        if (JsonUtils.isValidJson(rawResponse)) {
+            return rawResponse;
+        }
+        return "{\"notAJson\": \"" + JSONValue.escape(rawResponse.substring(0, Math.min(500, rawResponse.length()))) + "\"}";
     }
 }
