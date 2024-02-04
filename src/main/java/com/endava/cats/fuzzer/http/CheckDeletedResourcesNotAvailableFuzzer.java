@@ -46,24 +46,26 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (data.getMethod() == HttpMethod.GET) {
-            logger.info("Stored successful DELETE requests: {}", catsGlobalContext.getSuccessfulDeletes().size());
-            for (String delete : catsGlobalContext.getSuccessfulDeletes()) {
-                simpleExecutor.execute(
-                        SimpleExecutorContext.builder()
-                                .logger(logger)
-                                .fuzzer(this)
-                                .expectedResponseCode(ResponseCodeFamily.FOURXX)
-                                .fuzzingData(data)
-                                .payload("{}")
-                                .path(getRelativePath(delete))
-                                .scenario("Check that previously deleted resource is not available")
-                                .responseProcessor(this::checkResponse)
-                                .build()
-                );
-            }
-            catsGlobalContext.getSuccessfulDeletes().clear();
+        if (data.getMethod() != HttpMethod.GET) {
+            return;
         }
+
+        logger.info("Stored successful DELETE requests: {}", catsGlobalContext.getSuccessfulDeletes().size());
+        for (String delete : catsGlobalContext.getSuccessfulDeletes()) {
+            simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
+                            .logger(logger)
+                            .fuzzer(this)
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                            .fuzzingData(data)
+                            .payload("{}")
+                            .path(getRelativePath(delete))
+                            .scenario("Check that previously deleted resource is not available")
+                            .responseProcessor(this::checkResponse)
+                            .build()
+            );
+        }
+        catsGlobalContext.getSuccessfulDeletes().clear();
     }
 
     private void checkResponse(CatsResponse response, FuzzingData data) {

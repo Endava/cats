@@ -84,12 +84,14 @@ public abstract class OpenApiUtils {
         options.setFlatten(true);
 
         SwaggerParseResult parseResult = getOpenAPI(new OpenAPIV3Parser(), location, options);
+        boolean isOpenAPIValidSpec = parseResult.getOpenAPI() != null;
 
-        if (parseResult.getOpenAPI() == null) {
+        if (isOpenAPIValidSpec) {
+            openApiParseResult.setVersion(OpenApiParseResult.OpenApiVersion.fromSwaggerVersion(parseResult.getOpenAPI().getSpecVersion()));
+        } else {
+            //it might be a Swagger 2.0 spec
             parseResult = getOpenAPI(new SwaggerConverter(), location, options);
             openApiParseResult.setVersion(OpenApiParseResult.OpenApiVersion.V20);
-        } else {
-            openApiParseResult.setVersion(OpenApiParseResult.OpenApiVersion.fromSwaggerVersion(parseResult.getOpenAPI().getSpecVersion()));
         }
         openApiParseResult.setSwaggerParseResult(parseResult);
         return openApiParseResult;
@@ -134,9 +136,13 @@ public abstract class OpenApiUtils {
         Map<String, Schema> schemas = Optional.ofNullable(openAPI.getComponents().getSchemas()).orElseGet(HashMap::new);
 
         for (String contentType : contentTypeList) {
-            Optional.ofNullable(openAPI.getComponents().getRequestBodies()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
+            Optional.ofNullable(openAPI.getComponents().getRequestBodies())
+                    .orElseGet(Collections::emptyMap)
+                    .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), contentType));
         }
-        Optional.ofNullable(openAPI.getComponents().getResponses()).orElseGet(Collections::emptyMap).forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), ProcessingArguments.JSON_WILDCARD));
+        Optional.ofNullable(openAPI.getComponents().getResponses())
+                .orElseGet(Collections::emptyMap)
+                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), ProcessingArguments.JSON_WILDCARD));
 
         return schemas;
     }

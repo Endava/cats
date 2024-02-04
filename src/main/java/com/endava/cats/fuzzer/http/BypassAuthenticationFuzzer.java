@@ -45,20 +45,20 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         Set<String> authenticationHeaders = this.getAuthenticationHeaderProvided(data);
-        if (!authenticationHeaders.isEmpty()) {
-            simpleExecutor.execute(
-                    SimpleExecutorContext.builder()
-                            .fuzzer(this)
-                            .logger(logger)
-                            .fuzzingData(data)
-                            .payload(data.getPayload())
-                            .scenario("Send a happy flow bypassing authentication")
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX_AA)
-                            .skippedHeaders(authenticationHeaders)
-                            .build());
-        } else {
+        if (authenticationHeaders.isEmpty()) {
             logger.skip("No authentication header provided.");
+            return;
         }
+        simpleExecutor.execute(
+                SimpleExecutorContext.builder()
+                        .fuzzer(this)
+                        .logger(logger)
+                        .fuzzingData(data)
+                        .payload(data.getPayload())
+                        .scenario("Send a happy flow bypassing authentication")
+                        .expectedResponseCode(ResponseCodeFamily.FOURXX_AA)
+                        .skippedHeaders(authenticationHeaders)
+                        .build());
     }
 
     Set<String> getAuthenticationHeaderProvided(FuzzingData data) {

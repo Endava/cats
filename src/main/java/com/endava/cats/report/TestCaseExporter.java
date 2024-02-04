@@ -151,17 +151,26 @@ public abstract class TestCaseExporter {
     }
 
     private Map<String, List<CatsTestCase>> extractExecutionDetails(Map<String, CatsTestCase> testCaseMap) {
-        Map<String, CatsTestCase> allRun = testCaseMap.entrySet().stream().filter(entry -> entry.getValue().isNotSkipped() && entry.getValue().notIgnoredForExecutionStatistics())
+        Map<String, CatsTestCase> allRun = testCaseMap.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().isNotSkipped() && entry.getValue().notIgnoredForExecutionStatistics())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        return allRun.values().stream()
+        return allRun.values()
+                .stream()
                 .collect(Collectors.groupingBy(testCase -> testCase.getResponse().getHttpMethod() + " " + testCase.getPath()))
-                .entrySet().stream().filter(entry -> entry.getValue().size() > 1).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue().size() > 1)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private void writeExecutionTimesForPathAndHttpMethod(String key, List<CatsTestCase> value) {
         double average = value.stream().mapToLong(testCase -> testCase.getResponse().getResponseTimeInMs()).average().orElse(0);
-        List<CatsTestCase> sortedRuns = value.stream().sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs())).toList();
+        List<CatsTestCase> sortedRuns = value.stream()
+                .sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs()))
+                .toList();
+
         CatsTestCase bestCaseTestCase = sortedRuns.get(0);
         CatsTestCase worstCaseTestCase = sortedRuns.get(sortedRuns.size() - 1);
         List<TimeExecution> executions = sortedRuns.stream()

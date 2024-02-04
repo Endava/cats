@@ -390,6 +390,7 @@ public class FuzzingData {
                 maxFieldsToRemove = allFields.size() / 2;
             } else if (allFields.size() < maxFieldsToRemove) {
                 LOGGER.note("fieldsSubsetMinSize is bigger than the number of fields, the value will be changed to {}", allFields.size());
+                maxFieldsToRemove = allFields.size();
             }
             for (int i = maxFieldsToRemove; i >= 1; i--) {
                 sets.addAll(getAllSubsetsOfSize(new ArrayList<>(allFields), i));

@@ -48,7 +48,7 @@ public class StringGenerator {
      */
     public static final String EMPTY = "";
 
-    private static final RandomGen REGEXPGEN_RANDOM = new RandomBoundsGen();
+    private static final RandomGen REGEXP_RANDOM_GEN = new RandomBoundsGen();
     private static final org.cornutum.regexpgen.Provider REGEXPGEN_PROVIDER = Provider.forEcmaScript();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(StringGenerator.class);
@@ -101,7 +101,10 @@ public class StringGenerator {
     }
 
     /**
-     * This method generates a random string according to the given input. If the pattern already has length information the min/max will be ignored.
+     * This method generates a random string according to the given input.
+     * If the pattern already has length information the min/max will be ignored.
+     * <p>
+     * It tries to generate a valid value using 3 types of generators in a fallback manner.
      *
      * @param pattern the regex pattern
      * @param min     min length of the generated string
@@ -128,9 +131,9 @@ public class StringGenerator {
 
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
             if (min == max) {
-                min -= max;
+                min = 0;
             }
-            String generated = generator.generate(REGEXPGEN_RANDOM, min, max);
+            String generated = generator.generate(REGEXP_RANDOM_GEN, min, max);
 
             if (generated.matches(pattern)) {
                 LOGGER.debug("Generated using REGEXP {} matches {}", generated, pattern);
@@ -139,7 +142,7 @@ public class StringGenerator {
         }
 
         LOGGER.debug("Returning alphanumeric random string using REGEXP");
-        return REGEXPGEN_PROVIDER.matchingExact(ALPHANUMERIC_PLUS).generate(REGEXPGEN_RANDOM, min, max);
+        return REGEXPGEN_PROVIDER.matchingExact(ALPHANUMERIC_PLUS).generate(REGEXP_RANDOM_GEN, min, max);
     }
 
     private static String generateUsingCatsRegexGenerator(String pattern, int min, int max) {

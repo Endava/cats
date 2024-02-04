@@ -167,7 +167,7 @@ public class CatsUtil {
                 jsonPropertyForReplacement = removeArrayTermination(jsonPropertyForReplacement);
             }
             try {
-                jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), JsonUtils.GENERIC_PERMISSIVE_PARSER.parse(String.valueOf(valueToSet)));
+                jsonDocument.set(JsonUtils.sanitizeToJsonPath(jsonPropertyForReplacement), JsonUtils.JSON_PERMISSIVE_PARSER.parse(String.valueOf(valueToSet)));
             } catch (ParseException e) {
                 throw new CatsException(e);
             }

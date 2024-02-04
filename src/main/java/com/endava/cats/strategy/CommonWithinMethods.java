@@ -27,18 +27,22 @@ public final class CommonWithinMethods {
      * @throws NullPointerException If 'fuzzedFieldSchema' or 'invisibleChars' is null.
      */
     public static List<FuzzingStrategy> getFuzzingStrategies(Schema<?> fuzzedFieldSchema, List<String> invisibleChars, boolean maintainSize) {
-        if (!"string".equalsIgnoreCase(fuzzedFieldSchema.getType())
-                || "binary".equalsIgnoreCase(fuzzedFieldSchema.getFormat())
-                || "byte".equalsIgnoreCase(fuzzedFieldSchema.getFormat())) {
+        boolean isNotString = !"string".equalsIgnoreCase(fuzzedFieldSchema.getType());
+        boolean isBinaryFormat = "binary".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
+        boolean isByteFormat = "byte".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
+
+        if (isNotString || isBinaryFormat || isByteFormat) {
             return Collections.singletonList(FuzzingStrategy.skip().withData("Field does not match String schema or has binary/byte format"));
         }
         String initialValue = StringGenerator.generateValueBasedOnMinMax(fuzzedFieldSchema);
 
-        /*independent of the supplied strategy, we still maintain sizes for enums*/
+        /* independent of the supplied strategy, we still maintain sizes for enums */
         final boolean insertWithoutReplace = !maintainSize || !CollectionUtils.isEmpty(fuzzedFieldSchema.getEnum());
 
-        return invisibleChars
-                .stream().map(value -> FuzzingStrategy.replace().withData(insertInTheMiddle(initialValue, value, insertWithoutReplace))).toList();
+        return invisibleChars.stream()
+                .map(value -> FuzzingStrategy.replace()
+                        .withData(insertInTheMiddle(initialValue, value, insertWithoutReplace)))
+                .toList();
     }
 
     /**
@@ -54,7 +58,9 @@ public final class CommonWithinMethods {
     public static String insertInTheMiddle(String value, String whatToInsert, boolean insertWithoutReplace) {
         int position = value.length() / 2;
         int whatToInsertLength = Math.min(value.length(), whatToInsert.length());
-        return value.substring(0, position - (insertWithoutReplace ? 0 : whatToInsertLength / 2)) + whatToInsert + value.substring(position + (insertWithoutReplace ? 0 : whatToInsertLength / 2));
+        int diffBasedOnReplace = insertWithoutReplace ? 0 : whatToInsertLength / 2;
+
+        return value.substring(0, position - diffBasedOnReplace) + whatToInsert + value.substring(position + diffBasedOnReplace);
     }
 
     /**
@@ -76,6 +82,6 @@ public final class CommonWithinMethods {
         if (fuzzedFieldSchema.getMaxLength() == null) {
             return text.length();
         }
-        return fuzzedFieldSchema.getMaxLength() >= text.length() ? text.length() : fuzzedFieldSchema.getMaxLength();
+        return Math.min(fuzzedFieldSchema.getMaxLength(), text.length());
     }
 }

@@ -28,21 +28,22 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (!JsonUtils.isEmptyPayload(data.getPayload())) {
-            simpleExecutor.execute(
-                    SimpleExecutorContext.builder()
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX)
-                            .fuzzingData(data)
-                            .logger(logger)
-                            .replaceRefData(false)
-                            .scenario(this.getScenario())
-                            .fuzzer(this)
-                            .payload(this.getPayload(data))
-                            .build()
-            );
-        } else {
+        if (JsonUtils.isEmptyPayload(data.getPayload())) {
             logger.debug("Skipping fuzzer as payload is empty");
+            return;
         }
+
+        simpleExecutor.execute(
+                SimpleExecutorContext.builder()
+                        .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                        .fuzzingData(data)
+                        .logger(logger)
+                        .replaceRefData(false)
+                        .scenario(this.getScenario())
+                        .fuzzer(this)
+                        .payload(this.getPayload(data))
+                        .build()
+        );
     }
 
     @Override

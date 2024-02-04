@@ -53,37 +53,40 @@ public class RandomResourcesFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        Set<String> payloads = new HashSet<>();
         Set<String> pathVariables = Arrays.stream(OpenApiUtils.getPathElements(data.getPath()))
                 .filter(OpenApiUtils::isAPathVariable)
                 .map(element -> element.substring(1, element.length() - 1))
                 .collect(Collectors.toSet());
 
-        if (!pathVariables.isEmpty()) {
-            for (int i = 0; i < ITERATIONS; i++) {
-                String updatePayload = data.getPayload();
-                for (String pathVar : pathVariables) {
-                    String pathVarValueFromUrlParamsList = filesArguments.getUrlParam(pathVar);
-                    boolean isPathVarPassedAsUrlParam = StringUtils.isNotBlank(pathVarValueFromUrlParamsList);
-
-                    if (isPathVarPassedAsUrlParam) {
-                        // when path variable is passed as URL param it won't be fuzzed -> won't be part of the payload, so we add it
-                        updatePayload = JsonUtils.addNewElement(data.getPayload(), pathVar, pathVarValueFromUrlParamsList);
-                    }
-                    Object existingValue = JsonUtils.getVariableFromJson(updatePayload, pathVar);
-                    if (JsonUtils.isNotSet(String.valueOf(existingValue))) {
-                        throw new IllegalStateException("OpenAPI spec is missing definition for " + pathVar);
-                    }
-                    Object newValue = generateNewValue(existingValue);
-
-                    updatePayload = catsUtil.justReplaceField(updatePayload, pathVar, newValue).json();
-
-                }
-                payloads.add(updatePayload);
-            }
-
-            this.executeTests(data, payloads);
+        if (pathVariables.isEmpty()) {
+            return;
         }
+
+        Set<String> payloads = new HashSet<>();
+
+        for (int i = 0; i < ITERATIONS; i++) {
+            String updatePayload = data.getPayload();
+            for (String pathVar : pathVariables) {
+                String pathVarValueFromUrlParamsList = filesArguments.getUrlParam(pathVar);
+                boolean isPathVarPassedAsUrlParam = StringUtils.isNotBlank(pathVarValueFromUrlParamsList);
+
+                if (isPathVarPassedAsUrlParam) {
+                    // when path variable is passed as URL param it won't be fuzzed -> won't be part of the payload, so we add it
+                    updatePayload = JsonUtils.addNewElement(data.getPayload(), pathVar, pathVarValueFromUrlParamsList);
+                }
+                Object existingValue = JsonUtils.getVariableFromJson(updatePayload, pathVar);
+                if (JsonUtils.isNotSet(String.valueOf(existingValue))) {
+                    throw new IllegalStateException("OpenAPI spec is missing definition for " + pathVar);
+                }
+                Object newValue = generateNewValue(existingValue);
+
+                updatePayload = catsUtil.justReplaceField(updatePayload, pathVar, newValue).json();
+
+            }
+            payloads.add(updatePayload);
+        }
+
+        this.executeTests(data, payloads);
     }
 
     private void executeTests(FuzzingData data, Set<String> payloads) {
