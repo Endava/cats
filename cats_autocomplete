@@ -163,6 +163,7 @@ function _complete_cats() {
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} lint" ];    then _picocli_cats; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} info" ];    then _picocli_cats; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} stats" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} validate" ];    then _picocli_cats; return $?; fi
 
   # Find the longest sequence of subcommands and call the bash function for that subcommand.
   local cmds0=(generate-completion)
@@ -174,7 +175,9 @@ function _complete_cats() {
   local cmds6=(lint)
   local cmds7=(info)
   local cmds8=(stats)
+  local cmds9=(validate)
 
+  if CompWordsContainsArray "${cmds9[@]}"; then _picocli_cats_validate; return $?; fi
   if CompWordsContainsArray "${cmds8[@]}"; then _picocli_cats_stats; return $?; fi
   if CompWordsContainsArray "${cmds7[@]}"; then _picocli_cats_info; return $?; fi
   if CompWordsContainsArray "${cmds6[@]}"; then _picocli_cats_lint; return $?; fi
@@ -195,8 +198,8 @@ function _picocli_cats() {
   local curr_word=${COMP_WORDS[COMP_CWORD]}
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
-  local commands="generate-completion help list replay run fuzz lint info stats"
-  local flag_opts="-A --checkHeaders -F --checkFields -T --checkHttp -C --checkContract --includeContract --includeLinters -W --includeWhitespaces -E --includeEmojis -U --includeControlChars --createRefData -d --dryRun --skipDeprecatedOperations --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox --useExamples --rfc7396 -D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color -h --help -V --version"
+  local commands="generate-completion help list replay run fuzz lint info stats validate"
+  local flag_opts="-A --checkHeaders -F --checkFields -T --checkHttp -C --checkContract --includeContract --includeLinters -W --includeWhitespaces -E --includeEmojis -U --includeControlChars --createRefData -d --dryRun --skipDeprecatedOperations --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox --useExamples --rfc7396 --allowInvalidEnumValues -D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --matchInput --mi -h --help -V --version"
   local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --fuzzersConfig --fc --urlParams -P --headers -H --queryParams -Q --refData -R --functionalFuzzerFile --securityFuzzerFile -f --fuzzers -p --paths --skipPaths --skipFuzzers --httpMethods --fieldTypes --skipFieldTypes --fieldFormats --skipFieldFormats --skipFields --skipHeaders -t --tags --skipTags -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT") # --httpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
@@ -488,7 +491,7 @@ function _picocli_cats_help() {
   # Get completion data
   local curr_word=${COMP_WORDS[COMP_CWORD]}
 
-  local commands="generate-completion list replay run fuzz lint info stats"
+  local commands="generate-completion list replay run fuzz lint info stats validate"
   local flag_opts="-h --help"
   local arg_opts=""
 
@@ -746,7 +749,7 @@ function _picocli_cats_fuzz() {
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
   local commands=""
-  local flag_opts="-D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox -h --help -V --version"
+  local flag_opts="-D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --matchInput --mi --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox -h --help -V --version"
   local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --words -w --headers -H --data -d --httpMethod -X --targetFields -t"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
@@ -1024,6 +1027,33 @@ function _picocli_cats_stats() {
       local IFS=$'\n'
       COMPREPLY=( $( compReplyArray "${skip_option_args[@]}" ) )
       return $?
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `validate` subcommand.
+function _picocli_cats_validate() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="-j --json -d --detailed -h --help -V --version"
+  local arg_opts="-c --contract"
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    -c|--contract)
+      return
       ;;
   esac
 
