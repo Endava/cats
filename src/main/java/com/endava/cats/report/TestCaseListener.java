@@ -187,7 +187,7 @@ public class TestCaseListener {
      */
     public void addScenario(PrettyLogger logger, String scenario, Object... params) {
         logger.info(scenario, params);
-        testCaseMap.get(MDC.get(ID)).setScenario(replaceBrackets(scenario, params));
+        currentTestCase().setScenario(replaceBrackets(scenario, params));
     }
 
     /**
@@ -199,7 +199,7 @@ public class TestCaseListener {
      */
     public void addExpectedResult(PrettyLogger logger, String expectedResult, Object... params) {
         logger.note(expectedResult, params);
-        testCaseMap.get(MDC.get(ID)).setExpectedResult(replaceBrackets(expectedResult, params));
+        currentTestCase().setExpectedResult(replaceBrackets(expectedResult, params));
     }
 
     /**
@@ -209,7 +209,7 @@ public class TestCaseListener {
      * @param path the path to be associated with the current test case
      */
     public void addPath(String path) {
-        testCaseMap.get(MDC.get(ID)).setPath(path);
+        currentTestCase().setPath(path);
     }
 
     /**
@@ -219,7 +219,7 @@ public class TestCaseListener {
      * @param path the contract path to be associated with the current test case
      */
     public void addContractPath(String path) {
-        testCaseMap.get(MDC.get(ID)).setContractPath(path);
+        currentTestCase().setContractPath(path);
     }
 
     /**
@@ -229,7 +229,7 @@ public class TestCaseListener {
      * @param server the server information to be associated with the current test case
      */
     public void addServer(String server) {
-        testCaseMap.get(MDC.get(ID)).setServer(server);
+        currentTestCase().setServer(server);
     }
 
     /**
@@ -239,7 +239,7 @@ public class TestCaseListener {
      * @param request the CatsRequest to be associated with the current test case
      */
     public void addRequest(CatsRequest request) {
-        testCaseMap.get(MDC.get(ID)).setRequest(request);
+        currentTestCase().setRequest(request);
     }
 
     /**
@@ -249,7 +249,7 @@ public class TestCaseListener {
      * @param response the CatsResponse to be associated with the current test case
      */
     public void addResponse(CatsResponse response) {
-        testCaseMap.get(MDC.get(ID)).setResponse(response);
+        currentTestCase().setResponse(response);
     }
 
     /**
@@ -259,13 +259,13 @@ public class TestCaseListener {
      * @param fullRequestPath the full request path to be associated with the current test case
      */
     public void addFullRequestPath(String fullRequestPath) {
-        testCaseMap.get(MDC.get(ID)).setFullRequestPath(fullRequestPath);
+        currentTestCase().setFullRequestPath(fullRequestPath);
     }
 
     private void endTestCase() {
-        testCaseMap.get(MDC.get(ID)).setFuzzer(MDC.get(FUZZER_KEY));
-        if (testCaseMap.get(MDC.get(ID)).isNotSkipped()) {
-            CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        currentTestCase().setFuzzer(MDC.get(FUZZER_KEY));
+        if (currentTestCase().isNotSkipped()) {
+            CatsTestCase testCase = currentTestCase();
             testCaseExporter.writeTestCase(testCase);
         }
         MDC.remove(ID);
@@ -363,12 +363,12 @@ public class TestCaseListener {
     }
 
     private void setResultReason(CatsResultFactory.CatsResult catsResult) {
-        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        CatsTestCase testCase = currentTestCase();
         testCase.setResultReason(catsResult.reason());
     }
 
     private void setResultReason(String reason) {
-        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        CatsTestCase testCase = currentTestCase();
         testCase.setResultReason(reason);
     }
 
@@ -383,8 +383,9 @@ public class TestCaseListener {
      */
     void reportWarn(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
-        CatsTestCase testCase = testCaseMap.get(MDC.get(TestCaseListener.ID));
+        CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
+
         if (ignoreArguments.isSkipReportingForWarnings()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForWarnings is enabled"));
@@ -444,7 +445,7 @@ public class TestCaseListener {
      */
     void reportError(PrettyLogger logger, String message, Object... params) {
         this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
-        CatsTestCase testCase = testCaseMap.get(MDC.get(TestCaseListener.ID));
+        CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime()) || isException(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
@@ -495,13 +496,13 @@ public class TestCaseListener {
     private void reportSkipped(PrettyLogger logger, Object... params) {
         executionStatisticsListener.increaseSkipped();
         logger.skip("Skipped due to: {}", params);
-        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        CatsTestCase testCase = currentTestCase();
         testCase.setResultSkipped();
         testCase.setResultDetails(replaceBrackets("Skipped due to: {}", params));
     }
 
     void reportInfo(PrettyLogger logger, String message, Object... params) {
-        CatsTestCase testCase = testCaseMap.get(MDC.get(TestCaseListener.ID));
+        CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isSkipReportingForSuccess()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
@@ -607,15 +608,19 @@ public class TestCaseListener {
     }
 
     private boolean isResponseContentTypeMatching(CatsResponse response, FuzzingData data) {
-        return (data.getResponseContentTypes().get(response.responseCodeAsString()) == null && response.getResponseContentType() == null) ||
-                data.getContentTypesByResponseCode(response.responseCodeAsString())
-                        .stream()
-                        .anyMatch(contentType -> areContentTypesEquivalent(response.getResponseContentType(), contentType));
+        boolean noContentTypeDefinedForResponseCode = data.getResponseContentTypes().get(response.responseCodeAsString()) == null;
+        boolean responseDoesNotHaveContentType = response.getResponseContentType() == null;
+        boolean responseContentTypeDefined = data.getContentTypesByResponseCode(response.responseCodeAsString())
+                .stream()
+                .anyMatch(contentType -> areContentTypesEquivalent(response.getResponseContentType(), contentType));
+
+        return (noContentTypeDefinedForResponseCode && responseDoesNotHaveContentType) || responseContentTypeDefined;
     }
 
     static boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {
         MediaType firstMediaType = MediaType.parse(firstContentType).withoutParameters();
         MediaType secondMediaType = MediaType.parse(secondContentType).withoutParameters();
+
         return firstMediaType.is(secondMediaType) || secondMediaType.is(firstMediaType) || (firstMediaType.type().equalsIgnoreCase(secondMediaType.type()) &&
                 (firstMediaType.subtype().endsWith(secondMediaType.subtype()) || secondMediaType.subtype().endsWith(firstMediaType.subtype())));
     }
@@ -683,7 +688,7 @@ public class TestCaseListener {
     }
 
     private void recordResult(String message, Object[] params, String result, PrettyLogger logger) {
-        CatsTestCase testCase = testCaseMap.get(MDC.get(ID));
+        CatsTestCase testCase = currentTestCase();
         testCase.setResult(result);
         testCase.setResultDetails(replaceBrackets(message, params));
         logger.star("{}, Path {}, HttpMethod {}, Result {}", testCase.getTestId(), testCase.getPath(), Optional.ofNullable(testCase.getRequest()).orElse(CatsRequest.empty()).getHttpMethod(), result);
@@ -714,6 +719,7 @@ public class TestCaseListener {
         reader.setLenient(true);
         JsonElement jsonElement = JsonParser.parseReader(reader);
         List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
+
         return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
                 || isResponseEmpty(response, responses)
                 || isNotTypicalDocumentedResponseCode(response)
@@ -816,6 +822,10 @@ public class TestCaseListener {
 
     private static boolean doesNotHaveAResponseSchema(String responseSchema) {
         return responseSchema == null || responseSchema.isEmpty();
+    }
+
+    private CatsTestCase currentTestCase() {
+        return testCaseMap.get(MDC.get(ID));
     }
 
     @Builder

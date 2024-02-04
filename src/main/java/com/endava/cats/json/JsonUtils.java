@@ -52,7 +52,7 @@ public abstract class JsonUtils {
     /**
      * A permissive JSON parser.
      */
-    public static final JSONParser GENERIC_PERMISSIVE_PARSER = new JSONParser(JSONParser.MODE_PERMISSIVE);
+    public static final JSONParser JSON_PERMISSIVE_PARSER = new JSONParser(JSONParser.MODE_PERMISSIVE);
 
     /**
      * A more strict JSON parser adhering to the RFC4627.
@@ -257,7 +257,7 @@ public abstract class JsonUtils {
             if ("$".equals(nodeKey)) {
                 return nodeValue;
             }
-            return JsonPath.parse(payload).set(nodeKey, GENERIC_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
+            return JsonPath.parse(payload).set(nodeKey, JSON_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
         } catch (ParseException e) {
             LOGGER.debug("Could not add node {}", nodeKey);
             return payload;

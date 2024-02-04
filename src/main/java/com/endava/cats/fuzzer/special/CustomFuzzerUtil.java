@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -94,7 +95,11 @@ public class CustomFuzzerUtil {
 
             String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
             catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
-            Set<CatsHeader> headers = this.getHeaders(arrayOfHeaders, currentPathValues, isHeadersFuzzing, i);
+
+            Set<CatsHeader> headers = new HashSet<>(Arrays.asList(arrayOfHeaders));
+            if (isHeadersFuzzing) {
+                headers = getHeadersWithFuzzing(arrayOfHeaders, currentPathValues, i);
+            }
 
             String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
@@ -113,9 +118,9 @@ public class CustomFuzzerUtil {
         }
     }
 
-    private Set<CatsHeader> getHeaders(CatsHeader[] existingHeaders, Map<String, Object> currentPathValues, boolean isHeadersFuzzing, int i) {
-        Set<CatsHeader> headers = new java.util.HashSet<>(Set.of(existingHeaders));
-        if (!headers.isEmpty() && isHeadersFuzzing) {
+    private Set<CatsHeader> getHeadersWithFuzzing(CatsHeader[] existingHeaders, Map<String, Object> currentPathValues, int i) {
+        Set<CatsHeader> headers = new HashSet<>(Arrays.asList(existingHeaders));
+        if (!headers.isEmpty()) {
             CatsHeader headerToReplace = existingHeaders[i];
             Object toReplaceWith = currentPathValues.get(headerToReplace.getName());
             headerToReplace.withValue(WordUtils.nullOrValueOf(toReplaceWith));

@@ -62,7 +62,10 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     private List<String> getMissingRequiredKeywords(Map<String, Object> currentTestCase) {
-        List<String> missing = getRequiredKeywords().stream().filter(keyword -> currentTestCase.get(keyword) == null).collect(Collectors.toList());
+        List<String> missing = getRequiredKeywords().stream()
+                .filter(keyword -> currentTestCase.get(keyword) == null)
+                .collect(Collectors.toList());
+
         if (currentTestCase.get(CatsDSLWords.TARGET_FIELDS_TYPES) == null && currentTestCase.get(CatsDSLWords.TARGET_FIELDS) == null) {
             missing.add(CatsDSLWords.TARGET_FIELDS + " or " + CatsDSLWords.TARGET_FIELDS_TYPES);
         }
@@ -79,7 +82,8 @@ public class SecurityFuzzer implements CustomFuzzerBase {
             currentPathValues = filesArguments.getSecurityFuzzerDetails().get(CatsDSLWords.ALL);
         }
 
-        currentPathValues = Optional.ofNullable(currentPathValues).orElse(Collections.emptyMap()).entrySet().stream()
+        currentPathValues = Optional.ofNullable(currentPathValues)
+                .orElse(Collections.emptyMap()).entrySet().stream()
                 .filter(stringObjectEntry -> customFuzzerUtil.isMatchingHttpMethod(stringObjectEntry.getValue(), data.getMethod()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -115,9 +119,14 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     private void fuzzFields(FuzzingData data, String key, Map<String, Object> individualTestConfig, List<String> nastyStrings, List<String> targetFields) {
         log.debug("Target fields {}", targetFields);
+
         for (String targetField : targetFields) {
             log.info("Fuzzing field [{}]", targetField);
-            Map<String, Object> individualTestConfigClone = individualTestConfig.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            Map<String, Object> individualTestConfigClone = individualTestConfig
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             individualTestConfigClone.put(targetField, nastyStrings);
             individualTestConfigClone.put(CatsDSLWords.DESCRIPTION, individualTestConfig.get(CatsDSLWords.DESCRIPTION) + ", field [" + targetField + "]");
             individualTestConfigClone.remove(CatsDSLWords.TARGET_FIELDS);
@@ -148,8 +157,11 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     private String[] extractListEntry(Map<String, Object> individualTestConfig, String key) {
-        return String.valueOf(individualTestConfig.getOrDefault(key, "")).replace("[", "")
-                .replace(" ", "").replace("]", "").split(",");
+        return String.valueOf(individualTestConfig.getOrDefault(key, ""))
+                .replace("[", "")
+                .replace(" ", "")
+                .replace("]", "")
+                .split(",");
     }
 
     @Override
