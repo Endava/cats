@@ -9,8 +9,12 @@ import jakarta.inject.Singleton;
  */
 @Singleton
 public class NullStringMutator implements Mutator {
+    private final CatsUtil catsUtil;
+
     @Inject
-    CatsUtil catsUtil;
+    public NullStringMutator(CatsUtil catsUtil) {
+        this.catsUtil = catsUtil;
+    }
 
     @Override
     public String mutate(String inputJson, String selectedField) {

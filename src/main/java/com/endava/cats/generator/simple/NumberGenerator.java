@@ -1,11 +1,11 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Utility class to generate random numbers.
@@ -60,7 +60,7 @@ public class NumberGenerator {
      * @return a random long matching the given boundaries
      */
     public static long generateRandomLong(long min, long max) {
-        return min + ThreadLocalRandom.current().nextLong(max - min);
+        return min + CatsUtil.random().nextLong(max - min);
     }
 
     /**

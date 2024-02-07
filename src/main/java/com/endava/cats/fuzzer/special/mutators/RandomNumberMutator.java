@@ -2,24 +2,28 @@ package com.endava.cats.fuzzer.special.mutators;
 
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
-
-import java.util.concurrent.ThreadLocalRandom;
 
 
 /**
  * Sends a random number in the target field.
  */
+@Singleton
 public class RandomNumberMutator implements Mutator {
     private static final int BOUND = 100;
 
+    private final CatsUtil catsUtil;
+
     @Inject
-    CatsUtil catsUtil;
+    public RandomNumberMutator(CatsUtil catsUtil) {
+        this.catsUtil = catsUtil;
+    }
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        int size = ThreadLocalRandom.current().nextInt(BOUND);
-        return catsUtil.justReplaceField(inputJson, selectedField, RandomStringUtils.randomAlphanumeric(size)).json();
+        int size = CatsUtil.random().nextInt(BOUND);
+        return catsUtil.justReplaceField(inputJson, selectedField, RandomStringUtils.randomNumeric(size)).json();
     }
 
     @Override

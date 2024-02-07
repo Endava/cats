@@ -4,6 +4,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.CatsUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -43,7 +44,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static com.endava.cats.generator.simple.StringGenerator.generateValueBasedOnMinMax;
 
@@ -89,7 +89,7 @@ public class OpenAPIModelGenerator {
      */
     public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth) {
         this.globalContext = catsGlobalContext;
-        this.random = ThreadLocalRandom.current();
+        this.random = CatsUtil.random();
         this.useExamples = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;

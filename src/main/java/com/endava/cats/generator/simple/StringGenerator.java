@@ -1,5 +1,6 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.util.CatsUtil;
 import com.github.curiousoddman.rgxgen.RgxGen;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -12,7 +13,6 @@ import org.cornutum.regexpgen.js.Provider;
 import org.cornutum.regexpgen.random.RandomBoundsGen;
 import org.springframework.util.CollectionUtils;
 
-import java.security.SecureRandom;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -39,8 +39,6 @@ public class StringGenerator {
      * Default alphanumeric pattern.
      */
     public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
-
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private static final int MAX_ATTEMPTS_GENERATE = 5;
     /**
@@ -207,7 +205,7 @@ public class StringGenerator {
         if (trimmed.length() < min) {
             return composeString(trimmed + trimmed, min, max);
         } else if (trimmed.length() > max) {
-            int random = max == min ? 0 : RANDOM.nextInt(max - min);
+            int random = max == min ? 0 : CatsUtil.random().nextInt(max - min);
             return trimmed.substring(0, max - random);
         }
 
@@ -272,7 +270,7 @@ public class StringGenerator {
 
         int count = 1000;
         while (count > 0) {
-            int codePoint = RANDOM.nextInt(Character.MAX_CODE_POINT + 1);
+            int codePoint = CatsUtil.random().nextInt(Character.MAX_CODE_POINT + 1);
             int type = Character.getType(codePoint);
 
             if (!Character.isDefined(codePoint) || type == Character.PRIVATE_USE || type == Character.SURROGATE || type == Character.UNASSIGNED) {

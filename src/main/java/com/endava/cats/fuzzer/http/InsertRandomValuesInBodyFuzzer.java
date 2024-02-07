@@ -4,6 +4,7 @@ import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
+import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.json.JsonUtils;
@@ -25,31 +26,6 @@ import java.util.List;
 public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final SimpleExecutor simpleExecutor;
-    private static final List<String> PAYLOADS = List.of("{0},", "{0.0},", "[{}],", "{$},", "[],", "{},",
-            """ 
-                    {"circularRef": {"self": {"$ref": "#/circularRef"}}},
-                    """,
-            """
-                    {"backslash": "\\"},
-                     """,
-            """
-                    {"ünicode": "ünicode"},
-                    """,
-            """
-                    "{"unexpected" $ "token": "value"},
-                    """,
-            """
-                    {\u0000:\u0000},
-                    """,
-            """
-                    {"\u0000":"\u0000"},
-                    """,
-            """
-                    {"␀":"␀"},
-                    """,
-            """
-                    {␀:␀},
-                    """);
 
     /**
      * Creates a new InsertRandomValuesInBodyFuzzer instance.
@@ -64,9 +40,9 @@ public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         if (!JsonUtils.isEmptyPayload(data.getPayload())) {
-            for (String maliciousPayload : PAYLOADS) {
+            for (String maliciousPayload : UnicodeGenerator.getInvalidJsons()) {
                 char firstChar = data.getPayload().charAt(0);
-                String finalPayload = firstChar + maliciousPayload + data.getPayload().substring(1);
+                String finalPayload = firstChar + maliciousPayload + "," + data.getPayload().substring(1);
 
                 simpleExecutor.execute(
                         SimpleExecutorContext.builder()
