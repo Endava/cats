@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -283,5 +284,25 @@ public class CatsUtil {
         }
 
         return N_A;
+    }
+
+    /**
+     * Selects a random element from the provided iterable.
+     *
+     * @param iterable and collection of elements
+     * @param <T>      the type of elements inside the collection
+     * @return a random element from the collection
+     */
+    public static <T> T selectRandom(Iterable<T> iterable) {
+        T selected = null;
+        int count = 0;
+
+        for (T element : iterable) {
+            if (ThreadLocalRandom.current().nextInt(++count) == 0) {
+                selected = element;
+            }
+        }
+
+        return selected;
     }
 }

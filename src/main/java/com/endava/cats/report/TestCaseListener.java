@@ -159,6 +159,10 @@ public class TestCaseListener {
         this.endTestCase();
     }
 
+    public int getCurrentTestCaseNumber() {
+        return TEST.get();
+    }
+
     private void startTestCase() {
         String testId = String.valueOf(TEST.incrementAndGet());
         MDC.put(ID, testId);
