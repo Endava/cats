@@ -4,12 +4,12 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
+import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
 import java.util.Set;
 
 /**
@@ -18,8 +18,6 @@ import java.util.Set;
  */
 @Singleton
 public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
-    private final Random random = new Random();
-
     @Override
     public Object generate(Schema<?> schema) {
         Locale.IsoCountryCode isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA3;
@@ -27,7 +25,7 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
             isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA2;
         }
         Set<String> isoCountries = Locale.getISOCountries(isoCountryCode);
-        return isoCountries.stream().skip(random.nextInt(isoCountries.size())).findFirst().orElse(Locale.UK.getCountry());
+        return isoCountries.stream().skip(CatsUtil.random().nextInt(isoCountries.size())).findFirst().orElse(Locale.UK.getCountry());
     }
 
     @Override

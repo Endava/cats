@@ -109,6 +109,6 @@ class RandomFuzzerTest {
     @Test
     void shouldOverrideMethods() {
         Assertions.assertThat(randomFuzzer.description()).isNotBlank();
-        Assertions.assertThat(randomFuzzer.toString()).isEqualTo("RandomFuzzer");
+        Assertions.assertThat(randomFuzzer).hasToString("RandomFuzzer");
     }
 }

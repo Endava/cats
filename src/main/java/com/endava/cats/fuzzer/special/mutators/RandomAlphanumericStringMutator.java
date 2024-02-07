@@ -5,8 +5,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 /**
  * Sends a random alphanumeric value in the target field.
  */
@@ -14,12 +12,16 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RandomAlphanumericStringMutator implements Mutator {
     private static final int BOUND = 100;
 
+    private final CatsUtil catsUtil;
+
     @Inject
-    CatsUtil catsUtil;
+    public RandomAlphanumericStringMutator(CatsUtil catsUtil) {
+        this.catsUtil = catsUtil;
+    }
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        int size = ThreadLocalRandom.current().nextInt(BOUND);
+        int size = CatsUtil.random().nextInt(BOUND);
         return catsUtil.justReplaceField(inputJson, selectedField, RandomStringUtils.randomAlphanumeric(size)).json();
     }
 

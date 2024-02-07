@@ -3,12 +3,12 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
+import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Random;
 
 /**
  * A generator class implementing various interfaces for generating valid and invalid duration data formats.
@@ -16,11 +16,9 @@ import java.util.Random;
  */
 @Singleton
 public class DurationGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
-    private final Random random = new Random();
-
     @Override
     public Object generate(Schema<?> schema) {
-        return Duration.ofDays(random.nextInt(0, 99999));
+        return Duration.ofDays(CatsUtil.random().nextInt(0, 99999));
     }
 
     @Override

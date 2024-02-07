@@ -1,11 +1,12 @@
 package com.endava.cats.json;
 
-import com.endava.cats.json.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import java.util.List;
 
 @QuarkusTest
 class JsonUtilsTest {
@@ -153,5 +154,41 @@ class JsonUtilsTest {
     @CsvSource({"prop1#prop1#prop1", "prop1#prop2#prop3#prop1#prop2", "prop1#prop2#prop3#prop2#prop3", "prop1#prop2#prop1"})
     void shouldReturnCyclic(String properties) {
         Assertions.assertThat(JsonUtils.isCyclicReference(properties, 3)).isTrue();
+    }
+
+    @Test
+    void shouldReturnJsonWhenValid() {
+        String json = """
+                {"key": "value"}
+                """;
+
+        String result = JsonUtils.getAsJsonString(json);
+
+        Assertions.assertThat(result).isEqualTo(json);
+    }
+
+    @Test
+    void shouldReturnAllFieldsFromJson() {
+        String json = """
+                {
+                    "key": "value",
+                    "anotherKey" : {
+                        "subKey": "subValue"
+                    },
+                    "anArray": [
+                        {"arrKey1":"arrValue1"},
+                        {"arrKey2":"arrValue2"}
+                    ]
+                }
+                """;
+
+        List<String> allKeys = JsonUtils.getAllFieldsOf(json);
+
+        Assertions.assertThat(allKeys).containsOnly("key",
+                "anotherKey",
+                "anotherKey.subKey",
+                "anArray",
+                "anArray[0].arrKey1",
+                "anArray[1].arrKey2");
     }
 }

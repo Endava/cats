@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -298,11 +299,20 @@ public class CatsUtil {
         int count = 0;
 
         for (T element : iterable) {
-            if (ThreadLocalRandom.current().nextInt(++count) == 0) {
+            if (random().nextInt(++count) == 0) {
                 selected = element;
             }
         }
 
         return selected;
+    }
+
+    /**
+     * Returns a Random for random generation.
+     *
+     * @return a Random
+     */
+    public static Random random() {
+        return ThreadLocalRandom.current();
     }
 }

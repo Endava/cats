@@ -83,6 +83,32 @@ public abstract class UnicodeGenerator {
     @Getter
     private static final List<String> abugidasChars = List.of("జ్ఞ\u200Cా", "স্র\u200Cু");
 
+    private static final List<String> INVALID_JSONS = List.of("{0}", "{0.0}", "[{}]", "{$}", "[]", "{}",
+            """ 
+                    {"circularRef": {"self": {"$ref": "#/circularRef"}}} \
+                    """,
+            """
+                    {"backslash": "\\"} \
+                    """,
+            """
+                    {"ünicode": "ünicode"} \
+                    """,
+            """
+                    "{"unexpected" $ "token": "value"} \
+                    """,
+            """
+                    {\u0000:\u0000} \
+                    """,
+            """
+                    {"\u0000":"\u0000"} \
+                    """,
+            """
+                    {"␀":"␀"} \
+                    """,
+            """
+                    {␀:␀} \
+                    """);
+
     private UnicodeGenerator() {
         //ntd
     }
@@ -158,5 +184,14 @@ public abstract class UnicodeGenerator {
      */
     public static String getZalgoText() {
         return ZALGO_TEXT.replace(" ", "");
+    }
+
+    /**
+     * Returns a list with invalid json payloads.
+     *
+     * @return A list with invalid json payloads
+     */
+    public static List<String> getInvalidJsons() {
+        return INVALID_JSONS;
     }
 }
