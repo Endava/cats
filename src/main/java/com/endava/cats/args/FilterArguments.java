@@ -23,6 +23,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
@@ -75,6 +76,7 @@ public class FilterArguments {
     private List<String> suppliedFuzzers;
     @CommandLine.Option(names = {"-p", "--paths"},
             description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. To list all available paths run: @|bold cats list -p -c api.yml|@", split = ",")
+    @Setter
     private List<String> paths;
     @CommandLine.Option(names = {"--skipPaths"},
             description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. To list all available paths run: @|bold cats list -p -c api.yml|@", split = ",")
@@ -84,6 +86,7 @@ public class FilterArguments {
     private List<String> skipFuzzers;
     @CommandLine.Option(names = {"--httpMethods"},
             description = "A comma separated list of HTTP methods. When supplied, only these methods will be considered for each contract path. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
+    @Setter
     private List<HttpMethod> httpMethods = HttpMethod.restMethods();
     @CommandLine.Option(names = {"-d", "--dryRun"},
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")

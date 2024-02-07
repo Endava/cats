@@ -100,10 +100,11 @@ import static org.fusesource.jansi.Ansi.ansi;
                 LintCommand.class,
                 InfoCommand.class,
                 StatsCommand.class,
-                ValidateCommand.class
+                ValidateCommand.class,
+                RandomCommand.class
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private PrettyLogger logger;
+    private final PrettyLogger logger;
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     @Inject

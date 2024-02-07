@@ -108,7 +108,17 @@ public abstract class ConsoleUtils {
      * @param percentage The completion percentage.
      */
     public static void renderSameRow(String path, double percentage) {
-        renderRow("\r", path, Math.min(percentage, 100d));
+        renderRow("\r", path, Double.valueOf(Math.min(percentage, 100d)).intValue() + "%");
+    }
+
+    /**
+     * Render a progress row on the same console row.
+     *
+     * @param path     The path being processed.
+     * @param progress A progress character.
+     */
+    public static void renderSameRow(String path, String progress) {
+        renderRow("\r", path, progress);
     }
 
     /**
@@ -118,23 +128,34 @@ public abstract class ConsoleUtils {
      * @param percentage The completion percentage.
      */
     public static void renderNewRow(String path, double percentage) {
-        renderRow(System.lineSeparator(), path, Math.min(percentage, 100d));
+        renderRow(System.lineSeparator(), path, Double.valueOf(Math.min(percentage, 100d)).intValue() + "%");
     }
+
+    /**
+     * Render a progress row on a new console row.
+     *
+     * @param path     the path being processed
+     * @param progress a progress character
+     */
+    public static void renderNewRow(String path, String progress) {
+        renderRow(System.lineSeparator(), path, progress);
+    }
+
 
     /**
      * Render a progress row with a specific prefix.
      *
-     * @param prefix     The prefix for the progress row.
-     * @param path       The path being processed.
-     * @param percentage The completion percentage.
+     * @param prefix            The prefix for the progress row.
+     * @param path              The path being processed.
+     * @param rightTextToRender The text to be written on the right hand side of the screen.
      */
-    public static void renderRow(String prefix, String path, Double percentage) {
+    public static void renderRow(String prefix, String path, String rightTextToRender) {
         String withoutAnsi = ANSI_REMOVE_PATTERN.matcher(path).replaceAll("");
         int consoleWidth = getTerminalWidth(80);
-        int dots = Math.max(consoleWidth - withoutAnsi.length() - String.valueOf(percentage.intValue()).length() - 2, 1);
+        int dots = Math.max(consoleWidth - withoutAnsi.length() - String.valueOf(rightTextToRender).length() - 1, 1);
         String firstPart = path.substring(0, path.indexOf("  "));
         String secondPart = path.substring(path.indexOf("  ") + 1);
-        System.out.print(Ansi.ansi().bold().a(prefix + firstPart + ".".repeat(dots) + secondPart + "  " + percentage.intValue() + "%").reset().toString());
+        System.out.print(Ansi.ansi().bold().a(prefix + firstPart + ".".repeat(dots) + secondPart + "  " + rightTextToRender).reset().toString());
     }
 
     /**

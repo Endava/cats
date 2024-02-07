@@ -4,7 +4,9 @@ import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.jayway.jsonpath.Configuration;
@@ -27,6 +29,9 @@ import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -391,5 +396,35 @@ public abstract class JsonUtils {
             return rawResponse;
         }
         return "{\"notAJson\": \"" + JSONValue.escape(rawResponse.substring(0, Math.min(500, rawResponse.length()))) + "\"}";
+    }
+
+
+    /**
+     * Extracts all fields from a JSON string with their fully qualified names.
+     *
+     * @param jsonPayload the JSON string
+     * @return a list of fully qualified field names
+     */
+    public static List<String> getAllFieldsOf(String jsonPayload) {
+        List<String> fields = new ArrayList<>();
+        JsonElement root = JsonParser.parseString(jsonPayload);
+        traverseJson(root, "", fields);
+        return fields;
+    }
+
+    private static void traverseJson(JsonElement element, String prefix, List<String> fields) {
+        if (element.isJsonObject()) {
+            JsonObject jsonObject = element.getAsJsonObject();
+            for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+                String fieldName = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
+                fields.add(fieldName);
+                traverseJson(entry.getValue(), fieldName, fields);
+            }
+        } else if (element.isJsonArray()) {
+            JsonArray jsonArray = element.getAsJsonArray();
+            for (int i = 0; i < jsonArray.size(); i++) {
+                traverseJson(jsonArray.get(i), prefix + "[" + i + "]", fields);
+            }
+        }
     }
 }

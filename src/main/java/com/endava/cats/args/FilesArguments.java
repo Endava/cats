@@ -206,7 +206,7 @@ public class FilesArguments {
                 .toList());
 
         log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(params));
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(urlParams));
     }
 
     /**
