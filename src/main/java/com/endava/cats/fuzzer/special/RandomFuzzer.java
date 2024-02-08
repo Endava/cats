@@ -109,7 +109,7 @@ public class RandomFuzzer implements Fuzzer {
         ConsoleUtils.renderSameRow(data.getPath() + "  " + data.getMethod(), cycle.next());
     }
 
-     void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {
+    void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {
         if (matchArguments.isMatchResponse(catsResponse)) {
             testCaseListener.reportResultError(logger, fuzzingData, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
         } else {

@@ -6,27 +6,27 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 /**
- * Sends random control chars in the target field.
+ * Sends random whitespaces in the target field.
  */
 @Singleton
-public class RandomControlCharsMutator implements Mutator {
-    private static final int BOUND = 10;
+public class RandomWhitespaceCharsMutator implements Mutator {
+    private static final int BOUND = 15;
     private final CatsUtil catsUtil;
 
     @Inject
-    public RandomControlCharsMutator(CatsUtil catsUtil) {
+    public RandomWhitespaceCharsMutator(CatsUtil catsUtil) {
         this.catsUtil = catsUtil;
     }
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        String randomControlChars = UnicodeGenerator.generateRandomUnicodeString(BOUND, Character::isISOControl);
+        String randomControlChars = UnicodeGenerator.generateRandomUnicodeString(BOUND, Character::isWhitespace);
 
         return catsUtil.justReplaceField(inputJson, selectedField, randomControlChars).json();
     }
 
     @Override
     public String name() {
-        return "random control chars";
+        return "random whitespace chars";
     }
 }
