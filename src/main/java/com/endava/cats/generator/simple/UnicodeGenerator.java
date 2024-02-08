@@ -1,10 +1,12 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.util.CatsUtil;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -193,5 +195,25 @@ public abstract class UnicodeGenerator {
      */
     public static List<String> getInvalidJsons() {
         return INVALID_JSONS;
+    }
+
+    /**
+     * Generates a random unicode string of given length matching the given predicate.
+     *
+     * @param length    the length of the string to be generated
+     * @param predicate the predicate to test when generating chars
+     * @return a string of given length with all chars passing given predicate
+     */
+    public static String generateRandomUnicodeString(int length, Predicate<Character> predicate) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            char randomChar;
+            do {
+                // Generate a random char value
+                randomChar = (char) CatsUtil.random().nextInt(Character.MAX_VALUE);
+            } while (!predicate.test(randomChar));
+            stringBuilder.append(randomChar);
+        }
+        return stringBuilder.toString();
     }
 }
