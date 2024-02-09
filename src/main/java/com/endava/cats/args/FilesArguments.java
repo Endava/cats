@@ -122,6 +122,13 @@ public class FilesArguments {
     @Setter
     private boolean createRefData;
 
+    @CommandLine.Option(names = {"--mutators", "-m"},
+            description = "A folder containing custom mutators. This argument is taken in consideration only when using the `cats random` command")
+    @Setter
+    @Getter
+    private File mutatorsFolder;
+
+
     /**
      * Loads all supplied files for --securityFuzzerFile, --customFuzzerFile, --refData, --urlParams and --headers.
      *
@@ -135,6 +142,16 @@ public class FilesArguments {
         loadHeaders();
         loadQueryParams();
         loadFuzzConfigProperties();
+        loadMutators();
+    }
+
+    public void loadMutators() throws IOException {
+        if (mutatorsFolder == null) {
+            log.debug("No custom Mutators folder provided");
+            return;
+        }
+        log.config(Ansi.ansi().bold().a("Custom Mutators folder: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(mutatorsFolder.getCanonicalPath()));
     }
 
     /**
@@ -143,14 +160,7 @@ public class FilesArguments {
      * @throws IOException if something happens while reading the file
      */
     public void loadSecurityFuzzerFile() throws IOException {
-        if (securityFuzzerFile == null) {
-            log.debug("No SecurityFuzzer file provided. SecurityFuzzer will be skipped!");
-            return;
-        }
-
-        log.config(Ansi.ansi().bold().a("Security Fuzzer file: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(securityFuzzerFile.getCanonicalPath()));
-        securityFuzzerDetails = parseYaml(securityFuzzerFile.getCanonicalPath());
+        securityFuzzerDetails = this.loadFileAsMapOfMapsOfStrings(securityFuzzerFile, "SecurityFuzzer");
     }
 
     /**
@@ -159,14 +169,7 @@ public class FilesArguments {
      * @throws IOException if something happens while reading the file
      */
     public void loadCustomFuzzerFile() throws IOException {
-        if (customFuzzerFile == null) {
-            log.debug("No FunctionalFuzzer file provided. FunctionalFuzzer will be skipped!");
-            return;
-        }
-
-        log.config(Ansi.ansi().bold().a("Functional Fuzzer file: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(customFuzzerFile.getCanonicalPath()));
-        customFuzzerDetails = parseYaml(customFuzzerFile.getCanonicalPath());
+        customFuzzerDetails = this.loadFileAsMapOfMapsOfStrings(customFuzzerFile, "FunctionalFuzzer");
     }
 
     /**
@@ -205,8 +208,10 @@ public class FilesArguments {
                 .map(entry -> entry.getKey() + ":" + entry.getValue())
                 .toList());
 
-        log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(urlParams));
+        if (!urlParams.isEmpty()) {
+            log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
+                    Ansi.ansi().fg(Ansi.Color.BLUE).a(urlParams));
+        }
     }
 
     /**

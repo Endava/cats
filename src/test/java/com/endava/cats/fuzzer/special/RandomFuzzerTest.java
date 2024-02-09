@@ -1,16 +1,18 @@
 package com.endava.cats.fuzzer.special;
 
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.fuzzer.special.mutators.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -46,7 +48,7 @@ class RandomFuzzerTest {
         randomFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener,
                 executionStatisticsListener,
                 matchArguments, mutators,
-                stopArguments, reportingArguments);
+                stopArguments, reportingArguments, Mockito.mock(FilesArguments.class), Mockito.mock(CatsUtil.class));
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

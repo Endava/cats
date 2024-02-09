@@ -1,32 +1,33 @@
-package com.endava.cats.fuzzer.special.mutators;
+package com.endava.cats.fuzzer.special.mutators.impl;
 
+import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 /**
- * Sends random whitespaces in the target field.
+ * Sends random control chars in the target field.
  */
 @Singleton
-public class RandomWhitespaceCharsMutator implements Mutator {
-    private static final int BOUND = 15;
+public class RandomControlCharsMutator implements Mutator {
+    private static final int BOUND = 10;
     private final CatsUtil catsUtil;
 
     @Inject
-    public RandomWhitespaceCharsMutator(CatsUtil catsUtil) {
+    public RandomControlCharsMutator(CatsUtil catsUtil) {
         this.catsUtil = catsUtil;
     }
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        String randomControlChars = UnicodeGenerator.generateRandomUnicodeString(BOUND, Character::isWhitespace);
+        String randomControlChars = UnicodeGenerator.generateRandomUnicodeString(BOUND, Character::isISOControl);
 
         return catsUtil.justReplaceField(inputJson, selectedField, randomControlChars).json();
     }
 
     @Override
     public String name() {
-        return "random whitespace chars";
+        return "random control chars";
     }
 }
