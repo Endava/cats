@@ -1,5 +1,6 @@
-package com.endava.cats.fuzzer.special.mutators;
+package com.endava.cats.fuzzer.special.mutators.impl;
 
+import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;

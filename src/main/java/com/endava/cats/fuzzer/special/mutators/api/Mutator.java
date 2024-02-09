@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.special.mutators;
+package com.endava.cats.fuzzer.special.mutators.api;
 
 /**
  * The Mutator interface represents an abstraction for mutating input strings.
