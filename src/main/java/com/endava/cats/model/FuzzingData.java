@@ -132,6 +132,11 @@ public class FuzzingData {
         if (schema.get$ref() != null) {
             schema = schemaMap.get(this.getDefinitionNameFromRef(schema.get$ref()));
         }
+
+        if (schema == null) {
+            return Collections.emptySet();
+        }
+
         List<String> required = Optional.ofNullable(schema.getRequired()).orElseGet(Collections::emptyList);
 
         if (schema.getProperties() != null) {
