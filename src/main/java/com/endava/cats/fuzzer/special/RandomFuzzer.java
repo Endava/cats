@@ -91,6 +91,7 @@ public class RandomFuzzer implements Fuzzer {
 
         if (mutatorsToRun.isEmpty()) {
             logger.error("No Mutators to run! Enable debug for more details.");
+            return;
         }
 
         long startTime = System.currentTimeMillis();
@@ -180,7 +181,7 @@ public class RandomFuzzer implements Fuzzer {
         return customMutators;
     }
 
-    private CustomMutatorConfig createConfig(Map<String, Object> customMutator) {
+    CustomMutatorConfig createConfig(Map<String, Object> customMutator) {
         String name = String.valueOf(
                 customMutator.get(
                         CustomMutatorKeywords.NAME.name().toLowerCase(Locale.ROOT)
