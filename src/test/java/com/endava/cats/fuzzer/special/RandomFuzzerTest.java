@@ -17,11 +17,13 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.File;
 import java.util.Set;
 
 @QuarkusTest
@@ -33,6 +35,8 @@ class RandomFuzzerTest {
     private StopArguments stopArguments;
     private ReportingArguments reportingArguments;
     private RandomFuzzer randomFuzzer;
+    private FilesArguments filesArguments;
+    private CatsUtil catsUtil;
     @Inject
     Instance<Mutator> mutators;
 
@@ -44,11 +48,13 @@ class RandomFuzzerTest {
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         matchArguments = Mockito.mock(MatchArguments.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
+        catsUtil = Mockito.mock(CatsUtil.class);
 
         randomFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener,
                 executionStatisticsListener,
                 matchArguments, mutators,
-                stopArguments, reportingArguments, Mockito.mock(FilesArguments.class), Mockito.mock(CatsUtil.class));
+                stopArguments, reportingArguments, filesArguments, catsUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -71,14 +77,7 @@ class RandomFuzzerTest {
 
     @Test
     void shouldRunForMultipleTimes() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Mockito.when(data.getPayload()).thenReturn("{\"id\":\"value\"}");
-        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
-        Mockito.when(data.getPath()).thenReturn("/path");
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("id"));
-        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()))
-                .thenReturn(false).thenReturn(false).thenReturn(true);
-        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
+        FuzzingData data = mockData();
         randomFuzzer.fuzz(data);
         Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());
     }
@@ -112,5 +111,38 @@ class RandomFuzzerTest {
     void shouldOverrideMethods() {
         Assertions.assertThat(randomFuzzer.description()).isNotBlank();
         Assertions.assertThat(randomFuzzer).hasToString("RandomFuzzer");
+    }
+
+    @Test
+    void shouldNotRunAnyTestWhenEmptyMutators() {
+        Mockito.when(filesArguments.getMutatorsFolder()).thenReturn(new File("src/tests"));
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("{\"id\":\"value\"}");
+        randomFuzzer.fuzz(data);
+        Mockito.verifyNoInteractions(simpleExecutor);
+    }
+
+    @Test
+    void shouldRunCustomMutatorsFromValidFolder() {
+        Mockito.when(filesArguments.getMutatorsFolder()).thenReturn(new File("src/test/resources/mutators"));
+        FuzzingData data = mockData();
+        Mockito.doCallRealMethod().when(catsUtil).justReplaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        RandomFuzzer randomFuzzerSpy = Mockito.spy(randomFuzzer);
+        randomFuzzerSpy.fuzz(data);
+        Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());
+        Mockito.verify(randomFuzzerSpy, Mockito.times(2)).createConfig(Mockito.any());
+    }
+
+    @NotNull
+    private FuzzingData mockData() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getPayload()).thenReturn("{\"id\":\"value\"}");
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(data.getPath()).thenReturn("/path");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("id"));
+        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()))
+                .thenReturn(false).thenReturn(false).thenReturn(true);
+        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
+        return data;
     }
 }
