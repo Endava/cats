@@ -7,6 +7,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.google.gson.JsonParser;
@@ -307,5 +308,14 @@ class FuzzingDataFactoryTest {
     @Test
     void shouldThrowExceptionWhenSchemeDoesNotExist() {
         Assertions.assertThatThrownBy(() -> setupFuzzingData("/pet-types", "src/test/resources/petstore-no-schema.yml")).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void shouldGetAllFieldsWhenSchemaDoesNotExist() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/rest/1/pdf/", "src/test/resources/issue98.json");
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData data = dataList.get(0);
+        Set<CatsField> fields = data.getAllFieldsAsCatsFields();
+        Assertions.assertThat(fields).hasSize(4);
     }
 }
