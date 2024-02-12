@@ -178,7 +178,7 @@ public class RandomFuzzer implements Fuzzer {
             }
         }
 
-        return customMutators;
+        return List.copyOf(customMutators);
     }
 
     CustomMutatorConfig createConfig(Map<String, Object> customMutator) {
