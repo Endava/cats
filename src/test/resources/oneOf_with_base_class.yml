@@ -22,8 +22,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponseOut'
+  /path2:
+    post:
+      summary: Creates a new resource
+      operationId: createResource
+      requestBody:
+        description: Request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PathTwoRequestIn'
+        required: true
+      responses:
+        '201':
+          description: Resource created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOut'
 components:
   schemas:
+    PathTwoRequestIn:
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        payloads:
+          $ref: '#/components/schemas/Payloads'
+    Payloads:
+      title: Payloads
+      type: array
+      items:
+        $ref: '#/components/schemas/Payload'
     RequestIn:
       required:
         - format
