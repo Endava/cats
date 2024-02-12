@@ -75,6 +75,7 @@ public abstract class JsonUtils {
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
             .serializeNulls()
             .create();
+    public static final Configuration SUPPRESS_EXCEPTIONS_CONFIGURATION = new Configuration.ConfigurationBuilder().options(Option.SUPPRESS_EXCEPTIONS).build();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
@@ -270,8 +271,9 @@ public abstract class JsonUtils {
             String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
             String replacementKey = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
             if (payload.contains("_OF")) {
-                Configuration suppressExceptionsConfiguration = new Configuration.ConfigurationBuilder().options(Option.SUPPRESS_EXCEPTIONS).build();
-                String interimPayload = JsonPath.parse(payload, suppressExceptionsConfiguration).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
+                String interimPayload = JsonPath.parse(payload, SUPPRESS_EXCEPTIONS_CONFIGURATION).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
+
+                interimPayload = checkIfArrayHasNestedKeysWithSameName(nodeKey, pathTowardsReplacement, replacementKey, interimPayload);
 
                 DocumentContext finalPayload = JsonPath.parse(interimPayload);
                 toEliminate.forEach(toEliminateKey -> {
@@ -283,10 +285,38 @@ public abstract class JsonUtils {
                         LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
                     }
                 });
+
                 return finalPayload.jsonString();
             }
             return payload;
         }
+    }
+
+    /**
+     * When having an array of composed objects CATS will generate something like:
+     * <pre>{@code
+     * {...
+     *   "services":[
+     *    {
+     *      "services": {...}
+     *    },
+     *    {
+     *      "services": {...}
+     *    }
+     * ]
+     * ...}
+     *
+     * }</pre>
+     * <p>
+     * In this specific cases, this will make sure we eliminate the inner keys which match the array key
+     */
+    private static String checkIfArrayHasNestedKeysWithSameName(String nodeKey, String pathTowardsReplacement, String replacementKey, String interimPayload) {
+        if (pathTowardsReplacement.endsWith(replacementKey + "[*]")) {
+            String arrayKey = pathTowardsReplacement.substring(0, pathTowardsReplacement.lastIndexOf("["));
+            List<Object> innerArrayObject = JsonPath.parse(interimPayload, SUPPRESS_EXCEPTIONS_CONFIGURATION).read(nodeKey);
+            interimPayload = JsonPath.parse(interimPayload, SUPPRESS_EXCEPTIONS_CONFIGURATION).set(arrayKey, innerArrayObject).jsonString();
+        }
+        return interimPayload;
     }
 
     /**

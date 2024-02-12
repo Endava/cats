@@ -306,6 +306,19 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldProperlyGenerateArraysWhenElementsUsingXXXOf() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/path2", "src/test/resources/oneOf_with_base_class.yml");
+        Assertions.assertThat(data).hasSize(2);
+        String payload = data.get(0).getPayload();
+
+        Object variable = JsonUtils.getVariableFromJson(payload, "$.payloads[0].payloads");
+        Assertions.assertThat(variable).hasToString("NOT_SET");
+
+        Object firstElementType = JsonUtils.getVariableFromJson(payload, "$.payloads[0].type");
+        Assertions.assertThat(firstElementType).hasToString("Address");
+    }
+
+    @Test
     void shouldThrowExceptionWhenSchemeDoesNotExist() {
         Assertions.assertThatThrownBy(() -> setupFuzzingData("/pet-types", "src/test/resources/petstore-no-schema.yml")).isInstanceOf(IllegalArgumentException.class);
     }
