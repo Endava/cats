@@ -27,7 +27,7 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotMatchingResponseSchema(String receivedResponseCode) {
-        String message = "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT matches the corresponding schema.".formatted(receivedResponseCode);
+        String message = "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT match the corresponding schema.".formatted(receivedResponseCode);
         String reason = "Not Matching Response Schema";
 
         return new CatsResult(message, reason);

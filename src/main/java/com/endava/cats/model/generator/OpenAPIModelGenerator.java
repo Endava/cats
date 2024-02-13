@@ -30,20 +30,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import static com.endava.cats.generator.simple.StringGenerator.generateValueBasedOnMinMax;
 
@@ -193,7 +180,7 @@ public class OpenAPIModelGenerator {
 
         List<String> enumValues = property.getEnum();
         if (!CollectionUtils.isEmpty(enumValues)) {
-            return enumValues.get(0);
+            return enumValues.stream().filter(Objects::nonNull).findFirst().orElse(enumValues.get(0));
         }
         if (property.getMinLength() != null || property.getMaxLength() != null) {
             return generateValueBasedOnMinMax(property);
