@@ -42,7 +42,7 @@ class PathPluralsLinterFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/users", "/users/{userId}/posts", "/users/{userId}/posts/cancel", "/users/addUser", "/tasks/cancelTask"})
+    @CsvSource({"/users", "/users/{userId}/posts", "/users/{userId}/posts/cancel", "/users/addUser", "/tasks/cancelTask", "/{userId}/permissions/csv"})
     void shouldMatchPluralsNamingStandards(String path) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
@@ -59,7 +59,7 @@ class PathPluralsLinterFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/v1/petsPath", "/admin/admin/pets/admin", "/findById", "/executeTask", "/addUser", "/user"})
+    @CsvSource({"/v1/petsPath", "/admin/admin/pets/admin", "/findById", "/executeTask", "/addUser", "/user", "/{userId}/permissions/csv/csv"})
     void shouldNotMatchPluralsNounsNamingStandards(String path) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
@@ -72,7 +72,7 @@ class PathPluralsLinterFuzzerTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1))
                 .reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Path elements not plural"),
-                        Mockito.eq("The following path elements are not using pluralization: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
+                        Mockito.eq("Some of the following path elements are not using pluralization: {}"), Mockito.contains(path.substring(path.lastIndexOf("/") + 1)));
     }
 
 

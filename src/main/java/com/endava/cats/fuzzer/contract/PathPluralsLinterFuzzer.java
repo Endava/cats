@@ -4,13 +4,13 @@ import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.stream.IntStream;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Checks that paths follow plural naming conventions.
@@ -40,19 +40,26 @@ public class PathPluralsLinterFuzzer extends BaseLinterFuzzer {
 
         if (this.hasErrors(checks)) {
             testCaseListener.reportResultError(log, data, "Path elements not plural",
-                    "The following path elements are not using pluralization: {}", StringUtils.stripEnd(checks.trim(), ","));
+                    "Some of the following path elements are not using pluralization: {}", StringUtils.stripEnd(checks.trim(), ","));
         } else {
             testCaseListener.reportResultInfo(log, data, "Path elements use pluralization to describe resources.");
         }
     }
 
     private String checkPlurals(String[] pathElements) {
-        String[] filteredPathElements = IntStream.range(0, pathElements.length)
-                .filter(i -> i % 2 == 0)
-                .mapToObj(i -> pathElements[i])
-                .toArray(String[]::new);
+        List<String> pathWithoutVariables = Arrays.stream(pathElements)
+                .filter(OpenApiUtils::isNotAPathVariable)
+                .toList();
 
-        return CatsUtil.check(filteredPathElements, pathElement -> OpenApiUtils.isNotAPathVariable(pathElement) && !pathElement.endsWith(PLURAL_END));
+        List<String> pathElementsWithoutPlural = pathWithoutVariables.stream()
+                .filter(pathElement -> !pathElement.endsWith(PLURAL_END))
+                .toList();
+
+        if (pathElementsWithoutPlural.size() > pathWithoutVariables.size() / 2) {
+            return String.join(", ", pathElementsWithoutPlural);
+        }
+
+        return N_A;
     }
 
     @Override

@@ -16,7 +16,10 @@ import java.util.List;
  * Contract Fuzzers are only focused on contract following best practices without calling the actual service.
  */
 public abstract class BaseLinterFuzzer implements Fuzzer {
-    private static final String N_A = "N/A";
+    /**
+     * Used for cases when the result is not available or not applicable.
+     */
+    protected static final String N_A = "N/A";
     /**
      * The test case listener.
      */
