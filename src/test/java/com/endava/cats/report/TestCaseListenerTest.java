@@ -593,7 +593,7 @@ class TestCaseListenerTest {
             spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [400] is documented, but response body does NOT matches the corresponding schema.");
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [400] is documented, but response body does NOT match the corresponding schema.");
     }
 
     @ParameterizedTest
