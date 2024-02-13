@@ -89,6 +89,10 @@ components:
       properties:
         data:
           type: string
+          enum:
+            - ONE
+            - TWO
+            - null
         expiry:
           type: string
           format: date

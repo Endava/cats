@@ -14,6 +14,7 @@ import com.endava.cats.model.FuzzingData;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.StringSchema;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -28,6 +29,7 @@ import org.slf4j.event.Level;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -473,14 +475,20 @@ class TestCaseListenerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({",", "test"})
+    @CsvSource({",", "test", "anEnum"})
     void shouldReportInfoWhenResponseCode400IsExpectedAndResponseBodyMatchesAndFuzzedFieldNullOrPresent(String fuzzedField) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
-        Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        StringSchema enumSchema = new StringSchema();
+        List<String> enumList = new ArrayList<>();
+        enumList.add(null);
+        enumList.add("value");
+        enumSchema.setEnum(enumList);
+        Mockito.when(response.getBody()).thenReturn("{'test':1,'anEnum':null}");
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
-        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4','anEnum':'value'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("anEnum", enumSchema));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.getFuzzedField()).thenReturn(fuzzedField);
 
