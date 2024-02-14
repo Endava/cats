@@ -6,11 +6,17 @@ import com.endava.cats.util.CatsUtil;
 
 /**
  * Executes mutator logic from a custom mutator file.
+ *
+ * <p>
+ * Custom mutators are parsed as {@code CustomMutatorConfig} and
+ * then transformed into {@code CustomMutator} instances.
+ * </p>
  * <p>
  * TODO:
  * - handle dynamic values in customMutator
  * - list type of mutators registered
  * - list type of custom mutators supported
+ * </p>
  */
 public class CustomMutator implements Mutator {
     private final CustomMutatorConfig customMutatorConfig;
