@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.info.Info;
 import lombok.Builder;
 import lombok.ToString;
 import org.fusesource.jansi.Ansi;
+import org.openapitools.codegen.utils.ModelUtils;
 import picocli.CommandLine;
 
 import java.lang.reflect.Field;
@@ -74,6 +75,7 @@ public class StatsCommand implements Runnable {
         DEPRECATED_HEADERS("{} deprecated headers: {}", "deprecatedHeaders"),
         SERVERS("Servers: {}", "servers"),
         SECURITY_SCHEMES("{} global security schemes: {}", "securitySchemes"),
+        UNUSED_SCHEMES("{} unused schemes: {}", "unusedSchemes"),
         TAGS("{} global tags: {}", "tags"),
         VERSIONING("API versioning: {}", "apiVersions"),
         CONSUMES("Consumes content types: {}", "consumesContentTypes"),
@@ -129,6 +131,7 @@ public class StatsCommand implements Runnable {
             Set<String> possibleMonitoringEndpoints = OpenApiUtils.getMonitoringEndpoints(openAPI);
             Set<String> usedHttpMethods = OpenApiUtils.getUsedHttpMethods(openAPI);
             String docsUrl = OpenApiUtils.getDocumentationUrl(openAPI);
+            List<String> unusedSchemas = ModelUtils.getUnusedSchemas(openAPI);
 
             Stats stats = new Stats.StatsBuilder().pathSize(pathSize).operationSize(operationsSize)
                     .servers(servers).requestBodies(requestBodies).schemas(schemas).responses(responses)
@@ -141,6 +144,7 @@ public class StatsCommand implements Runnable {
                     .docsUrl(docsUrl).extensions(extensions).pathsMissingPagination(pathsMissingPagination)
                     .monitoringEndpoints(possibleMonitoringEndpoints).usedHttpMethods(usedHttpMethods)
                     .authenticationHeaders(authenticationHeaders).idempotencyHeaders(idempotencyHeaders)
+                    .unusedSchemes(unusedSchemas)
                     .build();
 
             if (json) {
@@ -243,6 +247,7 @@ public class StatsCommand implements Runnable {
         Set<String> pathsMissingPagination;
         Set<String> monitoringEndpoints;
         Set<String> usedHttpMethods;
+        List<String> unusedSchemes;
         String docsUrl;
     }
 }
