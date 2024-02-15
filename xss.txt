@@ -1,3 +1,5 @@
+# This is a sample file that can be used with the SecurityFuzzer using the: cats fuzz --securityFuzzerFile xxx command
+
 JavaScript://%250Aalert?.(1)//'/*\'/*"/*\"/*`/*\`/*%26apos;)/*<!--></Title/</Style/</Script/</textArea/</iFrame/</noScript>\74k<K/contentEditable/autoFocus/OnFocus=/*${/*/;{/**/(alert)(1)}//><Base/Href=//X55.is\76-->
 <script>alert(123)</script>
 &lt;script&gt;alert(&#39;123&#39;);&lt;/script&gt;
