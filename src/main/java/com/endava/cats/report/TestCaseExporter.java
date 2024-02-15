@@ -358,6 +358,9 @@ public abstract class TestCaseExporter {
             logger.error("There was a problem writing test case {}: {}. Please check if CATS has proper right to write in the report location: {}",
                     testCase.getTestId(), e.getMessage(), reportingPath.toFile().getAbsolutePath());
             logger.debug(STACKTRACE, e);
+        } catch (NegativeArraySizeException e) {
+            logger.debug(e.getMessage());
+            logger.debug(STACKTRACE, e);
         }
     }
 
