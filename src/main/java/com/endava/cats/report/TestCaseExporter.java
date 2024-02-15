@@ -5,6 +5,7 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.json.KeyValueSerializer;
 import com.endava.cats.json.LongTypeSerializer;
 import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.KeyValuePair;
@@ -135,11 +136,11 @@ public abstract class TestCaseExporter {
      * Writes performance statistics for the executed test cases, including execution time details.
      * The method checks if printing execution statistics is enabled in the reporting arguments before generating and printing the report.
      *
-     * @param testCaseMap a map containing the executed test cases
+     * @param executionSummaries a map containing the summaries of executed test cases
      */
-    public void writePerformanceReport(Map<String, CatsTestCase> testCaseMap) {
+    public void writePerformanceReport(List<CatsTestCaseExecutionSummary> executionSummaries) {
         if (reportingArguments.isPrintExecutionStatistics()) {
-            Map<String, List<CatsTestCase>> executionDetails = extractExecutionDetails(testCaseMap);
+            Map<String, List<CatsTestCaseExecutionSummary>> executionDetails = extractExecutionDetails(executionSummaries);
 
             ConsoleUtils.renderHeader(" Execution time details ");
             ConsoleUtils.emptyLine();
@@ -150,44 +151,39 @@ public abstract class TestCaseExporter {
         }
     }
 
-    private Map<String, List<CatsTestCase>> extractExecutionDetails(Map<String, CatsTestCase> testCaseMap) {
-        Map<String, CatsTestCase> allRun = testCaseMap.entrySet()
+    private Map<String, List<CatsTestCaseExecutionSummary>> extractExecutionDetails(List<CatsTestCaseExecutionSummary> summaries) {
+        return summaries
                 .stream()
-                .filter(entry -> entry.getValue().isNotSkipped() && entry.getValue().notIgnoredForExecutionStatistics())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return allRun.values()
-                .stream()
-                .collect(Collectors.groupingBy(testCase -> testCase.getResponse().getHttpMethod() + " " + testCase.getPath()))
+                .collect(Collectors.groupingBy(testCase -> testCase.httpMethod() + " " + testCase.path()))
                 .entrySet()
                 .stream()
                 .filter(entry -> entry.getValue().size() > 1)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private void writeExecutionTimesForPathAndHttpMethod(String key, List<CatsTestCase> value) {
-        double average = value.stream().mapToLong(testCase -> testCase.getResponse().getResponseTimeInMs()).average().orElse(0);
-        List<CatsTestCase> sortedRuns = value.stream()
-                .sorted(Comparator.comparingLong(testCase -> testCase.getResponse().getResponseTimeInMs()))
+    private void writeExecutionTimesForPathAndHttpMethod(String key, List<CatsTestCaseExecutionSummary> value) {
+        double average = value.stream().mapToLong(CatsTestCaseExecutionSummary::responseTimeInMs).average().orElse(0);
+        List<CatsTestCaseExecutionSummary> sortedRuns = value.stream()
+                .sorted(Comparator.comparingLong(CatsTestCaseExecutionSummary::responseTimeInMs))
                 .toList();
 
-        CatsTestCase bestCaseTestCase = sortedRuns.get(0);
-        CatsTestCase worstCaseTestCase = sortedRuns.get(sortedRuns.size() - 1);
+        CatsTestCaseExecutionSummary bestCaseTestCase = sortedRuns.get(0);
+        CatsTestCaseExecutionSummary worstCaseTestCase = sortedRuns.get(sortedRuns.size() - 1);
         List<TimeExecution> executions = sortedRuns.stream()
                 .map(tetCase -> TimeExecution.builder()
-                        .testId(tetCase.getTestId())
-                        .executionInMs(tetCase.getResponse().getResponseTimeInMs())
+                        .testId(tetCase.testId())
+                        .executionInMs(tetCase.responseTimeInMs())
                         .build())
                 .toList();
 
         TimeExecutionDetails timeExecutionDetails = TimeExecutionDetails.builder().average(average)
                 .path(key).bestCase(TimeExecution.builder()
-                        .testId(bestCaseTestCase.getTestId())
-                        .executionInMs(bestCaseTestCase.getResponse().getResponseTimeInMs())
+                        .testId(bestCaseTestCase.testId())
+                        .executionInMs(bestCaseTestCase.responseTimeInMs())
                         .build())
                 .worstCase(TimeExecution.builder()
-                        .testId(worstCaseTestCase.getTestId())
-                        .executionInMs(worstCaseTestCase.getResponse().getResponseTimeInMs())
+                        .testId(worstCaseTestCase.testId())
+                        .executionInMs(worstCaseTestCase.responseTimeInMs())
                         .build())
                 .executions(executions).build();
 
@@ -235,11 +231,11 @@ public abstract class TestCaseExporter {
      * It creates a CatsTestReport and extracts information such as warnings, success, errors, and total tests.
      * The gathered information is stored in a context map.
      *
-     * @param testCaseMap                 the map containing CATS test cases
+     * @param summaries                   the pre-created summary for each test case
      * @param executionStatisticsListener the listener providing statistics on CATS execution
      */
-    public void writeSummary(Map<String, CatsTestCase> testCaseMap, ExecutionStatisticsListener executionStatisticsListener) {
-        CatsTestReport report = this.createTestReport(testCaseMap, executionStatisticsListener);
+    public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
+        CatsTestReport report = this.createTestReport(summaries, executionStatisticsListener);
 
         Map<String, Object> context = new HashMap<>();
         context.put("WARNINGS", report.getWarnings());
@@ -264,14 +260,10 @@ public abstract class TestCaseExporter {
         }
     }
 
-    private CatsTestReport createTestReport(Map<String, CatsTestCase> testCaseMap, ExecutionStatisticsListener executionStatisticsListener) {
-        List<CatsTestCaseSummary> summaries = testCaseMap.values().stream()
-                .filter(CatsTestCase::isNotSkipped)
-                .map(CatsTestCaseSummary::fromCatsTestCase)
-                .sorted()
-                .toList();
+    private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
+        List<CatsTestCaseSummary> sortedSummaries = summaries.stream().sorted().toList();
 
-        return CatsTestReport.builder().testCases(summaries).errors(executionStatisticsListener.getErrors())
+        return CatsTestReport.builder().testCases(sortedSummaries).errors(executionStatisticsListener.getErrors())
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
                 .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME))
                 .executionTime(((System.currentTimeMillis() - t0) / 1000))
