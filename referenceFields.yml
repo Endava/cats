@@ -1,3 +1,4 @@
+# This is an example of a reference data file that can be supplied using the --refData argument
 /pets/{id}/move:
   pet#id: "000000"
 /pets/{id}:
