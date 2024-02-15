@@ -61,7 +61,7 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
                         .expectedSpecificResponseCode("4XX or 2XX")
                         .fuzzer(this)
                         .logger(logger)
-                        .scenario("Add 10 000 extra random headers.")
+                        .scenario(String.format("Add %s extra random headers.", processingArguments.getRandomHeadersNumber()))
                         .responseProcessor(this::checkResponse)
                         .headers(headers)
                         .build()
