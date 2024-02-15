@@ -53,9 +53,10 @@ class LargeNumberOfRandomAlphanumericHeadersFuzzerTest {
         Assertions.assertThat(largeNumberOfRandomAlphanumericHeadersFuzzer.randomHeadersValueFunction().apply(10)).isNotBlank();
     }
 
+
     @ParameterizedTest
-    @CsvSource({"201", "400"})
-    void shouldReportInfoWhenNot5XX(int code) {
+    @CsvSource({"400", "431", "414"})
+    void shouldReportInfo(int code) {
         FuzzingData data = setupSimpleFuzzingData();
 
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(code).build());
@@ -65,15 +66,16 @@ class LargeNumberOfRandomAlphanumericHeadersFuzzerTest {
         Mockito.verify(testCaseListener).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("Request returned as expected for http method [{}] with response code [{}]"), Mockito.any());
     }
 
-    @Test
-    void shouldReportErrorWhen5XX() {
+    @ParameterizedTest
+    @CsvSource({"500", "200", "401"})
+    void shouldReportError(int code) {
         FuzzingData data = setupSimpleFuzzingData();
 
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(500).build());
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(code).build());
         largeNumberOfRandomAlphanumericHeadersFuzzer.fuzz(data);
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.any());
 
-        Mockito.verify(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Unexpected Response Code: 500"),
+        Mockito.verify(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Unexpected Response Code: " + code),
                 Mockito.eq("Request failed unexpectedly for http method [{}]: expected [{}], actual [{}]"), Mockito.any());
 
     }

@@ -30,7 +30,7 @@ public class LargeNumberOfRandomHeadersFuzzer extends BaseRandomHeadersFuzzer {
 
     @Override
     public String description() {
-        return "send a 'happy' flow request with 10 000 extra random headers";
+        return String.format("send a 'happy' flow request with %s extra random headers", super.processingArguments.getRandomHeadersNumber());
     }
 
     @Override

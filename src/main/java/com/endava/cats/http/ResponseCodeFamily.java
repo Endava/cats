@@ -38,7 +38,7 @@ public enum ResponseCodeFamily {
         }
     },
     /**
-     * Represents the 4XX response code family with 400, 413, 414, 422 as allowed codes.
+     * Represents the 4XX response code family with 400, 413, 414, 422, 431 as allowed codes.
      */
     FOURXX {
         @Override
@@ -48,7 +48,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("400", "413", "414", "422");
+            return Arrays.asList("400", "413", "414", "422", "431");
         }
     },
     /**
@@ -222,6 +222,10 @@ public enum ResponseCodeFamily {
         }
 
         return ZEROXX;
+    }
+
+    public static boolean isTooManyHeaders(int code) {
+        return code == 431;
     }
 
     /**
