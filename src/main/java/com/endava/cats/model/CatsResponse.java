@@ -16,6 +16,7 @@ import java.util.List;
 @Builder
 @Getter
 public class CatsResponse {
+    private static final String UNKNOWN_MEDIA_TYPE = "unknown/unknown";
     private static final int INVALID_ERROR_CODE = 999;
     private final int responseCode;
     private final String httpMethod;
@@ -121,6 +122,16 @@ public class CatsResponse {
     }
 
     /**
+     * Checks if the actual content type of the response is unknown.
+     * When services respond with 413, 414, 431 they might not set a content type for response.
+     *
+     * @return true if content type is set to {@code unknown/unknown}, false otherwise
+     */
+    public boolean isUnknownContentType() {
+        return UNKNOWN_MEDIA_TYPE.equalsIgnoreCase(responseContentType);
+    }
+
+    /**
      * Builder for CatsResponse.
      */
     public static class CatsResponseBuilder {
@@ -133,5 +144,14 @@ public class CatsResponse {
             this.responseCode = INVALID_ERROR_CODE;
             return this;
         }
+    }
+
+    /**
+     * Default content type when none is received from the service.
+     *
+     * @return a default content type when one is received from the server
+     */
+    public static String unknownContentType() {
+        return UNKNOWN_MEDIA_TYPE;
     }
 }

@@ -65,7 +65,7 @@ public class TestCaseListener {
     private static final String ID_ANSI = "id_ansi";
     static final AtomicInteger TEST = new AtomicInteger(0);
     private static final String DEFAULT_ERROR = "####";
-    private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501");
+    private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
     final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
@@ -636,8 +636,9 @@ public class TestCaseListener {
         boolean responseContentTypeDefined = data.getContentTypesByResponseCode(response.responseCodeAsString())
                 .stream()
                 .anyMatch(contentType -> areContentTypesEquivalent(response.getResponseContentType(), contentType));
+        boolean unknownContentType = response.isUnknownContentType();
 
-        return (noContentTypeDefinedForResponseCode && responseDoesNotHaveContentType) || responseContentTypeDefined;
+        return (noContentTypeDefinedForResponseCode && responseDoesNotHaveContentType) || responseContentTypeDefined || unknownContentType;
     }
 
     static boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {

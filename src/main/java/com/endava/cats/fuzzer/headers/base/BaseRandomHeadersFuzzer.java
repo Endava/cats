@@ -25,7 +25,8 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BaseRandomHeadersFuzzer.class);
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
-    private final ProcessingArguments processingArguments;
+
+    protected final ProcessingArguments processingArguments;
 
     /**
      * Constructs a new instance of BaseRandomHeadersFuzzer with protected access.
@@ -58,7 +59,7 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
         simpleExecutor.execute(
                 SimpleExecutorContext.builder()
                         .fuzzingData(data)
-                        .expectedSpecificResponseCode("4XX or 2XX")
+                        .expectedResponseCode(ResponseCodeFamily.FOURXX)
                         .fuzzer(this)
                         .logger(logger)
                         .scenario(String.format("Add %s extra random headers.", processingArguments.getRandomHeadersNumber()))
@@ -69,12 +70,13 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
     }
 
     private void checkResponse(CatsResponse response, FuzzingData data) {
-        if (ResponseCodeFamily.is2xxCode(response.getResponseCode()) || ResponseCodeFamily.is4xxCode(response.getResponseCode())) {
+        if (ResponseCodeFamily.FOURXX.matchesAllowedResponseCodes(String.valueOf(response.getResponseCode()))) {
             testCaseListener.reportResultInfo(logger, data, "Request returned as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else {
             testCaseListener.reportResultError(logger, data, "Unexpected Response Code: %s".formatted(response.getResponseCode()),
-                    "Request failed unexpectedly for http method [{}]: expected [{}], actual [{}]", response.getHttpMethod(), "2XX or 4XX", response.getResponseCode());
+                    "Request failed unexpectedly for http method [{}]: expected [{}], actual [{}]", response.getHttpMethod(),
+                    ResponseCodeFamily.FOURXX.allowedResponseCodes(), response.getResponseCode());
         }
     }
 

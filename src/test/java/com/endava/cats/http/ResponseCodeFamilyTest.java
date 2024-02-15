@@ -71,7 +71,7 @@ class ResponseCodeFamilyTest {
     void shouldBeValid4xxGenericAllowedCodes() {
         Assertions.assertThat(ResponseCodeFamily.FOURXX.asString()).isEqualTo("4XX");
         Assertions.assertThat(ResponseCodeFamily.FOURXX.getStartingDigit()).isEqualTo("4");
-        Assertions.assertThat(ResponseCodeFamily.FOURXX.allowedResponseCodes()).containsOnly("400", "413", "414", "422");
+        Assertions.assertThat(ResponseCodeFamily.FOURXX.allowedResponseCodes()).containsOnly("400", "413", "414", "422", "431");
     }
 
     @Test

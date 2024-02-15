@@ -467,7 +467,7 @@ public class ServiceCaller {
     }
 
     private String getResponseContentType(Response response) {
-        MediaType defaultResponseMediaType = MediaType.parse("unknown/unknown");
+        MediaType defaultResponseMediaType = MediaType.parse(CatsResponse.unknownContentType());
         if (response.body() != null) {
             return String.valueOf(Optional.ofNullable(response.body().contentType()).orElse(defaultResponseMediaType));
         }
