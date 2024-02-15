@@ -11,6 +11,8 @@ import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.CatsTestCase;
+import com.endava.cats.model.CatsTestCaseExecutionSummary;
+import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
 import com.google.common.net.MediaType;
@@ -32,6 +34,7 @@ import org.springframework.util.CollectionUtils;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -72,6 +75,8 @@ public class TestCaseListener {
     private final CatsGlobalContext globalContext;
     private final IgnoreArguments ignoreArguments;
     private final ReportingArguments reportingArguments;
+    final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
+    final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -267,14 +272,28 @@ public class TestCaseListener {
     }
 
     private void endTestCase() {
-        currentTestCase().setFuzzer(MDC.get(FUZZER_KEY));
-        if (currentTestCase().isNotSkipped()) {
-            CatsTestCase testCase = currentTestCase();
-            testCaseExporter.writeTestCase(testCase);
+        CatsTestCase currentTestCase = currentTestCase();
+        currentTestCase.setFuzzer(MDC.get(FUZZER_KEY));
+        if (currentTestCase.isNotSkipped()) {
+            testCaseExporter.writeTestCase(currentTestCase);
+            keepSummary(currentTestCase);
         }
+        keepExecutionDetails(currentTestCase);
+        testCaseMap.remove(MDC.get(ID));
         MDC.remove(ID);
         MDC.put(ID_ANSI, TEST_KEY_DEFAULT);
         logger.info(SEPARATOR);
+    }
+
+    private void keepSummary(CatsTestCase testCase) {
+        testCaseSummaryDetails.add(CatsTestCaseSummary.fromCatsTestCase(testCase));
+    }
+
+    private void keepExecutionDetails(CatsTestCase testCase) {
+        if (testCase.notIgnoredForExecutionStatistics() && reportingArguments.isPrintExecutionStatistics()) {
+            testCaseExecutionDetails.add(new CatsTestCaseExecutionSummary(testCase.getTestId(), testCase.getPath(),
+                    testCase.getHttpMethod(), testCase.getResponse().getResponseTimeInMs()));
+        }
     }
 
     /**
@@ -360,9 +379,9 @@ public class TestCaseListener {
      * Additionally, prints execution details using the associated logger.
      */
     public void endSession() {
-        testCaseExporter.writeSummary(testCaseMap, executionStatisticsListener);
+        testCaseExporter.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
         testCaseExporter.writeHelperFiles();
-        testCaseExporter.writePerformanceReport(testCaseMap);
+        testCaseExporter.writePerformanceReport(testCaseExecutionDetails);
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
     }
 
