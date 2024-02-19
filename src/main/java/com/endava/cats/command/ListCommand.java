@@ -11,6 +11,7 @@ import com.endava.cats.command.model.MutatorEntry;
 import com.endava.cats.command.model.PathDetailsEntry;
 import com.endava.cats.command.model.PathListEntry;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
@@ -112,6 +113,10 @@ public class ListCommand implements Runnable {
         if (listCommandGroups.listMutatorsGroup != null && listCommandGroups.listMutatorsGroup.mutators) {
             listMutators();
         }
+
+        if (listCommandGroups.listMutatorsGroup != null && listCommandGroups.listMutatorsGroup.customMutatorTypes) {
+            listMutatorsTypes();
+        }
     }
 
     void listFormats() {
@@ -119,6 +124,15 @@ public class ListCommand implements Runnable {
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(formats));
         } else {
             logger.noFormat("Registered OpenAPI formats: {}", formats);
+        }
+    }
+
+    void listMutatorsTypes() {
+        if (json) {
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(CustomMutatorConfig.Type.values()));
+        } else {
+            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered custom mutator types: {}").reset().toString();
+            logger.noFormat(message, CustomMutatorConfig.Type.values().length, Arrays.toString(CustomMutatorConfig.Type.values()));
         }
     }
 
@@ -329,9 +343,13 @@ public class ListCommand implements Runnable {
     static class ListMutatorsGroup {
         @CommandLine.Option(
                 names = {"-m", "--mutators", "mutators"},
-                description = "Display all current registered Mutators",
-                required = true)
+                description = "Display all current registered Mutators")
         boolean mutators;
+
+        @CommandLine.Option(
+                names = {"--cmt", "--customMutatorTypes"},
+                description = "Display types supported by the custom mutator")
+        boolean customMutatorTypes;
     }
 
     static class ListContractOptions {

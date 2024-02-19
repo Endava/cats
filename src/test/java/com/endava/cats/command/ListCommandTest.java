@@ -55,6 +55,16 @@ class ListCommandTest {
     }
 
     @Test
+    void shouldListMutatorsTypes() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("--cmt");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listMutatorsTypes();
+        commandLine.execute("--cmt", "-j");
+        Mockito.verify(spyListCommand, Mockito.times(2)).listMutatorsTypes();
+    }
+
+    @Test
     void shouldNotListFormats() {
         ListCommand spyListCommand = Mockito.spy(listCommand);
         CommandLine commandLine = new CommandLine(spyListCommand);
