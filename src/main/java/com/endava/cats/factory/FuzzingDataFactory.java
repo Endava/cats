@@ -11,6 +11,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.CatsModelUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -21,8 +22,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.examples.Example;
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
@@ -371,12 +370,13 @@ public class FuzzingDataFactory {
         if (mediaType.getSchema() != null) {
             String currentRequestSchema = mediaType.getSchema().get$ref();
 
-            if (currentRequestSchema == null && mediaType.getSchema() instanceof ArraySchema arraySchema) {
-                currentRequestSchema = arraySchema.getItems().get$ref();
+            if (currentRequestSchema == null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
+                currentRequestSchema = mediaType.getSchema().getItems().get$ref();
             }
             if (currentRequestSchema != null) {
                 reqSchemas.add(this.getSchemaName(currentRequestSchema));
-            } else if (mediaType.getSchema() instanceof ComposedSchema composedSchema) {
+            } else if (CatsModelUtils.isComposedSchema(mediaType.getSchema())) {
+                Schema<?> composedSchema = mediaType.getSchema();
                 if (composedSchema.getAnyOf() != null) {
                     composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
                 }
@@ -409,7 +409,7 @@ public class FuzzingDataFactory {
         OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(), processingArguments.getSelfReferenceDepth());
         List<String> result = this.generateSample(reqSchemaName, generator);
 
-        if (mediaType != null && mediaType.getSchema() instanceof ArraySchema) {
+        if (mediaType != null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
             /*when dealing with ArraySchemas we make sure we have 2 elements in the array*/
             result = result.stream().map(payload -> "[" + payload + "," + payload + "]").toList();
         }
@@ -702,8 +702,8 @@ public class FuzzingDataFactory {
             }
             if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
                 Schema<?> respSchema = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema();
-                if (respSchema instanceof ArraySchema arraySchema) {
-                    return arraySchema.getItems().get$ref();
+                if (CatsModelUtils.isArraySchema(respSchema)) {
+                    return respSchema.getItems().get$ref();
                 } else {
                     return respSchema.get$ref();
                 }

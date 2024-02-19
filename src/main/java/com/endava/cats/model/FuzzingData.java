@@ -2,11 +2,11 @@ package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.CatsModelUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -123,7 +123,7 @@ public class FuzzingData {
         return result;
     }
 
-    private Set<CatsField> getFields(Schema schema, String prefix) {
+    private Set<CatsField> getFields(Schema<?> schema, String prefix) {
         logger.trace("Getting fields for prefix: {}", prefix);
         if (JsonUtils.isCyclicReference(prefix, selfReferenceDepth)) {
             return Collections.emptySet();
@@ -140,7 +140,7 @@ public class FuzzingData {
         List<String> required = Optional.ofNullable(schema.getRequired()).orElseGet(Collections::emptyList);
 
         if (schema.getProperties() != null) {
-            for (Map.Entry<String, Schema> prop : (Set<Map.Entry<String, Schema>>) schema.getProperties().entrySet()) {
+            for (Map.Entry<String, Schema> prop : schema.getProperties().entrySet()) {
                 catsFields.add(CatsField.builder()
                         .name(prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey())
                         .schema(prop.getValue())
@@ -150,10 +150,10 @@ public class FuzzingData {
                         .build());
                 catsFields.addAll(this.getFields(prop.getValue(), prefix.isEmpty() ? prop.getKey() : prefix + "#" + prop.getKey()));
             }
-        } else if (schema instanceof ComposedSchema composedSchema) {
-            Optional.ofNullable(composedSchema.getAllOf()).ifPresent(allOf -> allOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
-            Optional.ofNullable(composedSchema.getAnyOf()).ifPresent(anyOf -> anyOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
-            Optional.ofNullable(composedSchema.getOneOf()).ifPresent(oneOf -> oneOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
+        } else if (CatsModelUtils.isComposedSchema(schema)) {
+            Optional.ofNullable(schema.getAllOf()).ifPresent(allOf -> allOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
+            Optional.ofNullable(schema.getAnyOf()).ifPresent(anyOf -> anyOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
+            Optional.ofNullable(schema.getOneOf()).ifPresent(oneOf -> oneOf.forEach(item -> catsFields.addAll(this.getFields(item, prefix))));
         }
 
         return catsFields.stream()

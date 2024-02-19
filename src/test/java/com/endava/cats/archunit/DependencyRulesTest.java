@@ -83,4 +83,10 @@ public class DependencyRulesTest {
 
     @ArchTest
     static ArchRule testClassesInSamePackage = testClassesShouldResideInTheSamePackageAsImplementation();
+
+
+    @ArchTest
+    static final ArchRule notClassShouldDependOnModelUtils =
+            noClasses().that().resideInAPackage("..").and().areNotAssignableFrom("com.endava.cats.util.CatsModelUtils")
+                    .should().accessClassesThat().resideInAPackage("org.openapitools.codegen.utils");
 }

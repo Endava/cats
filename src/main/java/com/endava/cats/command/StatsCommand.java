@@ -2,6 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -11,7 +12,6 @@ import io.swagger.v3.oas.models.info.Info;
 import lombok.Builder;
 import lombok.ToString;
 import org.fusesource.jansi.Ansi;
-import org.openapitools.codegen.utils.ModelUtils;
 import picocli.CommandLine;
 
 import java.lang.reflect.Field;
@@ -131,7 +131,7 @@ public class StatsCommand implements Runnable {
             Set<String> possibleMonitoringEndpoints = OpenApiUtils.getMonitoringEndpoints(openAPI);
             Set<String> usedHttpMethods = OpenApiUtils.getUsedHttpMethods(openAPI);
             String docsUrl = OpenApiUtils.getDocumentationUrl(openAPI);
-            List<String> unusedSchemas = ModelUtils.getUnusedSchemas(openAPI);
+            List<String> unusedSchemas = CatsModelUtils.getUnusedSchemas(openAPI);
 
             Stats stats = new Stats.StatsBuilder().pathSize(pathSize).operationSize(operationsSize)
                     .servers(servers).requestBodies(requestBodies).schemas(schemas).responses(responses)

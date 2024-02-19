@@ -9,9 +9,8 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
-import io.swagger.v3.oas.models.media.IntegerSchema;
-import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -50,7 +49,7 @@ public class VeryLargeIntegersInNumericFieldsFuzzer extends ExpectOnly4XXBaseFie
     @Override
     protected List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        if (fieldSchema instanceof NumberSchema || fieldSchema instanceof IntegerSchema) {
+        if (CatsModelUtils.isNumberSchema(fieldSchema) || CatsModelUtils.isIntegerSchema(fieldSchema)) {
             return Collections.singletonList(FuzzingStrategy.replace().withData(this.getTheActualData()));
         } else {
             return List.of(FuzzingStrategy.skip().withData("field is not numeric"));

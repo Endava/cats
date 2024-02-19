@@ -49,11 +49,11 @@ public class RandomZalgoTextMutator implements Mutator {
     public static String generateZalgoText(String inputText) {
         StringBuilder zalgoText = new StringBuilder();
 
-        for (char c : inputText.toCharArray()) {
-            zalgoText.append(c);
+        for (int i = 0; i < inputText.length(); i++) {
+            zalgoText.append(inputText.charAt(i));
 
             int numZalgoChars = 3 + CatsUtil.random().nextInt(7);
-            for (int i = 0; i < numZalgoChars; i++) {
+            for (int j = 0; j < numZalgoChars; j++) {
                 zalgoText.append(ZALGO_CHARACTERS[CatsUtil.random().nextInt(ZALGO_CHARACTERS.length)]);
             }
         }
