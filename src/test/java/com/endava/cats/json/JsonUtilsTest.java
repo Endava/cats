@@ -11,6 +11,26 @@ import java.util.List;
 @QuarkusTest
 class JsonUtilsTest {
 
+    @ParameterizedTest
+    @CsvSource({"key,CATS,kCATSey", "anotherKey#subKey,CATS,subCATSKey"})
+    void shouldInsertCharactersInFieldKeys(String key, String whatToInsert, String whatToCheck) {
+        String json = """
+                {
+                    "key": "value",
+                    "anotherKey" : {
+                        "subKey": "subValue"
+                    },
+                    "anArray": [
+                        {"arrKey1":"arrValue1"},
+                        {"arrKey2":"arrValue2"}
+                    ]
+                }
+                """;
+        String newJson = JsonUtils.insertCharactersInFieldKey(json, key, whatToInsert);
+
+        Assertions.assertThat(newJson).contains(whatToCheck);
+    }
+
     @Test
     void shouldFindField() {
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";

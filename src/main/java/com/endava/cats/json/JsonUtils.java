@@ -1,6 +1,7 @@
 package com.endava.cats.json;
 
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
+import com.endava.cats.strategy.CommonWithinMethods;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -405,9 +406,9 @@ public abstract class JsonUtils {
      * @param newValue       the new element value
      * @return a new payload starting with the initial JSON as base and with the new key and value
      */
-    public static String addNewElement(String initialPayload, String newKey, String newValue) {
+    public static String addNewElement(String initialPayload, String pathToKey, String newKey, Object newValue) {
         DocumentContext documentContext = JsonPath.parse(initialPayload);
-        documentContext.put("$", newKey, newValue);
+        documentContext.put(pathToKey, sanitizeToJsonPath(newKey), newValue);
 
         return documentContext.jsonString();
     }
@@ -440,6 +441,29 @@ public abstract class JsonUtils {
         JsonElement root = JsonParser.parseString(jsonPayload);
         traverseJson(root, "", fields);
         return fields;
+    }
+
+    /**
+     * Inserts characters in the provided json key.
+     *
+     * @param json            the current json
+     * @param currentFieldKey the current field key
+     * @param valueToInsert   characters to insert
+     * @return a new json with new characters inserted in the given key
+     */
+    public static String insertCharactersInFieldKey(String json, String currentFieldKey, String valueToInsert) {
+        int indexOfHash = currentFieldKey.lastIndexOf("#");
+        String lastPartOfField = currentFieldKey.substring(indexOfHash + 1);
+        String firstPartOfField = currentFieldKey.substring(0, Math.max(indexOfHash, 0));
+
+        Object currentFieldValue = getVariableFromJson(json, currentFieldKey);
+
+        String newFieldKey = CommonWithinMethods.insertInTheMiddle(lastPartOfField, valueToInsert, true);
+        String inputJsonWithRemovedKey = deleteNode(json, currentFieldKey);
+
+        String pathToKey = StringUtils.isBlank(firstPartOfField) ? "$" : firstPartOfField;
+
+        return addNewElement(inputJsonWithRemovedKey, pathToKey, newFieldKey, currentFieldValue);
     }
 
     private static void traverseJson(JsonElement element, String prefix, List<String> fields) {
