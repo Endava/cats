@@ -123,14 +123,15 @@ class RandomFuzzerTest {
     }
 
     @Test
-    void shouldRunCustomMutatorsFromValidFolder() {
+    void shouldRunCustomMutatorsFromValidFolder() throws Exception {
         Mockito.when(filesArguments.getMutatorsFolder()).thenReturn(new File("src/test/resources/mutators"));
         FuzzingData data = mockData();
         Mockito.doCallRealMethod().when(catsUtil).justReplaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
         RandomFuzzer randomFuzzerSpy = Mockito.spy(randomFuzzer);
         randomFuzzerSpy.fuzz(data);
         Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());
-        Mockito.verify(randomFuzzerSpy, Mockito.times(2)).createConfig(Mockito.any());
+        Mockito.verify(randomFuzzerSpy, Mockito.times(3)).createConfig(Mockito.any());
+        Mockito.verify(randomFuzzerSpy, Mockito.times(1)).readValueFromFile(Mockito.endsWith("dict.txt"));
     }
 
     @NotNull
