@@ -1,6 +1,7 @@
 package com.endava.cats.openapi;
 
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.util.CatsModelUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.ExternalDocumentation;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -164,8 +164,8 @@ public abstract class OpenApiUtils {
             LOGGER.debug("Getting schema {} for content-type {}", schemaName, contentType);
             Schema<?> refSchema = getMediaTypeFromContent(content, contentType).getSchema();
 
-            if (refSchema instanceof ArraySchema arraySchema) {
-                ref = arraySchema.getItems().get$ref();
+            if (CatsModelUtils.isArraySchema(refSchema)) {
+                ref = refSchema.getItems().get$ref();
                 refSchema.set$ref(ref);
                 schemaToAdd = refSchema;
             } else if (refSchema.get$ref() != null) {

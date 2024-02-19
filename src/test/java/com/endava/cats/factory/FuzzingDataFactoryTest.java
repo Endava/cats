@@ -331,4 +331,21 @@ class FuzzingDataFactoryTest {
         Set<CatsField> fields = data.getAllFieldsAsCatsFields();
         Assertions.assertThat(fields).hasSize(4);
     }
+
+    @Test
+    void shouldGenerateOpenApi31Specs() throws Exception {
+        System.getProperties().setProperty("bind-type", "true");
+        List<FuzzingData> dataList = setupFuzzingData("/pet", "src/test/resources/petstore31.yaml");
+        Assertions.assertThat(dataList).hasSize(2);
+        FuzzingData data = dataList.get(0);
+        List<String> fields = data.getAllFieldsAsCatsFields().stream().map(CatsField::getName).toList();
+        Assertions.assertThat(fields).containsExactly("status",
+                "tags",
+                "photoUrls",
+                "name",
+                "id",
+                "category#name",
+                "category",
+                "category#id");
+    }
 }

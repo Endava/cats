@@ -4,28 +4,17 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.BinarySchema;
-import io.swagger.v3.oas.models.media.BooleanSchema;
-import io.swagger.v3.oas.models.media.ByteArraySchema;
-import io.swagger.v3.oas.models.media.ComposedSchema;
-import io.swagger.v3.oas.models.media.DateSchema;
-import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.Discriminator;
-import io.swagger.v3.oas.models.media.IntegerSchema;
-import io.swagger.v3.oas.models.media.NumberSchema;
-import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.springframework.util.CollectionUtils;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -115,20 +104,20 @@ public class OpenAPIModelGenerator {
             return this.formatExampleIfNeeded(propertySchema);
         } else if (generatedValueFromFormat != null) {
             return generatedValueFromFormat;
-        } else if (propertySchema instanceof StringSchema stringSchema) {
-            return this.getExampleFromStringSchema(propertyName, stringSchema);
-        } else if (propertySchema instanceof BooleanSchema booleanSchema) {
-            return this.getExampleFromBooleanSchema(booleanSchema);
-        } else if (propertySchema instanceof ArraySchema arraySchema) {
-            Object objectProperties = this.getExampleFromArraySchema(propertyName, arraySchema);
+        } else if (CatsModelUtils.isStringSchema(propertySchema)) {
+            return this.getExampleFromStringSchema(propertyName, propertySchema);
+        } else if (CatsModelUtils.isBooleanSchema(propertySchema)) {
+            return this.getExampleFromBooleanSchema(propertySchema);
+        } else if (CatsModelUtils.isArraySchema(propertySchema)) {
+            Object objectProperties = this.getExampleFromArraySchema(propertyName, propertySchema);
             if (objectProperties != null) {
                 return objectProperties;
             }
-        } else if (propertySchema instanceof NumberSchema numberSchema) {
-            return this.getExampleFromNumberSchema(numberSchema);
-        } else if (propertySchema instanceof IntegerSchema integerSchema) {
-            return this.getExampleFromIntegerSchema(integerSchema);
-        } else if (propertySchema instanceof ObjectSchema) {
+        } else if (CatsModelUtils.isNumberSchema(propertySchema)) {
+            return this.getExampleFromNumberSchema(propertySchema);
+        } else if (CatsModelUtils.isIntegerSchema(propertySchema)) {
+            return this.getExampleFromIntegerSchema(propertySchema);
+        } else if (CatsModelUtils.isObjectSchema(propertySchema)) {
             return this.getExampleForObjectSchema(propertySchema);
         } else if (propertySchema.getAdditionalProperties() instanceof Schema) {
             return this.getExampleFromAdditionalPropertiesSchema(propertyName, propertySchema);
@@ -138,13 +127,13 @@ public class OpenAPIModelGenerator {
     }
 
     private <T> Object formatExampleIfNeeded(Schema<T> property) {
-        if (property instanceof DateSchema) {
+        if (CatsModelUtils.isDateSchema(property)) {
             return DATE_FORMATTER.format(LocalDate.ofInstant(((Date) property.getExample()).toInstant(), ZoneId.systemDefault()));
         }
-        if (property instanceof DateTimeSchema) {
+        if (CatsModelUtils.isDateTimeSchema(property)) {
             return ((OffsetDateTime) property.getExample()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         }
-        if (property instanceof BinarySchema || property instanceof ByteArraySchema) {
+        if (CatsModelUtils.isBinarySchema(property) || CatsModelUtils.isByteArraySchema(property)) {
             return Base64.getDecoder().decode((byte[]) property.getExample());
         }
         return property.getExample();
@@ -175,10 +164,10 @@ public class OpenAPIModelGenerator {
         return "{\"cats\":\"cats\"}";
     }
 
-    private Object getExampleFromStringSchema(String propertyName, Schema<String> property) {
+    private <T> Object getExampleFromStringSchema(String propertyName, Schema<T> property) {
         logger.trace("String property {}", propertyName);
 
-        List<String> enumValues = property.getEnum();
+        List<T> enumValues = property.getEnum();
         if (!CollectionUtils.isEmpty(enumValues)) {
             return enumValues.stream().filter(Objects::nonNull).findFirst().orElse(enumValues.get(0));
         }
@@ -207,7 +196,7 @@ public class OpenAPIModelGenerator {
         return mp;
     }
 
-    private Object getExampleFromIntegerSchema(Schema<Number> property) {
+    private Object getExampleFromIntegerSchema(Schema<?> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
         if (property.getEnum() != null) {
@@ -222,14 +211,14 @@ public class OpenAPIModelGenerator {
         return (int) randomNumber(min, max);
     }
 
-    private Object getExampleFromNumberSchema(Schema<BigDecimal> property) {
+    private Object getExampleFromNumberSchema(Schema<?> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
 
         return randomNumber(min, max);
     }
 
-    private Object getExampleFromBooleanSchema(Schema<Boolean> property) {
+    private Object getExampleFromBooleanSchema(Schema<?> property) {
         Object defaultValue = property.getDefault();
         if (defaultValue != null) {
             return defaultValue;
@@ -238,7 +227,7 @@ public class OpenAPIModelGenerator {
     }
 
     private Object getExampleFromArraySchema(String propertyName, Schema property) {
-        Schema innerType = ((ArraySchema) property).getItems();
+        Schema innerType = property.getItems();
         if (innerType.get$ref() != null) {
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
@@ -248,7 +237,7 @@ public class OpenAPIModelGenerator {
             Object[] objectProperties = new Object[arrayLength];
 
             for (int i = 0; i < arrayLength; i++) {
-                boolean isNullSchema = innerType.getType() == null && innerType.get$ref() == null && !(innerType instanceof ComposedSchema) && innerType.getProperties() == null;
+                boolean isNullSchema = innerType.getType() == null && innerType.get$ref() == null && !CatsModelUtils.isComposedSchema(innerType) && innerType.getProperties() == null;
                 if (isNullSchema) {
                     objectProperties[i] = StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
                 } else {
@@ -286,8 +275,8 @@ public class OpenAPIModelGenerator {
             logger.trace("Schema properties not null {}: {}", name, schema.getProperties().keySet());
             this.processSchemaProperties(name, schema, values);
         }
-        if (schema instanceof ComposedSchema composedSchema) {
-            this.populateWithComposedSchema(values, name, composedSchema);
+        if (CatsModelUtils.isComposedSchema(schema)) {
+            this.populateWithComposedSchema(values, name, schema);
         } else {
             globalContext.getRequestDataTypes().put(currentProperty, schema);
             return this.resolvePropertyToExample(name, schema);
@@ -322,8 +311,8 @@ public class OpenAPIModelGenerator {
 
     private Schema normalizeDiscriminatorMappingsToOneOf(String name, Schema<?> schema) {
         if (schema.getDiscriminator() != null && !CollectionUtils.isEmpty(schema.getDiscriminator().getMapping())
-                && !(schema instanceof ComposedSchema) && !isAnyComposedSchemaInChain(name)) {
-            ComposedSchema composedSchema = new ComposedSchema();
+                && !CatsModelUtils.isComposedSchema(schema) && !isAnyComposedSchemaInChain(name)) {
+            Schema<?> composedSchema = new Schema<>();
             composedSchema.setOneOf(schema.getDiscriminator().getMapping().values()
                     .stream().map(schemaName -> new Schema<>().$ref(schemaName))
                     .toList());
@@ -336,7 +325,7 @@ public class OpenAPIModelGenerator {
             globalContext.getSchemaMap().put(newSchema.getName(), newSchema);
             for (String oneOfSchema : schema.getDiscriminator().getMapping().values()) {
                 oneOfSchema = oneOfSchema.substring(oneOfSchema.lastIndexOf("/") + 1);
-                ComposedSchema currentOneOfSchema = (ComposedSchema) globalContext.getSchemaMap().get(oneOfSchema);
+                Schema<?> currentOneOfSchema = globalContext.getSchemaMap().get(oneOfSchema);
                 currentOneOfSchema.getAllOf()
                         .stream()
                         .filter(innerAllOfSchema -> innerAllOfSchema.get$ref() != null)
@@ -349,16 +338,16 @@ public class OpenAPIModelGenerator {
 
     private boolean isAnyComposedSchemaInChain(String schemaChain) {
         String[] schemaRefs = schemaChain.split("_");
-        return Arrays.stream(schemaRefs).anyMatch(entry -> globalContext.getSchemaMap().get(entry) instanceof ComposedSchema);
+        return Arrays.stream(schemaRefs).anyMatch(entry -> CatsModelUtils.isComposedSchema(globalContext.getSchemaMap().get(entry)));
     }
 
     private void parseFromInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName) {
         Schema innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
-        if (innerSchema instanceof ObjectSchema) {
+        if (CatsModelUtils.isObjectSchema(innerSchema)) {
             values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), innerSchema));
         }
-        if (innerSchema instanceof ComposedSchema composedSchema) {
-            this.populateWithComposedSchema(values, propertyName.toString(), composedSchema);
+        if (CatsModelUtils.isComposedSchema(innerSchema)) {
+            this.populateWithComposedSchema(values, propertyName.toString(), innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
             values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
             globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
@@ -385,7 +374,7 @@ public class OpenAPIModelGenerator {
         return result;
     }
 
-    private void populateWithComposedSchema(Map<String, Object> values, String propertyName, ComposedSchema composedSchema) {
+    private void populateWithComposedSchema(Map<String, Object> values, String propertyName, Schema<?> composedSchema) {
         if (composedSchema.getAllOf() != null) {
             addXXXOfExamples(values, propertyName, composedSchema.getAllOf(), "ALL_OF");
             String newKey = "ALL_OF";
@@ -454,7 +443,7 @@ public class OpenAPIModelGenerator {
         globalContext.getSchemaMap().put(schemaName, newSchema);
     }
 
-    private void mapDiscriminator(ComposedSchema composedSchema, List<Schema> anyOf) {
+    private void mapDiscriminator(Schema<?> composedSchema, List<Schema> anyOf) {
         if (composedSchema.getDiscriminator() != null) {
             globalContext.getDiscriminators().add(composedSchema.getDiscriminator());
             for (Schema<?> anyOfSchema : anyOf) {
@@ -477,8 +466,8 @@ public class OpenAPIModelGenerator {
             String fullSchemaRef = allOfSchema.get$ref();
             String schemaRef;
 
-            if (allOfSchema instanceof ArraySchema arraySchema) {
-                fullSchemaRef = arraySchema.getItems().get$ref();
+            if (CatsModelUtils.isArraySchema(allOfSchema)) {
+                fullSchemaRef = allOfSchema.getItems().get$ref();
             }
 
             Schema schemaToExample = allOfSchema;
@@ -499,4 +488,6 @@ public class OpenAPIModelGenerator {
             values.put(keyToStore + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
         }
     }
+
+
 }

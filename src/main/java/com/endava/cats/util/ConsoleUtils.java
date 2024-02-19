@@ -108,7 +108,7 @@ public abstract class ConsoleUtils {
      * @param percentage The completion percentage.
      */
     public static void renderSameRow(String path, double percentage) {
-        renderRow("\r", path, ((int) (Math.min(percentage, 100d))) + "%");
+        renderRow("\r", path, ((int) Math.min(percentage, 100d)) + "%");
     }
 
     /**

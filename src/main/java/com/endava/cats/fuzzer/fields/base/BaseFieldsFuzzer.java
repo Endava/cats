@@ -12,12 +12,12 @@ import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.FuzzingResult;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.List;
@@ -191,7 +191,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     private boolean isFuzzedValueMatchingPattern(Object fieldValue, FuzzingData data, String fuzzedField) {
         if (this.shouldCheckForFuzzedValueMatchingPattern()) {
             Schema<?> fieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-            if (fieldSchema.getPattern() == null || fieldSchema instanceof ByteArraySchema) {
+            if (fieldSchema.getPattern() == null || CatsModelUtils.isByteArraySchema(fieldSchema)) {
                 return true;
             }
             Pattern pattern = Pattern.compile(fieldSchema.getPattern());

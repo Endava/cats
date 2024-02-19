@@ -7,8 +7,8 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
-import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
@@ -76,7 +76,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         int generatedStringLength = fromSchemaLength + 15;
 
         String generated = StringGenerator.generateExactLength(pattern, generatedStringLength);
-        if (schema instanceof ByteArraySchema) {
+        if (CatsModelUtils.isByteArraySchema(schema)) {
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
         }
 
