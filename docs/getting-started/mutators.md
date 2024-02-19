@@ -5,7 +5,7 @@ description: Mutators
 
 # Mutators
 
-Mutators are the fuzzers used by [continuous fuzzing](./running-cats.md). You can list the built-in mutators using `cats list --mutators` sub-command.
+Mutators are the fuzzers used by [continuous fuzzing](./running-cats.md#continuous-fuzzing-mode). You can list the built-in mutators using `cats list --mutators` sub-command.
 Mutators are using more randomness than typical fuzzers. 
 They either generate data on the fly or randomly select from a larger set. 
 They also don't take into consideration data types, constraints, boundaries, etc.
