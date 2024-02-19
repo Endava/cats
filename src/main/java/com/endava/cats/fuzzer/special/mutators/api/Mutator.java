@@ -19,7 +19,7 @@ public interface Mutator {
     /**
      * The name of the mutator.
      *
-     * @return the name of the mutator
+     * @return the description of the mutator
      */
-    String name();
+    String description();
 }

@@ -56,7 +56,7 @@ public class CustomMutator implements Mutator {
     }
 
     @Override
-    public String name() {
+    public String description() {
         return customMutatorConfig.name();
     }
 }

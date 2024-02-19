@@ -29,7 +29,7 @@ public class RandomMaxValuesMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random max value";
+    public String description() {
+        return "replace field with random max values for int, long, float or double";
     }
 }

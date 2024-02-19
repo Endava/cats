@@ -27,7 +27,7 @@ public class RandomControlCharsMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random control chars";
+    public String description() {
+        return "replace field with random control chars";
     }
 }

@@ -43,7 +43,7 @@ public class RandomMultiCodepointEmojisMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random multi codepoint emojis";
+    public String description() {
+        return "replace field with random multi codepoint emojis";
     }
 }

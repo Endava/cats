@@ -21,7 +21,7 @@ public class RandomJsonMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random json";
+    public String description() {
+        return "replace body with random invalid jsons";
     }
 }

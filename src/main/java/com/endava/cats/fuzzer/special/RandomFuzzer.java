@@ -113,7 +113,7 @@ public class RandomFuzzer implements Fuzzer {
                             .fuzzingData(data)
                             .logger(logger)
                             .payload(mutatedPayload)
-                            .scenario("Send a random payload mutating field [%s] with [%s] mutator".formatted(targetField, selectedRandomMutator.name()))
+                            .scenario("Send a random payload mutating field [%s] with [%s] mutator".formatted(targetField, selectedRandomMutator.description()))
                             .expectedSpecificResponseCode("a response that doesn't shouldStop given arguments")
                             .responseProcessor(this::processResponse)
                             .build());

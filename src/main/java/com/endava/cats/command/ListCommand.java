@@ -7,9 +7,11 @@ import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
+import com.endava.cats.command.model.MutatorEntry;
 import com.endava.cats.command.model.PathDetailsEntry;
 import com.endava.cats.command.model.PathListEntry;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.json.JsonUtils;
@@ -69,6 +71,7 @@ public class ListCommand implements Runnable {
     private final List<Fuzzer> fuzzersList;
 
     private final List<String> formats;
+    private final List<MutatorEntry> mutators;
 
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
@@ -82,12 +85,13 @@ public class ListCommand implements Runnable {
      * @param fuzzersList an instance containing a list of fuzzers, excluding those annotated with {@code ValidateAndTrim} or {@code ValidateAndSanitize}
      * @param formats     an instance containing a list of OpenAPI formats, including their matching formats
      */
-    public ListCommand(@Any Instance<Fuzzer> fuzzersList, @Any Instance<OpenAPIFormat> formats) {
+    public ListCommand(@Any Instance<Fuzzer> fuzzersList, @Any Instance<OpenAPIFormat> formats, @Any Instance<Mutator> mutators) {
         this.fuzzersList = fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndSanitize.class) == null)
                 .toList();
         this.formats = formats.stream().flatMap(format -> format.matchingFormats().stream()).toList();
+        this.mutators = mutators.stream().map(m -> new MutatorEntry(m.getClass().getSimpleName(), m.description())).toList();
     }
 
     @Override
@@ -104,6 +108,10 @@ public class ListCommand implements Runnable {
         if (listCommandGroups.listFormats != null && listCommandGroups.listFormats.formats) {
             listFormats();
         }
+
+        if (listCommandGroups.listMutatorsGroup != null && listCommandGroups.listMutatorsGroup.mutators) {
+            listMutators();
+        }
     }
 
     void listFormats() {
@@ -111,6 +119,18 @@ public class ListCommand implements Runnable {
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(formats));
         } else {
             logger.noFormat("Registered OpenAPI formats: {}", formats);
+        }
+    }
+
+    void listMutators() {
+        if (json) {
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(mutators));
+        } else {
+            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered Mutators:").reset().toString();
+            logger.noFormat(message, mutators.size());
+            mutators.stream()
+                    .map(m -> " ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(m.name()).reset() + " - " + m.description())
+                    .forEach(logger::noFormat);
         }
     }
 
@@ -272,6 +292,9 @@ public class ListCommand implements Runnable {
         @CommandLine.ArgGroup(exclusive = false, heading = "List Fuzzers%n")
         ListFuzzersGroup listFuzzersGroup;
 
+        @CommandLine.ArgGroup(exclusive = false, heading = "List Mutators%n")
+        ListMutatorsGroup listMutatorsGroup;
+
         @CommandLine.ArgGroup(exclusive = false, heading = "List Fields Fuzzer Strategies%n")
         ListStrategies listStrategiesGroup;
 
@@ -301,6 +324,14 @@ public class ListCommand implements Runnable {
                 description = "Display all current registered Fuzzers",
                 required = true)
         boolean fuzzers;
+    }
+
+    static class ListMutatorsGroup {
+        @CommandLine.Option(
+                names = {"-m", "--mutators", "mutators"},
+                description = "Display all current registered Mutators",
+                required = true)
+        boolean mutators;
     }
 
     static class ListContractOptions {

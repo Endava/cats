@@ -23,7 +23,7 @@ public class NullStringMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "null";
+    public String description() {
+        return "replace field with null";
     }
 }

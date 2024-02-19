@@ -42,8 +42,8 @@ public class RandomZalgoTextMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random zalgo text";
+    public String description() {
+        return "replace field with random zalgo text";
     }
 
     public static String generateZalgoText(String inputText) {

@@ -27,7 +27,7 @@ public class RandomAlphanumericStringMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random alphanumeric";
+    public String description() {
+        return "replace field with random alphanumeric characters";
     }
 }

@@ -41,7 +41,7 @@ public class RandomLargeDecimalsMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random large decimals";
+    public String description() {
+        return "replace field with random large decimals";
     }
 }
