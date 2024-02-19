@@ -31,7 +31,7 @@ public class RandomStringMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random unicode";
+    public String description() {
+        return "replace field with random unicode strings";
     }
 }

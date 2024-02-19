@@ -36,7 +36,7 @@ public class RandomLargeIntegersMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random large integers";
+    public String description() {
+        return "replace field with random large integers";
     }
 }

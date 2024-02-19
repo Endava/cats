@@ -30,7 +30,7 @@ public class RandomMinValuesMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random min value";
+    public String description() {
+        return "replace field with random min values for int, long, float or double";
     }
 }

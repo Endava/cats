@@ -71,7 +71,7 @@ public class RandomLanguageIdentifiersMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random programming languages keywords";
+    public String description() {
+        return "replace field with random programming languages keywords";
     }
 }

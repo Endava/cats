@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -23,11 +24,14 @@ class ListCommandTest {
     @Inject
     Instance<OpenAPIFormat> formats;
 
+    @Inject
+    Instance<Mutator> mutators;
+
     private ListCommand listCommand;
 
     @BeforeEach
     void setup() {
-        listCommand = new ListCommand(fuzzers, formats);
+        listCommand = new ListCommand(fuzzers, formats, mutators);
     }
 
     @Test
@@ -38,6 +42,16 @@ class ListCommandTest {
         Mockito.verify(spyListCommand, Mockito.times(1)).listFormats();
         commandLine.execute("--formats", "-j");
         Mockito.verify(spyListCommand, Mockito.times(2)).listFormats();
+    }
+
+    @Test
+    void shouldListMutators() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("--mutators");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listMutators();
+        commandLine.execute("--mutators", "-j");
+        Mockito.verify(spyListCommand, Mockito.times(2)).listMutators();
     }
 
     @Test

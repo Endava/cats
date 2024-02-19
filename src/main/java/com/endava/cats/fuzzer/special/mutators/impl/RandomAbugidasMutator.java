@@ -43,8 +43,8 @@ public class RandomAbugidasMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random abugidas characters";
+    public String description() {
+        return "inject field with random abugidas characters";
     }
 
     public static String generateRandomTeluguCharacter() {

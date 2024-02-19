@@ -28,7 +28,7 @@ public class RandomNumberMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random number";
+    public String description() {
+        return "replace field with random long numbers";
     }
 }

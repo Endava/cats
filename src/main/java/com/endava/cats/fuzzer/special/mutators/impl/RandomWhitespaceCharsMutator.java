@@ -27,7 +27,7 @@ public class RandomWhitespaceCharsMutator implements Mutator {
     }
 
     @Override
-    public String name() {
-        return "random whitespace chars";
+    public String description() {
+        return "replace field with random whitespace chars";
     }
 }
