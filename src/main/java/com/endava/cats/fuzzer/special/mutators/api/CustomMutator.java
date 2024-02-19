@@ -14,8 +14,6 @@ import com.endava.cats.util.CatsUtil;
  * <p>
  * TODO:
  * - handle dynamic values in customMutator
- * - list type of mutators registered
- * - list type of custom mutators supported
  * </p>
  */
 public class CustomMutator implements Mutator {

@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -44,6 +46,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
 /**
  * Fuzzer intended for continuous fuzzing. It will randomly choose fields to fuzz and mutators to apply.
@@ -174,14 +177,14 @@ public class RandomFuzzer implements Fuzzer {
                 CustomMutatorConfig config = this.createConfig(customMutator);
                 customMutators.add(new CustomMutator(config, catsUtil));
             } catch (Exception e) {
-                logger.debug("There was a problem parsing {}: {}", customMutatorFile.getAbsolutePath(), e.toString());
+                logger.warn("There was a problem parsing {}: {}", customMutatorFile.getAbsolutePath(), e.toString());
             }
         }
 
         return List.copyOf(customMutators);
     }
 
-    CustomMutatorConfig createConfig(Map<String, Object> customMutator) {
+    CustomMutatorConfig createConfig(Map<String, Object> customMutator) throws IOException {
         String name = String.valueOf(
                 customMutator.get(
                         CustomMutatorKeywords.NAME.name().toLowerCase(Locale.ROOT)
@@ -195,12 +198,27 @@ public class RandomFuzzer implements Fuzzer {
                         )
                 ).toUpperCase(Locale.ROOT)
         );
+        Object customMutatorValues = customMutator.get(CustomMutatorKeywords.VALUES.name().toLowerCase(Locale.ROOT));
+        List<?> values;
 
-        List<Object> values = (List<Object>) customMutator.get(
-                CustomMutatorKeywords.VALUES.name().toLowerCase(Locale.ROOT)
-        );
+        if (customMutatorValues instanceof List<?> valuesList) {
+            logger.debug("Custom fuzzer values from mutator file");
+            values = valuesList;
+        } else {
+            String fileLocation = String.valueOf(customMutatorValues);
+            logger.debug("Loading custom fuzzer values from external file {}", fileLocation);
+            values = readValueFromFile(fileLocation);
+        }
 
         return new CustomMutatorConfig(name, type, values);
+    }
+
+    List<String> readValueFromFile(String fileLocation) throws IOException {
+        return Files.readAllLines(Path.of(fileLocation))
+                .stream()
+                .filter(Predicate.not(String::isBlank))
+                .filter(Predicate.not(line -> line.startsWith("# ")))
+                .toList();
     }
 
     static Map<String, Object> parseYamlAsSimpleMap(String yaml) throws IOException {
