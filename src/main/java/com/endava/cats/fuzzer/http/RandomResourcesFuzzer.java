@@ -72,7 +72,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
 
                 if (isPathVarPassedAsUrlParam) {
                     // when path variable is passed as URL param it won't be fuzzed -> won't be part of the payload, so we add it
-                    updatePayload = JsonUtils.addNewElement(data.getPayload(), pathVar, pathVarValueFromUrlParamsList);
+                    updatePayload = JsonUtils.addNewElement(data.getPayload(), "$", pathVar, pathVarValueFromUrlParamsList);
                 }
                 Object existingValue = JsonUtils.getVariableFromJson(updatePayload, pathVar);
                 if (JsonUtils.isNotSet(String.valueOf(existingValue))) {
