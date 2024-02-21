@@ -46,7 +46,7 @@ class HeadersCaseLinterFuzzerTest {
     @CsvSource({"first_payload,SNAKE", "SecondPayload,PASCAL", "third-payload,KEBAB", "X-Rate,HTTP_HEADER"})
     void shouldMatchHeadersNamingStandards(String schemaName, NamingArguments.Naming naming) {
         ReflectionTestUtils.setField(namingArguments, "headersNaming", naming);
-        FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData(schemaName, "200");
+        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData(schemaName, "200");
         data.getHeaders().add(CatsHeader.builder().name(schemaName).value(schemaName).build());
 
         headersCaseLinterFuzzer.fuzz(data);
@@ -58,7 +58,7 @@ class HeadersCaseLinterFuzzerTest {
     @CsvSource({"first-payload,SNAKE", "SecondPayload_2,PASCAL", "third_payload,KEBAB", "x_rate,HTTP_HEADER"})
     void shouldNotMatchHeadersNamingStandards(String headerName, NamingArguments.Naming naming) {
         ReflectionTestUtils.setField(namingArguments, "headersNaming", naming);
-        FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData(headerName, "200");
+        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData(headerName, "200");
         data.getHeaders().add(CatsHeader.builder().name(headerName).value(headerName).build());
 
         headersCaseLinterFuzzer.fuzz(data);

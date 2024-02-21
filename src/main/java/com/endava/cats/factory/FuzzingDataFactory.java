@@ -24,7 +24,6 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -127,7 +126,7 @@ public class FuzzingDataFactory {
      * @param schema the current ObjectSchema
      * @return a Set with all the query parameters
      */
-    private Set<String> extractQueryParams(ObjectSchema schema) {
+    private Set<String> extractQueryParams(Schema<?> schema) {
         return schema.getProperties().entrySet().stream().filter(entry -> entry.getValue().getName().endsWith("query")).map(Map.Entry::getKey).collect(Collectors.toSet());
     }
 
@@ -141,8 +140,8 @@ public class FuzzingDataFactory {
      * @param operationParameters the parameters defined in the OpenAPI contract
      * @return a Schema associated with the GET request which resembles the model for POST
      */
-    private ObjectSchema createSyntheticSchemaForGet(List<Parameter> operationParameters) {
-        ObjectSchema syntheticSchema = new ObjectSchema();
+    private Schema<?> createSyntheticSchemaForGet(List<Parameter> operationParameters) {
+        Schema<?> syntheticSchema = CatsModelUtils.newObjectSchema();
         syntheticSchema.setProperties(new LinkedHashMap<>());
         List<String> required = new ArrayList<>();
 
@@ -294,7 +293,7 @@ public class FuzzingDataFactory {
             return Collections.emptyList();
         }
 
-        ObjectSchema syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
+        Schema<?> syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
 
         globalContext.getSchemaMap().put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
         Set<String> queryParams = this.extractQueryParams(syntheticSchema);

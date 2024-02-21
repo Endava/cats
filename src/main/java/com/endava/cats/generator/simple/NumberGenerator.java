@@ -1,5 +1,6 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
@@ -39,14 +40,6 @@ public class NumberGenerator {
      * A constant representing the BigDecimal value 45,555,3333.543543543.
      */
     public static final BigDecimal DECIMAL_CONSTANT = new BigDecimal("455553333.543543543");
-    /**
-     * A constant representing the string "int32".
-     */
-    public static final String INT_32 = "int32";
-    /**
-     * A constant representing the string "float".
-     */
-    public static final String FLOAT = "float";
 
     private NumberGenerator() {
         //ntd
@@ -107,7 +100,7 @@ public class NumberGenerator {
         if (schema.getMaximum() != null) {
             return schema.getMaximum().longValue() + toAdd;
         }
-        if (INT_32.equalsIgnoreCase(schema.getFormat())) {
+        if (CatsModelUtils.isShortIntegerSchema(schema)) {
             return Integer.MAX_VALUE;
         }
         return Long.MAX_VALUE;
@@ -117,7 +110,7 @@ public class NumberGenerator {
         if (schema.getMinimum() != null) {
             return schema.getMinimum().longValue() - toAdd;
         }
-        if (INT_32.equalsIgnoreCase(schema.getFormat())) {
+        if (CatsModelUtils.isShortIntegerSchema(schema)) {
             return Integer.MIN_VALUE;
         }
         return Long.MIN_VALUE;
@@ -127,7 +120,7 @@ public class NumberGenerator {
         if (schema.getMaximum() != null) {
             return schema.getMaximum().add(toAdd);
         }
-        if (FLOAT.equalsIgnoreCase(schema.getFormat())) {
+        if (CatsModelUtils.isFloatSchema(schema)) {
             return BigDecimal.valueOf(Float.MAX_VALUE).subtract(BigDecimal.valueOf(Float.MIN_VALUE));
         }
 
@@ -138,7 +131,7 @@ public class NumberGenerator {
         if (schema.getMinimum() != null) {
             return schema.getMinimum().subtract(toSubtract);
         }
-        if (FLOAT.equalsIgnoreCase(schema.getFormat())) {
+        if (CatsModelUtils.isFloatSchema(schema)) {
             return BigDecimal.valueOf(Float.MIN_VALUE).subtract(BigDecimal.valueOf(Float.MAX_VALUE));
         }
 
@@ -152,7 +145,7 @@ public class NumberGenerator {
      * @return {@code Long.MIN_VALUE} if Schema is integer, {@code NumberGenerator.MOST_NEGATIVE_INTEGER} otherwise
      */
     public static Number getExtremeNegativeIntegerValue(Schema schema) {
-        if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase(INT_32)) {
+        if (schema.getFormat() == null || CatsModelUtils.isShortIntegerSchema(schema)) {
             return Long.MIN_VALUE;
         }
         return MOST_NEGATIVE_INTEGER;
@@ -165,7 +158,7 @@ public class NumberGenerator {
      * @return {@code Long.MAX_VALUE} if Schema is integer, {@code NumberGenerator.MOST_POSITIVE_INTEGER} otherwise
      */
     public static Number getExtremePositiveIntegerValue(Schema schema) {
-        if (schema.getFormat() == null || schema.getFormat().equalsIgnoreCase(INT_32)) {
+        if (schema.getFormat() == null || CatsModelUtils.isShortIntegerSchema(schema)) {
             return Long.MAX_VALUE;
         }
         return MOST_POSITIVE_INTEGER;
@@ -180,7 +173,7 @@ public class NumberGenerator {
     public static Number getExtremePositiveDecimalValue(Schema schema) {
         if (schema.getFormat() == null) {
             return MOST_POSITIVE_DECIMAL;
-        } else if (schema.getFormat().equalsIgnoreCase(FLOAT)) {
+        } else if (CatsModelUtils.isFloatSchema(schema)) {
             return Double.MAX_VALUE;
         }
         return BigDecimal.valueOf(Double.MAX_VALUE).add(BigDecimal.valueOf(Double.MAX_VALUE));
@@ -195,7 +188,7 @@ public class NumberGenerator {
     public static Number getExtremeNegativeDecimalValue(Schema schema) {
         if (schema.getFormat() == null) {
             return MOST_NEGATIVE_DECIMAL;
-        } else if (schema.getFormat().equalsIgnoreCase(FLOAT)) {
+        } else if (CatsModelUtils.isFloatSchema(schema)) {
             return -Double.MAX_VALUE;
         }
         return BigDecimal.valueOf(-Double.MAX_VALUE).add(BigDecimal.valueOf(-Double.MAX_VALUE));

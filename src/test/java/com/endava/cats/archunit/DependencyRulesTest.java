@@ -4,10 +4,13 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.LinterFuzzer;
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.Schema;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -86,7 +89,31 @@ public class DependencyRulesTest {
 
 
     @ArchTest
-    static final ArchRule notClassShouldDependOnModelUtils =
-            noClasses().that().resideInAPackage("..").and().areNotAssignableFrom("com.endava.cats.util.CatsModelUtils")
-                    .should().accessClassesThat().resideInAPackage("org.openapitools.codegen.utils");
+    static final ArchRule noClassShouldDependOnModelUtils =
+            noClasses().that()
+                    .resideInAPackage("..")
+                    .and()
+                    .areNotAssignableFrom("com.endava.cats.util.CatsModelUtils")
+                    .should()
+                    .accessClassesThat()
+                    .resideInAPackage("org.openapitools.codegen.utils");
+
+    @ArchTest
+    static final ArchRule noClassesShouldUseConcreteSchemas =
+            noClasses().that()
+                    .resideInAPackage("..")
+                    .and()
+                    .haveSimpleNameNotEndingWith("Test")
+                    .and()
+                    .areNotAssignableFrom("com.endava.cats.util.CatsModelUtils")
+                    .and()
+                    .areNotAssignableFrom("com.endava.cats.ReflectionConfig")
+                    .should()
+                    .dependOnClassesThat(new DescribedPredicate<>("not using extensions of Schema") {
+                        @Override
+                        public boolean test(JavaClass javaClass) {
+                            return !javaClass.getSimpleName().equalsIgnoreCase("Schema") &&
+                                    javaClass.isAssignableTo(Schema.class);
+                        }
+                    });
 }

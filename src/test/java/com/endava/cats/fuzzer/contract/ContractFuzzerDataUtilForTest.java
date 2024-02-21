@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-class ContractFuzzerDataUtil {
+class ContractFuzzerDataUtilForTest {
 
     public static FuzzingData prepareFuzzingData(String schemaName, HttpMethod method, String... responseCodes) {
         PathItem pathItem = new PathItem();

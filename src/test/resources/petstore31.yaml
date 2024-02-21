@@ -805,6 +805,17 @@ components:
         name:
           type: string
           example: doggie
+        residency:
+          type: object
+          example: multiverse
+        age:
+          type: string
+          format: number
+          minimum: 0
+        legs:
+          type: string
+          format: number
+          maximum: 10
         photoUrls:
           type: array
           xml:

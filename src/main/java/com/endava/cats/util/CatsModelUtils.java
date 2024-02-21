@@ -31,6 +31,26 @@ public abstract class CatsModelUtils {
         return ModelUtils.isNumberSchema(schema);
     }
 
+    public static boolean isFloatSchema(Schema<?> schema) {
+        return SchemaTypeUtil.FLOAT_FORMAT.equalsIgnoreCase(schema.getFormat());
+    }
+
+    public static boolean isDecimalSchema(Schema<?> schema) {
+        return "number".equalsIgnoreCase(schema.getFormat());
+    }
+
+    public static boolean isDoubleSchema(Schema<?> schema) {
+        return SchemaTypeUtil.DOUBLE_FORMAT.equalsIgnoreCase(schema.getFormat());
+    }
+
+    public static boolean isShortIntegerSchema(Schema<?> schema) {
+        return SchemaTypeUtil.INTEGER32_FORMAT.equalsIgnoreCase(schema.getFormat());
+    }
+
+    public static boolean isLongSchema(Schema<?> schema) {
+        return SchemaTypeUtil.INTEGER64_FORMAT.equalsIgnoreCase(schema.getFormat());
+    }
+
     public static boolean isIntegerSchema(Schema<?> schema) {
         return ModelUtils.isIntegerSchema(schema);
     }
@@ -69,12 +89,15 @@ public abstract class CatsModelUtils {
      * @return true if ObjectSchema, false otherwise
      */
     public static boolean isObjectSchema(Schema<?> schema) {
-        return schema instanceof ObjectSchema || (SchemaTypeUtil.OBJECT_TYPE.equals(schema.getType()) &&
-                !(schema instanceof MapSchema)
-                && !isComposedSchema(schema));
+        return schema instanceof ObjectSchema ||
+                (SchemaTypeUtil.OBJECT_TYPE.equals(schema.getType()) && !(schema instanceof MapSchema) && !isComposedSchema(schema));
     }
 
     public static List<String> getUnusedSchemas(OpenAPI openAPI) {
         return ModelUtils.getUnusedSchemas(openAPI);
+    }
+
+    public static ObjectSchema newObjectSchema() {
+        return new ObjectSchema();
     }
 }
