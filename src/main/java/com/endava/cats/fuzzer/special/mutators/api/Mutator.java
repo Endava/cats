@@ -1,5 +1,9 @@
 package com.endava.cats.fuzzer.special.mutators.api;
 
+import com.endava.cats.model.CatsHeader;
+
+import java.util.Collection;
+
 /**
  * The Mutator interface represents an abstraction for mutating input strings.
  * Implementations of this interface provide methods to apply various types of mutations
@@ -14,7 +18,20 @@ public interface Mutator {
      * @param selectedField The field within the JSON which is the primary target of mutation
      * @return The mutated output string
      */
-    String mutate(String inputJson, String selectedField);
+    default String mutate(String inputJson, String selectedField) {
+        return inputJson;
+    }
+
+
+    /**
+     * Applies a mutation to one of the headers.
+     *
+     * @param headers the request headers
+     * @return a list of headers with at least one mutated
+     */
+    default Collection<CatsHeader> mutate(Collection<CatsHeader> headers) {
+        return headers;
+    }
 
     /**
      * The name of the mutator.

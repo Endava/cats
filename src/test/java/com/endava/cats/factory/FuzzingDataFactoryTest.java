@@ -340,12 +340,15 @@ class FuzzingDataFactoryTest {
         FuzzingData data = dataList.get(0);
         List<String> fields = data.getAllFieldsAsCatsFields().stream().map(CatsField::getName).toList();
         Assertions.assertThat(fields).containsExactly("status",
+                "legs",
                 "tags",
                 "photoUrls",
                 "name",
                 "id",
                 "category#name",
                 "category",
-                "category#id");
+                "age",
+                "category#id",
+                "residency");
     }
 }

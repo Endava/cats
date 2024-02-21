@@ -12,9 +12,10 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -46,6 +47,7 @@ import static com.endava.cats.generator.simple.StringGenerator.generateValueBase
 public class OpenAPIModelGenerator {
     private static final String EXAMPLE = "example";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final BigDecimal MAX = new BigDecimal("99999999999");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGenerator.class);
     private final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     private final Random random;
@@ -174,11 +176,26 @@ public class OpenAPIModelGenerator {
         if (property.getMinLength() != null || property.getMaxLength() != null) {
             return generateValueBasedOnMinMax(property);
         }
+        if (CatsModelUtils.isDecimalSchema(property)) {
+            return generateBigDecimal(property);
+        }
         if (property.getPattern() != null) {
             return StringGenerator.generate(property.getPattern(), 1, 2000);
         }
-        logger.trace("No values found, using property name {} as example", propertyName);
+        logger.trace("No constraints, generating alphanumeric string based on property length {}", propertyName);
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
+    }
+
+    private BigDecimal generateBigDecimal(Schema<?> schema) {
+        BigDecimal min = schema.getMinimum() != null ? schema.getMinimum() : BigDecimal.ONE;
+        BigDecimal max = schema.getMaximum() != null ? schema.getMaximum() : MAX;
+
+        BigDecimal range = max.subtract(min);
+        BigDecimal randomBigDecimal = min.add(range.multiply(BigDecimal.valueOf(random.nextDouble())));
+
+        randomBigDecimal = randomBigDecimal.setScale(2, RoundingMode.HALF_UP);
+
+        return randomBigDecimal;
     }
 
     Map<String, Object> getExampleFromAdditionalPropertiesSchema(String propertyName, Schema property) {
@@ -205,10 +222,10 @@ public class OpenAPIModelGenerator {
         if (property.getDefault() != null) {
             return property.getDefault();
         }
-        if (SchemaTypeUtil.INTEGER32_FORMAT.equals(property.getFormat())) {
-            return (long) randomNumber(min, max);
+        if (CatsModelUtils.isShortIntegerSchema(property)) {
+            return (int) randomNumber(min, max);
         }
-        return (int) randomNumber(min, max);
+        return (long) randomNumber(min, max);
     }
 
     private Object getExampleFromNumberSchema(Schema<?> property) {

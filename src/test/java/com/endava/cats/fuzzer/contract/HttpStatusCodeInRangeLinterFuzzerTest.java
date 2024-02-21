@@ -39,7 +39,7 @@ class HttpStatusCodeInRangeLinterFuzzerTest {
     @ParameterizedTest
     @CsvSource({"100", "200", "599", "default"})
     void shouldReportInfoWhenAllResponseCodesAreValid(String responseCode) {
-        FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData("PetStore", responseCode);
+        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("PetStore", responseCode);
 
         httpStatusCodeInValidRangeContractInfoFuzzer.fuzz(data);
 
@@ -49,7 +49,7 @@ class HttpStatusCodeInRangeLinterFuzzerTest {
     @ParameterizedTest
     @CsvSource({"99", "1", "600"})
     void shouldReportErrorWhenAllResponseCodesAreValid(String responseCode) {
-        FuzzingData data = ContractFuzzerDataUtil.prepareFuzzingData("PetStore", responseCode);
+        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("PetStore", responseCode);
 
         httpStatusCodeInValidRangeContractInfoFuzzer.fuzz(data);
 
