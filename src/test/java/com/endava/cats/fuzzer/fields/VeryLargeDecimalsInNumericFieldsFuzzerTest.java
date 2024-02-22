@@ -21,7 +21,7 @@ class VeryLargeDecimalsInNumericFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         processingArguments = Mockito.mock(ProcessingArguments.class);
-        veryLargeDecimalsInNumericFieldsFuzzer = new VeryLargeDecimalsInNumericFieldsFuzzer(null, null, null, null, processingArguments);
+        veryLargeDecimalsInNumericFieldsFuzzer = new VeryLargeDecimalsInNumericFieldsFuzzer(null, null, null, processingArguments);
     }
 
     @Test

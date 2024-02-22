@@ -43,7 +43,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -532,10 +531,10 @@ public class FuzzingDataFactory {
                     anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
                 } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
                     anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
-                            Map.of(elementEntry.getKey(), elementEntry.getValue()), this.mergeMapsBiFunction());
+                            Map.of(elementEntry.getKey(), elementEntry.getValue()), this::mergeMaps);
                 } else if (isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ONE_OF) || isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ANY_OF)) {
                     anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
-                            elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this.mergeMapsBiFunction());
+                            elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this::mergeMaps);
                 } else if (isAnyOrOneOfInChildren(elementEntry.getValue(), ANY_OF, ONE_OF)) {
                     anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
                 }
@@ -558,14 +557,12 @@ public class FuzzingDataFactory {
         return false;
     }
 
-    private BiFunction<Map<String, JsonElement>, Map<String, JsonElement>, Map<String, JsonElement>> mergeMapsBiFunction() {
-        return (firstMap, secondMap) -> {
-            Map<String, JsonElement> newMap = new HashMap<>();
-            newMap.putAll(firstMap);
-            newMap.putAll(secondMap);
+    private Map<String, JsonElement> mergeMaps(Map<String, JsonElement> firstMap, Map<String, JsonElement> secondMap) {
+        Map<String, JsonElement> newMap = new HashMap<>();
+        newMap.putAll(firstMap);
+        newMap.putAll(secondMap);
 
-            return newMap;
-        };
+        return newMap;
     }
 
     /**

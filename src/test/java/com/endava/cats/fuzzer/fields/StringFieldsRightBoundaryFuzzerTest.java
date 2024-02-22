@@ -15,7 +15,7 @@ class StringFieldsRightBoundaryFuzzerTest {
 
     @BeforeEach
     void setup() {
-        stringFieldsRightBoundaryFuzzer = new StringFieldsRightBoundaryFuzzer(null, null, null, null);
+        stringFieldsRightBoundaryFuzzer = new StringFieldsRightBoundaryFuzzer(null, null, null);
     }
 
     @Test

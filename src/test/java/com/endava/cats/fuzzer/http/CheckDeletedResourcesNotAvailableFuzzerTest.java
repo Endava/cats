@@ -18,10 +18,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 @QuarkusTest
 class CheckDeletedResourcesNotAvailableFuzzerTest {
 
@@ -35,7 +31,7 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
 
     @BeforeEach
     void setup() {
-        catsGlobalContext = Mockito.mock(CatsGlobalContext.class);
+        catsGlobalContext = new CatsGlobalContext();
         checkDeletedResourcesNotAvailableFuzzer = new CheckDeletedResourcesNotAvailableFuzzer(simpleExecutor, catsGlobalContext, testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
         ReflectionTestUtils.setField(simpleExecutor, "testCaseListener", testCaseListener);
@@ -73,7 +69,7 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
     void shouldNotRunWhenNoStoredDeleteRequests() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
-        Mockito.when(catsGlobalContext.getSuccessfulDeletes()).thenReturn(Collections.emptySet());
+        catsGlobalContext.getSuccessfulDeletes().clear();
         checkDeletedResourcesNotAvailableFuzzer.fuzz(data);
 
         Mockito.verifyNoInteractions(simpleExecutor);
@@ -85,7 +81,7 @@ class CheckDeletedResourcesNotAvailableFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(respCode).build());
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
-        Mockito.when(catsGlobalContext.getSuccessfulDeletes()).thenReturn(new HashSet<>(Set.of("http://localhost/path")));
+        catsGlobalContext.getSuccessfulDeletes().add("http://localhost/path");
         checkDeletedResourcesNotAvailableFuzzer.fuzz(data);
 
         Mockito.verify(simpleExecutor, Mockito.times(1)).execute(Mockito.any());

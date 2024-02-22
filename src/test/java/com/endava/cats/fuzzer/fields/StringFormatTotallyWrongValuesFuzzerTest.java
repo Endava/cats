@@ -4,11 +4,10 @@ import com.endava.cats.generator.format.api.InvalidDataFormat;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.NumberSchema;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import jakarta.inject.Inject;
 
 @QuarkusTest
 class StringFormatTotallyWrongValuesFuzzerTest {
@@ -18,7 +17,7 @@ class StringFormatTotallyWrongValuesFuzzerTest {
 
     @BeforeEach
     void setup() {
-        stringFormatTotallyWrongValuesFuzzer = new StringFormatTotallyWrongValuesFuzzer(null, null, null, null, invalidDataFormat);
+        stringFormatTotallyWrongValuesFuzzer = new StringFormatTotallyWrongValuesFuzzer(null, null, null, invalidDataFormat);
     }
 
     @Test

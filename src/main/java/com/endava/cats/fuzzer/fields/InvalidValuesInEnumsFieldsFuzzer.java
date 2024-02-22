@@ -9,7 +9,6 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -29,12 +28,11 @@ public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
      *
      * @param sc                  the service caller
      * @param lr                  the test case listener
-     * @param cu                  utility class
      * @param cp                  files arguments
      * @param processingArguments to get the {@code --allowInvalidEnumValues} argument value
      */
-    public InvalidValuesInEnumsFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, ProcessingArguments processingArguments) {
-        super(sc, lr, cu, cp);
+    public InvalidValuesInEnumsFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp, ProcessingArguments processingArguments) {
+        super(sc, lr, cp);
         this.processingArguments = processingArguments;
     }
 

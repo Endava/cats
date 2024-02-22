@@ -7,7 +7,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -22,7 +21,6 @@ import java.util.Map;
 
 @QuarkusTest
 class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
-    private final CatsUtil catsUtil = new CatsUtil();
     private ServiceCaller serviceCaller;
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;
@@ -36,7 +34,7 @@ class OnlySingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
         testCaseListener = Mockito.mock(TestCaseListener.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);
-        onlySingleCodePointEmojisInFieldsValidateTrimFuzzer = new OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+        onlySingleCodePointEmojisInFieldsValidateTrimFuzzer = new OnlySingleCodePointEmojisInFieldsValidateTrimFuzzer(serviceCaller, testCaseListener, filesArguments, filterArguments);
     }
 
     @Test

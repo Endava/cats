@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.util.CatsUtil;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -16,17 +15,10 @@ public class RandomMinValuesMutator implements Mutator {
             Double.MIN_VALUE, Byte.MIN_VALUE, Short.MIN_VALUE, Float.MIN_NORMAL, Double.MIN_NORMAL, -Float.MIN_VALUE,
             -Float.MIN_NORMAL, -Double.MIN_VALUE, -Double.MIN_NORMAL);
 
-    private final CatsUtil catsUtil;
-
-    @Inject
-    public RandomMinValuesMutator(CatsUtil catsUtil) {
-        this.catsUtil = catsUtil;
-    }
-
     @Override
     public String mutate(String inputJson, String selectedField) {
         Object toReplaceWith = MIN_VALUES.get(CatsUtil.random().nextInt(MIN_VALUES.size()));
-        return catsUtil.justReplaceField(inputJson, selectedField, toReplaceWith).json();
+        return CatsUtil.justReplaceField(inputJson, selectedField, toReplaceWith).json();
     }
 
     @Override

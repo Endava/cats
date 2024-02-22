@@ -45,7 +45,6 @@ public class FieldsIteratorExecutor {
 
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    private final CatsUtil catsUtil;
     private final MatchArguments matchArguments;
     private final FilesArguments filesArguments;
 
@@ -58,15 +57,13 @@ public class FieldsIteratorExecutor {
      *
      * @param serviceCaller    The ServiceCaller instance responsible for making service calls during field iteration.
      * @param testCaseListener The TestCaseListener instance responsible for handling test case events.
-     * @param catsUtil         The CatsUtil instance providing utility methods for working with Cats DSL and configurations.
      * @param ma               The MatchArguments providing criteria for matching fields during iteration.
      * @param fa               The FilesArguments containing parameters related to working with files during iteration.
      */
     @Inject
-    public FieldsIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, CatsUtil catsUtil, MatchArguments ma, FilesArguments fa) {
+    public FieldsIteratorExecutor(ServiceCaller serviceCaller, TestCaseListener testCaseListener, MatchArguments ma, FilesArguments fa) {
         this.serviceCaller = serviceCaller;
         this.testCaseListener = testCaseListener;
-        this.catsUtil = catsUtil;
         this.matchArguments = ma;
         this.filesArguments = fa;
     }
@@ -135,9 +132,9 @@ public class FieldsIteratorExecutor {
 
     private FuzzingResult getFuzzingResult(FieldsIteratorExecutorContext context, String fuzzedField, FuzzingStrategy strategy) {
         if (context.isSimpleReplaceField()) {
-            return catsUtil.justReplaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy.getData());
+            return CatsUtil.justReplaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy.getData());
         }
-        return catsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
+        return CatsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
     }
 
     /**

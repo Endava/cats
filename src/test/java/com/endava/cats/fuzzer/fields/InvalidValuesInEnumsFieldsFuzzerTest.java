@@ -21,7 +21,7 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         processingArguments = Mockito.mock(ProcessingArguments.class);
-        invalidValuesInEnumsFieldsFuzzer = new InvalidValuesInEnumsFieldsFuzzer(null, null, null, null, processingArguments);
+        invalidValuesInEnumsFieldsFuzzer = new InvalidValuesInEnumsFieldsFuzzer(null, null, null, processingArguments);
     }
 
     @Test

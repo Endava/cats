@@ -10,7 +10,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
-import jakarta.enterprise.context.ApplicationScoped;
 import net.minidev.json.JSONArray;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
@@ -39,8 +38,7 @@ import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
 /**
  * Some utility methods that don't fit in other classes.
  */
-@ApplicationScoped
-public class CatsUtil {
+public abstract class CatsUtil {
     private static final String COMMA = ", ";
     private static final String N_A = "N/A";
 
@@ -93,7 +91,7 @@ public class CatsUtil {
      * @param data the data to be written to the YAML file
      * @throws IOException if an I/O error occurs during the writing process
      */
-    public void writeToYaml(String yaml, Map<String, Map<String, Object>> data) throws IOException {
+    public static void writeToYaml(String yaml, Map<String, Map<String, Object>> data) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         mapper.writeValue(new File(yaml), data);
     }
@@ -107,8 +105,8 @@ public class CatsUtil {
      * @param fuzzingStrategyToApply     the fuzzing strategy to apply for replacement
      * @return a FuzzingResult containing the modified payload and information about the replacement
      */
-    public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply) {
-        return this.replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
+    public static FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply) {
+        return replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
     }
 
     /**
@@ -120,7 +118,7 @@ public class CatsUtil {
      * @param with                       the value to replace with
      * @return a result with the payload replaced
      */
-    public FuzzingResult justReplaceField(String payload, String jsonPropertyForReplacement, Object with) {
+    public static FuzzingResult justReplaceField(String payload, String jsonPropertyForReplacement, Object with) {
         if (JsonUtils.isJsonArray(payload)) {
             jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
         }
@@ -139,7 +137,7 @@ public class CatsUtil {
      * @param mergeFuzzing               weather to merge the fuzzed value with the valid value
      * @return a FuzzingResult containing the modified payload and information about the replacement
      */
-    public FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
+    public static FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
         if (StringUtils.isNotBlank(payload)) {
             String jsonPropToGetValue = jsonPropertyForReplacement;
             if (JsonUtils.isJsonArray(payload)) {
@@ -194,7 +192,7 @@ public class CatsUtil {
      * @param payload           the existing payload
      * @return a payload with additionalProperties added
      */
-    public String setAdditionalPropertiesToPayload(Map<String, Object> currentPathValues, String payload) {
+    public static String setAdditionalPropertiesToPayload(Map<String, Object> currentPathValues, String payload) {
         Set<String> additionalPropertiesKeys = currentPathValues.keySet().stream().filter(
                 key -> key.matches(ADDITIONAL_PROPERTIES)).collect(Collectors.toSet());
         String result = payload;
@@ -220,7 +218,7 @@ public class CatsUtil {
         return result;
     }
 
-    private void setMapValues(DocumentContext jsonDoc, String additionalProperties, String prefix) {
+    private static void setMapValues(DocumentContext jsonDoc, String additionalProperties, String prefix) {
         String mapValues = additionalProperties.replace(MAP_VALUES + "=", "").replace("{", "").replace("}", "");
         for (String values : mapValues.split(",", -1)) {
             String[] entry = values.split("=", -1);

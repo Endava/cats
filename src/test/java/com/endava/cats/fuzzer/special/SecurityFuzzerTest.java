@@ -10,7 +10,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsDSLWords;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -39,17 +38,15 @@ class SecurityFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private CatsUtil catsUtil;
     private CustomFuzzerUtil customFuzzerUtil;
 
     private SecurityFuzzer securityFuzzer;
 
     @BeforeEach
     void setup() {
-        catsUtil = new CatsUtil();
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = new FilesArguments();
-        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, catsUtil, testCaseListener);
+        customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, testCaseListener);
         securityFuzzer = new SecurityFuzzer(filesArguments, customFuzzerUtil);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
@@ -127,7 +124,11 @@ class SecurityFuzzerTest {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
-        CatsResponse catsResponse = CatsResponse.from(200, responsePayload, "POST", 2);
+        CatsResponse catsResponse = CatsResponse.builder()
+                .responseCode(200).body(responsePayload).httpMethod("POST")
+                .responseTimeInMs(2)
+                .responseContentType("application/json")
+                .build();
         Map<String, Schema> properties = new HashMap<>();
         properties.put("firstName", new StringSchema());
         properties.put("lastName", new StringSchema());
@@ -140,7 +141,7 @@ class SecurityFuzzerTest {
         person.setProperties(properties);
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{'name':'oldValue', 'firstName':'John','lastName':'Cats','email':'john@yahoo.com', 'arrayField':[5,4]}").
                 responses(responses).responseCodes(Collections.singleton("200")).method(HttpMethod.POST).reqSchema(person).headers(new HashSet<>())
-                .requestContentTypes(List.of("application/json")).requestPropertyTypes(properties).build();
+                .requestContentTypes(List.of("application/json")).responseContentTypes(Collections.singletonMap("200", Collections.singletonList("application/json"))).requestPropertyTypes(properties).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         return data;

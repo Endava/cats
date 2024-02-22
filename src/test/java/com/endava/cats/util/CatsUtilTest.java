@@ -37,9 +37,8 @@ class CatsUtilTest {
             "{\"field\": {\"subField\":\"value\"}, \"anotherField\":\"otherValue\"}|field#subField",
             "{\"field\": [{\"subField\":\"value\"},{\"subField\":\"value\"}], \"anotherField\":\"otherValue\"}|field[*]#subField"}, delimiter = '|')
     void givenAPayloadAndAFuzzingStrategy_whenReplacingTheFuzzedValue_thenThePayloadIsProperlyFuzzed(String json, String path) {
-        CatsUtil catsUtil = new CatsUtil();
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
-        FuzzingResult result = catsUtil.replaceField(json, path, strategy);
+        FuzzingResult result = CatsUtil.replaceField(json, path, strategy);
 
         Assertions.assertThat(result.fuzzedValue()).isEqualTo("fuzzed");
         Assertions.assertThat(result.json()).contains("fuzzed");
@@ -47,29 +46,26 @@ class CatsUtilTest {
 
     @Test
     void shouldAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil();
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, Object> currentPathValues = Collections.singletonMap("additionalProperties", "{topElement=metadata, mapValues={test1=value1,test2=value2}}");
-        String updatedPayload = catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payload);
+        String updatedPayload = CatsUtil.setAdditionalPropertiesToPayload(currentPathValues, payload);
         Assertions.assertThat(updatedPayload).contains("metadata").contains("test1");
     }
 
     @Test
     void shouldNotAddTopElement() {
-        CatsUtil catsUtil = new CatsUtil();
         String payload = "{\"field\":\"value\", \"anotherField\":{\"subfield\": \"otherValue\"}}";
 
         Map<String, Object> currentPathValues = Collections.singletonMap("additionalProperties", "{mapValues={test1=value1,test2=value2}}");
-        String updatedPayload = catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payload);
+        String updatedPayload = CatsUtil.setAdditionalPropertiesToPayload(currentPathValues, payload);
         Assertions.assertThat(updatedPayload).doesNotContain("metadata").contains("test1");
     }
 
     @Test
     void shouldReturnEmptyFuzzingResultWhenEmptyJson() {
-        CatsUtil catsUtil = new CatsUtil();
         FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
-        FuzzingResult result = catsUtil.replaceField("", "test", strategy);
+        FuzzingResult result = CatsUtil.replaceField("", "test", strategy);
 
         Assertions.assertThat(result.fuzzedValue()).asString().isEmpty();
         Assertions.assertThat(result.json()).isEmpty();
@@ -77,7 +73,6 @@ class CatsUtilTest {
 
     @Test
     void shouldReplace() {
-        CatsUtil catsUtil = new CatsUtil();
         String payload = """
                 {
                   "arrayOfData": [
@@ -88,13 +83,12 @@ class CatsUtilTest {
                   "dateTime": "2016-05-24T15:54:14.876Z"
                 }
                 """;
-        FuzzingResult result = catsUtil.replaceField(payload, "arrayOfData", FuzzingStrategy.trail().withData("test"));
+        FuzzingResult result = CatsUtil.replaceField(payload, "arrayOfData", FuzzingStrategy.trail().withData("test"));
         Assertions.assertThat(result.json()).contains("test").contains("FAoe22OkDDln6qHyqALVI1test").contains("USA");
     }
 
     @Test
     void shouldReplaceWithArray() {
-        CatsUtil catsUtil = new CatsUtil();
         String payload = """
                 {
                   "arrayWithInteger": [
@@ -103,7 +97,7 @@ class CatsUtilTest {
                   "country": "USA"
                 }
                 """;
-        FuzzingResult result = catsUtil.replaceField(payload, "arrayWithInteger", FuzzingStrategy.replace().withData(List.of(55, 66)));
+        FuzzingResult result = CatsUtil.replaceField(payload, "arrayWithInteger", FuzzingStrategy.replace().withData(List.of(55, 66)));
         Assertions.assertThat(result.json()).contains("55").contains("66").contains("USA").doesNotContain("88").doesNotContain("99");
     }
 

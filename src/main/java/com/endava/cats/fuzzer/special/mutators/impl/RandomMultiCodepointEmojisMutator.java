@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.util.CatsUtil;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 /**
@@ -11,18 +10,12 @@ import jakarta.inject.Singleton;
 @Singleton
 public class RandomMultiCodepointEmojisMutator implements Mutator {
     private static final int BOUND = 15;
-    private final CatsUtil catsUtil;
-
-    @Inject
-    public RandomMultiCodepointEmojisMutator(CatsUtil catsUtil) {
-        this.catsUtil = catsUtil;
-    }
 
     @Override
     public String mutate(String inputJson, String selectedField) {
         String randomEmojis = generateEmojiString();
 
-        return catsUtil.justReplaceField(inputJson, selectedField, randomEmojis).json();
+        return CatsUtil.justReplaceField(inputJson, selectedField, randomEmojis).json();
     }
 
     private static String generateEmojiString() {

@@ -4,7 +4,6 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +17,7 @@ class StringsInNumericFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        stringsInNumericFieldsFuzzer = new StringsInNumericFieldsFuzzer(Mockito.mock(ServiceCaller.class), Mockito.mock(TestCaseListener.class), Mockito.mock(CatsUtil.class), Mockito.mock(FilesArguments.class));
+        stringsInNumericFieldsFuzzer = new StringsInNumericFieldsFuzzer(Mockito.mock(ServiceCaller.class), Mockito.mock(TestCaseListener.class), Mockito.mock(FilesArguments.class));
     }
 
     @Test

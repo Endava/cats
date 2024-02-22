@@ -9,11 +9,9 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
-import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,9 +27,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 @QuarkusTest
 class RandomResourcesFuzzerTest {
 
-    @Inject
-    private CatsUtil catsUtil;
-
     private ServiceCaller serviceCaller;
     private FilesArguments filesArguments;
     @InjectSpy
@@ -44,7 +39,7 @@ class RandomResourcesFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        randomResourcesFuzzer = new RandomResourcesFuzzer(catsUtil, simpleExecutor, filesArguments);
+        randomResourcesFuzzer = new RandomResourcesFuzzer(simpleExecutor, filesArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

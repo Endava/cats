@@ -24,7 +24,7 @@ class DecimalFieldsRightBoundaryFuzzerTest {
     @BeforeEach
     void setup() {
         filesArguments = Mockito.mock(FilesArguments.class);
-        decimalFieldsRightBoundaryFuzzer = new DecimalFieldsRightBoundaryFuzzer(null, null, null, filesArguments);
+        decimalFieldsRightBoundaryFuzzer = new DecimalFieldsRightBoundaryFuzzer(null, null, filesArguments);
     }
 
     @ParameterizedTest

@@ -4,9 +4,8 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +19,6 @@ class ExpectOnly2XXBaseFieldsFuzzerTest {
 
     private ServiceCaller serviceCaller;
     private TestCaseListener testCaseListener;
-    private CatsUtil catsUtil;
     private FilesArguments filesArguments;
 
     private ExpectOnly2XXBaseFieldsFuzzer expectOnly2XXBaseFieldsFuzzer;
@@ -29,9 +27,8 @@ class ExpectOnly2XXBaseFieldsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
-        catsUtil = Mockito.mock(CatsUtil.class);
         filesArguments = Mockito.mock(FilesArguments.class);
-        expectOnly2XXBaseFieldsFuzzer = new CustomExpect2XX(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        expectOnly2XXBaseFieldsFuzzer = new CustomExpect2XX(serviceCaller, testCaseListener, filesArguments);
     }
 
     @Test
@@ -43,8 +40,8 @@ class ExpectOnly2XXBaseFieldsFuzzerTest {
 
     static class CustomExpect2XX extends ExpectOnly2XXBaseFieldsFuzzer {
 
-        public CustomExpect2XX(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-            super(sc, lr, cu, cp);
+        public CustomExpect2XX(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+            super(sc, lr, cp);
         }
 
         @Override

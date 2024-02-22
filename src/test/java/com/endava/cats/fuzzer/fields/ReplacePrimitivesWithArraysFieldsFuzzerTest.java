@@ -10,7 +10,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -26,8 +25,6 @@ class ReplacePrimitivesWithArraysFieldsFuzzerTest {
     ServiceCaller serviceCaller;
     @InjectSpy
     TestCaseListener testCaseListener;
-    @InjectSpy
-    CatsUtil catsUtil;
     FieldsIteratorExecutor catsExecutor;
     private ReplacePrimitivesWithArraysFieldsFuzzer replacePrimitivesWithArraysFieldsFuzzer;
 
@@ -35,7 +32,7 @@ class ReplacePrimitivesWithArraysFieldsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        catsExecutor = new FieldsIteratorExecutor(serviceCaller, testCaseListener, catsUtil, Mockito.mock(MatchArguments.class), Mockito.mock(FilesArguments.class));
+        catsExecutor = new FieldsIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class), Mockito.mock(FilesArguments.class));
         replacePrimitivesWithArraysFieldsFuzzer = new ReplacePrimitivesWithArraysFieldsFuzzer(catsExecutor);
     }
 

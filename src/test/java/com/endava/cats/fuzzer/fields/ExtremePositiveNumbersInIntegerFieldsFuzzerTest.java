@@ -13,7 +13,7 @@ class ExtremePositiveNumbersInIntegerFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        extremePositiveValueInIntegerFields = new ExtremePositiveNumbersInIntegerFieldsFuzzer(null, null, null, null);
+        extremePositiveValueInIntegerFields = new ExtremePositiveNumbersInIntegerFieldsFuzzer(null, null, null);
     }
 
     @Test

@@ -9,7 +9,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -27,7 +26,6 @@ class EmptyStringsInFieldsFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
     private FilterArguments filterArguments;
-    private CatsUtil catsUtil;
     private FilesArguments filesArguments;
 
     private EmptyStringsInFieldsFuzzer emptyStringsInFieldsFuzzer;
@@ -37,9 +35,8 @@ class EmptyStringsInFieldsFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);
-        catsUtil = Mockito.mock(CatsUtil.class);
 
-        emptyStringsInFieldsFuzzer = new EmptyStringsInFieldsFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments, filterArguments);
+        emptyStringsInFieldsFuzzer = new EmptyStringsInFieldsFuzzer(serviceCaller, testCaseListener, filesArguments, filterArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 

@@ -10,7 +10,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsModelUtils;
-import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -32,12 +31,11 @@ public class VeryLargeIntegersInNumericFieldsFuzzer extends ExpectOnly4XXBaseFie
      *
      * @param sc the service caller
      * @param lr the test case listener
-     * @param cu utility class
      * @param cp files arguments
      * @param pa to get the size of the large integers
      */
-    public VeryLargeIntegersInNumericFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, ProcessingArguments pa) {
-        super(sc, lr, cu, cp);
+    public VeryLargeIntegersInNumericFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp, ProcessingArguments pa) {
+        super(sc, lr, cp);
         this.processingArguments = pa;
     }
 

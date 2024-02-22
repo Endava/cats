@@ -51,7 +51,6 @@ public class CustomFuzzerUtil {
     @Getter
     private final Map<String, String> variables = new HashMap<>();
     private final Map<String, Map<String, Object>> pathsWithInputVariables = new HashMap<>();
-    private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final ServiceCaller serviceCaller;
 
@@ -63,12 +62,10 @@ public class CustomFuzzerUtil {
      * are stored internally for use within the CustomFuzzerUtil.</p>
      *
      * @param sc  The ServiceCaller instance responsible for making service calls during custom fuzzing.
-     * @param cu  The CatsUtil instance providing utility methods for working with Cats DSL and configurations.
      * @param tcl The TestCaseListener instance handling test case events and notifications.
      */
-    public CustomFuzzerUtil(ServiceCaller sc, CatsUtil cu, TestCaseListener tcl) {
+    public CustomFuzzerUtil(ServiceCaller sc, TestCaseListener tcl) {
         this.serviceCaller = sc;
-        catsUtil = cu;
         testCaseListener = tcl;
     }
 
@@ -94,7 +91,7 @@ public class CustomFuzzerUtil {
             this.startCustomTest(testName, currentPathValues, expectedResponseCode);
 
             String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
-            catsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
+            CatsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
 
             Set<CatsHeader> headers = new HashSet<>(Arrays.asList(arrayOfHeaders));
             if (isHeadersFuzzing) {
@@ -415,7 +412,7 @@ public class CustomFuzzerUtil {
         }
         try {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
-            return catsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).json();
+            return CatsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).json();
         } catch (Exception e) {
             log.debug("Something went wrong while parsing!", e);
             log.warning("Property [{}] does not exist", keyValue.getKey());
@@ -488,7 +485,7 @@ public class CustomFuzzerUtil {
                                 variables.getOrDefault(this.getVariableName(String.valueOf(variableEntry.getValue())), NOT_SET)))));
 
 
-        catsUtil.writeToYaml("refData_custom.yml", finalPathsAndVariables);
+        CatsUtil.writeToYaml("refData_custom.yml", finalPathsAndVariables);
         log.complete("Finish writing refData_custom.yml");
     }
 

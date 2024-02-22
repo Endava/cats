@@ -6,7 +6,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -20,8 +19,6 @@ import java.util.Map;
 
 @QuarkusTest
 class ZalgoTextInFieldsSanitizeValidateFuzzerTest {
-
-    private final CatsUtil catsUtil = new CatsUtil();
     private ZalgoTextInFieldsSanitizeValidateFuzzer zalgoTextInFieldsSanitizeValidateFuzzer;
 
     @BeforeEach
@@ -29,7 +26,7 @@ class ZalgoTextInFieldsSanitizeValidateFuzzerTest {
         ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
-        zalgoTextInFieldsSanitizeValidateFuzzer = new ZalgoTextInFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        zalgoTextInFieldsSanitizeValidateFuzzer = new ZalgoTextInFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, filesArguments);
         Mockito.when(testCaseListener.isFieldNotADiscriminator(Mockito.anyString())).thenReturn(true);
         Mockito.when(testCaseListener.isFieldNotADiscriminator("pet#type")).thenReturn(false);
     }

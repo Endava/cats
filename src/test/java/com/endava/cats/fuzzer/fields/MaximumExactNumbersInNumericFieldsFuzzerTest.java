@@ -26,7 +26,7 @@ class MaximumExactNumbersInNumericFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         filesArguments = Mockito.mock(FilesArguments.class);
-        maximumExactNumbersInNumericFieldsFuzzer = new MaximumExactNumbersInNumericFieldsFuzzer(null, null, null, filesArguments);
+        maximumExactNumbersInNumericFieldsFuzzer = new MaximumExactNumbersInNumericFieldsFuzzer(null, null, filesArguments);
         Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
     }
 

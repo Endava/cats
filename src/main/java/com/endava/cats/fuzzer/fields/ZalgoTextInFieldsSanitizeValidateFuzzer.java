@@ -9,7 +9,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -27,11 +26,10 @@ public class ZalgoTextInFieldsSanitizeValidateFuzzer extends ExpectOnly2XXBaseFi
      *
      * @param sc the service caller
      * @param lr the test case listener
-     * @param cu utility class
      * @param cp files arguments
      */
-    protected ZalgoTextInFieldsSanitizeValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-        super(sc, lr, cu, cp);
+    protected ZalgoTextInFieldsSanitizeValidateFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+        super(sc, lr, cp);
     }
 
     @Override

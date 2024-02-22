@@ -23,7 +23,7 @@ class MaxLengthExactValuesInStringFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
-        maxLengthExactValuesInStringFieldsFuzzer = new MaxLengthExactValuesInStringFieldsFuzzer(null, null, null, filesArguments);
+        maxLengthExactValuesInStringFieldsFuzzer = new MaxLengthExactValuesInStringFieldsFuzzer(null, null, filesArguments);
         Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
     }
 

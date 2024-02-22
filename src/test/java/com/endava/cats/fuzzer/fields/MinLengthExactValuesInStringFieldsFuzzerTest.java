@@ -23,7 +23,7 @@ class MinLengthExactValuesInStringFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
-        minLengthExactValuesInStringFieldsFuzzer = new MinLengthExactValuesInStringFieldsFuzzer(null, null, null, filesArguments);
+        minLengthExactValuesInStringFieldsFuzzer = new MinLengthExactValuesInStringFieldsFuzzer(null, null, filesArguments);
         Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
     }
 

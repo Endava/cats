@@ -32,7 +32,6 @@ class TemplateFuzzerTest {
     private ServiceCaller serviceCaller;
     @InjectSpy
     private TestCaseListener testCaseListener;
-    private CatsUtil catsUtil;
 
     private TemplateFuzzer templateFuzzer;
 
@@ -41,9 +40,8 @@ class TemplateFuzzerTest {
         matchArguments = Mockito.mock(MatchArguments.class);
         userArguments = Mockito.mock(UserArguments.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        catsUtil = new CatsUtil();
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, catsUtil, userArguments, matchArguments);
+        templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, userArguments, matchArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
         CatsUtil.setCatsLogLevel("SEVERE");//we do this in order to avoid surefire breaking due to \uFFFe
     }

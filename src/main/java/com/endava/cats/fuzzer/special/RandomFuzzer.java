@@ -64,7 +64,6 @@ public class RandomFuzzer implements Fuzzer {
     private final StopArguments stopArguments;
     private final ReportingArguments reportingArguments;
     private final FilesArguments filesArguments;
-    private final CatsUtil catsUtil;
     private final Instance<Mutator> mutators;
 
     @Inject
@@ -72,7 +71,7 @@ public class RandomFuzzer implements Fuzzer {
                         ExecutionStatisticsListener executionStatisticsListener,
                         MatchArguments matchArguments, Instance<Mutator> mutators,
                         StopArguments stopArguments, ReportingArguments reportingArguments,
-                        FilesArguments filesArguments, CatsUtil catsUtil) {
+                        FilesArguments filesArguments) {
         this.simpleExecutor = simpleExecutor;
         this.testCaseListener = testCaseListener;
         this.executionStatisticsListener = executionStatisticsListener;
@@ -81,7 +80,6 @@ public class RandomFuzzer implements Fuzzer {
         this.stopArguments = stopArguments;
         this.reportingArguments = reportingArguments;
         this.filesArguments = filesArguments;
-        this.catsUtil = catsUtil;
     }
 
     @Override
@@ -175,7 +173,7 @@ public class RandomFuzzer implements Fuzzer {
                 Map<String, Object> customMutator = parseYamlAsSimpleMap(customMutatorFile.getCanonicalPath());
 
                 CustomMutatorConfig config = this.createConfig(customMutator);
-                customMutators.add(new CustomMutator(config, catsUtil));
+                customMutators.add(new CustomMutator(config));
             } catch (Exception e) {
                 logger.warn("There was a problem parsing {}: {}", customMutatorFile.getAbsolutePath(), e.toString());
             }

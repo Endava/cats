@@ -11,7 +11,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.ArraySchema;
@@ -32,8 +31,6 @@ class OverflowArraySizeFieldsFuzzerTest {
     ServiceCaller serviceCaller;
     @InjectSpy
     TestCaseListener testCaseListener;
-    @InjectSpy
-    CatsUtil catsUtil;
     FieldsIteratorExecutor catsExecutor;
     private OverflowArraySizeFieldsFuzzer overflowArraySizeFieldsFuzzer;
 
@@ -44,7 +41,7 @@ class OverflowArraySizeFieldsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        catsExecutor = new FieldsIteratorExecutor(serviceCaller, testCaseListener, catsUtil, Mockito.mock(MatchArguments.class), Mockito.mock(FilesArguments.class));
+        catsExecutor = new FieldsIteratorExecutor(serviceCaller, testCaseListener, Mockito.mock(MatchArguments.class), Mockito.mock(FilesArguments.class));
         overflowArraySizeFieldsFuzzer = new OverflowArraySizeFieldsFuzzer(catsExecutor, processingArguments);
     }
 

@@ -8,7 +8,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -27,14 +26,12 @@ class NullValuesInFieldsFuzzerTest {
     private TestCaseListener testCaseListener;
     private NullValuesInFieldsFuzzer nullValuesInFieldsFuzzer;
     private FilesArguments filesArguments;
-    private CatsUtil catsUtil;
 
     @BeforeEach
     void setup() {
         filterArguments = Mockito.mock(FilterArguments.class);
         filesArguments = Mockito.mock(FilesArguments.class);
-        catsUtil = Mockito.mock(CatsUtil.class);
-        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(null, testCaseListener, catsUtil, filesArguments, filterArguments);
+        nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(null, testCaseListener, filesArguments, filterArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
