@@ -44,7 +44,6 @@ public class TemplateFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
-    private final CatsUtil catsUtil;
     private final UserArguments userArguments;
     private final MatchArguments matchArguments;
 
@@ -53,14 +52,12 @@ public class TemplateFuzzer implements Fuzzer {
      *
      * @param sc The service caller used to make requests to the service under test.
      * @param lr The test case listener used to report test case results and progress.
-     * @param cu The CatsUtil object used to perform common utility tasks.
      * @param ua The UserArguments object containing the user-specified arguments for the fuzzer.
      * @param ma The MatchArguments object containing the match criteria for identifying valid responses.
      */
-    public TemplateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, UserArguments ua, MatchArguments ma) {
+    public TemplateFuzzer(ServiceCaller sc, TestCaseListener lr, UserArguments ua, MatchArguments ma) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
-        this.catsUtil = cu;
         this.userArguments = ua;
         this.matchArguments = ma;
     }
@@ -157,7 +154,7 @@ public class TemplateFuzzer implements Fuzzer {
 
     private String replacePayload(FuzzingData data, String withData, String targetField) {
         try {
-            return catsUtil.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).json();
+            return CatsUtil.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).json();
         } catch (JsonPathException e) {
             return data.getPayload();
         }

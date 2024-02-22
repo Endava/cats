@@ -7,7 +7,6 @@ import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 
 import java.util.Collections;
@@ -24,11 +23,10 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      *
      * @param sc The {@link ServiceCaller} used to make service calls
      * @param lr The {@link TestCaseListener} for reporting test case events
-     * @param cu The {@link CatsUtil} for utility functions
      * @param cp The {@link FilesArguments} for file-related arguments
      */
-    protected BaseBoundaryFieldFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-        super(sc, lr, cu, cp);
+    protected BaseBoundaryFieldFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+        super(sc, lr, cp);
     }
 
     @Override

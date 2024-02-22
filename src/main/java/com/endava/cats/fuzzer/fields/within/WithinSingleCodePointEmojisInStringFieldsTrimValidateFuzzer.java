@@ -11,7 +11,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.CommonWithinMethods;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -31,11 +30,10 @@ public class WithinSingleCodePointEmojisInStringFieldsTrimValidateFuzzer extends
      *
      * @param sc the service caller
      * @param lr the test case listener
-     * @param cu utility class
      * @param cp files arguments
      */
-    protected WithinSingleCodePointEmojisInStringFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-        super(sc, lr, cu, cp);
+    protected WithinSingleCodePointEmojisInStringFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+        super(sc, lr, cp);
     }
 
     @Override

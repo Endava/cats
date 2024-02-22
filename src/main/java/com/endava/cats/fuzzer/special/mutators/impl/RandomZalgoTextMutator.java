@@ -3,7 +3,6 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.util.CatsUtil;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 /**
@@ -21,24 +20,12 @@ public class RandomZalgoTextMutator implements Mutator {
             "\u0346", "\u031a"
     };
 
-    private final CatsUtil catsUtil;
-
-    /**
-     * Creates a new instance.
-     *
-     * @param catsUtil utility class
-     */
-    @Inject
-    public RandomZalgoTextMutator(CatsUtil catsUtil) {
-        this.catsUtil = catsUtil;
-    }
-
     @Override
     public String mutate(String inputJson, String selectedField) {
         String existingValue = String.valueOf(JsonUtils.getVariableFromJson(inputJson, selectedField));
         String valueWithZalgo = generateZalgoText(existingValue);
 
-        return catsUtil.justReplaceField(inputJson, selectedField, valueWithZalgo).json();
+        return CatsUtil.justReplaceField(inputJson, selectedField, valueWithZalgo).json();
     }
 
     @Override

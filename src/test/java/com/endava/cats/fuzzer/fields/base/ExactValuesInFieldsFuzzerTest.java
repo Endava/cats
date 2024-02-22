@@ -4,7 +4,6 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -22,7 +21,7 @@ class ExactValuesInFieldsFuzzerTest {
 
     @BeforeEach
     public void setup() {
-        myBaseBoundaryFuzzer = new MyExactValueFuzzer(null, null, null, null);
+        myBaseBoundaryFuzzer = new MyExactValueFuzzer(null, null, null);
     }
 
     @Test
@@ -73,8 +72,8 @@ class ExactValuesInFieldsFuzzerTest {
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {
 
-        public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-            super(sc, lr, cu, cp);
+        public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+            super(sc, lr, cp);
         }
 
         @Override

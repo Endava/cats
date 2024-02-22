@@ -91,7 +91,6 @@ public class ServiceCaller {
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
     private final FilesArguments filesArguments;
-    private final CatsUtil catsUtil;
     private final TestCaseListener testCaseListener;
     private final AuthArguments authArguments;
     private final ApiArguments apiArguments;
@@ -106,16 +105,14 @@ public class ServiceCaller {
      *
      * @param context             The global context for CATS.
      * @param lr                  The listener for test cases.
-     * @param cu                  The CATS utility.
      * @param filesArguments      The arguments related to files.
      * @param authArguments       The authentication arguments.
      * @param apiArguments        The API arguments.
      * @param processingArguments The processing arguments.
      */
     @Inject
-    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, CatsUtil cu, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
+    public ServiceCaller(CatsGlobalContext context, TestCaseListener lr, FilesArguments filesArguments, AuthArguments authArguments, ApiArguments apiArguments, ProcessingArguments processingArguments) {
         this.testCaseListener = lr;
-        this.catsUtil = cu;
         this.filesArguments = filesArguments;
         this.authArguments = authArguments;
         this.apiArguments = apiArguments;
@@ -688,14 +685,14 @@ public class ServiceCaller {
 
                         FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
                         boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
-                        payload = catsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
+                        payload = CatsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
                     }
                 } catch (PathNotFoundException e) {
                     logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
                 }
             }
 
-            payload = catsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
+            payload = CatsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
 
             logger.debug("Final payload after reference data replacement: {}", payload);
 

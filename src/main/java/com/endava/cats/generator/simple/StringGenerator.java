@@ -178,7 +178,7 @@ public class StringGenerator {
 
     private static boolean isSetOfAlternatives(String regex) {
         try {
-            String[] alternatives = regex.split("\\|");
+            String[] alternatives = regex.split("\\|", -1);
 
             if (alternatives.length > 1) {
                 for (String alternative : alternatives) {

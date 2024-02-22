@@ -642,8 +642,8 @@ public class TestCaseListener {
     }
 
     static boolean areContentTypesEquivalent(String firstContentType, String secondContentType) {
-        MediaType firstMediaType = MediaType.parse(firstContentType).withoutParameters();
-        MediaType secondMediaType = MediaType.parse(secondContentType).withoutParameters();
+        MediaType firstMediaType = MediaType.parse(Optional.ofNullable(firstContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
+        MediaType secondMediaType = MediaType.parse(Optional.ofNullable(secondContentType).orElse(CatsResponse.unknownContentType())).withoutParameters();
 
         return firstMediaType.is(secondMediaType) || secondMediaType.is(firstMediaType) || (firstMediaType.type().equalsIgnoreCase(secondMediaType.type()) &&
                 (firstMediaType.subtype().endsWith(secondMediaType.subtype()) || secondMediaType.subtype().endsWith(firstMediaType.subtype())));

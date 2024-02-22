@@ -31,7 +31,7 @@ class DecimalFieldsLeftBoundaryFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
         filesArguments = Mockito.mock(FilesArguments.class);
-        decimalFieldsLeftBoundaryFuzzer = new DecimalFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, null, filesArguments);
+        decimalFieldsLeftBoundaryFuzzer = new DecimalFieldsLeftBoundaryFuzzer(serviceCaller, testCaseListener, filesArguments);
     }
 
     @Test

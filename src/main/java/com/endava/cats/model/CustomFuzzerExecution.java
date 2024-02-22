@@ -29,10 +29,9 @@ public class CustomFuzzerExecution implements Comparable<CustomFuzzerExecution> 
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof CustomFuzzerExecution that)) {
             return false;
         }
-        CustomFuzzerExecution that = (CustomFuzzerExecution) o;
         return Objects.equals(fuzzingData.getPath(), that.fuzzingData.getPath()) && Objects.equals(testId, that.testId);
     }
 

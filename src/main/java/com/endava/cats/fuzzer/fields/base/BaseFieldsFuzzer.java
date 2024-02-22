@@ -31,10 +31,6 @@ import java.util.regex.Pattern;
 public abstract class BaseFieldsFuzzer implements Fuzzer {
     private static final String CATS_REMOVE_FIELD = "cats_remove_field";
     /**
-     * Utility class.
-     */
-    protected final CatsUtil catsUtil;
-    /**
      * The logger used by all subclasses.
      */
     protected final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
@@ -53,13 +49,11 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      *
      * @param sc The {@link ServiceCaller} used to make service calls
      * @param lr The {@link TestCaseListener} for reporting test case events
-     * @param cu The {@link CatsUtil} for utility functions
      * @param cp The {@link FilesArguments} for file-related arguments
      */
-    protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
+    protected BaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
         this.serviceCaller = sc;
         this.testCaseListener = lr;
-        this.catsUtil = cu;
         this.filesArguments = cp;
     }
 
@@ -104,7 +98,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             testCaseListener.addScenario(logger, "Send [{}] in request fields: field [{}], value [{}], is required [{}]",
                     this.typeOfDataSentToTheService(), fuzzedField, fuzzingStrategy.truncatedValue(), fuzzingConstraints.getRequiredString());
             logger.debug("Fuzzing possible...");
-            FuzzingResult fuzzingResult = catsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
+            FuzzingResult fuzzingResult = CatsUtil.replaceField(data.getPayload(), fuzzedField, fuzzingStrategy);
             boolean isFuzzedValueMatchingPattern = this.isFuzzedValueMatchingPattern(fuzzingResult.fuzzedValue(), data, fuzzedField);
 
             ServiceData serviceData = ServiceData.builder().relativePath(data.getPath())

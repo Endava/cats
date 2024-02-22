@@ -5,7 +5,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 
 import java.util.List;
 
@@ -23,11 +22,10 @@ public abstract class InvisibleCharsBaseTrimValidateFuzzer extends ExpectOnly2XX
      *
      * @param sc The {@link ServiceCaller} used to make service calls.
      * @param lr The {@link TestCaseListener} for reporting test case events.
-     * @param cu The {@link CatsUtil} for utility functions related to CATS (Compliance and Testing Suite).
      * @param cp The {@link FilesArguments} for file-related arguments.
      */
-    protected InvisibleCharsBaseTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-        super(sc, lr, cu, cp);
+    protected InvisibleCharsBaseTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+        super(sc, lr, cp);
     }
 
     @Override

@@ -14,11 +14,9 @@ import com.endava.cats.util.CatsUtil;
  */
 public class CustomMutator implements Mutator {
     private final CustomMutatorConfig customMutatorConfig;
-    private final CatsUtil catsUtil;
 
-    public CustomMutator(CustomMutatorConfig customMutatorConfig, CatsUtil catsUtil) {
+    public CustomMutator(CustomMutatorConfig customMutatorConfig) {
         this.customMutatorConfig = customMutatorConfig;
-        this.catsUtil = catsUtil;
     }
 
     @Override
@@ -30,17 +28,17 @@ public class CustomMutator implements Mutator {
         return switch (customMutatorConfig.type()) {
             case TRAIL -> {
                 String valueToReplace = String.valueOf(existingValue) + valueToFuzz;
-                yield catsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
+                yield CatsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
             }
             case INSERT -> {
                 String valueToReplace = CommonWithinMethods.insertInTheMiddle(String.valueOf(existingValue), String.valueOf(valueToFuzz), true);
-                yield catsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
+                yield CatsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
             }
             case PREFIX -> {
                 String valueToReplace = valueToFuzz + String.valueOf(existingValue);
-                yield catsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
+                yield CatsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
             }
-            case REPLACE -> catsUtil.justReplaceField(inputJson, selectedField, valueToFuzz).json();
+            case REPLACE -> CatsUtil.justReplaceField(inputJson, selectedField, valueToFuzz).json();
             case REPLACE_BODY -> String.valueOf(valueToFuzz);
             case IN_BODY -> {
                 char firstChar = inputJson.charAt(0);

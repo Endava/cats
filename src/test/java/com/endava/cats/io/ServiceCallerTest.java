@@ -10,7 +10,6 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -43,8 +42,6 @@ class ServiceCallerTest {
     public static WireMockServer wireMockServer;
     @Inject
     AuthArguments authArguments;
-    @Inject
-    CatsUtil catsUtil;
     @Inject
     ApiArguments apiArguments;
     @Inject
@@ -79,7 +76,7 @@ class ServiceCallerTest {
     public void setupEach() throws Exception {
         filesArguments = new FilesArguments();
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
-        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, catsUtil, filesArguments, authArguments, apiArguments, processingArguments);
+        serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments);
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:" + wireMockServer.port());
         ReflectionTestUtils.setField(authArguments, "basicAuth", "user:password");
         ReflectionTestUtils.setField(filesArguments, "refDataFile", new File("src/test/resources/refFields.yml"));
@@ -462,6 +459,7 @@ class ServiceCallerTest {
                 .httpMethod(HttpMethod.GET).headers(Collections.singleton(CatsHeader.builder().name("header").value("header")
                         .build())).contentType("application/json").replaceUrlParams(replaceUrlParams).build());
 
+        Assertions.assertThat(catsResponse).isNotNull();
         wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo(expectedUrl)));
     }
 }

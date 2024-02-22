@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.util.CatsUtil;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -16,13 +15,6 @@ public class RandomLargeIntegersMutator implements Mutator {
     private static final int ITERATIONS = 5;
     private static final int LENGTH = 20;
 
-    private final CatsUtil catsUtil;
-
-    @Inject
-    public RandomLargeIntegersMutator(CatsUtil catsUtil) {
-        this.catsUtil = catsUtil;
-    }
-
     @Override
     public String mutate(String inputJson, String selectedField) {
         int i = 0;
@@ -32,7 +24,7 @@ public class RandomLargeIntegersMutator implements Mutator {
             i++;
         }
 
-        return catsUtil.justReplaceField(inputJson, selectedField, new BigInteger(largeNumberBuilder.toString())).json();
+        return CatsUtil.justReplaceField(inputJson, selectedField, new BigInteger(largeNumberBuilder.toString())).json();
     }
 
     @Override

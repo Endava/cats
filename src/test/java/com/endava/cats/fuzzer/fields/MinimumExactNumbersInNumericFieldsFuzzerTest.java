@@ -23,7 +23,7 @@ class MinimumExactNumbersInNumericFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
-        minimumExactNumbersInNumericFieldsFuzzer = new MinimumExactNumbersInNumericFieldsFuzzer(null, null, null, filesArguments);
+        minimumExactNumbersInNumericFieldsFuzzer = new MinimumExactNumbersInNumericFieldsFuzzer(null, null, filesArguments);
         Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
     }
 

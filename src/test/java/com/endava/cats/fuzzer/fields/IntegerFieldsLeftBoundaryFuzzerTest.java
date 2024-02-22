@@ -22,7 +22,7 @@ class IntegerFieldsLeftBoundaryFuzzerTest {
     @BeforeEach
     void setup() {
         filesArguments = Mockito.mock(FilesArguments.class);
-        integerFieldsLeftBoundaryFuzzer = new IntegerFieldsLeftBoundaryFuzzer(null, null, null, filesArguments);
+        integerFieldsLeftBoundaryFuzzer = new IntegerFieldsLeftBoundaryFuzzer(null, null, filesArguments);
     }
 
     @Test

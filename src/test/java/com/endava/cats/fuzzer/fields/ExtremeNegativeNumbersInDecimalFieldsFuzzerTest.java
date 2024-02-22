@@ -15,7 +15,7 @@ class ExtremeNegativeNumbersInDecimalFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        extremeNegativeNumbersInDecimalFieldsFuzzer = new ExtremeNegativeNumbersInDecimalFieldsFuzzer(null, null, null, null);
+        extremeNegativeNumbersInDecimalFieldsFuzzer = new ExtremeNegativeNumbersInDecimalFieldsFuzzer(null, null, null);
     }
 
     @Test

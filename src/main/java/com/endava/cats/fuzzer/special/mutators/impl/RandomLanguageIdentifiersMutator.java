@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.util.CatsUtil;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -29,13 +28,6 @@ public class RandomLanguageIdentifiersMutator implements Mutator {
     private static final List<String> KOTLIN_KEYWORDS = List.of("as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if", "in", "interface", "is", "null", "object", "package", "return", "super", "this", "throw", "true", "try", "typealias", "val", "var", "when", "while");
     private static final List<String> SCALA_KEYWORDS = List.of("abstract", "case", "catch", "class", "def", "do", "else", "extends", "false", "final", "finally", "for", "forSome", "if", "implicit", "import", "lazy", "match", "new", "null", "object", "override", "package", "private", "protected", "return", "sealed", "super", "this", "throw", "trait", "try", "true", "type", "val", "var", "while", "with", "yield");
 
-    private final CatsUtil catsUtil;
-
-    @Inject
-    public RandomLanguageIdentifiersMutator(CatsUtil catsUtil) {
-        this.catsUtil = catsUtil;
-    }
-
     @Override
     public String mutate(String inputJson, String selectedField) {
         List<String> randomKeywordsList = selectRandomKeywords();
@@ -46,7 +38,7 @@ public class RandomLanguageIdentifiersMutator implements Mutator {
                 .collect(Collectors.joining(" "));
 
 
-        return catsUtil.justReplaceField(inputJson, selectedField, randomKeywords).json();
+        return CatsUtil.justReplaceField(inputJson, selectedField, randomKeywords).json();
     }
 
     private static List<String> selectRandomKeywords() {

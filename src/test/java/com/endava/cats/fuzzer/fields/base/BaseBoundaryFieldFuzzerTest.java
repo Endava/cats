@@ -5,7 +5,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.NumberSchema;
@@ -27,16 +26,12 @@ class BaseBoundaryFieldFuzzerTest {
 
     private ServiceCaller serviceCaller;
     private TestCaseListener testCaseListener;
-    private CatsUtil catsUtil;
     private FilesArguments filesArguments;
-
-    private BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer;
 
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
-        catsUtil = Mockito.mock(CatsUtil.class);
         filesArguments = Mockito.mock(FilesArguments.class);
     }
 
@@ -44,7 +39,7 @@ class BaseBoundaryFieldFuzzerTest {
     @CsvSource({"field,replace", "otherField,skip"})
     void shouldReturnProperFuzzingStrategy(String field, String expectedStrategyAsString) {
         FuzzingStrategy expectedStrategy = expectedStrategyAsString.equalsIgnoreCase("replace") ? FuzzingStrategy.replace() : FuzzingStrategy.skip();
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesFuzzer(serviceCaller, testCaseListener, filesArguments);
 
         FuzzingData data = getMockFuzzingData();
 
@@ -54,7 +49,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void givenABaseBoundaryFuzzerWithNoDefinedBoundary_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithoutBoundariesFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = new MyBaseBoundaryWithoutBoundariesFuzzer(serviceCaller, testCaseListener, filesArguments);
 
         FuzzingData data = getMockFuzzingData();
 
@@ -65,7 +60,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void givenABaseBoundaryFuzzerWithNoDefinedBoundaryAndIntegerSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, filesArguments);
 
         FuzzingData data = getMockFuzzingData();
 
@@ -76,7 +71,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void givenABaseBoundaryFuzzerAndAFieldWithNoSchema_whenGettingTheFuzzingStrategy_thenTheSkipStrategyIsBeingReturned() {
-        myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = new MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(serviceCaller, testCaseListener, filesArguments);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(new HashMap<>());
 
@@ -88,7 +83,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void shouldMatchFuzzerTypeWhenSchemaAssignable() {
-        myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
         Mockito.doCallRealMethod().when(myBaseBoundaryFuzzer).isRequestSchemaMatchingFuzzerType(Mockito.any());
         Mockito.when(myBaseBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).thenReturn(List.of("number"));
 
@@ -97,7 +92,7 @@ class BaseBoundaryFieldFuzzerTest {
 
     @Test
     void shouldNotMatchWhenSchemaNotAssignable() {
-        myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
         Mockito.doCallRealMethod().when(myBaseBoundaryFuzzer).isRequestSchemaMatchingFuzzerType(Mockito.any());
         Mockito.when(myBaseBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).thenReturn(List.of("number"));
 
@@ -107,7 +102,7 @@ class BaseBoundaryFieldFuzzerTest {
     @ParameterizedTest
     @CsvSource(value = {"number,true", "string,false", "null,false"}, nullValues = "null")
     void shouldMatchFuzzerTypeWhenSchemaTypeMatchesFuzzerSchema(String schemaType, boolean matching) {
-        myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
+        BaseBoundaryFieldFuzzer myBaseBoundaryFuzzer = Mockito.mock(MyBaseBoundaryWithBoundariesFuzzer.class);
         Mockito.doCallRealMethod().when(myBaseBoundaryFuzzer).isRequestSchemaMatchingFuzzerType(Mockito.any());
         Mockito.when(myBaseBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo()).thenReturn(List.of("number"));
         Schema schema = new Schema();
@@ -127,8 +122,8 @@ class BaseBoundaryFieldFuzzerTest {
 
     static class MyBaseBoundaryWithBoundariesFuzzer extends BaseBoundaryFieldFuzzer {
 
-        public MyBaseBoundaryWithBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-            super(sc, lr, cu, cp);
+        public MyBaseBoundaryWithBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+            super(sc, lr, cp);
         }
 
         @Override
@@ -154,8 +149,8 @@ class BaseBoundaryFieldFuzzerTest {
 
     static class MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer extends BaseBoundaryFieldFuzzer {
 
-        public MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-            super(sc, lr, cu, cp);
+        public MyBaseBoundaryWithBoundariesButNoBoundaryValueFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+            super(sc, lr, cp);
         }
 
         @Override
@@ -181,8 +176,8 @@ class BaseBoundaryFieldFuzzerTest {
 
     static class MyBaseBoundaryWithoutBoundariesFuzzer extends BaseBoundaryFieldFuzzer {
 
-        public MyBaseBoundaryWithoutBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-            super(sc, lr, cu, cp);
+        public MyBaseBoundaryWithoutBoundariesFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+            super(sc, lr, cp);
         }
 
         @Override
@@ -208,8 +203,8 @@ class BaseBoundaryFieldFuzzerTest {
 
     static class MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer extends BaseBoundaryFieldFuzzer {
 
-        public MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-            super(sc, lr, cu, cp);
+        public MyBaseBoundaryWithBoundariesAndIntegerSchemaFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+            super(sc, lr, cp);
         }
 
         @Override

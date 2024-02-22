@@ -7,7 +7,6 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -28,11 +27,10 @@ public class StringFieldsLeftBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
      *
      * @param sc The {@link ServiceCaller} used to make service calls.
      * @param lr The {@link TestCaseListener} for reporting test case events.
-     * @param cu The {@link CatsUtil} for utility functions related to CATS (Compliance and Testing Suite).
      * @param cp The {@link FilesArguments} for file-related arguments.
      */
-    public StringFieldsLeftBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp) {
-        super(sc, lr, cu, cp);
+    public StringFieldsLeftBoundaryFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+        super(sc, lr, cp);
     }
 
     @Override

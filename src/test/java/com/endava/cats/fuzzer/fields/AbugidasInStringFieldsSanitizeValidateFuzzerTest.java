@@ -6,7 +6,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -24,7 +23,6 @@ import java.util.Map;
 @QuarkusTest
 class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
 
-    private final CatsUtil catsUtil = new CatsUtil();
     private AbugidasInStringFieldsSanitizeValidateFuzzer abugidasCharsInStringFieldsSanitizeValidateFuzzer;
     private FilesArguments filesArguments;
 
@@ -33,7 +31,7 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
         ServiceCaller serviceCaller = Mockito.mock(ServiceCaller.class);
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         filesArguments = Mockito.mock(FilesArguments.class);
-        abugidasCharsInStringFieldsSanitizeValidateFuzzer = new AbugidasInStringFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, catsUtil, filesArguments);
+        abugidasCharsInStringFieldsSanitizeValidateFuzzer = new AbugidasInStringFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, filesArguments);
         Mockito.when(testCaseListener.isFieldNotADiscriminator(Mockito.anyString())).thenReturn(true);
         Mockito.when(testCaseListener.isFieldNotADiscriminator("pet#type")).thenReturn(false);
     }

@@ -14,7 +14,7 @@ class DecimalNumbersInIntegerFieldsFuzzerTest {
 
     @BeforeEach
     void setup() {
-        decimalNumbersInIntegerFieldsFuzzer = new DecimalNumbersInIntegerFieldsFuzzer(null, null, null, null);
+        decimalNumbersInIntegerFieldsFuzzer = new DecimalNumbersInIntegerFieldsFuzzer(null, null, null);
     }
 
     @Test

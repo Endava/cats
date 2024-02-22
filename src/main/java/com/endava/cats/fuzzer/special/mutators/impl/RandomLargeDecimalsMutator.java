@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.util.CatsUtil;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -18,13 +17,6 @@ public class RandomLargeDecimalsMutator implements Mutator {
 
     private static final int LENGTH = 20;
 
-    private final CatsUtil catsUtil;
-
-    @Inject
-    public RandomLargeDecimalsMutator(CatsUtil catsUtil) {
-        this.catsUtil = catsUtil;
-    }
-
     @Override
     public String mutate(String inputJson, String selectedField) {
         int totalIterations = ITERATIONS + SCALE_ITERATIONS;
@@ -37,7 +29,7 @@ public class RandomLargeDecimalsMutator implements Mutator {
             largeNumberBuilder.append(RandomStringUtils.randomNumeric(LENGTH));
         }
 
-        return catsUtil.justReplaceField(inputJson, selectedField, new BigDecimal(largeNumberBuilder.toString())).json();
+        return CatsUtil.justReplaceField(inputJson, selectedField, new BigDecimal(largeNumberBuilder.toString())).json();
     }
 
     @Override

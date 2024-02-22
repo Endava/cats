@@ -9,7 +9,6 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -30,7 +29,6 @@ import java.util.Set;
 @QuarkusTest
 class BypassAuthenticationFuzzerTest {
     private ServiceCaller serviceCaller;
-    private CatsUtil catsUtil;
     @InjectSpy
     private TestCaseListener testCaseListener;
     private FilesArguments filesArguments;

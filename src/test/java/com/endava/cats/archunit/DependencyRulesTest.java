@@ -6,12 +6,14 @@ import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.LinterFuzzer;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 
+import static com.tngtech.archunit.lang.conditions.ArchConditions.have;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.DependencyRules.NO_CLASSES_SHOULD_DEPEND_UPPER_PACKAGES;
@@ -116,4 +118,25 @@ public class DependencyRulesTest {
                                     javaClass.isAssignableTo(Schema.class);
                         }
                     });
+
+    @ArchTest
+    static final ArchRule allUtilClassesAbstract =
+            classes().that().resideInAPackage("com.endava.cats.util")
+                    .and()
+                    .haveSimpleNameContaining("Util")
+                    .and()
+                    .haveSimpleNameNotEndingWith("Test")
+                    .should()
+                    .haveModifier(JavaModifier.ABSTRACT);
+
+    @ArchTest
+    static final ArchRule utilClassesHaveOnlyStaticMethods =
+            classes().that().resideInAPackage("com.endava.cats.util")
+                    .and()
+                    .haveSimpleNameContaining("Util")
+                    .and()
+                    .haveSimpleNameNotEndingWith("Test")
+                    .should(have(DescribedPredicate.describe("only have static methods",
+                            javaClass -> javaClass.getMethods().stream().filter(method -> method.getModifiers().contains(JavaModifier.STATIC)).count() == javaClass.getMethods().size())));
+
 }

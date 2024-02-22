@@ -12,7 +12,6 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -36,7 +35,6 @@ class RandomFuzzerTest {
     private ReportingArguments reportingArguments;
     private RandomFuzzer randomFuzzer;
     private FilesArguments filesArguments;
-    private CatsUtil catsUtil;
     @Inject
     Instance<Mutator> mutators;
 
@@ -49,12 +47,11 @@ class RandomFuzzerTest {
         matchArguments = Mockito.mock(MatchArguments.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
         filesArguments = Mockito.mock(FilesArguments.class);
-        catsUtil = Mockito.mock(CatsUtil.class);
 
         randomFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener,
                 executionStatisticsListener,
                 matchArguments, mutators,
-                stopArguments, reportingArguments, filesArguments, catsUtil);
+                stopArguments, reportingArguments, filesArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -126,7 +123,6 @@ class RandomFuzzerTest {
     void shouldRunCustomMutatorsFromValidFolder() throws Exception {
         Mockito.when(filesArguments.getMutatorsFolder()).thenReturn(new File("src/test/resources/mutators"));
         FuzzingData data = mockData();
-        Mockito.doCallRealMethod().when(catsUtil).justReplaceField(Mockito.anyString(), Mockito.anyString(), Mockito.any());
         RandomFuzzer randomFuzzerSpy = Mockito.spy(randomFuzzer);
         randomFuzzerSpy.fuzz(data);
         Mockito.verify(simpleExecutor, Mockito.times(3)).execute(Mockito.any());

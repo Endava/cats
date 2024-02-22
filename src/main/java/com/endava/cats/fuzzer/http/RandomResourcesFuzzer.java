@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 @Singleton
 public class RandomResourcesFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
-    private final CatsUtil catsUtil;
     private final SimpleExecutor simpleExecutor;
     private final FilesArguments filesArguments;
     private static final int ITERATIONS = 10;
@@ -41,12 +40,10 @@ public class RandomResourcesFuzzer implements Fuzzer {
     /**
      * Creates a new instance.
      *
-     * @param catsUtil       utility class
      * @param simpleExecutor executor used to run the fuzz logic
      * @param filesArguments files argument
      */
-    public RandomResourcesFuzzer(CatsUtil catsUtil, SimpleExecutor simpleExecutor, FilesArguments filesArguments) {
-        this.catsUtil = catsUtil;
+    public RandomResourcesFuzzer(SimpleExecutor simpleExecutor, FilesArguments filesArguments) {
         this.simpleExecutor = simpleExecutor;
         this.filesArguments = filesArguments;
     }
@@ -80,7 +77,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
                 }
                 Object newValue = generateNewValue(existingValue);
 
-                updatePayload = catsUtil.justReplaceField(updatePayload, pathVar, newValue).json();
+                updatePayload = CatsUtil.justReplaceField(updatePayload, pathVar, newValue).json();
 
             }
             payloads.add(updatePayload);

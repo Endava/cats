@@ -8,7 +8,6 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -27,12 +26,11 @@ public class OnlyWhitespacesInFieldsTrimValidateFuzzer extends InvisibleCharsOnl
      *
      * @param sc the service caller
      * @param lr the test case listener
-     * @param cu utility class
      * @param cp files arguments
      * @param fa filter arguments
      */
-    public OnlyWhitespacesInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, CatsUtil cu, FilesArguments cp, FilterArguments fa) {
-        super(sc, lr, cu, cp, fa);
+    public OnlyWhitespacesInFieldsTrimValidateFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp, FilterArguments fa) {
+        super(sc, lr, cp, fa);
     }
 
     @Override

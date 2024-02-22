@@ -18,7 +18,7 @@ class VeryLargeUnicodeStringsInFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         processingArguments = Mockito.mock(ProcessingArguments.class);
-        veryLargeUnicodeStringsInFieldsFuzzer = new VeryLargeUnicodeStringsInFieldsFuzzer(null, null, null, null, processingArguments);
+        veryLargeUnicodeStringsInFieldsFuzzer = new VeryLargeUnicodeStringsInFieldsFuzzer(null, null, null, processingArguments);
     }
 
     @Test

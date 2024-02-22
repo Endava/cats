@@ -15,7 +15,7 @@ class VeryLargeStringsInFieldsFuzzerTest {
     @BeforeEach
     void setup() {
         processingArguments = Mockito.mock(ProcessingArguments.class);
-        veryLargeStringsInFieldsFuzzer = new VeryLargeStringsInFieldsFuzzer(null, null, null, null, processingArguments);
+        veryLargeStringsInFieldsFuzzer = new VeryLargeStringsInFieldsFuzzer(null, null, null, processingArguments);
     }
 
     @Test
