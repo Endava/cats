@@ -24,7 +24,11 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
      * Constant for a Cats specific Accept header.
      */
     protected static final String CATS_ACCEPT = "application/cats";
-    private static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
+
+    /**
+     * List of random content types that is expected to not be supported via API requests.
+     */
+    public static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
             "application/javascript",
             "application/octet-stream",
             "application/ogg",

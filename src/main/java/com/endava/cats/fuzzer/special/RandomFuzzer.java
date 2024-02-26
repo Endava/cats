@@ -13,6 +13,7 @@ import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorKeywords;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.json.JsonUtils;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -39,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -107,6 +109,7 @@ public class RandomFuzzer implements Fuzzer {
 
             Mutator selectedRandomMutator = CatsUtil.selectRandom(mutatorsToRun);
             String mutatedPayload = selectedRandomMutator.mutate(data.getPayload(), targetField);
+            Collection<CatsHeader> mutatedHeaders = selectedRandomMutator.mutate(data.getHeaders());
 
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
@@ -114,6 +117,7 @@ public class RandomFuzzer implements Fuzzer {
                             .fuzzingData(data)
                             .logger(logger)
                             .payload(mutatedPayload)
+                            .headers(mutatedHeaders)
                             .scenario("Send a random payload mutating field [%s] with [%s] mutator".formatted(targetField, selectedRandomMutator.description()))
                             .expectedSpecificResponseCode("a response that doesn't match given --matchXXX arguments")
                             .responseProcessor(this::processResponse)
