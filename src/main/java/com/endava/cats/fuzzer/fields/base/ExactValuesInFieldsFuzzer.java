@@ -61,7 +61,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
      * @return null of the schema has proper boundaries defined or a generated string value matching the boundaries otherwise
      */
     @Override
-    public String getBoundaryValue(Schema schema) {
+    public Object getBoundaryValue(Schema schema) {
         if (getExactMethod().apply(schema) == null) {
             logger.debug("Null value for applied boundary function!");
             return null;
