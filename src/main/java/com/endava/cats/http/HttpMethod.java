@@ -192,7 +192,7 @@ public enum HttpMethod {
             BIND, UNBIND, REBIND, MKREDIRECTREF,
             UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT);
 
-    private final static List<HttpMethod> HYPOTHETICAL_HTTP_METHODS = List.of(
+    private static final List<HttpMethod> HYPOTHETICAL_HTTP_METHODS = List.of(
             DIFF, VERIFY, PUBLISH, UNPUBLISH, BATCH, VIEW,
             PURGE, DEBUG, SUBSCRIBE, UNSUBSCRIBE, MERGE, INDEX);
 

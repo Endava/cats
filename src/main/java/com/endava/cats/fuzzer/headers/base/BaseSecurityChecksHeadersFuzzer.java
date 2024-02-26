@@ -4,6 +4,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.Cloner;
+import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
@@ -12,7 +13,6 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -25,38 +25,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
      */
     protected static final String CATS_ACCEPT = "application/cats";
 
-    /**
-     * List of random content types that is expected to not be supported via API requests.
-     */
-    public static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
-            "application/javascript",
-            "application/octet-stream",
-            "application/ogg",
-            "application/pdf",
-            "application/xhtml+xml",
-            "application/x-shockwave-flash",
-            "application/ld+json",
-            "application/xml",
-            "application/zip",
-            "application/x-www-form-urlencoded",
-            "image/gif",
-            "image/jpeg",
-            "image/png",
-            "image/tiff",
-            "image/vnd.microsoft.icon",
-            "image/x-icon",
-            "image/vnd.djvu",
-            "image/svg+xml",
-            "multipart/mixed; boundary=cats",
-            "multipart/alternative; boundary=cats",
-            "multipart/related; boundary=cats",
-            "multipart/form-data; boundary=cats",
-            "text/css",
-            "text/csv",
-            "text/html",
-            "text/javascript",
-            "text/plain",
-            "text/xml");
+
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     private final SimpleExecutor simpleExecutor;
@@ -82,7 +51,7 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     protected static List<Set<CatsHeader>> filterHeaders(FuzzingData data, String headerName, List<String> contentTypes) {
         List<Set<CatsHeader>> setOfSets = new ArrayList<>();
 
-        for (String currentHeader : UNSUPPORTED_MEDIA_TYPES) {
+        for (String currentHeader : StringGenerator.getUnsupportedMediaTypes()) {
             if (contentTypes.stream().noneMatch(currentHeader::startsWith)) {
                 Set<CatsHeader> clonedHeaders = Cloner.cloneMe(data.getHeaders());
                 clonedHeaders.add(CatsHeader.builder().name(headerName).value(currentHeader).build());

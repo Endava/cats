@@ -13,6 +13,8 @@ import org.cornutum.regexpgen.js.Provider;
 import org.cornutum.regexpgen.random.RandomBoundsGen;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -45,6 +47,39 @@ public class StringGenerator {
      * Represents an empty string.
      */
     public static final String EMPTY = "";
+
+    /**
+     * List of random content types that is expected to not be supported via API requests.
+     */
+    private static final List<String> UNSUPPORTED_MEDIA_TYPES = Arrays.asList("application/java-archive",
+            "application/javascript",
+            "application/octet-stream",
+            "application/ogg",
+            "application/pdf",
+            "application/xhtml+xml",
+            "application/x-shockwave-flash",
+            "application/ld+json",
+            "application/xml",
+            "application/zip",
+            "application/x-www-form-urlencoded",
+            "image/gif",
+            "image/jpeg",
+            "image/png",
+            "image/tiff",
+            "image/vnd.microsoft.icon",
+            "image/x-icon",
+            "image/vnd.djvu",
+            "image/svg+xml",
+            "multipart/mixed; boundary=cats",
+            "multipart/alternative; boundary=cats",
+            "multipart/related; boundary=cats",
+            "multipart/form-data; boundary=cats",
+            "text/css",
+            "text/csv",
+            "text/html",
+            "text/javascript",
+            "text/plain",
+            "text/xml");
 
     private static final RandomGen REGEXP_RANDOM_GEN = new RandomBoundsGen();
     private static final org.cornutum.regexpgen.Provider REGEXPGEN_PROVIDER = Provider.forEcmaScript();
@@ -315,5 +350,14 @@ public class StringGenerator {
         return input
                 .replaceAll("(^[\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+)|([\\p{Z}\\p{C}\\p{So}\\p{M}\\p{Sk}]+$)", EMPTY)
                 .replaceAll("[\\p{C}\\p{So}\\p{M}\\p{Sk}\r\n]+", EMPTY);
+    }
+
+    /**
+     * Returns a list of random content types that is expected to not be supported via API requests.
+     *
+     * @return a list of random content types to be used for fuzzing
+     */
+    public static List<String> getUnsupportedMediaTypes() {
+        return UNSUPPORTED_MEDIA_TYPES;
     }
 }
