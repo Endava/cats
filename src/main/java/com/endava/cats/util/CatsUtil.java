@@ -42,6 +42,10 @@ public abstract class CatsUtil {
     private static final String COMMA = ", ";
     private static final String N_A = "N/A";
 
+    private CatsUtil() {
+        //ntd
+    }
+
     /**
      * Filters a collection based on a specified predicate and prints items that do not match the predicate using a logger.
      * Returns a list of items that match the predicate.

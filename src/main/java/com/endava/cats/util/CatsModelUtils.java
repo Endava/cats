@@ -15,6 +15,10 @@ import java.util.List;
  */
 public abstract class CatsModelUtils {
 
+    private CatsModelUtils() {
+        //ntd
+    }
+
     public static boolean isStringSchema(Schema<?> schema) {
         return ModelUtils.isStringSchema(schema);
     }
