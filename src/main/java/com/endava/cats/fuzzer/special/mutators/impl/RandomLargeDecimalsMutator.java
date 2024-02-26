@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 public class RandomLargeDecimalsMutator implements Mutator {
     private static final int ITERATIONS = 5;
     private static final int SCALE_ITERATIONS = 2;
-
     private static final int LENGTH = 20;
 
     @Override
