@@ -29,18 +29,18 @@ class ExactValuesInFieldsFuzzerTest {
         Schema<String> schema = new StringSchema();
         schema.setPattern("[0-9]+");
         schema.setMaxLength(10);
-        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
-        Assertions.assertThat(generated).matches("[0-9]+");
+        Assertions.assertThat(generated).asString().matches("[0-9]+");
     }
 
     @Test
     void shouldGetBoundaryValueForSchemaWithNoPattern() {
         Schema<String> schema = new StringSchema();
         schema.setMaxLength(10);
-        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
-        Assertions.assertThat(generated).matches(StringGenerator.ALPHANUMERIC_PLUS);
+        Assertions.assertThat(generated).asString().matches(StringGenerator.ALPHANUMERIC_PLUS);
     }
 
     @Test
@@ -48,15 +48,15 @@ class ExactValuesInFieldsFuzzerTest {
         Schema<String> schema = new StringSchema();
         schema.setPattern("^(A-\\d{1,12})$");
         schema.setMaxLength(14);
-        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
-        Assertions.assertThat(generated).matches("^(A-\\d{1,12})$");
+        Assertions.assertThat(generated).asString().matches("^(A-\\d{1,12})$");
     }
 
     @Test
     void shouldGetNullBoundaryValueWhenNoBoundaries() {
         Schema<String> schema = new StringSchema();
-        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
         Assertions.assertThat(generated).isNull();
     }
@@ -65,9 +65,9 @@ class ExactValuesInFieldsFuzzerTest {
     void shouldGetBase64EncodeWhenByteArray() {
         Schema<byte[]> schema = new ByteArraySchema();
         schema.setMaxLength(10);
-        String generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
-        Assertions.assertThat(generated).matches("^[A-Za-z0-9+/=]+\\Z");
+        Assertions.assertThat(generated).asString().matches("^[A-Za-z0-9+/=]+\\Z");
     }
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {

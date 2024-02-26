@@ -45,7 +45,7 @@ public class MaximumExactNumbersInNumericFieldsFuzzer extends ExactValuesInField
     }
 
     @Override
-    public String getBoundaryValue(Schema schema) {
-        return String.valueOf(getExactMethod().apply(schema));
+    public Object getBoundaryValue(Schema schema) {
+        return getExactMethod().apply(schema);
     }
 }

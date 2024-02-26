@@ -5,6 +5,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,6 +86,15 @@ class MaximumExactNumbersInNumericFieldsFuzzerTest {
     void shouldReturn2XXForExpectedResultCodes() {
         Assertions.assertThat(maximumExactNumbersInNumericFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(maximumExactNumbersInNumericFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualByComparingTo(ResponseCodeFamily.TWOXX);
+    }
+
+    @Test
+    void shouldGenerateNumberBoundaryValue() {
+        IntegerSchema schema = new IntegerSchema();
+        schema.setMaximum(BigDecimal.ONE);
+        Object generated = maximumExactNumbersInNumericFieldsFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).isInstanceOf(Number.class);
     }
 
     @ParameterizedTest

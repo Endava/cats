@@ -5,6 +5,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,6 +68,15 @@ class MinimumExactNumbersInNumericFieldsFuzzerTest {
         StringSchema stringSchema = new StringSchema();
         stringSchema.setMinimum(BigDecimal.TEN);
         Assertions.assertThat(minimumExactNumbersInNumericFieldsFuzzer.getBoundaryValue(stringSchema)).isNotNull();
+    }
+
+    @Test
+    void shouldGenerateNumberBoundaryValue() {
+        IntegerSchema schema = new IntegerSchema();
+        schema.setMinimum(BigDecimal.ONE);
+        Object generated = minimumExactNumbersInNumericFieldsFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).isInstanceOf(Number.class);
     }
 
     @Test
