@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
@@ -38,22 +39,22 @@
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
-        <spotbugs-maven-plugin.version>4.8.3.0</spotbugs-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.8.3.1</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.11</compiler.version>
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.7.2</quarkus.platform.version>
+        <quarkus.platform.version>3.7.4</quarkus.platform.version>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
         <compiler-plugin.version>3.12.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>6.1.3</spring.version>
+        <spring.version>6.1.4</spring.version>
         <assertj-core.version>3.25.3</assertj-core.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
-        <spring-integration-core.version>6.2.1</spring-integration-core.version>
+        <spring-integration-core.version>6.2.2</spring-integration-core.version>
         <json.version>20240205</json.version>
         <error-prone.version>2.18.0</error-prone.version>
         <archunit-junit5.version>1.2.1</archunit-junit5.version>
@@ -68,7 +69,7 @@
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
         <okio.version>3.8.0</okio.version>
-        <wiremock.version>3.3.1</wiremock.version>
+        <wiremock.version>3.4.1</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <jline.version>3.24.1</jline.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
@@ -264,7 +265,7 @@
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
-                <version>1.15.3</version>
+                <version>1.15.8</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.pitest</groupId>
