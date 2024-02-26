@@ -14,6 +14,7 @@ import java.util.function.Function;
  * Enumeration with HTTP methods.
  */
 public enum HttpMethod {
+    //REST
     /**
      * HTTP POST method.
      */
@@ -54,6 +55,7 @@ public enum HttpMethod {
      */
     CONNECT,
 
+    // WebDAV
     /**
      * HTTP COPY method.
      */
@@ -132,7 +134,56 @@ public enum HttpMethod {
     /**
      * HTTP REPORT method.
      */
-    REPORT;
+    REPORT,
+    // HYPOTHETICAL METHODS
+    /**
+     * HTTP DIFF method
+     */
+    DIFF,
+    /**
+     * HTTP VERIFY method
+     */
+    VERIFY,
+    /**
+     * HTTP PUBLISH method
+     */
+    PUBLISH,
+    /**
+     * HTTP UNPUBLISH method
+     */
+    UNPUBLISH,
+    /**
+     * HTTP BATCH method
+     */
+    BATCH,
+    /**
+     * HTTP VIEW method
+     */
+    VIEW,
+    /**
+     * HTTP PURGE method
+     */
+    PURGE,
+    /**
+     * HTTP DEBUG method
+     */
+    DEBUG,
+    /**
+     * HTTP SUBSCRIBE method
+     */
+    SUBSCRIBE,
+    /**
+     * HTTP UNSUBSCRIBE method
+     */
+    UNSUBSCRIBE,
+    /**
+     * HTTP MERGE method
+     */
+    MERGE,
+    /**
+     * HTTP INDEX method
+     */
+    INDEX;
 
     private static final List<HttpMethod> REST_METHODS = Arrays.asList(POST, PUT, GET, TRACE, DELETE, PATCH, HEAD);
 
@@ -140,6 +191,10 @@ public enum HttpMethod {
             PROPPATCH, PROPFIND, MKCOL, LOCK, UNLOCK, SEARCH,
             BIND, UNBIND, REBIND, MKREDIRECTREF,
             UPDATEREDIRECTREF, ORDERPATCH, ACL, REPORT);
+
+    private final static List<HttpMethod> HYPOTHETICAL_HTTP_METHODS = List.of(
+            DIFF, VERIFY, PUBLISH, UNPUBLISH, BATCH, VIEW,
+            PURGE, DEBUG, SUBSCRIBE, UNSUBSCRIBE, MERGE, INDEX);
 
     /**
      * Holds a mapping between OpenAPI paths and HTTP methods.
@@ -173,6 +228,15 @@ public enum HttpMethod {
      */
     public static List<HttpMethod> nonRestMethods() {
         return NON_REST_METHODS;
+    }
+
+    /**
+     * Gets a list of hypothetical HTTP methods.
+     *
+     * @return a list of non-RESTful hypothetical HTTP methods.
+     */
+    public static List<HttpMethod> hypotheticalMethods() {
+        return HYPOTHETICAL_HTTP_METHODS;
     }
 
     /**
