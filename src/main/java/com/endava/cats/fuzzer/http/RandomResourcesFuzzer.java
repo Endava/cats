@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  * Iterates through path variables and sens random resource identifiers.
+ * The fuzzer only runs for GET and DELETE requests.
  */
 @HttpFuzzer
 @Singleton
