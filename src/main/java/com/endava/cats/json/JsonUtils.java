@@ -147,7 +147,7 @@ public abstract class JsonUtils {
     }
 
     /**
-     * Checks if the given string is a valid JSON.
+     * Checks if the given string is a valid JSON. Empty strings are not considered valid JSONs.
      *
      * @param text the given text
      * @return true if the input is a payload, false otherwise

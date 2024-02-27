@@ -50,9 +50,10 @@ class RandomResourcesFuzzerTest {
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
-    @Test
-    void shouldNotReplaceUrlParams() {
-        FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}/another/{urlParam}").
+    @ParameterizedTest
+    @CsvSource({"GET,10", "POST,20"})
+    void shouldNotReplaceUrlParams(HttpMethod method, int times) {
+        FuzzingData data = FuzzingData.builder().method(method).path("/test/{id}/another/{urlParam}").
                 reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{\"id\":\"d46df8b7-7d69-4bb4-b63b-88c3ebe0e1b8\"}");
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(404).build();
@@ -61,8 +62,8 @@ class RandomResourcesFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
         randomResourcesFuzzer.fuzz(data);
-        Mockito.verify(serviceCaller, Mockito.times(10)).call(argThat(serviceData -> !serviceData.getPayload().contains("urlParamValue")));
-        Mockito.verify(testCaseListener, Mockito.times(10)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX_NF), Mockito.anyBoolean());
+        Mockito.verify(serviceCaller, Mockito.times(times)).call(argThat(serviceData -> !serviceData.getPayload().contains("urlParamValue")));
+        Mockito.verify(testCaseListener, Mockito.times(times)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX_NF), Mockito.anyBoolean());
     }
 
     @ParameterizedTest
@@ -103,7 +104,7 @@ class RandomResourcesFuzzerTest {
     @Test
     void shouldSkipForNonHttpBodyMethods() {
         Assertions.assertThat(randomResourcesFuzzer.skipForHttpMethods())
-                .containsOnly(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.HEAD, HttpMethod.TRACE);
+                .containsOnly(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
 }

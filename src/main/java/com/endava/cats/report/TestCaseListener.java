@@ -19,7 +19,6 @@ import com.google.common.net.MediaType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -32,7 +31,6 @@ import org.slf4j.event.Level;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -739,15 +737,19 @@ public class TestCaseListener {
     }
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
-        JsonReader reader = new JsonReader(new StringReader(response.getBody()));
-        reader.setLenient(true);
-        JsonElement jsonElement = JsonParser.parseReader(reader);
-        List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
+        try {
+            JsonElement jsonElement = JsonParser.parseString(response.getBody());
+            List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
 
-        return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
-                || isResponseEmpty(response, responses)
-                || isNotTypicalDocumentedResponseCode(response)
-                || isEmptyArray(jsonElement);
+            return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
+                    || isResponseEmpty(response, responses)
+                    || isNotTypicalDocumentedResponseCode(response)
+                    || isEmptyArray(jsonElement);
+        } catch (Exception e) {
+            logger.debug("Something happened while matching response schema!", e);
+            //if something happens during json parsing we consider it doesn't match schema
+            return false;
+        }
     }
 
     private boolean isEmptyArray(JsonElement jsonElement) {

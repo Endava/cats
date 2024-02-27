@@ -17,8 +17,10 @@ import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -60,6 +62,41 @@ public class RandomResourcesFuzzer implements Fuzzer {
             return;
         }
 
+        if (HttpMethod.requiresBody(data.getMethod())) {
+            fuzzBodyMethods(data, pathVariables);
+        } else {
+            fuzzNonBodyMethods(data, pathVariables);
+        }
+    }
+
+    private void fuzzBodyMethods(FuzzingData data, Set<String> pathVariables) {
+        List<String> paths = new ArrayList<>();
+        for (int i = 0; i < pathVariables.size() * ITERATIONS; i++) {
+            String path = data.getPath();
+            for (String pathVar : pathVariables) {
+                Object generatedValue = generateNewValue();
+                path = path.replace(pathVar, String.valueOf(generatedValue));
+            }
+            path = path.replaceAll("[{}]", "");
+            paths.add(path);
+        }
+        for (String path : paths) {
+            simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF)
+                            .fuzzingData(data)
+                            .logger(logger)
+                            .replaceRefData(false)
+                            .scenario("Send random values in path variables")
+                            .fuzzer(this)
+                            .path(path)
+                            .replaceUrlParams(false)
+                            .build()
+            );
+        }
+    }
+
+    private void fuzzNonBodyMethods(FuzzingData data, Set<String> pathVariables) {
         Set<String> payloads = new HashSet<>();
 
         for (int i = 0; i < ITERATIONS; i++) {
@@ -102,6 +139,21 @@ public class RandomResourcesFuzzer implements Fuzzer {
                             .build()
             );
         }
+    }
+
+    private static Object generateNewValue() {
+        int randomChoice = CatsUtil.random().nextInt(3);
+        int randomLength = CatsUtil.random().nextInt(32);
+        switch (randomChoice) {
+            case 0:
+                return UUID.randomUUID().toString();
+            case 1:
+                return NumberGenerator.generateRandomLong(0, Long.MAX_VALUE);
+            case 2:
+                RandomStringUtils.randomAlphanumeric(randomLength);
+        }
+
+        return RandomStringUtils.randomAlphanumeric(randomLength);
     }
 
     private static Object generateNewValue(Object value) {
@@ -147,6 +199,6 @@ public class RandomResourcesFuzzer implements Fuzzer {
 
     @Override
     public List<HttpMethod> skipForHttpMethods() {
-        return List.of(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.HEAD, HttpMethod.TRACE);
+        return List.of(HttpMethod.HEAD, HttpMethod.TRACE);
     }
 }
