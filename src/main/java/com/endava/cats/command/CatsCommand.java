@@ -181,7 +181,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             this.printVersion(newVersion);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (IOException | ExecutionException e) {
+        } catch (IOException | ExecutionException | IllegalArgumentException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace", e);
             exitCodeDueToErrors = 192;
@@ -219,6 +219,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private void doLogic() throws IOException {
         this.doFirst();
         OpenAPI openAPI = this.createOpenAPI();
+        this.checkOpenAPI(openAPI);
         //reporting path is initialized only if OpenAPI spec is successfully parsed
         testCaseListener.initReportingPath();
         this.printConfiguration(openAPI);
@@ -227,6 +228,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.startFuzzing(openAPI);
         this.executeCustomFuzzer();
         this.enableAdditionalLoggingIfSummary();
+    }
+
+    private void checkOpenAPI(OpenAPI openAPI) {
+        if (openAPI == null || openAPI.getPaths() == null || openAPI.getPaths().isEmpty()) {
+            throw new IllegalArgumentException("Provided OpenAPI specs are invalid!");
+        }
     }
 
     private void enableAdditionalLoggingIfSummary() {
