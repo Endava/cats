@@ -196,7 +196,7 @@ public class StringGenerator {
         String generatedValue;
         try {
             do {
-                generatedValue = new RgxGen(pattern).generate();
+                generatedValue = RgxGen.parse(pattern).generate();
                 if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(pattern)) {
                     return generatedValue;
                 }
@@ -291,7 +291,7 @@ public class StringGenerator {
         }
         String pattern = ALPHANUMERIC + "{" + (minLength - 1) + "," + minLength + "}";
 
-        return new RgxGen(pattern).generate();
+        return RgxGen.parse(pattern).generate();
     }
 
     /**
