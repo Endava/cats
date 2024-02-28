@@ -28,8 +28,10 @@ public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataForma
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return propertyName.toLowerCase().endsWith("ip") || propertyName.toLowerCase().endsWith("ipaddress")
-                || "ip".equalsIgnoreCase(format) || "ipv4".equalsIgnoreCase(format);
+        return (propertyName.toLowerCase().endsWith("ip") && !propertyName.toLowerCase().startsWith("zip")) ||
+                propertyName.toLowerCase().endsWith("ipaddress") ||
+                "ip".equalsIgnoreCase(format) ||
+                "ipv4".equalsIgnoreCase(format);
     }
 
     @Override
