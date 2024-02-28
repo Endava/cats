@@ -15,6 +15,7 @@ import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.factory.NoMediaType;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -365,13 +367,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .filter(fuzzingData -> processingArguments.matchesXxxSelection(fuzzingData.getPayload()))
                 .toList();
 
-        // excludes Fuzzers whose HTTP methods do not match the FuzzingData http method
-        List<Fuzzer> fuzzersToRun = filterArguments.getFirstPhaseFuzzersAsFuzzers().stream()
-                .filter(fuzzer -> !(fuzzer.skipForHttpMethods().containsAll(filteredFuzzingData
-                        .stream()
-                        .map(FuzzingData::getMethod)
-                        .collect(Collectors.toList()))))
-                .toList();
+        Set<HttpMethod> allHttpMethodsFromFuzzingData = filteredFuzzingData
+                .stream()
+                .map(FuzzingData::getMethod)
+                .collect(Collectors.toSet());
+
+        List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethods(allHttpMethodsFromFuzzingData);
 
         testCaseListener.setTotalRunsPerPath(pathItemEntry.getKey(), fuzzersToRun.size() * filteredFuzzingData.size());
 

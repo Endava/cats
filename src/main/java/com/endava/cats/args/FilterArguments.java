@@ -244,6 +244,18 @@ public class FilterArguments {
     }
 
     /**
+     * Excludes fuzzers that are meant to be skipped for all the provided http methods list.
+     *
+     * @param httpMethods the list of http methods
+     * @return a filtered list with fuzzers that can be run against at least one of the provided http method
+     */
+    public List<Fuzzer> filterOutFuzzersNotMatchingHttpMethods(Set<HttpMethod> httpMethods) {
+        return this.getFirstPhaseFuzzersAsFuzzers().stream()
+                .filter(fuzzer -> !(new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods)))
+                .toList();
+    }
+
+    /**
      * Returns the fuzzers to be run initially as a group as list of fuzzer names.
      *
      * @return a list of fuzzers to be run in phase 1
