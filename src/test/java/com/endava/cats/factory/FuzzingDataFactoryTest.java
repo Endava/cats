@@ -47,7 +47,7 @@ class FuzzingDataFactoryTest {
         processingArguments = Mockito.mock(ProcessingArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
-        Mockito.when(processingArguments.getContentType()).thenReturn(List.of("application/json", "application/x-www-form-urlencoded"));
+        Mockito.when(processingArguments.getContentType()).thenReturn(List.of(ProcessingArguments.JSON_WILDCARD, "application/x-www-form-urlencoded"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
     }
 
