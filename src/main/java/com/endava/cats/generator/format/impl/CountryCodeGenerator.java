@@ -21,13 +21,21 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
     @Override
     public Object generate(Schema<?> schema) {
         Locale.IsoCountryCode isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA3;
-        if (schema.getMinLength() != null && schema.getMinLength() == 2) {
-            isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA2;
-        } else if(schema.getPattern() != null && schema.getPattern().endsWith("{2}$")) {
+
+        if (hasMinLengthTwo(schema) || patternMatchesTwoLetterIsoCode(schema)) {
             isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA2;
         }
+
         Set<String> isoCountries = Locale.getISOCountries(isoCountryCode);
         return isoCountries.stream().skip(CatsUtil.random().nextInt(isoCountries.size())).findFirst().orElse(Locale.UK.getCountry());
+    }
+
+    private static boolean patternMatchesTwoLetterIsoCode(Schema<?> schema) {
+        return schema.getPattern() != null && "RO".matches(schema.getPattern());
+    }
+
+    private static boolean hasMinLengthTwo(Schema<?> schema) {
+        return schema.getMinLength() != null && schema.getMinLength() == 2;
     }
 
     @Override
