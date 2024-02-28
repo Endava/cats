@@ -69,8 +69,8 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
     HttpMethod httpMethod = HttpMethod.POST;
 
     @CommandLine.Option(names = {"--contentType"},
-            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private String contentType = "application/json";
+            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning")
+    private String contentType;
     @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
             description = "A @|bold name:value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
                     " which result in multiple payloads for a single endpoint and http method.")
