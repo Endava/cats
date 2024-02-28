@@ -23,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @QuarkusTest
 class FilterArgumentsTest {
@@ -373,5 +374,22 @@ class FilterArgumentsTest {
     @Test
     void shouldReturnFuzzersAsClasses() {
         Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(91);
+    }
+
+    @Test
+    void shouldNotReturnAllFuzzers() {
+        Set<HttpMethod> httpMethods = Set.of(HttpMethod.GET);
+        List<Fuzzer> filteredFuzzers = filterArguments.filterOutFuzzersNotMatchingHttpMethods(httpMethods);
+        int allFuzzersSize = filterArguments.getFirstPhaseFuzzersAsFuzzers().size();
+        int filteredSize = filteredFuzzers.size();
+        Assertions.assertThat(filteredSize).isNotEqualTo(allFuzzersSize);
+    }
+
+    @Test
+    void shouldReturnAllFuzzers() {
+        Set<HttpMethod> httpMethods = Set.of(HttpMethod.GET, HttpMethod.POST);
+        List<Fuzzer> filteredFuzzers = filterArguments.filterOutFuzzersNotMatchingHttpMethods(httpMethods);
+        int allFuzzersSize = filterArguments.getFirstPhaseFuzzersAsFuzzers().size();
+        Assertions.assertThat(filteredFuzzers).hasSize(allFuzzersSize);
     }
 }
