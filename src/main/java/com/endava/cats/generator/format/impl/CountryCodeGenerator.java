@@ -23,6 +23,8 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
         Locale.IsoCountryCode isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA3;
         if (schema.getMinLength() != null && schema.getMinLength() == 2) {
             isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA2;
+        } else if(schema.getPattern() != null && schema.getPattern().endsWith("{2}$")) {
+            isoCountryCode = Locale.IsoCountryCode.PART1_ALPHA2;
         }
         Set<String> isoCountries = Locale.getISOCountries(isoCountryCode);
         return isoCountries.stream().skip(CatsUtil.random().nextInt(isoCountries.size())).findFirst().orElse(Locale.UK.getCountry());
