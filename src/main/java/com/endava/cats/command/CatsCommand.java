@@ -367,13 +367,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         // excludes Fuzzers whose HTTP methods do not match the FuzzingData http method
         List<Fuzzer> fuzzersToRun = filterArguments.getFirstPhaseFuzzersAsFuzzers().stream()
-                .filter(fuzzer -> fuzzer.skipForHttpMethods()
+                .filter(fuzzer -> !(fuzzer.skipForHttpMethods().containsAll(filteredFuzzingData
                         .stream()
-                        .noneMatch(httpMethod -> filteredFuzzingData
-                                .stream()
-                                .map(FuzzingData::getMethod)
-                                .toList()
-                                .contains(httpMethod)))
+                        .map(FuzzingData::getMethod)
+                        .collect(Collectors.toList()))))
                 .toList();
 
         testCaseListener.setTotalRunsPerPath(pathItemEntry.getKey(), fuzzersToRun.size() * filteredFuzzingData.size());
