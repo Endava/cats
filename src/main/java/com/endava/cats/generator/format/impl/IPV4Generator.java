@@ -3,14 +3,13 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
+import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
-import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * A generator class implementing interfaces for generating valid and invalid IPv4 address data formats.
@@ -20,10 +19,9 @@ import java.util.List;
 public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        Random random = new Random();
-        IntStream numbers = random.ints(4, 1, 254);
-        List<Integer> list = numbers.boxed().collect(Collectors.toList());
-        return "%s.%s.%s.%s".formatted(list.get(0).toString(), list.get(1).toString(), list.get(2).toString(), list.get(3).toString());
+        return IntStream.range(0, 4)
+                .mapToObj(i -> String.valueOf(CatsUtil.random().nextInt(254) + 1))
+                .collect(Collectors.joining("."));
     }
 
     @Override
