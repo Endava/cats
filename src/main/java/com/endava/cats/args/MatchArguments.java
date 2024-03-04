@@ -101,6 +101,9 @@ public class MatchArguments {
      * @return true if the regex matches the body, false otherwise
      */
     public boolean isMatchedResponseRegex(String body) {
+        if (StringUtils.isBlank(body) && matchResponseRegex == null) {
+            return false;
+        }
         Pattern pattern = Pattern.compile(Optional.ofNullable(matchResponseRegex).orElse(""), Pattern.DOTALL);
         return pattern.matcher(body).matches();
     }
