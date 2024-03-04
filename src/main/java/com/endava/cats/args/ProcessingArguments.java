@@ -69,6 +69,10 @@ public class ProcessingArguments {
             description = "When set to @|bold true|@ the InvalidValuesInEnumsFieldsFuzzer will be disabled. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean allowInvalidEnumValues = false;
 
+    @CommandLine.Option(names = {"--limitXxxOfCombinations"},
+            description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations")
+    private int limitXxxOfCombinations;
+
     /**
      * Represents a wildcard pattern for JSON content type with optional parameters.
      */

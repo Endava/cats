@@ -426,7 +426,15 @@ public class FuzzingDataFactory {
         String payloadSample = examples.get("example");
 
         payloadSample = this.squashAllOfElements(payloadSample);
-        return this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
+        List<String> payloadCombinationsBasedOnOneOfAndAnyOf = this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
+
+        if (processingArguments.getLimitXxxOfCombinations() > 0) {
+            int maxCombinations = Math.min(processingArguments.getLimitXxxOfCombinations(), payloadCombinationsBasedOnOneOfAndAnyOf.size());
+            return payloadCombinationsBasedOnOneOfAndAnyOf.stream()
+                    .limit(maxCombinations)
+                    .toList();
+        }
+        return payloadCombinationsBasedOnOneOfAndAnyOf;
     }
 
     /**
