@@ -44,8 +44,12 @@ public class InfoCommand implements Runnable {
     @ConfigProperty(name = "app.timestamp", defaultValue = "1-1-1")
     String appBuildTime;
 
+    @CommandLine.ParentCommand
+    CatsCommand catsCommand;
+
     @Override
     public void run() {
+        ConsoleUtils.initTerminalWidth(catsCommand.spec);
         String imageType = ImageInfo.inImageRuntimeCode() ? "native" : "uber-jar";
         String osName = System.getProperty("os.name");
         String osVersion = System.getProperty("os.version");
