@@ -13,7 +13,6 @@ import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -111,11 +110,6 @@ public class DryRunAspect {
         Object data = context.getParameters()[1];
 
         if (data instanceof FuzzingData fuzzingData) {
-            boolean tenThousandsTestsSimulated = counter % 10000 == 0;
-
-            if (tenThousandsTestsSimulated && !reportingArguments.isJsonOutput()) {
-                logger.noFormat(StringUtils.repeat("..", 1 + (counter / 10000)));
-            }
             paths.merge(fuzzingData.getPath() + "_" + fuzzingData.getMethod(), 1, Integer::sum);
         }
         counter++;
