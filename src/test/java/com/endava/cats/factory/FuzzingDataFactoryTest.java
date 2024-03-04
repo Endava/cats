@@ -283,6 +283,13 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldLimitOneOfAnyOfCombinations() throws Exception {
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(1);
+        List<FuzzingData> dataList = setupFuzzingData("/mfm/v1/services/", "src/test/resources/issue86.json");
+        Assertions.assertThat(dataList).hasSize(2);
+    }
+
+    @Test
     void shouldGenerateValidResponseForOneOfNestedCombinations() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/api/groops/{groopId}/StartGroopitPaging", "src/test/resources/nswag_gen_oneof.json");
         Assertions.assertThat(dataList).hasSize(1);
