@@ -41,7 +41,7 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
         Predicate<Schema<?>> schemaFilter = schema -> schema.getEnum() != null;
         BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer = (schema, field) -> schema.getEnum()
                 .stream()
-                .map(element -> (Object) element)
+                .map(Object.class::cast)
                 .toList();
         Predicate<String> notADiscriminator = catsExecutor::isFieldNotADiscriminator;
         Predicate<String> fieldExists = field -> JsonUtils.isFieldInJson(data.getPayload(), field);

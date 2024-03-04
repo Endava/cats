@@ -219,7 +219,7 @@ public class RandomFuzzer implements Fuzzer {
         return Files.readAllLines(Path.of(fileLocation))
                 .stream()
                 .filter(Predicate.not(String::isBlank))
-                .filter(Predicate.not(line -> line.startsWith("# ")))
+                .filter(Predicate.not(line -> line.startsWith("#")))
                 .toList();
     }
 
