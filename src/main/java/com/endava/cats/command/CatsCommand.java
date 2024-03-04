@@ -11,6 +11,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.factory.NoMediaType;
 import com.endava.cats.fuzzer.api.Fuzzer;
@@ -183,7 +184,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             this.printVersion(newVersion);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (IOException | ExecutionException | IllegalArgumentException e) {
+        } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace", e);
             exitCodeDueToErrors = 192;

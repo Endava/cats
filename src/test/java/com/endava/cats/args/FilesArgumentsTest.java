@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.exception.CatsException;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -92,6 +93,14 @@ class FilesArgumentsTest {
         ReflectionTestUtils.setField(filesArguments, "queryFile", new File("mumu"));
 
         Assertions.assertThrows(IOException.class, filesArguments::loadQueryParams);
+    }
+
+    @Test
+    void shouldThrowExceptionAsInvalidFormatForHeaders() throws Exception {
+        FilesArguments filesArguments = new FilesArguments();
+        ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/wrong_headers.yml"));
+        org.assertj.core.api.Assertions.assertThatThrownBy(filesArguments::loadHeaders).isInstanceOf(CatsException.class)
+                .hasMessage("File format is wrong for Headers. Make sure you supply a valid yaml file!");
     }
 
     @Test
