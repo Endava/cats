@@ -439,7 +439,19 @@ body.dark-mode .rounded-trace {
 .rounded-acl,
 .rounded-report,
 .rounded-connect,
-.rounded-updateredirectref {
+.rounded-updateredirectref,
+.rounded-diff,
+.rounded-verify,
+.rounded-publish,
+.rounded-unpublish,
+.rounded-batch,
+.rounded-view,
+.rounded-purge,
+.rounded-debug,
+.rounded-subscribe,
+.rounded-unsubscribe,
+.rounded-merge,
+.rounded-index {
 	background-color: var(--light-pink-light);
 	border: 1px solid var(--light-pink-light);
 	color: var(--rose-pink);
@@ -462,7 +474,19 @@ body.dark-mode .rounded-orderpatch,
 body.dark-mode .rounded-acl,
 body.dark-mode .rounded-report,
 body.dark-mode .rounded-connect,
-body.dark-mode .rounded-updateredirectref {
+body.dark-mode .rounded-updateredirectref,
+body.dark-mode .rounded-diff,
+body.dark-mode .rounded-verify,
+body.dark-mode .rounded-publish,
+body.dark-mode .rounded-unpublish,
+body.dark-mode .rounded-batch,
+body.dark-mode .rounded-view,
+body.dark-mode .rounded-purge,
+body.dark-mode .rounded-debug,
+body.dark-mode .rounded-subscribe,
+body.dark-mode .rounded-unsubscribe,
+body.dark-mode .rounded-merge,
+body.dark-mode .rounded-index{
 	background-color: #460B2D;
 	border: 1px solid #460B2D;
 	color: #EB2F96;
