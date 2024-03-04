@@ -71,51 +71,51 @@ public class FilterArguments {
         FLOAT, DOUBLE, INT32, INT64, DATE, DATE_TIME, PASSWORD, BYTE, BINARY, EMAIL, UUID, URI, URL, HOSTNAME, IPV4, IPV6
     }
 
-    @CommandLine.Option(names = {"-f", "--fuzzers"},
+    @CommandLine.Option(names = {"-f", "--fuzzers", "--fuzzer"},
             description = "A comma separated list of fuzzers you want to run. You can use full or partial Fuzzer names. To list all available fuzzers run: @|bold cats list -f|@", split = ",")
     private List<String> suppliedFuzzers;
-    @CommandLine.Option(names = {"-p", "--paths"},
+    @CommandLine.Option(names = {"-p", "--paths", "--path"},
             description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. To list all available paths run: @|bold cats list -p -c api.yml|@", split = ",")
     @Setter
     private List<String> paths;
-    @CommandLine.Option(names = {"--skipPaths"},
+    @CommandLine.Option(names = {"--skipPaths", "--skipPath"},
             description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. To list all available paths run: @|bold cats list -p -c api.yml|@", split = ",")
     private List<String> skipPaths;
-    @CommandLine.Option(names = {"--skipFuzzers"},
+    @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
             description = "A comma separated list of fuzzers you want to ignore. You can use full or partial Fuzzer names. To list all available fuzzers run: @|bold cats list -f|@", split = ",")
     private List<String> skipFuzzers;
-    @CommandLine.Option(names = {"--httpMethods"},
+    @CommandLine.Option(names = {"--httpMethods", "--httpMethod"},
             description = "A comma separated list of HTTP methods. When supplied, only these methods will be considered for each contract path. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
     @Setter
     private List<HttpMethod> httpMethods = HttpMethod.restMethods();
     @CommandLine.Option(names = {"-d", "--dryRun"},
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
     private boolean dryRun;
-    @CommandLine.Option(names = {"--fieldTypes"},
+    @CommandLine.Option(names = {"--fieldTypes", "--fieldType"},
             description = "A comma separated list of OpenAPI data types to include. It only supports standard types: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FieldType> fieldTypes;
-    @CommandLine.Option(names = {"--skipFieldTypes"},
+    @CommandLine.Option(names = {"--skipFieldTypes", "--skipFieldType"},
             description = "A comma separated list of OpenAPI data types to skip. It only supports standard types: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FieldType> skipFieldTypes;
-    @CommandLine.Option(names = {"--fieldFormats"},
+    @CommandLine.Option(names = {"--fieldFormats", "--fieldFormat"},
             description = "A comma separated list of OpenAPI data formats to include. It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FormatType> fieldFormats;
-    @CommandLine.Option(names = {"--skipFieldFormats"},
+    @CommandLine.Option(names = {"--skipFieldFormats", "--skipFieldFormat"},
             description = "A comma separated list of OpenAPI data formats to skip.  It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FormatType> skipFieldFormats;
-    @CommandLine.Option(names = {"--skipFields"},
+    @CommandLine.Option(names = {"--skipFields", "--skipField"},
             description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")
     private List<String> skipFields;
-    @CommandLine.Option(names = {"--skipHeaders"},
+    @CommandLine.Option(names = {"--skipHeaders", "--skipHeader"},
             description = "A comma separated list of headers that will be skipped by all Fuzzers", split = ",")
     private List<String> skipHeaders;
     @CommandLine.Option(names = {"--skipDeprecatedOperations"},
             description = "Skip fuzzing deprecated API operations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean skipDeprecated;
-    @CommandLine.Option(names = {"-t", "--tags"},
+    @CommandLine.Option(names = {"-t", "--tags", "--tag"},
             description = "A comma separated list of tags to include. If no tag is supplied, all tags will be considered. To list all available tags run: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> tags;
-    @CommandLine.Option(names = {"--skipTags"},
+    @CommandLine.Option(names = {"--skipTags", "--skipTag"},
             description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. To list all available tags run: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> skipTags;
 
