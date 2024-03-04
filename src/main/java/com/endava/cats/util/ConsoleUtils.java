@@ -4,10 +4,8 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
+import picocli.CommandLine;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -23,8 +21,18 @@ public abstract class ConsoleUtils {
 
     private static final Pattern ANSI_REMOVE_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
 
+    private static int terminalWidth = 0;
+
     private ConsoleUtils() {
         //ntd
+    }
+
+    public static void initTerminalWidth(CommandLine.Model.CommandSpec spec) {
+        try {
+            terminalWidth = spec.usageMessage().width();
+        } catch (Exception e) {
+            terminalWidth = 0;
+        }
     }
 
     /**
@@ -67,12 +75,11 @@ public abstract class ConsoleUtils {
      * @return The terminal type or "unknown" if unable to determine.
      */
     public static String getTerminalType() {
-        try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
-            return terminal.getType();
-
-        } catch (IOException e) {
-            LOGGER.debug("Unable to determine terminal type.");
+        String terminalType = System.getenv("TERM");
+        if (terminalType != null && !terminalType.isEmpty()) {
+            return terminalType;
         }
+
         return "unknown";
     }
 
@@ -87,18 +94,14 @@ public abstract class ConsoleUtils {
 
     /**
      * Get the width of the terminal.
+     * <p>
+     * Size is cached, so it won't reach to width changes during run.
      *
      * @param defaultWidth The default width to use if unable to determine the terminal size.
      * @return The width of the terminal.
      */
     public static int getTerminalWidth(int defaultWidth) {
-        try (Terminal terminal = TerminalBuilder.builder().system(true).build()) {
-            return terminal.getSize().getColumns() > 0 ? terminal.getSize().getColumns() : defaultWidth;
-        } catch (IOException e) {
-            LOGGER.debug("Unable to determine terminal size. Using {}", defaultWidth);
-        }
-
-        return defaultWidth;
+        return terminalWidth == 0 ? defaultWidth : terminalWidth;
     }
 
     /**
@@ -132,17 +135,6 @@ public abstract class ConsoleUtils {
     }
 
     /**
-     * Render a progress row on a new console row.
-     *
-     * @param path     the path being processed
-     * @param progress a progress character
-     */
-    public static void renderNewRow(String path, String progress) {
-        renderRow(System.lineSeparator(), path, progress);
-    }
-
-
-    /**
      * Render a progress row with a specific prefix.
      *
      * @param prefix            The prefix for the progress row.
@@ -152,10 +144,11 @@ public abstract class ConsoleUtils {
     public static void renderRow(String prefix, String path, String rightTextToRender) {
         String withoutAnsi = ANSI_REMOVE_PATTERN.matcher(path).replaceAll("");
         int consoleWidth = getTerminalWidth(80);
-        int dots = Math.max(consoleWidth - withoutAnsi.length() - String.valueOf(rightTextToRender).length() - 1, 1);
+        int dots = Math.max(consoleWidth - withoutAnsi.length() - rightTextToRender.length() - 2, 1);
         String firstPart = path.substring(0, path.indexOf("  "));
         String secondPart = path.substring(path.indexOf("  ") + 1);
-        System.out.print(Ansi.ansi().bold().a(prefix + firstPart + ".".repeat(dots) + secondPart + "  " + rightTextToRender).reset().toString());
+        String toPrint = Ansi.ansi().bold().a(prefix + firstPart + " " + ".".repeat(dots) + secondPart + "  " + rightTextToRender).reset().toString();
+        System.out.print(toPrint);
     }
 
     /**
@@ -177,9 +170,8 @@ public abstract class ConsoleUtils {
      */
     public static void renderHeader(String header) {
         LOGGER.noFormat(" ");
-        int toAdd = header.length() % 2;
         int equalsNo = (getTerminalWidth(80) - header.length()) / 2;
-        LOGGER.noFormat(Ansi.ansi().bold().a("=".repeat(equalsNo) + header + "=".repeat(equalsNo + toAdd)).reset().toString());
+        LOGGER.noFormat(Ansi.ansi().bold().a("=".repeat(equalsNo) + header + "=".repeat(equalsNo)).reset().toString());
     }
 
     /**

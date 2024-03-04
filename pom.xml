@@ -71,7 +71,6 @@
         <okio.version>3.8.0</okio.version>
         <wiremock.version>3.4.2</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
-        <jline.version>3.24.1</jline.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
     </properties>
@@ -553,14 +552,9 @@
             <version>${javax.validation-api.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.jline</groupId>
-            <artifactId>jline</artifactId>
-            <version>${jline.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jline</groupId>
-            <artifactId>jline-native</artifactId>
-            <version>${jline.version}</version>
+            <groupId>org.fusesource.jansi</groupId>
+            <artifactId>jansi</artifactId>
+            <version>${jansi.version}</version>
         </dependency>
         <dependency>
             <groupId>org.cornutum.regexp</groupId>
