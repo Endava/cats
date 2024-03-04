@@ -34,7 +34,7 @@ public class OverflowArraySizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
 
     @Override
     public BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext getContext(FuzzingData data) {
-        BiFunction<Schema<?>, String, List<String>> fuzzValueProducer = (schema, string) -> {
+        BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer = (schema, string) -> {
             int size = schema.getMaxItems() != null ? schema.getMaxItems() : processingArguments.getLargeStringsSize();
             String fieldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), string + "[0]"));
             return List.of("[" + StringUtils.repeat(fieldValue, ",", size + 10) + "]");

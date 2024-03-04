@@ -137,8 +137,8 @@ public class MatchArguments {
      * @param inputValue   the input value to check for reflection
      * @return {@code true} if the input value is reflected in the response body, {@code false} otherwise
      */
-    public boolean isInputReflected(CatsResponse catsResponse, String inputValue) {
-        return matchInput && catsResponse.getBody().contains(inputValue);
+    public boolean isInputReflected(CatsResponse catsResponse, Object inputValue) {
+        return matchInput && catsResponse.getBody().contains(String.valueOf(inputValue));
     }
 
     /**

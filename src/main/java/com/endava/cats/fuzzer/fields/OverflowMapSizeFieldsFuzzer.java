@@ -36,7 +36,7 @@ public class OverflowMapSizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
 
     @Override
     public BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext getContext(FuzzingData data) {
-        BiFunction<Schema<?>, String, List<String>> fuzzValueProducer = (schema, field) -> {
+        BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer = (schema, field) -> {
             Object allMapKeys = JsonUtils.getVariableFromJson(data.getPayload(), field + ".keys()");
             String firstKey = allMapKeys instanceof String s ? s : ((Set<String>) allMapKeys).iterator().next();
             Object firstKeyValue = JsonUtils.getVariableFromJson(data.getPayload(), field + "." + firstKey);

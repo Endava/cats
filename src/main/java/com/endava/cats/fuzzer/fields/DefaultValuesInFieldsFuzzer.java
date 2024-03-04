@@ -39,7 +39,7 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         Predicate<Schema<?>> isNotEnum = schema -> schema.getEnum() == null;
         Predicate<Schema<?>> hasDefault = schema -> schema.getDefault() != null;
-        BiFunction<Schema<?>, String, List<String>> fuzzedValueProducer = (schema, field) -> List.of(String.valueOf(schema.getDefault()));
+        BiFunction<Schema<?>, String, List<Object>> fuzzedValueProducer = (schema, field) -> List.of(schema.getDefault());
 
         catsExecutor.execute(
                 FieldsIteratorExecutorContext.builder()

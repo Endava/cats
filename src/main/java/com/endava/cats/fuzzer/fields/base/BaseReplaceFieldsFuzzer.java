@@ -79,7 +79,7 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
         private final String replaceWith;
         private final String skipMessage;
         private final Predicate<String> fieldFilter;
-        private final BiFunction<Schema<?>, String, List<String>> fuzzValueProducer;
+        private final BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer;
     }
 
     /**
