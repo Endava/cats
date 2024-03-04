@@ -14,6 +14,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -48,7 +49,7 @@ public class UserDictionaryFieldsFuzzer implements Fuzzer {
         } else if (!matchArguments.isAnyMatchArgumentSupplied()) {
             logger.error("Skipping fuzzer as no --matchXXX argument was provided!");
         } else {
-            BiFunction<Schema<?>, String, List<String>> fuzzedValueProducer = (schema, field) -> userArguments.getWordsAsList();
+            BiFunction<Schema<?>, String, List<Object>> fuzzedValueProducer = (schema, field) -> Collections.singletonList(userArguments.getWordsAsList());
 
             catsExecutor.execute(
                     FieldsIteratorExecutorContext.builder()

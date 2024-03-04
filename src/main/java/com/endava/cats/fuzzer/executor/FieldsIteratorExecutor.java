@@ -90,7 +90,7 @@ public class FieldsIteratorExecutor {
         for (String fuzzedField : allFields) {
             Schema<?> fuzzedFieldSchema = context.getFuzzingData().getRequestPropertyTypes().get(fuzzedField);
             if (context.getSchemaFilter().test(fuzzedFieldSchema) && context.getFieldFilter().test(fuzzedField)) {
-                for (String currentValue : context.getFuzzValueProducer().apply(fuzzedFieldSchema, fuzzedField)) {
+                for (Object currentValue : context.getFuzzValueProducer().apply(fuzzedFieldSchema, fuzzedField)) {
                     testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> executeTestCase(context, fuzzedField, currentValue));
                 }
             } else {
@@ -99,7 +99,7 @@ public class FieldsIteratorExecutor {
         }
     }
 
-    private void executeTestCase(FieldsIteratorExecutorContext context, String fuzzedField, String currentValue) {
+    private void executeTestCase(FieldsIteratorExecutorContext context, String fuzzedField, Object currentValue) {
         FuzzingStrategy strategy = context.getFuzzingStrategy().withData(currentValue);
         context.getLogger().debug("Applying [{}] for field [{}]", strategy, fuzzedField);
 
