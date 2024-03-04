@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.exception.CatsException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -343,17 +344,21 @@ public class FilesArguments {
 
     private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws
             IOException {
-        if (file == null) {
-            log.debug("No {} file provided!", fileType);
-            return new HashMap<>();
+        try {
+            if (file == null) {
+                log.debug("No {} file provided!", fileType);
+                return new HashMap<>();
+            }
+
+            log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
+                    Ansi.ansi().fg(Ansi.Color.BLUE).a(file.getCanonicalPath()));
+            Map<String, Map<String, Object>> fromFile = parseYaml(file.getCanonicalPath());
+            log.debug("{} file loaded successfully: {}", fileType, fromFile);
+
+            return fromFile;
+        } catch (IllegalArgumentException e) {
+            throw new CatsException("File format is wrong for " + fileType + ". Make sure you supply a valid yaml file!", e);
         }
-
-        log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(file.getCanonicalPath()));
-        Map<String, Map<String, Object>> fromFile = parseYaml(file.getCanonicalPath());
-        log.debug("{} file loaded successfully: {}", fileType, fromFile);
-
-        return fromFile;
     }
 
     static Map<String, Map<String, Object>> parseYaml(String yaml) throws IOException {
