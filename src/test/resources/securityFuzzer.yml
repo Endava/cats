@@ -4,5 +4,5 @@
     targetFields:
       - id
       - name
-    stringsFile: xss.txt
+    stringsFile: files/xss.txt
     expectedResponseCode: 200

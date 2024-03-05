@@ -3,6 +3,6 @@
     description: XSS strings
     targetFieldTypes:
       - http_body
-    stringsFile: xss.txt
+    stringsFile: files/xss.txt
     httpMethod: POST
     expectedResponseCode: 200

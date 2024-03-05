@@ -4,6 +4,6 @@ all:
     firstName: 2
     targetFields:
       - name
-    stringsFile: xss.txt
+    stringsFile: files/xss.txt
     httpMethod: ALL
     expectedResponseCode: 200

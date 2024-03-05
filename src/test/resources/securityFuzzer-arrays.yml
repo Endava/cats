@@ -7,6 +7,6 @@
       - 3
     targetFields:
       - firstName
-    stringsFile: xss.txt
+    stringsFile: files/xss.txt
     httpMethod: POST
     expectedResponseCode: 200
