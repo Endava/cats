@@ -1,0 +1,5 @@
+all:
+  Authorization: Bearer jwt <JWT>
+  TraceId: 1dd361e3-c35e-4439-a67c-47a9ba8d098b
+/pets:
+  API-Key: 123
