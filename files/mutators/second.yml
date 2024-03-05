@@ -1,0 +1,7 @@
+name: unicode mutator
+type: replace
+values:
+  - \u0000
+  - null
+  - ""
+  - "👩🏾"
