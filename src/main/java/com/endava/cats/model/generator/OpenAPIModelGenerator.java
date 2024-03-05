@@ -111,10 +111,7 @@ public class OpenAPIModelGenerator {
         } else if (CatsModelUtils.isBooleanSchema(propertySchema)) {
             return this.getExampleFromBooleanSchema(propertySchema);
         } else if (CatsModelUtils.isArraySchema(propertySchema)) {
-            Object objectProperties = this.getExampleFromArraySchema(propertyName, propertySchema);
-            if (objectProperties != null) {
-                return objectProperties;
-            }
+            return this.getExampleFromArraySchema(propertyName, propertySchema);
         } else if (CatsModelUtils.isNumberSchema(propertySchema)) {
             return this.getExampleFromNumberSchema(propertySchema);
         } else if (CatsModelUtils.isIntegerSchema(propertySchema)) {
@@ -252,8 +249,7 @@ public class OpenAPIModelGenerator {
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
         if (innerType != null) {
-            int arrayLength = null == property.getMaxItems() ? 2 : property.getMaxItems();
-            arrayLength = null == property.getMinItems() ? arrayLength : property.getMinItems();
+            int arrayLength = null == property.getMinItems() ? 2 : property.getMinItems();
             Object[] objectProperties = new Object[arrayLength];
 
             for (int i = 0; i < arrayLength; i++) {
