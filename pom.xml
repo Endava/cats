@@ -27,7 +27,7 @@
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <jansi.version>2.4.1</jansi.version>
         <lombok.version>1.18.30</lombok.version>
-        <rgxgen.version>2.0</rgxgen.version>
+        <rgxgen.version>1.4</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <openapi-generator.version>7.3.0</openapi-generator.version>
         <sonar.coverage.exclusions>
