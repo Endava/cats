@@ -196,7 +196,7 @@ public class StringGenerator {
         String generatedValue;
         try {
             do {
-                generatedValue = RgxGen.parse(pattern).generate();
+                generatedValue = new RgxGen(pattern).generate();
                 if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(pattern)) {
                     return generatedValue;
                 }
@@ -204,7 +204,7 @@ public class StringGenerator {
                 attempts++;
             } while (attempts < MAX_ATTEMPTS_GENERATE && !generatedValue.matches(pattern));
         } catch (Exception e) {
-            LOGGER.debug("RGX generator failed, returning empty.");
+            LOGGER.debug("RGX generator failed, returning empty.", e);
             return EMPTY;
         }
         LOGGER.debug("Generated using RGX {}", generatedValue);
@@ -291,7 +291,7 @@ public class StringGenerator {
         }
         String pattern = ALPHANUMERIC + "{" + (minLength - 1) + "," + minLength + "}";
 
-        return RgxGen.parse(pattern).generate();
+        return new RgxGen(pattern).generate();
     }
 
     /**
