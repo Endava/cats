@@ -5,6 +5,6 @@
       - string
       - http_headers
       - email
-    stringsFile: xss.txt
+    stringsFile: files/xss.txt
     httpMethod: POST
     expectedResponseCode: 200
