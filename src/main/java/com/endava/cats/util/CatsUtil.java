@@ -7,6 +7,7 @@ import com.endava.cats.json.JsonUtils;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.github.javafaker.Faker;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -41,6 +42,8 @@ import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
 public abstract class CatsUtil {
     private static final String COMMA = ", ";
     private static final String N_A = "N/A";
+
+    private static final Faker FAKER = new Faker(random());
 
     private CatsUtil() {
         //ntd
@@ -316,5 +319,14 @@ public abstract class CatsUtil {
      */
     public static Random random() {
         return ThreadLocalRandom.current();
+    }
+
+    /**
+     * Returns a shared Faker instance for valid fake data.
+     *
+     * @return a common shared Faker instance
+     */
+    public static Faker faker() {
+        return FAKER;
     }
 }

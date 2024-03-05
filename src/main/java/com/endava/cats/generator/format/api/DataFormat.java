@@ -36,4 +36,13 @@ public abstract class DataFormat<T extends DataFormatGenerator> {
                         Optional.ofNullable(propertyName).orElse("")))
                 .findFirst();
     }
+
+    public static Object generatedOrNull(Schema<?> schema, Object generated) {
+        if (schema.getPattern() == null ||
+                (schema.getPattern() != null && String.valueOf(generated).matches(schema.getPattern()))) {
+            return generated;
+        }
+
+        return null;
+    }
 }
