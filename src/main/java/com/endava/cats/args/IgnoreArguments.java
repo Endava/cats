@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 public class IgnoreArguments {
 
     @CommandLine.Option(names = {"--ignoreResponseCodeUndocumentedCheck", "--iu"},
-            description = "Don't check if the response code received from the service matches the value expected by the fuzzer. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
+            description = "Don't check if the response code received from is documented inside the contract. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseCodeUndocumentedCheck;
 
     @CommandLine.Option(names = {"--ignoreResponseBodyCheck", "--ib"},
