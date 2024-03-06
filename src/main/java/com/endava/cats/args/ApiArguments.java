@@ -68,6 +68,17 @@ public class ApiArguments {
     }
 
     /**
+     * Returns the full user agent, appending the testId and the fuzzer name.
+     *
+     * @param testId the id of the test case being run
+     * @param fuzzer the name of the fuzzer being run
+     * @return a full name for the user agent containing both version data and testId and fuzzer name
+     */
+    public String getUserAgent(int testId, String fuzzer) {
+        return this.userAgent + " (Test " + testId + " - " + fuzzer + ")";
+    }
+
+    /**
      * Sets a custom user agent based on the CATS version.
      *
      * @param version the current CATS version
