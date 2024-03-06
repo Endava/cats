@@ -509,7 +509,7 @@ public class ServiceCaller {
         data.getHeaders().forEach(header -> headers.add(new KeyValuePair<>(header.getName(), header.getValue())));
         addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
         addIfNotPresent(HttpHeaders.CONTENT_TYPE, this.getContentType(data.getHttpMethod(), data.getContentType()), data, headers);
-        addIfNotPresent(HttpHeaders.USER_AGENT, apiArguments.getUserAgent(), data, headers);
+        addIfNotPresent(HttpHeaders.USER_AGENT, apiArguments.getUserAgent(testCaseListener.getCurrentTestCaseNumber(), testCaseListener.getCurrentFuzzer()), data, headers);
     }
 
     private String getContentType(HttpMethod method, String defaultContentType) {

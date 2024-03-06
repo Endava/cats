@@ -162,6 +162,20 @@ public class TestCaseListener {
         this.endTestCase();
     }
 
+    /**
+     * Returns the current name of the fuzzer being executed.
+     *
+     * @return the fuzzer name that is currently being run
+     */
+    public String getCurrentFuzzer() {
+        return MDC.get(FUZZER_KEY);
+    }
+
+    /**
+     * Returns the current test case number being executed.
+     *
+     * @return the test case number being executed
+     */
     public int getCurrentTestCaseNumber() {
         return TEST.get();
     }
