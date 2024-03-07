@@ -8,7 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 @QuarkusTest
-public class AddressGeneratorTest {
+class AddressGeneratorTest {
 
     @Test
     void shouldGenerate() {

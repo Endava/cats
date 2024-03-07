@@ -58,6 +58,8 @@ class CountryCodeGeneratorTest {
 
     @Test
     void shouldGenerateFullCountry() {
+        Schema<String> schema = new Schema<>();
+        Assertions.assertThat(countryCodeGenerator.generate(schema)).asString().hasSizeGreaterThan(3);
     }
 
     @Test

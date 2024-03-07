@@ -46,6 +46,7 @@ import static com.endava.cats.generator.simple.StringGenerator.generateValueBase
  */
 public class OpenAPIModelGenerator {
     private static final String EXAMPLE = "example";
+    public static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGenerator.class);
@@ -101,7 +102,7 @@ public class OpenAPIModelGenerator {
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
         Object generatedValueFromFormat = validDataFormat.generate(propertySchema, propertyName);
 
-        if (generatedValueFromFormat != null) {
+        if (generatedValueFromFormat != null && notSyntheticSchema(propertyName)) {
             return generatedValueFromFormat;
         } else if (propertySchema.getExample() != null && canUseExamples(propertySchema)) {
             logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
@@ -123,6 +124,10 @@ public class OpenAPIModelGenerator {
         }
 
         return resolveProperties(propertySchema);
+    }
+
+    private boolean notSyntheticSchema(String currentProperty) {
+        return !currentProperty.startsWith(SYNTH_SCHEMA_NAME);
     }
 
     private <T> Object formatExampleIfNeeded(Schema<T> property) {
