@@ -9,6 +9,7 @@ import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A generator class implementing various interfaces for generating valid and invalid email data formats.
@@ -26,8 +27,8 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return propertyName.toLowerCase().endsWith(EMAIL) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase().endsWith("emailaddress") ||
+        return propertyName.toLowerCase(Locale.ROOT).endsWith(EMAIL) ||
+                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("emailaddress") ||
                 EMAIL.equalsIgnoreCase(format);
     }
 

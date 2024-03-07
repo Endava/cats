@@ -32,16 +32,32 @@ class CountryCodeGeneratorTest {
         Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSize(2);
     }
 
-    @Test
-    void shouldGenerate3LettersCodeWhenHavingMinLength() {
+    @ParameterizedTest
+    @CsvSource({"2,2", "3,3"})
+    void shouldGenerateBasedOnMinLength(int schemaMinLength, int resultLength) {
         Schema<String> schema = new Schema<>();
-        schema.setMinLength(4);
-        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSize(3);
+        schema.setMinLength(schemaMinLength);
+        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSize(resultLength);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2,2", "3,3"})
+    void shouldGenerateBasedOnMaxLength(int schemaMinLength, int resultLength) {
+        Schema<String> schema = new Schema<>();
+        schema.setMaxLength(schemaMinLength);
+        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSize(resultLength);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"[A-Z]{2},2", "[A-Z]{3},3"})
+    void shouldGenerateBasedOnPattern(String pattern, int resultLength) {
+        Schema<String> schema = new Schema<>();
+        schema.setPattern(pattern);
+        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSize(resultLength);
     }
 
     @Test
-    void shouldGenerate3LettersCode() {
-        Assertions.assertThat(countryCodeGenerator.generate(new Schema<>()).toString()).hasSize(3);
+    void shouldGenerateFullCountry() {
     }
 
     @Test

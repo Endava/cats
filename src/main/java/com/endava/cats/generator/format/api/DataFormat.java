@@ -37,9 +37,9 @@ public abstract class DataFormat<T extends DataFormatGenerator> {
                 .findFirst();
     }
 
-    public static Object generatedOrNull(Schema<?> schema, Object generated) {
-        if (schema.getPattern() == null ||
-                (schema.getPattern() != null && String.valueOf(generated).matches(schema.getPattern()))) {
+    public static Object matchesPatternOrNull(Schema<?> schema, Object generated) {
+        if ((schema.getPattern() == null || (schema.getPattern() != null && String.valueOf(generated).matches(schema.getPattern())))
+                && (schema.getMaxLength() == null || (String.valueOf(generated).length() <= schema.getMaxLength()))) {
             return generated;
         }
 
