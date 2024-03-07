@@ -45,12 +45,13 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import static com.endava.cats.model.generator.OpenAPIModelGenerator.SYNTH_SCHEMA_NAME;
+
 /**
  * This class is responsible for creating {@link com.endava.cats.model.FuzzingData} objects based on the supplied OpenApi paths
  */
 @ApplicationScoped
 public class FuzzingDataFactory {
-    private static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
     private static final String ANY_OF = "ANY_OF";
     private static final String ONE_OF = "ONE_OF";
 
