@@ -26,8 +26,8 @@ public class URIGenerator implements ValidDataFormatGenerator, InvalidDataFormat
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return URI.equals(format) || URL.equals(format) || propertyName.equalsIgnoreCase(URL)
-                || propertyName.equalsIgnoreCase(URI) || propertyName.toLowerCase(Locale.ROOT).endsWith(URL)
+        return URI.equals(format) || URL.equals(format)
+                || propertyName.toLowerCase(Locale.ROOT).endsWith(URL)
                 || propertyName.toLowerCase(Locale.ROOT).endsWith(URI);
     }
 

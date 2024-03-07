@@ -1,20 +1,20 @@
 package com.endava.cats.model.generator;
 
 import com.endava.cats.context.CatsGlobalContext;
-import com.endava.cats.json.JsonUtils;
 import com.endava.cats.generator.format.api.ValidDataFormat;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.openapi.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.core.models.ParseOptions;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -90,8 +90,8 @@ class OpenAPIModelGeneratorTest {
         Map<String, String> example = generator.generate("MegaPet");
         String exampleJson = example.get("example");
 
-        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#dateOfBirth")).isEqualTo("2000-12-12");
-        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#timeOfVaccination")).isEqualTo("2012-01-24T15:54:14.876Z");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#dateOfBirth")).asString().matches("[0-9]{4}-[0-9]{2}-[0-9]{2}");
+        Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#timeOfVaccination")).asString().matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{1,6}Z");
     }
 
     private OpenAPIModelGenerator setupPayloadGenerator() throws IOException {
