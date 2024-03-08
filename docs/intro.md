@@ -21,7 +21,7 @@ CATS is:
 - **📖 Simple to Learn**: flat learning curve, with intuitive configuration and syntax
 - **⚡️ Fast**: automatic process for writing, running and reporting
 
-By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**uto-generated **T**ests for **S**wagger) enables you to generate thousands of API tests within minutes with **no coding effort**.
+By using a simple and minimal syntax, with a flat learning curve, CATS (**C**ontract **A**API **T**esting **S**ecurity) enables you to generate thousands of API tests within minutes with **no coding effort**.
 All tests are **generated, run and reported automatically** based on a pre-defined set of **100+ Fuzzers**.
 The Fuzzers cover a wide range of boundary testing and negative scenarios from random large Unicode values to well crafted, context dependant values based on the request data types and constraints.
 Even more, you can **leverage** the fact that **CATS** generates request payloads dynamically and **write simple end-to-end functional tests**.
