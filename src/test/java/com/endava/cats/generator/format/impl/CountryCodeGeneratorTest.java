@@ -20,7 +20,7 @@ class CountryCodeGeneratorTest {
 
     @ParameterizedTest
     @CsvSource({"iso-3166,not,true", "country-code,not,true", "countryCode,not,true", "not,countrycode,true", "not,country-code,true"
-            , "not,countryCode,true", "not,country-Code,true", "not,not,false"})
+            , "not,countryCode,true", "not,country-Code,true", "not,mycountry,true", "not,not,false"})
     void shouldApply(String format, String property, boolean expected) {
         Assertions.assertThat(countryCodeGenerator.appliesTo(format, property)).isEqualTo(expected);
     }
@@ -38,6 +38,22 @@ class CountryCodeGeneratorTest {
         Schema<String> schema = new Schema<>();
         schema.setMinLength(schemaMinLength);
         Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSize(resultLength);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"4", "5"})
+    void shouldGenerateFullWhenLargerMinLength(int schemaMinLength) {
+        Schema<String> schema = new Schema<>();
+        schema.setMinLength(schemaMinLength);
+        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).doesNotMatch("[A-Z]{2,3}");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"4", "5"})
+    void shouldGenerateFullWhenLargerMaxLength(int schemaMinLength) {
+        Schema<String> schema = new Schema<>();
+        schema.setMaxLength(schemaMinLength);
+        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSizeGreaterThan(4);
     }
 
     @ParameterizedTest
@@ -60,6 +76,14 @@ class CountryCodeGeneratorTest {
     void shouldGenerateFullCountry() {
         Schema<String> schema = new Schema<>();
         Assertions.assertThat(countryCodeGenerator.generate(schema)).asString().hasSizeGreaterThan(3);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"[a-z]+", "[a-z]{3}", "[a-z]{2}"})
+    void shouldGenerateFullCountryWhenNotMatchingPattern(String pattern) {
+        Schema<String> schema = new Schema<>();
+        schema.setPattern(pattern);
+        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).doesNotMatch("[A-Z]{2,3}");
     }
 
     @Test

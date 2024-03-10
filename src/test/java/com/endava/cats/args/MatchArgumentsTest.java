@@ -212,4 +212,9 @@ class MatchArgumentsTest {
         boolean reflected = matchArguments.isInputReflected(response, reflectedValue);
         Assertions.assertThat(reflected).isEqualTo(expected);
     }
+
+    @Test
+    void shouldNotMatchRegexWhenBodyNullAndRegexNull() {
+        Assertions.assertThat(matchArguments.isMatchedResponseRegex(null)).isFalse();
+    }
 }

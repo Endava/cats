@@ -16,7 +16,7 @@ class DateGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"dob", "dateOfBirth", "birthday"})
+    @CsvSource({"dob", "dateOfBirth", "birthdate", "otherdate"})
     void shouldNotApplyForDob(String format) {
         DateGenerator strategy = new DateGenerator();
         Assertions.assertThat(strategy.appliesTo(format, "")).isFalse();

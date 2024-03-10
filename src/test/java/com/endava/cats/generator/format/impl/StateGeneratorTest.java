@@ -23,7 +23,7 @@ class StateGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"state,true", "STATE,true", "other#state,true", "other, false"})
+    @CsvSource({"state,true", "STATE,true", "other#state,true", "statename,true", "other, false"})
     void shouldApplyToPropertyName(String property, boolean expected) {
         StateGenerator stateGenerator = new StateGenerator();
         Assertions.assertThat(stateGenerator.appliesTo("", property)).isEqualTo(expected);
