@@ -108,4 +108,14 @@ class CatsUtilTest {
         Object result = CatsUtil.getAsAppropriateType(value);
         Assertions.assertThat(result).isInstanceOf(expectedType);
     }
+
+    @Test
+    void shouldReplaceJsonArray() {
+        String json = """
+                {"key": [3,4,5]}
+                """;
+
+        String result = CatsUtil.justReplaceField(json, "key", "replaced").json();
+        Assertions.assertThat(result).contains("replaced").doesNotContain("3", "4", "5");
+    }
 }

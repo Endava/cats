@@ -19,7 +19,7 @@ class IPV4GeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"not,ip,true", "not,ipaddress,true", "not,hostIp,true", "ip,something,true", "ipv4,something,true", "not,something,false"})
+    @CsvSource({"not,ip,true", "not,ipaddress,true", "not,hostIp,true", "not,zip,false", "ip,something,true", "ipv4,something,true", "not,something,false"})
     void shouldRecognizeIpAddress(String format, String property, boolean expected) {
         boolean isIp = ipv4Generator.appliesTo(format, property);
         Assertions.assertThat(isIp).isEqualTo(expected);

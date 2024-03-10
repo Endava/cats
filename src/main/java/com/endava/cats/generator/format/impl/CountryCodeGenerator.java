@@ -26,7 +26,7 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
                 .findFirst()
                 .orElse(Locale.UK.getCountry());
 
-        Locale locale = new Locale("en", randomCountry);
+        Locale locale = new Locale.Builder().setLanguage("en").setRegion(randomCountry).build();
 
         if (hasLengthTwo(schema) || patternMatchesTwoLetterIsoCode(schema)) {
             return locale.getCountry();
