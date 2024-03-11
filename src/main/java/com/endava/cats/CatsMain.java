@@ -27,7 +27,6 @@ public class CatsMain implements QuarkusApplication {
 
     @Override
     public int run(String... args) {
-        System.setProperty("org.jline.terminal.dumb", "true");
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
             logger.fatal("Something unexpected happened: {}", e.getMessage());
             logger.debug("Stacktrace", e);
