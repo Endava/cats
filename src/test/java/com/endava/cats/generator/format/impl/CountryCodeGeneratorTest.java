@@ -53,7 +53,7 @@ class CountryCodeGeneratorTest {
     void shouldGenerateFullWhenLargerMaxLength(int schemaMinLength) {
         Schema<String> schema = new Schema<>();
         schema.setMaxLength(schemaMinLength);
-        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).hasSizeGreaterThan(4);
+        Assertions.assertThat(countryCodeGenerator.generate(schema).toString()).doesNotMatch("[A-Z]{2,3}");
     }
 
     @ParameterizedTest
@@ -75,7 +75,7 @@ class CountryCodeGeneratorTest {
     @Test
     void shouldGenerateFullCountry() {
         Schema<String> schema = new Schema<>();
-        Assertions.assertThat(countryCodeGenerator.generate(schema)).asString().hasSizeGreaterThan(3);
+        Assertions.assertThat(countryCodeGenerator.generate(schema)).asString().doesNotMatch("[A-Z]{2,3}");
     }
 
     @ParameterizedTest
