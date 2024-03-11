@@ -103,7 +103,7 @@ public class FieldsIteratorExecutor {
         FuzzingStrategy strategy = context.getFuzzingStrategy().withData(currentValue);
         context.getLogger().debug("Applying [{}] for field [{}]", strategy, fuzzedField);
 
-        testCaseListener.addScenario(context.getLogger(), context.getScenario() + "  Current field [{}] [{}]", fuzzedField, strategy);
+        testCaseListener.addScenario(context.getLogger(), context.getScenario() + " Current field [{}] [{}]", fuzzedField, strategy);
         testCaseListener.addExpectedResult(context.getLogger(), "Should return [{}]",
                 context.getExpectedResponseCode() != null ? context.getExpectedResponseCode().asString() : "a response that doesn't match" + matchArguments.getMatchString());
 
