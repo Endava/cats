@@ -231,14 +231,31 @@ public class ServiceCaller {
             return response;
         } catch (IOException | IllegalStateException e) {
             long duration = System.currentTimeMillis() - startTime;
-            this.recordRequestAndResponse(catsRequest, CatsResponse.builder()
-                    .body("no body due to error").httpMethod(catsRequest.getHttpMethod())
-                    .responseTimeInMs(duration).withInvalidErrorCode()
-                    .jsonBody(new JsonPrimitive("no body due to error"))
+            String message = "no body due to error";
+            int errorCode = CatsResponse.invalidErrorCode();
+
+            if (CatsResponse.isEmptyResponse(e)) {
+                message = "empty reply from server";
+                errorCode = CatsResponse.emptyReplyCode();
+            }
+
+            CatsResponse catsResponse = CatsResponse.builder()
+                    .body(message).httpMethod(catsRequest.getHttpMethod())
+                    .responseTimeInMs(duration).responseCode(errorCode)
+                    .jsonBody(new JsonPrimitive(message))
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
-                    .build(), data);
-            throw new CatsException(e);
+                    .build();
+
+            this.recordRequestAndResponse(catsRequest, catsResponse, data);
+
+            if (!CatsResponse.isEmptyResponse(e)) {
+                throw new CatsException(e);
+            } else {
+                logger.debug("Empty response!", e);
+            }
+
+            return catsResponse;
         }
     }
 
@@ -414,6 +431,7 @@ public class ServiceCaller {
             //for GET and HEAD we remove Content-Type as some servers don't like it
             headers.removeAll("Content-Type");
         }
+
         try (Response response = okHttpClient.newCall(new Request.Builder()
                 .url(catsRequest.getUrl())
                 .headers(headers.build())

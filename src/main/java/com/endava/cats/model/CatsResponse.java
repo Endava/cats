@@ -7,6 +7,8 @@ import com.google.gson.JsonParser;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,6 +20,7 @@ import java.util.List;
 public class CatsResponse {
     private static final String UNKNOWN_MEDIA_TYPE = "unknown/unknown";
     private static final int INVALID_ERROR_CODE = 999;
+    private static final int EMPTY_REPLY = 952;
     private final int responseCode;
     private final String httpMethod;
     private final long responseTimeInMs;
@@ -135,15 +138,6 @@ public class CatsResponse {
      * Builder for CatsResponse.
      */
     public static class CatsResponseBuilder {
-        /**
-         * Sets the response code to an invalid error code.
-         *
-         * @return The builder instance for method chaining.
-         */
-        public CatsResponseBuilder withInvalidErrorCode() {
-            this.responseCode = INVALID_ERROR_CODE;
-            return this;
-        }
     }
 
     /**
@@ -153,5 +147,40 @@ public class CatsResponse {
      */
     public static String unknownContentType() {
         return UNKNOWN_MEDIA_TYPE;
+    }
+
+    /**
+     * Default response code in case of errors.
+     *
+     * @return default response code in case of errors
+     */
+    public static int invalidErrorCode() {
+        return INVALID_ERROR_CODE;
+    }
+
+    /**
+     * Default response code in case of empty response reply from server.
+     *
+     * @return default response code in case of empty reply from server
+     */
+    public static int emptyReplyCode() {
+        return EMPTY_REPLY;
+    }
+
+    /**
+     * Checks if the given exception is instance of IOException and if
+     * the message or one of the suppressed messages contains "unexpected end of stream".
+     *
+     * @param e the exception
+     * @return true if response is empty, false otherwise
+     */
+    public static boolean isEmptyResponse(Exception e) {
+        if (e instanceof IOException ioException) {
+            return ioException.getMessage().contains("unexpected end of stream") ||
+                    Arrays.stream(ioException.getSuppressed()).anyMatch(t -> t.getMessage().contains("unexpected end of stream")) ||
+                    ioException.getMessage().contains("Connection reset") ||
+                    Arrays.stream(ioException.getSuppressed()).anyMatch(t -> t.getMessage().contains("Connection reset"));
+        }
+        return false;
     }
 }
