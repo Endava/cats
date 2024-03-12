@@ -276,6 +276,16 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldReturnSkippedFieldsForAllFuzzers() {
+        ReflectionTestUtils.setField(filterArguments, "skipFields", List.of("field1", "!field2"));
+
+        List<String> skipFields = filterArguments.getSkipFields();
+        List<String> skipFieldsForAllFuzzers = filterArguments.getSkipFieldsToBeSkippedForAllFuzzers();
+        Assertions.assertThat(skipFields).containsOnly("field1", "!field2");
+        Assertions.assertThat(skipFieldsForAllFuzzers).containsOnly("field2");
+    }
+
+    @Test
     void shouldReturnEmptySkipFields() {
         Assertions.assertThat(filterArguments.getSkipFields()).isEmpty();
     }

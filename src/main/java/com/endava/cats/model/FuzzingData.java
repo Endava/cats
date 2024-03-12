@@ -76,6 +76,10 @@ public class FuzzingData {
     private List<String> skipFieldFormats = Collections.emptyList();
 
     @Builder.Default
+    private List<String> skippedFieldsForAllFuzzers = Collections.emptyList();
+
+
+    @Builder.Default
     private Set<String> examples = new HashSet<>();
 
     @Builder.Default
@@ -174,7 +178,7 @@ public class FuzzingData {
      *
      * @return A set containing the names of all read-only fields.
      */
-    public Set<String> getAllReadOnlyFields() {
+    private Set<String> getAllReadOnlyFields() {
         if (allReadOnlyFields == null) {
             allReadOnlyFields = this.getAllFieldsAsCatsFields().stream().filter(CatsField::isReadOnly).map(CatsField::getName).collect(Collectors.toSet());
         }
@@ -189,7 +193,7 @@ public class FuzzingData {
      *
      * @return A set containing the names of all write-only fields.
      */
-    public Set<String> getAllWriteOnlyFields() {
+    private Set<String> getAllWriteOnlyFields() {
         if (allWriteOnlyFields == null) {
             allWriteOnlyFields = this.getAllFieldsAsCatsFields().stream().filter(CatsField::isWriteOnly).map(CatsField::getName).collect(Collectors.toSet());
         }
@@ -230,6 +234,7 @@ public class FuzzingData {
             }
             allFieldsAsCatsFields.removeIf(catsField -> skipFieldTypes.contains(Optional.ofNullable(catsField.getSchema().getType()).orElse(EMPTY)));
             allFieldsAsCatsFields.removeIf(catsField -> skipFieldFormats.contains(Optional.ofNullable(catsField.getSchema().getFormat()).orElse(EMPTY)));
+            allFieldsAsCatsFields.removeIf(catsField -> skippedFieldsForAllFuzzers.stream().anyMatch(skippedField -> catsField.getName().startsWith(skippedField)));
         }
 
         return allFieldsAsCatsFields;
