@@ -100,9 +100,10 @@ public class OpenAPIModelGenerator {
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
-        Object generatedValueFromFormat = validDataFormat.generate(propertySchema, propertyName);
+        String propertyForGeneration = currentProperty.endsWith(propertyName) ? currentProperty : currentProperty + "#" + propertyName;
+        Object generatedValueFromFormat = validDataFormat.generate(propertySchema, propertyForGeneration);
 
-        if (generatedValueFromFormat != null && notSyntheticSchema(propertyName)) {
+        if (generatedValueFromFormat != null && notSyntheticSchema(propertyName) && propertySchema.getProperties() == null) {
             return generatedValueFromFormat;
         } else if (propertySchema.getExample() != null && canUseExamples(propertySchema)) {
             logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
