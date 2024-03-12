@@ -40,7 +40,7 @@ class AbugidasInStringFieldsValidateSanitizeFuzzerTest {
         FuzzingStrategy fuzzingStrategy = abugidasInStringFieldsValidateSanitizeFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
 
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("్ఞ\u200Cా");
-        Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX_TWOXX);
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
         Assertions.assertThat(abugidasInStringFieldsValidateSanitizeFuzzer.description()).isNotNull();
