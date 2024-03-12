@@ -102,9 +102,24 @@ public class ReplayCommand implements Runnable {
         CatsTestCase testCase = this.loadTestCaseFile(testCaseFileName);
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         this.loadHeadersIfSupplied(testCase);
-        CatsResponse response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
-        String responseBody = JsonUtils.getAsJsonString(response.getBody());
-        logger.complete("Response body: \n{}", responseBody);
+
+        CatsResponse response;
+        try {
+            response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
+        } catch (IOException e) {
+            if (CatsResponse.isEmptyResponse(e)) {
+                response = CatsResponse.builder()
+                        .jsonBody(JsonUtils.parseAsJsonElement(CatsResponse.emptyBody()))
+                        .body(CatsResponse.emptyBody())
+                        .responseCode(CatsResponse.emptyReplyCode())
+                        .build();
+            } else {
+                throw e;
+            }
+
+        }
+
+        logger.complete("Response body: \n{}", response.getBody());
         this.writeTestJsonsIfSupplied(testCase, response);
         this.showResponseCodesDifferences(testCase, response);
     }
@@ -116,7 +131,7 @@ public class ReplayCommand implements Runnable {
 
         logger.noFormat("");
         logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody());
-        logger.star("New response body: {}", JsonUtils.getAsJsonString(response.getBody()));
+        logger.star("New response body: {}", response.getJsonBody());
         logger.noFormat("");
     }
 

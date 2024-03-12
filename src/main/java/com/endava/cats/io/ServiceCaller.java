@@ -27,7 +27,6 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 import com.jayway.jsonpath.PathNotFoundException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -231,18 +230,18 @@ public class ServiceCaller {
             return response;
         } catch (IOException | IllegalStateException e) {
             long duration = System.currentTimeMillis() - startTime;
-            String message = "no body due to error";
+            String message = CatsResponse.norBodyError();
             int errorCode = CatsResponse.invalidErrorCode();
 
             if (CatsResponse.isEmptyResponse(e)) {
-                message = "empty reply from server";
+                message = CatsResponse.emptyBody();
                 errorCode = CatsResponse.emptyReplyCode();
             }
 
             CatsResponse catsResponse = CatsResponse.builder()
                     .body(message).httpMethod(catsRequest.getHttpMethod())
                     .responseTimeInMs(duration).responseCode(errorCode)
-                    .jsonBody(new JsonPrimitive(message))
+                    .jsonBody(JsonUtils.parseAsJsonElement(message))
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build();
