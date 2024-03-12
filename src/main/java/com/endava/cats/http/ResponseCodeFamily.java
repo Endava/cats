@@ -191,6 +191,17 @@ public enum ResponseCodeFamily {
         public List<String> allowedResponseCodes() {
             return List.of("400", "501");
         }
+    },
+    FOURXX_TWOXX {
+        @Override
+        public String asString() {
+            return "4XX|2XX";
+        }
+
+        @Override
+        public List<String> allowedResponseCodes() {
+            return List.of("2XX", "4XX");
+        }
     };
 
     /**
