@@ -107,16 +107,12 @@ public class ReplayCommand implements Runnable {
         try {
             response = serviceCaller.callService(testCase.getRequest(), Collections.emptySet());
         } catch (IOException e) {
-            if (CatsResponse.isEmptyResponse(e)) {
-                response = CatsResponse.builder()
-                        .jsonBody(JsonUtils.parseAsJsonElement(CatsResponse.emptyBody()))
-                        .body(CatsResponse.emptyBody())
-                        .responseCode(CatsResponse.emptyReplyCode())
-                        .build();
-            } else {
-                throw e;
-            }
-
+            CatsResponse.ExceptionalResponse exceptionalResponse = CatsResponse.getResponseByException(e);
+            response = CatsResponse.builder()
+                    .jsonBody(JsonUtils.parseAsJsonElement(exceptionalResponse.responseBody()))
+                    .body(exceptionalResponse.responseBody())
+                    .responseCode(exceptionalResponse.responseCode())
+                    .build();
         }
 
         logger.complete("Response body: \n{}", response.getBody());

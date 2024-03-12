@@ -173,7 +173,7 @@ class ServiceCallerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/pets/fault/reset,952,empty reply from server","/pets/fault/malformed,400,empty response","/pets/fault/random,952,empty reply from server","/pets/fault/empty,952,empty reply from server"})
+    @CsvSource({"/pets/fault/reset,952,empty reply from server", "/pets/fault/malformed,957,protocol exception", "/pets/fault/random,952,empty reply from server", "/pets/fault/empty,952,empty reply from server"})
     void shouldHandleIOExceptions(String path, String responseCode, String expectedBody) {
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();
@@ -258,7 +258,8 @@ class ServiceCallerTest {
 
         ServiceData data = ServiceData.builder().relativePath("/pets").payload("{'field':'oldValue'}").httpMethod(HttpMethod.POST)
                 .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build();
-        Assertions.assertThatThrownBy(() -> serviceCaller.call(data)).isInstanceOf(RuntimeException.class);
+        CatsResponse response = serviceCaller.call(data);
+        Assertions.assertThat(response.getResponseCode()).isEqualTo(953);
     }
 
     @Test
