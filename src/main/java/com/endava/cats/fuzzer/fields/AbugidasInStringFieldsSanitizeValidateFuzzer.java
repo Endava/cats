@@ -55,7 +55,7 @@ public class AbugidasInStringFieldsSanitizeValidateFuzzer extends ExpectOnly2XXB
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
-        return ResponseCodeFamily.FOURXX;
+        return ResponseCodeFamily.FOURXX_TWOXX;
     }
 
     @Override
