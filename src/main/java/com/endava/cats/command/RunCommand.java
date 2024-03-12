@@ -5,6 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.util.CatsDSLWords;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -106,6 +107,11 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Override
     public void run() {
         apiArguments.validateRequired(spec);
+        apiArguments.validateValidServer(spec);
+        if (CatsUtil.isFileEmpty(file)) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "You must provide a valid non-empty <file>");
+        }
+
         try {
             if (this.isFunctionalFuzzerFile()) {
                 catsCommand.filterArguments.customFilter("FunctionalFuzzer");

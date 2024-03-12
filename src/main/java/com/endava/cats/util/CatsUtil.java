@@ -19,6 +19,7 @@ import org.jboss.logmanager.LogContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -328,5 +329,35 @@ public abstract class CatsUtil {
      */
     public static Faker faker() {
         return FAKER;
+    }
+
+    /**
+     * Checks if a given string represents a valid URL address.
+     *
+     * @param urlString The string to be checked.
+     * @return True if the string represents a valid URL, false otherwise.
+     */
+    public static boolean isValidURL(String urlString) {
+        try {
+            URI.create(urlString).toURL();
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a given file is empty.
+     *
+     * @param file The file to be checked.
+     * @return True if the file is empty, false otherwise.
+     */
+    public static boolean isFileEmpty(File file) {
+        if (file != null && file.isFile()) {
+            return file.length() == 0;
+        } else {
+            return false;
+        }
     }
 }

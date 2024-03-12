@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
+import picocli.CommandLine;
 
 import java.io.File;
 
@@ -29,9 +30,18 @@ class RunCommandTest {
     void init() {
         filterArguments = Mockito.mock(FilterArguments.class);
         ReflectionTestUtils.setField(apiArguments, "contract", "contract");
-        ReflectionTestUtils.setField(apiArguments, "server", "server");
+        ReflectionTestUtils.setField(apiArguments, "server", "http://server");
         ReflectionTestUtils.setField(catsCommand, "filterArguments", filterArguments);
         ReflectionTestUtils.setField(runCommand, "catsCommand", catsCommand);
+        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ReflectionTestUtils.setField(runCommand, "spec", spec);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenServerNotValid() {
+        ReflectionTestUtils.setField(apiArguments, "server", "server");
+        Assertions.assertThatThrownBy(() -> runCommand.run()).isInstanceOf(CommandLine.ParameterException.class);
     }
 
 
