@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.io.IOException;
+import java.net.ProtocolException;
+
 @QuarkusTest
 class CatsResponseTest {
 
@@ -33,5 +36,22 @@ class CatsResponseTest {
         boolean actual = response.isValidErrorCode();
 
         Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"connection refused,953", "read timeout,954", "write timeout,955", "connection timeout,956", "unexpected end of stream,952", "something else,999"})
+    void shouldReturnProperExceptionalResponse(String message, int responseCode) throws Exception {
+        IOException exception = new IOException(message);
+        CatsResponse.ExceptionalResponse response = CatsResponse.getResponseByException(exception);
+
+        Assertions.assertThat(response.responseCode()).isEqualTo(responseCode);
+    }
+
+    @Test
+    void shouldHandleProtocolException() {
+        ProtocolException exception = new ProtocolException();
+        CatsResponse.ExceptionalResponse response = CatsResponse.getResponseByException(exception);
+
+        Assertions.assertThat(response.responseCode()).isEqualTo(957);
     }
 }

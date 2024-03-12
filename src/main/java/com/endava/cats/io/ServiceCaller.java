@@ -8,7 +8,6 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
-import com.endava.cats.exception.CatsException;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.json.JsonUtils;
@@ -230,29 +229,21 @@ public class ServiceCaller {
             return response;
         } catch (IOException | IllegalStateException e) {
             long duration = System.currentTimeMillis() - startTime;
-            String message = CatsResponse.norBodyError();
-            int errorCode = CatsResponse.invalidErrorCode();
 
-            if (CatsResponse.isEmptyResponse(e)) {
-                message = CatsResponse.emptyBody();
-                errorCode = CatsResponse.emptyReplyCode();
-            }
+            CatsResponse.ExceptionalResponse exceptionalResponse = CatsResponse.getResponseByException(e);
 
             CatsResponse catsResponse = CatsResponse.builder()
-                    .body(message).httpMethod(catsRequest.getHttpMethod())
-                    .responseTimeInMs(duration).responseCode(errorCode)
-                    .jsonBody(JsonUtils.parseAsJsonElement(message))
+                    .body(exceptionalResponse.responseBody()).httpMethod(catsRequest.getHttpMethod())
+                    .responseTimeInMs(duration).responseCode(exceptionalResponse.responseCode())
+                    .jsonBody(JsonUtils.parseAsJsonElement(exceptionalResponse.responseBody()))
                     .fuzzedField(data.getFuzzedFields()
                             .stream().findAny().map(el -> el.substring(el.lastIndexOf("#") + 1)).orElse(null))
                     .build();
 
             this.recordRequestAndResponse(catsRequest, catsResponse, data);
 
-            if (!CatsResponse.isEmptyResponse(e)) {
-                throw new CatsException(e);
-            } else {
-                logger.debug("Empty response!", e);
-            }
+            logger.debug("Stacktrace from ServiceCaller", e);
+
 
             return catsResponse;
         }
