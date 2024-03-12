@@ -51,7 +51,7 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
 
     @Test
     void shouldReturn2xxWhenFuzzValueNotMatchingPattern() {
-        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX_TWOXX);
     }
 
     @Test
