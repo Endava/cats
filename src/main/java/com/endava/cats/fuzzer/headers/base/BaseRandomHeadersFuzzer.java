@@ -75,7 +75,7 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
                     response.getHttpMethod(), response.getResponseCode());
         } else {
             testCaseListener.reportResultError(logger, data, "Unexpected Response Code: %s".formatted(response.getResponseCode()),
-                    "Request failed unexpectedly for http method [{}]: expected [{}], actual [{}]", response.getHttpMethod(),
+                    "Request failed unexpectedly for http method [{}]: expected {}, actual [{}]", response.getHttpMethod(),
                     ResponseCodeFamily.FOURXX.allowedResponseCodes(), response.getResponseCode());
         }
     }

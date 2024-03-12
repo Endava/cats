@@ -327,8 +327,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         // just for getting the terminal width
         ConsoleUtils.initTerminalWidth(spec);
         this.processLogLevelArgument();
-        filesArguments.loadConfig();
         apiArguments.validateRequired(spec);
+        apiArguments.validateValidServer(spec);
+        filesArguments.loadConfig();
         apiArguments.setUserAgent(appVersion);
     }
 
