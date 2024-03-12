@@ -13,6 +13,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.http.Fault;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -61,6 +62,11 @@ class ServiceCallerTest {
         wireMockServer.stubFor(WireMock.get("/pets/1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.get("/pets/1?limit=2").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
         wireMockServer.stubFor(WireMock.get("/pets/999?id=1").willReturn(WireMock.aResponse().withBody("{'pet':'pet'}")));
+        wireMockServer.stubFor(WireMock.get("/pets/fault/reset").willReturn(WireMock.aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+        wireMockServer.stubFor(WireMock.get("/pets/fault/empty").willReturn(WireMock.aResponse().withFault(Fault.EMPTY_RESPONSE)));
+        wireMockServer.stubFor(WireMock.get("/pets/fault/malformed").willReturn(WireMock.aResponse().withFault(Fault.MALFORMED_RESPONSE_CHUNK)));
+        wireMockServer.stubFor(WireMock.get("/pets/fault/random").willReturn(WireMock.aResponse().withFault(Fault.RANDOM_DATA_THEN_CLOSE)));
+
         wireMockServer.stubFor(WireMock.delete("/pets/1").willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.head(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
         wireMockServer.stubFor(WireMock.trace(WireMock.urlEqualTo("/pets/1")).willReturn(WireMock.aResponse()));
@@ -163,6 +169,20 @@ class ServiceCallerTest {
 
         Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo("200");
         Assertions.assertThat(catsResponse.getBody()).contains("html");
+        Assertions.assertThat(catsResponse.getJsonBody().toString()).contains("notAJson");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"/pets/fault/reset,952,empty reply from server","/pets/fault/malformed,400,empty response","/pets/fault/random,952,empty reply from server","/pets/fault/empty,952,empty reply from server"})
+    void shouldHandleIOExceptions(String path, String responseCode, String expectedBody) {
+        serviceCaller.initHttpClient();
+        serviceCaller.initRateLimiter();
+
+        CatsResponse catsResponse = serviceCaller.call(ServiceData.builder().relativePath(path).httpMethod(HttpMethod.GET)
+                .headers(Collections.singleton(CatsHeader.builder().name("header").value("header").build())).contentType("application/json").build());
+
+        Assertions.assertThat(catsResponse.responseCodeAsString()).isEqualTo(responseCode);
+        Assertions.assertThat(catsResponse.getBody()).contains(expectedBody);
         Assertions.assertThat(catsResponse.getJsonBody().toString()).contains("notAJson");
     }
 
