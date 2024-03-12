@@ -19,6 +19,12 @@ import java.util.List;
 @Getter
 public class CatsResponse {
     private static final String UNKNOWN_MEDIA_TYPE = "unknown/unknown";
+    private static final String EMPTY_RESPONSE = """
+            {"notAJson": "empty reply from server"}
+            """;
+    private static final String NO_BODY_ERROR = """
+            {"notAJson": "no body due to error"}
+            """;
     private static final int INVALID_ERROR_CODE = 999;
     private static final int EMPTY_REPLY = 952;
     private final int responseCode;
@@ -165,6 +171,14 @@ public class CatsResponse {
      */
     public static int emptyReplyCode() {
         return EMPTY_REPLY;
+    }
+
+    public static String emptyBody() {
+        return EMPTY_RESPONSE;
+    }
+
+    public static String norBodyError() {
+        return NO_BODY_ERROR;
     }
 
     /**
