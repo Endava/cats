@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -75,6 +76,7 @@ public class TestCaseListener {
     private final ReportingArguments reportingArguments;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
+    private final Set<String> recordedErrors = new HashSet<>();
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -395,6 +397,16 @@ public class TestCaseListener {
         testCaseExporter.writeHelperFiles();
         testCaseExporter.writePerformanceReport(testCaseExecutionDetails);
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
+        writeRecordedErrorsIfPresent();
+    }
+
+    private void writeRecordedErrorsIfPresent() {
+        PrettyLogger consoleLogger = PrettyLoggerFactory.getConsoleLogger();
+        if (recordedErrors.isEmpty()) {
+            return;
+        }
+        consoleLogger.noFormat(ansi().bold().fgRed().a("\nThere were errors executing the custom file: ").reset().toString());
+        recordedErrors.forEach(error -> consoleLogger.noFormat("  -> " + error));
     }
 
     private void setResultReason(CatsResultFactory.CatsResult catsResult) {
@@ -866,6 +878,10 @@ public class TestCaseListener {
 
     private CatsTestCase currentTestCase() {
         return testCaseMap.get(MDC.get(ID));
+    }
+
+    public void recordError(String error) {
+        this.recordedErrors.add(error);
     }
 
     @Builder

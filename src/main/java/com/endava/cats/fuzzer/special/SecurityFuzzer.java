@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Fuzzer that will perform fuzzing based on user supplied payloads that also support response verification.
@@ -62,7 +63,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     private List<String> getMissingRequiredKeywords(Map<String, Object> currentTestCase) {
-        List<String> missing = getRequiredKeywords().stream()
+        List<String> missing = Stream.concat(requiredKeywords().stream(), Stream.of(CatsDSLWords.STRINGS_FILE))
                 .filter(keyword -> currentTestCase.get(keyword) == null)
                 .collect(Collectors.toList());
 
@@ -70,10 +71,6 @@ public class SecurityFuzzer implements CustomFuzzerBase {
             missing.add(CatsDSLWords.TARGET_FIELDS + " or " + CatsDSLWords.TARGET_FIELDS_TYPES);
         }
         return missing;
-    }
-
-    private List<String> getRequiredKeywords() {
-        return List.of(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.STRINGS_FILE, CatsDSLWords.HTTP_METHOD);
     }
 
     private Map<String, Object> getCurrentPathValues(FuzzingData data) {
@@ -96,7 +93,9 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
         List<String> missingRequiredKeywords = this.getMissingRequiredKeywords(individualTestConfig);
         if (!missingRequiredKeywords.isEmpty()) {
-            log.error("Path [{}] is missing the following mandatory entries: {}", data.getPath(), missingRequiredKeywords);
+            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getPath(), missingRequiredKeywords);
+            log.error(message);
+            customFuzzerUtil.recordError(message);
             return;
         }
 
@@ -175,8 +174,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     @Override
-    public List<String> reservedWords() {
-        return Arrays.asList(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.STRINGS_FILE, CatsDSLWords.TARGET_FIELDS,
-                CatsDSLWords.TARGET_FIELDS_TYPES, CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
+    public List<String> requiredKeywords() {
+        return List.of(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.HTTP_METHOD);
     }
 }

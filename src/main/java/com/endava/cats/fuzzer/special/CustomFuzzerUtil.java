@@ -40,7 +40,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.json.JsonUtils.NOT_SET;
-import static com.endava.cats.util.CatsDSLWords.*;
+import static com.endava.cats.util.CatsDSLWords.CATS_BODY_FUZZ;
+import static com.endava.cats.util.CatsDSLWords.CATS_HEADERS;
+import static com.endava.cats.util.CatsDSLWords.CHECKS;
+import static com.endava.cats.util.CatsDSLWords.DESCRIPTION;
+import static com.endava.cats.util.CatsDSLWords.EXPECTED_RESPONSE_CODE;
+import static com.endava.cats.util.CatsDSLWords.ONE_OF_SELECTION;
+import static com.endava.cats.util.CatsDSLWords.OUTPUT;
+import static com.endava.cats.util.CatsDSLWords.RESERVED_WORDS;
+import static com.endava.cats.util.CatsDSLWords.VERIFY;
 
 /**
  * Common methods used by the FunctionalFuzzer and SecurityFuzzer.
@@ -317,8 +325,10 @@ public class CustomFuzzerUtil {
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
         log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getPath(), data.getMethod(), value);
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
+        List<String> missingKeywords = this.getMissingKeywords(fuzzer, (Map<String, Object>) value);
+        boolean isEntryValid = missingKeywords.isEmpty();
 
-        if (this.entryIsValid((Map<String, Object>) value) && isValidOneOf) {
+        if (isEntryValid && isValidOneOf) {
             this.pathsWithInputVariables.put(data.getPath(), (Map<String, Object>) value);
             List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value, data.getPayload());
             for (Map<String, Object> testCase : individualTestCases) {
@@ -328,8 +338,9 @@ public class CustomFuzzerUtil {
             log.skip("Skipping path [{}] as it does not match oneOfSelection", data.getPath());
             log.debug("Payload: {}", data.getPayload());
         } else {
-            log.warning("Skipping path [{}] as missing [{}] specific fields. List of reserved words: [{}]",
-                    data.getPath(), fuzzer.getClass().getSimpleName(), fuzzer.reservedWords());
+            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getPath(), missingKeywords);
+            log.warning(message);
+            this.recordError(message);
         }
     }
 
@@ -349,12 +360,10 @@ public class CustomFuzzerUtil {
         return JsonUtils.equalAsJson(data.getPayload(), updatedJson);
     }
 
-    private boolean entryIsValid(Map<String, Object> currentPathValues) {
-        boolean responseCodeValid = ResponseCodeFamily.isValidCode(String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE)));
-        boolean hasAtMostOneArrayOfData = currentPathValues.entrySet().stream().filter(entry -> entry.getValue() instanceof ArrayList).count() <= 1;
-        boolean hasHttpMethod = currentPathValues.get(HTTP_METHOD) != null;
-
-        return responseCodeValid && hasAtMostOneArrayOfData && hasHttpMethod;
+    private List<String> getMissingKeywords(CustomFuzzerBase fuzzer, Map<String, Object> currentTestCase) {
+        return fuzzer.requiredKeywords().stream()
+                .filter(keyword -> currentTestCase.get(keyword) == null)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -503,5 +512,9 @@ public class CustomFuzzerUtil {
         Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CatsDSLWords.HTTP_METHOD)));
 
         return httpMethodFromYaml.isEmpty() || httpMethodFromYaml.get().equals(httpMethod);
+    }
+
+    public void recordError(String message) {
+        testCaseListener.recordError(message);
     }
 }
