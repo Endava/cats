@@ -110,7 +110,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
 
             CatsResponse response = serviceCaller.call(serviceData);
 
-            testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints, true, this.shouldMatchContentType());
+            testCaseListener.reportResult(logger, data, response, expectedResponseCodeBasedOnConstraints, this.shouldMatchResponseSchema(data), this.shouldMatchContentType(data));
         } else {
             logger.debug("Fuzzing not possible!");
             FuzzingStrategy strategy = this.createSkipStrategy(fuzzingStrategy);
@@ -221,9 +221,23 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
      * <p>
      * Override this to return false to avoid content type checking.
      *
+     * @param data the current fuzzing data context
      * @return true if the fuzzer should check if the response content type matches the contract, false otherwise
      */
-    protected boolean shouldMatchContentType() {
+    protected boolean shouldMatchContentType(FuzzingData data) {
+        return true;
+    }
+
+    /**
+     * When sending large or malformed values the payload might not reach the application layer, but rather be rejected by the HTTP server.
+     * In those cases response is typically html which will most likely won't match the OpenAPI spec.
+     * <p>
+     * Override this to return false to avoid response schema checking.
+     *
+     * @param data the current fuzzing data context
+     * @return true if the fuzzer should check if the response matches the schema from the contract, false otherwise
+     */
+    protected boolean shouldMatchResponseSchema(FuzzingData data) {
         return true;
     }
 
