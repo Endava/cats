@@ -44,4 +44,9 @@ class VeryLargeUnicodeStringsInFieldsFuzzerTest {
     void shouldOverrideToNotMatchPatterns() {
         Assertions.assertThat(veryLargeUnicodeStringsInFieldsFuzzer.shouldCheckForFuzzedValueMatchingPattern()).isFalse();
     }
+
+    @Test
+    void shouldNotMatchResponseContentType() {
+        Assertions.assertThat(veryLargeUnicodeStringsInFieldsFuzzer.shouldMatchContentType()).isFalse();
+    }
 }

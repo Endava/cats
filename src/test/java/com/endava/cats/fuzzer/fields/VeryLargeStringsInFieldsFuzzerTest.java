@@ -36,4 +36,9 @@ class VeryLargeStringsInFieldsFuzzerTest {
     void shouldOverrideToNotMatchPatterns() {
         Assertions.assertThat(veryLargeStringsInFieldsFuzzer.shouldCheckForFuzzedValueMatchingPattern()).isFalse();
     }
+
+    @Test
+    void shouldNotMatchResponseContentType() {
+        Assertions.assertThat(veryLargeStringsInFieldsFuzzer.shouldMatchContentType()).isFalse();
+    }
 }

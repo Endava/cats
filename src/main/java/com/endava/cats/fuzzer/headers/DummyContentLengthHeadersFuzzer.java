@@ -52,6 +52,11 @@ public class DummyContentLengthHeadersFuzzer extends BaseSecurityChecksHeadersFu
     }
 
     @Override
+    protected boolean shouldMatchContentType() {
+        return false;
+    }
+
+    @Override
     public List<Set<CatsHeader>> getHeaders(FuzzingData data) {
         Set<CatsHeader> clonedHeaders = Cloner.cloneMe(data.getHeaders());
         clonedHeaders.add(CatsHeader.builder().name(HttpHeaders.CONTENT_LENGTH).value(DUMMY_LENGTH).build());

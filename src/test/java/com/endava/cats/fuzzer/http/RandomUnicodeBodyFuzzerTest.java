@@ -51,7 +51,7 @@ class RandomUnicodeBodyFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
         randomUnicodeBodyFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @Test

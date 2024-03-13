@@ -49,7 +49,7 @@ class DuplicateHeadersFuzzerTest {
 
         duplicateHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean(), Mockito.eq(true));
 
     }
 
@@ -64,7 +64,7 @@ class DuplicateHeadersFuzzerTest {
 
         duplicateHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean(), Mockito.eq(true));
 
     }
 

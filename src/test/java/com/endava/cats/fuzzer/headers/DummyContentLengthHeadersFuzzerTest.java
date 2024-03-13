@@ -48,4 +48,9 @@ class DummyContentLengthHeadersFuzzerTest {
     void shouldReturn400501ResponseCode() {
         Assertions.assertThat(dummyContentLengthHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamily.FOUR00_FIVE01);
     }
+
+    @Test
+    void shouldNotMatchResponseContentType() {
+        Assertions.assertThat(dummyContentLengthHeadersFuzzer.shouldMatchContentType()).isFalse();
+    }
 }

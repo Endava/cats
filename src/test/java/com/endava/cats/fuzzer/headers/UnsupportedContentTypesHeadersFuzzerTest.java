@@ -71,11 +71,11 @@ class UnsupportedContentTypesHeadersFuzzerTest {
         ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
 
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT), Mockito.anyBoolean());
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT), Mockito.anyBoolean(), Mockito.anyBoolean());
         unsupportedContentTypeHeadersFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(29)).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT), Mockito.anyBoolean());
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX_MT), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @Test

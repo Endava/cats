@@ -35,7 +35,6 @@ class VeryLargeStringsInHeadersFuzzerTest {
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
     }
 
     @Test
@@ -44,5 +43,15 @@ class VeryLargeStringsInHeadersFuzzerTest {
 
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(1);
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData().toString()).hasSize(20000);
+    }
+
+    @Test
+    void shouldNotMatchResponse() {
+        Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
+    }
+
+    @Test
+    void shouldNotMatchContentType() {
+        Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().isMatchResponseContentType()).isFalse();
     }
 }

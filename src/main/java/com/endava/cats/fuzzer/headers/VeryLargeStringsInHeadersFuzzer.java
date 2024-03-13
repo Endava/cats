@@ -42,6 +42,7 @@ public class VeryLargeStringsInHeadersFuzzer extends BaseHeadersFuzzer {
                         FuzzingStrategy.replace().withData(
                                 StringGenerator.generateLargeString(processingArguments.getLargeStringsSize() / 4))))
                 .matchResponseSchema(false)
+                .matchResponseContentType(false)
                 .build();
     }
 }

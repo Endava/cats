@@ -75,9 +75,22 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
                             .expectedResponseCode(this.getResponseCodeFamily())
                             .expectedSpecificResponseCode(this.getExpectedResponseCode())
                             .matchResponseResult(false)
+                            .matchResponseContentType(this.shouldMatchContentType())
                             .headers(headers)
                             .build());
         }
+    }
+
+    /**
+     * When sending large or malformed values the payload might not reach the application layer, but rather be rejected by the HTTP server.
+     * In those cases response content-type is typically html which will most likely won't match the OpenAPI spec.
+     * <p>
+     * Override this to return false to avoid content type checking.
+     *
+     * @return true if the fuzzer should check if the response content type matches the contract, false otherwise
+     */
+    protected boolean shouldMatchContentType() {
+        return true;
     }
 
     /**

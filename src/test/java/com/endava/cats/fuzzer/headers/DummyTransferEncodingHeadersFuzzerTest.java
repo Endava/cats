@@ -48,4 +48,9 @@ class DummyTransferEncodingHeadersFuzzerTest {
     void shouldReturn400501ResponseCode() {
         Assertions.assertThat(dummyTransferEncodingHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamily.FOUR00_FIVE01);
     }
+
+    @Test
+    void shouldNotMatchResponseContentType() {
+        Assertions.assertThat(dummyTransferEncodingHeadersFuzzer.shouldMatchContentType()).isFalse();
+    }
 }
