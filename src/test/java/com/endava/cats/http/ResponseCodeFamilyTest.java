@@ -90,9 +90,9 @@ class ResponseCodeFamilyTest {
 
     @Test
     void shouldBeValid4xxNFAllowedCodes() {
-        Assertions.assertThat(ResponseCodeFamily.FOURXX_NF.asString()).isEqualTo("4XX");
-        Assertions.assertThat(ResponseCodeFamily.FOURXX_NF.getStartingDigit()).isEqualTo("4");
-        Assertions.assertThat(ResponseCodeFamily.FOURXX_NF.allowedResponseCodes()).containsOnly("404");
+        Assertions.assertThat(ResponseCodeFamily.FOURXX_NF_AND_VALIDATION.asString()).isEqualTo("4XX");
+        Assertions.assertThat(ResponseCodeFamily.FOURXX_NF_AND_VALIDATION.getStartingDigit()).isEqualTo("4");
+        Assertions.assertThat(ResponseCodeFamily.FOURXX_NF_AND_VALIDATION.allowedResponseCodes()).containsOnly("404", "400", "422");
     }
 
     @Test
