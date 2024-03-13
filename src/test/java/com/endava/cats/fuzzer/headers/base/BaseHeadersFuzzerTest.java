@@ -53,14 +53,14 @@ class BaseHeadersFuzzerTest {
     void givenAConcreteBaseHeadersFuzzerInstanceWithNoMandatoryHeader_whenExecutingTheFuzzMethod_thenTheFuzzingLogicIsProperlyExecuted() {
         FuzzingData data = this.createData(false);
         baseHeadersFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX), Mockito.eq(true));
+        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX), Mockito.eq(true), Mockito.eq(true));
     }
 
     @Test
     void givenAConcreteBaseHeadersFuzzerInstanceWithMandatoryHeader_whenExecutingTheFuzzMethod_thenTheFuzzingLogicIsProperlyExecuted() {
         FuzzingData data = this.createData(true);
         baseHeadersFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
+        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true), Mockito.eq(true));
     }
 
     @Test
@@ -69,7 +69,7 @@ class BaseHeadersFuzzerTest {
                 .requestContentTypes(List.of("application/json")).build();
         Mockito.doCallRealMethod().when(serviceCaller).isAuthenticationHeader(Mockito.any());
         baseHeadersFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(true));
     }
 
     @Test
@@ -77,11 +77,11 @@ class BaseHeadersFuzzerTest {
         FuzzingData data = createData(true);
         data.getHeaders().add(CatsHeader.builder().name("skippedHeader").value("skippedValue").required(true).build());
         baseHeadersFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true), Mockito.eq(true));
 
         Mockito.when(filterArguments.getSkipHeaders()).thenReturn(List.of("skippedHeader"));
         baseHeadersFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true));
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.eq(true), Mockito.eq(true));
     }
 
     private FuzzingData createData(boolean requiredHeaders) {

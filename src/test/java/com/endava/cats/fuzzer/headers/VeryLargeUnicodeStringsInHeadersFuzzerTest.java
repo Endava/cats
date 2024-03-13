@@ -35,6 +35,10 @@ class VeryLargeUnicodeStringsInHeadersFuzzerTest {
         Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotNull();
         Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+    }
+
+    @Test
+    void shouldNotMatchResponse() {
         Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
     }
 
@@ -42,5 +46,10 @@ class VeryLargeUnicodeStringsInHeadersFuzzerTest {
     void shouldGetPayloadSize() {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20);
         Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData().toString()).hasSize(20 + "cats".length());
+    }
+
+    @Test
+    void shouldNotMatchContentType() {
+        Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().isMatchResponseContentType()).isFalse();
     }
 }

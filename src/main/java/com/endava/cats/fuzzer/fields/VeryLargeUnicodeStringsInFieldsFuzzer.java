@@ -46,6 +46,11 @@ public class VeryLargeUnicodeStringsInFieldsFuzzer extends ExpectOnly4XXBaseFiel
     }
 
     @Override
+    protected boolean shouldMatchContentType() {
+        return false;
+    }
+
+    @Override
     protected boolean shouldCheckForFuzzedValueMatchingPattern() {
         return false;
     }

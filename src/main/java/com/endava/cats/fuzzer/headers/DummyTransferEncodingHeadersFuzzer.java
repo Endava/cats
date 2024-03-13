@@ -47,6 +47,11 @@ public class DummyTransferEncodingHeadersFuzzer extends BaseSecurityChecksHeader
     }
 
     @Override
+    protected boolean shouldMatchContentType() {
+        return false;
+    }
+
+    @Override
     public String targetHeaderName() {
         return HttpHeaders.TRANSFER_ENCODING;
     }

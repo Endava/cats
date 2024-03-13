@@ -36,6 +36,7 @@ public class VeryLargeUnicodeStringsInHeadersFuzzer extends BaseHeadersFuzzer {
                 .typeOfDataSentToTheService("large unicode values")
                 .fuzzStrategy(FuzzingStrategy.getLargeValuesStrategy(processingArguments.getLargeStringsSize()))
                 .matchResponseSchema(false)
+                .matchResponseContentType(false)
                 .build();
     }
 

@@ -54,6 +54,11 @@ public class VeryLargeStringsInFieldsFuzzer extends ExpectOnly4XXBaseFieldsFuzze
     }
 
     @Override
+    protected boolean shouldMatchContentType() {
+        return false;
+    }
+
+    @Override
     public String description() {
         return "iterate through each String field and send very large values (40000 characters)";
     }

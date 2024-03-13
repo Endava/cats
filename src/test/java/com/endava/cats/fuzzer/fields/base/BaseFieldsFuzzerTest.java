@@ -85,7 +85,7 @@ class BaseFieldsFuzzerTest {
         FuzzingData data = createFuzzingData();
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.eq(true), Mockito.eq(true));
     }
 
     @NotNull
@@ -149,7 +149,7 @@ class BaseFieldsFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.from(responseCode)));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.from(responseCode)), Mockito.eq(true), Mockito.eq(true));
     }
 
     static class MyBaseFieldsFuzzer extends BaseFieldsFuzzer {

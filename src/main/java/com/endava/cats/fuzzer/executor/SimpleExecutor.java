@@ -74,7 +74,7 @@ public class SimpleExecutor {
             if (context.getResponseProcessor() != null) {
                 context.getResponseProcessor().accept(response, context.getFuzzingData());
             } else {
-                testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult());
+                testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult(), context.isMatchResponseContentType());
             }
         });
     }

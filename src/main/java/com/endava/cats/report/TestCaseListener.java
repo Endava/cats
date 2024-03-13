@@ -596,7 +596,7 @@ public class TestCaseListener {
      * @param expectedResultCode the expected response code family
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
-        this.reportResult(logger, data, response, expectedResultCode, true);
+        this.reportResult(logger, data, response, expectedResultCode, true, true);
     }
 
     /**
@@ -609,11 +609,25 @@ public class TestCaseListener {
      * @param shouldMatchToResponseSchema a flag indicating whether the response should match the expected schema
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema) {
+        this.reportResult(logger, data, response, expectedResultCode, shouldMatchToResponseSchema, true);
+    }
+
+    /**
+     * Reports the result of a test based on the provided parameters, including response code, schema matching, and content type.
+     *
+     * @param logger                      the logger used to log result-related information
+     * @param data                        the fuzzing data associated with the test
+     * @param response                    the response received from the test
+     * @param expectedResultCode          the expected response code family
+     * @param shouldMatchToResponseSchema a flag indicating whether the response should match the expected schema
+     * @param shouldMatchContentType      a flag indicating whether the response content type should match the one from the OpenAPI spec
+     */
+    public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema, boolean shouldMatchContentType) {
         expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), expectedResultCode);
         boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
-        boolean isResponseContentTypeMatching = this.isResponseContentTypeMatching(response, data);
+        boolean isResponseContentTypeMatching = !shouldMatchContentType || this.isResponseContentTypeMatching(response, data);
 
         this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}", matchesResponseSchema, responseCodeExpected, responseCodeDocumented);
         this.storeRequestOnPostOrRemoveOnDelete(data, response);
