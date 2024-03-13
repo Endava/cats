@@ -88,8 +88,7 @@ class FunctionalFuzzerTest {
         Mockito.verify(spyFunctionalFuzzer, Mockito.never()).processCustomFuzzerFile(data);
         Assertions.assertThat(functionalFuzzer.description()).isNotNull();
         Assertions.assertThat(functionalFuzzer).hasToString(functionalFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(functionalFuzzer.reservedWords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.MAP_VALUES,
-                CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
+        Assertions.assertThat(functionalFuzzer.requiredKeywords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.HTTP_METHOD);
     }
 
     @Test
@@ -322,6 +321,7 @@ class FunctionalFuzzerTest {
         tests.put("field", Arrays.asList(customFieldValues));
         tests.put("expectedResponseCode", "200");
         tests.put("httpMethod", "POST");
+        tests.put("description", "some description");
 
         path.put("test1", tests);
         path.put("test2", tests);

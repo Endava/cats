@@ -14,5 +14,5 @@ public interface CustomFuzzerBase extends Fuzzer {
      *
      * @return A {@link List} of {@link String} representing reserved words.
      */
-    List<String> reservedWords();
+    List<String> requiredKeywords();
 }

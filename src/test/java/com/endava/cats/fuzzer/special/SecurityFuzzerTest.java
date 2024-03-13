@@ -65,11 +65,13 @@ class SecurityFuzzerTest {
         spyCustomFuzzer.fuzz(data);
 
         Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
+    void shouldOverrideMethods() {
         Assertions.assertThat(securityFuzzer.description()).isNotNull();
         Assertions.assertThat(securityFuzzer).hasToString(securityFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(securityFuzzer.reservedWords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY,
-                CatsDSLWords.STRINGS_FILE, CatsDSLWords.TARGET_FIELDS, CatsDSLWords.MAP_VALUES, CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES,
-                CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD, CatsDSLWords.TARGET_FIELDS_TYPES);
+        Assertions.assertThat(securityFuzzer.requiredKeywords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.HTTP_METHOD);
     }
 
     @Test
@@ -87,7 +89,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verifyNoInteractions(testCaseListener);
+        Mockito.verify(testCaseListener, Mockito.times(1)).recordError("Path [/pets/{id}/move] is missing the following mandatory entries: [httpMethod, targetFields or targetFieldTypes]");
     }
 
     @ParameterizedTest
