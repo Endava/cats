@@ -611,31 +611,31 @@ public class TestCaseListener {
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode()))
                 .matchesContentType(isResponseContentTypeMatching).build();
 
-        if (assertions.isNotMatchingContentType() && !ignoreArguments.isIgnoreResponseContentTypeCheck()) {
-            this.logger.debug("Response content type not matching contract");
-            CatsResultFactory.CatsResult contentTypeNotMatching = CatsResultFactory.createNotMatchingContentType(data.getContentTypesByResponseCode(response.responseCodeAsString()), response.getResponseContentType());
-            this.reportResultWarn(logger, data, contentTypeNotMatching.reason(), contentTypeNotMatching.message());
-        } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
-            this.logger.debug("Response code expected and documented and matches response schema");
-            this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
+        if (assertions.isResponseCodeDocumentedButNotExpected()) {
+            this.logger.debug("Response code documented but not expected");
+            this.reportError(logger, CatsResultFactory.createUnexpectedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
         } else if (isNotFound(response)) {
             this.logger.debug("NOT_FOUND response");
             this.reportError(logger, CatsResultFactory.createNotFound());
-        } else if (assertions.isResponseCodeUnimplemented()) {
-            this.logger.debug("Response code unimplemented");
-            CatsResultFactory.CatsResult notImplementedResult = CatsResultFactory.createNotImplemented();
-            this.reportResultWarn(logger, data, notImplementedResult.reason(), notImplementedResult.message());
-        } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
-            this.logger.debug("Response code expected and documented and but doesn't match response schema");
-            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
             this.reportWarnOrInfoBasedOnCheck(logger, data,
                     CatsResultFactory.createUndocumentedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString(), data.getResponseCodes().toString()),
                     ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
-        } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            this.logger.debug("Response code documented but not expected");
-            this.reportError(logger, CatsResultFactory.createUnexpectedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
+        } else if (assertions.isNotMatchingContentType() && !ignoreArguments.isIgnoreResponseContentTypeCheck()) {
+            this.logger.debug("Response content type not matching contract");
+            CatsResultFactory.CatsResult contentTypeNotMatching = CatsResultFactory.createNotMatchingContentType(data.getContentTypesByResponseCode(response.responseCodeAsString()), response.getResponseContentType());
+            this.reportResultWarn(logger, data, contentTypeNotMatching.reason(), contentTypeNotMatching.message());
+        } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
+            this.logger.debug("Response code expected and documented and but doesn't match response schema");
+            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
+        } else if (assertions.isResponseCodeUnimplemented()) {
+            this.logger.debug("Response code unimplemented");
+            CatsResultFactory.CatsResult notImplementedResult = CatsResultFactory.createNotImplemented();
+            this.reportResultWarn(logger, data, notImplementedResult.reason(), notImplementedResult.message());
+        } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
+            this.logger.debug("Response code expected and documented and matches response schema");
+            this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
         } else {
             this.logger.debug("Unexpected behaviour");
             this.reportError(logger, CatsResultFactory.createUnexpectedBehaviour(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
