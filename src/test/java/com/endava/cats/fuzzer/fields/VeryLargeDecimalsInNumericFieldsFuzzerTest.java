@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.IntegerSchema;
@@ -9,6 +10,8 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import java.util.Map;
@@ -56,5 +59,19 @@ class VeryLargeDecimalsInNumericFieldsFuzzerTest {
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", new StringSchema()));
 
         Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.getFieldFuzzingStrategy(data, "myField").get(0).isSkip()).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST,true", "GET,false"})
+    void shouldNotMatchResponseContentType(HttpMethod method, boolean expected) {
+        FuzzingData data = FuzzingData.builder().method(method).build();
+        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.shouldMatchContentType(data)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST,true", "GET,false"})
+    void shouldMatchResponseSchema(HttpMethod method, boolean expected) {
+        FuzzingData data = FuzzingData.builder().method(method).build();
+        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.shouldMatchResponseSchema(data)).isEqualTo(expected);
     }
 }
