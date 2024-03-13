@@ -96,7 +96,7 @@ public enum ResponseCodeFamily {
     /**
      * Represents the 404 response code.
      */
-    FOURXX_NF {
+    FOURXX_NF_AND_VALIDATION {
         @Override
         public String asString() {
             return "4XX";
@@ -104,7 +104,7 @@ public enum ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Collections.singletonList("404");
+            return List.of("404", "400", "422");
         }
     },
     /**
@@ -320,9 +320,7 @@ public enum ResponseCodeFamily {
         boolean isAllowedResponseCode = this.allowedResponseCodes().contains(code);
         boolean isAllowedGenericResponseCode = this.allowedResponseCodes().stream()
                 .filter(allowedCode -> allowedCode.endsWith(XX))
-                .findFirst()
-                .orElse("X")
-                .charAt(0) == code.toUpperCase(Locale.ROOT).charAt(0);
+                .anyMatch(allowedCode -> allowedCode.charAt(0) == code.toUpperCase(Locale.ROOT).charAt(0));
 
         return isAllowedGenericResponseCode || isAllowedResponseCode;
     }

@@ -83,7 +83,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         for (String path : paths) {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF)
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF_AND_VALIDATION)
                             .fuzzingData(data)
                             .logger(logger)
                             .replaceRefData(false)
@@ -128,7 +128,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         for (String payload : payloads) {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF)
+                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF_AND_VALIDATION)
                             .fuzzingData(data)
                             .logger(logger)
                             .replaceRefData(false)
