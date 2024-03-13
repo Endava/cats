@@ -25,7 +25,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--urlParams param1:value1 param2:value2` A comma separated list of 'name:value' pairs of parameters to be replaced inside the URLs. This is useful when you have static parameters in URLs (like 'version' for example).
 - `--functionalFuzzerFile=FILE ` a file used by the `FunctionalFuzzer` that will be used to create user-supplied payloads.
 - `--skipFuzzers=LIST_OF_FIZZERs` a comma separated list of fuzzers that will be skipped for **all** paths. You can either provide full `Fuzzer` names (for example: `--skippedFuzzers=VeryLargeStringsFuzzer`) or partial `Fuzzer` names (for example: `--skipFuzzers=VeryLarge`). `CATS` will check if the `Fuzzer` names contains the string you provide in the arguments value.
-- `--skipFields=field1,field2#subField1` a comma separated list of fields that will be skipped by replacement Fuzzers like EmptyStringsInFields, NullValuesInFields, etc.
+- `--skipFields=field1,field2#subField1` a comma separated list of fields that will be skipped by replacement Fuzzers like EmptyStringsInFields, NullValuesInFields, etc. **When a field starts with `!` any field that starts with that name will be entirely skipped for fuzzing**
 - `--httpMethods=PUT,POST,etc` a comma separated list of HTTP methods that will be used to filter which http methods will be executed for each path within the contract
 - `--securityFuzzerFile=FILE` A file used by the `SecurityFuzzer` that will be used to inject special strings in order to exploit possible vulnerabilities
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply `--printExecutionStatistics=detailed`
@@ -84,6 +84,19 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--maskHeaders` A comma separated list of headers to mask to protect sensitive info such as login credentials to be written in report files. Masked headers will be replaced with `$$HeaderName` so that test cases can be replayed using environment variables
 - `--tags`  A comma separated list of tags to include. If no tag is supplied, all tags will be considered. To list all available tags run: `cats stats -c api.yml`
 - `--skipTags` A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. To list all available tags run: `cats stats -c  api.yml`
+
+:::tip
+When you want to skip fuzzing entirely for a specific JSON object or specific fields you must prefix the field name from the `--skipFields` argument with `!`.
+The following `--skipFields="!address"` will skip fuzzing for all sub-fields of the `address` object. If you also want CATS to not sent the `address` 
+object at all to the service (sometimes some object might not make sense in conjunction with other objects) you must also use the `cats_remove_field`
+within the reference data file.
+
+```yaml
+all:
+  address: cats_remove_field
+```
+
+:::
 
 Next arguments are active only when supplying a custom dictionary via `--words`:
 - `--matchResponseCodes=<matchResponseCodes>[,<matchResponseCodes>...]` A comma separated list of HTTP response codes that will be matched as error. All other response codes will be ignored from the final report. If provided, all Contract Fuzzers will be skipped

@@ -1,7 +1,8 @@
 # HTTP Fuzzers
-CATS has currently 24 registered `HTTP` Fuzzers:
+CATS has currently 25 registered `HTTP` Fuzzers:
 - `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
 - `CheckDeletedResourcesNotAvailableFuzzer` - checks that resources are not available through `GET` after a successful `DELETE`
+- `CustomHttpMethods` - iterate through a list of hypothetical HTTP methods that are not expected to be implemented by REST APIs
 - `DummyRequestFuzzer` - send a dummy json request {'cats': 'cats'}
 - `EmptyBodyFuzzer` - send a request with a empty string body
 - `EmptyJsonArrayBody` - send a request with a empty json array body
