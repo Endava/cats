@@ -32,7 +32,7 @@ public class DateOfBirthGenerator implements ValidDataFormatGenerator, OpenAPIFo
 
     @Override
     public List<String> matchingFormats() {
-        return List.of("description");
+        return List.of("dob");
     }
 
     @Override
