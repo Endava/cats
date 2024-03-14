@@ -22,6 +22,19 @@ class DateGeneratorTest {
         Assertions.assertThat(strategy.appliesTo(format, "")).isFalse();
     }
 
+    @ParameterizedTest
+    @CsvSource({"dob", "dateOfBirth", "birthdate"})
+    void shouldNotApplyForDobProperties(String property) {
+        DateGenerator strategy = new DateGenerator();
+        Assertions.assertThat(strategy.appliesTo("date", property)).isFalse();
+    }
+
+    @Test
+    void shouldApplyIfNotDobProperty() {
+        DateGenerator strategy = new DateGenerator();
+        Assertions.assertThat(strategy.appliesTo("date", "someOtherDate")).isTrue();
+    }
+
     @Test
     void givenADateFormatGeneratorStrategy_whenGettingTheTotallyWrongValue_thenTheValueIsReturnedAsExpected() {
         DateGenerator strategy = new DateGenerator();

@@ -356,8 +356,7 @@ public abstract class CatsUtil {
     public static boolean isFileEmpty(File file) {
         if (file != null && file.isFile()) {
             return file.length() == 0;
-        } else {
-            return false;
         }
+        return true;
     }
 }

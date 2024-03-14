@@ -138,12 +138,6 @@ public class CatsResponse {
     }
 
     /**
-     * Builder for CatsResponse.
-     */
-    public static class CatsResponseBuilder {
-    }
-
-    /**
      * Default content type when none is received from the service.
      *
      * @return a default content type when one is received from the server
