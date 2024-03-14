@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -117,5 +118,16 @@ class CatsUtilTest {
 
         String result = CatsUtil.justReplaceField(json, "key", "replaced").json();
         Assertions.assertThat(result).contains("replaced").doesNotContain("3", "4", "5");
+    }
+
+    @Test
+    void shouldReturnFileEmptyWhenFileNull() {
+        Assertions.assertThat(CatsUtil.isFileEmpty(null)).isTrue();
+    }
+
+    @Test
+    void shouldReturnFileEmptyWhenFileEmpty() {
+        File file = new File("src/test/resources/empty.yml");
+        Assertions.assertThat(CatsUtil.isFileEmpty(file)).isTrue();
     }
 }

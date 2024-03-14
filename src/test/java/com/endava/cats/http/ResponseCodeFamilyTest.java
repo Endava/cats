@@ -182,11 +182,22 @@ class ResponseCodeFamilyTest {
         Assertions.assertThat(ResponseCodeFamily.FOUR00_FIVE01.asString()).isEqualTo("400|501");
     }
 
+    @Test
+    void shouldHave2XX4XXAsString() {
+        Assertions.assertThat(ResponseCodeFamily.FOURXX_TWOXX.asString()).isEqualTo("4XX|2XX");
+    }
+
     @ParameterizedTest
     @CsvSource({"true,were", "false,were not"})
     void shouldReturnProperWordingBasedOnRequired(boolean required, String expected) {
         Object[] result = ResponseCodeFamily.getExpectedWordingBasedOnRequiredFields(required);
 
         Assertions.assertThat(result[1]).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"431,true", "432,false"})
+    void shouldReturnTooManyHeaders(int code, boolean result) {
+        Assertions.assertThat(ResponseCodeFamily.isTooManyHeaders(code)).isEqualTo(result);
     }
 }

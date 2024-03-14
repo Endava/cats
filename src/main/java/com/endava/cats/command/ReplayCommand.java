@@ -120,7 +120,7 @@ public class ReplayCommand implements Runnable {
         this.showResponseCodesDifferences(testCase, response);
     }
 
-    private void showResponseCodesDifferences(CatsTestCase catsTestCase, CatsResponse response) {
+    void showResponseCodesDifferences(CatsTestCase catsTestCase, CatsResponse response) {
         logger.noFormat("");
         logger.star("Old response code: {}", catsTestCase.getResponse().getResponseCode());
         logger.star("New response code: {}", response.getResponseCode());
@@ -131,7 +131,7 @@ public class ReplayCommand implements Runnable {
         logger.noFormat("");
     }
 
-    private void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) {
+    void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) {
         if (StringUtils.isBlank(this.outputReportFolder)) {
             return;
         }

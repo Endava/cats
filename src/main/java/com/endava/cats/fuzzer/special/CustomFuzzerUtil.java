@@ -363,7 +363,7 @@ public class CustomFuzzerUtil {
     private List<String> getMissingKeywords(CustomFuzzerBase fuzzer, Map<String, Object> currentTestCase) {
         return fuzzer.requiredKeywords().stream()
                 .filter(keyword -> currentTestCase.get(keyword) == null)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

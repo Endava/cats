@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.IOException;
 import java.util.Collections;
 
 @QuarkusTest
@@ -74,5 +75,14 @@ class ReplayCommandTest {
         replayCommand.run();
 
         Mockito.verifyNoInteractions(serviceCaller);
+    }
+
+    @Test
+    void shouldReturnCustomIOResponseWhenIOException() throws Exception {
+        replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.anySet())).thenThrow(new IOException("connection refused"));
+        ReplayCommand spyReplay = Mockito.spy(replayCommand);
+        spyReplay.run();
+        Mockito.verify(spyReplay, Mockito.times(1)).showResponseCodesDifferences(Mockito.any(), Mockito.argThat(catsResponse -> catsResponse.getResponseCode() == 953));
     }
 }
