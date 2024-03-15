@@ -222,4 +222,8 @@ public class CatsResponse {
             return responseBody;
         }
     }
+
+    public static class CatsResponseBuilder {
+        //ntd
+    }
 }
