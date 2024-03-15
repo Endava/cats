@@ -4,7 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;
@@ -45,7 +45,7 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
                 FieldsIteratorExecutorContext.builder()
                         .scenario("Iterate through each field with default value defined and send happy flow requests.")
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
-                        .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                        .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                         .schemaFilter(isNotEnum.and(hasDefault))
                         .fieldFilter(catsExecutor::isFieldNotADiscriminator)
                         .fuzzValueProducer(fuzzedValueProducer)

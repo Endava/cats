@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.headers.only;
 
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -24,8 +24,8 @@ class OnlySpacesInHeadersFuzzerTest {
 
     @Test
     void shouldReturn4xxForRequiredAnd2xxForOptionalResponseCodes() {
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(onlySpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 
     @Test

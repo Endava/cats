@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.leading;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -34,9 +34,9 @@ class LeadingControlCharsInFieldsValidateTrimFuzzerTest {
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\r\n");
-        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
 
         Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(leadingControlCharsInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();

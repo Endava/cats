@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.leading;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -34,7 +34,7 @@ class LeadingSingleCodePointEmojisInFieldsTrimValidateFuzzerTest {
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\uD83E\uDD76");
-        Assertions.assertThat(leadingSingleCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(leadingSingleCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(leadingSingleCodePointEmojisInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(leadingSingleCodePointEmojisInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }

@@ -568,7 +568,7 @@ public abstract class OpenApiUtils {
                 .map(Operation::getParameters)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
-                .filter(parameter -> parameter.getIn().equals("header"))
+                .filter(parameter -> "header".equals(parameter.getIn()))
                 .map(Parameter::getName)
                 .filter(Objects::nonNull)
                 .filter(parameter ->
@@ -585,7 +585,7 @@ public abstract class OpenApiUtils {
                 .map(Operation::getParameters)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
-                .filter(parameter -> parameter.getIn().equals("header"))
+                .filter(parameter -> "header".equals(parameter.getIn()))
                 .filter(parameter -> parameter.getDeprecated() != null && parameter.getDeprecated())
                 .map(Parameter::getName)
                 .collect(Collectors.toSet());
@@ -603,7 +603,7 @@ public abstract class OpenApiUtils {
                 .map(Operation::getParameters)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
-                .filter(parameter -> parameter.getIn().equals("query"))
+                .filter(parameter -> "query".equals(parameter.getIn()))
                 .map(Parameter::getName)
                 .collect(Collectors.toSet());
     }

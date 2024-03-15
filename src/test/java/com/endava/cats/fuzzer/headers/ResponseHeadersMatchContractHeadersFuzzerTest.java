@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -54,7 +54,7 @@ class ResponseHeadersMatchContractHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().responseHeaders(Collections.emptyMap())
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Collections.emptyList()).build();
@@ -70,7 +70,7 @@ class ResponseHeadersMatchContractHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().responseHeaders(Map.of("200", Set.of("missingHeader", "anotherMissingHeader")))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(List.of(new KeyValuePair<>("header1", "value1"))).build();
@@ -87,7 +87,7 @@ class ResponseHeadersMatchContractHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().responseHeaders(Map.of("200", Set.of("notMissing", "notMissingAlso")))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(List.of(new KeyValuePair<>("notMissing", "value1"), new KeyValuePair<>("notMissingAlso", "value2"))).build();
@@ -95,7 +95,7 @@ class ResponseHeadersMatchContractHeadersFuzzerTest {
 
         responseHeadersMatchContractHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.any(), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.any(), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
 
     }
 }

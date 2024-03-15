@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzer;
 import com.endava.cats.fuzzer.headers.base.BaseHeadersFuzzerContext;
 import com.endava.cats.generator.simple.UnicodeGenerator;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.strategy.FuzzingStrategy;
 import jakarta.inject.Singleton;
 
@@ -31,8 +31,8 @@ public class LeadingSpacesInHeadersFuzzer extends BaseHeadersFuzzer {
     @Override
     public BaseHeadersFuzzerContext createFuzzerContext() {
         return BaseHeadersFuzzerContext.builder()
-                .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamily.TWOXX)
-                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamily.TWOXX)
+                .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamilyPredefined.TWOXX)
+                .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamilyPredefined.TWOXX)
                 .typeOfDataSentToTheService("values prefixed with spaces")
                 .fuzzStrategy(getInvisibleChars()
                         .stream().map(value -> FuzzingStrategy.prefix().withData(value)).toList())

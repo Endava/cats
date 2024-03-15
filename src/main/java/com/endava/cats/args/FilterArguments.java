@@ -266,7 +266,7 @@ public class FilterArguments {
      */
     public List<Fuzzer> filterOutFuzzersNotMatchingHttpMethods(Set<HttpMethod> httpMethods) {
         return this.getFirstPhaseFuzzersAsFuzzers().stream()
-                .filter(fuzzer -> !(new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods)))
+                .filter(fuzzer -> !new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods))
                 .toList();
     }
 

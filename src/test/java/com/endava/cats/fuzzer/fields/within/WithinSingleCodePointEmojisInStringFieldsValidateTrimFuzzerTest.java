@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -43,9 +43,9 @@ class WithinSingleCodePointEmojisInStringFieldsValidateTrimFuzzerTest {
         FuzzingStrategy fuzzingStrategy = withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
 
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\uD83D\uDC80");
-        Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
 
         Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(withinSingleCodePointEmojisInStringFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();

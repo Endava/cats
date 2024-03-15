@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -41,7 +41,6 @@ class WithinControlCharsInStringFieldsSanitizeValidateFuzzerTest {
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
 
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\u0000");
-        Assertions.assertThat(withinControlCharsInStringFieldsSanitizeValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
         Assertions.assertThat(withinControlCharsInStringFieldsSanitizeValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(withinControlCharsInStringFieldsSanitizeValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
 

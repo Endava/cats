@@ -7,6 +7,8 @@ import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
@@ -179,7 +181,7 @@ class TestCaseListenerTest {
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("300", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("300", Collections.emptyList()));
 
-        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
+        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX));
 
 
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
@@ -197,7 +199,7 @@ class TestCaseListenerTest {
         CatsResponse response = CatsResponse.builder().body("{}").responseCode(200).responseContentType("application/json").build();
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getContentTypesByResponseCode("200")).thenReturn(List.of("application/csv"));
-        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
+        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
@@ -215,7 +217,7 @@ class TestCaseListenerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200"));
 
-        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        prepareTestCaseListenerSimpleSetup(response, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX));
 
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseWarns(Mockito.any());
@@ -273,13 +275,13 @@ class TestCaseListenerTest {
         testCaseListener.testCaseMap.put("1", new CatsTestCase());
         testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
 
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses()).hasSize(1).containsKey("/test");
         Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses().get("/test")).isNotEmpty();
 
         Mockito.when(data.getMethod()).thenReturn(HttpMethod.DELETE);
         Mockito.when(data.getPath()).thenReturn("/test/{testId}");
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses()).hasSize(1).containsKey("/test");
         Assertions.assertThat(catsGlobalContext.getPostSuccessfulResponses().get("/test")).isEmpty();
 
@@ -383,7 +385,7 @@ class TestCaseListenerTest {
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
     }
@@ -400,7 +402,7 @@ class TestCaseListenerTest {
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
@@ -420,7 +422,7 @@ class TestCaseListenerTest {
 
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX);
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
@@ -438,7 +440,7 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
-        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
     }
@@ -454,7 +456,7 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
 
-        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
+        testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
         CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
@@ -481,7 +483,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [400] is documented and response body matches the corresponding schema.");
@@ -501,7 +503,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [400] is documented and response body matches the corresponding schema.");
@@ -519,7 +521,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [400] is documented and response body matches the corresponding schema.");
@@ -538,7 +540,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [400] is documented and response body matches the corresponding schema.");
@@ -557,7 +559,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [400] is documented and response body matches the corresponding schema.");
@@ -577,7 +579,7 @@ class TestCaseListenerTest {
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
-            spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX);
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code [400] is documented, but response body does NOT match the corresponding schema.");
@@ -585,7 +587,7 @@ class TestCaseListenerTest {
 
     @ParameterizedTest
     @CsvSource({"406,FOURXX_MT", "415,FOURXX_MT", "400,FOURXX"})
-    void shouldReportInfoWhenResponseCodeNotNecessarilyDocumentedIsExpectedAndResponseBodyMatchesButFuzzedFieldNotPresent(String responseCode, ResponseCodeFamily family) {
+    void shouldReportInfoWhenResponseCodeNotNecessarilyDocumentedIsExpectedAndResponseBodyMatchesButFuzzedFieldNotPresent(String responseCode, ResponseCodeFamilyPredefined family) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
@@ -631,9 +633,9 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
 
-        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
-        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [400], documented response codes: [200, 401]".formatted(ResponseCodeFamily.FOURXX.allowedResponseCodes().toString()));
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [400], documented response codes: [200, 401]".formatted(ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes().toString()));
     }
 
     @Test
@@ -649,7 +651,7 @@ class TestCaseListenerTest {
         Mockito.when(response.getResponseCode()).thenReturn(404);
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
 
-        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.FOURXX));
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "Response HTTP code 404: you might need to provide business context using --refData or --urlParams");
     }
@@ -667,7 +669,7 @@ class TestCaseListenerTest {
         Mockito.when(response.getResponseCode()).thenReturn(501);
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("501");
 
-        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamily.TWOXX));
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX));
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response HTTP code 501: you forgot to implement this functionality!");
     }
@@ -719,19 +721,11 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void shouldReturnResultCodeFamilyFromFuzzersConfigFile() {
-        catsGlobalContext.getFuzzersConfiguration().put("Dummy.expectedResponseCode", "4XX");
-        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfiguredFor("Dummy", ResponseCodeFamily.TWOXX);
-
-        Assertions.assertThat(resultCodeFromFile).isEqualTo(ResponseCodeFamily.FOURXX_GENERIC);
-    }
-
-    @Test
     void shouldReturnDefaultResponseCodeFamilyWhenConfigNotFound() {
         catsGlobalContext.getFuzzersConfiguration().put("AnotherDummy.expectedResponseCode", "999");
-        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfiguredFor("Dummy", ResponseCodeFamily.TWOXX);
+        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfiguredFor("Dummy", ResponseCodeFamilyPredefined.TWOXX);
 
-        Assertions.assertThat(resultCodeFromFile).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(resultCodeFromFile).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 
     @ParameterizedTest
@@ -741,6 +735,30 @@ class TestCaseListenerTest {
     void shouldCheckContentTypesEquivalence(String firstContentType, String secondContentType, boolean expected) {
         boolean result = TestCaseListener.areContentTypesEquivalent(firstContentType, secondContentType);
         Assertions.assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldLoadFuzzerSpecificResponseCode() {
+        CatsGlobalContext catsGlobalContext = new CatsGlobalContext();
+        catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
+        ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
+        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", ResponseCodeFamilyPredefined.TWOXX);
+
+        Assertions.assertThat(family).isInstanceOf(ResponseCodeFamilyDynamic.class);
+
+        ResponseCodeFamilyDynamic familyDynamic = (ResponseCodeFamilyDynamic) family;
+        Assertions.assertThat(familyDynamic.allowedResponseCodes()).containsOnly("201", "202");
+    }
+
+    @Test
+    void shouldReturnDefaultResponseCodeWhenNoConfiguration() {
+        ReflectionTestUtils.setField(testCaseListener, "globalContext", new CatsGlobalContext());
+        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", ResponseCodeFamilyPredefined.TWOXX);
+
+        Assertions.assertThat(family).isInstanceOf(ResponseCodeFamilyPredefined.class);
+
+        ResponseCodeFamilyPredefined familyPredefined = (ResponseCodeFamilyPredefined) family;
+        Assertions.assertThat(familyPredefined).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build, Runnable runnable) {

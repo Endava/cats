@@ -7,6 +7,8 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
@@ -751,7 +753,14 @@ public class TestCaseListener {
         String valueFound = globalContext.getExpectedResponseCodeConfigured(keyToLookup);
         logger.debug("Configuration key {}, value {}", keyToLookup, valueFound);
 
-        return valueFound != null ? ResponseCodeFamily.from(valueFound) : defaultValue;
+        if (valueFound == null) {
+            return defaultValue;
+        }
+        List<String> responseCodes = Arrays.stream(valueFound.split(",", -1))
+                .map(String::trim)
+                .filter(item -> item.length() == 3)
+                .toList();
+        return new ResponseCodeFamilyDynamic(responseCodes);
     }
 
     private void recordResult(String message, Object[] params, String result, PrettyLogger logger) {
@@ -818,7 +827,7 @@ public class TestCaseListener {
     }
 
     private boolean isErrorResponse(CatsResponse response) {
-        return ResponseCodeFamily.FOURXX.matchesAllowedResponseCodes(response.responseCodeAsString());
+        return ResponseCodeFamilyPredefined.FOURXX.matchesAllowedResponseCodes(response.responseCodeAsString());
     }
 
     private boolean isNotErrorResponse(CatsResponse response) {

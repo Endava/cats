@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -65,7 +65,7 @@ public class RandomDummyInvalidJsonBodyFuzzer implements Fuzzer {
         for (String payload : PAYLOADS) {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                             .fuzzingData(data)
                             .logger(logger)
                             .replaceRefData(false)
