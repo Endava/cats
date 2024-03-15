@@ -53,11 +53,17 @@ class RunCommandTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"securityFuzzer.yml,1", "securityFuzzer-fieldTypes.yml,1", "nonExistent.yml,0"})
+    @CsvSource({"securityFuzzer.yml,1", "securityFuzzer-fieldTypes.yml,1"})
     void shouldRunSecurityFuzzer(String securityFuzzerFile, int times) {
         ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/" + securityFuzzerFile));
         runCommand.run();
         Mockito.verify(filterArguments, Mockito.times(times)).customFilter("SecurityFuzzer");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenEmptyFile() {
+        ReflectionTestUtils.setField(runCommand, "file", new File("src/test/resources/nonExistent.yml"));
+        Assertions.assertThatThrownBy(() -> runCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("You must provide a valid non-empty <file>");
     }
 
     @Test
