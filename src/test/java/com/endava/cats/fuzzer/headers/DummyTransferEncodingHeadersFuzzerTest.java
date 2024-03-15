@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
@@ -46,7 +46,7 @@ class DummyTransferEncodingHeadersFuzzerTest {
 
     @Test
     void shouldReturn400501ResponseCode() {
-        Assertions.assertThat(dummyTransferEncodingHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamily.FOUR00_FIVE01);
+        Assertions.assertThat(dummyTransferEncodingHeadersFuzzer.getResponseCodeFamily()).isEqualTo(ResponseCodeFamilyPredefined.FOUR00_FIVE01);
     }
 
     @Test

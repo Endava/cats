@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.headers.leading;
 
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
@@ -18,8 +18,8 @@ class LeadingSpacesInHeadersFuzzerTest {
 
     @Test
     void shouldExpect2xxForOptionalAndRequiredHeaders() {
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpCodeForRequiredHeadersFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getExpectedHttpForOptionalHeadersFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 
     @Test

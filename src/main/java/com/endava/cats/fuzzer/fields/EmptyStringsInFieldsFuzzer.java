@@ -6,6 +6,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.fuzzer.fields.base.Expect4XXForRequiredBaseFieldsFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -48,7 +49,7 @@ public class EmptyStringsInFieldsFuzzer extends Expect4XXForRequiredBaseFieldsFu
 
     @Override
     protected ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
-        return ResponseCodeFamily.FOURXX;
+        return ResponseCodeFamilyPredefined.FOURXX;
     }
 
     @Override

@@ -4,7 +4,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;
@@ -43,7 +43,7 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
                 FieldsIteratorExecutorContext.builder()
                         .scenario("Replace %s fields with %s values. ".formatted(context.replaceWhat, context.replaceWith))
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
-                        .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                        .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                         .skipMessage(context.skipMessage)
                         .fieldFilter(context.fieldFilter)
                         .fuzzValueProducer(context.fuzzValueProducer)

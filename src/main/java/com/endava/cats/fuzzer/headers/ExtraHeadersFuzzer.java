@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -44,7 +44,7 @@ public class ExtraHeadersFuzzer implements Fuzzer {
         simpleExecutor.execute(
                 SimpleExecutorContext.builder()
                         .fuzzingData(data)
-                        .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                        .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                         .fuzzer(this)
                         .logger(logger)
                         .scenario("Add an extra header inside the request: name [%s], value [%s]. ".formatted(CATS_FUZZY_HEADER, CATS_FUZZY_HEADER))

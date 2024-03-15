@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
@@ -99,7 +99,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(22)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
     }
 
     @Test
@@ -108,7 +108,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.never()).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.never()).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
     }
 
     @ParameterizedTest
@@ -119,7 +119,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(expectedTestRuns)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(expectedTestRuns)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {

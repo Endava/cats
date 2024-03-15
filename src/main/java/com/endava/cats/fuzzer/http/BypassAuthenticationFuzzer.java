@@ -5,7 +5,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -56,7 +56,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
                         .fuzzingData(data)
                         .payload(data.getPayload())
                         .scenario("Send a happy flow bypassing authentication")
-                        .expectedResponseCode(ResponseCodeFamily.FOURXX_AA)
+                        .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_AA)
                         .skippedHeaders(authenticationHeaders)
                         .build());
     }

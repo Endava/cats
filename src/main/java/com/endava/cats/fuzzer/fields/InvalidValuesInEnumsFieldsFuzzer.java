@@ -6,6 +6,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.fields.base.BaseBoundaryFieldFuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -68,16 +69,16 @@ public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
-        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamily.TWOXX : ResponseCodeFamily.FOURXX;
+        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamilyPredefined.TWOXX : ResponseCodeFamilyPredefined.FOURXX;
     }
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
-        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamily.TWOXX : ResponseCodeFamily.FOURXX;
+        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamilyPredefined.TWOXX : ResponseCodeFamilyPredefined.FOURXX;
     }
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
-        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamily.TWOXX : ResponseCodeFamily.FOURXX;
+        return processingArguments.isAllowInvalidEnumValues() ? ResponseCodeFamilyPredefined.TWOXX : ResponseCodeFamilyPredefined.FOURXX;
     }
 }

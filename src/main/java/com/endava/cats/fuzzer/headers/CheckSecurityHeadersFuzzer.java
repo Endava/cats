@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.KeyValuePair;
@@ -68,7 +68,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
                         .fuzzer(this)
                         .scenario("Send a happy flow request and check the following Security Headers: %s".formatted(SECURITY_HEADERS_AS_STRING))
                         .expectedResult(" and all the above security headers within the response")
-                        .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                        .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                         .responseProcessor(this::checkResponse)
                         .build()
         );
@@ -80,7 +80,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
             testCaseListener.reportResultError(log, data, "Missing recommended security headers",
                     "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(pair -> pair.getKey() + "=" + pair.getValue()).collect(Collectors.toSet()));
         } else {
-            testCaseListener.reportResult(log, data, response, ResponseCodeFamily.TWOXX);
+            testCaseListener.reportResult(log, data, response, ResponseCodeFamilyPredefined.TWOXX);
         }
     }
 
