@@ -4,7 +4,7 @@
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
     <description>OpenAPI Fuzzer and Negative Testing Tool</description>
-    <version>11.3.0</version>
+    <version>11.3.1-SNAPSHOT</version>
     <name>CATS</name>
     <url>https://endava.github.io/cats/</url>
 
