@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates readable usernames.
@@ -20,7 +19,7 @@ public class UsernameGenerator implements ValidDataFormatGenerator, OpenAPIForma
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "username".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("username");
+                PropertySanitizer.sanitize(propertyName).endsWith("username");
     }
 
     @Override

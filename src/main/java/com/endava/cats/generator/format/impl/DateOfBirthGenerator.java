@@ -13,7 +13,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates real world birthdays.
@@ -25,9 +24,9 @@ public class DateOfBirthGenerator implements ValidDataFormatGenerator, OpenAPIFo
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "dob".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("birthday") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("dob") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("dateofbirth");
+                PropertySanitizer.sanitize(propertyName).endsWith("birthday") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("dob") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("dateofbirth");
     }
 
     @Override

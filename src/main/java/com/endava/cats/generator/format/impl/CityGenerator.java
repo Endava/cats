@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates valid city names.
@@ -20,8 +19,8 @@ public class CityGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "city".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("city") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("cityname");
+                PropertySanitizer.sanitize(propertyName).endsWith("city") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("cityname");
     }
 
     @Override

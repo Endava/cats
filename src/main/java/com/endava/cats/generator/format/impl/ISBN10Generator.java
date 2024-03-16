@@ -8,7 +8,6 @@ import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * A generator class implementing interfaces for generating valid ISBN-10 (International Standard Book Number) data formats.
@@ -29,8 +28,8 @@ public class ISBN10Generator implements ValidDataFormatGenerator, OpenAPIFormat 
     public boolean appliesTo(String format, String propertyName) {
         return ISBN_10.equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 ISBN.equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith(ISBN_10)||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith(ISBN);
+                PropertySanitizer.sanitize(propertyName).endsWith(ISBN_10) ||
+                PropertySanitizer.sanitize(propertyName).endsWith(ISBN);
     }
 
     @Override
