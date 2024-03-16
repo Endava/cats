@@ -10,7 +10,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates real line1 addresses.
@@ -21,7 +20,7 @@ public class AddressLine1Generator implements ValidDataFormatGenerator, OpenAPIF
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "line1".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("line1");
+                PropertySanitizer.sanitize(propertyName).endsWith("line1");
     }
 
     @Override

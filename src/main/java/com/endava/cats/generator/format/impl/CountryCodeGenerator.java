@@ -62,8 +62,8 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
         String lastPart = parts[parts.length - 1];
         return "iso3166".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 "countrycode".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(lastPart).toLowerCase(Locale.ROOT).endsWith("country") ||
-                PropertySanitizer.sanitize(lastPart).toLowerCase(Locale.ROOT).startsWith("country");
+                PropertySanitizer.sanitize(lastPart).endsWith("country") ||
+                PropertySanitizer.sanitize(lastPart).startsWith("country");
     }
 
     @Override

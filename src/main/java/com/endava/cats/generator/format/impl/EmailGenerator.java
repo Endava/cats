@@ -22,13 +22,13 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public Object generate(Schema<?> schema) {
-        return RandomStringUtils.randomAlphabetic(5) + "cool.cats@cats.io";
+        return RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT) + "cool.cats@cats.io";
     }
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return propertyName.toLowerCase(Locale.ROOT).endsWith(EMAIL) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("emailaddress") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("emailaddress") ||
                 EMAIL.equalsIgnoreCase(format);
     }
 

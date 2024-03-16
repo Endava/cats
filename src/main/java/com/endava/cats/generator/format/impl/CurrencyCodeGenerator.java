@@ -30,7 +30,7 @@ public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidD
     public boolean appliesTo(String format, String propertyName) {
         return "currencycode".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 "iso4217".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("currencycode");
+                PropertySanitizer.sanitize(propertyName).endsWith("currencycode");
     }
 
     @Override

@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates valid states.
@@ -20,8 +19,8 @@ public class StateGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "state".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("state") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("statename");
+                PropertySanitizer.sanitize(propertyName).endsWith("state") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("statename");
     }
 
     @Override
