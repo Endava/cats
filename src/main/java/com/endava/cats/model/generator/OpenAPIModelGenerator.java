@@ -348,7 +348,7 @@ public class OpenAPIModelGenerator {
             for (String oneOfSchema : schema.getDiscriminator().getMapping().values()) {
                 oneOfSchema = oneOfSchema.substring(oneOfSchema.lastIndexOf("/") + 1);
                 Schema<?> currentOneOfSchema = globalContext.getSchemaMap().get(oneOfSchema);
-                currentOneOfSchema.getAllOf()
+                Optional.ofNullable(currentOneOfSchema.getAllOf()).orElse(Collections.emptyList())
                         .stream()
                         .filter(innerAllOfSchema -> innerAllOfSchema.get$ref() != null)
                         .forEach(innerAllOfSchema -> innerAllOfSchema.set$ref(newSchema.getName()));
