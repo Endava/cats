@@ -51,7 +51,7 @@ public abstract class OpenApiUtils {
 
     private static final Pattern VERSION_HEADER = Pattern.compile("(v\\d+)");
 
-    private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "sort", "perpage", "datefrom", "dateto", "datestart", "dateend");
+    private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "pagesize", "pagenumber", "sort", "perpage", "datefrom", "dateto", "datestart", "dateend");
 
     private static final Set<String> MONITORING_MATCHES = Set.of("[version\\d*\\.?|v\\d+\\.?]/status", "/status", ".*/health", ".*/monitoring/status", ".*/ping", ".*/healthz");
 
