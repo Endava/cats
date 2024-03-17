@@ -3,6 +3,7 @@ package com.endava.cats.generator.format.api;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.enterprise.inject.Instance;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,11 +31,11 @@ public abstract class DataFormat<T extends DataFormatGenerator> {
      * @param propertyName The name of the property
      * @return An optional containing the data format generator for the property, if it exists
      */
-    Optional<T> getGenerator(Schema<?> schema, String propertyName) {
+    List<T> getGenerators(Schema<?> schema, String propertyName) {
         return generators.stream()
                 .filter(generator -> generator.appliesTo(Optional.ofNullable(schema.getFormat()).orElse(""),
                         Optional.ofNullable(propertyName).orElse("")))
-                .findFirst();
+                .toList();
     }
 
     public static Object matchesPatternOrNull(Schema<?> schema, Object generated) {
