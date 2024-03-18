@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.ExactValuesInFieldsFuzzer;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
@@ -47,5 +48,12 @@ public class MaximumExactNumbersInNumericFieldsFuzzer extends ExactValuesInField
     @Override
     public Object getBoundaryValue(Schema schema) {
         return getExactMethod().apply(schema);
+    }
+
+    @Override
+    public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
+        Schema schema = data.getRequestPropertyTypes().get(fuzzedField);
+        boolean isRefDataField = filesArguments.getRefData(data.getPath()).get(fuzzedField) != null;
+        return !isRefDataField && getExactMethod().apply(schema) != null;
     }
 }
