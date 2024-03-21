@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -43,9 +43,9 @@ class WithinMultiCodePointEmojisInStringFieldsValidateTrimFuzzerTest {
         FuzzingStrategy fuzzingStrategy = withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "field").get(1);
 
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\uD83D\uDC68\u200D\uD83C\uDFED️");
-        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
 
         Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();

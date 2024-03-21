@@ -41,4 +41,7 @@ public class HeadersIteratorExecutorContext {
 
     @Builder.Default
     boolean skipAuthHeaders = true;
+
+    @Builder.Default
+    boolean shouldMatchContentType = true;
 }

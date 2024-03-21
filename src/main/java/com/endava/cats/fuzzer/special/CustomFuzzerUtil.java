@@ -5,6 +5,7 @@ import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.json.JsonUtils;
@@ -40,7 +41,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.json.JsonUtils.NOT_SET;
-import static com.endava.cats.util.CatsDSLWords.*;
+import static com.endava.cats.util.CatsDSLWords.CATS_BODY_FUZZ;
+import static com.endava.cats.util.CatsDSLWords.CATS_HEADERS;
+import static com.endava.cats.util.CatsDSLWords.CHECKS;
+import static com.endava.cats.util.CatsDSLWords.DESCRIPTION;
+import static com.endava.cats.util.CatsDSLWords.EXPECTED_RESPONSE_CODE;
+import static com.endava.cats.util.CatsDSLWords.ONE_OF_SELECTION;
+import static com.endava.cats.util.CatsDSLWords.OUTPUT;
+import static com.endava.cats.util.CatsDSLWords.RESERVED_WORDS;
+import static com.endava.cats.util.CatsDSLWords.VERIFY;
 
 /**
  * Common methods used by the FunctionalFuzzer and SecurityFuzzer.
@@ -88,10 +97,18 @@ public class CustomFuzzerUtil {
 
         for (int i = 0; i < howManyTests; i++) {
             String expectedResponseCode = String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE));
-            this.startCustomTest(testName, currentPathValues, expectedResponseCode);
+            List<String> expectedResponseCodeAsList = Arrays.stream(expectedResponseCode
+                            .replace("[", "")
+                            .replace("]", "")
+                            .split(",", -1))
+                    .map(String::trim)
+                    .toList();
+
+            ResponseCodeFamily expectedResponseCodeFamily = new ResponseCodeFamilyDynamic(expectedResponseCodeAsList);
+            this.startCustomTest(testName, currentPathValues, expectedResponseCodeFamily);
 
             String payloadWithCustomValuesReplaced = this.getJsonWithCustomValuesFromFile(data, currentPathValues);
-            CatsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
+            payloadWithCustomValuesReplaced = CatsUtil.setAdditionalPropertiesToPayload(currentPathValues, payloadWithCustomValuesReplaced);
 
             Set<CatsHeader> headers = new HashSet<>(Arrays.asList(arrayOfHeaders));
             if (isHeadersFuzzing) {
@@ -108,9 +125,9 @@ public class CustomFuzzerUtil {
             String verify = WordUtils.nullOrValueOf(currentPathValues.get(VERIFY));
 
             if (verify != null) {
-                this.checkVerifiesAndReport(data, payloadWithCustomValuesReplaced, response, verify, expectedResponseCode);
+                this.checkVerifiesAndReport(data, payloadWithCustomValuesReplaced, response, verify, expectedResponseCodeFamily);
             } else {
-                testCaseListener.reportResult(log, data, response, ResponseCodeFamily.from(expectedResponseCode));
+                testCaseListener.reportResult(log, data, response, expectedResponseCodeFamily);
             }
         }
     }
@@ -160,7 +177,7 @@ public class CustomFuzzerUtil {
                         entry -> CatsDSLParser.parseAndGetResult(entry.getValue(), Map.of(Parser.REQUEST, request))));
     }
 
-    private void checkVerifiesAndReport(FuzzingData data, String request, CatsResponse response, String verify, String expectedResponseCode) {
+    private void checkVerifiesAndReport(FuzzingData data, String request, CatsResponse response, String verify, ResponseCodeFamily expectedResponseCode) {
         Map<String, String> verifies = this.parseYmlEntryIntoMap(verify);
         Map<String, String> responseValues = this.matchVariablesWithTheResponse(response, verifies, Map.Entry::getKey);
         log.debug("Parameters to verify: {}", verifies);
@@ -184,7 +201,7 @@ public class CustomFuzzerUtil {
                 }
             });
 
-            if (errorMessages.isEmpty() && ResponseCodeFamily.matchAsCodeOrRange(expectedResponseCode, response.responseCodeAsString())) {
+            if (errorMessages.isEmpty() && expectedResponseCode.matchesAllowedResponseCodes(response.responseCodeAsString())) {
                 testCaseListener.reportResultInfo(log, data, "Response matches all 'verify' parameters");
             } else if (errorMessages.isEmpty()) {
                 testCaseListener.reportResultWarn(log, data, "Returned response code not matching expected response code",
@@ -260,10 +277,10 @@ public class CustomFuzzerUtil {
     }
 
 
-    private void startCustomTest(String testName, Map<String, Object> currentPathValues, String expectedResponseCode) {
+    private void startCustomTest(String testName, Map<String, Object> currentPathValues, ResponseCodeFamily expectedResponseCode) {
         String testScenario = this.getTestScenario(testName, currentPathValues);
         testCaseListener.addScenario(log, "Scenario: {}", testScenario);
-        testCaseListener.addExpectedResult(log, "Should return [{}]", expectedResponseCode);
+        testCaseListener.addExpectedResult(log, "Should return {}", expectedResponseCode.allowedResponseCodes());
     }
 
     /**
@@ -317,8 +334,10 @@ public class CustomFuzzerUtil {
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
         log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getPath(), data.getMethod(), value);
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
+        List<String> missingKeywords = this.getMissingKeywords(fuzzer, (Map<String, Object>) value);
+        boolean isEntryValid = missingKeywords.isEmpty();
 
-        if (this.entryIsValid((Map<String, Object>) value) && isValidOneOf) {
+        if (isEntryValid && isValidOneOf) {
             this.pathsWithInputVariables.put(data.getPath(), (Map<String, Object>) value);
             List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value, data.getPayload());
             for (Map<String, Object> testCase : individualTestCases) {
@@ -328,8 +347,9 @@ public class CustomFuzzerUtil {
             log.skip("Skipping path [{}] as it does not match oneOfSelection", data.getPath());
             log.debug("Payload: {}", data.getPayload());
         } else {
-            log.warning("Skipping path [{}] as missing [{}] specific fields. List of reserved words: [{}]",
-                    data.getPath(), fuzzer.getClass().getSimpleName(), fuzzer.reservedWords());
+            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getPath(), missingKeywords);
+            log.warning(message);
+            this.recordError(message);
         }
     }
 
@@ -349,12 +369,10 @@ public class CustomFuzzerUtil {
         return JsonUtils.equalAsJson(data.getPayload(), updatedJson);
     }
 
-    private boolean entryIsValid(Map<String, Object> currentPathValues) {
-        boolean responseCodeValid = ResponseCodeFamily.isValidCode(String.valueOf(currentPathValues.get(EXPECTED_RESPONSE_CODE)));
-        boolean hasAtMostOneArrayOfData = currentPathValues.entrySet().stream().filter(entry -> entry.getValue() instanceof ArrayList).count() <= 1;
-        boolean hasHttpMethod = currentPathValues.get(HTTP_METHOD) != null;
-
-        return responseCodeValid && hasAtMostOneArrayOfData && hasHttpMethod;
+    private List<String> getMissingKeywords(CustomFuzzerBase fuzzer, Map<String, Object> currentTestCase) {
+        return fuzzer.requiredKeywords().stream()
+                .filter(keyword -> currentTestCase.get(keyword) == null)
+                .toList();
     }
 
     /**
@@ -364,7 +382,10 @@ public class CustomFuzzerUtil {
      * @return individual requests
      */
     private List<Map<String, Object>> createIndividualRequest(Map<String, Object> testCase, String payload) {
-        Optional<Map.Entry<String, Object>> listOfValuesOptional = testCase.entrySet().stream().filter(entry -> entry.getValue() instanceof List).findFirst();
+        Optional<Map.Entry<String, Object>> listOfValuesOptional = testCase.entrySet().stream()
+                .filter(entry -> entry.getValue() instanceof List)
+                .filter(entry -> !entry.getKey().equalsIgnoreCase(EXPECTED_RESPONSE_CODE))
+                .findFirst();
         List<Map<String, Object>> allValues = new ArrayList<>();
 
         if (listOfValuesOptional.isPresent()) {
@@ -503,5 +524,9 @@ public class CustomFuzzerUtil {
         Optional<HttpMethod> httpMethodFromYaml = HttpMethod.fromString(String.valueOf(currentPathValues.get(CatsDSLWords.HTTP_METHOD)));
 
         return httpMethodFromYaml.isEmpty() || httpMethodFromYaml.get().equals(httpMethod);
+    }
+
+    public void recordError(String message) {
+        testCaseListener.recordError(message);
     }
 }

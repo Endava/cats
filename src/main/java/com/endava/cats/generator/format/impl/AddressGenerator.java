@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates real addresses.
@@ -20,7 +19,7 @@ public class AddressGenerator implements ValidDataFormatGenerator, OpenAPIFormat
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "address".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("address");
+                PropertySanitizer.sanitize(propertyName).endsWith("address");
     }
 
     @Override

@@ -7,6 +7,8 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyDynamic;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
@@ -36,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -75,6 +78,7 @@ public class TestCaseListener {
     private final ReportingArguments reportingArguments;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
+    private final Set<String> recordedErrors = new HashSet<>();
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -395,6 +399,16 @@ public class TestCaseListener {
         testCaseExporter.writeHelperFiles();
         testCaseExporter.writePerformanceReport(testCaseExecutionDetails);
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
+        writeRecordedErrorsIfPresent();
+    }
+
+    private void writeRecordedErrorsIfPresent() {
+        PrettyLogger consoleLogger = PrettyLoggerFactory.getConsoleLogger();
+        if (recordedErrors.isEmpty()) {
+            return;
+        }
+        consoleLogger.noFormat(ansi().bold().fgRed().a("\nThere were errors executing the custom file: ").reset().toString());
+        recordedErrors.forEach(error -> consoleLogger.noFormat("  -> " + error));
     }
 
     private void setResultReason(CatsResultFactory.CatsResult catsResult) {
@@ -584,7 +598,7 @@ public class TestCaseListener {
      * @param expectedResultCode the expected response code family
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode) {
-        this.reportResult(logger, data, response, expectedResultCode, true);
+        this.reportResult(logger, data, response, expectedResultCode, true, true);
     }
 
     /**
@@ -597,11 +611,25 @@ public class TestCaseListener {
      * @param shouldMatchToResponseSchema a flag indicating whether the response should match the expected schema
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema) {
+        this.reportResult(logger, data, response, expectedResultCode, shouldMatchToResponseSchema, true);
+    }
+
+    /**
+     * Reports the result of a test based on the provided parameters, including response code, schema matching, and content type.
+     *
+     * @param logger                      the logger used to log result-related information
+     * @param data                        the fuzzing data associated with the test
+     * @param response                    the response received from the test
+     * @param expectedResultCode          the expected response code family
+     * @param shouldMatchToResponseSchema a flag indicating whether the response should match the expected schema
+     * @param shouldMatchContentType      a flag indicating whether the response content type should match the one from the OpenAPI spec
+     */
+    public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema, boolean shouldMatchContentType) {
         expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), expectedResultCode);
         boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
-        boolean isResponseContentTypeMatching = this.isResponseContentTypeMatching(response, data);
+        boolean isResponseContentTypeMatching = !shouldMatchContentType || this.isResponseContentTypeMatching(response, data);
 
         this.logger.debug("matchesResponseSchema {}, responseCodeExpected {}, responseCodeDocumented {}", matchesResponseSchema, responseCodeExpected, responseCodeDocumented);
         this.storeRequestOnPostOrRemoveOnDelete(data, response);
@@ -611,31 +639,36 @@ public class TestCaseListener {
                 responseCodeUnimplemented(ResponseCodeFamily.isUnimplemented(response.getResponseCode()))
                 .matchesContentType(isResponseContentTypeMatching).build();
 
-        if (assertions.isResponseCodeDocumentedButNotExpected()) {
-            this.logger.debug("Response code documented but not expected");
-            this.reportError(logger, CatsResultFactory.createUnexpectedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
-        } else if (isNotFound(response)) {
-            this.logger.debug("NOT_FOUND response");
-            this.reportError(logger, CatsResultFactory.createNotFound());
+        if (assertions.isNotMatchingContentType() && !ignoreArguments.isIgnoreResponseContentTypeCheck()) {
+            this.logger.debug("Response content type not matching contract");
+            CatsResultFactory.CatsResult contentTypeNotMatching = CatsResultFactory.createNotMatchingContentType(data.getContentTypesByResponseCode(response.responseCodeAsString()), response.getResponseContentType());
+            this.reportResultWarn(logger, data, contentTypeNotMatching.reason(), contentTypeNotMatching.message());
+        } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
+            this.logger.debug("Response code expected and documented and matches response schema");
+            this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
+        } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
+            this.logger.debug("Response code expected and documented and but doesn't match response schema");
+            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
             this.reportWarnOrInfoBasedOnCheck(logger, data,
                     CatsResultFactory.createUndocumentedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString(), data.getResponseCodes().toString()),
                     ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
-        } else if (assertions.isNotMatchingContentType() && !ignoreArguments.isIgnoreResponseContentTypeCheck()) {
-            this.logger.debug("Response content type not matching contract");
-            CatsResultFactory.CatsResult contentTypeNotMatching = CatsResultFactory.createNotMatchingContentType(data.getContentTypesByResponseCode(response.responseCodeAsString()), response.getResponseContentType());
-            this.reportResultWarn(logger, data, contentTypeNotMatching.reason(), contentTypeNotMatching.message());
-        } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
-            this.logger.debug("Response code expected and documented and but doesn't match response schema");
-            this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
-        } else if (assertions.isResponseCodeUnimplemented()) {
-            this.logger.debug("Response code unimplemented");
-            CatsResultFactory.CatsResult notImplementedResult = CatsResultFactory.createNotImplemented();
-            this.reportResultWarn(logger, data, notImplementedResult.reason(), notImplementedResult.message());
-        } else if (assertions.isResponseCodeExpectedAndDocumentedAndMatchesResponseSchema()) {
-            this.logger.debug("Response code expected and documented and matches response schema");
-            this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
+        } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
+            if (isNotFound(response)) {
+                this.logger.debug("NOT_FOUND response");
+                this.reportError(logger, CatsResultFactory.createNotFound());
+            } else if (assertions.isResponseCodeUnimplemented()) {
+                this.logger.debug("Response code unimplemented");
+                CatsResultFactory.CatsResult notImplementedResult = CatsResultFactory.createNotImplemented();
+                this.reportResultWarn(logger, data, notImplementedResult.reason(), notImplementedResult.message());
+            } else {
+                this.logger.debug("Response code documented but not expected");
+                this.reportError(logger, CatsResultFactory.createUnexpectedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
+            }
+        } else if (isNotFound(response)) {
+            this.logger.debug("NOT_FOUND response");
+            this.reportError(logger, CatsResultFactory.createNotFound());
         } else {
             this.logger.debug("Unexpected behaviour");
             this.reportError(logger, CatsResultFactory.createUnexpectedBehaviour(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString()));
@@ -720,7 +753,14 @@ public class TestCaseListener {
         String valueFound = globalContext.getExpectedResponseCodeConfigured(keyToLookup);
         logger.debug("Configuration key {}, value {}", keyToLookup, valueFound);
 
-        return valueFound != null ? ResponseCodeFamily.from(valueFound) : defaultValue;
+        if (valueFound == null) {
+            return defaultValue;
+        }
+        List<String> responseCodes = Arrays.stream(valueFound.split(",", -1))
+                .map(String::trim)
+                .filter(item -> item.length() == 3)
+                .toList();
+        return new ResponseCodeFamilyDynamic(responseCodes);
     }
 
     private void recordResult(String message, Object[] params, String result, PrettyLogger logger) {
@@ -787,7 +827,7 @@ public class TestCaseListener {
     }
 
     private boolean isErrorResponse(CatsResponse response) {
-        return ResponseCodeFamily.FOURXX.matchesAllowedResponseCodes(response.responseCodeAsString());
+        return ResponseCodeFamilyPredefined.FOURXX.matchesAllowedResponseCodes(response.responseCodeAsString());
     }
 
     private boolean isNotErrorResponse(CatsResponse response) {
@@ -866,6 +906,10 @@ public class TestCaseListener {
 
     private CatsTestCase currentTestCase() {
         return testCaseMap.get(MDC.get(ID));
+    }
+
+    public void recordError(String error) {
+        this.recordedErrors.add(error);
     }
 
     @Builder

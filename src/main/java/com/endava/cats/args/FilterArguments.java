@@ -51,6 +51,7 @@ public class FilterArguments {
     static final List<Fuzzer> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
     static final List<String> PATHS_TO_INCLUDE = new ArrayList<>();
+    private static final String EXCLUDE_FRON_ALL_FUZZERS_MARK = "!";
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FilterArguments.class);
 
@@ -104,7 +105,8 @@ public class FilterArguments {
             description = "A comma separated list of OpenAPI data formats to skip.  It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FormatType> skipFieldFormats;
     @CommandLine.Option(names = {"--skipFields", "--skipField"},
-            description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc.", split = ",")
+            description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc. " +
+                    "If the field name starts with @|bold !|@ the field will be skipped by @|bold all|@ fuzzers. ", split = ",")
     private List<String> skipFields;
     @CommandLine.Option(names = {"--skipHeaders", "--skipHeader"},
             description = "A comma separated list of headers that will be skipped by all Fuzzers", split = ",")
@@ -127,6 +129,19 @@ public class FilterArguments {
      */
     public List<String> getSkipFields() {
         return Optional.ofNullable(this.skipFields).orElse(Collections.emptyList());
+    }
+
+    /**
+     * Return the fields that must be skipped by all fuzzers. Fields that must be skipped
+     * by all fuzzers are marked with {@code !};
+     *
+     * @return a list of fields that can be skipped by all fuzzers
+     */
+    public List<String> getSkipFieldsToBeSkippedForAllFuzzers() {
+        return this.getSkipFields().stream()
+                .filter(field -> field.startsWith(EXCLUDE_FRON_ALL_FUZZERS_MARK))
+                .map(field -> field.substring(1))
+                .toList();
     }
 
     /**
@@ -251,7 +266,7 @@ public class FilterArguments {
      */
     public List<Fuzzer> filterOutFuzzersNotMatchingHttpMethods(Set<HttpMethod> httpMethods) {
         return this.getFirstPhaseFuzzersAsFuzzers().stream()
-                .filter(fuzzer -> !(new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods)))
+                .filter(fuzzer -> !new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods))
                 .toList();
     }
 

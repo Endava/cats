@@ -4,7 +4,7 @@
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
     <description>OpenAPI Fuzzer and Negative Testing Tool</description>
-    <version>11.1.1-SNAPSHOT</version>
+    <version>11.3.1-SNAPSHOT</version>
     <name>CATS</name>
     <url>https://endava.github.io/cats/</url>
 
@@ -28,7 +28,7 @@
         <lombok.version>1.18.30</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <openapi-generator.version>7.3.0</openapi-generator.version>
+        <openapi-generator.version>7.4.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -39,22 +39,22 @@
         <maven-site-plugin.version>4.0.0-M13</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.5.0</maven-project-info-reports-plugin.version>
         <spotbugs-maven-plugin.version>4.8.3.1</spotbugs-maven-plugin.version>
-        <sonar-maven-plugin.version>3.10.0.2594</sonar-maven-plugin.version>
+        <sonar-maven-plugin.version>3.11.0.3922</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.11</compiler.version>
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.8.1</quarkus.platform.version>
+        <quarkus.platform.version>3.8.2</quarkus.platform.version>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
-        <compiler-plugin.version>3.12.1</compiler-plugin.version>
+        <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>6.1.4</spring.version>
+        <spring.version>6.1.5</spring.version>
         <assertj-core.version>3.25.3</assertj-core.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
         <spring-integration-core.version>6.2.2</spring-integration-core.version>
-        <json.version>20240205</json.version>
+        <json.version>20240303</json.version>
         <error-prone.version>2.18.0</error-prone.version>
         <archunit-junit5.version>1.2.1</archunit-junit5.version>
         <json-smart.version>2.5.0</json-smart.version>
@@ -64,10 +64,10 @@
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
-        <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
+        <maven-gpg-plugin.version>3.2.1</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
-        <okio.version>3.8.0</okio.version>
+        <okio.version>3.9.0</okio.version>
         <wiremock.version>3.4.2</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
@@ -316,7 +316,7 @@
         <url>https://en-milie@github.com/Endava/cats.git</url>
         <connection>scm:git:git@github.com:Endava/cats.git</connection>
         <developerConnection>scm:git:git@github.com:Endava/cats.git</developerConnection>
-        <tag>cats-10.4.1</tag>
+        <tag>cats-11.3.0</tag>
     </scm>
 
     <distributionManagement>

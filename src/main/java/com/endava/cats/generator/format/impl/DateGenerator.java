@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * A generator class implementing various interfaces for generating valid and invalid date data formats.
@@ -29,9 +28,9 @@ public class DateGenerator implements ValidDataFormatGenerator, InvalidDataForma
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "date".equalsIgnoreCase(format) &&
-                !PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("birthdate") &&
-                !PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("dob") &&
-                !PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("dateofbirth");
+                !PropertySanitizer.sanitize(propertyName).endsWith("birthdate") &&
+                !PropertySanitizer.sanitize(propertyName).endsWith("dob") &&
+                !PropertySanitizer.sanitize(propertyName).endsWith("dateofbirth");
     }
 
     @Override

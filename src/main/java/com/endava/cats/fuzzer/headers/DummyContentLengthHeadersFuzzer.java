@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.headers.base.BaseSecurityChecksHeadersFuzzer;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.google.common.net.HttpHeaders;
@@ -43,12 +44,17 @@ public class DummyContentLengthHeadersFuzzer extends BaseSecurityChecksHeadersFu
 
     @Override
     public ResponseCodeFamily getResponseCodeFamily() {
-        return ResponseCodeFamily.FOUR00_FIVE01;
+        return ResponseCodeFamilyPredefined.FOUR00_FIVE01;
     }
 
     @Override
     public String targetHeaderName() {
         return HttpHeaders.CONTENT_LENGTH;
+    }
+
+    @Override
+    protected boolean shouldMatchContentType() {
+        return false;
     }
 
     @Override

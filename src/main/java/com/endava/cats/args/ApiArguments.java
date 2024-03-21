@@ -1,5 +1,6 @@
 package com.endava.cats.args;
 
+import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
@@ -64,6 +65,12 @@ public class ApiArguments {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
         } else if (this.server == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --server=<server>");
+        }
+    }
+
+    public void validateValidServer(CommandLine.Model.CommandSpec spec) {
+        if (!CatsUtil.isValidURL(server)) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "You must provide a valid <server> URL which must start with http or https");
         }
     }
 

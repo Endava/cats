@@ -6,7 +6,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -46,7 +46,7 @@ public class InsertRandomValuesInBodyFuzzer implements Fuzzer {
 
                 simpleExecutor.execute(
                         SimpleExecutorContext.builder()
-                                .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                                .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                                 .fuzzingData(data)
                                 .logger(logger)
                                 .replaceRefData(false)

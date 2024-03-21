@@ -8,7 +8,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.simple.NumberGenerator;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
@@ -83,7 +83,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         for (String path : paths) {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF)
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION)
                             .fuzzingData(data)
                             .logger(logger)
                             .replaceRefData(false)
@@ -128,7 +128,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         for (String payload : payloads) {
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX_NF)
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION)
                             .fuzzingData(data)
                             .logger(logger)
                             .replaceRefData(false)

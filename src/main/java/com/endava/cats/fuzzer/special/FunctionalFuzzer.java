@@ -133,8 +133,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     }
 
     @Override
-    public List<String> reservedWords() {
-        return Arrays.asList(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.MAP_VALUES,
-                CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
+    public List<String> requiredKeywords() {
+        return Arrays.asList(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.HTTP_METHOD, CatsDSLWords.DESCRIPTION);
     }
 }

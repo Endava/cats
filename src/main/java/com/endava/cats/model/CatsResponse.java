@@ -8,9 +8,12 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Model class used to hold http response details.
@@ -19,14 +22,8 @@ import java.util.List;
 @Getter
 public class CatsResponse {
     private static final String UNKNOWN_MEDIA_TYPE = "unknown/unknown";
-    private static final String EMPTY_RESPONSE = """
-            {"notAJson": "empty reply from server"}
-            """;
-    private static final String NO_BODY_ERROR = """
-            {"notAJson": "no body due to error"}
-            """;
+    private static final Exception EMPTY_EXCEPTION = new Exception("");
     private static final int INVALID_ERROR_CODE = 999;
-    private static final int EMPTY_REPLY = 952;
     private final int responseCode;
     private final String httpMethod;
     private final long responseTimeInMs;
@@ -141,12 +138,6 @@ public class CatsResponse {
     }
 
     /**
-     * Builder for CatsResponse.
-     */
-    public static class CatsResponseBuilder {
-    }
-
-    /**
      * Default content type when none is received from the service.
      *
      * @return a default content type when one is received from the server
@@ -156,45 +147,83 @@ public class CatsResponse {
     }
 
     /**
-     * Default response code in case of errors.
-     *
-     * @return default response code in case of errors
-     */
-    public static int invalidErrorCode() {
-        return INVALID_ERROR_CODE;
-    }
-
-    /**
-     * Default response code in case of empty response reply from server.
-     *
-     * @return default response code in case of empty reply from server
-     */
-    public static int emptyReplyCode() {
-        return EMPTY_REPLY;
-    }
-
-    public static String emptyBody() {
-        return EMPTY_RESPONSE;
-    }
-
-    public static String norBodyError() {
-        return NO_BODY_ERROR;
-    }
-
-    /**
-     * Checks if the given exception is instance of IOException and if
-     * the message or one of the suppressed messages contains "unexpected end of stream".
+     * Maps a given IOException to a corresponding response code and message.
      *
      * @param e the exception
-     * @return true if response is empty, false otherwise
+     * @return an {@code ExceptionalResponse} enum with response code and message
      */
-    public static boolean isEmptyResponse(Exception e) {
+    public static ExceptionalResponse getResponseByException(Exception e) {
         if (e instanceof IOException ioException) {
-            return ioException.getMessage().contains("unexpected end of stream") ||
-                    Arrays.stream(ioException.getSuppressed()).anyMatch(t -> t.getMessage().contains("unexpected end of stream")) ||
-                    ioException.getMessage().contains("Connection reset") ||
-                    Arrays.stream(ioException.getSuppressed()).anyMatch(t -> t.getMessage().contains("Connection reset"));
+            if (exceptionContains(ioException, "unexpected end of stream") ||
+                    exceptionContains(ioException, "connection reset")) {
+                return ExceptionalResponse.EMPTY_BODY;
+            }
+            if (exceptionContains(ioException, "connection refused")) {
+                return ExceptionalResponse.CONNECTION_REFUSED;
+            }
+            if (exceptionContains(ioException, "read timeout")) {
+                return ExceptionalResponse.READ_TIMEOUT;
+            }
+            if (exceptionContains(ioException, "write timeout")) {
+                return ExceptionalResponse.WRITE_TIMEOUT;
+            }
+            if (exceptionContains(ioException, "connection timeout")) {
+                return ExceptionalResponse.CONNECTION_TIMEOUT;
+            }
+            if (e instanceof ProtocolException || e.getCause() instanceof ProtocolException) {
+                return ExceptionalResponse.PROTOCOL_EXCEPTION;
+            }
         }
-        return false;
+        return ExceptionalResponse.NO_BODY;
+    }
+
+    private static boolean exceptionContains(IOException ioException, String message) {
+        return Optional.ofNullable(ioException.getMessage()).orElse("").toLowerCase(Locale.ROOT).contains(message) ||
+                Optional.ofNullable(ioException.getCause()).orElse(EMPTY_EXCEPTION).getMessage().toLowerCase(Locale.ROOT).contains(message) ||
+                Arrays.stream(ioException.getSuppressed()).anyMatch(t -> t.getMessage().toLowerCase(Locale.ROOT).contains(message));
+    }
+
+    public enum ExceptionalResponse {
+        EMPTY_BODY(952, """
+                {"notAJson": "empty reply from server"}
+                """),
+        CONNECTION_REFUSED(953, """
+                {"notAJson": "connection refused! please make sure you have access to the service!"}
+                """),
+        READ_TIMEOUT(954, """
+                {"notAJson": "read timeout! you might want to increased it using --readTimeout"}
+                """),
+        WRITE_TIMEOUT(955, """
+                {"notAJson": "read timeout! you might want to increased it using --writeTimeout"}
+                """),
+        CONNECTION_TIMEOUT(956, """
+                {"notAJson": "read timeout! you might want to increased it using --connectionTimeout"}
+                """),
+        PROTOCOL_EXCEPTION(957, """
+                {"notAJson": "protocol exception! your service has issues providing a consistent response"}
+                """),
+        NO_BODY(INVALID_ERROR_CODE, """
+                {"notAJson": "no body due to unknown error"}
+                """);
+
+        private final int responseCode;
+        private final String responseBody;
+
+        ExceptionalResponse(int responseCode, String jsonResponse) {
+            this.responseCode = responseCode;
+            this.responseBody = jsonResponse;
+        }
+
+        public int responseCode() {
+            return responseCode;
+        }
+
+        public String responseBody() {
+            return responseBody;
+        }
+    }
+
+    public static class CatsResponseBuilder {
+        //ntd
     }
 }

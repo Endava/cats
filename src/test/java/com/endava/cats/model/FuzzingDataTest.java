@@ -148,6 +148,21 @@ class FuzzingDataTest {
         Assertions.assertThat(catsFields).hasSize(expected);
     }
 
+    @ParameterizedTest
+    @CsvSource({"address#street,3", "cats,4"})
+    void shouldExcludeBasedOnFieldName(String name, int expected) {
+        ObjectSchema baseSchema = new ObjectSchema();
+        baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
+        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields())
+                .requestPropertyTypes(this.buildRequestPropertyTypes())
+                .reqSchema(baseSchema)
+                .skippedFieldsForAllFuzzers(List.of(name))
+                .build();
+        Set<CatsField> catsFields = data.getAllFieldsAsCatsFields();
+
+        Assertions.assertThat(catsFields).hasSize(expected);
+    }
+
     @Test
     void shouldGetPowerSet() {
         ObjectSchema baseSchema = new ObjectSchema();

@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 @QuarkusTest
 class CityGeneratorTest {
+
     @Test
     void shouldGenerate() {
         CityGenerator cityGenerator = new CityGenerator();
@@ -24,7 +25,7 @@ class CityGeneratorTest {
 
     @ParameterizedTest
     @CsvSource({"city,true", "CITY,true", "cityName,true", "city_name,true", "other#city,true", "other, false"})
-            void shouldApplyToPropertyName(String property, boolean expected) {
+    void shouldApplyToPropertyName(String property, boolean expected) {
         CityGenerator cityGenerator = new CityGenerator();
         Assertions.assertThat(cityGenerator.appliesTo("", property)).isEqualTo(expected);
     }

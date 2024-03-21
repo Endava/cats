@@ -94,7 +94,7 @@ public class HeadersIteratorExecutor {
 
     private void reportResult(HeadersIteratorExecutorContext context, ResponseCodeFamily expectedResponseCode, CatsResponse response) {
         if (expectedResponseCode != null) {
-            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode, context.isMatchResponseSchema());
+            testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, expectedResponseCode, context.isMatchResponseSchema(), context.isShouldMatchContentType());
         } else if (matchArguments.isMatchResponse(response) || !matchArguments.isAnyMatchArgumentSupplied()) {
             testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Response matches arguments", "Response matches" + matchArguments.getMatchString());
         } else {

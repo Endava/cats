@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.http;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -63,7 +63,7 @@ class RandomResourcesFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
         randomResourcesFuzzer.fuzz(data);
         Mockito.verify(serviceCaller, Mockito.times(times)).call(argThat(serviceData -> !serviceData.getPayload().contains("urlParamValue")));
-        Mockito.verify(testCaseListener, Mockito.times(times)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX_NF), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(times)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @ParameterizedTest
@@ -79,7 +79,7 @@ class RandomResourcesFuzzerTest {
 
         randomResourcesFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(10)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX_NF), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(10)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_NF_AND_VALIDATION), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @Test

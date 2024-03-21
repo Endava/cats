@@ -90,6 +90,7 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public void run() {
         // these are all throwing a ParameterException in case a mandatory argument is not provided
         apiArguments.validateRequired(spec);
+        apiArguments.validateValidServer(spec);
 
         catsCommand.filterArguments.customFilter("RandomFuzzer");
         catsCommand.filesArguments = filesArguments;

@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates valid last names.
@@ -20,7 +19,7 @@ public class LastNameGenerator implements ValidDataFormatGenerator, OpenAPIForma
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "lastname".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("lastname");
+                PropertySanitizer.sanitize(propertyName).endsWith("lastname");
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -90,12 +91,12 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
-        return ResponseCodeFamily.TWOXX;
+        return ResponseCodeFamilyPredefined.TWOXX;
     }
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
-        return ResponseCodeFamily.TWOXX;
+        return ResponseCodeFamilyPredefined.TWOXX;
     }
 
     @Override

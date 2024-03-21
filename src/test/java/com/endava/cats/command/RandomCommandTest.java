@@ -32,7 +32,7 @@ class RandomCommandTest {
     void shouldRunWithAllArguments() {
         ApiArguments apiArguments = new ApiArguments();
         apiArguments.setContract("contract");
-        apiArguments.setServer("server");
+        apiArguments.setServer("http://server");
         randomCommand.apiArguments = apiArguments;
 
         MatchArguments matchArguments = Mockito.mock(MatchArguments.class);
@@ -61,5 +61,14 @@ class RandomCommandTest {
         randomCommand.catsCommand = catsCommand;
         int exitCode = randomCommand.getExitCode();
         Assertions.assertThat(exitCode).isEqualTo(10);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenServerNotValid() {
+        ApiArguments apiArguments = new ApiArguments();
+        apiArguments.setContract("contract");
+        apiArguments.setServer("server");
+        randomCommand.apiArguments = apiArguments;
+        Assertions.assertThatThrownBy(() -> randomCommand.run()).isInstanceOf(CommandLine.ParameterException.class);
     }
 }

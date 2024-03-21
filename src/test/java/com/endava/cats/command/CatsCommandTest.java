@@ -193,4 +193,13 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         Assertions.assertThatThrownBy(() -> catsMain.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("Missing required option --contract=<contract>");
     }
+
+    @Test
+    void shouldThrowExceptionWhenServerNotValid() {
+        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ReflectionTestUtils.setField(catsMain, "spec", spec);
+        ReflectionTestUtils.setField(apiArguments, "server", "server");
+        Assertions.assertThatThrownBy(() -> catsMain.run()).isInstanceOf(CommandLine.ParameterException.class);
+    }
 }

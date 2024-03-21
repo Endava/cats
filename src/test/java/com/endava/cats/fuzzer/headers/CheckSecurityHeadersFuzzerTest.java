@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.headers;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -66,7 +66,7 @@ class CheckSecurityHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(SOME_SECURITY_HEADERS).build();
@@ -83,7 +83,7 @@ class CheckSecurityHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         List<KeyValuePair<String, String>> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
         allHeaders.add(new KeyValuePair<>("dummy", "dummy"));
@@ -94,7 +94,7 @@ class CheckSecurityHeadersFuzzerTest {
 
         checkSecurityHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
     }
 
     @Test
@@ -102,7 +102,7 @@ class CheckSecurityHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         List<KeyValuePair<String, String>> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
         allHeaders.add(new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'"));
@@ -113,7 +113,7 @@ class CheckSecurityHeadersFuzzerTest {
 
         checkSecurityHeadersFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
     }
 
     @Test
@@ -121,7 +121,7 @@ class CheckSecurityHeadersFuzzerTest {
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>(HEADERS))
                 .requestContentTypes(Collections.singletonList("application/json")).reqSchema(new StringSchema()).build();
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(),
-                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+                Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         List<KeyValuePair<String, String>> allHeaders = new ArrayList<>(SOME_SECURITY_HEADERS);
         allHeaders.add(new KeyValuePair<>("Content-Security-Policy", "frame-ancestors 'none'"));
