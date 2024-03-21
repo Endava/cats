@@ -238,6 +238,16 @@ public class OpenAPIModelGenerator {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
 
+        if (property.getEnum() != null) {
+            return property.getEnum().get(random.nextInt(0, property.getEnum().size()));
+        }
+        if (property.getDefault() != null) {
+            return property.getDefault();
+        }
+        if (CatsModelUtils.isFloatSchema(property)) {
+            return (float)randomNumber(min, max);
+        }
+
         return randomNumber(min, max);
     }
 
