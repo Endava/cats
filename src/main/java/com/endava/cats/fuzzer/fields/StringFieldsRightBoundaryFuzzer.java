@@ -44,12 +44,7 @@ public class StringFieldsRightBoundaryFuzzer extends BaseBoundaryFieldFuzzer {
 
     @Override
     public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
-        Schema<?> schema = data.getRequestPropertyTypes().get(fuzzedField);
-        if (schema.getMaxLength() != null && schema.getMaxLength() == Integer.MAX_VALUE) {
-            logger.warn("{} seems to use default maxLength. Please consider explicitly setting a reasonable value for maxLength.", fuzzedField);
-            logger.skip("Skipping due to: maxLength for {} already at the upper limit!", fuzzedField);
-        }
-        return schema.getMaxLength() != null && schema.getMaxLength() < Integer.MAX_VALUE;
+        return true;
     }
 
 

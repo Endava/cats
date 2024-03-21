@@ -24,7 +24,7 @@ class StringFieldsRightBoundaryFuzzerTest {
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", nrSchema)).build();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.getSchemaTypesTheFuzzerWillApplyTo().stream().anyMatch(schema -> schema.equalsIgnoreCase("string"))).isTrue();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.getBoundaryValue(nrSchema)).isNotNull();
-        Assertions.assertThat(stringFieldsRightBoundaryFuzzer.hasBoundaryDefined("test", data)).isFalse();
+        Assertions.assertThat(stringFieldsRightBoundaryFuzzer.hasBoundaryDefined("test", data)).isTrue();
         Assertions.assertThat(stringFieldsRightBoundaryFuzzer.description()).isNotNull();
 
         nrSchema.setMaxLength(2);
@@ -33,11 +33,10 @@ class StringFieldsRightBoundaryFuzzerTest {
     }
 
     @Test
-    void shouldNotHaveBoundariesDefinedWhenMaxLengthIsIntegerMaxValue() {
+    void shouldHaveBoundaryDefined() {
         StringSchema nrSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", nrSchema)).build();
-        nrSchema.setMaxLength(Integer.MAX_VALUE);
-        Assertions.assertThat(stringFieldsRightBoundaryFuzzer.hasBoundaryDefined("test", data)).isFalse();
+        Assertions.assertThat(stringFieldsRightBoundaryFuzzer.hasBoundaryDefined("test", data)).isTrue();
     }
 
 }
