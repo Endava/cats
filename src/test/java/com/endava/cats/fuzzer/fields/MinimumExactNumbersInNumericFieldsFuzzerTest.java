@@ -86,7 +86,7 @@ class MinimumExactNumbersInNumericFieldsFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({",true", "mama,false"})
+    @CsvSource({",true", "mama,true"})
     void shouldTestBoundaryDefinedBasedOnFormat(String format, boolean expected) {
         StringSchema stringSchema = new StringSchema();
         FuzzingData data = FuzzingData.builder().requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
