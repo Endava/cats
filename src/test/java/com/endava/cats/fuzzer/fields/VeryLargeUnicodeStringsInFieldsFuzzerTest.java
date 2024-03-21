@@ -1,10 +1,14 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
@@ -43,5 +47,19 @@ class VeryLargeUnicodeStringsInFieldsFuzzerTest {
     @Test
     void shouldOverrideToNotMatchPatterns() {
         Assertions.assertThat(veryLargeUnicodeStringsInFieldsFuzzer.shouldCheckForFuzzedValueMatchingPattern()).isFalse();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST,true", "GET,false"})
+    void shouldNotMatchResponseContentType(HttpMethod method, boolean expected) {
+        FuzzingData data = FuzzingData.builder().method(method).build();
+        Assertions.assertThat(veryLargeUnicodeStringsInFieldsFuzzer.shouldMatchContentType(data)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"POST,true", "GET,false"})
+    void shouldMatchResponseSchema(HttpMethod method, boolean expected) {
+        FuzzingData data = FuzzingData.builder().method(method).build();
+        Assertions.assertThat(veryLargeUnicodeStringsInFieldsFuzzer.shouldMatchResponseSchema(data)).isEqualTo(expected);
     }
 }

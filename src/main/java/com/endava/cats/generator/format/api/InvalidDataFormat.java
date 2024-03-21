@@ -28,6 +28,9 @@ public class InvalidDataFormat extends DataFormat<InvalidDataFormatGenerator> {
      * @return a generator for the given schema and property name
      */
     public InvalidDataFormatGenerator generator(Schema<?> schema, String propertyName) {
-        return super.getGenerator(schema, propertyName).orElse(new VoidGenerator());
+        return super.getGenerators(schema, propertyName)
+                .stream()
+                .findFirst()
+                .orElse(new VoidGenerator());
     }
 }

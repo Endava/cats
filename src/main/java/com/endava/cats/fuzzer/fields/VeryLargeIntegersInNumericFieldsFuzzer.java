@@ -5,6 +5,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.fields.base.ExpectOnly4XXBaseFieldsFuzzer;
 import com.endava.cats.generator.simple.NumberGenerator;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -56,6 +57,16 @@ public class VeryLargeIntegersInNumericFieldsFuzzer extends ExpectOnly4XXBaseFie
 
     public String getTheActualData() {
         return NumberGenerator.generateVeryLargeInteger(processingArguments.getLargeStringsSize() / 4);
+    }
+
+    @Override
+    protected boolean shouldMatchResponseSchema(FuzzingData data) {
+        return HttpMethod.requiresBody(data.getMethod());
+    }
+
+    @Override
+    protected boolean shouldMatchContentType(FuzzingData data) {
+        return HttpMethod.requiresBody(data.getMethod());
     }
 
     @Override

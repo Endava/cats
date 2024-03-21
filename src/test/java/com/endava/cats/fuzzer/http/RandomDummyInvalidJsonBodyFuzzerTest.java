@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -39,7 +39,7 @@ class RandomDummyInvalidJsonBodyFuzzerTest {
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(200).build());
         randomDummyInvalidJsonBodyFuzzer.fuzz(Mockito.mock(FuzzingData.class));
 
-        Mockito.verify(testCaseListener, Mockito.times(12)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(12)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @Test
@@ -52,7 +52,7 @@ class RandomDummyInvalidJsonBodyFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
         randomDummyInvalidJsonBodyFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(12)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(12)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @Test

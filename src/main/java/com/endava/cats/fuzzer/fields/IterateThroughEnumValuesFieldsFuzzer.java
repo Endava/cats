@@ -4,7 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -50,7 +50,7 @@ public class IterateThroughEnumValuesFieldsFuzzer implements Fuzzer {
                 FieldsIteratorExecutorContext.builder()
                         .scenario("Iterate through each possible enum values and send happy flow requests.")
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
-                        .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                        .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                         .skipMessage("It's either not an enum or it's a discriminator.")
                         .fieldFilter(notADiscriminator.and(fieldExists))
                         .schemaFilter(schemaFilter)

@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -35,7 +35,7 @@ public class HappyPathFuzzer implements Fuzzer {
     public void fuzz(FuzzingData data) {
         simpleExecutor.execute(SimpleExecutorContext.builder()
                 .fuzzingData(data)
-                .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                 .fuzzer(this)
                 .payload(data.getPayload())
                 .scenario("Send a 'happy' flow request with all fields and all headers")

@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -39,8 +39,8 @@ class OnlyMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
     @Test
     void shouldOverrideDefaultMethods() {
-        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsValidateTrimFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
         Assertions.assertThat(onlyMultiCodePointEmojisInFieldsValidateTrimFuzzer.skipForHttpMethods()).isEmpty();
         Assertions.assertThat(onlyMultiCodePointEmojisInFieldsValidateTrimFuzzer.description()).isNotNull();
         Assertions.assertThat(onlyMultiCodePointEmojisInFieldsValidateTrimFuzzer.typeOfDataSentToTheService()).isNotNull();

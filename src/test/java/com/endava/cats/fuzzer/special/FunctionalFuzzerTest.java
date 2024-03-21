@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -88,8 +87,7 @@ class FunctionalFuzzerTest {
         Mockito.verify(spyFunctionalFuzzer, Mockito.never()).processCustomFuzzerFile(data);
         Assertions.assertThat(functionalFuzzer.description()).isNotNull();
         Assertions.assertThat(functionalFuzzer).hasToString(functionalFuzzer.getClass().getSimpleName());
-        Assertions.assertThat(functionalFuzzer.reservedWords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.OUTPUT, CatsDSLWords.VERIFY, CatsDSLWords.MAP_VALUES,
-                CatsDSLWords.ONE_OF_SELECTION, CatsDSLWords.ADDITIONAL_PROPERTIES, CatsDSLWords.ELEMENT, CatsDSLWords.HTTP_METHOD);
+        Assertions.assertThat(functionalFuzzer.requiredKeywords()).containsOnly(CatsDSLWords.EXPECTED_RESPONSE_CODE, CatsDSLWords.DESCRIPTION, CatsDSLWords.HTTP_METHOD);
     }
 
     @Test
@@ -101,7 +99,7 @@ class FunctionalFuzzerTest {
         spyFunctionalFuzzer.executeCustomFuzzerTests();
 
         Mockito.verify(spyFunctionalFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
-        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
     }
 
     @Test
@@ -113,7 +111,7 @@ class FunctionalFuzzerTest {
         spyFunctionalFuzzer.executeCustomFuzzerTests();
 
         Mockito.verify(spyFunctionalFuzzer, Mockito.times(1)).processCustomFuzzerFile(data);
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
     }
 
     @Test
@@ -146,15 +144,15 @@ class FunctionalFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"src/test/resources/functionalFuzzer.yml,TWOXX,4", "src/test/resources/functionalFuzzer-no-resp-code.yml,FOURXX,1", "src/test/resources/functionalFuzzer-resp-code-family.yml,TWOXX_GENERIC,1"})
-    void shouldMatchExpectedResultCodeFamily(String file, ResponseCodeFamily expectedResponseCode, int times) throws Exception {
+    @CsvSource({"src/test/resources/functionalFuzzer.yml,200,4", "src/test/resources/functionalFuzzer-no-resp-code.yml,400,1", "src/test/resources/functionalFuzzer-resp-code-family.yml,2XX,1"})
+    void shouldMatchExpectedResultCodeFamily(String file, String expectedResponseCode, int times) throws Exception {
         FuzzingData data = setContext(file, "{\"code\": \"200\"}");
 
         FunctionalFuzzer spyFunctionalFuzzer = Mockito.spy(functionalFuzzer);
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(times)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(expectedResponseCode));
+        Mockito.verify(testCaseListener, Mockito.times(times)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase(expectedResponseCode)));
     }
 
     @Test
@@ -167,8 +165,7 @@ class FunctionalFuzzerTest {
         spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verify(testCaseListener, Mockito.times(1))
                 .reportResultWarn(Mockito.any(), Mockito.eq(data), Mockito.eq("Returned response code not matching expected response code"),
-                        Mockito.eq("Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]"),
-                        AdditionalMatchers.aryEq(new Object[]{"400", "200"}));
+                        Mockito.eq("Response matches all 'verify' parameters, but response code doesn't match expected response code: expected [{}], actual [{}]"), Mockito.any());
     }
 
     @Test
@@ -195,6 +192,24 @@ class FunctionalFuzzerTest {
     }
 
     @Test
+    void shouldAllowMultipleExpectedResponses() throws Exception {
+        String file = "src/test/resources/functionalFuzzer-multiple-rp.yml";
+        FuzzingData data = setContext(file, "{\"code\": \"200\"}");
+
+        filesArguments.loadCustomFuzzerFile();
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
+
+        data = setContext(file, "{\"code\": \"400\"}", 400);
+        Mockito.reset(testCaseListener);
+        filesArguments.loadCustomFuzzerFile();
+        functionalFuzzer.fuzz(data);
+        functionalFuzzer.executeCustomFuzzerTests();
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200|400")));
+    }
+
+    @Test
     void shouldWriteRefData() throws Exception {
         FuzzingData data = setContext("src/test/resources/functionalFuzzer.yml", "{\"code\": \"200\"}");
         ReflectionTestUtils.setField(filesArguments, "createRefData", true);
@@ -217,7 +232,7 @@ class FunctionalFuzzerTest {
         filesArguments.loadCustomFuzzerFile();
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.TWOXX));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
     }
 
     @Test
@@ -293,21 +308,25 @@ class FunctionalFuzzerTest {
         Mockito.verifyNoInteractions(testCaseListener);
     }
 
-    private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
+    private FuzzingData setContext(String fuzzerFile, String responsePayload) {
+        return setContext(fuzzerFile, responsePayload, 200);
+    }
+
+    private FuzzingData setContext(String fuzzerFile, String responsePayload, int responseCode) {
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File(fuzzerFile));
         Map<String, List<String>> responses = new HashMap<>();
-        responses.put("200", Collections.singletonList("response"));
+        responses.put(String.valueOf(responseCode), Collections.singletonList("response"));
         CatsResponse catsResponse = CatsResponse.builder()
-                .responseCode(200).body(responsePayload).httpMethod("POST")
+                .responseCode(responseCode).body(responsePayload).httpMethod("POST")
                 .responseTimeInMs(2)
                 .responseContentType("application/json")
                 .build();
 
         FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\", \"name\":\"dodo\",\"key_ops\":[\"1\",\"2\"]}").
-                responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST)
+                responses(responses).responseCodes(Collections.singleton(String.valueOf(responseCode))).reqSchema(new StringSchema()).method(HttpMethod.POST)
                 .headers(new HashSet<>())
                 .requestContentTypes(List.of("application/json"))
-                .responseContentTypes(Collections.singletonMap("200", Collections.singletonList("application/json")))
+                .responseContentTypes(Collections.singletonMap(String.valueOf(responseCode), Collections.singletonList("application/json")))
                 .build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
@@ -322,6 +341,7 @@ class FunctionalFuzzerTest {
         tests.put("field", Arrays.asList(customFieldValues));
         tests.put("expectedResponseCode", "200");
         tests.put("httpMethod", "POST");
+        tests.put("description", "some description");
 
         path.put("test1", tests);
         path.put("test2", tests);

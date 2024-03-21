@@ -57,6 +57,7 @@ public class OpenAPIModelGenerator {
     private final ValidDataFormat validDataFormat;
     private final int selfReferenceDepth;
     private String currentProperty = "";
+    private Map<String, String> schemaRefMap;
 
     /**
      * Constructs an OpenAPIModelGenerator with the specified configuration.
@@ -72,6 +73,7 @@ public class OpenAPIModelGenerator {
         this.useExamples = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
+        this.schemaRefMap = new LinkedHashMap<>();
     }
 
 
@@ -96,13 +98,15 @@ public class OpenAPIModelGenerator {
                 }
             }
         }
+        schemaRefMap.clear();
         return Collections.emptyMap();
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
-        Object generatedValueFromFormat = validDataFormat.generate(propertySchema, propertyName);
+        String propertyForGeneration = currentProperty.endsWith(propertyName) ? currentProperty : currentProperty + "#" + propertyName;
+        Object generatedValueFromFormat = validDataFormat.generate(propertySchema, propertyForGeneration);
 
-        if (generatedValueFromFormat != null && notSyntheticSchema(propertyName)) {
+        if (generatedValueFromFormat != null && notSyntheticSchema(propertyName) && CatsModelUtils.isStringSchema(propertySchema) && propertySchema.getEnum() == null) {
             return generatedValueFromFormat;
         } else if (propertySchema.getExample() != null && canUseExamples(propertySchema)) {
             logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
@@ -261,6 +265,7 @@ public class OpenAPIModelGenerator {
             return "[]";
         }
         if (innerType.get$ref() != null) {
+            schemaRefMap.put(propertyName, innerType.get$ref().toString());
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
         if (innerType != null) {
@@ -298,7 +303,7 @@ public class OpenAPIModelGenerator {
         logger.trace("Resolving model '{}' to example", name);
         schema = normalizeDiscriminatorMappingsToOneOf(name, schema);
 
-        if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth)) {
+        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
             return values;
         }
 
@@ -324,6 +329,9 @@ public class OpenAPIModelGenerator {
         String previousPropertyValue = currentProperty;
         for (Object propertyName : schema.getProperties().keySet()) {
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
+            if (schemaRef != null) {
+                schemaRefMap.put(propertyName.toString(), schemaRef);
+            }
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
             currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
 
@@ -345,7 +353,9 @@ public class OpenAPIModelGenerator {
                 && !CatsModelUtils.isComposedSchema(schema) && !isAnyComposedSchemaInChain(name)) {
             Schema<?> composedSchema = new Schema<>();
             composedSchema.setOneOf(schema.getDiscriminator().getMapping().values()
-                    .stream().map(schemaName -> new Schema<>().$ref(schemaName))
+                    .stream()
+                    .filter(schemaName -> !schemaName.equalsIgnoreCase(name))
+                    .map(schemaName -> new Schema<>().$ref(schemaName))
                     .toList());
             composedSchema.setDiscriminator(schema.getDiscriminator());
             schema.getProperties().get(schema.getDiscriminator().getPropertyName()).setEnum(new ArrayList<>(schema.getDiscriminator().getMapping().keySet()));
@@ -357,7 +367,7 @@ public class OpenAPIModelGenerator {
             for (String oneOfSchema : schema.getDiscriminator().getMapping().values()) {
                 oneOfSchema = oneOfSchema.substring(oneOfSchema.lastIndexOf("/") + 1);
                 Schema<?> currentOneOfSchema = globalContext.getSchemaMap().get(oneOfSchema);
-                currentOneOfSchema.getAllOf()
+                Optional.ofNullable(currentOneOfSchema.getAllOf()).orElse(Collections.emptyList())
                         .stream()
                         .filter(innerAllOfSchema -> innerAllOfSchema.get$ref() != null)
                         .forEach(innerAllOfSchema -> innerAllOfSchema.set$ref(newSchema.getName()));

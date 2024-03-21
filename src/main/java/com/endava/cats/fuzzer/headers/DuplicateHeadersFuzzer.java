@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsDSLWords;
@@ -52,7 +52,7 @@ public class DuplicateHeadersFuzzer implements Fuzzer {
                             .headers(finalHeadersList)
                             .fuzzingData(data)
                             .logger(logger)
-                            .expectedResponseCode(ResponseCodeFamily.FOURXX)
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                             .scenario("Add a duplicate header inside the request: name [%s], value [%s]. All other details are similar to a happy flow".formatted(catsHeader.getName(), catsHeader.getTruncatedValue()))
                             .fuzzer(this)
                             .build());

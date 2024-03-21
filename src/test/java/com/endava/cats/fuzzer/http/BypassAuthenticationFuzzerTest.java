@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
@@ -66,7 +66,7 @@ class BypassAuthenticationFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
         bypassAuthenticationFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX_AA), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_AA), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @Test
@@ -80,7 +80,7 @@ class BypassAuthenticationFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
 
         bypassAuthenticationFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamily.FOURXX_AA), Mockito.anyBoolean());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX_AA), Mockito.anyBoolean(), Mockito.eq(true));
     }
 
     @Test

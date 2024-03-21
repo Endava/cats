@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.trailing;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -34,7 +34,7 @@ class TrailingWhitespacesInFieldsTrimValidateFuzzerTest {
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.trail().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");
-        Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(trailingWhitespacesInFieldsTrimValidateFuzzer.typeOfDataSentToTheService()).isNotNull();
     }

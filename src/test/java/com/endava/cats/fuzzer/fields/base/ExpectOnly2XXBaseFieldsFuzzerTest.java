@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.fields.base;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -33,8 +34,8 @@ class ExpectOnly2XXBaseFieldsFuzzerTest {
 
     @Test
     void givenADummyExpectOnly2XXFieldsFuzzer_whenCreatingANewInstance_thenTheDefaultMethodsAreMatchingThe2XXFuzzer() {
-        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
+        Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(expectOnly2XXBaseFieldsFuzzer).hasToString(expectOnly2XXBaseFieldsFuzzer.getClass().getSimpleName());
     }
 

@@ -5,6 +5,7 @@ import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
@@ -31,16 +32,16 @@ public class LeadingWhitespacesInFieldsValidateTrimFuzzer extends LeadingWhitesp
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
-        return ResponseCodeFamily.FOURXX;
+        return ResponseCodeFamilyPredefined.FOURXX;
     }
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
-        return ResponseCodeFamily.FOURXX;
+        return ResponseCodeFamilyPredefined.FOURXX;
     }
 
     @Override
     public ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
-        return ResponseCodeFamily.FOURXX;
+        return ResponseCodeFamilyPredefined.FOURXX;
     }
 }

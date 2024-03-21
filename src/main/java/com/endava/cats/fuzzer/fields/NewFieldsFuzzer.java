@@ -4,6 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.json.JsonUtils;
@@ -54,9 +55,9 @@ public class NewFieldsFuzzer implements Fuzzer {
     private void process(FuzzingData data) {
         JsonElement fuzzedJson = this.addNewField(data);
 
-        ResponseCodeFamily expectedResultCode = ResponseCodeFamily.TWOXX;
+        ResponseCodeFamily expectedResultCode = ResponseCodeFamilyPredefined.TWOXX;
         if (HttpMethod.requiresBody(data.getMethod())) {
-            expectedResultCode = ResponseCodeFamily.FOURXX;
+            expectedResultCode = ResponseCodeFamilyPredefined.FOURXX;
         }
         testCaseListener.addScenario(logger, "Add new field inside the request: name [{}], value [{}]. All other details are similar to a happy flow", NEW_FIELD, NEW_FIELD);
         testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", expectedResultCode.asString());

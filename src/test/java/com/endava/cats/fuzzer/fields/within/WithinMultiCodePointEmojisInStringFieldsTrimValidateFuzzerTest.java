@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields.within;
 
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -44,7 +44,7 @@ class WithinMultiCodePointEmojisInStringFieldsTrimValidateFuzzerTest {
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
 
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("\uD83D\uDC68\u200D\uD83C\uDFED️");
-        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
         Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsTrimValidateFuzzer.description()).isNotNull();
         Assertions.assertThat(withinMultiCodePointEmojisInStringFieldsTrimValidateFuzzer.concreteFuzzStrategy().name()).isEqualTo(FuzzingStrategy.replace().name());
 

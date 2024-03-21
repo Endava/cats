@@ -29,6 +29,10 @@ public class ValidDataFormat extends DataFormat<ValidDataFormatGenerator> {
      * @return The generated data
      */
     public Object generate(Schema<?> schema, String propertyName) {
-        return super.getGenerator(schema, propertyName).orElse(new VoidGenerator()).generate(schema);
+        return super.getGenerators(schema, propertyName)
+                .stream()
+                .findFirst()
+                .orElse(new VoidGenerator())
+                .generate(schema);
     }
 }

@@ -103,6 +103,15 @@ public class SimpleExecutorContext {
     boolean matchResponseResult = true;
 
     /**
+     * When sending large or malformed values the payload might not reach the application layer, but rather be rejected by the HTTP server.
+     * In those cases response content-type is typically html which will most likely won't match the OpenAPI spec.
+     * <p>
+     * Override this to return false to avoid content type checking.
+     */
+    @Builder.Default
+    boolean matchResponseContentType = true;
+
+    /**
      * Gets the path. If the path is not set, it returns the path from the associated fuzzing data.
      *
      * @return The path, or the path from the associated fuzzing data if the path is not set.

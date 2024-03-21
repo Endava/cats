@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -50,7 +50,7 @@ public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
         if (!data.getResponseHeaders().isEmpty()) {
             simpleExecutor.execute(SimpleExecutorContext.builder()
                     .fuzzingData(data)
-                    .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                    .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                     .fuzzer(this)
                     .payload(data.getPayload())
                     .scenario("Send a 'happy' flow request with all fields and all headers and checks if the response headers match those declared in the contract")
@@ -69,7 +69,7 @@ public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
                 .collect(Collectors.toCollection(TreeSet::new));
 
         if (notReturnedHeaders.isEmpty()) {
-            testCaseListener.reportResult(logger, fuzzingData, catsResponse, ResponseCodeFamily.TWOXX);
+            testCaseListener.reportResult(logger, fuzzingData, catsResponse, ResponseCodeFamilyPredefined.TWOXX);
         } else {
             testCaseListener.reportResultError(logger, fuzzingData, "Missing response headers",
                     "The following response headers defined in the contract are missing: {}", notReturnedHeaders.toArray());

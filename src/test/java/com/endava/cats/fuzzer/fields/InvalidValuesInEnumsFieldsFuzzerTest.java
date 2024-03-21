@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -49,16 +49,16 @@ class InvalidValuesInEnumsFieldsFuzzerTest {
 
     @Test
     void shouldReturn4XXIfNotAllowInvalidEnumValues() {
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.FOURXX);
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
     }
 
     @Test
     void shouldReturn2XXIfAllowInvalidEnumValues() {
         Mockito.when(processingArguments.isAllowInvalidEnumValues()).thenReturn(true);
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamily.TWOXX);
-        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.TWOXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenRequiredFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenOptionalFieldsAreFuzzed()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
+        Assertions.assertThat(invalidValuesInEnumsFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 }

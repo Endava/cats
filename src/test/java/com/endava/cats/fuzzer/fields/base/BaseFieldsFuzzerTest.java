@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields.base;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
@@ -85,7 +86,7 @@ class BaseFieldsFuzzerTest {
         FuzzingData data = createFuzzingData();
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.eq(true), Mockito.eq(true));
     }
 
     @NotNull
@@ -149,7 +150,7 @@ class BaseFieldsFuzzerTest {
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any());
 
         baseFieldsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamily.from(responseCode)));
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.from(responseCode)), Mockito.eq(true), Mockito.eq(true));
     }
 
     static class MyBaseFieldsFuzzer extends BaseFieldsFuzzer {
@@ -167,17 +168,17 @@ class BaseFieldsFuzzerTest {
 
         @Override
         protected ResponseCodeFamily getExpectedHttpCodeWhenRequiredFieldsAreFuzzed() {
-            return ResponseCodeFamily.FOURXX;
+            return ResponseCodeFamilyPredefined.FOURXX;
         }
 
         @Override
         protected ResponseCodeFamily getExpectedHttpCodeWhenOptionalFieldsAreFuzzed() {
-            return ResponseCodeFamily.TWOXX;
+            return ResponseCodeFamilyPredefined.TWOXX;
         }
 
         @Override
         protected ResponseCodeFamily getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern() {
-            return ResponseCodeFamily.FOURXX;
+            return ResponseCodeFamilyPredefined.FOURXX;
         }
 
         @Override

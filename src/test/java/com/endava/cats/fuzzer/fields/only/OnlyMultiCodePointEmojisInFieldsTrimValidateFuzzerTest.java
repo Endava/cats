@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields.only;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -40,7 +40,7 @@ class OnlyMultiCodePointEmojisInFieldsTrimValidateFuzzerTest {
 
     @Test
     void shouldProperlyOverrideMethods() {
-        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
         Assertions.assertThat(onlyMultiCodePointEmojisInFieldsTrimValidateFuzzer.skipForHttpMethods()).isEmpty();
 
         FuzzingData data = Mockito.mock(FuzzingData.class);

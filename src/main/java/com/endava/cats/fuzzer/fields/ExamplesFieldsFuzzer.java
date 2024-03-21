@@ -4,7 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -62,7 +62,7 @@ public class ExamplesFieldsFuzzer implements Fuzzer {
                     .fuzzer(this)
                     .fuzzingData(data)
                     .scenario("Send a request for every unique example")
-                    .expectedResponseCode(ResponseCodeFamily.TWOXX)
+                    .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                     .expectedSpecificResponseCode("2XX")
                     .build()
             );

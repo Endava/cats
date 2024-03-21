@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates real world postal codes.
@@ -20,11 +19,11 @@ public class PostCodeGenerator implements ValidDataFormatGenerator, OpenAPIForma
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "zip".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("postcode") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("postalcode") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("zip") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("zipcode") ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("pincode");
+                PropertySanitizer.sanitize(propertyName).endsWith("postcode") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("postalcode") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("zip") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("zipcode") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("pincode");
     }
 
     @Override

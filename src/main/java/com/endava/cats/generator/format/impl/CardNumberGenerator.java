@@ -9,11 +9,9 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * A generator class implementing various interfaces for generating valid and invalid card number data formats.
- * It also implements the OpenAPIFormat interface.
  */
 @Singleton
 public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
@@ -32,7 +30,7 @@ public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDat
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "cardnumber".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("cardnumber");
+                PropertySanitizer.sanitize(propertyName).endsWith("cardnumber");
     }
 
     @Override

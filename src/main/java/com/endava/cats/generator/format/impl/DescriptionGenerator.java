@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates quotes to fill in description fields.
@@ -20,7 +19,7 @@ public class DescriptionGenerator implements ValidDataFormatGenerator, OpenAPIFo
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "description".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("description");
+                PropertySanitizer.sanitize(propertyName).endsWith("description");
     }
 
     @Override

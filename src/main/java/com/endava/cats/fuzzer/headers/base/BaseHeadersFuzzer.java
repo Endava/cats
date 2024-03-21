@@ -38,6 +38,7 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
                         .fuzzValueProducer(context::getFuzzStrategy)
                         .scenario("Send [%s] in headers.".formatted(context.getTypeOfDataSentToTheService()))
                         .matchResponseSchema(context.isMatchResponseSchema())
+                        .shouldMatchContentType(context.isMatchResponseContentType())
                         .fuzzingData(fuzzingData)
                         .build());
     }
@@ -56,7 +57,6 @@ public abstract class BaseHeadersFuzzer implements Fuzzer {
         }
         return fuzzerContext;
     }
-
 
     /**
      * Override this to provide details about Fuzzer expectations and fuzzing strategy.

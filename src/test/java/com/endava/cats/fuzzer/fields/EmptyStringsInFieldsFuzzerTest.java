@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
@@ -54,7 +54,7 @@ class EmptyStringsInFieldsFuzzerTest {
 
     @Test
     void shouldReturnExpectedResultCode4xx() {
-        Assertions.assertThat(emptyStringsInFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamily.FOURXX);
+        Assertions.assertThat(emptyStringsInFieldsFuzzer.getExpectedHttpCodeWhenFuzzedValueNotMatchesPattern()).isEqualTo(ResponseCodeFamilyPredefined.FOURXX);
     }
 
     @Test

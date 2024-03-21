@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Generates readable first names.
@@ -20,7 +19,7 @@ public class FirstNameGenerator implements ValidDataFormatGenerator, OpenAPIForm
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "firstname".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).toLowerCase(Locale.ROOT).endsWith("firstname");
+                PropertySanitizer.sanitize(propertyName).endsWith("firstname");
     }
 
     @Override
