@@ -50,7 +50,6 @@ public class MinimumExactNumbersInNumericFieldsFuzzer extends ExactValuesInField
         return getExactMethod().apply(schema);
     }
 
-
     @Override
     public boolean hasBoundaryDefined(String fuzzedField, FuzzingData data) {
         Schema schema = data.getRequestPropertyTypes().get(fuzzedField);

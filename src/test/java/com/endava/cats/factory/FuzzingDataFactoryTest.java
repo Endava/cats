@@ -340,6 +340,17 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldDetectCyclicDependenciesWhenPropertiesNamesDontMatch() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
+        Assertions.assertThat(dataList).hasSize(2);
+        FuzzingData data = dataList.get(0);
+        Object var1 = JsonUtils.getVariableFromJson(data.getPayload(),"$.credentialSource.updatedBy.credentialSource");
+        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(),"$.credentialSource.updatedBy.credentialSource.updatedBy");
+        Assertions.assertThat(var1).hasToString("{}");
+        Assertions.assertThat(var2).hasToString("NOT_SET");
+    }
+
+    @Test
     void shouldGenerateOpenApi31Specs() throws Exception {
         System.getProperties().setProperty("bind-type", "true");
         List<FuzzingData> dataList = setupFuzzingData("/pet", "src/test/resources/petstore31.yaml");
