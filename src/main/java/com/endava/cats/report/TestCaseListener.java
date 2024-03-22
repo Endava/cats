@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -652,7 +653,7 @@ public class TestCaseListener {
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
             this.reportWarnOrInfoBasedOnCheck(logger, data,
-                    CatsResultFactory.createUndocumentedResponseCode(response.responseCodeAsString(), expectedResultCode.allowedResponseCodes().toString(), data.getResponseCodes().toString()),
+                    CatsResultFactory.createUndocumentedResponseCode(response.responseCodeAsString(), String.valueOf(expectedResultCode.allowedResponseCodes()), String.valueOf(data.getResponseCodes())),
                     ignoreArguments.isIgnoreResponseCodeUndocumentedCheck());
         } else if (assertions.isResponseCodeDocumentedButNotExpected()) {
             if (isNotFound(response)) {
@@ -711,9 +712,10 @@ public class TestCaseListener {
     }
 
     private boolean isResponseCodeDocumented(FuzzingData data, CatsResponse response) {
-        return data.getResponseCodes().contains(response.responseCodeAsString()) ||
+        Set<String> responseCodes = Optional.ofNullable(data.getResponseCodes()).orElse(Collections.emptySet());
+        return responseCodes.contains(response.responseCodeAsString()) ||
                 isNotTypicalDocumentedResponseCode(response) ||
-                responseMatchesDocumentedRange(response.responseCodeAsResponseRange(), data.getResponseCodes());
+                responseMatchesDocumentedRange(response.responseCodeAsResponseRange(), responseCodes);
     }
 
     private boolean responseMatchesDocumentedRange(String receivedResponseCode, Set<String> documentedResponseCodes) {
@@ -811,11 +813,12 @@ public class TestCaseListener {
     }
 
     private List<String> getExpectedResponsesByResponseCode(CatsResponse response, FuzzingData data) {
-        List<String> responses = data.getResponses().get(response.responseCodeAsString());
+        Map<String, List<String>> responsesMap = Optional.ofNullable(data.getResponses()).orElse(Collections.emptyMap());
+        List<String> responses = responsesMap.get(response.responseCodeAsString());
 
         if (CollectionUtils.isEmpty(responses)) {
-            return data.getResponses().getOrDefault(response.responseCodeAsResponseRange(),
-                    data.getResponses().get(response.responseCodeAsResponseRange().toLowerCase(Locale.ROOT)));
+            return responsesMap.getOrDefault(response.responseCodeAsResponseRange(),
+                    responsesMap.get(response.responseCodeAsResponseRange().toLowerCase(Locale.ROOT)));
         }
 
         return responses;
