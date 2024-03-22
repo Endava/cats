@@ -103,10 +103,15 @@ public class OpenAPIModelGenerator {
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
-        String propertyForGeneration = currentProperty.endsWith(propertyName) ? currentProperty : currentProperty + "#" + propertyName;
-        Object generatedValueFromFormat = validDataFormat.generate(propertySchema, propertyForGeneration);
+        Object enumOrDefault = this.getEnumOrDefault(propertySchema);
 
-        if (generatedValueFromFormat != null && notSyntheticSchema(propertyName) && CatsModelUtils.isStringSchema(propertySchema) && propertySchema.getEnum() == null) {
+        if (enumOrDefault != null) {
+            return enumOrDefault;
+        }
+
+        Object generatedValueFromFormat = this.generateStringValue(propertyName, propertySchema);
+
+        if (generatedValueFromFormat != null) {
             return generatedValueFromFormat;
         } else if (propertySchema.getExample() != null && canUseExamples(propertySchema)) {
             logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
@@ -114,7 +119,7 @@ public class OpenAPIModelGenerator {
         } else if (CatsModelUtils.isStringSchema(propertySchema)) {
             return this.getExampleFromStringSchema(propertyName, propertySchema);
         } else if (CatsModelUtils.isBooleanSchema(propertySchema)) {
-            return this.getExampleFromBooleanSchema(propertySchema);
+            return this.getExampleFromBooleanSchema();
         } else if (CatsModelUtils.isArraySchema(propertySchema)) {
             return this.getExampleFromArraySchema(propertyName, propertySchema);
         } else if (CatsModelUtils.isNumberSchema(propertySchema)) {
@@ -130,8 +135,30 @@ public class OpenAPIModelGenerator {
         return resolveProperties(propertySchema);
     }
 
-    private boolean notSyntheticSchema(String currentProperty) {
-        return !currentProperty.startsWith(SYNTH_SCHEMA_NAME);
+    private <T> Object generateStringValue(String propertyName, Schema<T> propertySchema) {
+        if (syntheticSchema(propertyName) || !CatsModelUtils.isStringSchema(propertySchema)) {
+            return null;
+        }
+
+        String propertyForGeneration = currentProperty.endsWith(propertyName) ? currentProperty : currentProperty + "#" + propertyName;
+        return validDataFormat.generate(propertySchema, propertyForGeneration);
+    }
+
+    private <T> Object getEnumOrDefault(Schema<T> propertySchema) {
+        List<T> enumValues = propertySchema.getEnum();
+        if (!CollectionUtils.isEmpty(enumValues)) {
+            return enumValues.stream().filter(Objects::nonNull).findAny().orElse(enumValues.get(0));
+        }
+
+        if (propertySchema.getDefault() != null) {
+            return propertySchema.getDefault();
+        }
+
+        return null;
+    }
+
+    private boolean syntheticSchema(String currentProperty) {
+        return currentProperty.startsWith(SYNTH_SCHEMA_NAME);
     }
 
     private <T> Object formatExampleIfNeeded(Schema<T> property) {
@@ -175,10 +202,6 @@ public class OpenAPIModelGenerator {
     private <T> Object getExampleFromStringSchema(String propertyName, Schema<T> property) {
         logger.trace("String property {}", propertyName);
 
-        List<T> enumValues = property.getEnum();
-        if (!CollectionUtils.isEmpty(enumValues)) {
-            return enumValues.stream().filter(Objects::nonNull).findFirst().orElse(enumValues.get(0));
-        }
         if (property.getMinLength() != null || property.getMaxLength() != null) {
             return generateValueBasedOnMinMax(property);
         }
@@ -222,12 +245,7 @@ public class OpenAPIModelGenerator {
     private Object getExampleFromIntegerSchema(Schema<?> property) {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
-        if (property.getEnum() != null) {
-            return property.getEnum().get(random.nextInt(0, property.getEnum().size()));
-        }
-        if (property.getDefault() != null) {
-            return property.getDefault();
-        }
+
         if (CatsModelUtils.isShortIntegerSchema(property)) {
             return (int) randomNumber(min, max);
         }
@@ -238,25 +256,15 @@ public class OpenAPIModelGenerator {
         Double min = property.getMinimum() == null ? null : property.getMinimum().doubleValue();
         Double max = property.getMaximum() == null ? null : property.getMaximum().doubleValue();
 
-        if (property.getEnum() != null) {
-            return property.getEnum().get(random.nextInt(0, property.getEnum().size()));
-        }
-        if (property.getDefault() != null) {
-            return property.getDefault();
-        }
         if (CatsModelUtils.isFloatSchema(property)) {
-            return (float)randomNumber(min, max);
+            return (float) randomNumber(min, max);
         }
 
         return randomNumber(min, max);
     }
 
-    private Object getExampleFromBooleanSchema(Schema<?> property) {
-        Object defaultValue = property.getDefault();
-        if (defaultValue != null) {
-            return defaultValue;
-        }
-        return Boolean.TRUE;
+    private Object getExampleFromBooleanSchema() {
+        return random.nextBoolean();
     }
 
     private Object getExampleFromArraySchema(String propertyName, Schema property) {
