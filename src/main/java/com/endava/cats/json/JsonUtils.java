@@ -485,9 +485,9 @@ public abstract class JsonUtils {
     /**
      * This will do the Cyclic Schema Reference to avoid infinite loop
      *
-     * @param currentProperty    currentProperty name string along with all the parent object name separated by '#'
-     * @param schemaRefMap       the propertyName and respective component schema reference path
-     * @param depth              Fixed depth number for child objects
+     * @param currentProperty currentProperty name string along with all the parent object name separated by '#'
+     * @param schemaRefMap    the propertyName and respective component schema reference path
+     * @param depth           Fixed depth number for child objects
      * @return a boolean as true or false
      */
     public static boolean isCyclicSchemaReference(String currentProperty, Map<String, String> schemaRefMap, int depth) {
@@ -501,7 +501,7 @@ public abstract class JsonUtils {
 
                 String iRef = schemaRefMap.get(properties[i]);
                 String jRef = schemaRefMap.get(properties[j]);
-                if (iRef != null && jRef != null && iRef.equalsIgnoreCase(jRef)) {
+                if (iRef != null && iRef.equalsIgnoreCase(jRef)) {
                     LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
                     return true;
                 }
