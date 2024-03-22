@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.argThat;
 
@@ -54,7 +55,7 @@ class RandomResourcesFuzzerTest {
     @CsvSource({"GET,10", "POST,20"})
     void shouldNotReplaceUrlParams(HttpMethod method, int times) {
         FuzzingData data = FuzzingData.builder().method(method).path("/test/{id}/another/{urlParam}").
-                reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+                reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).responseCodes(Set.of("400")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{\"id\":\"d46df8b7-7d69-4bb4-b63b-88c3ebe0e1b8\"}");
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(404).build();
 
@@ -70,7 +71,7 @@ class RandomResourcesFuzzerTest {
     @CsvSource({"{\"id\":12345}", "{\"id\":\"d46df8b7-7d69-4bb4-b63b-88c3ebe0e1b8\"}", "{\"id\":\"someString\"}"})
     void shouldRunForPathsWithVariables(String payload) {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}").
-                reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+                reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).responseCodes(Set.of("400")).build();
         ReflectionTestUtils.setField(data, "processedPayload", payload);
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(404).build();
 
