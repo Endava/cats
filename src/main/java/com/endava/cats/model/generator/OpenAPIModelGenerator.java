@@ -273,7 +273,7 @@ public class OpenAPIModelGenerator {
             return "[]";
         }
         if (innerType.get$ref() != null) {
-            schemaRefMap.put(propertyName, innerType.get$ref().toString());
+            schemaRefMap.put(propertyName, innerType.get$ref());
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
         if (innerType != null) {
