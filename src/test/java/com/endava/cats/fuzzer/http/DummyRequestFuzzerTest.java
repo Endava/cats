@@ -17,6 +17,7 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Set;
 
 @QuarkusTest
 class DummyRequestFuzzerTest {
@@ -45,7 +46,7 @@ class DummyRequestFuzzerTest {
 
     @Test
     void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported() {
-        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).requestContentTypes(List.of("application/json")).build();
+        FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).requestContentTypes(List.of("application/json")).responseCodes(Set.of("400")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).build();

@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class DuplicateHeadersFuzzerTest {
@@ -42,7 +43,7 @@ class DuplicateHeadersFuzzerTest {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
         FuzzingData data = FuzzingData.builder().headers(Collections.singleton(CatsHeader.builder().name("header").value("value").build())).
-                responses(responses).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+                responses(responses).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).responseCodes(Set.of("400")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
@@ -57,7 +58,7 @@ class DuplicateHeadersFuzzerTest {
     void givenAnEmptySetOfHeaders_whenCallingTheDuplicateHeadersFuzzer_thenTheResultsAreCorrectlyReported() {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
-        FuzzingData data = FuzzingData.builder().headers(Collections.emptySet()).responses(responses).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+        FuzzingData data = FuzzingData.builder().headers(Collections.emptySet()).responses(responses).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).responseCodes(Set.of("400")).build();
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         Mockito.doNothing().when(testCaseListener).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.anyBoolean());
