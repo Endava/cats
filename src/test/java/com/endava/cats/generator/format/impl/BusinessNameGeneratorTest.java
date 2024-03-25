@@ -24,7 +24,7 @@ class BusinessNameGeneratorTest {
 
     @ParameterizedTest
     @CsvSource({"businessName,true", "BUSINESSNAME,true", "businessName,true", "business_name,true",
-            "other#companyName,true", "other#businessLegalName,true", "other, false"})
+            "other#company,true", "other#companyName,true", "other#businessLegalName,true", "other, false"})
     void shouldApplyToPropertyName(String property, boolean expected) {
         BusinessNameGenerator businessNameGenerator = new BusinessNameGenerator();
         Assertions.assertThat(businessNameGenerator.appliesTo("", property)).isEqualTo(expected);

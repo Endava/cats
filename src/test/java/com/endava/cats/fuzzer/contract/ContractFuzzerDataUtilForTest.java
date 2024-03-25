@@ -16,7 +16,7 @@ import java.util.Set;
 
 class ContractFuzzerDataUtilForTest {
 
-    public static FuzzingData prepareFuzzingData(String schemaName, HttpMethod method, String... responseCodes) {
+    public static FuzzingData prepareFuzzingData(String schemaName, String onePropName, HttpMethod method, String... responseCodes) {
         PathItem pathItem = new PathItem();
         Operation operation = new Operation();
         ApiResponses apiResponses = new ApiResponses();
@@ -28,7 +28,7 @@ class ContractFuzzerDataUtilForTest {
         }
         StringSchema firstName = new StringSchema();
         StringSchema lastName = new StringSchema();
-        Map<String, Schema> properties = Map.of("firstName", firstName, "lastName", lastName);
+        Map<String, Schema> properties = Map.of("firstName", firstName, onePropName, lastName);
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put(schemaName, new Schema().$ref(schemaName).properties(properties));
 
@@ -39,6 +39,10 @@ class ContractFuzzerDataUtilForTest {
     }
 
     public static FuzzingData prepareFuzzingData(String schemaName, String responseCode) {
-        return prepareFuzzingData(schemaName, HttpMethod.POST, responseCode);
+        return prepareFuzzingData(schemaName, "lastName", HttpMethod.POST, responseCode);
+    }
+
+    public static FuzzingData prepareFuzzingData(String schemaName, String onePropName, String responseCode) {
+        return prepareFuzzingData(schemaName, onePropName, HttpMethod.POST, responseCode);
     }
 }

@@ -2,14 +2,15 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseExporterHtmlJs;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.enterprise.inject.Instance;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
-import jakarta.enterprise.inject.Instance;
 import java.util.Collections;
 import java.util.stream.Stream;
 
@@ -43,7 +43,7 @@ class RecommendedHttpCodesLinterFuzzerTest {
             "404,202;HEAD", "404,500,200;DELETE", "404,500,201;DELETE", "404,500,202;DELETE", "404,500,204;DELETE",
             "400,404,500,200;PATCH", "400,404,500,201;PATCH", "400,404,500,202;PATCH", "400,404,500,204;PATCH", "500,200;TRACE"}, delimiter = ';')
     void shouldReportInfoWhenAllResponseCodesAreValid(String responseCode, HttpMethod method) {
-        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("PetStore", method, responseCode.split(","));
+        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("PetStore", "lastName", method, responseCode.split(","));
 
         recommendedHttpCodesContractInfoFuzzer.fuzz(data);
 
@@ -55,7 +55,7 @@ class RecommendedHttpCodesLinterFuzzerTest {
             "404;HEAD;200|202", "500,201;DELETE;404", "404,202;DELETE;500", "400,404,500;DELETE;200|201|202|204",
             "404,500,200;PATCH;400", "400,500,201;PATCH;404", "400,404,202;PATCH;500", "400,404,500;PATCH;200|201|202|204", "500,400;TRACE;200", "400,200;TRACE;500"}, delimiter = ';')
     void shouldReportErrorWhenAllResponseCodesAreValid(String responseCode, HttpMethod method, String missing) {
-        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("PetStore", method, responseCode.split(","));
+        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("PetStore", "lastName", method, responseCode.split(","));
 
         recommendedHttpCodesContractInfoFuzzer.fuzz(data);
 

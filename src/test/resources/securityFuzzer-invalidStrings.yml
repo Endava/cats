@@ -1,6 +1,7 @@
 /pets/{id}/move:
   test1:
     description: XSS strings
+    httpMethod: POST
     targetFields:
       - name
     stringsFile: xss_invalid.txt
