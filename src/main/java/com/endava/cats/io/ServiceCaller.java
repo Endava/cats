@@ -589,8 +589,8 @@ public class ServiceCaller {
     }
 
     private void addSuppliedHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
-        Map<String, Object> userSuppliedHeaders = filesArguments.getHeaders(data.getRelativePath());
-        logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getRelativePath(), userSuppliedHeaders);
+        Map<String, Object> userSuppliedHeaders = filesArguments.getHeaders(data.getContractPath());
+        logger.debug("Path {} (including ALL headers) has the following headers: {}", data.getContractPath(), userSuppliedHeaders);
 
         Map<String, String> suppliedHeaders = userSuppliedHeaders.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,

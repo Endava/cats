@@ -58,7 +58,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
         if (currentPathValues != null) {
             currentPathValues.forEach((key, value) -> this.executeTestCases(data, key, value));
         } else {
-            log.skip("Skipping path [{}] for method [{}] as it was not configured in securityFuzzerFile", data.getPath(), data.getMethod());
+            log.skip("Skipping path [{}] for method [{}] as it was not configured in securityFuzzerFile", data.getContractPath(), data.getMethod());
         }
     }
 
@@ -74,7 +74,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     private Map<String, Object> getCurrentPathValues(FuzzingData data) {
-        Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getPath());
+        Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getContractPath());
         if (CollectionUtils.isEmpty(currentPathValues)) {
             currentPathValues = filesArguments.getSecurityFuzzerDetails().get(CatsDSLWords.ALL);
         }
@@ -88,12 +88,12 @@ public class SecurityFuzzer implements CustomFuzzerBase {
     }
 
     private void executeTestCases(FuzzingData data, String key, Object value) {
-        log.note("Path [{}] has the following security configuration [{}]", data.getPath(), value);
+        log.note("Path [{}] has the following security configuration [{}]", data.getContractPath(), value);
         Map<String, Object> individualTestConfig = (Map<String, Object>) value;
 
         List<String> missingRequiredKeywords = this.getMissingRequiredKeywords(individualTestConfig);
         if (!missingRequiredKeywords.isEmpty()) {
-            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getPath(), missingRequiredKeywords);
+            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getContractPath(), missingRequiredKeywords);
             log.error(message);
             customFuzzerUtil.recordError(message);
             return;

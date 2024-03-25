@@ -405,7 +405,7 @@ class ServiceCallerTest {
     void shouldAddHeaderWhenAddUserHeadersOffButAuthenticationHeader() {
         ServiceData data = ServiceData.builder()
                 .headers(Set.of(CatsHeader.builder().name("simpleHeader").value("simpleValue").build()))
-                .relativePath("auth-header")
+                .relativePath("auth-header").contractPath("auth-header")
                 .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
 
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);

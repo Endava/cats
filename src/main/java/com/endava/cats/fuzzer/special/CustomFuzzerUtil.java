@@ -332,22 +332,22 @@ public class CustomFuzzerUtil {
      * @param fuzzer The custom fuzzer used for generating individual test cases.
      */
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
-        log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getPath(), data.getMethod(), value);
+        log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getContractPath(), data.getMethod(), value);
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
         List<String> missingKeywords = this.getMissingKeywords(fuzzer, (Map<String, Object>) value);
         boolean isEntryValid = missingKeywords.isEmpty();
 
         if (isEntryValid && isValidOneOf) {
-            this.pathsWithInputVariables.put(data.getPath(), (Map<String, Object>) value);
+            this.pathsWithInputVariables.put(data.getContractPath(), (Map<String, Object>) value);
             List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value, data.getPayload());
             for (Map<String, Object> testCase : individualTestCases) {
                 testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
             }
         } else if (!isValidOneOf) {
-            log.skip("Skipping path [{}] as it does not match oneOfSelection", data.getPath());
+            log.skip("Skipping path [{}] as it does not match oneOfSelection", data.getContractPath());
             log.debug("Payload: {}", data.getPayload());
         } else {
-            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getPath(), missingKeywords);
+            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getContractPath(), missingKeywords);
             log.warning(message);
             this.recordError(message);
         }

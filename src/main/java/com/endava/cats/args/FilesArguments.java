@@ -337,9 +337,13 @@ public class FilesArguments {
 
 
     static Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path) {
-        return collection.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(path) || entry.getKey().equalsIgnoreCase(ALL))
-                .map(Map.Entry::getValue).collect(HashMap::new, Map::putAll, Map::putAll);
+        Map<String, Object> mergedMap = new HashMap<>(collection.getOrDefault(path, Collections.emptyMap()));
+
+        collection.entrySet().stream()
+                .filter(entry -> entry.getKey().equalsIgnoreCase(ALL) && mergedMap.keySet().stream().noneMatch(pathKey -> entry.getValue().containsKey(pathKey)))
+                .forEach(entry -> mergedMap.putAll(entry.getValue()));
+
+        return mergedMap;
     }
 
     private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws

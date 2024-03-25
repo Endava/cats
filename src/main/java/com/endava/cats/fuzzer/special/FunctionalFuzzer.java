@@ -57,14 +57,14 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     }
 
     void processCustomFuzzerFile(FuzzingData data) {
-        Map<String, Object> currentPathValues = filesArguments.getCustomFuzzerDetails().get(data.getPath());
+        Map<String, Object> currentPathValues = filesArguments.getCustomFuzzerDetails().get(data.getContractPath());
         if (currentPathValues != null) {
             currentPathValues.entrySet().stream()
                     .filter(stringObjectEntry -> customFuzzerUtil.isMatchingHttpMethod(stringObjectEntry.getValue(), data.getMethod()))
                     .forEach(entry -> executions.add(CustomFuzzerExecution.builder()
                             .fuzzingData(data).testId(entry.getKey()).testEntry(entry.getValue()).build()));
         } else {
-            logger.skip("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getPath(), data.getMethod());
+            logger.skip("Skipping path [{}] for method [{}] as it was not configured in customFuzzerFile", data.getContractPath(), data.getMethod());
         }
     }
 
@@ -78,16 +78,16 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
         logger.debug("Executing {} functional tests.", executions.size());
         Collections.sort(executions);
 
-        executions.stream().collect(Collectors.groupingBy(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath(), Collectors.counting()))
+        executions.stream().collect(Collectors.groupingBy(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getContractPath(), Collectors.counting()))
                 .forEach((s, aLong) -> testCaseListener.setTotalRunsPerPath(s, aLong.intValue()));
 
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
-            executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getPath().equalsIgnoreCase(entry.getKey()))
+            executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getContractPath().equalsIgnoreCase(entry.getKey()))
                     .forEach(customFuzzerExecution -> {
                         testCaseListener.beforeFuzz(this.getClass());
                         customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
                                 customFuzzerExecution.getTestEntry(), this);
-                        testCaseListener.afterFuzz(customFuzzerExecution.getFuzzingData().getPath(), customFuzzerExecution.getFuzzingData().getMethod().name());
+                        testCaseListener.afterFuzz(customFuzzerExecution.getFuzzingData().getContractPath(), customFuzzerExecution.getFuzzingData().getMethod().name());
                     });
         }
     }
