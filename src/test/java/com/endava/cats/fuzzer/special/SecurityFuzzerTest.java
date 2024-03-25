@@ -52,7 +52,7 @@ class SecurityFuzzerTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
+    void shouldThrowExceptionWhenFileDoesNotExist() {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File("mumu"));
 
         Assertions.assertThatThrownBy(() -> filesArguments.loadSecurityFuzzerFile()).isInstanceOf(FileNotFoundException.class);
@@ -105,9 +105,8 @@ class SecurityFuzzerTest {
     @Test
     void givenAnInvalidSecurityFuzzerFile_whenTheFuzzerRuns_thenNoResultIsReport() throws Exception {
         FuzzingData data = setContext("src/test/resources/securityFuzzer-invalidStrings.yml", "{'name': {'first': 'Cats'}, 'id': '25'}");
-        SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
-        spySecurityFuzzer.fuzz(data);
+        securityFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.never()).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX));
     }
 

@@ -43,16 +43,8 @@ public abstract class CatsModelUtils {
         return "number".equalsIgnoreCase(schema.getFormat());
     }
 
-    public static boolean isDoubleSchema(Schema<?> schema) {
-        return SchemaTypeUtil.DOUBLE_FORMAT.equalsIgnoreCase(schema.getFormat());
-    }
-
     public static boolean isShortIntegerSchema(Schema<?> schema) {
         return SchemaTypeUtil.INTEGER32_FORMAT.equalsIgnoreCase(schema.getFormat());
-    }
-
-    public static boolean isLongSchema(Schema<?> schema) {
-        return SchemaTypeUtil.INTEGER64_FORMAT.equalsIgnoreCase(schema.getFormat());
     }
 
     public static boolean isIntegerSchema(Schema<?> schema) {

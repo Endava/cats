@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields.base;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.ByteArraySchema;
@@ -11,17 +12,32 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Function;
 
 @QuarkusTest
 class ExactValuesInFieldsFuzzerTest {
 
     private ExactValuesInFieldsFuzzer myBaseBoundaryFuzzer;
+    private FilesArguments filesArguments;
 
     @BeforeEach
     public void setup() {
-        myBaseBoundaryFuzzer = new MyExactValueFuzzer(null, null, null);
+        filesArguments = Mockito.mock(FilesArguments.class);
+        myBaseBoundaryFuzzer = new MyExactValueFuzzer(null, null, filesArguments);
+    }
+
+    @Test
+    void shouldNotRunWhenRefData() {
+        Mockito.when(filesArguments.getRefData("/test")).thenReturn(Map.of("test", "value"));
+        StringSchema stringSchema = new StringSchema();
+        FuzzingData data = FuzzingData.builder().path("/test").requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
+        stringSchema.setMaximum(new BigDecimal(100));
+        Assertions.assertThat(myBaseBoundaryFuzzer.hasBoundaryDefined("test", data)).isFalse();
     }
 
     @Test

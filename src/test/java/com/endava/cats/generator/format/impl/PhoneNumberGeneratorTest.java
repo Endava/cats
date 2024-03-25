@@ -23,7 +23,7 @@ class PhoneNumberGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"phoneNumber,true", "PHONENUMBER,true", "phoneNumber,true", "phone_number,true", "other#phoneNumber,true", "other, false"})
+    @CsvSource({"phone,true", "phoneNumber,true", "PHONENUMBER,true", "phoneNumber,true", "phone_number,true", "other#phoneNumber,true", "other, false"})
     void shouldApplyToPropertyName(String property, boolean expected) {
         PhoneNumberGenerator phoneNumberGenerator = new PhoneNumberGenerator();
         Assertions.assertThat(phoneNumberGenerator.appliesTo("", property)).isEqualTo(expected);

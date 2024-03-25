@@ -16,16 +16,27 @@ import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Map;
 
 @QuarkusTest
 class MinimumExactNumbersInNumericFieldsFuzzerTest {
     private MinimumExactNumbersInNumericFieldsFuzzer minimumExactNumbersInNumericFieldsFuzzer;
+    private FilesArguments filesArguments;
 
     @BeforeEach
     void setup() {
-        FilesArguments filesArguments = Mockito.mock(FilesArguments.class);
+        filesArguments = Mockito.mock(FilesArguments.class);
         minimumExactNumbersInNumericFieldsFuzzer = new MinimumExactNumbersInNumericFieldsFuzzer(null, null, filesArguments);
         Mockito.when(filesArguments.getRefData(Mockito.anyString())).thenReturn(Collections.emptyMap());
+    }
+
+    @Test
+    void shouldNotRunWhenRefData() {
+        Mockito.when(filesArguments.getRefData("/test")).thenReturn(Map.of("test", "value"));
+        StringSchema stringSchema = new StringSchema();
+        FuzzingData data = FuzzingData.builder().path("/test").requestPropertyTypes(Collections.singletonMap("test", stringSchema)).build();
+        stringSchema.setMaximum(new BigDecimal(100));
+        Assertions.assertThat(minimumExactNumbersInNumericFieldsFuzzer.hasBoundaryDefined("test", data)).isFalse();
     }
 
     @Test

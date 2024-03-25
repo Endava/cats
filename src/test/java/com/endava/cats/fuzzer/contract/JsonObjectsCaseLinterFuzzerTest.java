@@ -68,6 +68,17 @@ class JsonObjectsCaseLinterFuzzerTest {
     }
 
     @Test
+    void shouldReportErrorWhenPropertiesNotMatchNamingConvention() {
+        FuzzingData data = ContractFuzzerDataUtilForTest.prepareFuzzingData("FirstPayload", "last_name", "200");
+
+        jsonObjectsCaseLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(),
+                Mockito.eq("JSON elements do not follow naming conventions: {}"),
+                Mockito.contains("last_name"));
+    }
+
+    @Test
     void shouldSkipForNonBodyMethods() {
         Assertions.assertThat(jsonObjectsCaseLinterFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
     }

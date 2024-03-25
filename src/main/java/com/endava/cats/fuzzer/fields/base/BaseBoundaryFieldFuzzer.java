@@ -41,10 +41,11 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
         if (this.fuzzedFieldHasAnAssociatedSchema(schema) && this.isFieldPartOfPayload(fuzzedField, data.getPayload())) {
             logger.debug("Field {} has an associated schema", fuzzedField);
             logger.note("Field [{}] schema is [{}] and type [{}]", fuzzedField, schema.getClass().getSimpleName(), schema.getType());
-            if (this.isFieldFuzzable(fuzzedField, data) && this.fuzzerGeneratedBoundaryValue(schema)) {
+            Object generatedBoundaryValue = this.getBoundaryValue(schema);
+            if (this.isFieldFuzzable(fuzzedField, data) && generatedBoundaryValue != null) {
                 logger.debug("Field {} is fuzzable and has boundary value", fuzzedField);
                 logger.debug("{} type matching. Start fuzzing...", getSchemaTypesTheFuzzerWillApplyTo());
-                return Collections.singletonList(FuzzingStrategy.replace().withData(this.getBoundaryValue(schema)));
+                return Collections.singletonList(FuzzingStrategy.replace().withData(generatedBoundaryValue));
             } else if (!this.hasBoundaryDefined(fuzzedField, data)) {
                 logger.debug("Field {} does not have a boundary defined", fuzzedField);
                 logger.skip("Boundaries not defined. Will skip fuzzing...");
@@ -66,10 +67,6 @@ public abstract class BaseBoundaryFieldFuzzer extends ExpectOnly4XXBaseFieldsFuz
      */
     private boolean isFieldPartOfPayload(String field, String payload) {
         return JsonUtils.isFieldInJson(payload, field);
-    }
-
-    private boolean fuzzerGeneratedBoundaryValue(Schema<?> schema) {
-        return this.getBoundaryValue(schema) != null;
     }
 
     /**
