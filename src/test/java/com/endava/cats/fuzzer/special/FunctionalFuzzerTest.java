@@ -128,7 +128,7 @@ class FunctionalFuzzerTest {
     private FuzzingData setupFuzzingData(CatsResponse catsResponse, String... customFieldValues) {
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));
-        FuzzingData data = FuzzingData.builder().path("path1").payload("{\"field\":\"oldValue\"}").
+        FuzzingData data = FuzzingData.builder().contractPath("path1").path("path1").payload("{\"field\":\"oldValue\"}").
                 responses(responses).responseCodes(Collections.singleton("200")).reqSchema(new StringSchema()).method(HttpMethod.POST)
                 .headers(new HashSet<>()).requestContentTypes(List.of("application/json"))
                 .responseContentTypes(Collections.singletonMap("200", Collections.singletonList("application/json")))
@@ -322,7 +322,7 @@ class FunctionalFuzzerTest {
                 .responseContentType("application/json")
                 .build();
 
-        FuzzingData data = FuzzingData.builder().path("/pets/{id}/move").payload("{\"pet\":\"oldValue\", \"name\":\"dodo\",\"key_ops\":[\"1\",\"2\"]}").
+        FuzzingData data = FuzzingData.builder().contractPath("/pets/{id}/move").path("/pets/{id}/move").payload("{\"pet\":\"oldValue\", \"name\":\"dodo\",\"key_ops\":[\"1\",\"2\"]}").
                 responses(responses).responseCodes(Collections.singleton(String.valueOf(responseCode))).reqSchema(new StringSchema()).method(HttpMethod.POST)
                 .headers(new HashSet<>())
                 .requestContentTypes(List.of("application/json"))
