@@ -70,8 +70,8 @@ public class ProcessingArguments {
     private boolean allowInvalidEnumValues = false;
 
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
-            description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations")
-    private int limitXxxOfCombinations;
+            description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private int limitXxxOfCombinations = 10;
 
     /**
      * Represents a wildcard pattern for JSON content type with optional parameters.
