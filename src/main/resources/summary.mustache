@@ -120,7 +120,12 @@
                     <td><a href="{{key}}.html" target="_blank"><span class="active rounded rounded-{{httpMethod}}">{{httpMethod}}</span><span
                             class="active rounded path">{{path}}</span><span class="scenario">{{scenario}}</span></a></td>
                     <td><a href="{{key}}.html" target="_blank"><label class="test-result result-{{result}}">{{result}}</label></a></td>
-                    <td><a href="{{key}}.html" target="_blank">{{resultReason}}</a></td>
+                    <td>
+                        {{#switchedResult}}
+                        <span class="result-warn"> ⚠ </span>
+                        {{/switchedResult}}
+                        <a href="{{key}}.html" target="_blank">&nbsp;{{resultReason}}</a>
+                    </td>
                 </tr>
                 {{/TEST_CASES}}
                 </tbody>
