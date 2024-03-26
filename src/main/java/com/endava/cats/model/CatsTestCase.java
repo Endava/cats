@@ -44,6 +44,7 @@ public class CatsTestCase {
     private String result;
     private String resultReason;
     private String resultDetails;
+    private String resultIgnoreDetails;
     private CatsRequest request = CatsRequest.empty();
     private CatsResponse response = CatsResponse.empty();
     private String path = "####";
@@ -65,6 +66,16 @@ public class CatsTestCase {
      */
     public boolean isNotSkipped() {
         return !SKIPPED.equalsIgnoreCase(result) && !SKIP_REPORTING.equalsIgnoreCase(result);
+    }
+
+    /**
+     * Records a result ignore reason based on the {@code from} and {@code to} levels.
+     *
+     * @param from original reporting level
+     * @param to   the new reporting level
+     */
+    public void setResultIgnoreDetails(String from, String to) {
+        this.resultIgnoreDetails = "Result switched from %s to %s based on --ignoreXXX arguments".formatted(from, to);
     }
 
     /**
@@ -90,6 +101,15 @@ public class CatsTestCase {
      */
     public boolean hasRequestDetails() {
         return response.isValidErrorCode();
+    }
+
+    /**
+     * Checks if the current test case has a result that was switched based on --ignoreXX arguments.
+     *
+     * @return true if the result was switched, false otherwise
+     */
+    public boolean hasResultSwitched() {
+        return resultIgnoreDetails != null;
     }
 
     /**

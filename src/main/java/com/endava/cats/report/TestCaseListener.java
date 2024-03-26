@@ -450,6 +450,7 @@ public class TestCaseListener {
             this.skipTest(logger, replaceBrackets("Some response elements were marked as ignored and --skipReportingForIgnoredCodes is enabled."));
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else {
+            testCase.setResultIgnoreDetails(Level.WARN.toString(), Level.INFO.toString());
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }
@@ -457,6 +458,7 @@ public class TestCaseListener {
 
     private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, FuzzingData data, CatsResultFactory.CatsResult catsResult, boolean ignoreCheck, Object... params) {
         if (ignoreCheck) {
+            currentTestCase().setResultIgnoreDetails(Level.WARN.toString(), Level.INFO.toString());
             this.reportInfo(logger, catsResult, params);
             setResultReason(catsResult);
         } else {
@@ -507,6 +509,7 @@ public class TestCaseListener {
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
             this.recordResult(message, params, SKIP_REPORTING, logger);
         } else {
+            testCase.setResultIgnoreDetails(Level.ERROR.toString(), Level.INFO.toString());
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }

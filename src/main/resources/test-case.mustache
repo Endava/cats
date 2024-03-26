@@ -87,7 +87,16 @@
                 {{resultDetails}}
             </p>
         </div>
-
+        {{#hasResultSwitched}}
+            <div class="component title result-warn">
+                <p>Warning</p>
+            </div>
+            <div class="component text result-warn">
+                <p>
+                    {{resultIgnoreDetails}}
+                </p>
+            </div>
+        {{/hasResultSwitched}}
         <div class="component title">
             <p>Contract Path</p>
         </div>
