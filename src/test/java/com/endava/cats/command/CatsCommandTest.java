@@ -130,6 +130,7 @@ class CatsCommandTest {
         Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(Mockito.mock(CheckDeletedResourcesNotAvailableFuzzer.class)));
         Mockito.when(executionStatisticsListener.areManyIoErrors()).thenReturn(true);
         Mockito.when(executionStatisticsListener.getIoErrors()).thenReturn(10);
+
         Mockito.when(filterArguments.getPathsToRun(Mockito.any())).thenReturn(List.of("/pet-types", "/pet-types-rec", "/pets", "/pets-batch", "/pets/{id}"));
         CatsCommand spyMain = Mockito.spy(catsMain);
         spyMain.run();

@@ -47,6 +47,7 @@ class FuzzingDataFactoryTest {
         processingArguments = Mockito.mock(ProcessingArguments.class);
         filterArguments = Mockito.mock(FilterArguments.class);
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(10);
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of(ProcessingArguments.JSON_WILDCARD, "application/x-www-form-urlencoded"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
     }
@@ -344,8 +345,20 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.get(0);
-        Object var1 = JsonUtils.getVariableFromJson(data.getPayload(),"$.credentialSource.updatedBy.credentialSource");
-        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(),"$.credentialSource.updatedBy.credentialSource.updatedBy");
+        Object var1 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy");
+        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource");
+        Assertions.assertThat(var1).hasToString("{}");
+        Assertions.assertThat(var2).hasToString("NOT_SET");
+    }
+
+    @Test
+    void shouldConsiderSelfReferenceDepthWhenDetectingCyclicDependencies() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
+        Assertions.assertThat(dataList).hasSize(2);
+        FuzzingData data = dataList.get(0);
+        Object var1 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.addedBy");
+        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.addedBy.credentialSource");
         Assertions.assertThat(var1).hasToString("{}");
         Assertions.assertThat(var2).hasToString("NOT_SET");
     }

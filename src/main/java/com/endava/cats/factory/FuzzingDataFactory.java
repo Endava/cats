@@ -471,7 +471,7 @@ public class FuzzingDataFactory {
                     JsonElement jsonElement = JsonUtils.parseAsJsonElement(element);
                     return JsonUtils.GSON.toJson(List.of(jsonElement, jsonElement));
                 })
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
@@ -487,7 +487,12 @@ public class FuzzingDataFactory {
         anyOfOrOneOfElements = this.joinCommonOneAndAnyOfs(anyOfOrOneOfElements);
 
         anyOfOrOneOfElements.forEach((pathKey, anyOfOrOneOf) -> {
-            List<String> interimCombinationList = new ArrayList<>(result);
+            List<String> interimCombinationList =
+
+                    new ArrayList<>(result).stream()
+                            .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), result.size()))
+                            .collect(Collectors.toCollection(ArrayList::new));
+
             result.clear();
             anyOfOrOneOf.forEach((key, value) ->
                     interimCombinationList.forEach(payload ->

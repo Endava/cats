@@ -31,10 +31,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for JSON objects interaction.
@@ -492,16 +494,14 @@ public abstract class JsonUtils {
      */
     public static boolean isCyclicSchemaReference(String currentProperty, Map<String, String> schemaRefMap, int depth) {
         String[] properties = currentProperty.split("#", -1);
-        if (properties.length < depth) {
-            return false;
-        }
 
         for (int i = 0; i < properties.length - 1; i++) {
             for (int j = i + 1; j <= properties.length - 1; j++) {
-
-                String iRef = schemaRefMap.get(properties[i]);
-                String jRef = schemaRefMap.get(properties[j]);
-                if (iRef != null && iRef.equalsIgnoreCase(jRef)) {
+                String iKeyToSearch = Arrays.stream(properties).limit(i).collect(Collectors.joining("#"));
+                String jKeyToSearch = Arrays.stream(properties).limit(j).collect(Collectors.joining("#"));
+                String iRef = schemaRefMap.get(iKeyToSearch);
+                String jRef = schemaRefMap.get(jKeyToSearch);
+                if (iRef != null && iRef.equalsIgnoreCase(jRef) && (j - i >= depth)) {
                     LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
                     return true;
                 }
