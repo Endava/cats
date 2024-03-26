@@ -196,7 +196,7 @@ public class OpenAPIModelGenerator {
         if (property.getProperties() == null || property.getProperties().isEmpty()) {
             return new HashMap<>();
         }
-        return "{\"cats\":\"cats\"}";
+        return resolveProperties(property);
     }
 
     private <T> Object getExampleFromStringSchema(String propertyName, Schema<T> property) {
@@ -273,7 +273,7 @@ public class OpenAPIModelGenerator {
             return "[]";
         }
         if (innerType.get$ref() != null) {
-            schemaRefMap.put(propertyName, innerType.get$ref());
+            schemaRefMap.put(currentProperty, innerType.get$ref());
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
         if (innerType != null) {
@@ -337,11 +337,13 @@ public class OpenAPIModelGenerator {
         String previousPropertyValue = currentProperty;
         for (Object propertyName : schema.getProperties().keySet()) {
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
-            if (schemaRef != null) {
-                schemaRefMap.put(propertyName.toString(), schemaRef);
-            }
+
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
             currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
+
+            if (schemaRef != null) {
+                schemaRefMap.put(currentProperty, schemaRef);
+            }
 
             if (innerSchema == null) {
                 this.parseFromInnerSchema(name, schema, values, propertyName);
