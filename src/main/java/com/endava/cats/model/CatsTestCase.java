@@ -72,10 +72,9 @@ public class CatsTestCase {
      * Records a result ignore reason based on the {@code from} and {@code to} levels.
      *
      * @param from original reporting level
-     * @param to   the new reporting level
      */
-    public void setResultIgnoreDetails(String from, String to) {
-        this.resultIgnoreDetails = "Result switched from %s to %s based on --ignoreXXX arguments".formatted(from, to);
+    public void setResultIgnoreDetails(String from) {
+        this.resultIgnoreDetails = "Result switched from %s to SUCCESS based on --ignoreXXX arguments".formatted(from);
     }
 
     /**
