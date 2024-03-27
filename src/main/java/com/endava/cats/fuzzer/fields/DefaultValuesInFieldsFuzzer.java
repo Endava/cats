@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;
@@ -40,6 +41,8 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
         Predicate<Schema<?>> isNotEnum = schema -> schema.getEnum() == null;
         Predicate<Schema<?>> hasDefault = schema -> schema.getDefault() != null;
         BiFunction<Schema<?>, String, List<Object>> fuzzedValueProducer = (schema, field) -> List.of(schema.getDefault());
+        Predicate<String> isNotDiscriminator = catsExecutor::isFieldNotADiscriminator;
+        Predicate<String> isFieldInRequestPayload = field -> JsonUtils.isFieldInJson(data.getPayload(), field);
 
         catsExecutor.execute(
                 FieldsIteratorExecutorContext.builder()
@@ -47,7 +50,7 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(ResponseCodeFamilyPredefined.TWOXX)
                         .schemaFilter(isNotEnum.and(hasDefault))
-                        .fieldFilter(catsExecutor::isFieldNotADiscriminator)
+                        .fieldFilter(isNotDiscriminator.and(isFieldInRequestPayload))
                         .fuzzValueProducer(fuzzedValueProducer)
                         .skipMessage("It does not have a defined default value.")
                         .logger(logger)
