@@ -604,9 +604,9 @@ public class FuzzingDataFactory {
 
     private String squashAllOfElements(String payloadSample) {
         JsonElement jsonElement = JsonParser.parseString(payloadSample);
-        this.squashAllOf(jsonElement);
+        JsonElement newElement = this.squashAllOf(jsonElement);
 
-        return jsonElement.toString();
+        return newElement.toString();
     }
 
     /**
@@ -615,23 +615,36 @@ public class FuzzingDataFactory {
      *
      * @param element the current Json element
      */
-    private void squashAllOf(JsonElement element) {
+    private JsonElement squashAllOf(JsonElement element) {
         if (element.isJsonObject()) {
-            for (Map.Entry<String, JsonElement> entry : element.getAsJsonObject().entrySet()) {
-                squashAllOf(entry.getValue());
-                if (entry.getKey().equalsIgnoreCase("ALL_OF")) {
-                    element.getAsJsonObject().remove(entry.getKey());
-                    for (Map.Entry<String, JsonElement> allOfEntry : entry.getValue().getAsJsonObject().entrySet()) {
-                        element.getAsJsonObject().add(allOfEntry.getKey(), allOfEntry.getValue());
-                    }
-                    break;
+            JsonObject originalObject = element.getAsJsonObject();
+            JsonObject newObject = new JsonObject();
+            for (String key : originalObject.keySet()) {
+                if (key.equalsIgnoreCase("ALL_OF")) {
+                    JsonObject allOfObject = originalObject.getAsJsonObject(key);
+                    mergeJsonObject(newObject, squashAllOf(allOfObject));
+                } else {
+                    newObject.add(key, squashAllOf(originalObject.get(key)));
                 }
             }
+            return newObject;
         } else if (element.isJsonArray()) {
-            for (int i = 0; i < element.getAsJsonArray().size(); i++) {
-                squashAllOf(element.getAsJsonArray().get(i));
+            JsonArray originalArray = element.getAsJsonArray();
+            JsonArray newArray = new JsonArray();
+            for (JsonElement child : originalArray) {
+                newArray.add(squashAllOf(child));
             }
+            return newArray;
+        } else {
+            return element;
         }
+    }
+
+    private JsonObject mergeJsonObject(JsonObject original, JsonElement toMerge) {
+        for (Map.Entry<String, JsonElement> entry : toMerge.getAsJsonObject().entrySet()) {
+            original.add(entry.getKey(), entry.getValue());
+        }
+        return original;
     }
 
     private List<String> getRequestContentTypes(Operation operation, OpenAPI openAPI) {

@@ -17,7 +17,8 @@ class ValidDataFormatTest {
 
     @ParameterizedTest
     @CsvSource({"city,true", "CITY,true", "cityName,true", "city_name,true", "other#city,true",
-            "iban,true", "IBAN,true", "other#iban,true"
+            "iban,true", "IBAN,true", "other#iban,true",
+            "bic,true", "BIC,true", "swift,true", "bic_code,true", "other#swift_code,true", "other#bank_identifier_code,true", "other#bank_identifier,true", "other#bank_code,true"
     })
     void shouldReturnOneGeneratorWithProperty(String propertyName) {
         List<ValidDataFormatGenerator> validDataFormatList = validDataFormat.getGenerators(new Schema<>(), propertyName);
@@ -26,7 +27,8 @@ class ValidDataFormatTest {
 
     @ParameterizedTest
     @CsvSource({"city",
-            "iban"})
+            "iban",
+            "swift", "bic"})
     void shouldReturnOneGeneratorWithFormat(String format) {
         Schema<?> schema = new Schema<>();
         schema.setFormat(format);
