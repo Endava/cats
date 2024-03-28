@@ -22,6 +22,7 @@ import io.swagger.v3.parser.converter.SwaggerConverter;
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
+import io.swagger.v3.parser.util.DeserializationUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -54,6 +55,10 @@ public abstract class OpenApiUtils {
     private static final Set<String> PAGINATION = Set.of("limit", "offset", "page", "size", "pagesize", "pagenumber", "sort", "perpage", "datefrom", "dateto", "datestart", "dateend");
 
     private static final Set<String> MONITORING_MATCHES = Set.of("[version\\d*\\.?|v\\d+\\.?]/status", "/status", ".*/health", ".*/monitoring/status", ".*/ping", ".*/healthz");
+
+    static {
+        DeserializationUtils.getOptions().setMaxYamlCodePoints(99999999);
+    }
 
     private OpenApiUtils() {
         //ntd
