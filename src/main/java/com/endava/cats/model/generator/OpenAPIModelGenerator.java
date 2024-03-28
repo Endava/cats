@@ -57,7 +57,7 @@ public class OpenAPIModelGenerator {
     private final ValidDataFormat validDataFormat;
     private final int selfReferenceDepth;
     private String currentProperty = "";
-    private Map<String, String> schemaRefMap;
+    private final Map<String, String> schemaRefMap;
 
     /**
      * Constructs an OpenAPIModelGenerator with the specified configuration.
@@ -430,18 +430,16 @@ public class OpenAPIModelGenerator {
             addXXXOfExamples(values, propertyName, composedSchema.getAllOf(), "ALL_OF");
             String newKey = "ALL_OF";
             Map<String, Object> finalMap = new HashMap<>();
-            boolean innerAllOff = false;
+            boolean innerAllOff = values.keySet().stream().filter(key -> !key.startsWith(propertyName + "ALL_OF")).count() == values.size();
 
             for (Map.Entry<String, Object> entry : values.entrySet()) {
                 Object value = entry.getValue();
                 if (value instanceof Map map) {
                     finalMap.putAll(map);
-                } else {
-                    innerAllOff = true;
                 }
             }
 
-            if (!innerAllOff) {
+            if (innerAllOff) {
                 values.clear();
                 values.put(newKey, finalMap);
             } else {
