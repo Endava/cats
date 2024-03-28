@@ -623,7 +623,7 @@ public class FuzzingDataFactory {
                 if (key.equalsIgnoreCase("ALL_OF")) {
                     JsonObject allOfObject = originalObject.getAsJsonObject(key);
                     mergeJsonObject(newObject, squashAllOf(allOfObject));
-                } else {
+                } else if (!key.contains("ALL_OF")) {
                     newObject.add(key, squashAllOf(originalObject.get(key)));
                 }
             }
