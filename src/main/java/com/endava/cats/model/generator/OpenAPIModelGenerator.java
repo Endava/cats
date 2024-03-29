@@ -277,7 +277,7 @@ public class OpenAPIModelGenerator {
             innerType = this.globalContext.getSchemaMap().get(innerType.get$ref().substring(innerType.get$ref().lastIndexOf('/') + 1));
         }
         if (innerType != null) {
-            int arrayLength = null == property.getMinItems() ? 2 : property.getMinItems();
+            int arrayLength = getArrayLength(property);
             Object[] objectProperties = new Object[arrayLength];
 
             for (int i = 0; i < arrayLength; i++) {
@@ -291,6 +291,12 @@ public class OpenAPIModelGenerator {
             return objectProperties;
         }
         return "[]";
+    }
+
+    public static int getArrayLength(Schema<?> property) {
+        int minLength = null == property.getMinItems() ? 2 : property.getMinItems();
+
+        return null == property.getMaxItems() || property.getMaxItems() == 0 ? minLength : Math.min(5, property.getMaxItems());
     }
 
     double randomNumber(Double min, Double max) {
