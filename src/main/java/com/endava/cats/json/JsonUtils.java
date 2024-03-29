@@ -501,7 +501,7 @@ public abstract class JsonUtils {
                 String jKeyToSearch = Arrays.stream(properties).limit(j).collect(Collectors.joining("#"));
                 String iRef = schemaRefMap.get(iKeyToSearch);
                 String jRef = schemaRefMap.get(jKeyToSearch);
-                if (iRef != null && iRef.equalsIgnoreCase(jRef) && (j - i >= depth)) {
+                if ((iRef != null && iRef.equalsIgnoreCase(jRef) || properties[j].equalsIgnoreCase(properties[j - 1])) && (j - i >= depth)) {
                     LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
                     return true;
                 }
