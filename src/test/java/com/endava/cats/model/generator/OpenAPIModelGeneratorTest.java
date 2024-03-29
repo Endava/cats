@@ -94,6 +94,16 @@ class OpenAPIModelGeneratorTest {
         Assertions.assertThat(JsonUtils.getVariableFromJson(exampleJson, "$#timeOfVaccination")).asString().matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{1,16}Z");
     }
 
+    @ParameterizedTest
+    @CsvSource(value = {"null,1,1", "null,null,2", "1,null,1", "2,3,3"}, nullValues = "null")
+    void shouldComputeProperArrayLength(Integer min, Integer max, int expected) {
+        Schema<?> schema = new Schema<>();
+        schema.setMinItems(min);
+        schema.setMaxItems(max);
+        int result = OpenAPIModelGenerator.getArrayLength(schema);
+        Assertions.assertThat(result).isEqualTo(expected);
+    }
+
     private OpenAPIModelGenerator setupPayloadGenerator() throws IOException {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();
