@@ -21,12 +21,10 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * Iterates through path variables and sens random resource identifiers.
@@ -53,10 +51,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        Set<String> pathVariables = Arrays.stream(OpenApiUtils.getPathElements(data.getPath()))
-                .filter(OpenApiUtils::isAPathVariable)
-                .map(element -> element.substring(1, element.length() - 1))
-                .collect(Collectors.toSet());
+        Set<String> pathVariables = OpenApiUtils.getPathVariables(data.getPath());
 
         if (pathVariables.isEmpty()) {
             return;
