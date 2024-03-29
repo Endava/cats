@@ -169,14 +169,16 @@ public abstract class OpenApiUtils {
             LOGGER.debug("Getting schema {} for content-type {}", schemaName, contentType);
             Schema<?> refSchema = getMediaTypeFromContent(content, contentType).getSchema();
 
-            if (CatsModelUtils.isArraySchema(refSchema)) {
-                ref = refSchema.getItems().get$ref();
-                refSchema.set$ref(ref);
-                schemaToAdd = refSchema;
-            } else if (refSchema.get$ref() != null) {
-                ref = refSchema.get$ref();
-                String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
-                schemaToAdd = schemas.get(schemaKey);
+            if (refSchema != null) {
+                if (CatsModelUtils.isArraySchema(refSchema)) {
+                    ref = refSchema.getItems().get$ref();
+                    refSchema.set$ref(ref);
+                    schemaToAdd = refSchema;
+                } else if (refSchema.get$ref() != null) {
+                    ref = refSchema.get$ref();
+                    String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
+                    schemaToAdd = schemas.get(schemaKey);
+                }
             }
         } else if (content != null && !content.isEmpty() && schemas.get(schemaName) == null) {
             /*it means it wasn't already added with another content type*/
@@ -209,6 +211,25 @@ public abstract class OpenApiUtils {
         return Arrays.stream(path.substring(1).split("/"))
                 .filter(pathElement -> !VERSION_PATH.matcher(pathElement).matches())
                 .toArray(String[]::new);
+    }
+
+    /**
+     * Returns all variables from the given path. An element is considered a variable
+     * if it's enclosed by {}.
+     *
+     * @param path the given path
+     * @return a set of path variables in the form: {var1}, {var2}, etc.
+     */
+    public static Set<String> getPathVariables(String path) {
+        Set<String> parameters = new HashSet<>();
+        Pattern pattern = Pattern.compile("\\{(.*?)}");
+        Matcher matcher = pattern.matcher(path);
+
+        while (matcher.find()) {
+            parameters.add(matcher.group(1));
+        }
+
+        return parameters;
     }
 
     /**
