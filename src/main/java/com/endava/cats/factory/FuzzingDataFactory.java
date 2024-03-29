@@ -12,6 +12,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -151,6 +152,7 @@ public class FuzzingDataFactory {
 
             if ((isPathParam || isQueryParam) && filesArguments.isNotUrlParam(parameter.getName())) {
                 String newParameterName = parameter.getName() + "|" + parameter.getIn();
+                parameter.setSchema(Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>()));
                 parameter.getSchema().setName(newParameterName);
 
                 syntheticSchema.addProperty(parameter.getName(), parameter.getSchema());
@@ -351,7 +353,19 @@ public class FuzzingDataFactory {
             examples.addAll(mediaType.getExamples().values()
                     .stream()
                     .filter(example -> example.get$ref() != null)
-                    .map(example -> globalContext.getExampleMap().get(this.getSchemaName(example.get$ref())).getValue())
+                    .map(example -> {
+                        Example exampleFromSchemaMap = globalContext.getExampleMap().get(this.getSchemaName(example.get$ref()));
+                        if (exampleFromSchemaMap == null && example.get$ref().contains("/value/")) {
+                            //this might be a multi-level example something like: #/components/examples/JSON_WORKER_EXAMPLES/value/WORKER_COMPENSATION_PAYRATE_POST_PATCH
+
+                            String[] exampleKeys = example.get$ref().replace("#/components/examples/", "")
+                                    .replace("value/", "")
+                                    .split("/", -1);
+                            return ((ObjectNode) globalContext.getExampleMap().get(exampleKeys[0]).getValue()).get(exampleKeys[1]).get("value").toString();
+                        }
+                        return exampleFromSchemaMap != null ? exampleFromSchemaMap.getValue() : null;
+                    })
+                    .filter(Objects::nonNull)
                     .map(Object::toString)
                     .collect(Collectors.toSet()));
         }
@@ -726,7 +740,8 @@ public class FuzzingDataFactory {
                 return apiResponse.get$ref();
             }
             if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
-                Schema<?> respSchema = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema();
+                Schema<?> respSchema = Optional.ofNullable(OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema()).orElse(new Schema<>());
+
                 if (CatsModelUtils.isArraySchema(respSchema)) {
                     return respSchema.getItems().get$ref();
                 } else {
