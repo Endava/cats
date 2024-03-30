@@ -69,6 +69,7 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -506,7 +507,7 @@ public class ServiceCaller {
                 } else {
                     toReplaceWith = URLEncoder.encode(child.getValue().getAsString(), StandardCharsets.UTF_8);
                 }
-                processedPath = processedPath.replaceAll("\\{" + child.getKey() + "}", toReplaceWith);
+                processedPath = processedPath.replaceAll(Pattern.quote("{" + child.getKey() + "}"), toReplaceWith);
                 data.getPathParams().add(child.getKey());
             }
         }
