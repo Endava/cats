@@ -89,10 +89,21 @@ public abstract class CatsModelUtils {
                 (SchemaTypeUtil.OBJECT_TYPE.equals(schema.getType()) && !(schema instanceof MapSchema) && !isComposedSchema(schema));
     }
 
+    /**
+     * Returns all schema which don't seem to be used.
+     *
+     * @param openAPI the OpenAPI Spec
+     * @return a list of unused schemas
+     */
     public static List<String> getUnusedSchemas(OpenAPI openAPI) {
         return ModelUtils.getUnusedSchemas(openAPI);
     }
 
+    /**
+     * Creates an empty ObjectSchema
+     *
+     * @return a new ObjectSchema
+     */
     public static ObjectSchema newObjectSchema() {
         return new ObjectSchema();
     }
