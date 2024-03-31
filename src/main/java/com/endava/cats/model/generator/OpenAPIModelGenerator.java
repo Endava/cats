@@ -380,9 +380,15 @@ public class OpenAPIModelGenerator {
             newSchema.setName("CatsChanged" + name);
             newSchema.getDiscriminator().setMapping(null);
             globalContext.getSchemaMap().put(newSchema.getName(), newSchema);
-            for (String oneOfSchema : schema.getDiscriminator().getMapping().values()) {
-                oneOfSchema = oneOfSchema.substring(oneOfSchema.lastIndexOf("/") + 1);
+            for (String oneOfSchemaRef : schema.getDiscriminator().getMapping().values()) {
+                String oneOfSchema = oneOfSchemaRef.substring(oneOfSchemaRef.lastIndexOf("/") + 1);
                 Schema<?> currentOneOfSchema = globalContext.getSchemaMap().get(oneOfSchema);
+
+                if (currentOneOfSchema == null) {
+                    currentOneOfSchema = new Schema<>();
+                    currentOneOfSchema.set$ref(oneOfSchemaRef);
+                    globalContext.getSchemaMap().put(oneOfSchema, currentOneOfSchema);
+                }
                 Optional.ofNullable(currentOneOfSchema.getAllOf()).orElse(Collections.emptyList())
                         .stream()
                         .filter(innerAllOfSchema -> innerAllOfSchema.get$ref() != null)
