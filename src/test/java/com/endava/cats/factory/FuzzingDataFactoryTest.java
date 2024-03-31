@@ -199,6 +199,7 @@ class FuzzingDataFactoryTest {
         catsGlobalContext.getSchemaMap().putAll(schemas);
         catsGlobalContext.getExampleMap().putAll(OpenApiUtils.getExamples(openAPI));
         catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+        catsGlobalContext.getSchemaMap().remove("");
         PathItem pathItem = openAPI.getPaths().get(path);
 
         Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
