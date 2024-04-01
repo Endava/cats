@@ -442,7 +442,11 @@ public class OpenAPIModelGenerator {
             addXXXOfExamples(values, propertyName, composedSchema.getAllOf(), "ALL_OF");
             String newKey = "ALL_OF";
             Map<String, Object> finalMap = new HashMap<>();
-            boolean innerAllOff = values.keySet().stream().filter(key -> !key.startsWith(propertyName + "ALL_OF")).count() == values.size();
+
+            boolean innerAllOff = values.keySet()
+                    .stream()
+                    .filter(key -> !key.startsWith(propertyName + "ALL_OF") || key.startsWith(propertyName + "ALL_OF#null"))
+                    .count() == values.values().stream().filter(val -> !(val instanceof Map m && m.isEmpty())).count();
 
             for (Map.Entry<String, Object> entry : values.entrySet()) {
                 Object value = entry.getValue();
