@@ -2,6 +2,7 @@ package com.endava.cats.json;
 
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.strategy.CommonWithinMethods;
+import com.endava.cats.util.CatsModelUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -266,7 +267,7 @@ public abstract class JsonUtils {
             if ("$".equals(nodeKey)) {
                 return nodeValue;
             }
-            return JsonPath.parse(payload).set(nodeKey, JSON_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
+            return JsonPath.parse(payload).set(escapeFullPath(nodeKey), JSON_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
         } catch (ParseException e) {
             LOGGER.debug("Could not add node {}", nodeKey);
             return payload;
@@ -274,16 +275,21 @@ public abstract class JsonUtils {
             String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
             String replacementKey = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
             if (payload.contains("_OF")) {
+                String cleanPath = CatsModelUtils.eliminateDuplicatePart(nodeKey);
                 String interimPayload = JsonPath.parse(payload, SUPPRESS_EXCEPTIONS_CONFIGURATION).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
+
+                if (!cleanPath.equalsIgnoreCase(nodeKey)) {
+                    interimPayload = addElement(payload, pathTowardsReplacement, nodeValue);
+                }
 
                 interimPayload = checkIfArrayHasNestedKeysWithSameName(nodeKey, pathTowardsReplacement, replacementKey, interimPayload);
 
                 DocumentContext finalPayload = JsonPath.parse(interimPayload);
                 toEliminate.forEach(toEliminateKey -> {
                     try {
-                        String nodeToDelete = pathTowardsReplacement + "." + getNodeKey(toEliminateKey);
+                        String nodeToDelete = pathTowardsReplacement + "." + escapeSpaces(toEliminateKey);
                         LOGGER.debug("to delete {}", nodeToDelete);
-                        finalPayload.delete(JsonPath.compile(nodeToDelete).getPath());
+                        finalPayload.delete(JsonPath.compile(escapeFullPath(nodeToDelete)).getPath());
                     } catch (PathNotFoundException ex) {
                         LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
                     }
@@ -329,11 +335,20 @@ public abstract class JsonUtils {
      * @param toEliminateKey start of the node key
      * @return a node key combining the given input
      */
-    private static String getNodeKey(String toEliminateKey) {
+    private static String escapeSpaces(String toEliminateKey) {
         if (toEliminateKey.contains(" ")) {
             return "['" + toEliminateKey + "']";
         }
         return toEliminateKey;
+    }
+
+
+    public static String escapeFullPath(String input) {
+        if (input.startsWith("$.") && input.contains("[")) {
+            return "$." + "['" + input.substring(2) + "']";
+        }
+
+        return input;
     }
 
     /**
@@ -408,9 +423,23 @@ public abstract class JsonUtils {
      * @param newValue       the new element value
      * @return a new payload starting with the initial JSON as base and with the new key and value
      */
-    public static String addNewElement(String initialPayload, String pathToKey, String newKey, Object newValue) {
+    public static String replaceNewElement(String initialPayload, String pathToKey, String newKey, Object newValue) {
         DocumentContext documentContext = JsonPath.parse(initialPayload);
         documentContext.put(pathToKey, sanitizeToJsonPath(newKey), newValue);
+
+        return documentContext.jsonString();
+    }
+
+    public static String addElement(String initialPayload, String pathToKey, String newValue) {
+        DocumentContext documentContext = JsonPath.parse(initialPayload, SUPPRESS_EXCEPTIONS_CONFIGURATION);
+        DocumentContext newValueContext = JsonPath.parse(newValue, SUPPRESS_EXCEPTIONS_CONFIGURATION);
+        Map<String, Object> keysToMerge = newValueContext.read("$");
+
+        Object existingValue = documentContext.read(pathToKey);
+        if (existingValue instanceof Map m) {
+            m.putAll(keysToMerge);
+        }
+        documentContext.set(pathToKey, existingValue);
 
         return documentContext.jsonString();
     }
@@ -465,7 +494,7 @@ public abstract class JsonUtils {
 
         String pathToKey = StringUtils.isBlank(firstPartOfField) ? "$" : firstPartOfField;
 
-        return addNewElement(inputJsonWithRemovedKey, pathToKey, newFieldKey, currentFieldValue);
+        return replaceNewElement(inputJsonWithRemovedKey, pathToKey, newFieldKey, currentFieldValue);
     }
 
     private static void traverseJson(JsonElement element, String prefix, List<String> fields) {
