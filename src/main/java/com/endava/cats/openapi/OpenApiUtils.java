@@ -170,21 +170,21 @@ public abstract class OpenApiUtils {
             Schema<?> refSchema = getMediaTypeFromContent(content, contentType).getSchema();
 
             if (refSchema != null) {
-                if (CatsModelUtils.isArraySchema(refSchema)) {
-                    ref = refSchema.getItems().get$ref();
-                    refSchema.set$ref(ref);
-                    schemaToAdd = refSchema;
-                } else if (refSchema.get$ref() != null) {
+                if (refSchema.get$ref() != null) {
                     ref = refSchema.get$ref();
                     String schemaKey = ref.substring(ref.lastIndexOf('/') + 1);
                     schemaToAdd = schemas.get(schemaKey);
+                } else if (CatsModelUtils.isArraySchema(refSchema)) {
+                    ref = refSchema.getItems().get$ref();
+                    refSchema.set$ref(ref);
+                    schemaToAdd = refSchema;
                 }
             }
         } else if (content != null && !content.isEmpty() && schemas.get(schemaName) == null) {
             /*it means it wasn't already added with another content type*/
             LOGGER.warn("Content-Type not supported. Found: {} for {}", content.keySet(), schemaName);
         }
-        schemas.put(schemaName, schemaToAdd);
+        schemas.putIfAbsent(schemaName, schemaToAdd);
     }
 
     /**
