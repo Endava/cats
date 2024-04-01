@@ -634,7 +634,7 @@ public class FuzzingDataFactory {
             JsonObject originalObject = element.getAsJsonObject();
             JsonObject newObject = new JsonObject();
             for (String key : originalObject.keySet()) {
-                if (key.equalsIgnoreCase("ALL_OF")) {
+                if (key.equalsIgnoreCase("ALL_OF") || key.endsWith("ALL_OF#null")) {
                     JsonObject allOfObject = originalObject.getAsJsonObject(key);
                     mergeJsonObject(newObject, squashAllOf(allOfObject));
                 } else if (!key.contains("ALL_OF")) {
@@ -654,11 +654,10 @@ public class FuzzingDataFactory {
         }
     }
 
-    private JsonObject mergeJsonObject(JsonObject original, JsonElement toMerge) {
+    private void mergeJsonObject(JsonObject original, JsonElement toMerge) {
         for (Map.Entry<String, JsonElement> entry : toMerge.getAsJsonObject().entrySet()) {
             original.add(entry.getKey(), entry.getValue());
         }
-        return original;
     }
 
     private List<String> getRequestContentTypes(Operation operation, OpenAPI openAPI) {
@@ -757,7 +756,7 @@ public class FuzzingDataFactory {
         Set<CatsHeader> headers = new HashSet<>();
         if (operation.getParameters() != null) {
             for (Parameter param : operation.getParameters()) {
-                if (param.getIn().equalsIgnoreCase("header")) {
+                if ("header".equalsIgnoreCase(param.getIn())) {
                     headers.add(CatsHeader.fromHeaderParameter(param));
                 }
             }
