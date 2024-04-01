@@ -8,6 +8,7 @@ import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.openapitools.codegen.utils.ModelUtils;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Wrapper on top of {@link org.openapitools.codegen.utils.ModelUtils} in order to accommodate
@@ -106,5 +107,23 @@ public abstract class CatsModelUtils {
      */
     public static ObjectSchema newObjectSchema() {
         return new ObjectSchema();
+    }
+
+    /**
+     * Eliminates the last part of the string if it matches the previous one.
+     *
+     * @param input The input string separated by ".".
+     * @return The modified string with the last duplicate part removed.
+     */
+    public static String eliminateDuplicatePart(String input) {
+        return Stream.of(input.split("\\."))
+                .reduce((prev, curr) -> {
+                    if (prev.endsWith(curr)) {
+                        return prev;
+                    } else {
+                        return prev + "." + curr;
+                    }
+                })
+                .orElse("");
     }
 }
