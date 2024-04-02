@@ -43,7 +43,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.model.generator.OpenAPIModelGenerator.SYNTH_SCHEMA_NAME;
@@ -495,32 +497,45 @@ public class FuzzingDataFactory {
      * @return a list with all possible ONE_OF and ANY_OF combinations based on the initial JSON payload
      */
     private List<String> addNewCombination(JsonElement jsonElement) {
-        List<String> result = new ArrayList<>();
-        result.add(jsonElement.toString());
-        Map<String, Map<String, JsonElement>> anyOfOrOneOfElements = this.getAnyOrOneOffElements("$", jsonElement);
-        anyOfOrOneOfElements = this.joinCommonOneAndAnyOfs(anyOfOrOneOfElements);
+        Set<String> result = new TreeSet<>();
+        Stack<JsonElement> stack = new Stack<>();
+        Set<String> visited = new HashSet<>();
 
-        anyOfOrOneOfElements.forEach((pathKey, anyOfOrOneOf) -> {
-            List<String> interimCombinationList =
+        stack.push(jsonElement);
 
-                    new ArrayList<>(result).stream()
-                            .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), result.size()))
-                            .collect(Collectors.toCollection(ArrayList::new));
+        while (!stack.isEmpty()) {
+            JsonElement current = stack.pop();
+            String currentJson = current.toString();
 
-            result.clear();
-            anyOfOrOneOf.forEach((key, value) ->
-                    interimCombinationList.forEach(payload ->
-                            result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, value.toString(), anyOfOrOneOf.keySet()))));
-        });
-        if (result.stream().anyMatch(json -> json.contains(ANY_OF) || json.contains(ONE_OF))) {
-            List<String> newResult = new ArrayList<>();
-            for (String json : result) {
-                newResult.addAll(addNewCombination(JsonParser.parseString(json)));
+            if (visited.contains(currentJson)) {
+                continue; // Skip if already visited to avoid cycles
             }
-            return newResult;
-        } else {
-            return result;
+
+            result.add(currentJson);
+            visited.add(currentJson);
+
+            Map<String, Map<String, JsonElement>> anyOfOrOneOfElements = getAnyOrOneOffElements("$", current);
+            anyOfOrOneOfElements = joinCommonOneAndAnyOfs(anyOfOrOneOfElements);
+
+            anyOfOrOneOfElements.forEach((pathKey, anyOfOrOneOf) -> {
+                List<String> interimCombinationList = new ArrayList<>(result).stream()
+                        .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), result.size()))
+                        .collect(Collectors.toCollection(ArrayList::new));
+
+                result.clear();
+                anyOfOrOneOf.forEach((key, value) ->
+                        interimCombinationList.forEach(payload ->
+                                result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, value.toString(), anyOfOrOneOf.keySet()))));
+
+                // Add elements to the stack for further processing
+                result.stream()
+                        .filter(json -> json.contains(ANY_OF) || json.contains(ONE_OF))
+                        .map(JsonParser::parseString)
+                        .forEach(stack::push);
+            });
         }
+
+        return result.stream().toList();
     }
 
     private Map<String, Map<String, JsonElement>> joinCommonOneAndAnyOfs(Map<String, Map<String, JsonElement>> startingOneAnyOfs) {
@@ -572,7 +587,7 @@ public class FuzzingDataFactory {
         } else if (jsonElement.isJsonArray()) {
             JsonArray ja = jsonElement.getAsJsonArray();
             if (!ja.isEmpty() && !ja.get(0).isJsonNull() && !ja.get(0).isJsonPrimitive()) {
-                getAnyOrOneOffElements(jsonElementKey, ja.get(0));
+                anyOrOneOfs.putAll(getAnyOrOneOffElements(jsonElementKey, ja.get(0)));
             }
         }
 
@@ -635,8 +650,13 @@ public class FuzzingDataFactory {
             JsonObject newObject = new JsonObject();
             for (String key : originalObject.keySet()) {
                 if (key.equalsIgnoreCase("ALL_OF") || key.endsWith("ALL_OF#null")) {
-                    JsonObject allOfObject = originalObject.getAsJsonObject(key);
-                    mergeJsonObject(newObject, squashAllOf(allOfObject));
+                    JsonElement jsonElement = originalObject.get(key);
+                    if (jsonElement.isJsonObject()) {
+                        JsonObject allOfObject = originalObject.getAsJsonObject(key);
+                        mergeJsonObject(newObject, squashAllOf(allOfObject));
+                    } else {
+                        newObject.add(key.substring(0, key.indexOf("ALL_OF")), squashAllOf(jsonElement));
+                    }
                 } else if (!key.contains("ALL_OF")) {
                     newObject.add(key, squashAllOf(originalObject.get(key)));
                 }
