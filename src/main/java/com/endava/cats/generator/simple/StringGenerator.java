@@ -119,6 +119,7 @@ public class StringGenerator {
      * @return a generated value of exact length provided
      */
     public static String generateExactLength(String regex, int length) {
+        regex = cleanPattern(regex);
         StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(regex, length, length)));
 
         if (initialValue.length() != length) {
@@ -145,6 +146,7 @@ public class StringGenerator {
      * @return a random string corresponding to the given pattern and min, max restrictions
      */
     public static String generate(String pattern, int min, int max) {
+        pattern = cleanPattern(pattern);
         String initialVersion = generateUsingRgxGenerator(pattern, min, max);
         if (initialVersion.matches(pattern)) {
             LOGGER.debug("RGX generated value {} matched {}", initialVersion, pattern);
@@ -157,6 +159,16 @@ public class StringGenerator {
             LOGGER.debug("Generation using CATS failed, using REGEXP generator");
             return generateUsingRegexpGen(pattern, min, max);
         }
+    }
+
+    public static String cleanPattern(String pattern) {
+        if (pattern.matches(".\\^.*")) {
+            pattern = pattern.substring(1);
+        }
+        if (pattern.endsWith("$/")) {
+            pattern = StringUtils.removeEnd(pattern, "/");
+        }
+        return pattern;
     }
 
     private static String generateUsingRegexpGen(String pattern, int min, int max) {
