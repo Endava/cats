@@ -1,0 +1,2048 @@
+openapi: 3.0.0
+info:
+  title: Keatext Partner API
+  description: >-
+    Keatext brings the voice of customer and employee into your day-to-day
+    activities. Easily understand what drives engagement and get tailored
+    AI-based recommendations to improve people experiences.
+  version: 2.0.0
+servers:
+  - url: https://icarusapi.keatext.ai/api
+tags:
+  - name: datasets
+    x-displayName: Datasets
+  - description: >-
+      Whenever calling an analytics endpoint that returns a collection of items
+
+      or analytics results that apply to a set of records, you can use filters
+
+      in your query to scope on which records the calculations should be
+
+      applied.
+
+
+      See [Filters](https://developer.keatext.ai) for an exhaustive list of
+      available filters
+
+      and how to apply them.
+    name: analytics
+    x-displayName: Analytics
+  - name: organizations
+    x-displayName: Organizations
+  - description: >-
+      Filters of different types are interpreted using a logical `AND`,
+
+      while filters of the same type are interpreted using `OR`.
+
+      For example, the following configuration would only return analytics for a
+      record if:
+
+      - it has a rating greater than 3
+
+      - it was written since last Monday
+
+      - it contains either “this” or “that”, or both of them.
+
+
+      ```
+
+      {
+        "filters": [
+          {
+            "type": "greaterThan",
+            "datasetId": "5a6658f1abb99b1a00f39451",
+            "fieldId": "6038c4e0-4f0e-49c2-a80e-869a541bc890",
+            "value": 3
+          },
+          {
+            "type": "dateFriendly",
+            "value": "thisWeek"
+          },
+          {
+            "type": "contains",
+            "datasetId": "5a6658f1abb99b1a00f39451",
+            "fieldId": "6038c4e0-4f0e-49c2-a80e-869a541bc890",
+            "value": "this"
+          },
+          {
+            "type": "contains",
+            "datasetId": "5a6658f1abb99b1a00f39451",
+            "fieldId": "6038c4e0-4f0e-49c2-a80e-869a541bc890",
+            "value": "that"
+          }
+        ]
+      }
+
+      ```
+
+
+      __Note__: We no longer accept the `field` property inside filter objects.
+    name: filters
+    x-displayName: Filters
+  - name: authentication
+    x-displayName: Authentication
+  - description: >-
+      A typical workflow for a partner consists of:
+
+
+      * [Creating an organization for a client
+      company](/#operation/create-organization)
+
+      * [Creating a dataset for that organization](/#operation/create-dataset)
+
+      * [Adding records to that dataset](/#operation/add-records)
+
+      * [Giving a user access to the application](/#operation/authenticate-user)
+    name: basic-workflow
+    x-displayName: Basic workflow
+paths:
+  /analytics/statements:
+    post:
+      tags:
+        - analytics
+      summary: Get Statement Groups
+      operationId: Analytics_getStatementGroups
+      description: >-
+        A **statement group** is a group of statements that share the same topic
+
+        group, indicator group, and category (praise, problem, etc.).
+
+        For example, these negative statements belong to the same group:
+
+
+        - The <b>bathroom</b> was <i>filthy</i>.
+
+        - The <b>washroom</b> was <i>disgusting</i>.
+
+        - The <b>restroom</b> was <i>unsanitary</i>.
+
+
+        if the topics (in bold) and indicators (in italics) are in the same
+        topic
+
+        and indicator groups, respectively.
+
+
+        This endpoint returns a representative statement for each statement
+        groups. The
+
+        representative statement's expression is what we display in the Keatext
+        user
+
+        interface.
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryOrganizationId'
+      requestBody:
+        $ref: '#/components/requestBodies/AnalyticsRequest'
+      responses:
+        '200':
+          description: List of statement groups successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsGetStatementGroupsResponse'
+  /analytics/documents:
+    get:
+      tags:
+        - analytics
+      summary: Get Documents
+      operationId: Analytics_getFlexibly
+      description: >-
+        This endpoint allows you to retrieve documents flexibly. In addition to
+        sending
+
+        filters, you can optionally provide, through query parameters, a partial
+        or
+
+        complete description of a statement group with a topic group id,
+        indicator group
+
+        id, and category.
+
+        This allows you, for example, to get documents that contain statement
+        groups with
+
+        the topic group "bathroom" and the category "praise".
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryOrganizationId'
+        - $ref: '#/components/parameters/AuthorizationHeader'
+        - $ref: '#/components/parameters/TopicGroupId'
+        - $ref: '#/components/parameters/IndicatorGroupId'
+        - $ref: '#/components/parameters/Category'
+      requestBody:
+        $ref: '#/components/requestBodies/AnalyticsRequest'
+      responses:
+        '200':
+          description: List of documents successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsGetFlexiblyResponse'
+  TODO:
+    '0': A
+    '1': d
+    '2': d
+    '3': ' '
+    '4': a
+    '5': ' '
+    '6': d
+    '7': e
+    '8': s
+    '9': c
+    '10': r
+    '11': i
+    '12': p
+    '13': t
+    '14': i
+    '15': o
+    '16': 'n'
+    '17': .
+  /analytics/documents/{documentId}:
+    get:
+      tags:
+        - analytics
+      summary: Get a Document
+      operationId: Analytics_getDocumentById
+      parameters:
+        - $ref: '#/components/parameters/QueryOrganizationId'
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      responses:
+        '200':
+          description: Document successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+  /analytics/topics:
+    get:
+      tags:
+        - analytics
+      summary: Get Topic Groups
+      operationId: Analytics_getTopicGroups
+      description: |-
+        A **topic** is the "subject" of a statement. For instance, when we say:
+        - The <b>bathroom</b> was dirty but the <b>view</b> was nice.
+
+        there are two topics, identified in bold.
+        Topics that are synonymous or nearly synonymous (for example,
+        _bathroom_ and _washroom_) are typically grouped automatically.
+        Each topic group has a "representative" and contains one or more topics.
+        Please note that for consistency, __topics with no synonyms are still
+        returned as groups with only one member__.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryOrganizationId'
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/AnalyticsRequest'
+      responses:
+        '200':
+          description: List of topics successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsGetTopicGroupsResponse'
+  /analytics/indicators:
+    get:
+      tags:
+        - analytics
+      summary: Get Indicator Groups
+      operationId: Analytics_getIndicatorGroups
+      description: |-
+        An **indicator** is an expression that describes a topic. For
+        instance, when we say:
+        - The food was <i>great</i> and <i>inexpensive</i>.
+
+        there are two indicators, identified in italics.
+        Indicators that are synonymous or nearly synonymous (for example,
+        _clean_ and _tidy_) are typically grouped automatically.
+        Each indicator group has a "representative" and contains one or more
+        indicators.
+        Please note that for consistency, __indicators with no synonyms are
+        returned as groups with only one member__.
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryOrganizationId'
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/AnalyticsRequest'
+      responses:
+        '200':
+          description: List of indicators successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsGetIndicatorGroupsResponse'
+  /auth/login:
+    post:
+      tags:
+        - authentication
+      summary: Generate a Token
+      operationId: Authentication_generateToken
+      description: |-
+        This endpoint allows you to generate a token that will authenticate
+        you in further calls to our API. This token is typically valid for 7
+        days, and generating a new token doesn't invalidate previous,
+        unexpired tokens.
+
+        If you use curl, we recommend putting your credentials in a JSON file
+        (see the request sample in the right pane) and reading from that file
+        to simplify the process of generating new tokens.
+
+        ```bash
+        curl -H "Content-Type: application/json" \
+              -d @credentials.json \
+              -X POST \
+              https://icarusapi.keatext.ai/api/auth/login
+        ```
+
+        You could even go one step further by storing the resulting token in
+        a text file and reading from that file as well:
+
+        ```bash
+        curl [...] | jq -r '.jwt.token' > token.txt
+         # In further calls to our API
+         curl -H "Authorization: Bearer $(cat token.txt)" [...]
+        ```
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationGenerateTokenRequest'
+        required: true
+      responses:
+        '200':
+          description: Token successfully generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: User doesn't exist, or password is missing or empty
+  /datasets/{datasetId}:
+    get:
+      tags:
+        - datasets
+      summary: Get a Dataset
+      operationId: Datasets_getData
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      responses:
+        '200':
+          description: Dataset successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+        '404':
+          description: Dataset doesn't exist
+    patch:
+      tags:
+        - datasets
+      summary: Update a Dataset's Properties
+      operationId: Datasets_updateProperties
+      description: |-
+        This endpoint allows you to change a dataset's name and description,
+        and what field is used as a primary date, customer id, and primary
+        key. To change a dataset's fields, use the
+        [Create a Dataset Field](/#operation/create-field),
+        [Update a Dataset Field](/#operation/update-field), and
+        [Delete a Dataset Field](/#operation/delete-field) endpoints.
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutateDataset'
+        required: true
+      responses:
+        '204':
+          description: Dataset successfully updated
+    delete:
+      tags:
+        - datasets
+      summary: Delete a Dataset
+      operationId: Datasets_deleteDataset
+      description: >-
+        This endpoint allows you to delete a dataset. <u><b>Warning</b>: All
+        data and
+
+        analytics for that dataset will be deleted. Use with caution.</u>
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      responses:
+        '204':
+          description: Dataset successfully deleted
+  /datasets:
+    get:
+      tags:
+        - datasets
+      summary: Get an Organization's Datasets
+      operationId: Datasets_getOrganizationData
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+        - description: The organization's id.
+          name: orgId
+          in: query
+          required: true
+          example: 592dc9a6afbf6d1b0095f097
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Datasets successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetsGetOrganizationDataResponse'
+    post:
+      tags:
+        - datasets
+      summary: Create a Dataset
+      operationId: Datasets_addRecords
+      description: |-
+        A dataset is a collection of records that share the same structure. You
+        can add as many records to a dataset as you want, as well as change the
+        dataset's structure over time as your needs change.
+        (To change a dataset's fields, use the
+        [Create a Dataset Field](/#operation/create-field),
+        [Update a Dataset Field](/#operation/update-field), and
+        [Delete a Dataset Field](/#operation/delete-field) endpoints.)
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dataset'
+        required: true
+      responses:
+        '200':
+          description: Dataset successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dataset'
+  /datasets/{datasetId}/fields:
+    post:
+      tags:
+        - datasets
+      summary: Create a Dataset Field
+      operationId: Datasets_addFieldToDataset
+      description: |-
+        This endpoint allows you to add a field to an existing dataset, as
+        the structure of your data changes over time.
+
+        The new field can be used in filters through the API, and in the
+        app if the field is set to visible (see the `isVisible` property).
+        Records ingested before adding the field have a null value for it,
+        but can be updated with our endpoint to
+        [Update a Dataset](/#operation/update-records).
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetV3Field'
+        required: true
+      responses:
+        '201':
+          description: Field successfully created
+  /datasets/{datasetId}/fields/{fieldKey}:
+    patch:
+      tags:
+        - datasets
+      summary: Update a Dataset Field
+      operationId: Datasets_updateFieldVisibility
+      description: This endpoint allows you to rename a field or change its visibility.
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+        - description: The field's unique identifier.
+          name: fieldKey
+          in: path
+          required: true
+          example: customer_response_1
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MutateFieldRequest'
+        required: true
+      responses:
+        '204':
+          description: Field successfully updated
+    delete:
+      tags:
+        - datasets
+      summary: Delete a Dataset Field
+      operationId: Datasets_removeField
+      description: >-
+        This endpoint allows you to delete a field. <u><b>Warning</b>: All data
+        and
+
+        analytics for that field will be deleted. Use with caution.</u>
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+        - description: The field's unique identifier.
+          name: fieldKey
+          in: path
+          required: true
+          example: customer_response_1
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Field successfully deleted
+  /datasets/{datasetId}/records:
+    post:
+      tags:
+        - datasets
+      summary: Populate a Dataset
+      operationId: Datasets_ingestRecords
+      description: |-
+
+        Assuming you've followed the instructions to
+        [generate a token](/#operation/get-token) and to
+        [create a dataset](/#operation/create-dataset),
+        then you can ingest records by putting them in a JSON file and then
+        making a call to our API:
+
+        ```bash
+        curl -H "Authorization: Bearer $(cat token.txt)" \
+              -H "Content-Type: application/json" \
+              -d @records.json \
+              -X POST \
+              https://icarusapi.keatext.ai/api/datasets/XdzFGgUhXsf7/records
+        ```
+
+        Note that you need to replace the dataset id in the URL with yours.
+
+        The response simply contains information about the ingestion, such
+        as the number of records that failed to be processed, that are
+        enqueued, or that were already processed.
+      parameters:
+        - $ref: '#/components/parameters/DatasetId'
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestionRequest'
+        required: true
+      responses:
+        '200':
+          description: Dataset successfully populated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestionResponse'
+  /organizations:
+    post:
+      tags:
+        - organizations
+      summary: Create an Organization
+      operationId: Organizations_createOrganization
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organization'
+        required: true
+      responses:
+        '200':
+          description: Organization successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+    get:
+      tags:
+        - organizations
+      summary: Get Your Organizations
+      operationId: Organizations_listYour
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      responses:
+        '200':
+          description: Organizations successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationsListYourResponse'
+  /organizations/{organizationId}:
+    delete:
+      tags:
+        - organizations
+      summary: Delete an Organization
+      operationId: Organizations_deleteOrganizationPermanently
+      description: |-
+        This endpoint deletes an organization permanently. __This
+        action cannot be undone__.
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+        - $ref: '#/components/parameters/OrganizationId'
+      responses:
+        '204':
+          description: Organization successfully deleted
+  /organizations/{organizationId}/access-url:
+    post:
+      tags:
+        - organizations
+      summary: Create and Authenticate a User
+      operationId: Organizations_createAndAuthenticateUser
+      description: >-
+        This endpoint creates and authenticates a user. __You have control over
+        which datasets they can see__.
+
+
+        The path returned is relative and must be prefixed with a hostname. If
+        you use a custom domain with
+
+        a CNAME record pointing to the Keatext servers, the full path can be
+        reconstructed as:
+
+
+        ```
+                  Domain name
+                ---------------
+        https://partnername.com/passwordless-login?token=akdAKDYHlkh18384jh1mkj&version=2
+
+        -----                 
+        -----------------------------------------------------
+
+        Protocol must          The value of the path property
+
+        be HTTPS
+
+        ```
+
+
+        The URL is __only valid for 30 seconds__. Once they are logged in, their
+        session will stay active for up
+
+        to 7 days, after which you will have to re-authenticate them.
+
+
+        __Note__: The `permanentFilters` and `temporaryFilters` parameters are
+        no longer supported.
+      parameters:
+        - $ref: '#/components/parameters/OrganizationId'
+        - $ref: '#/components/parameters/AuthorizationHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SSORequest'
+      responses:
+        '200':
+          description: User successfully created
+          content:
+            application/json:
+              schema:
+                $ref: >-
+                  #/components/schemas/OrganizationsCreateAndAuthenticateUserResponse
+  /organizations/{organizationId}/users:
+    delete:
+      tags:
+        - organizations
+      summary: Remove a User
+      operationId: Organizations_revokeAccess
+      description: This endpoint revokes a user's access to the organization.
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationHeader'
+        - $ref: '#/components/parameters/OrganizationId'
+        - description: The user's encoded email address.
+          name: email
+          in: query
+          example: tom%40example.com
+          schema:
+            type: string
+            format: email
+      responses:
+        '204':
+          description: User successfully removed
+  /:
+    options:
+      tags:
+        - filters
+      summary: Available filters
+      operationId: Filters_listAvailableFilters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FiltersListAvailableFiltersRequest'
+      responses:
+        default:
+          description: Default response
+components:
+  parameters:
+    AuthorizationHeader:
+      description: The [authorization token](/#operation/get-token).
+      name: Authorization
+      in: header
+      required: true
+      example: Bearer ZW1haWxAZXhhbXBsZS5jb206cGFzc3dvcmQ=
+      schema:
+        type: string
+    DatasetId:
+      description: The dataset's id.
+      example: XdzFGgUhXsf7
+    ContentTypeJson:
+      name: Content-Type
+      in: header
+      schema:
+        type: string
+        enum:
+          - application/json
+    AcceptJson:
+      name: Accept
+      in: header
+      schema:
+        type: string
+        enum:
+          - application/json
+    OrganizationId:
+      description: The organization's id.
+      name: organizationId
+      in: path
+      required: true
+      example: qU7zwuA6JQNw7fy8zut4VW5C
+      schema:
+        type: string
+    Path:
+      OrganizationId:
+        name: organizationId
+        in: path
+        required: true
+        type: string
+        example: 5a6658f1abb99b1a00f39451
+      DatasetId:
+        name: datasetId
+        in: path
+        required: true
+        example: 5a6658f1abb99b1a0024af10
+        schema:
+          type: string
+      DocumentId:
+        description: The record's id.
+        name: documentId
+        in: path
+        required: true
+        example: 4d8ee970
+        schema:
+          type: string
+    Limit:
+      description: The number of items to include in the result set.
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 15
+    Offset:
+      description: The starting position of the result set.
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+    QueryOrganizationId:
+      description: The id of the organization to get analytics from.
+      name: orgId
+      in: query
+      required: true
+      example: qU7zwuA6JQNw7fy8zut4VW5C
+      schema:
+        type: string
+    Sort:
+      description: |-
+        The datasets' property to use for sorting the list. The default order is
+        ascending. The mathematical negation symbol (`-`) can be prepended to
+        retrieve results in descending order.
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+    TopicGroupId:
+      description: An optional topic group id.
+      name: topicGroupId
+      in: query
+      required: false
+      example: 245efb1d-971c-4d4b-919e-4e0296782982
+      schema:
+        type: string
+        format: uuid
+    IndicatorGroupId:
+      description: An optional indicator group id.
+      name: indicatorGroupId
+      in: query
+      required: false
+      example: a2571140-28d9-4b15-a1c1-768eefbfb64c
+      schema:
+        type: string
+        format: uuid
+    Category:
+      description: An optional category.
+      name: category
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - praise
+          - problem
+          - suggestion
+          - question
+  requestBodies:
+    AnalyticsRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AnalyticsRequest'
+      required: true
+  schemas:
+    Username:
+      description: The user's email address.
+      type: string
+      format: email
+      example: tom@example.com
+    Password:
+      description: The user's password.
+      type: string
+      format: password
+      example: mypassword
+    Token:
+      type: object
+      properties:
+        jwt:
+          description: A JSON web token object.
+          type: object
+          properties:
+            token:
+              description: >-
+                A token to include in every request (Authorization: Bearer
+                MY_TOKEN).
+              type: string
+              example: hFCSR1sPJPFW6zH.0ygrZcFrWNnJX04.CkBXBFVevJx2baZ
+            expiresIn:
+              description: The number of seconds before the token expires.
+              type: integer
+              example: 604800
+    DatasetId:
+      description: |-
+        The id to use as a path parameter when calling an endpoint to retrieve
+        or modify the dataset.
+      type: string
+      example: 5c4a39716b2acd460052ac60
+    IngestionRequest:
+      type: object
+      required:
+        - records
+      properties:
+        records:
+          description: >-
+            The records to ingest.
+
+            **You need to use field keys (for example, `review_content`) rather
+            than field names
+
+            (`Review Content`) when ingesting records.**
+
+            If you did not set field keys explicitly (through a deprecated
+            endpoint), you can get
+
+            them with our endpoint to [Get a Dataset](/#operation/get-dataset).
+          type: array
+          items:
+            type: object
+      example:
+        records:
+          - author_id: 23199287
+            review_id: 456133
+            review_date: '2012-06-10T00:00:00.000Z'
+            review_content: >-
+              The clerk was extremely rude and the prices were too high. I won't
+              be back.
+            borough: Brooklyn
+          - author_id: 18630125
+            review_id: 737718
+            review_date: '2013-11-23T00:00:00.000Z'
+            review_content: >-
+              The store can get a bit too crowded but the clothes are really
+              nice.
+            borough: Manhattan
+          - author_id: 17943312
+            review_id: 737971
+            review_date: '2013-12-27T00:00:00.000Z'
+            review_content: >-
+              Good prices but the floor was dirty and the changing rooms were
+              too small.
+            borough: Manhattan
+    IngestionResponse:
+      type: object
+      properties:
+        failed:
+          description: The records that failed validation, along with the reason(s) why.
+          type: array
+          items:
+            type: object
+            properties:
+              rejectionReasons:
+                description: An array of validation errors.
+                type: array
+                items:
+                  type: string
+          example:
+            - Reviewer Id: 23199287
+              Review Id: 456133
+              Date: '2012-06-10T00:00:00.000Z'
+              Review: >-
+                The clerk was extremely rude and the prices were too high. I
+                won't be back.
+              Borough: Brooklyn
+              rejectionReasons:
+                - Invalid date in 'Date'
+        enqueued:
+          description: The number of records currently enqueued for processing.
+          type: number
+          example: 17
+        processed:
+          description: The number of records already processed.
+          type: number
+          example: 1003
+    FilterDatasetId:
+      description: The dataset's id.
+      type: string
+      format: ObjectId
+      example: 5a6658f1abb99b1a00f39451
+    FieldId:
+      description: The field's id.
+      type: string
+      format: uuid
+      example: 086e1530-4364-4a1d-b7b2-97e929d188ea
+    Filter:
+      type: object
+      required:
+        - type
+      discriminator:
+        propertyName: type
+      properties:
+        type:
+          description: The filter's type.
+          type: string
+          example: isKnown
+    isKnown:
+      description: The field's value is not empty.
+      required:
+        - field
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: isKnown
+            datasetId:
+              $ref: '#/components/schemas/FilterDatasetId'
+            fieldId:
+              $ref: '#/components/schemas/FieldId'
+    isUnknown:
+      description: The field value is missing or empty.
+      required:
+        - field
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: isUnknown
+            datasetId:
+              $ref: '#/components/schemas/FilterDatasetId'
+            fieldId:
+              $ref: '#/components/schemas/FieldId'
+    NumberFilter:
+      type: object
+      required:
+        - field
+        - value
+      properties:
+        datasetId:
+          $ref: '#/components/schemas/FilterDatasetId'
+        fieldId:
+          $ref: '#/components/schemas/FieldId'
+        value:
+          type: number
+          example: 49
+    greaterThan:
+      description: The field value is greater than a number.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/NumberFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: greaterThan
+    smallerThan:
+      description: The field value is smaller than a number.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/NumberFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: smallerThan
+    equal:
+      description: The field value is equal to a number.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/NumberFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: equal
+    DateTime:
+      description: A datetime string in ISO-8601 format.
+      type: string
+      format: date-time
+      example: '2018-01-31T20:06:15.000Z'
+    DateTimeFilter:
+      type: object
+      required:
+        - field
+        - value
+      properties:
+        datasetId:
+          $ref: '#/components/schemas/FilterDatasetId'
+        fieldId:
+          $ref: '#/components/schemas/FieldId'
+        value:
+          $ref: '#/components/schemas/DateTime'
+    before:
+      description: The field value is before a datetime.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/DateTimeFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: before
+    after:
+      description: The field value is after a datetime.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/DateTimeFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: after
+    beforeOrEqual:
+      description: The field value is before or equal to a datetime.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/DateTimeFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: beforeOrEqual
+    afterOrEqual:
+      description: The field value is after or equal to a datetime.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/DateTimeFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: afterOrEqual
+    inDateRange:
+      description: |-
+        Allows to filter data for a specific dataset field and for a specific
+        time range. Any dataset field identified as date time can be used to
+        filter data.
+      required:
+        - field
+        - value
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - properties:
+            type:
+              description: The filter's type
+              type: string
+              example: inDateRange
+            datasetId:
+              $ref: '#/components/schemas/FilterDatasetId'
+            fieldId:
+              $ref: '#/components/schemas/FieldId'
+            value:
+              description: An array of datetime strings in ISO-8601 format.
+              type: array
+              items:
+                $ref: '#/components/schemas/DateTime'
+              minItems: 2
+              maxItems: 2
+    dateFriendly:
+      description: >-
+        This filter allows to retrieve analytics for a specific pre-defined time
+        range.
+
+        The filter is applied on all included datasets (see source filter) with
+        a
+
+        valid primary date field defined.
+
+        * "today" (since today 00:00)
+
+        * "thisWeek" (since 00:00 Monday)
+
+        * "last7Days" (since 00:00 7 days ago)
+
+        * "thisMonth" (since 00:00 first day of month)
+
+        * "last30Days" (since 00:00 30 days ago)
+
+        * "last90Days" (since 00:00 90 days ago)
+
+        * "thisYear" (since 00:00 first day of current year)
+
+        * "lastYear" (since first day 00:00 of previous year to 00:00 first day
+        of current year)
+      required:
+        - value
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: dateFriendly
+            value:
+              type: string
+              enum:
+                - today
+                - thisWeek
+                - last7Days
+                - thisMonth
+                - last30Days
+                - last90Days
+                - thisYear
+                - lastYear
+                - any
+    primaryDate:
+      description: >-
+        Filters all analytics in the request to be within the specified time
+        range.
+
+        The filter is applied on all included datasets (see source filter) with
+
+        a valid primary date field defined.
+      required:
+        - type
+        - value
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: primaryDate
+            value:
+              description: >-
+                The 'from' property should be lower or equal to the 'to'
+                property,
+
+                otherwise no analytics will be returned.
+              type: object
+              required:
+                - from
+                - to
+              properties:
+                from:
+                  $ref: '#/components/schemas/DateTime'
+                to:
+                  $ref: '#/components/schemas/DateTime'
+    StringFilter:
+      type: object
+      required:
+        - field
+        - value
+      properties:
+        datasetId:
+          $ref: '#/components/schemas/FilterDatasetId'
+        fieldId:
+          $ref: '#/components/schemas/FieldId'
+        value:
+          type: string
+    contains:
+      description: The field value contains a substring.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/StringFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: contains
+    doesNotContain:
+      description: The field value does not contain a substring.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/StringFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: doesNotContain
+    matches:
+      description: The field value is equal to a string.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/StringFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: matches
+    notMatches:
+      description: The field value is not equal to a string.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/StringFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: notMatches
+    source:
+      description: Filter for dataset id and pertaining fields.
+      required:
+        - value
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: source
+            value:
+              description: >-
+                An object where keys are dataset (data source) ids and values
+                are
+
+                arrays of Fields
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FieldId'
+              example:
+                5a6658f1abb99b1a00f39451:
+                  - 7a992336-c0dd-4ff1-97a8-0e3fcd5d8d36
+                  - 60f25103-9286-45aa-80a0-66a610273938
+    AnalyticsFilter:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: array
+          items:
+            type: string
+    matchesOpinion:
+      description: Filter for opinions.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/AnalyticsFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: matchesOpinion
+            value:
+              type: array
+              items:
+                description: An array of opinion strings.
+                type: string
+                example:
+                  - praise
+                  - suggestion
+    matchesTopic:
+      description: Filter for topics.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/AnalyticsFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: matchesTopic
+            value:
+              type: array
+              items:
+                description: An array of topic strings.
+                type: string
+                example:
+                  - bed
+                  - place
+    matchesIndicator:
+      description: Filter for indicators.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/AnalyticsFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: matchesIndicator
+            value:
+              type: array
+              items:
+                description: An array of indicator strings.
+                type: string
+                example:
+                  - quiet
+                  - cool
+                  - charming
+    matchesKeyword:
+      description: Filter for keywords.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/AnalyticsFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: matchesKeyword
+            value:
+              type: array
+              items:
+                description: An array of keyword strings.
+                type: string
+                example:
+                  - tree house
+                  - adventure
+    matchesLabel:
+      description: The field’s predicted label is equal to a string.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - $ref: '#/components/schemas/StringFilter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: matchesLabel
+            value:
+              type: string
+              items:
+                description: A label string.
+                type: string
+                example:
+                  - host
+    labelIsKnown:
+      description: The field has a predicted label.
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - properties:
+            type:
+              description: The filter's type.
+              type: string
+              example: labelIsKnown
+    Organization:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          description: The organization's id.
+          type: string
+          format: ObjectId
+          example: qU7zwuA6JQNw7fy8zut4VW5C
+          readOnly: true
+        ownerId:
+          description: The organization owner's id.
+          type: string
+          example: auth0|592dc9a5c272ed7010e51d35
+          readOnly: true
+        name:
+          description: >-
+            The organization's name. **It must be unique across the Keatext
+            platform**.
+          type: string
+          example: Mulberry and Sons
+        createdAt:
+          description: The organization's creation time.
+          type: string
+          example: '2017-09-07 22:57:19.026+00'
+          readOnly: true
+        updatedAt:
+          description: The organization's last update time.
+          type: string
+          example: '2018-10-19 08:23:11.098+00'
+          readOnly: true
+    OrganizationId:
+      description: The organization's id.
+      type: string
+      example: qU7zwuA6JQNw7fy8zut4VW5C
+    FiltersArray:
+      description: An array of filters to restrict the user's access.
+      type: array
+      items:
+        type: object
+        required:
+          - datasetId
+        properties:
+          datasetId:
+            description: The dataset's id.
+            type: string
+            example: t5dQRMftVcNM
+    SSORequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          $ref: '#/components/schemas/Username'
+        filters:
+          description: >-
+            An array of filters to restrict the user's access. **If the array is
+            empty, the user
+
+            has access to every dataset in the organization**, otherwise they
+            only have access to
+
+            the listed datasets.
+          type: array
+          items:
+            type: object
+            required:
+              - datasetId
+            properties:
+              datasetId:
+                description: The dataset's id.
+                type: string
+                example: t5dQRMftVcNM
+        permissions:
+          description: >-
+            Additional permissions to give the user. <u>These permissions have
+            to be specified
+
+            each time you authenticate the user</u>. Possible values:
+              - `manage-groups`: The user can modify topic and indicator groups.
+          type: array
+          items:
+            type: string
+            enum:
+              - manage-groups
+      example:
+        email: tom@example.com
+        filters:
+          - datasetId: t5dQRMftVcNM
+          - datasetId: XdzFGgUhXsf7
+        permissions:
+          - manage-groups
+    MutateFieldRequest:
+      type: object
+      properties:
+        name:
+          description: The field's display name.
+          type: string
+        isVisible:
+          description: >-
+            Whether or not the field should be visible to end users in the app.
+          type: boolean
+      example:
+        isVisible: false
+    Paginated:
+      type: object
+      required:
+        - pageInfo
+        - results
+      properties:
+        results:
+          type: array
+          items: {}
+        pageInfo:
+          description: Information about the pagination.
+          type: object
+          properties:
+            offset:
+              description: The starting position of the current result set.
+              type: number
+              example: 30
+            nextOffset:
+              description: >-
+                The starting position of the next result set. Set to `offset +
+                currentCount` if there are more results, and to 0 otherwise.
+              type: number
+              example: 45
+            currentCount:
+              description: The number of items in the current result set.
+              type: number
+              example: 15
+            totalCount:
+              description: The total number of items that match your filters.
+              type: number
+              example: 384
+    Error:
+      Response:
+        type: object
+        properties:
+          message:
+            description: A simple message describing the error.
+            type: string
+          details:
+            description: A detailed message explaining the error.
+            type: string
+          reference:
+            description: A reference url pointing to the related documentation.
+            type: string
+    AnalyticsRequest:
+      type: object
+      properties:
+        filters:
+          description: A set of filters to refine the search.
+          type: array
+          items:
+            $ref: '#/components/schemas/Filter'
+          default: []
+          example:
+            - type: isKnown
+              field: 5a6658f1abb99b1a00f39451:myField
+    StatementRecordsResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementRecord'
+    StatementRecord:
+      type: object
+      properties:
+        id:
+          description: The document's id.
+          type: string
+          format: uuid
+          example: 92bc068f-277f-4250-b554-adc0af2742be
+        analyzedFields:
+          description: The document's analyzed fields that contain the statement group.
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/AnalyzedField'
+              - properties:
+                  offsets:
+                    description: >-
+                      The position of each occurrence of the statement group
+                      inside `content`.
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: number
+                      example:
+                        - 0
+                        - 88
+        fields:
+          $ref: '#/components/schemas/FieldsArray'
+    DocumentResponse:
+      type: object
+      properties:
+        datasetId:
+          description: The id of the dataset this document belongs to.
+          type: string
+          example: 5a6658f1abb99b1a00f39451
+        analyzedFields:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/AnalyzedField'
+              - type: object
+                properties:
+                  statements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StatementGroup'
+        fields:
+          $ref: '#/components/schemas/FieldsArray'
+    RecordCount:
+      type: number
+      example: 371
+    StatementGroup:
+      type: object
+      allOf:
+        - properties:
+            topicGroup:
+              $ref: '#/components/schemas/SimpleTopicGroup'
+            indicatorGroup:
+              $ref: '#/components/schemas/SimpleIndicatorGroup'
+            expression:
+              description: The representative statement's text.
+              type: string
+              example: the bedroom was beautiful
+            category:
+              description: The statement group's category.
+              type: string
+              example: praise
+              enum:
+                - praise
+                - problem
+                - question
+                - suggestion
+            recordCount:
+              allOf:
+                - description: The number of documents that contain the statement group.
+                - $ref: '#/components/schemas/RecordCount'
+    TopicsResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/TopicGroup'
+              - $ref: '#/components/schemas/DetailedGroup'
+    IndicatorsResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/IndicatorGroup'
+              - $ref: '#/components/schemas/DetailedGroup'
+    DetailedGroup:
+      type: object
+      allOf:
+        - properties:
+            id:
+              description: The group's id.
+              type: number
+              example: 653191274
+            distribution:
+              description: >-
+                The group's distribution across categories (praise, problem,
+                etc.).
+              type: object
+              properties:
+                problems:
+                  description: The number of problems that contain the group.
+                  type: number
+                praises:
+                  description: The number of praises that contain the group.
+                  type: number
+                questions:
+                  description: The number of questions that contain the group.
+                  type: number
+                suggestions:
+                  description: The number of suggestions that contain the group.
+                  type: number
+              example:
+                problems: 174
+                praises: 85
+                questions: 6
+                suggestions: 12
+            recordCount:
+              allOf:
+                - description: The number of documents that contain the group.
+                - $ref: '#/components/schemas/RecordCount'
+    SimpleTopicGroup:
+      description: The statement group's topic group.
+      type: object
+      properties:
+        rawValue:
+          description: The raw topic found in the representative statement's expression.
+          type: string
+          example: restroom
+        label:
+          description: The topic group's current label.
+          type: string
+          example: bathroom
+        id:
+          description: The topic group id.
+          type: string
+          format: uuid
+          example: 566817db-01d8-425f-acf5-a0b4c0e391a3
+    SimpleIndicatorGroup:
+      description: The statement group's indicator group. **There isn't always one**.
+      type: object
+      properties:
+        rawValue:
+          description: >-
+            The raw indicator found in the representative statement's
+            expression.
+          type: string
+          example: dirty
+        label:
+          description: The indicator group's current label.
+          type: string
+          example: not clean
+        id:
+          description: The indicator group id.
+          type: string
+          format: uuid
+          example: '4f553d2e-e328-420f-9458-bd7120fce0d9 '
+    TopicGroup:
+      type: object
+      properties:
+        label:
+          description: The topic group's representative.
+          type: string
+          example: bedroom
+        members:
+          description: The topics in the group.
+          type: array
+          items:
+            type: string
+          example:
+            - room
+            - bedroom
+            - guestroom
+    IndicatorGroup:
+      type: object
+      properties:
+        label:
+          description: The indicator group's representative.
+          type: string
+          example: beautiful
+        members:
+          description: The indicators in the group.
+          type: array
+          items:
+            type: string
+          example:
+            - pretty
+            - beautiful
+    FieldsArray:
+      type: array
+      items:
+        type: object
+        properties:
+          name:
+            description: The field's name.
+            type: string
+            example: reviewDate
+          content:
+            description: The field's value.
+            example: '2018-01-03T11:03:18.839Z'
+    AnalyzedField:
+      type: object
+      properties:
+        name:
+          description: The field's name.
+          type: string
+          example: reviewContent
+        content:
+          description: The field's value.
+          type: string
+          example: The bedroom was beautiful and the view was amazing.
+    DatasetName:
+      description: The dataset's name.
+      type: string
+      minLength: 1
+      example: Summer 2018 <> NY
+    DatasetDescription:
+      description: The dataset's description.
+      type: string
+      example: Reviews for New York stores for Summer 2018
+    PrimaryDate:
+      description: >-
+        The primary date field's key. This field is used to calculate time
+        trends.
+      type: string
+      example: entry_date
+    CustomerId:
+      description: >-
+        The customer id field's key. This field is used to count the number of
+        affected
+
+        customers in analytics.
+      type: string
+      example: client_id
+    PrimaryKey:
+      description: The primary key field's key. This field uniquely identifies records.
+      type: string
+      example: response_id
+    Dataset:
+      type: object
+      required:
+        - orgId
+        - name
+        - fields
+      properties:
+        description:
+          $ref: '#/components/schemas/DatasetDescription'
+        id:
+          allOf:
+            - $ref: '#/components/schemas/DatasetId'
+            - readOnly: true
+        orgId:
+          description: The id of the organization that owns the dataset.
+          type: string
+          example: 592dc9a6afbf6d1b0095f097
+        name:
+          $ref: '#/components/schemas/DatasetName'
+        fields:
+          description: The dataset's fields.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DatasetV3Field'
+          example:
+            - key: review_id
+              name: Review ID
+              type: number
+            - key: review_date
+              name: Review Date
+              type: datetime
+              dateFormat: YYYY-MM-DD
+            - key: author_id
+              name: Author ID
+              type: number
+            - key: review_content
+              name: Review Content
+              type: string
+              analyze: true
+            - key: borough
+              name: Borough
+              type: string
+              analyze: false
+        primaryDate:
+          allOf:
+            - example: review_date
+            - $ref: '#/components/schemas/PrimaryDate'
+        customerId:
+          allOf:
+            - example: author_id
+            - $ref: '#/components/schemas/CustomerId'
+        primaryKey:
+          allOf:
+            - example: review_id
+            - $ref: '#/components/schemas/PrimaryKey'
+        recordCount:
+          description: The number of records contained within that dataset.
+          type: number
+          readOnly: true
+          example: 12635
+        createdBy:
+          description: The id of the user who created the dataset.
+          type: string
+          readOnly: true
+          example: auth0|592dc9a5c272ed7010e51d35
+        createdAt:
+          description: The date at which the dataset was created.
+          type: string
+          readOnly: true
+          example: '2018-09-07T22:57:19.026Z'
+        updatedAt:
+          description: The date at which the dataset was updated for the last time.
+          type: string
+          example: '2018-10-19T08:23:11.098Z'
+          readOnly: true
+    MutateDataset:
+      type: object
+      properties:
+        description:
+          $ref: '#/components/schemas/DatasetDescription'
+        name:
+          $ref: '#/components/schemas/DatasetName'
+        primaryDate:
+          $ref: '#/components/schemas/PrimaryDate'
+        customerId:
+          $ref: '#/components/schemas/CustomerId'
+        primaryKey:
+          $ref: '#/components/schemas/PrimaryKey'
+    DatasetV3Field:
+      type: object
+      required:
+        - key
+        - type
+      properties:
+        key:
+          description: |-
+            The field's unique identifier. It cannot start with `+` or `-`.
+            This property can be changed at any point with our endpoint to
+            [Update a Dataset Field](/#operation/update-field).
+          type: string
+        name:
+          description: |-
+            The field's display name.
+            The default is the value of the `key` property.
+            This property can be changed at any point with our endpoint to
+            [Update a Dataset Field](/#operation/update-field).
+          type: string
+        type:
+          description: The field's datatype.
+          enum:
+            - string
+            - number
+            - datetime
+            - url
+          type: string
+        analyze:
+          description: >-
+            Whether or not the field contains feedback to analyze. <u>This
+            property
+
+            can only be used when the field's `type` is `string`</u>.
+          type: boolean
+          default: false
+        dateFormat:
+          description: >-
+            The datetime format. <u>This property is required when the field's
+            `type`
+
+            is `datetime`</u>.
+          type: string
+        isVisible:
+          description: |-
+            Whether or not the field should be visible to end users in the app.
+            This property can be changed at any point with our endpoint to
+            [Update a Dataset Field](/#operation/update-field).
+          type: boolean
+          default: true
+      example:
+        key: customer_response_1
+        name: How would you describe your experience?
+        type: string
+        analyze: true
+    AuthenticationGenerateTokenRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          $ref: '#/components/schemas/Username'
+        password:
+          $ref: '#/components/schemas/Password'
+    FiltersListAvailableFiltersRequest:
+      type: object
+      properties:
+        isKnown:
+          $ref: '#/components/schemas/isKnown'
+        isUnknown:
+          $ref: '#/components/schemas/isUnknown'
+        greaterThan:
+          $ref: '#/components/schemas/greaterThan'
+        smallerThan:
+          $ref: '#/components/schemas/smallerThan'
+        equal:
+          $ref: '#/components/schemas/equal'
+        dateFriendly:
+          $ref: '#/components/schemas/dateFriendly'
+        primaryDate:
+          $ref: '#/components/schemas/primaryDate'
+        before:
+          $ref: '#/components/schemas/before'
+        after:
+          $ref: '#/components/schemas/after'
+        beforeOrEqual:
+          $ref: '#/components/schemas/beforeOrEqual'
+        afterOrEqual:
+          $ref: '#/components/schemas/afterOrEqual'
+        inDateRange:
+          $ref: '#/components/schemas/inDateRange'
+        contains:
+          $ref: '#/components/schemas/contains'
+        doesNotContain:
+          $ref: '#/components/schemas/doesNotContain'
+        matches:
+          $ref: '#/components/schemas/matches'
+        notMatches:
+          $ref: '#/components/schemas/notMatches'
+        source:
+          $ref: '#/components/schemas/source'
+        matchesOpinion:
+          $ref: '#/components/schemas/matchesOpinion'
+        matchesTopic:
+          $ref: '#/components/schemas/matchesTopic'
+        matchesIndicator:
+          $ref: '#/components/schemas/matchesIndicator'
+        matchesKeyword:
+          $ref: '#/components/schemas/matchesKeyword'
+        matchesLabel:
+          $ref: '#/components/schemas/matchesLabel'
+        labelIsKnown:
+          $ref: '#/components/schemas/labelIsKnown'
+    AnalyticsGetStatementGroupsResponse:
+      allOf:
+        - $ref: '#/components/schemas/Paginated'
+        - properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/StatementGroup'
+    AnalyticsGetFlexiblyResponse:
+      allOf:
+        - $ref: '#/components/schemas/Paginated'
+        - $ref: '#/components/schemas/StatementRecordsResponse'
+    AnalyticsGetTopicGroupsResponse:
+      allOf:
+        - $ref: '#/components/schemas/Paginated'
+        - $ref: '#/components/schemas/TopicsResponse'
+    AnalyticsGetIndicatorGroupsResponse:
+      allOf:
+        - $ref: '#/components/schemas/Paginated'
+        - $ref: '#/components/schemas/IndicatorsResponse'
+    DatasetsGetOrganizationDataResponse:
+      allOf:
+        - $ref: '#/components/schemas/Paginated'
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/Dataset'
+    OrganizationsListYourResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/Organization'
+    OrganizationsCreateAndAuthenticateUserResponse:
+      type: object
+      properties:
+        path:
+          description: The relative path to authenticate the user.
+          type: string
+          example: /passwordless-login?token=akdAKDYHlkh18384jh1mkj&version=2
+        defaultOrigin:
+          description: The hostname to use if no custom domain is used.
+          type: string
+          example: https://cx.keatext.ai
+x-tagGroups:
+  - tags:
+      - basic-workflow
+    name: Workflows
+  - tags:
+      - authentication
+      - organizations
+      - datasets
+      - analytics
+      - filters
+    name: Current Version
