@@ -21,6 +21,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.endava.cats.generator.simple.StringGenerator.generateValueBasedOnMinMax;
 
@@ -317,6 +318,11 @@ public class OpenAPIModelGenerator {
         logger.trace("Resolving model '{}' to example", name);
         schema = normalizeDiscriminatorMappingsToOneOf(name, schema);
 
+        String schemaRef = schema.get$ref();
+        if (schemaRef != null) {
+            schema = globalContext.getSchemaMap().get(schemaRef.substring(schemaRef.lastIndexOf('/') + 1));
+        }
+
         if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
             return values;
         }
@@ -443,10 +449,10 @@ public class OpenAPIModelGenerator {
             String newKey = "ALL_OF";
             Map<String, Object> finalMap = new HashMap<>();
 
-            boolean innerAllOff = values.keySet()
+            boolean innerAllOff = values.values()
                     .stream()
-                    .filter(key -> !key.startsWith(propertyName + "ALL_OF") || key.startsWith(propertyName + "ALL_OF#null"))
-                    .count() == values.values().stream().filter(val -> !(val instanceof Map m && m.isEmpty())).count();
+                    .filter(key -> key instanceof Map)
+                    .count() == values.size();
 
             for (Map.Entry<String, Object> entry : values.entrySet()) {
                 Object value = entry.getValue();
@@ -461,6 +467,11 @@ public class OpenAPIModelGenerator {
             } else {
                 values.put(propertyName, finalMap);
             }
+            values = values.entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue() != null)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
             this.createMergedSchema(propertyName, composedSchema.getAllOf());
         }
         List<Schema> anyOfNonNullSchemas = this.excludeNullSchemas(composedSchema.getAnyOf());
