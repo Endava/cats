@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -67,6 +69,8 @@ public abstract class JsonUtils {
      * A more strict JSON parser adhering to the RFC4627.
      */
     public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
+
+    private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*])+\\w*");
 
     /**
      * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
@@ -342,13 +346,16 @@ public abstract class JsonUtils {
         return toEliminateKey;
     }
 
+    public static String escapeFullPath(String jsonPath) {
+        Matcher matcher = JSON_SQUARE_BR_KEYS.matcher(jsonPath);
+        StringBuilder sb = new StringBuilder();
 
-    public static String escapeFullPath(String input) {
-        if (input.startsWith("$.") && input.contains("[")) {
-            return "$." + "['" + input.substring(2) + "']";
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "['" + Matcher.quoteReplacement(matcher.group(0)) + "']");
         }
+        matcher.appendTail(sb);
 
-        return input;
+        return sb.toString();
     }
 
     /**
@@ -361,7 +368,7 @@ public abstract class JsonUtils {
     public static Object getVariableFromJson(String jsonPayload, String value) {
         try {
             DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
-            return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
+            return jsonDoc.read(escapeFullPath(JsonUtils.sanitizeToJsonPath(value)));
         } catch (JsonPathException | IllegalArgumentException e) {
             LOGGER.debug("Expected variable {} was not found. Setting to NOT_SET", value);
             return NOT_SET;
