@@ -32,20 +32,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.model.generator.OpenAPIModelGenerator.SYNTH_SCHEMA_NAME;
@@ -57,7 +44,6 @@ import static com.endava.cats.model.generator.OpenAPIModelGenerator.SYNTH_SCHEMA
 public class FuzzingDataFactory {
     private static final String ANY_OF = "ANY_OF";
     private static final String ONE_OF = "ONE_OF";
-
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingDataFactory.class);
     private final FilesArguments filesArguments;
     private final ProcessingArguments processingArguments;
@@ -498,7 +484,7 @@ public class FuzzingDataFactory {
      */
     private List<String> addNewCombination(JsonElement jsonElement) {
         Set<String> result = new TreeSet<>();
-        Stack<JsonElement> stack = new Stack<>();
+        Deque<JsonElement> stack = new ArrayDeque<>();
         Set<String> visited = new HashSet<>();
 
         stack.push(jsonElement);
