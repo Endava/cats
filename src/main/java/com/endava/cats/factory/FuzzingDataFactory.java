@@ -31,6 +31,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -410,7 +411,7 @@ public class FuzzingDataFactory {
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
         OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(), processingArguments.getSelfReferenceDepth());
-        List<String> result = this.generateSample(reqSchemaName, generator);
+        List<String> result = this.generateSample(reqSchemaName, generator, true);
 
         if (mediaType != null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
             /*when dealing with ArraySchemas we make sure we have 2 elements in the array*/
@@ -419,7 +420,7 @@ public class FuzzingDataFactory {
         return result;
     }
 
-    private List<String> generateSample(String reqSchemaName, OpenAPIModelGenerator generator) {
+    private List<String> generateSample(String reqSchemaName, OpenAPIModelGenerator generator, boolean createXxxOfCombinations) {
         long t0 = System.currentTimeMillis();
         logger.debug("Starting to generate example for schema name {}", reqSchemaName);
         Map<String, String> examples = generator.generate(reqSchemaName);
@@ -431,7 +432,11 @@ public class FuzzingDataFactory {
         String payloadSample = examples.get("example");
 
         payloadSample = this.squashAllOfElements(payloadSample);
-        List<String> payloadCombinationsBasedOnOneOfAndAnyOf = this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
+        List<String> payloadCombinationsBasedOnOneOfAndAnyOf = List.of(payloadSample);
+
+        if (createXxxOfCombinations) {
+            payloadCombinationsBasedOnOneOfAndAnyOf = this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
+        }
 
         if (processingArguments.getLimitXxxOfCombinations() > 0) {
             int maxCombinations = Math.min(processingArguments.getLimitXxxOfCombinations(), payloadCombinationsBasedOnOneOfAndAnyOf.size());
@@ -633,21 +638,7 @@ public class FuzzingDataFactory {
     private JsonElement squashAllOf(JsonElement element) {
         if (element.isJsonObject()) {
             JsonObject originalObject = element.getAsJsonObject();
-            JsonObject newObject = new JsonObject();
-            for (String key : originalObject.keySet()) {
-                if (key.equalsIgnoreCase("ALL_OF") || key.endsWith("ALL_OF#null")) {
-                    JsonElement jsonElement = originalObject.get(key);
-                    if (jsonElement.isJsonObject()) {
-                        JsonObject allOfObject = originalObject.getAsJsonObject(key);
-                        mergeJsonObject(newObject, squashAllOf(allOfObject));
-                    } else {
-                        newObject.add(key.substring(0, key.indexOf("ALL_OF")), squashAllOf(jsonElement));
-                    }
-                } else if (!key.contains("ALL_OF")) {
-                    newObject.add(key, squashAllOf(originalObject.get(key)));
-                }
-            }
-            return newObject;
+            return buildNewObject(originalObject);
         } else if (element.isJsonArray()) {
             JsonArray originalArray = element.getAsJsonArray();
             JsonArray newArray = new JsonArray();
@@ -658,6 +649,25 @@ public class FuzzingDataFactory {
         } else {
             return element;
         }
+    }
+
+    @NotNull
+    private JsonObject buildNewObject(JsonObject originalObject) {
+        JsonObject newObject = new JsonObject();
+        for (String key : originalObject.keySet()) {
+            if (key.equalsIgnoreCase("ALL_OF") || key.endsWith("ALL_OF#null")) {
+                JsonElement jsonElement = originalObject.get(key);
+                if (jsonElement.isJsonObject()) {
+                    JsonObject allOfObject = originalObject.getAsJsonObject(key);
+                    mergeJsonObject(newObject, squashAllOf(allOfObject));
+                } else {
+                    newObject.add(key.substring(0, key.indexOf("ALL_OF")), squashAllOf(jsonElement));
+                }
+            } else if (!key.contains("ALL_OF")) {
+                newObject.add(key, squashAllOf(originalObject.get(key)));
+            }
+        }
+        return newObject;
     }
 
     private void mergeJsonObject(JsonObject original, JsonElement toMerge) {
@@ -728,7 +738,7 @@ public class FuzzingDataFactory {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
                 String respSchemaName = this.getSchemaName(responseSchemaRef);
-                List<String> samples = this.generateSample(respSchemaName, generator);
+                List<String> samples = this.generateSample(respSchemaName, generator, processingArguments.isGenerateAllXxxCombinationsForResponses());
 
                 responses.put(responseCode, samples);
             } else {
