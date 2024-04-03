@@ -187,6 +187,13 @@ class JsonUtilsTest {
         Assertions.assertThat(result).isEqualTo(json);
     }
 
+    @ParameterizedTest
+    @CsvSource({"$.sort[name][lastName],$.['sort[name][lastName]']", "$.sort[*],$.sort[*]", "$.sort[10],$.sort[10]", "$.sort[*].sort[name],$.sort[*].['sort[name]']"})
+    void shouldProperlyEncloseJsonPathsWithSquareBrackets(String path, String expected) {
+        String actual = JsonUtils.escapeFullPath(path);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
     @Test
     void shouldReturnAllFieldsFromJson() {
         String json = """
