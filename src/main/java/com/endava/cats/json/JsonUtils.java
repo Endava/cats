@@ -70,7 +70,7 @@ public abstract class JsonUtils {
      */
     public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
 
-    private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*])+\\w*");
+    private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*)])+\\w*");
 
     /**
      * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
@@ -404,7 +404,7 @@ public abstract class JsonUtils {
      * @return true if the given property is cyclic with the given depth, false otherwise
      */
     public static boolean isCyclicReference(String currentProperty, int depth) {
-        String[] properties = currentProperty.split("#", -1);
+        String[] properties = currentProperty.split("[#_]", -1);
 
         if (properties.length < depth) {
             return false;
