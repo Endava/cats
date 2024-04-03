@@ -314,6 +314,9 @@ public class OpenAPIModelGenerator {
     }
 
     private Object resolveModelToExample(String name, Schema schema) {
+        if (JsonUtils.isCyclicReference(name, selfReferenceDepth)) {
+            return null;
+        }
         Map<String, Object> values = new HashMap<>();
         logger.trace("Resolving model '{}' to example", name);
         schema = normalizeDiscriminatorMappingsToOneOf(name, schema);
@@ -324,7 +327,7 @@ public class OpenAPIModelGenerator {
         }
 
         if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
-            return values;
+            return null;
         }
 
         if (schema.getProperties() != null) {
@@ -347,6 +350,9 @@ public class OpenAPIModelGenerator {
             globalContext.getDiscriminators().add(schema.getDiscriminator());
         }
         String previousPropertyValue = currentProperty;
+        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
+            return;
+        }
         for (Object propertyName : schema.getProperties().keySet()) {
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
 

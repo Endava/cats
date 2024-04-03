@@ -68,7 +68,7 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml");
 
         Assertions.assertThat(data).hasSizeGreaterThanOrEqualTo(2);
-        
+
         Assertions.assertThat(data.get(0).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
         Assertions.assertThat(data.get(1).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
     }
@@ -381,9 +381,9 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.get(0);
-        Object var1 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy");
+        String var1 = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource"));
         Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource");
-        Assertions.assertThat(var1).hasToString("{}");
+        Assertions.assertThat(var1).isNotEqualTo("NOT_SET");
         Assertions.assertThat(var2).hasToString("NOT_SET");
     }
 
@@ -393,9 +393,9 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.get(0);
-        Object var1 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.addedBy");
+        String var1 = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource"));
         Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.addedBy.credentialSource");
-        Assertions.assertThat(var1).hasToString("{}");
+        Assertions.assertThat(var1).isNotEqualTo("NOT_SET");
         Assertions.assertThat(var2).hasToString("NOT_SET");
     }
 
