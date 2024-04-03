@@ -321,6 +321,7 @@ public class OpenAPIModelGenerator {
         if (JsonUtils.isCyclicReference(name, selfReferenceDepth)) {
             return null;
         }
+
         Map<String, Object> values = new HashMap<>();
         logger.trace("Resolving model '{}' to example", name);
         schema = normalizeDiscriminatorMappingsToOneOf(name, schema);
@@ -328,10 +329,6 @@ public class OpenAPIModelGenerator {
         String schemaRef = schema.get$ref();
         if (schemaRef != null) {
             schema = globalContext.getSchemaMap().get(schemaRef.substring(schemaRef.lastIndexOf('/') + 1));
-        }
-
-        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
-            return null;
         }
 
         if (schema.getProperties() != null) {
@@ -348,16 +345,21 @@ public class OpenAPIModelGenerator {
     }
 
     private void processSchemaProperties(String name, Schema schema, Map<String, Object> values) {
+        if (JsonUtils.isCyclicReference(name, selfReferenceDepth)) {
+            return;
+        }
+
         logger.trace("Creating example from model values {}", name);
 
         if (schema.getDiscriminator() != null) {
             globalContext.getDiscriminators().add(schema.getDiscriminator());
         }
         String previousPropertyValue = currentProperty;
-        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
-            return;
-        }
+
         for (Object propertyName : schema.getProperties().keySet()) {
+            if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
+                return;
+            }
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
 
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
