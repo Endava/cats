@@ -73,6 +73,10 @@ public class ProcessingArguments {
             description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int limitXxxOfCombinations = 10;
 
+    @CommandLine.Option(names = {"--generateAllXxxCombinationsForResponses"},
+            description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean generateAllXxxCombinationsForResponses = false;
+
     /**
      * Represents a wildcard pattern for JSON content type with optional parameters.
      */

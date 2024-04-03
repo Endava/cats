@@ -104,6 +104,10 @@ public class OpenAPIModelGenerator {
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
+        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
+            return null;
+        }
+
         Object enumOrDefault = this.getEnumOrDefault(propertySchema);
 
         if (enumOrDefault != null) {
@@ -457,7 +461,7 @@ public class OpenAPIModelGenerator {
 
             boolean innerAllOff = values.values()
                     .stream()
-                    .filter(key -> key instanceof Map)
+                    .filter(Map.class::isInstance)
                     .count() == values.size();
 
             for (Map.Entry<String, Object> entry : values.entrySet()) {

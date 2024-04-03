@@ -413,7 +413,7 @@ public abstract class JsonUtils {
         for (int i = 0; i < properties.length - 1; i++) {
             for (int j = i + 1; j <= properties.length - 1; j++) {
                 if (properties[i].equalsIgnoreCase(properties[j])) {
-                    LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
+                    LOGGER.trace("Found cyclic reference for {}", currentProperty);
                     return true;
                 }
             }
