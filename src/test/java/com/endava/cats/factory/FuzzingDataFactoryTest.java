@@ -54,6 +54,24 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldFilterOutXxxExamples() throws Exception {
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(2);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+
+        List<FuzzingData> dataList = setupFuzzingData("/api/v2/meta/tables/{tableId}/columns", "src/test/resources/nocodb.yaml");
+
+        Assertions.assertThat(dataList).hasSize(2);
+        FuzzingData firstData = dataList.get(1);
+        Assertions.assertThat(firstData.getPayload()).containsAnyOf("ANY_OF", "ONE_OF");
+
+        Mockito.when(processingArguments.isFilterXxxFromRequestPayloads()).thenReturn(true);
+        List<FuzzingData> secondDataList = setupFuzzingData("/api/v2/meta/tables/{tableId}/columns", "src/test/resources/nocodb.yaml");
+        Assertions.assertThat(secondDataList).hasSize(1);
+        FuzzingData secondData = dataList.get(0);
+        Assertions.assertThat(secondData.getPayload()).doesNotContain("ANY_OF", "ONE_OF");
+    }
+
+    @Test
     void shouldGenerateMultiplePayloadsWhenRootOneOfAndDiscriminatorAndAllOfAndMappings() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/variant", "src/test/resources/issue_69.yml");
         Assertions.assertThat(data).hasSize(1);

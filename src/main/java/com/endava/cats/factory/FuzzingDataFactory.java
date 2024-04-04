@@ -438,6 +438,13 @@ public class FuzzingDataFactory {
             payloadCombinationsBasedOnOneOfAndAnyOf = this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
         }
 
+        if (processingArguments.isFilterXxxFromRequestPayloads()) {
+            payloadCombinationsBasedOnOneOfAndAnyOf = payloadCombinationsBasedOnOneOfAndAnyOf
+                    .stream()
+                    .filter(payload -> !(payload.contains("ANY_OF") || payload.contains("ONE_OF")))
+                    .toList();
+        }
+
         if (processingArguments.getLimitXxxOfCombinations() > 0) {
             int maxCombinations = Math.min(processingArguments.getLimitXxxOfCombinations(), payloadCombinationsBasedOnOneOfAndAnyOf.size());
             return payloadCombinationsBasedOnOneOfAndAnyOf.stream()
@@ -526,7 +533,7 @@ public class FuzzingDataFactory {
             });
         }
 
-        return result.stream().toList();
+        return new ArrayList<>(result);
     }
 
     private Map<String, Map<String, JsonElement>> joinCommonOneAndAnyOfs(Map<String, Map<String, JsonElement>> startingOneAnyOfs) {
