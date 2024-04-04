@@ -246,7 +246,7 @@ public abstract class JsonUtils {
     public static String deleteNode(String payload, String node) {
         if (StringUtils.isNotBlank(payload)) {
             try {
-                return JsonPath.parse(payload).delete(JsonUtils.sanitizeToJsonPath(node)).jsonString();
+                return JsonPath.parse(payload).delete(escapeFullPath(sanitizeToJsonPath(node))).jsonString();
             } catch (PathNotFoundException e) {
                 return payload;
             }
@@ -351,11 +351,18 @@ public abstract class JsonUtils {
         StringBuilder sb = new StringBuilder();
 
         while (matcher.find()) {
-            matcher.appendReplacement(sb, "['" + Matcher.quoteReplacement(matcher.group(0)) + "']");
+            matcher.appendReplacement(sb, jsonPathEscape(Matcher.quoteReplacement(matcher.group(0))));
         }
         matcher.appendTail(sb);
 
-        return sb.toString();
+        String interim = sb.toString();
+        return Arrays.stream(interim.split("\\.", -1))
+                .map(item -> item.matches("^\\$[a-zA-Z]+") ? jsonPathEscape(item) : item)
+                .collect(Collectors.joining("."));
+    }
+
+    private static String jsonPathEscape(String str) {
+        return "['" + str + "']";
     }
 
     /**
@@ -440,12 +447,13 @@ public abstract class JsonUtils {
     public static String addElement(String initialPayload, String pathToKey, String newValue) {
         DocumentContext documentContext = JsonPath.parse(initialPayload, SUPPRESS_EXCEPTIONS_CONFIGURATION);
         DocumentContext newValueContext = JsonPath.parse(newValue, SUPPRESS_EXCEPTIONS_CONFIGURATION);
-        Map<String, Object> keysToMerge = newValueContext.read("$");
+        Object keysToMerge = newValueContext.read("$");
 
         Object existingValue = documentContext.read(pathToKey);
-        if (existingValue instanceof Map m) {
-            m.putAll(keysToMerge);
+        if (existingValue instanceof Map m && keysToMerge instanceof Map m2) {
+            m.putAll(m2);
         }
+
         documentContext.set(pathToKey, existingValue);
 
         return documentContext.jsonString();
