@@ -73,9 +73,14 @@ public class ProcessingArguments {
             description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int limitXxxOfCombinations = 10;
 
-    @CommandLine.Option(names = {"--generateAllXxxCombinationsForResponses"},
-            description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"},
+            description = "Generate anyOf/oneOf combinations also for response schemas. By default it creates a one response payload with all possibilities. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean generateAllXxxCombinationsForResponses = false;
+
+    @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"},
+            description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. " +
+                    "Setting this to true will eliminate them as potential candidates. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean filterXxxFromRequestPayloads = false;
 
     /**
      * Represents a wildcard pattern for JSON content type with optional parameters.
