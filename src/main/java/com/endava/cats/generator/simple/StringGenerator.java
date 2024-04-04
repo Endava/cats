@@ -344,7 +344,7 @@ public class StringGenerator {
         }
         int minLength = property.getMinLength() != null ? property.getMinLength() : -1;
         int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : -1;
-        String pattern = property.getPattern() != null ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
+        String pattern = StringUtils.isNotBlank(property.getPattern()) ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         if (maxLength < minLength) {
             maxLength = minLength;
         }
