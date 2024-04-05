@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
@@ -25,7 +26,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <jansi.version>2.4.1</jansi.version>
-        <lombok.version>1.18.30</lombok.version>
+        <lombok.version>1.18.32</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
         <openapi-generator.version>7.4.0</openapi-generator.version>
@@ -45,7 +46,7 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.8.2</quarkus.platform.version>
+        <quarkus.platform.version>3.9.2</quarkus.platform.version>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -53,26 +54,27 @@
         <assertj-core.version>3.25.3</assertj-core.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
-        <spring-integration-core.version>6.2.2</spring-integration-core.version>
+        <spring-integration-core.version>6.2.3</spring-integration-core.version>
         <json.version>20240303</json.version>
         <error-prone.version>2.18.0</error-prone.version>
         <archunit-junit5.version>1.2.1</archunit-junit5.version>
-        <json-smart.version>2.5.0</json-smart.version>
+        <json-smart.version>2.5.1</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-        <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
-        <maven-gpg-plugin.version>3.2.1</maven-gpg-plugin.version>
+        <maven-gpg-plugin.version>3.2.2</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
         <okio.version>3.9.0</okio.version>
-        <wiremock.version>3.4.2</wiremock.version>
+        <wiremock.version>3.5.2</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
+        <kotlin-reflect.version>1.9.23</kotlin-reflect.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -125,7 +127,7 @@
                         <configuration>
                             <rules>
                                 <requireMavenVersion>
-                                    <version>[3.5.4,)</version>
+                                    <version>[3.9.4,)</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>
@@ -570,6 +572,12 @@
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
             <version>${javafaker.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-reflect</artifactId>
+            <version>${kotlin-reflect.version}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
