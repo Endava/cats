@@ -1,0 +1,45 @@
+{
+  "person": {
+    "name": "John Doe",
+    "age": 30,
+    "address": {
+      "street": "123 Main St",
+      "city": "New York",
+      "zip": "10001"
+    }
+  },
+  "company": {
+    "name": "Acme Inc",
+    "employees": [
+      {
+        "name": "Alice",
+        "position": "Manager"
+      },
+      {
+        "name": "Bob",
+        "position": "Developer"
+      }
+    ],
+    "location": {
+      "country": "USA",
+      "city": "San Francisco"
+    }
+  },
+  "products": [
+    {
+      "name": "Widget",
+      "price": 19.99
+    },
+    {
+      "name": "Gadget",
+      "price": 29.99
+    }
+  ],
+  "tags": [
+    "tech",
+    "gadgets",
+    "electronics"
+  ],
+  "isActive": true,
+  "creationDate": "2024-04-05T12:00:00Z"
+}

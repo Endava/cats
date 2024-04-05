@@ -54,8 +54,9 @@ class TemplateFuzzCommandTest {
 
     @Test
     void shouldRunWithFileData() {
-        templateFuzzCommand.data = "@src/test/resources/dict.txt";
+        templateFuzzCommand.data = "@src/test/resources/data.json";
         templateFuzzCommand.url = "localhost";
+
         templateFuzzCommand.run();
         Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
     }

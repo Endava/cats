@@ -9,9 +9,11 @@ import com.endava.cats.args.UserArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.VersionProvider;
 import com.google.common.net.HttpHeaders;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -23,6 +25,7 @@ import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -110,22 +113,22 @@ public class TemplateFuzzCommand implements Runnable {
     @CommandLine.Option(names = {"--targetFields", "-t"},
             description = "A comma separated list of fully qualified request fields, HTTP headers, path and query parameters that the Fuzzers will apply to." +
                     "For HTTP requests with bodies fuzzing will only run on request fields and/or HTTP headers. For HTTP request without bodies fuzzing will run on path and query parameters " +
-                    "and/or HTTP headers.", split = ",", required = true)
+                    "and/or HTTP headers.", split = ",")
     Set<String> targetFields;
 
     @Override
     public void run() {
         try {
-            reportingArguments.processLogData();
-            validateRequiredFields();
+            this.init();
             String payload = this.loadPayload();
             logger.debug("Resolved payload: {}", payload);
+            Set<String> fieldsToFuzz = getFieldsToFuzz(payload);
             FuzzingData fuzzingData = FuzzingData.builder().path(url)
                     .contractPath(url)
                     .processedPayload(payload)
                     .method(httpMethod)
                     .headers(this.getHeaders())
-                    .targetFields(targetFields)
+                    .targetFields(fieldsToFuzz)
                     .build();
 
             beforeFuzz();
@@ -137,7 +140,29 @@ public class TemplateFuzzCommand implements Runnable {
         }
     }
 
+    private void init() {
+        testCaseListener.startSession();
+        reportingArguments.processLogData();
+        ConsoleUtils.initTerminalWidth(spec);
+        validateRequiredFields();
+        renderHeaderIfSummary();
+    }
+
+    private void renderHeaderIfSummary() {
+        if (reportingArguments.isSummaryInConsole()) {
+            ConsoleUtils.renderHeader(" FUZZING ");
+        }
+    }
+
+    private Set<String> getFieldsToFuzz(String payload) {
+        if (!HttpMethod.requiresBody(httpMethod)) {
+            return Set.of();
+        }
+        return targetFields == null || targetFields.isEmpty() ? new HashSet<>(JsonUtils.getAllFieldsOf(payload)) : targetFields;
+    }
+
     private void afterFuzz(String path, String method) {
+        reportingArguments.enableAdditionalLoggingIfSummary();
         testCaseListener.afterFuzz(path, method);
         testCaseListener.endSession();
     }
