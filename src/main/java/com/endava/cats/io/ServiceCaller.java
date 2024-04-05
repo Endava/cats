@@ -14,6 +14,7 @@ import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.KeyValuePair;
+import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
@@ -271,6 +272,16 @@ public class ServiceCaller {
             url = this.addUriParams(processedPayload, data, url);
         }
         url = this.addAdditionalQueryParams(url, data.getRelativePath());
+        url = this.addPathParamsIfNotReplaced(url, data.getPathParamsPayload());
+        return url;
+    }
+
+    String addPathParamsIfNotReplaced(String url, String pathParamsPayload) {
+        Set<String> pathVariables = OpenApiUtils.getPathVariables(url);
+        for (String pathVariable : pathVariables) {
+            String pathValue = String.valueOf(JsonUtils.getVariableFromJson(pathParamsPayload, pathVariable));
+            url = url.replace("{" + pathVariable + "}", pathValue);
+        }
         return url;
     }
 

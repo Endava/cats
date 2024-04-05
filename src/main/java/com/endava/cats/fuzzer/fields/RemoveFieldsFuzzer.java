@@ -92,7 +92,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                     .payload(finalJsonPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
-                    .contentType(data.getFirstRequestContentType()).build());
+                    .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload()).build());
             testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
         } else {
             testCaseListener.skipTest(logger, "Field is from a different ANY_OF or ONE_OF payload");

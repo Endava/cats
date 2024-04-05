@@ -59,6 +59,7 @@ public class FuzzingData {
     private String processedPayload;
     private Set<String> targetFields;
     private int selfReferenceDepth;
+    private String pathParamsPayload;
 
     @Builder.Default
     private final Map<String, List<String>> responseContentTypes = Collections.emptyMap();

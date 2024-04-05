@@ -483,4 +483,17 @@ class ServiceCallerTest {
         Assertions.assertThat(catsResponse).isNotNull();
         wireMockServer.verify(WireMock.getRequestedFor(WireMock.urlEqualTo(expectedUrl)));
     }
+
+    @Test
+    void shouldReplacePathVariables() {
+        String json = """
+                {
+                    "configId": "123",
+                    "tenantId": "abcd"
+                }
+                """;
+        String url = "http://localhost:8080/configs/{configId}/tenants/{tenantId}";
+        String result = serviceCaller.addPathParamsIfNotReplaced(url, json);
+        Assertions.assertThat(result).isEqualTo("http://localhost:8080/configs/123/tenants/abcd");
+    }
 }
