@@ -119,6 +119,7 @@ public class FieldsIteratorExecutor {
                         .httpMethod(context.getFuzzingData().getMethod())
                         .contentType(context.getFuzzingData().getFirstRequestContentType())
                         .replaceRefData(context.isReplaceRefData())
+                        .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
                         .build());
 
         if (context.getExpectedResponseCode() != null) {

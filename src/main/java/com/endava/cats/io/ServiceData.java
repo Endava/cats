@@ -23,6 +23,7 @@ public class ServiceData {
     private final String payload;
     private final HttpMethod httpMethod;
     private final String contentType;
+    private final String pathParamsPayload;
     @Builder.Default
     private final boolean replaceRefData = true;
     @Builder.Default

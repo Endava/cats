@@ -69,6 +69,7 @@ public class SimpleExecutor {
                             .skippedHeaders(context.getSkippedHeaders())
                             .addUserHeaders(context.isAddUserHeaders())
                             .replaceUrlParams(context.isReplaceUrlParams())
+                            .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
                             .build());
 
             if (context.getResponseProcessor() != null) {

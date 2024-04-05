@@ -9,6 +9,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.json.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.model.KeyValuePair;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
@@ -208,8 +209,11 @@ public class FuzzingDataFactory {
         List<String> reqSchemaNames = this.getCurrentRequestSchemaName(mediaType);
         logger.debug("Request schema names identified for path {}, method {}: {}", path, method, reqSchemaNames);
 
-        Set<String> examples = this.extractExamples(mediaType);
+        KeyValuePair<String, Schema<?>> paramsSchema = this.createSyntheticSchemaForGet(operation);
+        //we need this in order to be able to generate path params if not supplied by the user
+        String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).get(0);
 
+        Set<String> examples = this.extractExamples(mediaType);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
@@ -242,6 +246,7 @@ public class FuzzingDataFactory {
                             .skipFieldFormats(filterArguments.getSkipFieldFormats())
                             .skippedFieldsForAllFuzzers(filterArguments.getSkipFieldsToBeSkippedForAllFuzzers())
                             .responseHeaders(responseHeaders)
+                            .pathParamsPayload(pathParamsExample)
                             .build()).toList());
         }
 
@@ -285,13 +290,11 @@ public class FuzzingDataFactory {
             return Collections.emptyList();
         }
 
-        Schema<?> syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
-
-        globalContext.getSchemaMap().put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
-        Set<String> queryParams = this.extractQueryParams(syntheticSchema);
+        KeyValuePair<String, Schema<?>> syntheticSchema = createSyntheticSchemaForGet(operation);
+        Set<String> queryParams = this.extractQueryParams(syntheticSchema.getValue());
         logger.debug("Query params for path {}, method {}: {}", path, method, queryParams);
 
-        List<String> payloadSamples = this.getRequestPayloadsSamples(null, SYNTH_SCHEMA_NAME + operation.getOperationId());
+        List<String> payloadSamples = this.getRequestPayloadsSamples(null, syntheticSchema.getKey());
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
@@ -306,7 +309,7 @@ public class FuzzingDataFactory {
                         .headers(this.extractHeaders(operation))
                         .payload(payload)
                         .responseCodes(operation.getResponses().keySet())
-                        .reqSchema(syntheticSchema)
+                        .reqSchema(syntheticSchema.getValue())
                         .pathItem(item)
                         .schemaMap(globalContext.getSchemaMap())
                         .responses(responses)
@@ -326,6 +329,13 @@ public class FuzzingDataFactory {
                         .responseHeaders(responseHeaders)
                         .build())
                 .toList();
+    }
+
+    private KeyValuePair<String, Schema<?>> createSyntheticSchemaForGet(Operation operation) {
+        Schema<?> syntheticSchema = this.createSyntheticSchemaForGet(operation.getParameters());
+        globalContext.getSchemaMap().put(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
+
+        return new KeyValuePair<>(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
     }
 
     private Set<String> extractExamples(MediaType mediaType) {

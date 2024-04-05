@@ -78,6 +78,7 @@ public class HeadersIteratorExecutor {
                                     .queryParams(context.getFuzzingData().getQueryParams())
                                     .httpMethod(context.getFuzzingData().getMethod())
                                     .contentType(context.getFuzzingData().getFirstRequestContentType())
+                                    .pathParamsPayload(context.getFuzzingData().getPathParamsPayload())
                                     .build();
 
                             CatsResponse response = serviceCaller.call(serviceData);
