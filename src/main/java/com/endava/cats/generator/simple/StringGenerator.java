@@ -146,11 +146,17 @@ public class StringGenerator {
      * @return a random string corresponding to the given pattern and min, max restrictions
      */
     public static String generate(String pattern, int min, int max) {
+        LOGGER.debug("Generate for pattern {} min {} max {}", pattern, min, max);
         pattern = cleanPattern(pattern);
         String initialVersion = generateUsingRgxGenerator(pattern, min, max);
         if (initialVersion.matches(pattern)) {
             LOGGER.debug("RGX generated value {} matched {}", initialVersion, pattern);
             return initialVersion;
+        }
+        String secondVersion = generateUsingRgxGenerator(removeLookaheadAssertions(pattern), min, max);
+        if (secondVersion.matches(pattern)) {
+            LOGGER.debug("RGX generated value with lookaheads removed {} matched {}", secondVersion, pattern);
+            return secondVersion;
         }
 
         try {
@@ -342,8 +348,8 @@ public class StringGenerator {
         if (!CollectionUtils.isEmpty(property.getEnum())) {
             return String.valueOf(property.getEnum().get(0));
         }
-        int minLength = property.getMinLength() != null ? property.getMinLength() : -1;
-        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : -1;
+        int minLength = property.getMinLength() != null ? property.getMinLength() : 1;
+        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 50;
         String pattern = StringUtils.isNotBlank(property.getPattern()) ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         if (maxLength < minLength) {
             maxLength = minLength;
@@ -371,5 +377,19 @@ public class StringGenerator {
      */
     public static List<String> getUnsupportedMediaTypes() {
         return UNSUPPORTED_MEDIA_TYPES;
+    }
+
+    /**
+     * Removes lookaheads which might cause current generators to fail.
+     *
+     * @param regex the given regex
+     * @return a regex with lookaheads removed
+     */
+    public static String removeLookaheadAssertions(String regex) {
+        // Replace negative lookahead (?!) with an empty string
+        regex = regex.replaceAll("\\(\\?!.*?\\)", "");
+        // Replace positive lookahead (?=) with an empty string
+        regex = regex.replaceAll("\\(\\?=.+?\\)", "");
+        return regex;
     }
 }
