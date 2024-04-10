@@ -121,13 +121,13 @@ public abstract class JsonUtils {
     }
 
     /**
-     * Replaces "#" with "." inside the given path.
+     * Replaces "#" with "." inside the given path and escapes if needed.
      *
      * @param input the input path
      * @return a path replacing "#"  with "."
      */
     public static String sanitizeToJsonPath(String input) {
-        return input.replace("#", ".");
+        return escapeFullPath(escapeSpaces(input.replace("#", ".")));
     }
 
     /**
@@ -246,7 +246,7 @@ public abstract class JsonUtils {
     public static String deleteNode(String payload, String node) {
         if (StringUtils.isNotBlank(payload)) {
             try {
-                return JsonPath.parse(payload).delete(escapeFullPath(sanitizeToJsonPath(node))).jsonString();
+                return JsonPath.parse(payload).delete(sanitizeToJsonPath(node)).jsonString();
             } catch (PathNotFoundException e) {
                 return payload;
             }
@@ -293,7 +293,7 @@ public abstract class JsonUtils {
                     try {
                         String nodeToDelete = pathTowardsReplacement + "." + escapeSpaces(toEliminateKey);
                         LOGGER.debug("to delete {}", nodeToDelete);
-                        finalPayload.delete(JsonPath.compile(escapeFullPath(nodeToDelete)).getPath());
+                        finalPayload.delete(escapeFullPath(nodeToDelete));
                     } catch (PathNotFoundException ex) {
                         LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
                     }
@@ -375,7 +375,7 @@ public abstract class JsonUtils {
     public static Object getVariableFromJson(String jsonPayload, String value) {
         try {
             DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
-            return jsonDoc.read(escapeFullPath(JsonUtils.sanitizeToJsonPath(value)));
+            return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
         } catch (JsonPathException | IllegalArgumentException e) {
             LOGGER.debug("Expected variable {} was not found. Setting to NOT_SET", value);
             return NOT_SET;
