@@ -277,7 +277,7 @@ public abstract class JsonUtils {
             return payload;
         } catch (PathNotFoundException e) {
             String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
-            String replacementKey = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
+            String replacementKey = getReplacementKey(nodeKey);
             if (payload.contains("_OF")) {
                 String cleanPath = CatsModelUtils.eliminateDuplicatePart(nodeKey);
                 String interimPayload = JsonPath.parse(payload, SUPPRESS_EXCEPTIONS_CONFIGURATION).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
@@ -303,6 +303,14 @@ public abstract class JsonUtils {
             }
             return payload;
         }
+    }
+
+    public static String getReplacementKey(String nodeKey) {
+        String initial = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
+        if (initial.endsWith("[*]")) {
+            return initial.substring(0, initial.length() - 3);
+        }
+        return initial;
     }
 
     /**
