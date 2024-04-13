@@ -34,8 +34,22 @@ import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.endava.cats.model.generator.OpenAPIModelGenerator.SYNTH_SCHEMA_NAME;
 
@@ -533,7 +547,7 @@ public class FuzzingDataFactory {
                 result.clear();
                 anyOfOrOneOf.forEach((key, value) ->
                         interimCombinationList.forEach(payload ->
-                                result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, value.toString(), anyOfOrOneOf.keySet()))));
+                                result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()))));
 
                 // Add elements to the stack for further processing
                 result.stream()
@@ -549,9 +563,15 @@ public class FuzzingDataFactory {
     private Map<String, Map<String, JsonElement>> joinCommonOneAndAnyOfs(Map<String, Map<String, JsonElement>> startingOneAnyOfs) {
         Set<String> keySet = startingOneAnyOfs.entrySet()
                 .stream()
-                .collect(Collectors.groupingBy(entry ->
-                        entry.getKey().contains("_OF") ? entry.getKey().substring(0, entry.getKey().indexOf("_OF") - 3) : entry.getKey()))
-                .keySet()
+                .collect(Collectors.groupingBy(entry -> {
+                    if (entry.getKey().contains("_OF#array[*]")) {
+                        return entry.getKey().substring(0, entry.getKey().indexOf("_OF") - 3) + "[*]";
+                    }
+                    if (entry.getKey().contains("_OF")) {
+                        return entry.getKey().substring(0, entry.getKey().indexOf("_OF") - 3);
+                    }
+                    return entry.getKey();
+                })).keySet()
                 .stream()
                 .map(entry -> entry.replaceAll("\\.+$", ""))
                 .collect(Collectors.toSet());
@@ -560,7 +580,10 @@ public class FuzzingDataFactory {
                 .map(key -> startingOneAnyOfs
                         .entrySet()
                         .stream()
-                        .filter(entry -> entry.getKey().startsWith(key))
+                        .filter(
+                                entry -> (entry.getKey().startsWith(key) && isNotXxxOfArray(entry.getKey(), key))
+                                        || ((key.endsWith("[*]") && !isNotXxxOfArray(entry.getKey(), key.substring(0, key.length() - 3))))
+                        )
                         .collect(Collectors.toMap(stringMapEntry -> key, Map.Entry::getValue, (map1, map2) -> {
                             Map<String, JsonElement> newMap = new HashMap<>();
                             newMap.putAll(map1);
@@ -568,9 +591,50 @@ public class FuzzingDataFactory {
                             return newMap;
                         }))).toList();
 
-        return listOfMap.stream().flatMap(m -> m.entrySet().stream())
+
+        Map<String, Map<String, JsonElement>> groupedKeymap = listOfMap.stream().flatMap(m -> m.entrySet().stream())
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         Map.Entry::getValue));
+
+        Set<String> nonArrayKeys = groupedKeymap.keySet().stream()
+                .filter(key -> !key.endsWith("[*]"))
+                .collect(Collectors.toSet());
+
+        for (String nonArrayKey : nonArrayKeys) {
+            if (groupedKeymap.containsKey(nonArrayKey + "[*]")) {
+                Map<String, JsonElement> newArrayMap = new HashMap<>(groupedKeymap.get(nonArrayKey));
+                KeyValuePair<String, JsonElement> existingValue = this.getExistingValue(startingOneAnyOfs, nonArrayKey);
+
+                newArrayMap.put(existingValue.getKey(), existingValue.getValue());
+                groupedKeymap.put(nonArrayKey, newArrayMap);
+
+                Map<String, JsonElement> keyMap = new HashMap<>(groupedKeymap.computeIfAbsent(nonArrayKey + "[*]", k -> Map.of()));
+                keyMap.put(existingValue.getKey(), existingValue.getValue());
+                groupedKeymap.put(nonArrayKey + "[*]", keyMap);
+            }
+        }
+
+        return groupedKeymap;
+    }
+
+    private KeyValuePair<String, JsonElement> getExistingValue(Map<String, Map<String, JsonElement>> startingOneAnyOfs, String nonArrayKey) {
+        String keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + "ANY_OF#array")).findFirst().orElse(null);
+        String keyOfPair;
+        JsonElement value;
+        if (keyToGet != null) {
+            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + "ANY_OF#array";
+        } else {
+            keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + "ONE_OF#array")).findFirst().orElse("");
+            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + "ONE_OF#array";
+        }
+        value = Optional.ofNullable(startingOneAnyOfs.get(keyToGet)).orElse(Map.of()).get(JsonUtils.getReplacementKey(keyToGet));
+//        value.add(startingOneAnyOfs.get(keyToGet).get(JsonUtils.getReplacementKey(keyToGet)));
+
+        return new KeyValuePair<>(keyOfPair, value);
+    }
+
+    private boolean isNotXxxOfArray(String iteratingKey, String mainKey) {
+        return !iteratingKey.startsWith(mainKey + "ANY_OF#array") && !iteratingKey.startsWith(mainKey + "ONE_OF#array");
     }
 
 
@@ -580,15 +644,17 @@ public class FuzzingDataFactory {
         if (jsonElement.isJsonObject()) {
             jsonObject = jsonElement.getAsJsonObject();
             for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
-                if (elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull()) {
+                if (isNotNullAndNonPrimitiveArray(elementEntry) && isAnyOrOneOfInChildren(elementEntry.getValue())) {
                     anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
+                } else if (isNotNullAndNonPrimitiveArray(elementEntry)) {
+                    anyOrOneOfs.merge(this.createArrayKey(jsonElementKey, elementEntry.getKey()), Map.of(elementEntry.getKey(), elementEntry.getValue().getAsJsonArray().get(0)), this::mergeMaps);
                 } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
                     anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
                             Map.of(elementEntry.getKey(), elementEntry.getValue()), this::mergeMaps);
                 } else if (isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ONE_OF) || isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ANY_OF)) {
                     anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
                             elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this::mergeMaps);
-                } else if (isAnyOrOneOfInChildren(elementEntry.getValue(), ANY_OF, ONE_OF)) {
+                } else if (isAnyOrOneOfInChildren(elementEntry.getValue())) {
                     anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
                 }
             }
@@ -600,6 +666,12 @@ public class FuzzingDataFactory {
         }
 
         return anyOrOneOfs;
+    }
+
+    private static boolean isNotNullAndNonPrimitiveArray(Map.Entry<String, JsonElement> elementEntry) {
+        return elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() &&
+                /*!elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && */
+                !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull();
     }
 
     private boolean isJsonValueOf(JsonElement element, String startKey) {
@@ -633,10 +705,10 @@ public class FuzzingDataFactory {
         return jsonElementKey + "." + nextKey + "[*]";
     }
 
-    private boolean isAnyOrOneOfInChildren(JsonElement element, String... toSearch) {
+    private boolean isAnyOrOneOfInChildren(JsonElement element) {
         String elementAsString = element.toString();
 
-        return Arrays.stream(toSearch).anyMatch(elementAsString::contains);
+        return Stream.of(ANY_OF, ONE_OF).anyMatch(elementAsString::contains);
     }
 
     private String squashAllOfElements(String payloadSample) {
