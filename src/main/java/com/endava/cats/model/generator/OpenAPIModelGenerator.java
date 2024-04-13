@@ -12,6 +12,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
@@ -360,10 +361,14 @@ public class OpenAPIModelGenerator {
             if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
                 return;
             }
+            if (propertyName == null) {
+                continue;
+            }
+
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
 
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
-            currentProperty = previousPropertyValue.isEmpty() ? propertyName.toString() : previousPropertyValue + "#" + propertyName.toString();
+            currentProperty = StringUtils.isBlank(previousPropertyValue) ? String.valueOf(propertyName) : previousPropertyValue + "#" + String.valueOf(propertyName);
 
             if (schemaRef != null) {
                 schemaRefMap.put(currentProperty, schemaRef);
