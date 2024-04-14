@@ -277,9 +277,6 @@ public abstract class JsonUtils {
             String interimPayload = JsonPath.parse(payload).set(escapeFullPath(nodeKey), JSON_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
             DocumentContext finalPayload = removeElements(toEliminate, interimPayload, nodeKey.substring(0, nodeKey.lastIndexOf(".")));
             return finalPayload.jsonString();
-        } catch (ParseException e) {
-            LOGGER.debug("Could not add node {}", nodeKey);
-            return payload;
         } catch (PathNotFoundException e) {
             String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
             String replacementKey = getReplacementKey(nodeKey);
@@ -298,7 +295,7 @@ public abstract class JsonUtils {
                 return finalPayload.jsonString();
             }
             return payload;
-        } catch (InvalidPathException e) {
+        } catch (ParseException | InvalidPathException e) {
             LOGGER.debug("Could not add node {}", nodeKey);
             return payload;
         }
@@ -432,7 +429,8 @@ public abstract class JsonUtils {
      * @return true if the given property is cyclic with the given depth, false otherwise
      */
     public static boolean isCyclicReference(String currentProperty, int depth) {
-        String[] properties = currentProperty.split("[#_]", -1);
+        String[] properties = Arrays.stream(currentProperty.split("[#_]", -1)).filter(StringUtils::isNotBlank).toArray(String[]::new);
+        ;
 
         if (properties.length < depth) {
             return false;
@@ -440,7 +438,7 @@ public abstract class JsonUtils {
 
         for (int i = 0; i < properties.length - 1; i++) {
             for (int j = i + 1; j <= properties.length - 1; j++) {
-                if (properties[i].equalsIgnoreCase(properties[j])) {
+                if (properties[i].equalsIgnoreCase(properties[j]) && j - i >= depth) {
                     LOGGER.trace("Found cyclic reference for {}", currentProperty);
                     return true;
                 }
@@ -558,7 +556,7 @@ public abstract class JsonUtils {
      * @return a boolean as true or false
      */
     public static boolean isCyclicSchemaReference(String currentProperty, Map<String, String> schemaRefMap, int depth) {
-        String[] properties = currentProperty.split("#", -1);
+        String[] properties = Arrays.stream(currentProperty.split("#", -1)).filter(StringUtils::isNotBlank).toArray(String[]::new);
 
         for (int i = 0; i < properties.length - 1; i++) {
             for (int j = i + 1; j <= properties.length - 1; j++) {
@@ -566,7 +564,7 @@ public abstract class JsonUtils {
                 String jKeyToSearch = Arrays.stream(properties).limit(j).collect(Collectors.joining("#"));
                 String iRef = schemaRefMap.get(iKeyToSearch);
                 String jRef = schemaRefMap.get(jKeyToSearch);
-                if ((iRef != null && iRef.equalsIgnoreCase(jRef) || properties[j].equalsIgnoreCase(properties[j - 1])) && (j - i >= depth)) {
+                if (((iRef != null && iRef.equalsIgnoreCase(jRef)) || properties[j].equalsIgnoreCase(properties[j - 1])) && j - i >= depth) {
                     LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
                     return true;
                 }
