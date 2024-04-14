@@ -368,23 +368,27 @@ public class OpenAPIModelGenerator {
             String schemaRef = ((Schema) schema.getProperties().get(propertyName)).get$ref();
 
             Schema innerSchema = this.globalContext.getSchemaMap().get(schemaRef != null ? schemaRef.substring(schemaRef.lastIndexOf('/') + 1) : "");
-            currentProperty = StringUtils.isBlank(previousPropertyValue) ? String.valueOf(propertyName) : previousPropertyValue + "#" + String.valueOf(propertyName);
+            currentProperty = StringUtils.isBlank(previousPropertyValue) ? String.valueOf(propertyName) : previousPropertyValue + "#" + propertyName;
 
             if (schemaRef != null) {
                 schemaRefMap.put(currentProperty, schemaRef);
             }
 
-            if (innerSchema == null) {
-                this.parseFromInnerSchema(name, schema, values, propertyName);
-            } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
-                values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
-            } else {
-                values.put(propertyName.toString(), this.resolveModelToExample(propertyName.toString(), innerSchema));
-            }
+            processInnerSchema(name, schema, values, propertyName, innerSchema);
         }
         currentProperty = previousPropertyValue;
         schema.setExample(values);
         catsGeneratedExamples.add(schema);
+    }
+
+    private void processInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName, Schema innerSchema) {
+        if (innerSchema == null) {
+            this.parseFromInnerSchema(name, schema, values, propertyName);
+        } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
+            values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
+        } else {
+            values.put(propertyName.toString(), this.resolveModelToExample(propertyName.toString(), innerSchema));
+        }
     }
 
     private Schema normalizeDiscriminatorMappingsToOneOf(String name, Schema<?> schema) {
