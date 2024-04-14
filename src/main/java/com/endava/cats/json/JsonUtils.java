@@ -271,7 +271,12 @@ public abstract class JsonUtils {
             if ("$".equals(nodeKey)) {
                 return nodeValue;
             }
-            return JsonPath.parse(payload).set(escapeFullPath(nodeKey), JSON_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
+            if (!payload.contains("_OF")) {
+                return payload;
+            }
+            String interimPayload = JsonPath.parse(payload).set(escapeFullPath(nodeKey), JSON_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
+            DocumentContext finalPayload = removeElements(toEliminate, interimPayload, nodeKey.substring(0, nodeKey.lastIndexOf(".")));
+            return finalPayload.jsonString();
         } catch (ParseException e) {
             LOGGER.debug("Could not add node {}", nodeKey);
             return payload;
@@ -288,21 +293,29 @@ public abstract class JsonUtils {
 
                 interimPayload = checkIfArrayHasNestedKeysWithSameName(nodeKey, pathTowardsReplacement, replacementKey, interimPayload);
 
-                DocumentContext finalPayload = JsonPath.parse(interimPayload);
-                toEliminate.forEach(toEliminateKey -> {
-                    try {
-                        String nodeToDelete = pathTowardsReplacement + "." + escapeSpaces(toEliminateKey);
-                        LOGGER.debug("to delete {}", nodeToDelete);
-                        finalPayload.delete(escapeFullPath(nodeToDelete));
-                    } catch (PathNotFoundException ex) {
-                        LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
-                    }
-                });
+                DocumentContext finalPayload = removeElements(toEliminate, interimPayload, pathTowardsReplacement);
 
                 return finalPayload.jsonString();
             }
             return payload;
+        } catch (InvalidPathException e) {
+            LOGGER.debug("Could not add node {}", nodeKey);
+            return payload;
         }
+    }
+
+    private static DocumentContext removeElements(Set<String> toEliminate, String interimPayload, String pathTowardsReplacement) {
+        DocumentContext finalPayload = JsonPath.parse(interimPayload);
+        toEliminate.forEach(toEliminateKey -> {
+            try {
+                String nodeToDelete = pathTowardsReplacement + "." + escapeSpaces(toEliminateKey);
+                LOGGER.debug("to delete {}", nodeToDelete);
+                finalPayload.delete(escapeFullPath(nodeToDelete));
+            } catch (PathNotFoundException ex) {
+                LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
+            }
+        });
+        return finalPayload;
     }
 
     public static String getReplacementKey(String nodeKey) {

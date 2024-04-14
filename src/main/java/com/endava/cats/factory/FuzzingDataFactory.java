@@ -60,6 +60,11 @@ import static com.endava.cats.model.generator.OpenAPIModelGenerator.SYNTH_SCHEMA
 public class FuzzingDataFactory {
     private static final String ANY_OF = "ANY_OF";
     private static final String ONE_OF = "ONE_OF";
+    private static final String ANY_OF_ARRAY = "ANY_OF#array";
+    private static final String ONE_OF_ARRAY = "ONE_OF#array";
+    private static final String ARRAY_WILDCARD = "[*]";
+    public static final String OF = "_OF";
+    public static final String ALL_OF = "ALL_OF";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingDataFactory.class);
     private final FilesArguments filesArguments;
     private final ProcessingArguments processingArguments;
@@ -565,10 +570,10 @@ public class FuzzingDataFactory {
                 .stream()
                 .collect(Collectors.groupingBy(entry -> {
                     if (entry.getKey().contains("_OF#array[*]")) {
-                        return entry.getKey().substring(0, entry.getKey().indexOf("_OF") - 3) + "[*]";
+                        return entry.getKey().substring(0, entry.getKey().indexOf(OF) - 3) + ARRAY_WILDCARD;
                     }
-                    if (entry.getKey().contains("_OF")) {
-                        return entry.getKey().substring(0, entry.getKey().indexOf("_OF") - 3);
+                    if (entry.getKey().contains(OF)) {
+                        return entry.getKey().substring(0, entry.getKey().indexOf(OF) - 3);
                     }
                     return entry.getKey();
                 })).keySet()
@@ -582,7 +587,7 @@ public class FuzzingDataFactory {
                         .stream()
                         .filter(
                                 entry -> (entry.getKey().startsWith(key) && isNotXxxOfArray(entry.getKey(), key))
-                                        || ((key.endsWith("[*]") && !isNotXxxOfArray(entry.getKey(), key.substring(0, key.length() - 3))))
+                                        || ((key.endsWith(ARRAY_WILDCARD) && !isNotXxxOfArray(entry.getKey(), key.substring(0, key.length() - 3))))
                         )
                         .collect(Collectors.toMap(stringMapEntry -> key, Map.Entry::getValue, (map1, map2) -> {
                             Map<String, JsonElement> newMap = new HashMap<>();
@@ -597,20 +602,20 @@ public class FuzzingDataFactory {
                         Map.Entry::getValue));
 
         Set<String> nonArrayKeys = groupedKeymap.keySet().stream()
-                .filter(key -> !key.endsWith("[*]"))
+                .filter(key -> !key.endsWith(ARRAY_WILDCARD))
                 .collect(Collectors.toSet());
 
         for (String nonArrayKey : nonArrayKeys) {
-            if (groupedKeymap.containsKey(nonArrayKey + "[*]")) {
+            if (groupedKeymap.containsKey(nonArrayKey + ARRAY_WILDCARD)) {
                 Map<String, JsonElement> newArrayMap = new HashMap<>(groupedKeymap.get(nonArrayKey));
                 KeyValuePair<String, JsonElement> existingValue = this.getExistingValue(startingOneAnyOfs, nonArrayKey);
 
                 newArrayMap.put(existingValue.getKey(), existingValue.getValue());
                 groupedKeymap.put(nonArrayKey, newArrayMap);
 
-                Map<String, JsonElement> keyMap = new HashMap<>(groupedKeymap.computeIfAbsent(nonArrayKey + "[*]", k -> Map.of()));
-                keyMap.put(existingValue.getKey(), existingValue.getValue());
-                groupedKeymap.put(nonArrayKey + "[*]", keyMap);
+                Map<String, JsonElement> keyMap = new HashMap<>(groupedKeymap.getOrDefault(nonArrayKey + ARRAY_WILDCARD, Map.of()));
+                keyMap.putAll(newArrayMap);
+                groupedKeymap.put(nonArrayKey + ARRAY_WILDCARD, keyMap);
             }
         }
 
@@ -618,23 +623,22 @@ public class FuzzingDataFactory {
     }
 
     private KeyValuePair<String, JsonElement> getExistingValue(Map<String, Map<String, JsonElement>> startingOneAnyOfs, String nonArrayKey) {
-        String keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + "ANY_OF#array")).findFirst().orElse(null);
+        String keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + ANY_OF_ARRAY)).findFirst().orElse(null);
         String keyOfPair;
         JsonElement value;
         if (keyToGet != null) {
-            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + "ANY_OF#array";
+            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + ANY_OF_ARRAY;
         } else {
-            keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + "ONE_OF#array")).findFirst().orElse("");
-            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + "ONE_OF#array";
+            keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + ONE_OF_ARRAY)).findFirst().orElse("");
+            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + ONE_OF_ARRAY;
         }
         value = Optional.ofNullable(startingOneAnyOfs.get(keyToGet)).orElse(Map.of()).get(JsonUtils.getReplacementKey(keyToGet));
-//        value.add(startingOneAnyOfs.get(keyToGet).get(JsonUtils.getReplacementKey(keyToGet)));
 
         return new KeyValuePair<>(keyOfPair, value);
     }
 
     private boolean isNotXxxOfArray(String iteratingKey, String mainKey) {
-        return !iteratingKey.startsWith(mainKey + "ANY_OF#array") && !iteratingKey.startsWith(mainKey + "ONE_OF#array");
+        return !iteratingKey.startsWith(mainKey + ANY_OF_ARRAY) && !iteratingKey.startsWith(mainKey + ONE_OF_ARRAY);
     }
 
 
@@ -670,7 +674,6 @@ public class FuzzingDataFactory {
 
     private static boolean isNotNullAndNonPrimitiveArray(Map.Entry<String, JsonElement> elementEntry) {
         return elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() &&
-                /*!elementEntry.getValue().getAsJsonArray().get(0).isJsonPrimitive() && */
                 !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull();
     }
 
@@ -702,7 +705,7 @@ public class FuzzingDataFactory {
     }
 
     private String createArrayKey(String jsonElementKey, String nextKey) {
-        return jsonElementKey + "." + nextKey + "[*]";
+        return jsonElementKey + "." + nextKey + ARRAY_WILDCARD;
     }
 
     private boolean isAnyOrOneOfInChildren(JsonElement element) {
@@ -744,15 +747,15 @@ public class FuzzingDataFactory {
     private JsonObject buildNewObject(JsonObject originalObject) {
         JsonObject newObject = new JsonObject();
         for (String key : originalObject.keySet()) {
-            if (key.equalsIgnoreCase("ALL_OF") || key.endsWith("ALL_OF#null")) {
+            if (key.equalsIgnoreCase(ALL_OF) || key.endsWith("ALL_OF#null")) {
                 JsonElement jsonElement = originalObject.get(key);
                 if (jsonElement.isJsonObject()) {
                     JsonObject allOfObject = originalObject.getAsJsonObject(key);
                     mergeJsonObject(newObject, squashAllOf(allOfObject));
                 } else {
-                    newObject.add(key.substring(0, key.indexOf("ALL_OF")), squashAllOf(jsonElement));
+                    newObject.add(key.substring(0, key.indexOf(ALL_OF)), squashAllOf(jsonElement));
                 }
-            } else if (!key.contains("ALL_OF")) {
+            } else if (!key.contains(ALL_OF)) {
                 newObject.add(key, squashAllOf(originalObject.get(key)));
             }
         }
