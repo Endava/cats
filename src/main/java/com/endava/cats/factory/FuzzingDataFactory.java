@@ -587,7 +587,7 @@ public class FuzzingDataFactory {
                         .stream()
                         .filter(
                                 entry -> (entry.getKey().startsWith(key) && isNotXxxOfArray(entry.getKey(), key))
-                                        || ((key.endsWith(ARRAY_WILDCARD) && !isNotXxxOfArray(entry.getKey(), key.substring(0, key.length() - 3))))
+                                        || (key.endsWith(ARRAY_WILDCARD) && !isNotXxxOfArray(entry.getKey(), key.substring(0, key.length() - 3)))
                         )
                         .collect(Collectors.toMap(stringMapEntry -> key, Map.Entry::getValue, (map1, map2) -> {
                             Map<String, JsonElement> newMap = new HashMap<>();
