@@ -171,9 +171,9 @@ class JsonUtilsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"prop1#prop1#prop1", "prop1#prop2#prop3#prop1#prop2", "prop1#prop2#prop3#prop2#prop3", "prop1#prop2#prop1"})
+    @CsvSource({"prop1#prop1#prop1#prop1", "prop1#prop2#prop3#prop1#prop2", "prop1#prop2#prop3#prop2#prop3", "prop1#prop2#prop1"})
     void shouldReturnCyclic(String properties) {
-        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 3)).isTrue();
+        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isTrue();
     }
 
     @Test

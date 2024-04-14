@@ -62,13 +62,7 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData firstData = dataList.get(1);
-        Assertions.assertThat(firstData.getPayload()).containsAnyOf("ANY_OF", "ONE_OF");
-
-        Mockito.when(processingArguments.isFilterXxxFromRequestPayloads()).thenReturn(true);
-        List<FuzzingData> secondDataList = setupFuzzingData("/api/v2/meta/tables/{tableId}/columns", "src/test/resources/nocodb.yaml");
-        Assertions.assertThat(secondDataList).hasSize(1);
-        FuzzingData secondData = dataList.get(0);
-        Assertions.assertThat(secondData.getPayload()).doesNotContain("ANY_OF", "ONE_OF");
+        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF");
     }
 
     @Test
@@ -235,6 +229,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/api/groopits/create", "src/test/resources/nswag_gen_oneof.json");
 
         Assertions.assertThat(dataList).hasSize(9);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.get(7);
         Assertions.assertThat(firstData.getPayload()).containsAnyOf("\"discriminator\":\"ResponseData\"", "\"discriminator\":\"PictureData\"");
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
@@ -246,6 +242,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/datasets/{datasetId}", "src/test/resources/keatext.yaml");
 
         Assertions.assertThat(dataList).hasSize(3);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.get(0);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         String keyWithSquares = String.valueOf(JsonUtils.getVariableFromJson(firstData.getPayload(), "$.primaryDate"));
@@ -258,6 +256,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/tags", "src/test/resources/getresp.yaml");
 
         Assertions.assertThat(dataList).hasSize(5);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.get(1);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         String keyWithSquares = String.valueOf(JsonUtils.getVariableFromJson(firstData.getPayload(), "$.query[createdAt][to]"));
@@ -270,6 +270,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/payouts", "src/test/resources/token.yml");
 
         Assertions.assertThat(dataList).hasSize(11);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.get(0);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         Object creditorNotExistent = JsonUtils.getVariableFromJson(firstData.getPayload(), "$.initiation.creditor.creditor");
@@ -330,6 +332,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/mfm/v1/services/", "src/test/resources/issue86.json");
 
         Assertions.assertThat(dataList).hasSize(5);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.get(0);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         List<String> responses = dataList.get(0).getResponses().get("422");
