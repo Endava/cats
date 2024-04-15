@@ -60,27 +60,27 @@ public class ProcessingArguments {
     Map<String, String> xxxOfSelections;
 
     @Setter
-    @CommandLine.Option(names = {"--rfc7396"},
+    @CommandLine.Option(names = {"--rfc7396"}, negatable = true,
             description = "When set to @|bold true|@ it will send Content-Type=application/merge-patch+json for PATCH requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean rfc7396 = false;
 
     @Setter
-    @CommandLine.Option(names = {"--allowInvalidEnumValues"},
+    @CommandLine.Option(names = {"--allowInvalidEnumValues"}, negatable = true,
             description = "When set to @|bold true|@ the InvalidValuesInEnumsFieldsFuzzer will be disabled. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean allowInvalidEnumValues = false;
 
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
             description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private int limitXxxOfCombinations = 10;
+    private int limitXxxOfCombinations = 20;
 
-    @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"},
+    @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"}, negatable = true,
             description = "Generate anyOf/oneOf combinations also for response schemas. By default it creates a one response payload with all possibilities. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean generateAllXxxCombinationsForResponses = false;
 
-    @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"},
-            description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. " +
-                    "Setting this to true will eliminate them as potential candidates. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean filterXxxFromRequestPayloads = false;
+    @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"}, negatable = true,
+            description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default." +
+                    "Setting this to false will include send them as valid requests which will probably fail. It's mostly for debug purposes. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean filterXxxFromRequestPayloads = true;
 
     /**
      * Represents a wildcard pattern for JSON content type with optional parameters.
