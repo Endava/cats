@@ -266,6 +266,17 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldProperlyCreateAllXxxCombinations() throws Exception {
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(100);
+        List<FuzzingData> dataList = setupFuzzingData("/shipments", "src/test/resources/shippo.yaml");
+
+        Assertions.assertThat(dataList).hasSize(77);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
+                .hasSize(4);
+    }
+
+    @Test
     void shouldProperlyParseRootAllOfAndOneOfElements() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/payouts", "src/test/resources/token.yml");
 
