@@ -70,16 +70,16 @@ public class ProcessingArguments {
     private boolean allowInvalidEnumValues = false;
 
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
-            description = "Max number of anyOf/oneOf combinations. By default considers all possible anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Max number of anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int limitXxxOfCombinations = 20;
 
     @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"}, negatable = true,
-            description = "Generate anyOf/oneOf combinations also for response schemas. By default it creates a one response payload with all possibilities. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Generate anyOf/oneOf combinations also for response schemas. By default it creates one response payload with all possibilities. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean generateAllXxxCombinationsForResponses = false;
 
     @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"}, negatable = true,
-            description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default." +
-                    "Setting this to false will include send them as valid requests which will probably fail. It's mostly for debug purposes. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default. " +
+                    "Setting this to false will send them as requests which will probably fail. It's mostly for debug purposes. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean filterXxxFromRequestPayloads = true;
 
     /**
