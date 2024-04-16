@@ -165,9 +165,9 @@ class JsonUtilsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"prop1#prop2", "prop1#prop2#prop3", "prop1#prop2#prop3#prop4"})
+    @CsvSource({"prop1#prop2", "prop1#prop2#prop3", "prop1#prop2#prop3#prop4", "CatsGetSchemaget_user_users__user_id__get"})
     void shouldNotReturnCyclic(String properties) {
-        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 2)).isFalse();
+        Assertions.assertThat(JsonUtils.isCyclicReference(properties, 3)).isFalse();
     }
 
     @ParameterizedTest
