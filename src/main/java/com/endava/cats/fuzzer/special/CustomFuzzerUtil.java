@@ -332,6 +332,7 @@ public class CustomFuzzerUtil {
      * @param fuzzer The custom fuzzer used for generating individual test cases.
      */
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
+        testCaseListener.notifySummaryObservers(data.getContractPath(), data.getMethod().name(), 0d);
         log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getContractPath(), data.getMethod(), value);
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
         List<String> missingKeywords = this.getMissingKeywords(fuzzer, (Map<String, Object>) value);

@@ -24,7 +24,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.Iterators;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.inject.Instance;
@@ -42,7 +41,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -58,7 +56,6 @@ import java.util.function.Predicate;
 @SpecialFuzzer
 public class RandomFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(RandomFuzzer.class);
-    private final Iterator<String> cycle = Iterators.cycle("\\", "|", "/", "-");
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
     private final ExecutionStatisticsListener executionStatisticsListener;
@@ -102,7 +99,7 @@ public class RandomFuzzer implements Fuzzer {
         boolean shouldStop = false;
         Set<String> allCatsFields = data.getAllFieldsByHttpMethod();
 
-        this.startProgress(data);
+        testCaseListener.startUnknownProgress(data);
 
         while (!shouldStop) {
             String targetField = CatsUtil.selectRandom(allCatsFields);
@@ -123,26 +120,9 @@ public class RandomFuzzer implements Fuzzer {
                             .responseProcessor(this::processResponse)
                             .build());
 
-            updateProgress(data);
+            testCaseListener.updateUnknownProgress(data);
             shouldStop = stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime);
         }
-    }
-
-    private void updateProgress(FuzzingData data) {
-        if (!reportingArguments.isSummaryInConsole()) {
-            return;
-        }
-        if (testCaseListener.getCurrentTestCaseNumber() % 20 == 0) {
-            ConsoleUtils.renderSameRow(data.getPath() + "  " + data.getMethod(), cycle.next());
-        }
-    }
-
-    private void startProgress(FuzzingData data) {
-        if (!reportingArguments.isSummaryInConsole()) {
-            return;
-        }
-        testCaseListener.notifySummaryObservers(data.getPath(), data.getMethod().name(), 0d);
-        ConsoleUtils.renderSameRow(data.getPath() + "  " + data.getMethod(), cycle.next());
     }
 
     void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {

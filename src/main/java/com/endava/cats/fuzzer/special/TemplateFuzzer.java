@@ -64,6 +64,7 @@ public class TemplateFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
+        testCaseListener.startUnknownProgress(data);
         for (String targetField : Optional.ofNullable(data.getTargetFields()).orElse(Collections.emptySet())) {
             int payloadSize = this.getPayloadSize(data, targetField);
 
@@ -85,6 +86,7 @@ public class TemplateFuzzer implements Fuzzer {
                             .build();
 
                     testCaseListener.createAndExecuteTest(logger, this, () -> process(data, catsRequest, targetField, payload));
+                    testCaseListener.updateUnknownProgress(data);
                 }
             }
         }
@@ -177,25 +179,42 @@ public class TemplateFuzzer implements Fuzzer {
         return oldValue.length();
     }
 
-    private void process(FuzzingData data, CatsRequest catsRequest, String targetField, String fuzzValued) {
-        testCaseListener.addScenario(logger, "Replace request field, header or path/query param [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzValued).truncatedValue());
+    private void process(FuzzingData data, CatsRequest catsRequest, String targetField, String fuzzedValue) {
+        testCaseListener.addScenario(logger, "Replace request field, header or path/query param [{}], with [{}]", targetField, FuzzingStrategy.replace().withData(fuzzedValue).truncatedValue());
         testCaseListener.addExpectedResult(logger, "Should get a response that doesn't match given arguments");
         testCaseListener.addRequest(catsRequest);
         testCaseListener.addPath(catsRequest.getUrl());
-        testCaseListener.addContractPath(catsRequest.getUrl());
-        testCaseListener.addContractPath(catsRequest.getUrl());
+        testCaseListener.addContractPath(data.getContractPath());
         testCaseListener.addFullRequestPath(catsRequest.getUrl());
+        long startTime = System.currentTimeMillis();
+
         try {
             CatsResponse catsResponse = serviceCaller.callService(catsRequest, Set.of(targetField));
-            if (matchArguments.isMatchResponse(catsResponse) || matchArguments.isInputReflected(catsResponse, fuzzValued) || !matchArguments.isAnyMatchArgumentSupplied()) {
-                testCaseListener.addResponse(catsResponse);
-                testCaseListener.reportResultError(logger, data, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
-            } else {
-                testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
-            }
+            checkResponse(catsResponse, data, fuzzedValue);
+        } catch (IOException e) {
+            long duration = System.currentTimeMillis() - startTime;
+            CatsResponse.ExceptionalResponse exceptionalResponse = CatsResponse.getResponseByException(e);
+
+            CatsResponse catsResponse = CatsResponse.builder()
+                    .body(exceptionalResponse.responseBody()).httpMethod(catsRequest.getHttpMethod())
+                    .responseTimeInMs(duration).responseCode(exceptionalResponse.responseCode())
+                    .jsonBody(JsonUtils.parseAsJsonElement(exceptionalResponse.responseBody()))
+                    .fuzzedField(targetField)
+                    .build();
+
+            checkResponse(catsResponse, data, fuzzedValue);
         } catch (Exception e) {
             logger.debug("Something unexpected happened: ", e);
             testCaseListener.reportResultError(logger, data, "Check response details", "Something went wrong {}", e.getMessage());
+        }
+    }
+
+    private void checkResponse(CatsResponse catsResponse, FuzzingData data, String fuzzedValue) {
+        if (matchArguments.isMatchResponse(catsResponse) || matchArguments.isInputReflected(catsResponse, fuzzedValue) || !matchArguments.isAnyMatchArgumentSupplied()) {
+            testCaseListener.addResponse(catsResponse);
+            testCaseListener.reportResultError(logger, data, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
+        } else {
+            testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
         }
     }
 

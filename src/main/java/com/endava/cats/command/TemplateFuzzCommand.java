@@ -20,6 +20,8 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
 import jakarta.inject.Inject;
+import lombok.Getter;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -97,6 +99,10 @@ public class TemplateFuzzCommand implements Runnable {
     @Inject
     TestCaseListener testCaseListener;
 
+    @Getter
+    @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
+    String appVersion;
+
     @CommandLine.Option(names = {"--headers", "-H"},
             description = "Specifies the headers that will be passed along with the request and/or fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
     Map<String, String> headers = Map.of(HttpHeaders.ACCEPT, "application/json", HttpHeaders.CONTENT_TYPE, "application/json");
@@ -131,7 +137,7 @@ public class TemplateFuzzCommand implements Runnable {
                     .targetFields(fieldsToFuzz)
                     .build();
 
-            beforeFuzz();
+            beforeFuzz(fuzzingData.getContractPath());
             templateFuzzer.fuzz(fuzzingData);
             afterFuzz(fuzzingData.getContractPath(), fuzzingData.getMethod().name());
         } catch (IOException e) {
@@ -146,6 +152,7 @@ public class TemplateFuzzCommand implements Runnable {
         ConsoleUtils.initTerminalWidth(spec);
         validateRequiredFields();
         renderHeaderIfSummary();
+        apiArguments.setUserAgent(appVersion);
     }
 
     private void renderHeaderIfSummary() {
@@ -156,7 +163,7 @@ public class TemplateFuzzCommand implements Runnable {
 
     private Set<String> getFieldsToFuzz(String payload) {
         if (!HttpMethod.requiresBody(httpMethod)) {
-            return Set.of();
+            return targetFields;
         }
         return targetFields == null || targetFields.isEmpty() ? new HashSet<>(JsonUtils.getAllFieldsOf(payload)) : targetFields;
     }
@@ -167,8 +174,7 @@ public class TemplateFuzzCommand implements Runnable {
         testCaseListener.endSession();
     }
 
-    private void beforeFuzz() throws IOException {
-        testCaseListener.startSession();
+    private void beforeFuzz(String path) throws IOException {
         testCaseListener.initReportingPath();
         testCaseListener.beforeFuzz(templateFuzzer.getClass());
     }
