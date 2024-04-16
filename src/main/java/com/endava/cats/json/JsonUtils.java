@@ -430,7 +430,6 @@ public abstract class JsonUtils {
      */
     public static boolean isCyclicReference(String currentProperty, int depth) {
         String[] properties = Arrays.stream(currentProperty.split("[#_]", -1)).filter(StringUtils::isNotBlank).toArray(String[]::new);
-        ;
 
         if (properties.length < depth) {
             return false;

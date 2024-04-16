@@ -17,6 +17,7 @@ import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
+import com.google.common.collect.Iterators;
 import com.google.common.net.MediaType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,6 +61,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @ApplicationScoped
 @DryRun
 public class TestCaseListener {
+    private final Iterator<String> cycle = Iterators.cycle("\\", "|", "/", "-");
     private static final String FUZZER_KEY_DEFAULT = "*******";
     private static final String TEST_KEY_DEFAULT = "******";
     static final String ID = "id";
@@ -336,6 +339,33 @@ public class TestCaseListener {
     }
 
     /**
+     * Use this to start a summary progress when the number of tests to run is not known.
+     *
+     * @param data the FuzzingData context
+     */
+    public void startUnknownProgress(FuzzingData data) {
+        if (!reportingArguments.isSummaryInConsole()) {
+            return;
+        }
+        this.notifySummaryObservers(data.getContractPath(), data.getMethod().name(), 0d);
+        ConsoleUtils.renderSameRow(data.getPath() + "  " + data.getMethod(), cycle.next());
+    }
+
+    /**
+     * Updates the progress with a new character to signla progress.
+     *
+     * @param data the FuzzingData context
+     */
+    public void updateUnknownProgress(FuzzingData data) {
+        if (!reportingArguments.isSummaryInConsole()) {
+            return;
+        }
+        if (this.getCurrentTestCaseNumber() % 20 == 0) {
+            ConsoleUtils.renderSameRow(data.getPath() + "  " + data.getMethod(), cycle.next());
+        }
+    }
+
+    /**
      * Starts a new testing session, initializing necessary configurations and logging session information.
      * This method sets default values for identifiers and logs session details such as application name,
      * version, build time, and platform.
@@ -501,7 +531,7 @@ public class TestCaseListener {
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
         if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime()) || isException(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
-            executionStatisticsListener.increaseErrors(testCase.getPath());
+            executionStatisticsListener.increaseErrors(testCase.getContractPath());
             logger.error(message, params);
             this.recordResult(message, params, Level.ERROR.toString().toLowerCase(), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
