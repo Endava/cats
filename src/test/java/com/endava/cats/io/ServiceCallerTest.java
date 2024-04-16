@@ -173,7 +173,7 @@ class ServiceCallerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"/pets/fault/reset,952,empty reply from server", "/pets/fault/malformed,957,protocol exception", "/pets/fault/random,952,empty reply from server", "/pets/fault/empty,952,empty reply from server"})
+    @CsvSource({"/pets/fault/reset,958,connection reset", "/pets/fault/malformed,957,protocol exception", "/pets/fault/random,952,empty reply from server", "/pets/fault/empty,952,empty reply from server"})
     void shouldHandleIOExceptions(String path, String responseCode, String expectedBody) {
         serviceCaller.initHttpClient();
         serviceCaller.initRateLimiter();

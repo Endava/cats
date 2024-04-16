@@ -48,10 +48,10 @@ class TemplateFuzzerTest {
 
     @Test
     void shouldNotRunWhenNoTargetFields() {
-        FuzzingData data = FuzzingData.builder().targetFields(Collections.emptySet()).build();
+        FuzzingData data = FuzzingData.builder().contractPath("/path").method(HttpMethod.POST).targetFields(Collections.emptySet()).build();
 
         templateFuzzer.fuzz(data);
-        Mockito.verifyNoInteractions(testCaseListener);
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -60,10 +60,12 @@ class TemplateFuzzerTest {
                 .targetFields(Set.of("test"))
                 .processedPayload("{\"field\":\"value\"}")
                 .headers(Collections.emptySet())
+                .method(HttpMethod.POST)
+                .contractPath("/path")
                 .path("http://url")
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verifyNoInteractions(testCaseListener);
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -152,7 +154,7 @@ class TemplateFuzzerTest {
                 .build();
         Mockito.when(userArguments.getWords()).thenReturn(new File("non_real"));
         templateFuzzer.fuzz(data);
-        Mockito.verifyNoInteractions(testCaseListener);
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -184,7 +186,7 @@ class TemplateFuzzerTest {
 
         templateFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("Something went wrong {}"), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.any(), Mockito.any());
     }
 
     @Test
