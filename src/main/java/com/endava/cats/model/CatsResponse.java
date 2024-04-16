@@ -154,8 +154,7 @@ public class CatsResponse {
      */
     public static ExceptionalResponse getResponseByException(Exception e) {
         if (e instanceof IOException ioException) {
-            if (exceptionContains(ioException, "unexpected end of stream") ||
-                    exceptionContains(ioException, "connection reset")) {
+            if (exceptionContains(ioException, "unexpected end of stream")) {
                 return ExceptionalResponse.EMPTY_BODY;
             }
             if (exceptionContains(ioException, "connection refused")) {
@@ -169,6 +168,9 @@ public class CatsResponse {
             }
             if (exceptionContains(ioException, "connection timeout")) {
                 return ExceptionalResponse.CONNECTION_TIMEOUT;
+            }
+            if (exceptionContains(ioException, "connection reset")) {
+                return ExceptionalResponse.CONNECTION_RESET;
             }
             if (e instanceof ProtocolException || e.getCause() instanceof ProtocolException) {
                 return ExceptionalResponse.PROTOCOL_EXCEPTION;
@@ -194,13 +196,16 @@ public class CatsResponse {
                 {"notAJson": "read timeout! you might want to increased it using --readTimeout"}
                 """),
         WRITE_TIMEOUT(955, """
-                {"notAJson": "read timeout! you might want to increased it using --writeTimeout"}
+                {"notAJson": "write timeout! you might want to increased it using --writeTimeout"}
                 """),
         CONNECTION_TIMEOUT(956, """
-                {"notAJson": "read timeout! you might want to increased it using --connectionTimeout"}
+                {"notAJson": "connection timeout! you might want to increased it using --connectionTimeout"}
                 """),
         PROTOCOL_EXCEPTION(957, """
                 {"notAJson": "protocol exception! your service has issues providing a consistent response"}
+                """),
+        CONNECTION_RESET(958, """
+                {"notAJson": "connection reset! you might retry the request or check connectivity or server status!"}
                 """),
         NO_BODY(INVALID_ERROR_CODE, """
                 {"notAJson": "no body due to unknown error"}
