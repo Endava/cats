@@ -233,4 +233,15 @@ class TemplateFuzzerTest {
     void shouldHaveDescription() {
         Assertions.assertThat(templateFuzzer.description()).isNotBlank();
     }
+
+    @Test
+    void shouldReplaceComplexPaths() {
+        FuzzingData data = FuzzingData.builder()
+                .path("http://localhost:8000/lookup?url=http%3A%2F%2Flocalhost%3A6001/users/ID")
+                .build();
+        Mockito.when(userArguments.isSimpleReplace()).thenReturn(true);
+        String replaced = templateFuzzer.replacePath(data, "valueReplaced", "ID");
+
+        Assertions.assertThat(replaced).isEqualTo("http://localhost:8000/lookup?url=http%3A%2F%2Flocalhost%3A6001/users/valueReplaced");
+    }
 }

@@ -175,6 +175,16 @@ public abstract class ConsoleUtils {
     }
 
     /**
+     * Prints the given message to the console on the same row and then moves the cursor to a new line.
+     *
+     * @param message the message
+     */
+    public static void renderSameRow(String message) {
+        int spacesToAdd = getConsoleColumns(message.length());
+        System.out.print("\r" + message + " ".repeat(spacesToAdd) + "\n");
+    }
+
+    /**
      * Print an empty line to the console.
      */
     public static void emptyLine() {

@@ -51,7 +51,7 @@ class RandomFuzzerTest {
         randomFuzzer = new RandomFuzzer(simpleExecutor, testCaseListener,
                 executionStatisticsListener,
                 matchArguments, mutators,
-                stopArguments, reportingArguments, filesArguments);
+                stopArguments, filesArguments);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
