@@ -24,6 +24,15 @@ public class UserArguments {
             description = "Specifies the user dictionary used by the @|bold TemplateFuzzer|@ to fuzz the specified fields and/or headers")
     File words;
 
+    @CommandLine.Option(names = {"--simpleReplace"},
+            description = "If set to true, it will simply do a replace between the targetFields names provided and the fuzz values")
+    boolean simpleReplace = false;
+
+    @CommandLine.Option(names = {"--printProgress"},
+            description = "If set to true, it will print any URLs matching the given match arguments")
+    boolean printProgress = false;
+
+
     /**
      * Gets the custom provided dictionary as a list of strings where each row is an item.
      *
