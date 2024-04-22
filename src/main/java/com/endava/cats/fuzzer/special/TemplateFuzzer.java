@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -78,6 +79,7 @@ public class TemplateFuzzer implements Fuzzer {
                     List<KeyValuePair<String, Object>> replacedHeaders = this.replaceHeaders(data, payload, targetField);
                     String replacedPayload = this.replacePayload(data, payload, targetField);
                     String replacedPath = this.replacePath(data, payload, targetField);
+
                     CatsRequest catsRequest = CatsRequest.builder()
                             .payload(replacedPayload)
                             .headers(replacedHeaders)
@@ -93,6 +95,10 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     String replacePath(FuzzingData data, String withData, String targetField) {
+        if (userArguments.isSimpleReplace()) {
+            return data.getPath().replace(targetField, Optional.ofNullable(withData).orElse(""));
+        }
+
         String finalPath = data.getPath();
         try {
             URL url = URI.create(data.getPath()).toURL();
@@ -137,7 +143,11 @@ public class TemplateFuzzer implements Fuzzer {
                 payloads.add("");
                 return payloads;
             } else {
-                return Files.readAllLines(Path.of(userArguments.getWords().getAbsolutePath()), StandardCharsets.UTF_8);
+                return Files.readAllLines(Path.of(userArguments.getWords().getAbsolutePath()), StandardCharsets.UTF_8)
+                        .stream()
+                        .filter(Predicate.not(String::isBlank))
+                        .filter(Predicate.not(line -> line.startsWith("# ")))
+                        .toList();
             }
         } catch (IOException e) {
             logger.debug("Something went wrong while fuzzing!", e);
@@ -213,8 +223,15 @@ public class TemplateFuzzer implements Fuzzer {
         if (matchArguments.isMatchResponse(catsResponse) || matchArguments.isInputReflected(catsResponse, fuzzedValue) || !matchArguments.isAnyMatchArgumentSupplied()) {
             testCaseListener.addResponse(catsResponse);
             testCaseListener.reportResultError(logger, data, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
+            this.renderFinding(catsResponse);
         } else {
             testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
+        }
+    }
+
+    private void renderFinding(CatsResponse catsResponse) {
+        if (userArguments.isPrintProgress()) {
+            ConsoleUtils.renderSameRow("+ " + catsResponse.getPath());
         }
     }
 
