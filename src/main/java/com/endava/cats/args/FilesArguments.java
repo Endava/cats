@@ -340,8 +340,11 @@ public class FilesArguments {
         Map<String, Object> mergedMap = new HashMap<>(collection.getOrDefault(path, Collections.emptyMap()));
 
         collection.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(ALL) && mergedMap.keySet().stream().noneMatch(pathKey -> entry.getValue().containsKey(pathKey)))
-                .forEach(entry -> mergedMap.putAll(entry.getValue()));
+                .filter(entry -> entry.getKey().equalsIgnoreCase(ALL))
+                .map(entry -> entry.getValue())
+                .findFirst().orElse(Map.of())
+                .entrySet().stream()
+                .forEach(entry -> mergedMap.putIfAbsent(entry.getKey(), entry.getValue()));
 
         return mergedMap;
     }
