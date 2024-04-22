@@ -154,23 +154,10 @@ public class CatsResponse {
      */
     public static ExceptionalResponse getResponseByException(Exception e) {
         if (e instanceof IOException ioException) {
-            if (exceptionContains(ioException, "unexpected end of stream")) {
-                return ExceptionalResponse.EMPTY_BODY;
-            }
-            if (exceptionContains(ioException, "connection refused")) {
-                return ExceptionalResponse.CONNECTION_REFUSED;
-            }
-            if (exceptionContains(ioException, "read timeout")) {
-                return ExceptionalResponse.READ_TIMEOUT;
-            }
-            if (exceptionContains(ioException, "write timeout")) {
-                return ExceptionalResponse.WRITE_TIMEOUT;
-            }
-            if (exceptionContains(ioException, "connection timeout")) {
-                return ExceptionalResponse.CONNECTION_TIMEOUT;
-            }
-            if (exceptionContains(ioException, "connection reset")) {
-                return ExceptionalResponse.CONNECTION_RESET;
+            for (ExceptionalResponse exceptionalResponse : ExceptionalResponse.values()) {
+                if (exceptionContains(ioException, exceptionalResponse.messageToSearch)) {
+                    return exceptionalResponse;
+                }
             }
             if (e instanceof ProtocolException || e.getCause() instanceof ProtocolException) {
                 return ExceptionalResponse.PROTOCOL_EXCEPTION;
@@ -186,37 +173,39 @@ public class CatsResponse {
     }
 
     public enum ExceptionalResponse {
-        EMPTY_BODY(952, """
+        EMPTY_BODY(952, "unexpected end of stream", """
                 {"notAJson": "empty reply from server"}
                 """),
-        CONNECTION_REFUSED(953, """
+        CONNECTION_REFUSED(953, "connection refused", """
                 {"notAJson": "connection refused! please make sure you have access to the service!"}
                 """),
-        READ_TIMEOUT(954, """
+        READ_TIMEOUT(954, "read timeout", """
                 {"notAJson": "read timeout! you might want to increased it using --readTimeout"}
                 """),
-        WRITE_TIMEOUT(955, """
+        WRITE_TIMEOUT(955, "write timeout", """
                 {"notAJson": "write timeout! you might want to increased it using --writeTimeout"}
                 """),
-        CONNECTION_TIMEOUT(956, """
+        CONNECTION_TIMEOUT(956, "connection timeout", """
                 {"notAJson": "connection timeout! you might want to increased it using --connectionTimeout"}
                 """),
-        PROTOCOL_EXCEPTION(957, """
+        PROTOCOL_EXCEPTION(957, "protocol exception", """
                 {"notAJson": "protocol exception! your service has issues providing a consistent response"}
                 """),
-        CONNECTION_RESET(958, """
+        CONNECTION_RESET(958, "connection reset", """
                 {"notAJson": "connection reset! you might retry the request or check connectivity or server status!"}
                 """),
-        NO_BODY(INVALID_ERROR_CODE, """
+        NO_BODY(INVALID_ERROR_CODE, "no body", """
                 {"notAJson": "no body due to unknown error"}
                 """);
 
         private final int responseCode;
         private final String responseBody;
+        private final String messageToSearch;
 
-        ExceptionalResponse(int responseCode, String jsonResponse) {
+        ExceptionalResponse(int responseCode, String messageToSearch, String jsonResponse) {
             this.responseCode = responseCode;
             this.responseBody = jsonResponse;
+            this.messageToSearch = messageToSearch;
         }
 
         public int responseCode() {
