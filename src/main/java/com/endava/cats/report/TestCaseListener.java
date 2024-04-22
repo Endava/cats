@@ -194,7 +194,7 @@ public class TestCaseListener {
     private void startTestCase() {
         String testId = String.valueOf(TEST.incrementAndGet());
         MDC.put(ID, testId);
-        MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 6, Ansi.Color.MAGENTA));
+        MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 7, Ansi.Color.MAGENTA));
 
         testCaseMap.put(testId, new CatsTestCase());
         testCaseMap.get(testId).setTestId("Test " + testId);
