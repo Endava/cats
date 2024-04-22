@@ -137,7 +137,7 @@ public class TemplateFuzzCommand implements Runnable {
                     .targetFields(fieldsToFuzz)
                     .build();
 
-            beforeFuzz(fuzzingData.getContractPath());
+            beforeFuzz();
             templateFuzzer.fuzz(fuzzingData);
             afterFuzz(fuzzingData.getContractPath(), fuzzingData.getMethod().name());
         } catch (IOException e) {
@@ -174,7 +174,7 @@ public class TemplateFuzzCommand implements Runnable {
         testCaseListener.endSession();
     }
 
-    private void beforeFuzz(String path) throws IOException {
+    private void beforeFuzz() throws IOException {
         testCaseListener.initReportingPath();
         testCaseListener.beforeFuzz(templateFuzzer.getClass());
     }
