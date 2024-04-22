@@ -3,7 +3,6 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
-import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
@@ -61,7 +60,6 @@ public class RandomFuzzer implements Fuzzer {
     private final ExecutionStatisticsListener executionStatisticsListener;
     private final MatchArguments matchArguments;
     private final StopArguments stopArguments;
-    private final ReportingArguments reportingArguments;
     private final FilesArguments filesArguments;
     private final Instance<Mutator> mutators;
 
@@ -69,15 +67,13 @@ public class RandomFuzzer implements Fuzzer {
     public RandomFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener,
                         ExecutionStatisticsListener executionStatisticsListener,
                         MatchArguments matchArguments, Instance<Mutator> mutators,
-                        StopArguments stopArguments, ReportingArguments reportingArguments,
-                        FilesArguments filesArguments) {
+                        StopArguments stopArguments, FilesArguments filesArguments) {
         this.simpleExecutor = simpleExecutor;
         this.testCaseListener = testCaseListener;
         this.executionStatisticsListener = executionStatisticsListener;
         this.matchArguments = matchArguments;
         this.mutators = mutators;
         this.stopArguments = stopArguments;
-        this.reportingArguments = reportingArguments;
         this.filesArguments = filesArguments;
     }
 
