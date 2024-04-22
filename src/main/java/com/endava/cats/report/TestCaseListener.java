@@ -62,8 +62,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @DryRun
 public class TestCaseListener {
     private final Iterator<String> cycle = Iterators.cycle("\\", "|", "/", "-");
-    private static final String FUZZER_KEY_DEFAULT = "*******";
-    private static final String TEST_KEY_DEFAULT = "******";
+    private static final String DEFAULT = "*******";
     static final String ID = "id";
     private static final String FUZZER_KEY = "fuzzerKey";
     private static final String FUZZER = "fuzzer";
@@ -123,6 +122,10 @@ public class TestCaseListener {
         return message;
     }
 
+    private String getKeyDefault() {
+        return reportingArguments.isSummaryInConsole() ? "" : DEFAULT;
+    }
+
     /**
      * Performs setup actions before fuzzing for the specified fuzzer class.
      *
@@ -130,7 +133,7 @@ public class TestCaseListener {
      */
     public void beforeFuzz(Class<?> fuzzer) {
         String clazz = ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()).replaceAll("[a-z]", "");
-        MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, FUZZER_KEY_DEFAULT.length(), Ansi.Color.MAGENTA));
+        MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, getKeyDefault().length(), Ansi.Color.MAGENTA));
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
     }
 
@@ -144,8 +147,8 @@ public class TestCaseListener {
         double chunkSize = 100d / runTotals.getOrDefault(path, 1) + 0.01;
         this.notifySummaryObservers(path, httpMethod, chunkSize);
 
-        MDC.put(FUZZER, FUZZER_KEY_DEFAULT);
-        MDC.put(FUZZER_KEY, FUZZER_KEY_DEFAULT);
+        MDC.put(FUZZER, this.getKeyDefault());
+        MDC.put(FUZZER_KEY, this.getKeyDefault());
     }
 
     /**
@@ -301,7 +304,7 @@ public class TestCaseListener {
         keepExecutionDetails(currentTestCase);
         testCaseMap.remove(MDC.get(ID));
         MDC.remove(ID);
-        MDC.put(ID_ANSI, TEST_KEY_DEFAULT);
+        MDC.put(ID_ANSI, this.getKeyDefault());
         logger.info(SEPARATOR);
     }
 
@@ -371,9 +374,9 @@ public class TestCaseListener {
      * version, build time, and platform.
      */
     public void startSession() {
-        MDC.put(ID_ANSI, TEST_KEY_DEFAULT);
-        MDC.put(FUZZER, FUZZER_KEY_DEFAULT);
-        MDC.put(FUZZER_KEY, FUZZER_KEY_DEFAULT);
+        MDC.put(ID_ANSI, this.getKeyDefault());
+        MDC.put(FUZZER, this.getKeyDefault());
+        MDC.put(FUZZER_KEY, this.getKeyDefault());
 
         String osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
 
