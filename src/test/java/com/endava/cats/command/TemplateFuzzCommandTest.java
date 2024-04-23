@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -17,6 +18,7 @@ class TemplateFuzzCommandTest {
 
     @Inject
     TemplateFuzzCommand templateFuzzCommand;
+    MatchArguments matchArguments;
     @Inject
     UserArguments userArguments;
     TemplateFuzzer templateFuzzer;
@@ -25,6 +27,9 @@ class TemplateFuzzCommandTest {
     void setup() {
         templateFuzzer = Mockito.mock(TemplateFuzzer.class);
         ReflectionTestUtils.setField(templateFuzzCommand, "templateFuzzer", templateFuzzer);
+        matchArguments = Mockito.mock(MatchArguments.class);
+        ReflectionTestUtils.setField(templateFuzzCommand, "matchArguments", matchArguments);
+        Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
     }
 
     @Test
@@ -66,5 +71,16 @@ class TemplateFuzzCommandTest {
         templateFuzzCommand.data = "@src/test/resources/dict_non_real.txt";
         templateFuzzCommand.run();
         Mockito.verifyNoInteractions(templateFuzzer);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenNoMatchArgumentSupplied() {
+        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ReflectionTestUtils.setField(templateFuzzCommand, "spec", spec);
+        templateFuzzCommand.data = "@src/test/resources/data.json";
+        Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(false);
+        
+        Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("At least one --matchXXX argument is required");
     }
 }
