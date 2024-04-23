@@ -49,6 +49,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.isUseExamples()).thenReturn(true);
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(10);
         Mockito.when(processingArguments.isGenerateAllXxxCombinationsForResponses()).thenReturn(true);
+        Mockito.when(processingArguments.isFilterXxxFromRequestPayloads()).thenReturn(false);
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of(ProcessingArguments.JSON_WILDCARD, "application/x-www-form-urlencoded"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
     }
@@ -274,6 +275,72 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
                 .hasSize(4);
+    }
+
+    @Test
+    void shouldProperlyGenerateFromArrayWithAnyOfElements() throws Exception {
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(100);
+        List<FuzzingData> dataList = setupFuzzingData("/api/v1/studies", "src/test/resources/prolific.yaml");
+
+        Assertions.assertThat(dataList).hasSize(17);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
+                .hasSize(1);
+
+        FuzzingData firstData = dataList.get(0);
+        boolean isActionsArray = JsonUtils.isArray(firstData.getPayload(), "$.CreateStudy.completion_codes[0].actions");
+        Assertions.assertThat(isActionsArray).isTrue();
+    }
+
+    @Test
+    void shouldLimitXxxCombinationsWhenCombinationsExceedArgument() throws Exception {
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(100);
+        List<FuzzingData> dataList = setupFuzzingData("/v0/organizations/{organization-id}/onboarding/applications", "src/test/resources/griffin.yaml");
+
+        Assertions.assertThat(dataList).hasSize(100);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
+                .hasSize(3);
+
+        FuzzingData firstData = dataList.get(0);
+        boolean isActionsArray = JsonUtils.isArray(firstData.getPayload(), "$.subject-profile.claims");
+        Assertions.assertThat(isActionsArray).isTrue();
+    }
+
+    @Test
+    void shouldGenerateCombinationWhenXxxArraysAndSimpleTypes() throws IOException {
+        List<FuzzingData> dataList = setupFuzzingData("/api/database/tokens/{token_id}", "src/test/resources/baserow.yaml");
+
+        Assertions.assertThat(dataList).hasSize(12);
+
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
+
+        FuzzingData data = dataList.get(4);
+        Object createPermision = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.create[0]");
+        Object updatePermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.update[0]");
+
+        Assertions.assertThat(createPermision).asString().isEqualTo("database");
+        Assertions.assertThat(updatePermission).asString().isEqualTo("database");
+    }
+
+    @Test
+    void shouldGenerateCombinationsWhenXxxAsInlineSchemas() throws IOException {
+        List<FuzzingData> dataList = setupFuzzingData("/v1/employee_benefits/{employee_benefit_id}", "src/test/resources/gusto.yaml");
+
+        Assertions.assertThat(dataList).hasSize(4);
+
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
+                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
+
+        FuzzingData firstData = dataList.get(1);
+        boolean firstDataIsArray = JsonUtils.isArray(firstData.getPayload(), "$.contribution.value");
+
+        FuzzingData zeroData = dataList.get(0);
+        boolean zeroDataIsNotArray = JsonUtils.isArray(zeroData.getPayload(), "$.contribution.value");
+
+        Assertions.assertThat(firstDataIsArray).isTrue();
+        Assertions.assertThat(zeroDataIsNotArray).isFalse();
     }
 
     @Test
