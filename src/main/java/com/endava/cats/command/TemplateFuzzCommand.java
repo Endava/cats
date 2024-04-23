@@ -193,6 +193,9 @@ public class TemplateFuzzCommand implements Runnable {
         if (HttpMethod.requiresBody(httpMethod) && data == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --data=<data>");
         }
+        if (!matchArguments.isAnyMatchArgumentSupplied()) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "At least one --matchXXX argument is required");
+        }
     }
 
     private String loadPayload() throws IOException {
