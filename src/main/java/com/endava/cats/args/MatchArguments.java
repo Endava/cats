@@ -39,7 +39,7 @@ public class MatchArguments {
     private String matchResponseRegex;
 
     @CommandLine.Option(names = {"--matchInput", "--mi"},
-            description = "A flag to check if the response is reflecting the fuzzed value that will match as @|bold,underline error|@. Non-matching responses will be ignored from the final report.")
+            description = "A flag to check if the response is reflecting the fuzzed value that will match as @|bold,underline error|@. Non-matching responses will be ignored from the final report. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean matchInput;
 
     /**
