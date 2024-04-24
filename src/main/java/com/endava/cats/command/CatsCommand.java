@@ -332,7 +332,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         apiArguments.validateRequired(spec);
         apiArguments.validateValidServer(spec);
         filesArguments.loadConfig();
-        apiArguments.setUserAgent(appVersion);
     }
 
     private void printConfiguration(OpenAPI openAPI) {

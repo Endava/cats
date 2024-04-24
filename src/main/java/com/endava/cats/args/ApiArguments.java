@@ -4,6 +4,7 @@ import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
 /**
@@ -46,6 +47,9 @@ public class ApiArguments {
             description = "Base URL of the service")
     private String server;
 
+    @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
+    String appVersion;
+
     /**
      * Verifies if the supplied OpenAPI spec is from a local location or a http one.
      *
@@ -82,17 +86,9 @@ public class ApiArguments {
      * @return a full name for the user agent containing both version data and testId and fuzzer name
      */
     public String getUserAgent(int testId, String fuzzer) {
-        return this.userAgent + " (Test " + testId + " - " + fuzzer + ")";
-    }
-
-    /**
-     * Sets a custom user agent based on the CATS version.
-     *
-     * @param version the current CATS version
-     */
-    public void setUserAgent(String version) {
         if (userAgent == null) {
-            userAgent = "cats/" + version;
+            userAgent = "cats/" + appVersion;
         }
+        return this.userAgent + " (Test " + testId + " - " + fuzzer + ")";
     }
 }
