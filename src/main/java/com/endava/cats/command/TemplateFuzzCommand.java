@@ -21,6 +21,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
 import jakarta.inject.Inject;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
 
@@ -61,6 +62,12 @@ import java.util.stream.Collectors;
 @Unremovable
 public class TemplateFuzzCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzCommand.class);
+
+    /**
+     * Keyword used to mark fields to fuzz.
+     */
+    public static final String FUZZ = "FUZZ";
+
     @CommandLine.Parameters(index = "0",
             paramLabel = "<url>",
             description = "Full URL path of the service endpoint. This should include query params for non-body HTTP requests.")
@@ -113,13 +120,11 @@ public class TemplateFuzzCommand implements Runnable {
     String data;
 
     @CommandLine.Option(names = {"--httpMethod", "-X"},
-            description = "The HTTP method. For HTTP method requiring a body you must also supply a  @|bold,underline --template|@. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+            description = "The HTTP method. For HTTP method requiring a body you must also supply @|bold,underline --data|@. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
     HttpMethod httpMethod = HttpMethod.POST;
 
     @CommandLine.Option(names = {"--targetFields", "-t"},
-            description = "A comma separated list of fully qualified request fields, HTTP headers, path and query parameters that the Fuzzers will apply to." +
-                    "For HTTP requests with bodies fuzzing will only run on request fields and/or HTTP headers. For HTTP request without bodies fuzzing will run on path and query parameters " +
-                    "and/or HTTP headers.", split = ",")
+            description = "A comma separated list of fully qualified request fields, HTTP headers, path and query parameters that the Fuzzers will apply to.", split = ",")
     Set<String> targetFields;
 
     @Override
@@ -128,7 +133,7 @@ public class TemplateFuzzCommand implements Runnable {
             this.init();
             String payload = this.loadPayload();
             logger.debug("Resolved payload: {}", payload);
-            Set<String> fieldsToFuzz = getFieldsToFuzz(payload);
+            Set<String> fieldsToFuzz = getFieldsToFuzz(payload, url);
             FuzzingData fuzzingData = FuzzingData.builder().path(url)
                     .contractPath(url)
                     .processedPayload(payload)
@@ -152,7 +157,6 @@ public class TemplateFuzzCommand implements Runnable {
         ConsoleUtils.initTerminalWidth(spec);
         validateRequiredFields();
         renderHeaderIfSummary();
-        apiArguments.setUserAgent(appVersion);
     }
 
     private void renderHeaderIfSummary() {
@@ -161,11 +165,28 @@ public class TemplateFuzzCommand implements Runnable {
         }
     }
 
-    private Set<String> getFieldsToFuzz(String payload) {
-        if (!HttpMethod.requiresBody(httpMethod)) {
-            return targetFields;
+    private Set<String> getFieldsToFuzz(String payload, String url) {
+        String fuzzKeyword = this.getFuzzKeyword(payload, url);
+
+        if (targetFields == null || targetFields.isEmpty()) {
+            if (StringUtils.isEmpty(fuzzKeyword) && !HttpMethod.requiresBody(httpMethod)) {
+                throw new CommandLine.ParameterException(spec.commandLine(), "You must provide either --targetFields or the FUZZ keyword");
+            }
+            if (StringUtils.isEmpty(fuzzKeyword)) {
+                return new HashSet<>(JsonUtils.getAllFieldsOf(payload));
+            }
+            //When FUZZ keyword is supplied, set simple replace to true in order to do a simple replace(FUZZ, fuzzValue)
+            userArguments.setSimpleReplace(true);
+            return Set.of(fuzzKeyword);
         }
-        return targetFields == null || targetFields.isEmpty() ? new HashSet<>(JsonUtils.getAllFieldsOf(payload)) : targetFields;
+        return targetFields;
+    }
+
+    private String getFuzzKeyword(String payload, String url) {
+        if (url.contains(FUZZ) || payload.contains(FUZZ)) {
+            return FUZZ;
+        }
+        return "";
     }
 
     private void afterFuzz(String path, String method) {

@@ -173,6 +173,51 @@ class TemplateFuzzerTest {
     }
 
     @Test
+    void shouldRunWithFuzzKeywordInPath() throws Exception {
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("FUZZ"))
+                .headers(Set.of())
+                .processedPayload("{\"field\":\"value\"}")
+                .method(HttpMethod.POST)
+                .path("http://url/FUZZ")
+                .build();
+        Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
+        templateFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldRunWithFuzzKeywordInPayload() throws Exception {
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("FUZZ"))
+                .headers(Set.of())
+                .processedPayload("{\"field\":\"FUZZ\"}")
+                .method(HttpMethod.POST)
+                .path("http://url/")
+                .build();
+        Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
+        templateFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(2)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
+    void shouldNotRunWhenFuzzNotPresent() throws Exception {
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        FuzzingData data = FuzzingData.builder()
+                .targetFields(Set.of("FUZZ"))
+                .headers(Set.of())
+                .processedPayload("{\"field\":\"value\"}")
+                .method(HttpMethod.POST)
+                .path("http://url/")
+                .build();
+        Mockito.when(userArguments.getWords()).thenReturn(new File("src/test/resources/dict.txt"));
+        templateFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
+    }
+
+    @Test
     void shouldReportErrorWhenServiceException() throws Exception {
         FuzzingData data = FuzzingData.builder()
                 .targetFields(Set.of("header"))

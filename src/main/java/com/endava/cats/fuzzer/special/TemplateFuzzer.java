@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 @Singleton
 @SpecialFuzzer
 public class TemplateFuzzer implements Fuzzer {
+    public static final String EMPTY = "";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TemplateFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
@@ -96,7 +97,7 @@ public class TemplateFuzzer implements Fuzzer {
 
     String replacePath(FuzzingData data, String withData, String targetField) {
         if (userArguments.isSimpleReplace()) {
-            return data.getPath().replace(targetField, Optional.ofNullable(withData).orElse(""));
+            return data.getPath().replace(targetField, Optional.ofNullable(withData).orElse(EMPTY));
         }
 
         String finalPath = data.getPath();
@@ -140,7 +141,7 @@ public class TemplateFuzzer implements Fuzzer {
                 payloads.add(UnicodeGenerator.getZalgoText());
                 payloads.add(StringGenerator.generateLargeString(20000));
                 payloads.add(null);
-                payloads.add("");
+                payloads.add(EMPTY);
                 return payloads;
             } else {
                 return Files.readAllLines(Path.of(userArguments.getWords().getAbsolutePath()), StandardCharsets.UTF_8)
@@ -165,6 +166,9 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     private String replacePayload(FuzzingData data, String withData, String targetField) {
+        if (userArguments.isSimpleReplace()) {
+            return data.getPayload().replace(targetField, withData);
+        }
         try {
             return CatsUtil.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).json();
         } catch (JsonPathException e) {
@@ -173,7 +177,7 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     private int getPayloadSize(FuzzingData data, String field) {
-        String oldValue = data.getPath().contains(field) ? "CATS_FUZZ" : "";
+        String oldValue = data.getPath().contains(field) ? "CATS_FUZZ" : EMPTY;
 
         if (oldValue.isEmpty()) {
             oldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), field));
@@ -183,7 +187,10 @@ public class TemplateFuzzer implements Fuzzer {
                     .filter(header -> header.getName().equalsIgnoreCase(field))
                     .map(CatsHeader::getValue)
                     .findFirst()
-                    .orElse("");
+                    .orElse(EMPTY);
+        }
+        if (oldValue.isEmpty()) {
+            oldValue = data.getPayload().contains(field) ? "CATS_FUZZ" : EMPTY;
         }
 
         return oldValue.length();
