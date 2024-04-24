@@ -54,7 +54,7 @@ public class InfoCommand implements Runnable {
         String osName = System.getProperty("os.name");
         String osVersion = System.getProperty("os.version");
         String osArch = System.getProperty("os.arch");
-        String terminalWidth = String.valueOf(ConsoleUtils.getTerminalWidth(1));
+        String terminalWidth = String.valueOf(ConsoleUtils.getTerminalWidth());
         String terminalType = ConsoleUtils.getTerminalType();
         String shell = ConsoleUtils.getShell();
 
