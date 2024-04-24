@@ -11,21 +11,21 @@ import org.junit.jupiter.params.provider.CsvSource;
 class DescriptionGeneratorTest {
     @Test
     void shouldGenerate() {
-        DescriptionGenerator DescriptionGenerator = new DescriptionGenerator();
-        Assertions.assertThat(DescriptionGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThan(1);
+        DescriptionGenerator descriptionGenerator = new DescriptionGenerator();
+        Assertions.assertThat(descriptionGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThan(1);
     }
 
     @ParameterizedTest
     @CsvSource({"Description,true", "other,false"})
     void shouldApplyToFormat(String format, boolean expected) {
-        DescriptionGenerator DescriptionGenerator = new DescriptionGenerator();
-        Assertions.assertThat(DescriptionGenerator.appliesTo(format, "")).isEqualTo(expected);
+        DescriptionGenerator descriptionGenerator = new DescriptionGenerator();
+        Assertions.assertThat(descriptionGenerator.appliesTo(format, "")).isEqualTo(expected);
     }
 
     @ParameterizedTest
     @CsvSource({"Description,true", "description,true", "other#Description,true", "other, false"})
     void shouldApplyToPropertyName(String property, boolean expected) {
-        DescriptionGenerator DescriptionGenerator = new DescriptionGenerator();
-        Assertions.assertThat(DescriptionGenerator.appliesTo("", property)).isEqualTo(expected);
+        DescriptionGenerator descriptionGenerator = new DescriptionGenerator();
+        Assertions.assertThat(descriptionGenerator.appliesTo("", property)).isEqualTo(expected);
     }
 }
