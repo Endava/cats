@@ -2,6 +2,7 @@ package com.endava.cats.util;
 
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
@@ -21,7 +22,14 @@ public abstract class ConsoleUtils {
 
     private static final Pattern ANSI_REMOVE_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
 
-    private static int terminalWidth = 0;
+    /**
+     * -- GETTER --
+     * Get the width of the terminal.
+     * <p>
+     * Size is cached, so it won't reach to width changes during run.
+     */
+    @Getter
+    private static int terminalWidth = 80;
 
     private ConsoleUtils() {
         //ntd
@@ -31,7 +39,7 @@ public abstract class ConsoleUtils {
         try {
             terminalWidth = spec.usageMessage().width();
         } catch (Exception e) {
-            terminalWidth = 0;
+            terminalWidth = 80;
         }
     }
 
@@ -93,18 +101,6 @@ public abstract class ConsoleUtils {
     }
 
     /**
-     * Get the width of the terminal.
-     * <p>
-     * Size is cached, so it won't reach to width changes during run.
-     *
-     * @param defaultWidth The default width to use if unable to determine the terminal size.
-     * @return The width of the terminal.
-     */
-    public static int getTerminalWidth(int defaultWidth) {
-        return terminalWidth == 0 ? defaultWidth : terminalWidth;
-    }
-
-    /**
      * Render a progress row on the same console row.
      *
      * @param path       The path being processed.
@@ -143,8 +139,7 @@ public abstract class ConsoleUtils {
      */
     public static void renderRow(String prefix, String path, String rightTextToRender) {
         String withoutAnsi = ANSI_REMOVE_PATTERN.matcher(path).replaceAll("");
-        int consoleWidth = getTerminalWidth(80);
-        int dots = Math.max(consoleWidth - withoutAnsi.length() - rightTextToRender.length() - 2, 1);
+        int dots = Math.max(terminalWidth - withoutAnsi.length() - rightTextToRender.length() - 2, 1);
         String firstPart = path.substring(0, path.indexOf("  "));
         String secondPart = path.substring(path.indexOf("  ") + 1);
         String toPrint = Ansi.ansi().bold().a(prefix + firstPart + " " + ".".repeat(dots) + secondPart + "  " + rightTextToRender).reset().toString();
@@ -158,9 +153,7 @@ public abstract class ConsoleUtils {
      * @return The adjusted number of columns.
      */
     public static int getConsoleColumns(int toSubtract) {
-        int columns = getTerminalWidth(120);
-
-        return columns - toSubtract;
+        return terminalWidth - toSubtract;
     }
 
     /**
@@ -170,7 +163,7 @@ public abstract class ConsoleUtils {
      */
     public static void renderHeader(String header) {
         LOGGER.noFormat(" ");
-        int equalsNo = (getTerminalWidth(80) - header.length()) / 2;
+        int equalsNo = (terminalWidth - header.length()) / 2;
         LOGGER.noFormat(Ansi.ansi().bold().a("=".repeat(equalsNo) + header + "=".repeat(equalsNo)).reset().toString());
     }
 
