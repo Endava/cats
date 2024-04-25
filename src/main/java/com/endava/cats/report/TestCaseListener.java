@@ -429,11 +429,21 @@ public class TestCaseListener {
      * Additionally, prints execution details using the associated logger.
      */
     public void endSession() {
+        reportingArguments.enableAdditionalLoggingIfSummary();
         testCaseExporter.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
         testCaseExporter.writeHelperFiles();
         testCaseExporter.writePerformanceReport(testCaseExecutionDetails);
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
         writeRecordedErrorsIfPresent();
+    }
+
+    /**
+     * Renders a FUZZING header is logging is SUMMARY.
+     */
+    public void renderFuzzingHeader() {
+        if (reportingArguments.isSummaryInConsole()) {
+            ConsoleUtils.renderHeader(" FUZZING ");
+        }
     }
 
     private void writeRecordedErrorsIfPresent() {
@@ -537,6 +547,7 @@ public class TestCaseListener {
             executionStatisticsListener.increaseErrors(testCase.getContractPath());
             logger.error(message, params);
             this.recordResult(message, params, Level.ERROR.toString().toLowerCase(), logger);
+            this.renderProgress(catsResponse);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
@@ -547,6 +558,18 @@ public class TestCaseListener {
             this.reportInfo(logger, message, params);
         }
         recordAuthErrors(catsResponse);
+    }
+
+
+    /**
+     * When {@code --printProgress} is enabled we output in the console the url that fails.
+     *
+     * @param catsResponse the CatsResponse object
+     */
+    private void renderProgress(CatsResponse catsResponse) {
+        if (reportingArguments.isPrintProgress()) {
+            ConsoleUtils.renderSameRow("+ " + catsResponse.getPath());
+        }
     }
 
     private boolean isException(CatsResponse catsResponse) {

@@ -112,6 +112,6 @@ class OpenAPIModelGeneratorTest {
         OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         globalContext.getSchemaMap().putAll(schemas);
-        return new OpenAPIModelGenerator(globalContext, validDataFormat, true, 3);
+        return new OpenAPIModelGenerator(globalContext, validDataFormat, true, 3, true);
     }
 }
