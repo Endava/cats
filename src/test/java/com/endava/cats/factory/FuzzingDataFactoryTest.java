@@ -96,6 +96,19 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data.get(0).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
     }
 
+//    @Test
+    void shouldIgnoreOneOfAnyOfWhenAdditionalSchemaIsNull2() throws Exception {
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(2);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.isUseDefaults()).thenReturn(false);
+
+        List<FuzzingData> data = setupFuzzingData("/evaluate", "../openapi-examples/radix/openapi.yaml");
+        Assertions.assertThat(data).hasSize(1);
+
+        Assertions.assertThat(data.get(0).getPayload()).contains("dateFrom");
+        Assertions.assertThat(data.get(0).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
+    }
+
     @Test
     void shouldNotGenerateRequestBodyWhenPostButSchemaEmpty() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore_empty_body.json");
@@ -279,10 +292,10 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldProperlyGenerateFromArrayWithAnyOfElements() throws Exception {
-        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(100);
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(50);
         List<FuzzingData> dataList = setupFuzzingData("/api/v1/studies", "src/test/resources/prolific.yaml");
 
-        Assertions.assertThat(dataList).hasSize(17);
+        Assertions.assertThat(dataList).hasSize(31);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
                 .hasSize(1);

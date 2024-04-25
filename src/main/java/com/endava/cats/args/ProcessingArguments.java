@@ -82,6 +82,10 @@ public class ProcessingArguments {
                     "Setting this to false will send them as requests which will probably fail. It's mostly for debug purposes. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean filterXxxFromRequestPayloads = true;
 
+    @CommandLine.Option(names = {"--useDefaults"}, negatable = true,
+            description = "If set to true, it will use the default values when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@", arity = "1")
+    private boolean useDefaults = true;
+
     /**
      * Represents a wildcard pattern for JSON content type with optional parameters.
      */

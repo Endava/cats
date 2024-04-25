@@ -230,17 +230,11 @@ public class TemplateFuzzer implements Fuzzer {
         if (matchArguments.isMatchResponse(catsResponse) || matchArguments.isInputReflected(catsResponse, fuzzedValue) || !matchArguments.isAnyMatchArgumentSupplied()) {
             testCaseListener.addResponse(catsResponse);
             testCaseListener.reportResultError(logger, data, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
-            this.renderFinding(catsResponse);
         } else {
             testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
         }
     }
 
-    private void renderFinding(CatsResponse catsResponse) {
-        if (userArguments.isPrintProgress()) {
-            ConsoleUtils.renderSameRow("+ " + catsResponse.getPath());
-        }
-    }
 
     @Override
     public String description() {

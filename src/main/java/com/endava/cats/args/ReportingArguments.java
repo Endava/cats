@@ -83,6 +83,10 @@ public class ReportingArguments {
             description = "A list of headers to mask when logging into console or in report files. Headers will be replaced with @|underline $$headerName|@ so that test cases can be replayed with environment variables", split = ",")
     private Set<String> maskHeaders;
 
+    @CommandLine.Option(names = {"--printProgress"},
+            description = "If set to true, it will print any URLs matching the given match arguments.  Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+    boolean printProgress;
+
     private List<String> getLogData() {
         return Optional.ofNullable(logData).orElse(Collections.emptyList());
     }

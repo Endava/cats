@@ -227,25 +227,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         testCaseListener.initReportingPath();
         this.printConfiguration(openAPI);
         this.initGlobalData(openAPI);
-        this.renderHeaderIfSummary();
+        testCaseListener.renderFuzzingHeader();
         this.startFuzzing(openAPI);
         this.executeCustomFuzzer();
-        this.enableAdditionalLoggingIfSummary();
     }
 
     private void checkOpenAPI(OpenAPI openAPI) {
         if (openAPI == null || openAPI.getPaths() == null || openAPI.getPaths().isEmpty()) {
             throw new IllegalArgumentException("Provided OpenAPI specs are invalid!");
-        }
-    }
-
-    private void enableAdditionalLoggingIfSummary() {
-        reportingArguments.enableAdditionalLoggingIfSummary();
-    }
-
-    private void renderHeaderIfSummary() {
-        if (reportingArguments.isSummaryInConsole()) {
-            ConsoleUtils.renderHeader(" FUZZING ");
         }
     }
 

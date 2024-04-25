@@ -143,6 +143,8 @@ public abstract class ConsoleUtils {
         String firstPart = path.substring(0, path.indexOf("  "));
         String secondPart = path.substring(path.indexOf("  ") + 1);
         String toPrint = Ansi.ansi().bold().a(prefix + firstPart + " " + ".".repeat(dots) + secondPart + "  " + rightTextToRender).reset().toString();
+
+        //we just use system.out as the logger adds a new line
         System.out.print(toPrint);
     }
 
@@ -173,7 +175,9 @@ public abstract class ConsoleUtils {
      * @param message the message
      */
     public static void renderSameRow(String message) {
-        int spacesToAdd = getConsoleColumns(message.length());
+        int spacesToAdd = Math.max(getConsoleColumns(message.length()), 0);
+
+        //we just use system.out as the logger adds a new line
         System.out.print("\r" + message + " ".repeat(spacesToAdd) + "\n");
     }
 

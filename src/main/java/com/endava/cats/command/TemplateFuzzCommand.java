@@ -156,13 +156,7 @@ public class TemplateFuzzCommand implements Runnable {
         reportingArguments.processLogData();
         ConsoleUtils.initTerminalWidth(spec);
         validateRequiredFields();
-        renderHeaderIfSummary();
-    }
-
-    private void renderHeaderIfSummary() {
-        if (reportingArguments.isSummaryInConsole()) {
-            ConsoleUtils.renderHeader(" FUZZING ");
-        }
+        testCaseListener.renderFuzzingHeader();
     }
 
     private Set<String> getFieldsToFuzz(String payload, String url) {

@@ -60,6 +60,7 @@ public class OpenAPIModelGenerator {
     private final int selfReferenceDepth;
     private String currentProperty = "";
     private final Map<String, String> schemaRefMap;
+    private boolean useDefaults;
 
     /**
      * Constructs an OpenAPIModelGenerator with the specified configuration.
@@ -69,13 +70,14 @@ public class OpenAPIModelGenerator {
      * @param useExamplesArgument Flag indicating whether to use examples from the OpenAPI specification.
      * @param selfReferenceDepth  The maximum depth for generating self-referencing models.
      */
-    public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth) {
+    public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth, boolean useDefaults) {
         this.globalContext = catsGlobalContext;
         this.random = CatsUtil.random();
         this.useExamples = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
         this.schemaRefMap = new LinkedHashMap<>();
+        this.useDefaults = useDefaults;
     }
 
 
@@ -156,7 +158,7 @@ public class OpenAPIModelGenerator {
             return enumValues.stream().filter(Objects::nonNull).findAny().orElse(enumValues.get(0));
         }
 
-        if (propertySchema.getDefault() != null) {
+        if (propertySchema.getDefault() != null && useDefaults) {
             return propertySchema.getDefault();
         }
 

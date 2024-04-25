@@ -439,7 +439,9 @@ public class FuzzingDataFactory {
     }
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
-        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(), processingArguments.getSelfReferenceDepth());
+        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults());
+
         List<String> result = this.generateSample(reqSchemaName, generator, true);
 
         if (mediaType != null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
@@ -650,9 +652,9 @@ public class FuzzingDataFactory {
             for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
                 if (isNotNullAndNonPrimitiveArray(elementEntry) && isAnyOrOneOfInChildren(elementEntry.getValue())) {
                     anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
-                } else if (isNotNullAndNonPrimitiveArray(elementEntry)) {
+                } else if (isNotNullAndNonPrimitiveArray(elementEntry) && isXxxOfInString(elementEntry.getKey())) {
                     anyOrOneOfs.merge(this.createArrayKey(jsonElementKey, elementEntry.getKey()), Map.of(elementEntry.getKey(), elementEntry.getValue().getAsJsonArray().get(0)), this::mergeMaps);
-                } else if (elementEntry.getKey().contains(ONE_OF) || elementEntry.getKey().contains(ANY_OF)) {
+                } else if (isXxxOfInString(elementEntry.getKey())) {
                     anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
                             Map.of(elementEntry.getKey(), elementEntry.getValue()), this::mergeMaps);
                 } else if (isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ONE_OF) || isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ANY_OF)) {
@@ -670,6 +672,10 @@ public class FuzzingDataFactory {
         }
 
         return anyOrOneOfs;
+    }
+
+    private boolean isXxxOfInString(String toCheck) {
+        return toCheck.contains(ONE_OF) || toCheck.contains(ANY_OF);
     }
 
     private static boolean isNotNullAndNonPrimitiveArray(Map.Entry<String, JsonElement> elementEntry) {
@@ -825,7 +831,9 @@ public class FuzzingDataFactory {
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation) {
         Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(), processingArguments.getSelfReferenceDepth());
+        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults());
+
         for (String responseCode : operation.getResponses().keySet()) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
