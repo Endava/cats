@@ -341,10 +341,9 @@ public class FilesArguments {
 
         collection.entrySet().stream()
                 .filter(entry -> entry.getKey().equalsIgnoreCase(ALL))
-                .map(entry -> entry.getValue())
+                .map(Map.Entry::getValue)
                 .findFirst().orElse(Map.of())
-                .entrySet().stream()
-                .forEach(entry -> mergedMap.putIfAbsent(entry.getKey(), entry.getValue()));
+                .forEach(mergedMap::putIfAbsent);
 
         return mergedMap;
     }
