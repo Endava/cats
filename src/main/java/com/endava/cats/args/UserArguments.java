@@ -26,7 +26,7 @@ public class UserArguments {
 
     @CommandLine.Option(names = {"--simpleReplace"},
             description = "If set to true, it will simply do a replace between the targetFields names provided and the fuzz values")
-    boolean simpleReplace = false;
+    boolean simpleReplace;
 
     /**
      * Gets the custom provided dictionary as a list of strings where each row is an item.

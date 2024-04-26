@@ -62,11 +62,11 @@ public class ReportingArguments {
             description = "Make selected commands output to console in JSON format.")
     private boolean jsonOutput;
 
-    @CommandLine.Option(names = {"--checkUpdate"}, negatable = true,
+    @CommandLine.Option(names = {"--checkUpdate"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "If true checks if there is a CATS update available and prints the release notes along with the links. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean checkUpdate = true;
 
-    @CommandLine.Option(names = {"--color"}, negatable = true,
+    @CommandLine.Option(names = {"--color"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "If true enables coloured console output. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean color = true;
 
