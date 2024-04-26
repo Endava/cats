@@ -32,7 +32,7 @@ public class ProcessingArguments {
             description = "This can be either sanitizeAndValidation or validateAndSanitize. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private SanitizationStrategy sanitizationStrategy = SanitizationStrategy.SANITIZE_AND_VALIDATE;
 
-    @CommandLine.Option(names = {"--useExamples"}, negatable = true,
+    @CommandLine.Option(names = {"--useExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "Use examples from the OpenAPI contract or not. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useExamples = true;
 
@@ -60,30 +60,30 @@ public class ProcessingArguments {
     Map<String, String> xxxOfSelections;
 
     @Setter
-    @CommandLine.Option(names = {"--rfc7396"}, negatable = true,
+    @CommandLine.Option(names = {"--rfc7396"},
             description = "When set to @|bold true|@ it will send Content-Type=application/merge-patch+json for PATCH requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean rfc7396 = false;
+    private boolean rfc7396;
 
     @Setter
-    @CommandLine.Option(names = {"--allowInvalidEnumValues"}, negatable = true,
-            description = "When set to @|bold true|@ the InvalidValuesInEnumsFieldsFuzzer will be disabled. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean allowInvalidEnumValues = false;
+    @CommandLine.Option(names = {"--allowInvalidEnumValues"},
+            description = "When set to @|bold true|@ the InvalidValuesInEnumsFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean allowInvalidEnumValues;
 
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
             description = "Max number of anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int limitXxxOfCombinations = 20;
 
-    @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"}, negatable = true,
+    @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"},
             description = "Generate anyOf/oneOf combinations also for response schemas. By default it creates one response payload with all possibilities. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean generateAllXxxCombinationsForResponses = false;
+    private boolean generateAllXxxCombinationsForResponses;
 
-    @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"}, negatable = true,
+    @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default. " +
                     "Setting this to false will send them as requests which will probably fail. It's mostly for debug purposes. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean filterXxxFromRequestPayloads = true;
 
-    @CommandLine.Option(names = {"--useDefaults"}, negatable = true,
-            description = "If set to true, it will use the default values when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@", arity = "1")
+    @CommandLine.Option(names = {"--useDefaults"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+            description = "If set to true, it will use the default values when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useDefaults = true;
 
     /**
