@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.simple.UnicodeGenerator;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 
 /**

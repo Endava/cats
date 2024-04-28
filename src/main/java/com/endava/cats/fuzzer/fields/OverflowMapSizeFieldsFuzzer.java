@@ -4,7 +4,7 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;

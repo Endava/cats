@@ -1,6 +1,6 @@
 package com.endava.cats.args;
 
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;

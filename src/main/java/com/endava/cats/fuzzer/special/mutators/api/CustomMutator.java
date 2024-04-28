@@ -1,7 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.api;
 
-import com.endava.cats.json.JsonUtils;
-import com.endava.cats.strategy.CommonWithinMethods;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.CatsUtil;
 
 /**
@@ -31,7 +30,7 @@ public class CustomMutator implements Mutator {
                 yield CatsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
             }
             case INSERT -> {
-                String valueToReplace = CommonWithinMethods.insertInTheMiddle(String.valueOf(existingValue), String.valueOf(valueToFuzz), true);
+                String valueToReplace = CatsUtil.insertInTheMiddle(String.valueOf(existingValue), String.valueOf(valueToFuzz), true);
                 yield CatsUtil.justReplaceField(inputJson, selectedField, valueToReplace).json();
             }
             case PREFIX -> {

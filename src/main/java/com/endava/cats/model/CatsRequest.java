@@ -1,5 +1,6 @@
 package com.endava.cats.model;
 
+import com.endava.cats.util.KeyValuePair;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

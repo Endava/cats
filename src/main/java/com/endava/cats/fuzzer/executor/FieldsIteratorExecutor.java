@@ -135,7 +135,7 @@ public class FieldsIteratorExecutor {
         if (context.isSimpleReplaceField()) {
             return CatsUtil.justReplaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy.getData());
         }
-        return CatsUtil.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
+        return FuzzingStrategy.replaceField(context.getFuzzingData().getPayload(), fuzzedField, strategy);
     }
 
     /**

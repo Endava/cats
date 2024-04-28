@@ -11,7 +11,7 @@ import com.endava.cats.fuzzer.special.mutators.api.CustomMutator;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorKeywords;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;

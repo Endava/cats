@@ -1,6 +1,7 @@
 package com.endava.cats.model;
 
 import com.endava.cats.model.ann.Exclude;
+import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.WordUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
