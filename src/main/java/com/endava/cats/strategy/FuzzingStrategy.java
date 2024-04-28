@@ -1,9 +1,17 @@
 package com.endava.cats.strategy;
 
 import com.endava.cats.generator.simple.StringGenerator;
+import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.FuzzingResult;
+import com.endava.cats.util.WordUtils;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
+import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -270,4 +278,79 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
      * @return the name of the fuzzing strategy
      */
     public abstract String name();
+
+    /**
+     * Retrieves a list of fuzzing strategies based on the characteristics of the provided field schema.
+     *
+     * @param fuzzedFieldSchema The schema representing the characteristics of the field to be fuzzed.
+     * @param invisibleChars    A list of invisible characters to be used in fuzzing strategies.
+     * @param maintainSize      If true, maintains the size of the field during fuzzing; if false, allows size modification.
+     * @return A list of {@link FuzzingStrategy} objects representing different fuzzing strategies for the field.
+     * It returns {@code FuzzingStrategy.skip()} If the field schema type is not "string" or has a binary/byte format.
+     * @throws NullPointerException If 'fuzzedFieldSchema' or 'invisibleChars' is null.
+     */
+    public static List<FuzzingStrategy> getFuzzingStrategies(Schema<?> fuzzedFieldSchema, List<String> invisibleChars, boolean maintainSize) {
+        boolean isNotString = !"string".equalsIgnoreCase(fuzzedFieldSchema.getType());
+        boolean isBinaryFormat = "binary".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
+        boolean isByteFormat = "byte".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
+
+        if (isNotString || isBinaryFormat || isByteFormat) {
+            return Collections.singletonList(FuzzingStrategy.skip().withData("Field does not match String schema or has binary/byte format"));
+        }
+        String initialValue = StringGenerator.generateValueBasedOnMinMax(fuzzedFieldSchema);
+
+        /* independent of the supplied strategy, we still maintain sizes for enums */
+        final boolean insertWithoutReplace = !maintainSize || !CollectionUtils.isEmpty(fuzzedFieldSchema.getEnum());
+
+        return invisibleChars.stream()
+                .map(value -> FuzzingStrategy.replace()
+                        .withData(CatsUtil.insertInTheMiddle(initialValue, value, insertWithoutReplace)))
+                .toList();
+    }
+
+
+    /**
+     * Replaces a specific field in the given payload using the provided fuzzing strategy.
+     *
+     * @param payload                    the original payload containing the field to be replaced
+     * @param jsonPropertyForReplacement the JSON property representing the field to be replaced
+     * @param fuzzingStrategyToApply     the fuzzing strategy to apply for replacement
+     * @return a FuzzingResult containing the modified payload and information about the replacement
+     */
+    public static FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply) {
+        return replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
+    }
+
+    /**
+     * Replaces a specific field in the given payload using the provided fuzzing strategy.
+     *
+     * @param payload                    the original payload containing the field to be replaced
+     * @param jsonPropertyForReplacement the JSON property representing the field to be replaced
+     * @param fuzzingStrategyToApply     the fuzzing strategy to apply for replacement
+     * @param mergeFuzzing               weather to merge the fuzzed value with the valid value
+     * @return a FuzzingResult containing the modified payload and information about the replacement
+     */
+    public static FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
+        if (StringUtils.isNotBlank(payload)) {
+            String jsonPropToGetValue = jsonPropertyForReplacement;
+            if (JsonUtils.isJsonArray(payload)) {
+                jsonPropToGetValue = JsonUtils.FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
+                jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
+            }
+            DocumentContext jsonDocument = JsonPath.parse(payload);
+            Object oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
+            if (oldValue instanceof JSONArray && !jsonPropToGetValue.contains("[*]")) {
+                oldValue = jsonDocument.read("$." + jsonPropToGetValue + "[0]");
+                jsonPropertyForReplacement = "$." + jsonPropertyForReplacement + "[*]";
+            }
+            Object valueToSet = fuzzingStrategyToApply.process(oldValue);
+            if (mergeFuzzing) {
+                valueToSet = FuzzingStrategy.mergeFuzzing(WordUtils.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
+            }
+            CatsUtil.replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, valueToSet);
+
+            return new FuzzingResult(jsonDocument.jsonString(), valueToSet);
+        }
+        return FuzzingResult.empty();
+    }
 }

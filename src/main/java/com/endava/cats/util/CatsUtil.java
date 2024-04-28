@@ -3,15 +3,12 @@ package com.endava.cats.util;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
-import com.endava.cats.json.JsonUtils;
-import com.endava.cats.strategy.FuzzingStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.javafaker.Faker;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
-import net.minidev.json.JSONArray;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -106,20 +103,8 @@ public abstract class CatsUtil {
 
 
     /**
-     * Replaces a specific field in the given payload using the provided fuzzing strategy.
-     *
-     * @param payload                    the original payload containing the field to be replaced
-     * @param jsonPropertyForReplacement the JSON property representing the field to be replaced
-     * @param fuzzingStrategyToApply     the fuzzing strategy to apply for replacement
-     * @return a FuzzingResult containing the modified payload and information about the replacement
-     */
-    public static FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply) {
-        return replaceField(payload, jsonPropertyForReplacement, fuzzingStrategyToApply, false);
-    }
-
-    /**
      * This method replaces the existing value of the {@code jsonPropertyForReplacement} with the supplied value.
-     * For complex replacement like merging with refData values or processing the FuzzingStrategy use the {@code replaceField} method.
+     * For complex replacement like merging with refData values or processing the FuzzingStrategy use the {@code FuzzingStrategy.replaceField} method.
      *
      * @param payload                    the JSON payload
      * @param jsonPropertyForReplacement the JSON property path to replace
@@ -136,40 +121,7 @@ public abstract class CatsUtil {
         return new FuzzingResult(jsonDocument.jsonString(), with);
     }
 
-    /**
-     * Replaces a specific field in the given payload using the provided fuzzing strategy.
-     *
-     * @param payload                    the original payload containing the field to be replaced
-     * @param jsonPropertyForReplacement the JSON property representing the field to be replaced
-     * @param fuzzingStrategyToApply     the fuzzing strategy to apply for replacement
-     * @param mergeFuzzing               weather to merge the fuzzed value with the valid value
-     * @return a FuzzingResult containing the modified payload and information about the replacement
-     */
-    public static FuzzingResult replaceField(String payload, String jsonPropertyForReplacement, FuzzingStrategy fuzzingStrategyToApply, boolean mergeFuzzing) {
-        if (StringUtils.isNotBlank(payload)) {
-            String jsonPropToGetValue = jsonPropertyForReplacement;
-            if (JsonUtils.isJsonArray(payload)) {
-                jsonPropToGetValue = JsonUtils.FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
-                jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
-            }
-            DocumentContext jsonDocument = JsonPath.parse(payload);
-            Object oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
-            if (oldValue instanceof JSONArray && !jsonPropToGetValue.contains("[*]")) {
-                oldValue = jsonDocument.read("$." + jsonPropToGetValue + "[0]");
-                jsonPropertyForReplacement = "$." + jsonPropertyForReplacement + "[*]";
-            }
-            Object valueToSet = fuzzingStrategyToApply.process(oldValue);
-            if (mergeFuzzing) {
-                valueToSet = FuzzingStrategy.mergeFuzzing(WordUtils.nullOrValueOf(oldValue), fuzzingStrategyToApply.getData());
-            }
-            replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, valueToSet);
-
-            return new FuzzingResult(jsonDocument.jsonString(), valueToSet);
-        }
-        return FuzzingResult.empty();
-    }
-
-    private static void replaceOldValueWithNewOne(String jsonPropertyForReplacement, DocumentContext jsonDocument, Object valueToSet) {
+    public static void replaceOldValueWithNewOne(String jsonPropertyForReplacement, DocumentContext jsonDocument, Object valueToSet) {
         if (JsonUtils.isValidJson(elementToString(valueToSet))) {
             if (areBothPropertyToReplaceAndValueToReplaceArrays(jsonPropertyForReplacement, valueToSet)) {
                 jsonPropertyForReplacement = removeArrayTermination(jsonPropertyForReplacement);
@@ -358,5 +310,23 @@ public abstract class CatsUtil {
             return file.length() == 0;
         }
         return true;
+    }
+
+    /**
+     * Inserts a specified string into the middle of another string.
+     *
+     * @param value                The original string where the insertion is performed.
+     * @param whatToInsert         The string to be inserted into the middle of the original string.
+     * @param insertWithoutReplace If true, the insertion is done without replacing any characters; if false,
+     *                             the insertion replaces a portion of the original string.
+     * @return The string resulting from the insertion operation.
+     * @throws NullPointerException If 'value' or 'whatToInsert' is null.
+     */
+    public static String insertInTheMiddle(String value, String whatToInsert, boolean insertWithoutReplace) {
+        int position = value.length() / 2;
+        int whatToInsertLength = Math.min(value.length(), whatToInsert.length());
+        int diffBasedOnReplace = insertWithoutReplace ? 0 : whatToInsertLength / 2;
+
+        return value.substring(0, position - diffBasedOnReplace) + whatToInsert + value.substring(position + diffBasedOnReplace);
     }
 }

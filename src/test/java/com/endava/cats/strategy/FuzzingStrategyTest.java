@@ -1,20 +1,20 @@
 package com.endava.cats.strategy;
 
-import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.strategy.NoopFuzzingStrategy;
-import com.endava.cats.strategy.PrefixFuzzingStrategy;
-import com.endava.cats.strategy.ReplaceFuzzingStrategy;
-import com.endava.cats.strategy.SkipFuzzingStrategy;
-import com.endava.cats.strategy.TrailFuzzingStrategy;
+import com.endava.cats.util.FuzzingResult;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.List;
+
 @QuarkusTest
 class FuzzingStrategyTest {
+    public static final String YY = "YY";
 
     @Test
     void givenTheFuzzingStrategyClass_whenCallingTheStaticCreateMethods_thenProperInstancesAreReturned() {
@@ -190,5 +190,95 @@ class FuzzingStrategyTest {
         String result = FuzzingStrategy.markLargeString("test");
 
         Assertions.assertThat(result).isEqualTo("catestts");
+    }
+
+
+    @ParameterizedTest
+    @CsvSource({"number,any", "string,byte", "string,binary"})
+    void shouldSkipWhenNotStringSchemaOrBinaryString(String type, String format) {
+        Schema schema = new Schema();
+        schema.setType(type);
+        schema.setFormat(format);
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of("YY"), true);
+
+        Assertions.assertThat(fuzzingStrategyList).hasSize(1);
+        Assertions.assertThat(fuzzingStrategyList.get(0).name()).isEqualTo(FuzzingStrategy.skip().name());
+    }
+
+    @Test
+    void shouldInsertWithoutReplaceWhenNotMaintainSize() {
+        StringSchema schema = new StringSchema();
+        int length = 10;
+        schema.setMinLength(length);
+        schema.setMaxLength(length);
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of(YY), false);
+
+        Assertions.assertThat(fuzzingStrategyList).hasSize(1);
+        Assertions.assertThat(fuzzingStrategyList.get(0).getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length + YY.length());
+    }
+
+    @Test
+    void shouldInsertWitReplaceWhenMaintainSize() {
+        StringSchema schema = new StringSchema();
+        int length = 10;
+        schema.setMinLength(length);
+        schema.setMaxLength(length);
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of(YY), true);
+
+        Assertions.assertThat(fuzzingStrategyList).hasSize(1);
+        Assertions.assertThat(fuzzingStrategyList.get(0).getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length);
+    }
+
+    @Test
+    void shouldInsertWithoutReplaceWhenEnums() {
+        StringSchema schema = new StringSchema();
+        schema.setEnum(List.of("ENUM"));
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of(YY), false);
+
+        Assertions.assertThat(fuzzingStrategyList).hasSize(1);
+        Assertions.assertThat(fuzzingStrategyList.get(0).getData()).isEqualTo("EN" + YY + "UM");
+    }
+
+    @Test
+    void shouldReturnEmptyFuzzingResultWhenEmptyJson() {
+        FuzzingStrategy strategy = FuzzingStrategy.replace().withData("fuzzed");
+        FuzzingResult result = FuzzingStrategy.replaceField("", "test", strategy);
+
+        Assertions.assertThat(result.fuzzedValue()).asString().isEmpty();
+        Assertions.assertThat(result.json()).isEmpty();
+    }
+
+    @Test
+    void shouldReplace() {
+        String payload = """
+                {
+                  "arrayOfData": [
+                    "FAoe22OkDDln6qHyqALVI1",
+                    "FAoe22OkDDln6qHyqALVI1"
+                  ],
+                  "country": "USA",
+                  "dateTime": "2016-05-24T15:54:14.876Z"
+                }
+                """;
+        FuzzingResult result = FuzzingStrategy.replaceField(payload, "arrayOfData", FuzzingStrategy.trail().withData("test"));
+        Assertions.assertThat(result.json()).contains("test").contains("FAoe22OkDDln6qHyqALVI1test").contains("USA");
+    }
+
+    @Test
+    void shouldReplaceWithArray() {
+        String payload = """
+                {
+                  "arrayWithInteger": [
+                    88,99
+                  ],
+                  "country": "USA"
+                }
+                """;
+        FuzzingResult result = FuzzingStrategy.replaceField(payload, "arrayWithInteger", FuzzingStrategy.replace().withData(List.of(55, 66)));
+        Assertions.assertThat(result.json()).contains("55").contains("66").contains("USA").doesNotContain("88").doesNotContain("99");
     }
 }

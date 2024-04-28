@@ -8,7 +8,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -40,7 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.json.JsonUtils.NOT_SET;
+import static com.endava.cats.util.JsonUtils.NOT_SET;
 import static com.endava.cats.util.CatsDSLWords.CATS_BODY_FUZZ;
 import static com.endava.cats.util.CatsDSLWords.CATS_HEADERS;
 import static com.endava.cats.util.CatsDSLWords.CHECKS;
@@ -434,7 +434,7 @@ public class CustomFuzzerUtil {
         }
         try {
             FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(toReplace);
-            return CatsUtil.replaceField(payload, keyValue.getKey(), fuzzingStrategy).json();
+            return FuzzingStrategy.replaceField(payload, keyValue.getKey(), fuzzingStrategy).json();
         } catch (Exception e) {
             log.debug("Something went wrong while parsing!", e);
             log.warning("Property [{}] does not exist", keyValue.getKey());

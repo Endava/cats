@@ -10,7 +10,6 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
-import com.endava.cats.strategy.CommonWithinMethods;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
@@ -39,7 +38,7 @@ public class AbugidasInStringFieldsSanitizeValidateFuzzer extends ExpectOnly2XXB
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
         Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        return CommonWithinMethods.getFuzzingStrategies(fuzzedFieldSchema, UnicodeGenerator.getAbugidasChars(), false);
+        return FuzzingStrategy.getFuzzingStrategies(fuzzedFieldSchema, UnicodeGenerator.getAbugidasChars(), false);
     }
 
     @Override

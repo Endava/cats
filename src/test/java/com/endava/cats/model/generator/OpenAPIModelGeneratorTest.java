@@ -2,7 +2,7 @@ package com.endava.cats.model.generator;
 
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.openapi.OpenApiUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;

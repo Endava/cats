@@ -1,6 +1,5 @@
 package com.endava.cats.util;
 
-import com.endava.cats.json.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;

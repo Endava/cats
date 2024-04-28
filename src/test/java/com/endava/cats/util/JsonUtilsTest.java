@@ -1,4 +1,4 @@
-package com.endava.cats.json;
+package com.endava.cats.util;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;

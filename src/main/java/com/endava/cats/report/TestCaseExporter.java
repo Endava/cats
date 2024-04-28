@@ -2,13 +2,13 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.json.KeyValueSerializer;
-import com.endava.cats.json.LongTypeSerializer;
+import com.endava.cats.util.KeyValueSerializer;
+import com.endava.cats.util.LongTypeSerializer;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
-import com.endava.cats.model.KeyValuePair;
+import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;

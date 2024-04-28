@@ -6,7 +6,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;

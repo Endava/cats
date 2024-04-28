@@ -9,7 +9,7 @@ import com.endava.cats.args.UserArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;

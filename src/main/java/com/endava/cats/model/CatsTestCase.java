@@ -1,8 +1,9 @@
 package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.ann.Exclude;
+import com.endava.cats.util.KeyValuePair;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;

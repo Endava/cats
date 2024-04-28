@@ -317,7 +317,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         //this is a hack to set terminal width here in order to avoid importing a full-blown library like jline
         // just for getting the terminal width
         ConsoleUtils.initTerminalWidth(spec);
-        this.processLogLevelArgument();
+        reportingArguments.processLogData();
         apiArguments.validateRequired(spec);
         apiArguments.validateValidServer(spec);
         filesArguments.loadConfig();
@@ -337,11 +337,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
         logger.config(ansi().bold().a("Total number of OpenAPI operations: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(nofOfOperations));
-    }
-
-
-    private void processLogLevelArgument() {
-        reportingArguments.processLogData();
     }
 
     private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {

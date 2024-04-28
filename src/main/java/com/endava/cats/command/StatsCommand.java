@@ -1,6 +1,6 @@
 package com.endava.cats.command;
 
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.VersionProvider;

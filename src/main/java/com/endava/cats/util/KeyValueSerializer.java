@@ -1,6 +1,5 @@
-package com.endava.cats.json;
+package com.endava.cats.util;
 
-import com.endava.cats.model.KeyValuePair;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;

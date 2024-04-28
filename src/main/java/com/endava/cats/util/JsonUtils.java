@@ -1,8 +1,6 @@
-package com.endava.cats.json;
+package com.endava.cats.util;
 
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
-import com.endava.cats.strategy.CommonWithinMethods;
-import com.endava.cats.util.CatsModelUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -522,7 +520,7 @@ public abstract class JsonUtils {
 
         Object currentFieldValue = getVariableFromJson(json, currentFieldKey);
 
-        String newFieldKey = CommonWithinMethods.insertInTheMiddle(lastPartOfField, valueToInsert, true);
+        String newFieldKey = CatsUtil.insertInTheMiddle(lastPartOfField, valueToInsert, true);
         String inputJsonWithRemovedKey = deleteNode(json, currentFieldKey);
 
         String pathToKey = StringUtils.isBlank(firstPartOfField) ? "$" : firstPartOfField;

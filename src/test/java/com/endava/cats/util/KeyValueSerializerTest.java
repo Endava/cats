@@ -1,7 +1,5 @@
-package com.endava.cats.json;
+package com.endava.cats.util;
 
-import com.endava.cats.json.KeyValueSerializer;
-import com.endava.cats.model.KeyValuePair;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;

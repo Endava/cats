@@ -1,4 +1,4 @@
-package com.endava.cats.model;
+package com.endava.cats.util;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

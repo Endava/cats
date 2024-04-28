@@ -5,7 +5,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;

@@ -7,15 +7,14 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.KeyValuePair;
+import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.jayway.jsonpath.JsonPathException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -170,7 +169,7 @@ public class TemplateFuzzer implements Fuzzer {
             return data.getPayload().replace(targetField, withData);
         }
         try {
-            return CatsUtil.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).json();
+            return FuzzingStrategy.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).json();
         } catch (JsonPathException e) {
             return data.getPayload();
         }

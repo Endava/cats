@@ -1,7 +1,7 @@
 package com.endava.cats.io.util;
 
 
-import com.endava.cats.model.KeyValuePair;
+import com.endava.cats.util.KeyValuePair;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;

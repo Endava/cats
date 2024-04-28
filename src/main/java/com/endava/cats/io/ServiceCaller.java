@@ -10,10 +10,10 @@ import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
-import com.endava.cats.json.JsonUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.model.KeyValuePair;
+import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -74,7 +74,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static com.endava.cats.json.JsonUtils.NOT_SET;
+import static com.endava.cats.util.JsonUtils.NOT_SET;
 import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
 
 /**
@@ -705,7 +705,7 @@ public class ServiceCaller {
 
                         FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
                         boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
-                        payload = CatsUtil.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
+                        payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
                     }
                 } catch (PathNotFoundException e) {
                     logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
