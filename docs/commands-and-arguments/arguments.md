@@ -72,7 +72,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--[no-]-color` If true enables ANSI codes and coloured console output. Default: true
 - `--onlyLog=star,note` A list of log levels to include; allows more granular control of the log levels
 - `--userAgent=USER_AGENT` The user agent to be set in the User-Agent HTTP header. Default: cats/version
-- `--verbosity=VERBOSITY`  Sets the verbosity of the console logging. If set to summary CATS will only output a simple progress screen per path. Default: `SUMMARY`
+- `--verbosity=DEETAILED|SUMMARY`  Sets the verbosity of the console logging. If set to summary CATS will only output a simple progress screen per path. Default: `SUMMARY`
 - `--oneOfSelection "field1=value1"`, `--anyOfSelection` A `name=value` list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions which result in multiple payloads for a single endpoint and http method
 - `--randomHeadersNumber=NUMBER` The number of random headers that will be sent by the `LargeNumberOfRandomAlphanumericHeadersFuzzer` and `LargeNumberOfRandomHeadersFuzzer`. Default: `10000`
 - `--skipFieldTypes=string,integer,etc.` A comma separated list of OpenAPI data types to skip. It only supports standard types: https://swagger.io/docs/specification/data-models/data-types
@@ -84,6 +84,15 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--maskHeaders` A comma separated list of headers to mask to protect sensitive info such as login credentials to be written in report files. Masked headers will be replaced with `$$HeaderName` so that test cases can be replayed using environment variables
 - `--tags`  A comma separated list of tags to include. If no tag is supplied, all tags will be considered. To list all available tags run: `cats stats -c api.yml`
 - `--skipTags` A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. To list all available tags run: `cats stats -c  api.yml`
+- `--fuzzersConfig=FILE` A properties file with Fuzzer configuration that changes default behaviour. Configuration keys are prefixed with the fully qualified Fuzzer name  
+- `--mutators=FOLDER` A folder containing custom mutators. Only applicable when using the `cats random` sub-command
+- `--allowInvalidEnumValues` When set to true the `InvalidValuesInEnumsFieldsFuzzer` will expect a 2XX response code instead of 4XX
+- `--[no-]filterXxxFromRequestPayloads` In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default. Setting this to false will send them as requests which will probably fail. It's mostly for debug purposes
+- `--generateXxxCombinationsForResponses` Generate anyOf/oneOf combinations also for response schemas. By default it creates one response payload with all possibilities
+- `--selfReferenceDepth=<selfReferenceDepth>` Max depth for objects having cyclic dependencies
+- `--limitXxxOfCombinations=<limitXxxOfCombinations>` Max number of anyOf/oneOf combinations
+- `--[no-]useDefaults` If set to true, it will use the default values when generating examples
+- `--simpleReplace` If set to true, it will simply do a replacement between the targetFields names provided and the fuzz values
 
 :::tip
 When you want to skip fuzzing entirely for a specific JSON object or specific fields you must prefix the field name from the `--skipFields` argument with `!`.

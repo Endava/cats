@@ -37,6 +37,10 @@ All available subcommands are listed below:
 
 - `cats stats` will display basic statistics about a given OpenAPI contract like number of paths, operations, versioning, etc.
 
+- `cats validate` checks if an OpenAPI spec is valid and version used
+
+- `cats random` does continuous fuzzing based on mutators until a certain stop condition is hit
+
 :::tip
 Each sub-command has its own help. You can run `cats sub-command -h` to check all available arguments: `cats fuzz -h`.
 :::
