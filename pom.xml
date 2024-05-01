@@ -42,11 +42,11 @@
         <spotbugs-maven-plugin.version>4.8.4.0</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.11.0.3922</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
-        <compiler.version>0.9.11</compiler.version>
+        <compiler.version>0.9.13</compiler.version>
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.9.4</quarkus.platform.version>
+        <quarkus.platform.version>3.9.5</quarkus.platform.version>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
