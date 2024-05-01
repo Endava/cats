@@ -21,7 +21,7 @@ import java.util.List;
 @Setter
 public class UserArguments {
     @CommandLine.Option(names = {"--words", "-w"},
-            description = "Specifies the user dictionary used by the @|bold TemplateFuzzer|@ to fuzz the specified fields and/or headers")
+            description = "Specifies a custom user dictionary that will be used for fields and/or headers fuzzing")
     File words;
 
     @CommandLine.Option(names = {"--simpleReplace"},
