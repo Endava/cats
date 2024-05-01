@@ -14,6 +14,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Discriminator;
@@ -475,6 +476,7 @@ class TestCaseListenerTest {
         enumList.add("value");
         enumSchema.setEnum(enumList);
         Mockito.when(response.getBody()).thenReturn("{'test':1,'anEnum':null}");
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString("{'test':1,'anEnum':null}"));
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4','anEnum':'value'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("anEnum", enumSchema));
@@ -496,6 +498,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn(body);
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString(body));
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Collections.emptyMap());
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
@@ -515,6 +518,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("[{'test':1},{'test':2}]");
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString("[{'test':1},{'test':2}]"));
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
@@ -534,6 +538,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn(returnedBody);
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString(returnedBody));
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList(documentedResponses), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
@@ -552,6 +557,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("[]");
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString("[]"));
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
@@ -563,6 +569,29 @@ class TestCaseListenerTest {
         });
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [400] is documented and response body matches the corresponding schema.");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"application/csv", "application/pdf"})
+    void shouldReportInfoWhenResponseCode200AndResponseContentTypeIsAFile(String contentType) {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        CatsResponse response = Mockito.mock(CatsResponse.class);
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(response.getBody()).thenReturn("column1,column2,column3");
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString("{'notAJson': 'column1,column2,column3'}"));
+        Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
+        Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
+        Mockito.when(data.getContentTypesByResponseCode(Mockito.any())).thenReturn(List.of(contentType));
+        Mockito.when(response.responseCodeAsString()).thenReturn("200");
+        Mockito.when(response.getResponseContentType()).thenReturn(contentType);
+        Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addRequest(CatsRequest.builder().httpMethod("method").build());
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX);
+        });
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseSuccess(Mockito.any());
+        Mockito.verify(spyListener, Mockito.times(1)).reportInfo(logger, "Response matches expected result. Response code [200] is documented and response body matches the corresponding schema.");
     }
 
     @Test
@@ -592,6 +621,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString("{'test':1}"));
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "4xx"));
         Mockito.when(data.getResponses()).thenReturn(new TreeMap<>(Map.of("4xx", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}"))));
         Mockito.when(response.responseCodeAsString()).thenReturn(responseCode);

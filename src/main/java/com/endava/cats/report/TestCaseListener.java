@@ -71,6 +71,7 @@ public class TestCaseListener {
     private static final String DEFAULT_ERROR = "####";
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
+    private static final List<String> CONTENT_TYPE_DONT_MATCH_SCHEMA = List.of("application/csv", "application/pdf");
     final Map<String, CatsTestCase> testCaseMap = new HashMap<>();
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
@@ -853,18 +854,24 @@ public class TestCaseListener {
 
     private boolean matchesResponseSchema(CatsResponse response, FuzzingData data) {
         try {
-            JsonElement jsonElement = JsonParser.parseString(response.getBody());
             List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
 
-            return isActualResponseMatchingDocumentedResponses(response, jsonElement, responses)
-                    || isResponseEmpty(response, responses)
+            return isResponseEmpty(response, responses)
+                    || isResponseContentTypeNotMatchable(response)
                     || isNotTypicalDocumentedResponseCode(response)
-                    || isEmptyArray(jsonElement);
+                    || isEmptyArray(response.getJsonBody())
+                    || isActualResponseMatchingDocumentedResponses(response, responses);
         } catch (Exception e) {
             logger.debug("Something happened while matching response schema!", e);
             //if something happens during json parsing we consider it doesn't match schema
             return false;
         }
+    }
+
+    private boolean isResponseContentTypeNotMatchable(CatsResponse response) {
+        return CONTENT_TYPE_DONT_MATCH_SCHEMA
+                .stream()
+                .anyMatch(dontMatchContentType -> areContentTypesEquivalent(dontMatchContentType, response.getResponseContentType()));
     }
 
     private boolean isEmptyArray(JsonElement jsonElement) {
@@ -883,17 +890,13 @@ public class TestCaseListener {
         return responses;
     }
 
-    private boolean isActualResponseMatchingDocumentedResponses(CatsResponse response, JsonElement jsonElement, List<String> responses) {
-        return responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, jsonElement))
-                && ((isErrorResponse(response) && isFuzzedFieldPresentInResponse(response)) || isNotErrorResponse(response));
+    private boolean isActualResponseMatchingDocumentedResponses(CatsResponse response, List<String> responses) {
+        return responses != null && responses.stream().anyMatch(responseSchema -> matchesElement(responseSchema, response.getJsonBody()))
+                && (isFuzzedFieldPresentInResponse(response) || !isErrorResponse(response));
     }
 
     private boolean isErrorResponse(CatsResponse response) {
         return ResponseCodeFamilyPredefined.FOURXX.matchesAllowedResponseCodes(response.responseCodeAsString());
-    }
-
-    private boolean isNotErrorResponse(CatsResponse response) {
-        return !isErrorResponse(response);
     }
 
     private boolean isFuzzedFieldPresentInResponse(CatsResponse response) {
