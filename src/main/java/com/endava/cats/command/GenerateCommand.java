@@ -1,0 +1,136 @@
+package com.endava.cats.command;
+
+import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.factory.FuzzingDataFactory;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.FuzzingData;
+import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.VersionProvider;
+import com.google.gson.JsonParser;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.quarkus.arc.Unremovable;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import jakarta.inject.Inject;
+import picocli.CommandLine;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+/**
+ * Generates payloads based on the OpenAPI contract and supplied arguments.
+ */
+@CommandLine.Command(
+        name = "generate",
+        mixinStandardHelpOptions = true,
+        usageHelpAutoWidth = true,
+        exitCodeOnInvalidInput = 191,
+        exitCodeOnExecutionException = 192,
+        description = "Generates valid requests based on the given OpenAPI spec",
+        exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
+        exitCodeList = {"@|bold  0|@:Successful program execution",
+                "@|bold 191|@:Usage error: user input for the command was incorrect",
+                "@|bold 192|@:Internal execution error: an exception occurred when executing command"},
+        footerHeading = "%n@|bold,underline Examples:|@%n",
+        footer = {"  Generate payloads for a POST on /test from a given OpenAPI contract:",
+                "    cats generate -c openapi.yml -X POST -p /test",
+                "", "  Generate payloads for a POST on /test from a given OpenAPI contract and replace firstName with a predefined value:",
+                "    cats generate -c openapi.yml -X POST -p /test -R firstName=John"},
+        versionProvider = VersionProvider.class)
+@Unremovable
+public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator {
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(GenerateCommand.class);
+
+    @CommandLine.Option(names = {"-c", "--contract"},
+            description = "The OpenAPI contract", required = true)
+    private String contract;
+
+    @CommandLine.Option(names = {"--httpMethod", "-X"},
+            description = "The HTTP method. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+    HttpMethod httpMethod = HttpMethod.POST;
+
+    @CommandLine.Option(names = {"--path", "-p"},
+            description = "The path to generate the payload for", required = true)
+    private String path;
+
+    @CommandLine.Option(names = {"--limit", "-l"},
+            description = "Max number of payloads to return. This might be useful when request body uses oneOf/anyOf combinations.")
+    private int limit;
+
+    @CommandLine.Option(names = {"-D", "--debug"},
+            description = "Set CATS log level to ALL. Useful for diagnose when raising bugs")
+    private boolean debug;
+
+    @CommandLine.Option(names = {"--pretty"},
+            description = "Pretty print output")
+    private boolean pretty;
+
+    @CommandLine.Option(names = {"--contentType"},
+            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+    private String contentType = "application/json";
+
+
+    FuzzingDataFactory fuzzingDataFactory;
+    CatsGlobalContext globalContext;
+
+    @Inject
+    public GenerateCommand(FuzzingDataFactory fuzzingDataFactory, CatsGlobalContext globalContext) {
+        this.fuzzingDataFactory = fuzzingDataFactory;
+        this.globalContext = globalContext;
+    }
+
+    private int exitCodeDueToErrors = 0;
+
+    @Override
+    public void run() {
+        try {
+            OpenAPI openAPI = OpenApiUtils.readOpenApi(contract);
+            this.checkOpenAPI(openAPI);
+            this.globalContext.init(openAPI, List.of(contentType), new Properties());
+            if (debug) {
+                CatsUtil.setCatsLogLevel("ALL");
+            }
+            PathItem pathItem = openAPI.getPaths().entrySet()
+                    .stream().filter(openApiPath -> openApiPath.getKey().equalsIgnoreCase(path))
+                    .map(Map.Entry::getValue).findFirst().orElseThrow(() -> new IllegalArgumentException("Provided path does not exist!"));
+
+            List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);
+            List<FuzzingData> filteredBasedOnHttpMethod = fuzzingDataList.stream()
+                    .filter(data -> data.getMethod().equals(httpMethod))
+                    .toList();
+
+            printResult(filteredBasedOnHttpMethod.stream().map(FuzzingData::getPayload).toList());
+        } catch (IOException | IllegalArgumentException e) {
+            logger.fatal("Something went wrong while running CATS: {}", e.toString());
+            logger.debug("Stacktrace", e);
+            exitCodeDueToErrors = 192;
+        }
+    }
+
+    void printResult(List<String> filteredBasedOnHttpMethod) {
+        if (pretty) {
+            System.out.println(filteredBasedOnHttpMethod.stream()
+                    .limit(limit > 0 ? limit : filteredBasedOnHttpMethod.size())
+                    .map(JsonParser::parseString)
+                    .map(JsonUtils.GSON::toJson).toList());
+        } else {
+            System.out.println(filteredBasedOnHttpMethod);
+        }
+    }
+
+    private void checkOpenAPI(OpenAPI openAPI) {
+        if (openAPI == null || openAPI.getPaths() == null || openAPI.getPaths().isEmpty()) {
+            throw new IllegalArgumentException("Provided OpenAPI specs are invalid!");
+        }
+    }
+
+    @Override
+    public int getExitCode() {
+        return exitCodeDueToErrors;
+    }
+}

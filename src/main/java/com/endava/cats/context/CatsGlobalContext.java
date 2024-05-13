@@ -1,5 +1,8 @@
 package com.endava.cats.context;
 
+import com.endava.cats.factory.NoMediaType;
+import com.endava.cats.openapi.OpenApiUtils;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
@@ -38,5 +41,16 @@ public class CatsGlobalContext {
      */
     public String getExpectedResponseCodeConfigured(String fuzzer) {
         return this.fuzzersConfiguration.getProperty(fuzzer);
+    }
+
+    public void init(OpenAPI openAPI, List<String> contentType, Properties fuzzersConfiguration) {
+        Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, contentType);
+        this.getSchemaMap().putAll(allSchemasFromOpenApi);
+        this.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
+        this.getExampleMap().putAll(OpenApiUtils.getExamples(openAPI));
+        this.getFuzzersConfiguration().putAll(fuzzersConfiguration);
+
+        //sometimes OpenAPI generator adds a "" entry
+        this.getSchemaMap().remove("");
     }
 }
