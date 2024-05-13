@@ -6,10 +6,10 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
@@ -90,19 +90,6 @@ class FuzzingDataFactoryTest {
     @Test
     void shouldIgnoreOneOfAnyOfWhenAdditionalSchemaIsNull() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/path1", "src/test/resources/oneOf_with_null_additional.yml");
-        Assertions.assertThat(data).hasSize(1);
-
-        Assertions.assertThat(data.get(0).getPayload()).contains("dateFrom");
-        Assertions.assertThat(data.get(0).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
-    }
-
-//    @Test
-    void shouldIgnoreOneOfAnyOfWhenAdditionalSchemaIsNull2() throws Exception {
-        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(2);
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
-        Mockito.when(processingArguments.isUseDefaults()).thenReturn(false);
-
-        List<FuzzingData> data = setupFuzzingData("/evaluate", "../openapi-examples/radix/openapi.yaml");
         Assertions.assertThat(data).hasSize(1);
 
         Assertions.assertThat(data.get(0).getPayload()).contains("dateFrom");
