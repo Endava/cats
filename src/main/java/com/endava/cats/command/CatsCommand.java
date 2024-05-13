@@ -13,7 +13,6 @@ import com.endava.cats.args.UserArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.factory.FuzzingDataFactory;
-import com.endava.cats.factory.NoMediaType;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -29,7 +28,6 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Inject;
 import lombok.Getter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -104,7 +102,8 @@ import static org.fusesource.jansi.Ansi.ansi;
                 InfoCommand.class,
                 StatsCommand.class,
                 ValidateCommand.class,
-                RandomCommand.class
+                RandomCommand.class,
+                GenerateCommand.class
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger;
@@ -268,16 +267,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void initGlobalData(OpenAPI openAPI) {
-        Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, processingArguments.getContentType());
-        globalContext.getSchemaMap().putAll(allSchemasFromOpenApi);
-        globalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
-        globalContext.getExampleMap().putAll(OpenApiUtils.getExamples(openAPI));
-        globalContext.getFuzzersConfiguration().putAll(filesArguments.getFuzzConfigProperties());
+        globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties());
 
-        //sometimes OpenAPI generator adds a "" entry
-        globalContext.getSchemaMap().remove("");
         logger.debug("Fuzzers custom configuration: {}", globalContext.getFuzzersConfiguration());
-        logger.debug("Schemas: {}", allSchemasFromOpenApi.keySet());
+        logger.debug("Schemas: {}", globalContext.getSchemaMap().keySet());
     }
 
     void startFuzzing(OpenAPI openAPI) {
