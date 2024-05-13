@@ -15,9 +15,11 @@ import java.util.List;
  */
 @Singleton
 public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
+    private static final List<String> FORMATS = List.of("0## ### ####", "0### ### ####", "### ### ####", "#### ### ####");
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
+        System.out.println("Format: " + propertyName);
         return "phone".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 PropertySanitizer.sanitize(propertyName).endsWith("phone") ||
                 PropertySanitizer.sanitize(propertyName).endsWith("phonenumber");
@@ -30,8 +32,8 @@ public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFo
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().phoneNumber().cellPhone();
-
+        String pattern = FORMATS.get(CatsUtil.random().nextInt(FORMATS.size()));
+        String generated = CatsUtil.faker().numerify(pattern);
         return DataFormat.matchesPatternOrNull(schema, generated);
     }
 }
