@@ -30,7 +30,8 @@ public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataForma
         String[] propertyParts = propertyName.split("#", -1);
         String partToTest = propertyParts[propertyParts.length - 1];
 
-        return (partToTest.toLowerCase().endsWith("ip") && !partToTest.toLowerCase().startsWith("zip")) ||
+        return (partToTest.toLowerCase().endsWith("ip") && !partToTest.toLowerCase().startsWith("zip")
+                && !partToTest.toLowerCase().endsWith("citizenship")) ||
                 PropertySanitizer.sanitize(partToTest).endsWith("ipaddress") ||
                 "ip".equalsIgnoreCase(format) ||
                 "ipv4".equalsIgnoreCase(format);
