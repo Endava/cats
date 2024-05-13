@@ -240,7 +240,7 @@ public class FilesArguments {
      * @return a name:value list of url params to be replaced when calling the service
      */
     public List<String> getUrlParamsList() {
-        return this.urlParams;
+        return Optional.ofNullable(this.urlParams).orElse(Collections.emptyList());
     }
 
     /**
