@@ -121,7 +121,7 @@ class SecurityFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(expectedTestRuns)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.argThat(arg -> arg.asString().equalsIgnoreCase("200")));
     }
 
-    private FuzzingData setContext(String fuzzerFile, String responsePayload) throws Exception {
+    private FuzzingData setContext(String fuzzerFile, String responsePayload) {
         ReflectionTestUtils.setField(filesArguments, "securityFuzzerFile", new File(fuzzerFile));
         Map<String, List<String>> responses = new HashMap<>();
         responses.put("200", Collections.singletonList("response"));

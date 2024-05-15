@@ -5,9 +5,9 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -89,7 +89,7 @@ class CheckSecurityHeadersFuzzerTest {
         allHeaders.add(new KeyValuePair<>("dummy", "dummy"));
 
         CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(200).headers(Stream.concat(allHeaders.stream(), MISSING_HEADERS.stream())
-                .collect(Collectors.toList())).build();
+                .toList()).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         checkSecurityHeadersFuzzer.fuzz(data);

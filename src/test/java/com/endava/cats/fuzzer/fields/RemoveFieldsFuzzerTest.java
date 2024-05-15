@@ -48,7 +48,7 @@ class RemoveFieldsFuzzerTest {
 
     @Test
     void shouldSkipFuzzerIfSkippedTests() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
+        data = Mockito.mock(FuzzingData.class);
         Mockito.when(processingArguments.getFieldsFuzzingStrategy()).thenReturn(ProcessingArguments.SetFuzzingStrategy.ONEBYONE);
         Mockito.when(data.getAllFields(Mockito.any(), Mockito.anyInt())).thenReturn(Collections.singleton(Collections.singleton("id")));
         Mockito.when(filterArguments.getSkipFields()).thenReturn(Collections.singletonList("id"));

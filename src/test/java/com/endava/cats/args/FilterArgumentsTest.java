@@ -10,7 +10,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,10 +35,6 @@ class FilterArgumentsTest {
     CheckArguments checkArguments;
 
     ProcessingArguments processingArguments;
-
-    @Inject
-    Instance<Fuzzer> fuzzers;
-
 
     @BeforeEach
     void setup() {

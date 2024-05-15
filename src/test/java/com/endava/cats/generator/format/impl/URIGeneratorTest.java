@@ -1,7 +1,5 @@
 package com.endava.cats.generator.format.impl;
 
-
-import com.endava.cats.generator.format.impl.URIGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

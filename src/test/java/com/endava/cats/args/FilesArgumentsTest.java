@@ -96,7 +96,7 @@ class FilesArgumentsTest {
     }
 
     @Test
-    void shouldThrowExceptionAsInvalidFormatForHeaders() throws Exception {
+    void shouldThrowExceptionAsInvalidFormatForHeaders() {
         FilesArguments filesArguments = new FilesArguments();
         ReflectionTestUtils.setField(filesArguments, "headersFile", new File("src/test/resources/wrong_headers.yml"));
         org.assertj.core.api.Assertions.assertThatThrownBy(filesArguments::loadHeaders).isInstanceOf(CatsException.class)
