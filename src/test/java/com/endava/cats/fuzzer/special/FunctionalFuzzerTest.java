@@ -71,7 +71,7 @@ class FunctionalFuzzerTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenFileDoesNotExist() throws Exception {
+    void shouldThrowExceptionWhenFileDoesNotExist() {
         ReflectionTestUtils.setField(filesArguments, "customFuzzerFile", new File("mumu"));
 
         Assertions.assertThatThrownBy(() -> filesArguments.loadCustomFuzzerFile()).isInstanceOf(FileNotFoundException.class);

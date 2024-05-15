@@ -40,7 +40,7 @@ class CatsResponseTest {
 
     @ParameterizedTest
     @CsvSource({"connection refused,953", "read timeout,954", "write timeout,955", "connection timeout,956", "unexpected end of stream,952", "something else,999"})
-    void shouldReturnProperExceptionalResponse(String message, int responseCode) throws Exception {
+    void shouldReturnProperExceptionalResponse(String message, int responseCode) {
         IOException exception = new IOException(message);
         CatsResponse.ExceptionalResponse response = CatsResponse.getResponseByException(exception);
 

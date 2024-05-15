@@ -769,7 +769,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldLoadFuzzerSpecificResponseCode() {
-        CatsGlobalContext catsGlobalContext = new CatsGlobalContext();
+        catsGlobalContext = new CatsGlobalContext();
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
         ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
         ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", ResponseCodeFamilyPredefined.TWOXX);

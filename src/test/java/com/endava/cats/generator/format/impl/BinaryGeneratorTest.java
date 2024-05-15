@@ -1,7 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
 
-import com.endava.cats.generator.format.impl.BinaryGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import org.apache.commons.codec.binary.Base64;
 import org.assertj.core.api.Assertions;

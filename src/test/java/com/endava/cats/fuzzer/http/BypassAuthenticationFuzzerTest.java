@@ -54,7 +54,7 @@ class BypassAuthenticationFuzzerTest {
 
 
     @Test
-    void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerRuns() throws Exception {
+    void givenAPayloadWithAuthenticationHeadersAndCustomHeaders_whenApplyingTheBypassAuthenticationFuzzer_thenTheFuzzerRuns() {
         Mockito.when(filesArguments.getHeaders(Mockito.anyString())).thenReturn(createCustomFuzzerFile());
 
         Map<String, List<String>> responses = new HashMap<>();
@@ -109,7 +109,7 @@ class BypassAuthenticationFuzzerTest {
     }
 
     @Test
-    void shouldProperlyIdentifyAuthHeadersFromHeadersFile() throws Exception {
+    void shouldProperlyIdentifyAuthHeadersFromHeadersFile() {
         Mockito.when(filesArguments.getHeaders(Mockito.any())).thenReturn(createCustomFuzzerFile());
         FuzzingData data = FuzzingData.builder().headers(new HashSet<>()).path("path1").reqSchema(new StringSchema()).build();
         Set<String> authHeaders = bypassAuthenticationFuzzer.getAuthenticationHeaderProvided(data);
