@@ -44,7 +44,7 @@ import java.util.Properties;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(GenerateCommand.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
     @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract", required = true)
@@ -114,12 +114,12 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
 
     void printResult(List<String> filteredBasedOnHttpMethod) {
         if (pretty) {
-            System.out.println(filteredBasedOnHttpMethod.stream()
+            logger.noFormat(filteredBasedOnHttpMethod.stream()
                     .limit(limit > 0 ? limit : filteredBasedOnHttpMethod.size())
                     .map(JsonParser::parseString)
-                    .map(JsonUtils.GSON::toJson).toList());
+                    .map(JsonUtils.GSON::toJson).toList().toString());
         } else {
-            System.out.println(filteredBasedOnHttpMethod);
+            logger.noFormat(filteredBasedOnHttpMethod.toString());
         }
     }
 
