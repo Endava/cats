@@ -9,11 +9,11 @@ import com.endava.cats.generator.simple.NumberGenerator;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -28,7 +28,6 @@ import java.util.UUID;
 
 /**
  * Iterates through path variables and sens random resource identifiers.
- * The fuzzer only runs for GET and DELETE requests.
  */
 @HttpFuzzer
 @Singleton
