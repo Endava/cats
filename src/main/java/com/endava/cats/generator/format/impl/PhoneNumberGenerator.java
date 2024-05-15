@@ -19,7 +19,6 @@ public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFo
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        System.out.println("Format: " + propertyName);
         return "phone".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 PropertySanitizer.sanitize(propertyName).endsWith("phone") ||
                 PropertySanitizer.sanitize(propertyName).endsWith("phonenumber");
