@@ -165,6 +165,7 @@ function _complete_cats() {
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} stats" ];    then _picocli_cats; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} validate" ];    then _picocli_cats; return $?; fi
   if [ "${COMP_LINE}" = "${COMP_WORDS[0]} random" ];    then _picocli_cats; return $?; fi
+  if [ "${COMP_LINE}" = "${COMP_WORDS[0]} generate" ];    then _picocli_cats; return $?; fi
 
   # Find the longest sequence of subcommands and call the bash function for that subcommand.
   local cmds0=(generate-completion)
@@ -178,7 +179,9 @@ function _complete_cats() {
   local cmds8=(stats)
   local cmds9=(validate)
   local cmds10=(random)
+  local cmds11=(generate)
 
+  if CompWordsContainsArray "${cmds11[@]}"; then _picocli_cats_generate; return $?; fi
   if CompWordsContainsArray "${cmds10[@]}"; then _picocli_cats_random; return $?; fi
   if CompWordsContainsArray "${cmds9[@]}"; then _picocli_cats_validate; return $?; fi
   if CompWordsContainsArray "${cmds8[@]}"; then _picocli_cats_stats; return $?; fi
@@ -201,7 +204,7 @@ function _picocli_cats() {
   local curr_word=${COMP_WORDS[COMP_CWORD]}
   local prev_word=${COMP_WORDS[COMP_CWORD-1]}
 
-  local commands="generate-completion help list replay run fuzz lint info stats validate random"
+  local commands="generate-completion help list replay run fuzz lint info stats validate random generate"
   local flag_opts="-A --checkHeaders -F --checkFields -T --checkHttp -C --checkContract --includeContract --includeLinters -W --includeWhitespaces -E --includeEmojis -U --includeControlChars --createRefData -d --dryRun --skipDeprecatedOperations --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox --useExamples --rfc7396 --allowInvalidEnumValues --generateXxxCombinationsForResponses --filterXxxFromRequestPayloads --useDefaults -D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --printProgress --simpleReplace --matchInput --mi -h --help -V --version"
   local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --fuzzersConfig --fc --urlParams -P --headers -H --queryParams -Q --refData -R --functionalFuzzerFile --securityFuzzerFile --mutators -m -f --fuzzers --fuzzer -p --paths --path --skipPaths --skipPath --skipFuzzers --skipFuzzer --httpMethods --httpMethod --fieldTypes --fieldType --skipFieldTypes --skipFieldType --fieldFormats --fieldFormat --skipFieldFormats --skipFieldFormat --skipFields --skipField --skipHeaders --skipHeader -t --tags --tag --skipTags --skipTag -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection --limitXxxOfCombinations -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
@@ -503,7 +506,7 @@ function _picocli_cats_help() {
   # Get completion data
   local curr_word=${COMP_WORDS[COMP_CWORD]}
 
-  local commands="generate-completion list replay run fuzz lint info stats validate random"
+  local commands="generate-completion list replay run fuzz lint info stats validate random generate"
   local flag_opts="-h --help"
   local arg_opts=""
 
@@ -1260,6 +1263,48 @@ function _picocli_cats_random() {
       return
       ;;
     --path|-p)
+      return
+      ;;
+  esac
+
+  if [[ "${curr_word}" == -* ]]; then
+    COMPREPLY=( $(compgen -W "${flag_opts} ${arg_opts}" -- "${curr_word}") )
+  else
+    local positionals=""
+    local IFS=$'\n'
+    COMPREPLY=( $(compgen -W "${commands// /$'\n'}${IFS}${positionals}" -- "${curr_word}") )
+  fi
+}
+
+# Generates completions for the options and subcommands of the `generate` subcommand.
+function _picocli_cats_generate() {
+  # Get completion data
+  local curr_word=${COMP_WORDS[COMP_CWORD]}
+  local prev_word=${COMP_WORDS[COMP_CWORD-1]}
+
+  local commands=""
+  local flag_opts="-D --debug --pretty -h --help -V --version"
+  local arg_opts="-c --contract --httpMethod -X --path -p --limit -l --contentType"
+  local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
+
+  type compopt &>/dev/null && compopt +o default
+
+  case ${prev_word} in
+    -c|--contract)
+      return
+      ;;
+    --httpMethod|-X)
+      local IFS=$'\n'
+      COMPREPLY=( $( compReplyArray "${httpMethod_option_args[@]}" ) )
+      return $?
+      ;;
+    --path|-p)
+      return
+      ;;
+    --limit|-l)
+      return
+      ;;
+    --contentType)
       return
       ;;
   esac
