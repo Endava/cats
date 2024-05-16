@@ -85,7 +85,7 @@ public class FilterArguments {
     @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
             description = "A comma separated list of fuzzers you want to ignore. You can use full or partial Fuzzer names. To list all available fuzzers run: @|bold cats list -f|@", split = ",")
     private List<String> skipFuzzers;
-    @CommandLine.Option(names = {"--httpMethods", "--httpMethod"},
+    @CommandLine.Option(names = {"--httpMethods", "--httpMethod", "-X"},
             description = "A comma separated list of HTTP methods. When supplied, only these methods will be considered for each contract path. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
     @Setter
     private List<HttpMethod> httpMethods = HttpMethod.restMethods();
