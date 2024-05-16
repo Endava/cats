@@ -8,8 +8,8 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.KeyValuePair;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -393,7 +393,7 @@ class ServiceCallerTest {
                 .fuzzedHeader("catsFuzzedHeader").addUserHeaders(false).contentType("application/json").build();
 
         List<KeyValuePair<String, Object>> headers = serviceCaller.buildHeaders(data);
-        List<String> headerNames = headers.stream().map(KeyValuePair::getKey).collect(Collectors.toList());
+        List<String> headerNames = headers.stream().map(KeyValuePair::getKey).toList();
         Assertions.assertThat(headerNames).doesNotContain("header").contains("catsFuzzedHeader", "simpleHeader");
 
         List<KeyValuePair<String, Object>> catsHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).toList();

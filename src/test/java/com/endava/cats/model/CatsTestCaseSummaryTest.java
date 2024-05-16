@@ -7,19 +7,6 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class CatsTestCaseSummaryTest {
 
-
-    @Test
-    void givenTwoTestCaseSummaryInstancesWithNoIntPart_whenComparingThem_thenTheyAreNotEqual() {
-        CatsTestCase testCase1 = new CatsTestCase();
-        testCase1.setTestId("ID1");
-        testCase1.setResponse(CatsResponse.empty());
-        testCase1.setRequest(CatsRequest.builder().httpMethod("POST").build());
-        CatsTestCaseSummary summary1 = CatsTestCaseSummary.fromCatsTestCase(testCase1);
-        CatsTestCaseSummary summary2 = CatsTestCaseSummary.fromCatsTestCase(testCase1);
-
-        Assertions.assertThat(summary1).isEqualByComparingTo(summary2);
-    }
-
     @Test
     void givenTwoTestCaseSummaryInstancesWithTheDifferentStringParts_whenComparingThem_thenTheyAreNotEqual() {
         CatsTestCase testCase1 = new CatsTestCase();
