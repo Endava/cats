@@ -72,10 +72,10 @@ class GenerateCommandTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"not_existent", "src/test/resources/empty.yml"})
+    @CsvSource({"not_existent", "src/test/resources/empty.yml", "src/test/resources/no-paths.yml", "src/test/resources/empty-paths.yml"})
     void shouldThrowExceptionWhenContractIssues(String contract) {
         CommandLine commandLine = new CommandLine(generateCommand);
-        commandLine.execute("--contract", contract, "--path", "/pet");
+        commandLine.execute("--contract", contract, "--path", "/pet", "--debug");
         Assertions.assertThat(generateCommand.getExitCode()).isEqualTo(192);
     }
 }

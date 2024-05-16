@@ -1,0 +1,7 @@
+info:
+  description: ""
+  title: ""
+  version: ""
+openapi: 3.0.1
+paths:
+  post:

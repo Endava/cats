@@ -57,24 +57,12 @@ class FilterArgumentsTest {
     @ParameterizedTest
     @CsvSource({"checkHeaders,CheckSecurityHeadersFuzzer,RemoveFieldsFuzzer",
             "checkFields,RemoveFieldsFuzzer,CheckSecurityHeadersFuzzer",
-            "checkHttp,HappyPathFuzzer,CheckSecurityHeadersFuzzer"})
-    void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
-        ReflectionTestUtils.setField(checkArguments, argument, true);
-
-        List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
-
-        Assertions.assertThat(fuzzers).contains(matching).doesNotContain(notMatching);
-    }
-
-
-    @ParameterizedTest
-    @CsvSource({"includeControlChars,LeadingControlCharsInHeadersFuzzer,LeadingWhitespacesInHeadersFuzzer",
+            "checkHttp,HappyPathFuzzer,CheckSecurityHeadersFuzzer", "includeControlChars,LeadingControlCharsInHeadersFuzzer,LeadingWhitespacesInHeadersFuzzer",
             "includeEmojis,LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
             "includeWhitespaces,LeadingWhitespacesInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
             "includeContract,TopLevelElementsLinterFuzzer,LeadingWhitespacesInHeadersFuzzer"})
-    void shouldIncludeLengthyFuzzers(String argument, String matching, String notMatching) {
+    void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
         ReflectionTestUtils.setField(checkArguments, argument, true);
-
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains(matching).doesNotContain(notMatching);

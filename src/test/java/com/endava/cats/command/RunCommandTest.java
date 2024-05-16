@@ -15,6 +15,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 @QuarkusTest
 class RunCommandTest {
@@ -73,5 +75,33 @@ class RunCommandTest {
         ReflectionTestUtils.setField(catsCommand, "executionStatisticsListener", listener);
         int exitCode = runCommand.getExitCode();
         Assertions.assertThat(exitCode).isEqualTo(10);
+    }
+
+    @Test
+    void shouldNotRunWhenCannotReadFile() throws IOException {
+        File tempFile = createUnreadableFile();
+        ReflectionTestUtils.setField(runCommand, "file", tempFile);
+        runCommand.run();
+        Mockito.verify(filterArguments, Mockito.times(0)).customFilter("SecurityFuzzer");
+        Mockito.verify(filterArguments, Mockito.times(0)).customFilter("FunctionalFuzzer");
+
+        deleteFile(tempFile);
+    }
+
+    public static File createUnreadableFile() throws IOException {
+        File tempFile = File.createTempFile("testFile", ".txt");
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write("Test content");
+        }
+        if (!tempFile.setReadable(false)) {
+            throw new IOException("Failed to make file non-readable");
+        }
+        return tempFile;
+    }
+
+    public static void deleteFile(File file) {
+        if (file != null && file.exists()) {
+            file.delete();
+        }
     }
 }

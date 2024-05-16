@@ -5,6 +5,7 @@ import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.http.RandomResourcesFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyDynamic;
@@ -791,6 +792,38 @@ class TestCaseListenerTest {
         Assertions.assertThat(familyPredefined).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
 
+    @Test
+    void shouldReturnCurrentTestNumber() {
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().build(), () -> {
+        });
+        Assertions.assertThat(testCaseListener.getCurrentTestCaseNumber()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldReturnCurrentFuzzer() {
+        testCaseListener.beforeFuzz(RandomResourcesFuzzer.class);
+        String fuzzer = testCaseListener.getCurrentFuzzer();
+        Assertions.assertThat(fuzzer).isEqualTo("RandomResources");
+    }
+
+    @Test
+    void shouldStartUnknownProgress() {
+        FuzzingData data = FuzzingData.builder().contractPath("/test").method(HttpMethod.POST).path("/test").build();
+        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
+        TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
+        testCaseListenerSpy.startUnknownProgress(data);
+        Mockito.verify(testCaseListenerSpy).notifySummaryObservers(Mockito.eq("/test"), Mockito.eq("POST"), Mockito.anyDouble());
+    }
+
+    @Test
+    void shouldUpdateUnknownProgress() {
+        FuzzingData data = FuzzingData.builder().contractPath("/test").method(HttpMethod.POST).path("/test").build();
+        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
+        TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
+        testCaseListenerSpy.updateUnknownProgress(data);
+        Mockito.verify(testCaseListenerSpy, Mockito.times(1)).getCurrentTestCaseNumber();
+    }
+
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build, Runnable runnable) {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
             testCaseListener.addScenario(logger, "Given a {} field", "string");
@@ -801,6 +834,5 @@ class TestCaseListenerTest {
             testCaseListener.addExpectedResult(logger, "Should return {}", "2XX");
             runnable.run();
         });
-        MDC.put(TestCaseListener.ID, "1");
     }
 }
