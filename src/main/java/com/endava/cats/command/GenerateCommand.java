@@ -5,12 +5,12 @@ import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
-import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.github.ludovicianul.prettylogger.config.level.PrettyLevel;
 import io.quarkus.arc.Unremovable;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -89,12 +89,14 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
     @Override
     public void run() {
         try {
+            if (!debug) {
+                PrettyLogger.enableLevels(PrettyLevel.CONFIG, PrettyLevel.FATAL);
+            }
+
             OpenAPI openAPI = OpenApiUtils.readOpenApi(contract);
             this.checkOpenAPI(openAPI);
             this.globalContext.init(openAPI, List.of(contentType), new Properties());
-            if (debug) {
-                CatsUtil.setCatsLogLevel("ALL");
-            }
+
             PathItem pathItem = openAPI.getPaths().entrySet()
                     .stream().filter(openApiPath -> openApiPath.getKey().equalsIgnoreCase(path))
                     .map(Map.Entry::getValue).findFirst().orElseThrow(() -> new IllegalArgumentException("Provided path does not exist!"));
@@ -107,7 +109,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
             printResult(filteredBasedOnHttpMethod.stream().map(FuzzingData::getPayload).toList());
         } catch (IOException | IllegalArgumentException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
-            logger.debug("Stacktrace", e);
+            logger.debug("Stacktrace: {}", e);
             exitCodeDueToErrors = 192;
         }
     }
