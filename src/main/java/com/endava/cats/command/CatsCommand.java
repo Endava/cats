@@ -185,7 +185,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             Thread.currentThread().interrupt();
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
-            logger.debug("Stacktrace", e);
+            logger.debug("Stacktrace: {}", e);
             exitCodeDueToErrors = 192;
         }
     }
