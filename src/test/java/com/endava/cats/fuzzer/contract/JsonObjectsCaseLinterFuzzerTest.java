@@ -35,10 +35,12 @@ class JsonObjectsCaseLinterFuzzerTest {
     @BeforeEach
     void setup() {
         Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
+        ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
         Mockito.when(exporters.stream()).thenReturn(Stream.of(Mockito.mock(TestCaseExporter.class)));
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
-        jsonObjectsCaseLinterFuzzer = new JsonObjectsCaseLinterFuzzer(testCaseListener, Mockito.mock(ProcessingArguments.class), namingArguments);
+        jsonObjectsCaseLinterFuzzer = new JsonObjectsCaseLinterFuzzer(testCaseListener, processingArguments, namingArguments);
         ReflectionTestUtils.setField(namingArguments, "jsonPropertiesNaming", NamingArguments.Naming.CAMEL);
         ReflectionTestUtils.setField(namingArguments, "jsonObjectsNaming", NamingArguments.Naming.PASCAL);
     }
