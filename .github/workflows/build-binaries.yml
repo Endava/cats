@@ -1,0 +1,34 @@
+name: GraalVM Native Image builds on All platforms
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Building CATS on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        arch: [ amd64, arm64 ]
+        exclude:
+          - os: windows-latest
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build and run CATS
+        run: |
+          mvn -B clean package -Pnative -DskipTests=true
+
+      - name: Upload native image
+        uses: actions/upload-artifact@v4
+        with:
+          name: cats-${{ matrix.os }}
+          path: target/cats-runner
