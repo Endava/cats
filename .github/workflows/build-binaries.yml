@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    name: Building CATS on ${{ matrix.os }} {{ matrix.arch }}
+    name: Building CATS on ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -21,7 +21,8 @@ jobs:
           java-version: '21'
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: 'true'
+      - name: Display OS Arch
+        run: uname -p
 
       - name: Build and run CATS
         run: |
@@ -31,5 +32,5 @@ jobs:
       - name: Upload native image
         uses: actions/upload-artifact@v4
         with:
-          name: cats-${{ matrix.os }}
+          name: cats-${{ matrix.os }}-${{ matrix.arch }}
           path: target/cats-runner
