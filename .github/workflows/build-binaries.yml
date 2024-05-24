@@ -8,11 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-        arch: [ amd64, arm64 ]
-        exclude:
-          - os: windows-latest
-            arch: arm64
+        os: [macos-latest, macos-13, windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -26,8 +22,8 @@ jobs:
 
       - name: Build and run CATS
         run: |
-          mvn -B clean --file pom.xml
-          mvn -B package --file pom.xml -Pnative -DskipTests=true
+          ./mvnw -B clean --file pom.xml
+          ./mvnw -B package --file pom.xml -Pnative -DskipTests=true
 
       - name: Upload native image
         uses: actions/upload-artifact@v4
