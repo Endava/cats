@@ -4,7 +4,7 @@ on:
 
 jobs:
   build:
-    name: Building CATS on ${{ matrix.os }}
+    name: Building CATS on ${{ matrix.os }} {{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -25,7 +25,8 @@ jobs:
 
       - name: Build and run CATS
         run: |
-          mvn -B clean package -Pnative -DskipTests=true
+          mvn -B clean --file pom.xml
+          mvn -B package --file pom.xml -Pnative -DskipTests=true
 
       - name: Upload native image
         uses: actions/upload-artifact@v4
