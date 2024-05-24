@@ -121,8 +121,11 @@ public class StringGenerator {
     public static String generateExactLength(String regex, int length) {
         regex = cleanPattern(regex);
         StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(regex, length, length)));
+        if (initialValue.length() == 0 || initialValue.isEmpty()) {
+            return "";
+        }
 
-        if (initialValue.length() > 0 && initialValue.length() != length) {
+        if (initialValue.length() != length) {
             int startingAt = initialValue.length() - 1;
             String toRepeat = initialValue.substring(startingAt);
             initialValue.append(toRepeat);
