@@ -75,11 +75,15 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         int generatedStringLength = fromSchemaLength + 15;
 
         String generated = StringGenerator.generateExactLength(pattern, generatedStringLength);
-        if (CatsModelUtils.isByteArraySchema(schema)) {
-            return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
-        }
+        if (generated != null && !generated.isEmpty()) {
+            if (CatsModelUtils.isByteArraySchema(schema)) {
+                return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
+            }
 
-        return generated.substring(0, fromSchemaLength);
+            return generated.substring(0, fromSchemaLength);
+            
+        }
+        return "";
     }
 
     @Override
