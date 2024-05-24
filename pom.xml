@@ -29,7 +29,7 @@
         <lombok.version>1.18.32</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <openapi-generator.version>7.5.0</openapi-generator.version>
+        <openapi-generator.version>7.6.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -46,15 +46,15 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.10.1</quarkus.platform.version>
+        <quarkus.platform.version>3.10.2</quarkus.platform.version>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>6.1.6</spring.version>
+        <spring.version>6.1.8</spring.version>
         <assertj-core.version>3.25.3</assertj-core.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
-        <spring-integration-core.version>6.2.4</spring-integration-core.version>
+        <spring-integration-core.version>6.3.0</spring-integration-core.version>
         <json.version>20240303</json.version>
         <error-prone.version>2.18.0</error-prone.version>
         <archunit-junit5.version>1.3.0</archunit-junit5.version>
@@ -69,12 +69,12 @@
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
         <okio.version>3.9.0</okio.version>
-        <wiremock.version>3.5.4</wiremock.version>
+        <wiremock.version>3.6.0</wiremock.version>
         <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
-        <kotlin-reflect.version>1.9.23</kotlin-reflect.version>
+        <kotlin-reflect.version>2.0.0</kotlin-reflect.version>
     </properties>
     <dependencyManagement>
         <dependencies>
