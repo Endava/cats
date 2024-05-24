@@ -85,6 +85,8 @@ public abstract class UnicodeGenerator {
     @Getter
     private static final List<String> abugidasChars = List.of("జ్ఞ\u200Cా", "স্র\u200Cু");
 
+    private static final List<String> ZW_CHARS_SMALL_LIST = List.of("\u200B", "\u200C", "\u200D", "\u200E", "\u200F");
+
     private static final List<String> INVALID_JSONS = List.of("{0}", "{0.0}", "[{}]", "{$}", "[]", "{}",
             """ 
                     {"circularRef": {"self": {"$ref": "#/circularRef"}}} \
@@ -195,6 +197,15 @@ public abstract class UnicodeGenerator {
      */
     public static List<String> getInvalidJsons() {
         return INVALID_JSONS;
+    }
+
+    /**
+     * Gets a list of zero width characters.
+     *
+     * @return A list of zero width characters.
+     */
+    public static List<String> getZwCharsSmallList() {
+        return ZW_CHARS_SMALL_LIST;
     }
 
     /**
