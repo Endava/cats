@@ -22,8 +22,12 @@ jobs:
 
       - name: Get Previous Tag
         id: get_previous_tag
-        run: echo "PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)" >> $GITHUB_ENV
-
+        run: |
+          TAGS=$(git tag --sort=-creatordate)
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          PREVIOUS_TAG=$(echo "$TAGS" | grep -B 1 "$CURRENT_TAG" | head -n 1)
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
+          
       - name: Generate Changelog
         id: generate_changelog
         run: |
