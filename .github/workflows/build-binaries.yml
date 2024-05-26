@@ -31,7 +31,7 @@ jobs:
         id: generate_changelog
         run: |
           echo "Generating changelog from ${{ env.PREVIOUS_TAG }} to ${{ github.ref_name }}"
-          CHANGELOG=$(git log ${{ env.PREVIOUS_TAG }}..${{ github.ref_name }} --pretty=format:"* %s" --no-merges | grep -vE "\[maven-release-plugin\]|chore:|docs:|test:|ci:|build:")
+          CHANGELOG=$(git log ${{ env.PREVIOUS_TAG }}..cats-${{ github.event.inputs.releaseversion }} --pretty=format:"* %s" --no-merges | grep -vE "\[maven-release-plugin\]|chore:|docs:|test:|ci:|build:")
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
