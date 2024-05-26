@@ -17,20 +17,22 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-tags: true
+          fetch-depth: 0
           ref: cats-${{ github.event.inputs.releaseversion }}
 
       - name: Get Previous Tag
         id: get_previous_tag
         run: |
-          TAGS=$(git tag --sort=-creatordate)
           CURRENT_TAG=${GITHUB_REF#refs/tags/}
-          PREVIOUS_TAG=$(echo "$TAGS" | grep -B 1 "$CURRENT_TAG" | head -n 1)
+          echo "CURRENT_TAG=$CURRENT_TAG"
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 $CURRENT_TAG^)
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG"
           echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
-          
+
       - name: Generate Changelog
         id: generate_changelog
         run: |
+          echo "Generating changelog from ${{ env.PREVIOUS_TAG }} to ${{ github.ref_name }}"
           CHANGELOG=$(git log ${{ env.PREVIOUS_TAG }}..${{ github.ref_name }} --pretty=format:"* %s" --no-merges | grep -vE "\[maven-release-plugin\]|chore:|docs:|test:|ci:|build:")
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG" >> $GITHUB_ENV
