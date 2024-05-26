@@ -41,6 +41,6 @@ class ZeroWidthCharsInNamesHeadersFuzzerTest {
     @Test
     void shouldRunWhenHeadersArePresent() {
         zeroWidthCharsInNamesHeadersFuzzer.fuzz(FuzzingData.builder().headers(Set.of(CatsHeader.builder().name("test").value("value").build())).build());
-        Mockito.verify(simpleExecutor, Mockito.times(5)).execute(Mockito.any());
+        Mockito.verify(simpleExecutor, Mockito.times(11)).execute(Mockito.any());
     }
 }

@@ -33,7 +33,7 @@ class ZeroWidthCharsInValuesHeadersFuzzerTest {
 
     @Test
     void shouldReturnZeroWidthChars() {
-        Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(5);
+        Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(11);
         Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).hasToString("\u200b");
     }
 
