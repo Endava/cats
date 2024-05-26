@@ -79,13 +79,15 @@ public abstract class UnicodeGenerator {
 
     @Getter
     private static final List<String> singleCodePointEmojis = Arrays.asList("\uD83E\uDD76", "\uD83D\uDC80", "\uD83D\uDC7B", "\uD83D\uDC7E");
+
     @Getter
     private static final List<String> multiCodePointEmojis = Arrays.asList("\uD83D\uDC69\uD83C\uDFFE", "\uD83D\uDC68\u200D\uD83C\uDFED️", "\uD83D\uDC69\u200D\uD83D\uDE80");
 
     @Getter
     private static final List<String> abugidasChars = List.of("జ్ఞ\u200Cా", "স্র\u200Cু");
 
-    private static final List<String> ZW_CHARS_SMALL_LIST = List.of("\u200B", "\u200C", "\u200D", "\u200E", "\u200F");
+    private static final List<String> ZW_CHARS_SMALL_LIST = List.of("\u200B", "\u200C", "\u200D", "\u200E", "\u200F",
+            "\u202A", "\u202B", "\u202C", "\u202D", "\u202E", "\u202F");
 
     private static final List<String> INVALID_JSONS = List.of("{0}", "{0.0}", "[{}]", "{$}", "[]", "{}",
             """ 
