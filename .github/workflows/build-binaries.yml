@@ -17,6 +17,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          fetch-tags: true
           ref: cats-${{ github.event.inputs.releaseversion }}
 
       - name: Get Previous Tag
