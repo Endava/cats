@@ -23,9 +23,7 @@ jobs:
       - name: Get Previous Tag
         id: get_previous_tag
         run: |
-          CURRENT_TAG=${GITHUB_REF#refs/tags/}
-          echo "CURRENT_TAG=$CURRENT_TAG"
-          PREVIOUS_TAG=$(git describe --tags --abbrev=0 $CURRENT_TAG^)
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 cats-${{ github.event.inputs.releaseversion }}^)
           echo "PREVIOUS_TAG=$PREVIOUS_TAG"
           echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_ENV
 
