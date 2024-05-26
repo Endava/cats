@@ -1,32 +1,159 @@
 name: GraalVM Native Image builds on All platforms
 on:
   workflow_dispatch:
+    inputs:
+      releaseversion:
+        description: 'Release version'
+        required: true
+        default: 'X.X.X'
 
 jobs:
+  release:
+    name: Creating Release for CATS ${{ github.event.inputs.releaseversion }}
+    runs-on: ubuntu-latest
+    outputs:
+      release_upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: cats-${{ github.event.inputs.releaseversion }}
+
+      - name: Get Previous Tag
+        id: get_previous_tag
+        run: echo "PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)" >> $GITHUB_ENV
+
+      - name: Generate Changelog
+        id: generate_changelog
+        run: |
+          CHANGELOG=$(git log ${{ env.PREVIOUS_TAG }}..${{ github.ref_name }} --pretty=format:"* %s" --no-merges | grep -vE "\[maven-release-plugin\]|chore:|docs:|test:|ci:|build:")
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: cats-${{ github.event.inputs.releaseversion }}
+          release_name: cats-${{ github.event.inputs.releaseversion }}
+          draft: false
+          prerelease: false
+          body: ${{ env.CHANGELOG}}
+  build_uberjar:
+    name: Building CATS uberjar for release ${{ github.event.inputs.releaseversion }}
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: cats-${{ github.event.inputs.releaseversion }}
+
+      - name: Build Uberjar
+        run: |
+          ./mvnw -B clean --file pom.xml
+          ./mvnw -B package --file pom.xml -Dquarkus.package.type=uber-jar -DskipTests=true
+
+      - name: Tar jar file
+        run: |
+          cp target/cats-runner.jar cats.jar
+          tar -czf cats_uberjar_${{ github.event.inputs.releaseversion }}.tar.gz cats.jar
+
+      - name: Upload Uberjar
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_URL: ${{ needs.release.outputs.release_upload_url }}
+        with:
+          upload_url: ${{ RELEASE_URL }}
+          asset_path: cats_uberjar_${{ github.event.inputs.releaseversion }}.tar.gz
+          asset_name: cats_uberjar_${{ github.event.inputs.releaseversion }}.tar.gz
+          asset_content_type: application/gzip
+
   build:
-    name: Building CATS on ${{ matrix.os }} ${{ matrix.arch }}
+    name: Building CATS on ${{ matrix.os }} for release ${{ github.event.inputs.releaseversion }}
+    needs: release
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, macos-13, windows-latest, ubuntu-latest]
+        os: [ macos-latest, macos-13, windows-latest, ubuntu-latest ]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: cats-${{ github.event.inputs.releaseversion }}
 
-      - uses: graalvm/setup-graalvm@v1
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
         with:
           java-version: '21'
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Display OS Arch
-        run: uname -p
+
+      - name: Determine OS Architecture for Linux and MacOS
+        if: matrix.os != 'windows-latest'
+        id: determine_arch
+        run: |
+          arch=$(uname -p)
+          if [[ "$arch" == "arm" ]]; then
+            echo "OS_ARCH=arm64" >> $GITHUB_ENV
+          else
+            echo "OS_ARCH=amd64" >> $GITHUB_ENV
+          fi
+
+      - name: Determine OS Architecture for Windows
+        if: matrix.os == 'windows-latest'
+        id: determine_arch_windows
+        run: |
+          echo "OS_ARCH=amd64" >> $GITHUB_ENV
+
+      - name: Determine OS Name
+        id: determine_os
+        run: echo "RUNNER_OS=${{ matrix.os }}" | sed 's/-[^-]*$//' >> $GITHUB_ENV
 
       - name: Build and run CATS
         run: |
           ./mvnw -B clean --file pom.xml
           ./mvnw -B package --file pom.xml -Pnative -DskipTests=true
 
-      - name: Upload native image
-        uses: actions/upload-artifact@v4
+      - name: Tar files for Linux and MacOS
+        if: matrix.os != 'windows-latestt'
+        run: |
+          cp target/cats-runner cats
+          tar -czf cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH}}_${{ github.event.inputs.releaseversion }}.tar.gz cats
+
+      - name: Upload Tar files for Linux and MacOS
+        if: matrix.os != 'windows-latestt'
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_URL: ${{ needs.release.outputs.release_upload_url }}
         with:
-          name: cats-${{ matrix.os }}-${{ matrix.arch }}
-          path: target/cats-runner
+          upload_url: ${{ RELEASE_URL }}
+          asset_path: cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH}}_${{ github.event.inputs.releaseversion }}.tar.gz
+          asset_name: cats_${{ env.RUNNER_OS }}_${{ env.OS_ARCH}}_${{ github.event.inputs.releaseversion }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Zip file for Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          copy target\cats-native-image-source-jar\cats-runner.exe cats.exe
+          Compress-Archive -Path cats.exe -Destination cats_windows_amd64_${{ github.event.inputs.releaseversion }}.zip
+
+      - name: Upload Zip for Windows
+        if: matrix.os == 'windows-latest'
+        id: upload-release-asset-windows
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_URL: ${{ needs.release.outputs.release_upload_url }}
+        with:
+          upload_url: ${{ RELEASE_URL }}
+          asset_path: cats_windows_amd64_${{ github.event.inputs.releaseversion }}.zip
+          asset_name: cats_windows_amd64_${{ github.event.inputs.releaseversion }}.zip
+          asset_content_type: application/zip
