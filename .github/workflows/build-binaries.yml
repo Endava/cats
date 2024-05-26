@@ -57,6 +57,13 @@ jobs:
         with:
           ref: cats-${{ github.event.inputs.releaseversion }}
 
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Uberjar
         run: |
           ./mvnw -B clean --file pom.xml
