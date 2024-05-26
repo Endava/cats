@@ -154,7 +154,7 @@ jobs:
       - name: Zip file for Windows
         if: matrix.os == 'windows-latest'
         run: |
-          copy target\cats-native-image-source-jar\cats-runner.exe cats.exe
+          copy target\cats-runner.exe cats.exe
           Compress-Archive -Path cats.exe -Destination cats_windows_amd64_${{ github.event.inputs.releaseversion }}.zip
 
       - name: Upload Zip for Windows
