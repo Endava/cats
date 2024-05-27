@@ -397,6 +397,7 @@ class TestCaseListenerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString("{'test':1}"));
         Mockito.when(data.getResponseCodes()).thenReturn(Collections.singleton("200"));
         Mockito.when(data.getResponses()).thenReturn(Collections.singletonMap("200", Collections.singletonList("nomatch")));
         Mockito.when(response.responseCodeAsString()).thenReturn("200");
@@ -601,6 +602,7 @@ class TestCaseListenerTest {
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
+        Mockito.when(response.getJsonBody()).thenReturn(JsonParser.parseString("{'test':1}"));
         Mockito.when(data.getResponseCodes()).thenReturn(Set.of("200", "400"));
         Mockito.when(data.getResponses()).thenReturn(Map.of("400", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
