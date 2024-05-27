@@ -19,7 +19,7 @@ public class HttpStatusCodeInRangeLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     /**
-     * Creates a new HttpStatusCodeInRangeLinterFuzzer instance/
+     * Creates a new HttpStatusCodeInRangeLinterFuzzer instance.
      *
      * @param tcl the test case listener
      */
