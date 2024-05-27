@@ -86,8 +86,10 @@ public abstract class UnicodeGenerator {
     @Getter
     private static final List<String> abugidasChars = List.of("జ్ఞ\u200Cా", "স্র\u200Cু");
 
-    private static final List<String> ZW_CHARS_SMALL_LIST = List.of("\u200B", "\u200C", "\u200D", "\u200E", "\u200F",
+    private static final List<String> ZW_CHARS_SMALL_LIST_HEADERS = List.of("\u200B", "\u200C", "\u200D", "\u200E", "\u200F",
             "\u202A", "\u202B", "\u202C", "\u202D", "\u202E", "\u202F");
+
+    private static final List<String> ZW_CHARS_SMALL_LIST_FIELDS = List.of("\u200B", "\u200C", "\u200D", "\u200F", "\u202B", "\u202E");
 
     private static final List<String> INVALID_JSONS = List.of("{0}", "{0.0}", "[{}]", "{$}", "[]", "{}",
             """ 
@@ -206,8 +208,17 @@ public abstract class UnicodeGenerator {
      *
      * @return A list of zero width characters.
      */
-    public static List<String> getZwCharsSmallList() {
-        return ZW_CHARS_SMALL_LIST;
+    public static List<String> getZwCharsSmallListHeaders() {
+        return ZW_CHARS_SMALL_LIST_HEADERS;
+    }
+
+    /**
+     * Gets a list of zero width characters.
+     *
+     * @return A list of zero width characters.
+     */
+    public static List<String> getZwCharsSmallListFields() {
+        return ZW_CHARS_SMALL_LIST_FIELDS;
     }
 
     /**

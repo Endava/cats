@@ -31,7 +31,7 @@ public class ZeroWidthCharsInValuesHeadersFuzzer extends BaseHeadersFuzzer {
                 .expectedHttpCodeForRequiredHeadersFuzzed(ResponseCodeFamilyPredefined.FOURXX)
                 .expectedHttpForOptionalHeadersFuzzed(ResponseCodeFamilyPredefined.FOURXX)
                 .typeOfDataSentToTheService("Zero-width characters")
-                .fuzzStrategy(UnicodeGenerator.getZwCharsSmallList().stream().map(value -> FuzzingStrategy.insert().withData(value)).toList())
+                .fuzzStrategy(UnicodeGenerator.getZwCharsSmallListHeaders().stream().map(value -> FuzzingStrategy.insert().withData(value)).toList())
                 .matchResponseSchema(false)
                 .build();
     }

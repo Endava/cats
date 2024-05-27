@@ -41,7 +41,7 @@ public class ZeroWidthCharsInNamesHeadersFuzzer implements Fuzzer {
         if (data.getHeaders().isEmpty()) {
             return;
         }
-        for (String zeroWidthChar : UnicodeGenerator.getZwCharsSmallList()) {
+        for (String zeroWidthChar : UnicodeGenerator.getZwCharsSmallListHeaders()) {
             Set<CatsHeader> clonedHeaders = data.getHeaders().stream()
                     .map(catsHeader -> CatsHeader.builder()
                             .name(CatsUtil.insertInTheMiddle(catsHeader.getName(), zeroWidthChar, true))
