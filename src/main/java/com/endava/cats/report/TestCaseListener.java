@@ -856,7 +856,8 @@ public class TestCaseListener {
         try {
             List<String> responses = this.getExpectedResponsesByResponseCode(response, data);
 
-            return isResponseEmpty(response, responses)
+            return isNullResponse(response)
+                    || isResponseEmpty(response, responses)
                     || isResponseContentTypeNotMatchable(response)
                     || isNotTypicalDocumentedResponseCode(response)
                     || isEmptyArray(response.getJsonBody())
@@ -866,6 +867,10 @@ public class TestCaseListener {
             //if something happens during json parsing we consider it doesn't match schema
             return false;
         }
+    }
+
+    private boolean isNullResponse(CatsResponse response) {
+        return response.getJsonBody() == null || response.getBody() == null;
     }
 
     private boolean isResponseContentTypeNotMatchable(CatsResponse response) {
