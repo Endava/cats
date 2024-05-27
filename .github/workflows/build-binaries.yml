@@ -48,6 +48,11 @@ jobs:
           prerelease: false
           body: ${{ env.CHANGELOG}}
 
+      - name: Print Release URL
+        id: print_release_url
+        run: |
+          echo "Release URL: ${{ steps.create_release.outputs.upload_url }}"
+
   build_linux_arm64:
     name: Building Linux arm64 for CATS ${{ github.event.inputs.releaseversion }}
     runs-on: ubuntu-latest
@@ -94,7 +99,6 @@ jobs:
           asset_path: cats_linux_arm64_${{ github.event.inputs.releaseversion }}.tar.gz
           asset_name: cats_linux_arm64_${{ github.event.inputs.releaseversion }}.tar.gz
           asset_content_type: application/gzip
-        run: echo ${{ env.RELEASE_URL }}
 
   build_uberjar:
     name: Building CATS uberjar for release ${{ github.event.inputs.releaseversion }}
