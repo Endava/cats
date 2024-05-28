@@ -1,0 +1,263 @@
+{
+    "swagger": "2.0",
+    "basePath": "/",
+    "paths": {
+        "/parents": {
+            "post": {
+                "responses": {
+                    "201": {
+                        "description": "Parent object created successfully"
+                    }
+                },
+                "summary": "Create a new parent object",
+                "operationId": "post_parents_resource",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/Parent"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Parent"
+                            }
+                        }
+                    }
+                },
+                "summary": "Get all parent objects",
+                "operationId": "get_parents_resource",
+                "parameters": [
+                    {
+                        "name": "X-Fields",
+                        "in": "header",
+                        "type": "string",
+                        "format": "mask",
+                        "description": "An optional fields mask"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/parents/{parentId}": {
+            "parameters": [
+                {
+                    "name": "parentId",
+                    "in": "path",
+                    "required": true,
+                    "type": "integer"
+                }
+            ],
+            "put": {
+                "responses": {
+                    "200": {
+                        "description": "Parent object updated successfully"
+                    }
+                },
+                "summary": "Update a specific parent object",
+                "operationId": "put_parent_resource",
+                "parameters": [
+                    {
+                        "name": "payload",
+                        "required": true,
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/Parent"
+                        }
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            },
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/Parent"
+                        }
+                    }
+                },
+                "summary": "Get a specific parent object",
+                "operationId": "get_parent_resource",
+                "parameters": [
+                    {
+                        "name": "X-Fields",
+                        "in": "header",
+                        "type": "string",
+                        "format": "mask",
+                        "description": "An optional fields mask"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            },
+            "delete": {
+                "responses": {
+                    "204": {
+                        "description": "Parent object deleted successfully"
+                    }
+                },
+                "summary": "Delete a specific parent object",
+                "operationId": "delete_parent_resource",
+                "tags": [
+                    "default"
+                ]
+            }
+        },
+        "/parents/{parentId}/children": {
+            "parameters": [
+                {
+                    "name": "parentId",
+                    "in": "path",
+                    "required": true,
+                    "type": "integer"
+                }
+            ],
+            "get": {
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Child"
+                            }
+                        }
+                    }
+                },
+                "summary": "Get children of a specific parent object",
+                "operationId": "get_children_resource",
+                "parameters": [
+                    {
+                        "name": "X-Fields",
+                        "in": "header",
+                        "type": "string",
+                        "format": "mask",
+                        "description": "An optional fields mask"
+                    }
+                ],
+                "tags": [
+                    "default"
+                ]
+            }
+        }
+    },
+    "info": {
+        "title": "Complex API",
+        "version": "1.0",
+        "description": "API for handling parent-child relationships"
+    },
+    "produces": [
+        "application/json"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "default",
+            "description": "Default namespace"
+        }
+    ],
+    "definitions": {
+        "Parent": {
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of the parent (1-50 characters)",
+                    "minLength": 1,
+                    "maxLength": 50
+                },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Child"
+                    }
+                }
+            },
+            "type": "object"
+        },
+        "Child": {
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of the child (1-50 characters)",
+                    "minLength": 1,
+                    "maxLength": 50
+                },
+                "grandchildren": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Grandchild"
+                    }
+                }
+            },
+            "type": "object"
+        },
+        "Grandchild": {
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of the grandchild (1-50 characters)",
+                    "minLength": 1,
+                    "maxLength": 50
+                },
+                "grandgrandchildren": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GrandGrandchild"
+                    }
+                }
+            },
+            "type": "object"
+        },
+        "GrandGrandchild": {
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of the grand-grandchild (1-50 characters)",
+                    "minLength": 1,
+                    "maxLength": 50
+                }
+            },
+            "type": "object"
+        }
+    },
+    "responses": {
+        "ParseError": {
+            "description": "When a mask can't be parsed"
+        },
+        "MaskError": {
+            "description": "When any error occurs on mask"
+        }
+    }
+}

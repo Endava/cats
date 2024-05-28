@@ -6,13 +6,13 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.KeyValuePair;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -816,8 +816,11 @@ public class FuzzingDataFactory {
         Map<String, List<String>> responses = new HashMap<>();
         for (String responseCode : operation.getResponses().keySet()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
-            Content defaultContent = buildDefaultContent();
-            responses.put(responseCode, new ArrayList<>(Optional.ofNullable(apiResponse.getContent()).orElse(defaultContent).keySet()));
+            Content content = apiResponse.getContent();
+            if (content == null || content.isEmpty()) {
+                content = buildDefaultContent();
+            }
+            responses.put(responseCode, new ArrayList<>(content.keySet()));
         }
 
         return responses;

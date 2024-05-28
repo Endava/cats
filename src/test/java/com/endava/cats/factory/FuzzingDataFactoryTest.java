@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @QuarkusTest
@@ -75,6 +76,17 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(responses).hasSize(2);
         Assertions.assertThat(responses.get(0)).doesNotContain("Variant").contains("option1");
         Assertions.assertThat(responses.get(1)).doesNotContain("Variant").contains("option2");
+    }
+
+    @Test
+    void shouldAddDefaultContentTypeForResponses() throws Exception {
+        Mockito.doCallRealMethod().when(processingArguments).getDefaultContentType();
+        List<FuzzingData> data = setupFuzzingData("/parents", "src/test/resources/issue127.json");
+
+        Assertions.assertThat(data).hasSizeGreaterThanOrEqualTo(2);
+        Optional<FuzzingData> getRequest = data.stream().filter(fuzzingData -> fuzzingData.getMethod() == HttpMethod.GET).findFirst();
+        Assertions.assertThat(getRequest).isPresent();
+        Assertions.assertThat(getRequest.get().getResponseContentTypes().values()).containsOnly(List.of("application/json"));
     }
 
     @Test
