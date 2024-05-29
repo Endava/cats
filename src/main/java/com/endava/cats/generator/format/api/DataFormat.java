@@ -46,4 +46,17 @@ public abstract class DataFormat<T extends DataFormatGenerator> {
 
         return null;
     }
+
+    public static Object matchesPatternOrNullWithCombinations(Schema<?> schema, String generated) {
+        Object attempt = null;
+
+        for (String variant : List.of(generated, generated.replace(" ", ""), generated.replace(" ", "-"))) {
+            attempt = DataFormat.matchesPatternOrNull(schema, variant);
+            if (attempt != null) {
+                break;
+            }
+        }
+
+        return attempt;
+    }
 }
