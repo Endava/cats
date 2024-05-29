@@ -20,7 +20,8 @@ public class AddressLine1Generator implements ValidDataFormatGenerator, OpenAPIF
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "line1".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).endsWith("line1");
+                PropertySanitizer.sanitize(propertyName).endsWith("line1") ||
+                PropertySanitizer.sanitize(propertyName).endsWith("lineone");
     }
 
     @Override

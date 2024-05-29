@@ -24,7 +24,7 @@ class AddressLine1GeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"line1,true", "LINE1,true", "other,false"})
+    @CsvSource({"line1,true", "LINE1,true", "lineone,true", "other,false"})
     void shouldApplyToPropertyName(String property, boolean expected) {
         AddressLine1Generator addressGenerator = new AddressLine1Generator();
         Assertions.assertThat(addressGenerator.appliesTo("", property)).isEqualTo(expected);
