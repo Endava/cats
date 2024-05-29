@@ -31,8 +31,14 @@ public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFo
 
     @Override
     public Object generate(Schema<?> schema) {
-        String pattern = FORMATS.get(CatsUtil.random().nextInt(FORMATS.size()));
+        String pattern;
+        if (schema.getPattern() != null && (schema.getPattern().startsWith("^\\+") || schema.getPattern().startsWith("\\+"))) {
+            pattern = "+40### ### ###";
+        } else {
+            pattern = FORMATS.get(CatsUtil.random().nextInt(FORMATS.size()));
+        }
         String generated = CatsUtil.faker().numerify(pattern);
-        return DataFormat.matchesPatternOrNull(schema, generated);
+
+        return DataFormat.matchesPatternOrNullWithCombinations(schema, generated);
     }
 }
