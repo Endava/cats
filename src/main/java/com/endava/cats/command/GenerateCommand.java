@@ -115,14 +115,18 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
     }
 
     void printResult(List<String> filteredBasedOnHttpMethod) {
+        List<String> toPrintList = filteredBasedOnHttpMethod;
+
         if (pretty) {
-            logger.noFormat(filteredBasedOnHttpMethod.stream()
+            toPrintList = filteredBasedOnHttpMethod.stream()
                     .limit(limit > 0 ? limit : filteredBasedOnHttpMethod.size())
                     .map(JsonParser::parseString)
-                    .map(JsonUtils.GSON::toJson).toList().toString());
-        } else {
-            logger.noFormat(filteredBasedOnHttpMethod.toString());
+                    .map(JsonUtils.GSON::toJson).toList();
         }
+
+        Object toPrint = toPrintList.size() == 1 ? toPrintList.get(0) : toPrintList;
+
+        logger.noFormat(toPrint.toString());
     }
 
     private void checkOpenAPI(OpenAPI openAPI) {
