@@ -43,6 +43,11 @@ public class StringGenerator {
     public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
 
     private static final int MAX_ATTEMPTS_GENERATE = 5;
+
+    private static final String ALPHANUMERIC_VALUE = "CatsIsCool";
+
+    private static final String EMPTY_PATTERN = "(\\^\\$\\|)|(\\|\\^\\$)|(\\^\\$)";
+
     /**
      * Represents an empty string.
      */
@@ -174,6 +179,7 @@ public class StringGenerator {
         if (pattern.endsWith("$/")) {
             pattern = StringUtils.removeEnd(pattern, "/");
         }
+        pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
         return pattern;
     }
 
@@ -223,7 +229,7 @@ public class StringGenerator {
             } while (attempts < MAX_ATTEMPTS_GENERATE && !generatedValue.matches(pattern));
         } catch (Exception e) {
             LOGGER.debug("RGX generator failed, returning empty.", e);
-            return EMPTY;
+            return ALPHANUMERIC_VALUE;
         }
         LOGGER.debug("Generated using RGX {}", generatedValue);
         return generatedValue;
