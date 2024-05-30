@@ -77,6 +77,7 @@ public class ProcessingArguments {
             description = "Generate anyOf/oneOf combinations also for response schemas. By default it creates one response payload with all possibilities. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean generateAllXxxCombinationsForResponses;
 
+    @Setter
     @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default. " +
                     "Setting this to false will send them as requests which will probably fail. It's mostly for debug purposes. Default: @|bold,underline ${DEFAULT-VALUE}|@")

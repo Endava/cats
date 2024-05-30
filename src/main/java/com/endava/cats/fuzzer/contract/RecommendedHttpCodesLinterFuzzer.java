@@ -56,6 +56,4 @@ public class RecommendedHttpCodesLinterFuzzer extends BaseLinterFuzzer {
     public String description() {
         return "verifies that the current path contains all recommended HTTP response codes for all operations";
     }
-
 }
-
