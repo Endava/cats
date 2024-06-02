@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
@@ -13,6 +14,8 @@ import jakarta.enterprise.inject.Instance;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import java.util.List;
@@ -53,6 +56,15 @@ class ResponsesWithBodiesLinterFuzzerTest {
                 Mockito.eq("Missing response body for some HTTP response codes"), Mockito.eq("The following HTTP response codes are missing a response body: {}"), Mockito.eq(List.of("200")));
     }
 
+    @ParameterizedTest
+    @CsvSource({"204", "304"})
+    void shouldSkipCodes(String code) {
+        FuzzingData data = FuzzingData.builder().responses(Map.of(code, List.of())).build();
+        responsesWithBodiesLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All HTTP response codes have a response body"));
+    }
+
     @Test
     void shouldReturnSimpleClassNameForToString() {
         Assertions.assertThat(responsesWithBodiesLinterFuzzer).hasToString(responsesWithBodiesLinterFuzzer.getClass().getSimpleName());
@@ -61,5 +73,10 @@ class ResponsesWithBodiesLinterFuzzerTest {
     @Test
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(responsesWithBodiesLinterFuzzer.description()).isEqualTo("verifies that HTTP response codes (except for 204 and 304) have a response body");
+    }
+
+    @Test
+    void shouldSkipForHttpHead() {
+        Assertions.assertThat(responsesWithBodiesLinterFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.HEAD);
     }
 }

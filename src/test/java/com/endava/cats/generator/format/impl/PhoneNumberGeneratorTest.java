@@ -16,11 +16,12 @@ class PhoneNumberGeneratorTest {
         Assertions.assertThat(phoneNumberGenerator.generate(new Schema<>()).toString()).hasSizeGreaterThan(1);
     }
 
-    @Test
-    void shouldGenerateWithPlusWhenPlusPattern() {
+    @ParameterizedTest
+    @CsvSource(value = {"^\\+?[1-9]\\d{6,14}$", "\\+?[1-9]\\d{6,14}$"}, delimiter = ';')
+    void shouldGenerateWithPlusWhenPlusPattern(String pattern) {
         PhoneNumberGenerator phoneNumberGenerator = new PhoneNumberGenerator();
         StringSchema schema = new StringSchema();
-        schema.setPattern("^\\+?[1-9]\\d{6,14}$");
+        schema.setPattern(pattern);
         Assertions.assertThat(phoneNumberGenerator.generate(schema).toString()).startsWith("+4");
     }
 

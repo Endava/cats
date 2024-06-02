@@ -18,6 +18,7 @@ import java.util.Map;
 @LinterFuzzer
 public class ResponsesWithBodiesLinterFuzzer extends BaseLinterFuzzer {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
+    private static final List<String> SKIPPED_CODES = List.of("204", "304");
 
     /**
      * Creates a new ResponsesWithBodiesLinterFuzzer instance.
@@ -36,6 +37,7 @@ public class ResponsesWithBodiesLinterFuzzer extends BaseLinterFuzzer {
         List<String> httpResponseCodesMissingBody = data.getResponses()
                 .entrySet()
                 .stream()
+                .filter(entry -> !SKIPPED_CODES.contains(entry.getKey()))
                 .filter(entry -> entry.getValue().isEmpty())
                 .map(Map.Entry::getKey)
                 .toList();
