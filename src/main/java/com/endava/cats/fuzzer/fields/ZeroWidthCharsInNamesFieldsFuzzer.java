@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Singleton
 @FieldFuzzer
 public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(NewFieldsFuzzer.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ZeroWidthCharsInNamesFieldsFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 

@@ -15,7 +15,7 @@ import java.util.List;
  */
 @Singleton
 public class BankAccountNumberGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
-    private final static String[] FORMATS = new String[]{"## ## ## ##", "## ## ## ## ##"};
+    private static final String[] FORMATS = new String[]{"## ## ## ##", "## ## ## ## ##"};
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
