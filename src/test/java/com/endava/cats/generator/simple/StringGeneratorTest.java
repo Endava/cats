@@ -128,4 +128,10 @@ class StringGeneratorTest {
         String generated = StringGenerator.generate("^$|^(?i)(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)$", 100, 100);
         Assertions.assertThat(generated).hasSize(100).matches("^(?i)(http://|https://)([a-z0-9./\\-_.~+=:;%&?]+)");
     }
+
+    @Test
+    void shouldRemoveCaseInsensitive() {
+        String generated = StringGenerator.cleanPattern("^(?i)(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)$");
+        Assertions.assertThat(generated).isEqualTo("^(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)$");
+    }
 }
