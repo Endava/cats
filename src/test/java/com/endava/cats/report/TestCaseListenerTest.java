@@ -803,7 +803,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldReturnCurrentFuzzer() {
-        testCaseListener.beforeFuzz(RandomResourcesFuzzer.class);
+        testCaseListener.beforeFuzz(RandomResourcesFuzzer.class, "test", "post");
         String currentFuzzer = testCaseListener.getCurrentFuzzer();
         Assertions.assertThat(currentFuzzer).isEqualTo("RandomResources");
     }
