@@ -20,8 +20,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Set;
 
 @QuarkusTest
-class ZeroWidthCharsInValuesFieldsFuzzerTest {
-    private ZeroWidthCharsInValuesFieldsFuzzer zeroWidthCharsInValuesFieldsFuzzer;
+class ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzerTest {
+    private ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer;
     private ServiceCaller serviceCaller;
     @InjectSpy
     TestCaseListener testCaseListener;
@@ -30,17 +30,17 @@ class ZeroWidthCharsInValuesFieldsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
-        zeroWidthCharsInValuesFieldsFuzzer = new ZeroWidthCharsInValuesFieldsFuzzer(serviceCaller, testCaseListener, Mockito.mock(FilesArguments.class));
+        zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer = new ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, Mockito.mock(FilesArguments.class));
     }
 
     @Test
     void shouldHaveDescription() {
-        Assertions.assertThat(zeroWidthCharsInValuesFieldsFuzzer.description()).isNotBlank();
+        Assertions.assertThat(zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer.description()).isNotBlank();
     }
 
     @Test
     void shouldHaveToString() {
-        Assertions.assertThat(zeroWidthCharsInValuesFieldsFuzzer).hasToString(zeroWidthCharsInValuesFieldsFuzzer.getClass().getSimpleName());
+        Assertions.assertThat(zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer).hasToString(zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer.getClass().getSimpleName());
     }
 
     @ParameterizedTest
@@ -48,7 +48,7 @@ class ZeroWidthCharsInValuesFieldsFuzzerTest {
     void shouldNotRunWithEmptyPayload(String payload) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getPayload()).thenReturn(payload);
-        zeroWidthCharsInValuesFieldsFuzzer.fuzz(data);
+        zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer.fuzz(data);
         Mockito.verifyNoInteractions(serviceCaller);
         Mockito.verifyNoInteractions(testCaseListener);
     }
@@ -57,7 +57,7 @@ class ZeroWidthCharsInValuesFieldsFuzzerTest {
     void shouldNotRunWhenNoFields() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of());
-        zeroWidthCharsInValuesFieldsFuzzer.fuzz(data);
+        zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer.fuzz(data);
         Mockito.verifyNoInteractions(serviceCaller);
         Mockito.verifyNoInteractions(testCaseListener);
     }
@@ -76,8 +76,8 @@ class ZeroWidthCharsInValuesFieldsFuzzerTest {
                 }
                 """);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().responseCode(400).build());
-        zeroWidthCharsInValuesFieldsFuzzer.fuzz(data);
+        zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(18)).reportResult(Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX), Mockito.eq(true), Mockito.eq(true));
+                Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.eq(true), Mockito.eq(true));
     }
 }

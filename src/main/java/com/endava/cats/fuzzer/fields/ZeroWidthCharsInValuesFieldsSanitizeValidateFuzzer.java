@@ -1,8 +1,9 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.annotations.SanitizeAndValidate;
 import com.endava.cats.args.FilesArguments;
-import com.endava.cats.fuzzer.fields.base.ExpectOnly4XXBaseFieldsFuzzer;
+import com.endava.cats.fuzzer.fields.base.ExpectOnly2XXBaseFieldsFuzzer;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
@@ -13,11 +14,12 @@ import jakarta.inject.Singleton;
 import java.util.List;
 
 /**
- * Fuzzer that sends zero-width characters in fields.
+ * Fuzzer that sends zero-width characters in fields for the sanitize then validate strategy.
  */
 @FieldFuzzer
 @Singleton
-public class ZeroWidthCharsInValuesFieldsFuzzer extends ExpectOnly4XXBaseFieldsFuzzer {
+@SanitizeAndValidate
+public class ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer extends ExpectOnly2XXBaseFieldsFuzzer {
     /**
      * Constructor for initializing common dependencies for fuzzing base fields with the expectation of only 4xx responses.
      *
@@ -25,7 +27,7 @@ public class ZeroWidthCharsInValuesFieldsFuzzer extends ExpectOnly4XXBaseFieldsF
      * @param lr The {@link TestCaseListener} for reporting test case events.
      * @param cp The {@link FilesArguments} for file-related arguments.
      */
-    protected ZeroWidthCharsInValuesFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+    protected ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
         super(sc, lr, cp);
     }
 
