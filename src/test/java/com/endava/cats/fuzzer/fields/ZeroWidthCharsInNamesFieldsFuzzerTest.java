@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
@@ -78,5 +79,10 @@ class ZeroWidthCharsInNamesFieldsFuzzerTest {
         zeroWidthCharsInNamesFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(18)).reportResult(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldSkipForHttpMethods() {
+        Assertions.assertThat(zeroWidthCharsInNamesFieldsFuzzer.skipForHttpMethods()).containsOnly(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
     }
 }

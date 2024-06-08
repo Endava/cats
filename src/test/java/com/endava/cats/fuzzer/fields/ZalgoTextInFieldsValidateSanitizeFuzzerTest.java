@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @QuarkusTest
-class ZalgoTextInStringFieldsValidateSanitizeFuzzerTest {
+class ZalgoTextInFieldsValidateSanitizeFuzzerTest {
     private ZalgoTextInFieldsValidateSanitizeFuzzer zalgoTextInStringFieldsValidateSanitizeFuzzer;
 
     @BeforeEach
