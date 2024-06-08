@@ -55,6 +55,8 @@ public class ZeroWidthCharsInNamesHeadersFuzzer implements Fuzzer {
                             .fuzzingData(data)
                             .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
                             .fuzzer(this)
+                            .matchResponseContentType(false)
+                            .matchResponseResult(false)
                             .logger(logger)
                             .scenario("Inject zero-width characters in the header names")
                             .headers(clonedHeaders)
