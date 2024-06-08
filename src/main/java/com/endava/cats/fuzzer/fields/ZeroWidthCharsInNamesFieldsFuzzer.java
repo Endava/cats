@@ -3,12 +3,14 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.simple.UnicodeGenerator;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -17,6 +19,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -44,7 +47,11 @@ public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
             return;
         }
         for (String fuzzValue : UnicodeGenerator.getZwCharsSmallListFields()) {
-            for (String fuzzedField : data.getAllFieldsByHttpMethod().stream().limit(5).collect(Collectors.toSet())) {
+            for (String fuzzedField : data.getAllFieldsByHttpMethod()
+                    .stream()
+                    .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
+                    .limit(5)
+                    .collect(Collectors.toSet())) {
                 testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzValue));
             }
         }
@@ -53,7 +60,8 @@ public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
     private void process(FuzzingData data, String fuzzedField, String fuzzValue) {
         String fuzzedPayload = getFuzzedPayload(data, fuzzedField, fuzzValue);
 
-        testCaseListener.addScenario(logger, "Insert zero-width chars in field names: field [{}], char [{}]. All other details are similar to a happy flow", fuzzedField, fuzzValue);
+        testCaseListener.addScenario(logger, "Insert zero-width chars in field names: field [{}], char [{}]. All other details are similar to a happy flow",
+                fuzzedField, FuzzingStrategy.formatValue(fuzzValue));
         testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", ResponseCodeFamilyPredefined.FOURXX.asString());
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
@@ -68,6 +76,11 @@ public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
         String simpleFuzzedFieldName = fuzzedField.substring(fuzzedField.lastIndexOf("#") + 1);
         String fuzzedFieldName = CatsUtil.insertInTheMiddle(simpleFuzzedFieldName, fuzzValue, true);
         return currentPayload.replace("\"" + simpleFuzzedFieldName + "\"", "\"" + fuzzedFieldName + "\"");
+    }
+
+    @Override
+    public List<HttpMethod> skipForHttpMethods() {
+        return List.of(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
     }
 
     @Override
