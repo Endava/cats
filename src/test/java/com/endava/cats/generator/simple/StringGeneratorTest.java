@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.List;
+
 @QuarkusTest
 class StringGeneratorTest {
 
@@ -133,5 +135,13 @@ class StringGeneratorTest {
     void shouldRemoveCaseInsensitive() {
         String generated = StringGenerator.cleanPattern("^(?i)(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)$");
         Assertions.assertThat(generated).isEqualTo("^(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)$");
+    }
+
+    @Test
+    void shouldGenerateLeftBoundaryForEnum() {
+        Schema<String> schema = new StringSchema();
+        schema.setEnum(List.of("test", "b", "c"));
+        String generated = StringGenerator.generateLeftBoundString(schema);
+        Assertions.assertThat(generated).hasSize(4);
     }
 }

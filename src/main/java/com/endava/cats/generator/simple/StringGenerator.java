@@ -90,7 +90,7 @@ public class StringGenerator {
     private static final org.cornutum.regexpgen.Provider REGEXPGEN_PROVIDER = Provider.forEcmaScript();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(StringGenerator.class);
-    public static final String CASE_INSENSITIVE = "\\(\\?i\\)";
+    public static final String CASE_INSENSITIVE = "(?i)";
 
     private StringGenerator() {
         //ntd
@@ -181,7 +181,7 @@ public class StringGenerator {
             pattern = StringUtils.removeEnd(pattern, "/");
         }
         pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
-        pattern = pattern.replaceAll(CASE_INSENSITIVE, EMPTY);
+        pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
         return pattern;
     }
 
