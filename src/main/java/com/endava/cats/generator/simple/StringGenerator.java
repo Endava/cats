@@ -310,6 +310,11 @@ public class StringGenerator {
      * @return a string smaller than Schema's minLength
      */
     public static String generateLeftBoundString(Schema<?> schema) {
+        if (schema.getEnum() != null) {
+            String value = String.valueOf(schema.getEnum().get(0));
+            return RandomStringUtils.randomAlphanumeric(Math.max(1, value.length()));
+        }
+
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
 
         if (minLength <= 0) {
