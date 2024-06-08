@@ -803,7 +803,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldReturnCurrentFuzzer() {
-        testCaseListener.beforeFuzz(RandomResourcesFuzzer.class, "test", "post");
+        testCaseListener.beforeFuzz(RandomResourcesFuzzer.class, "test");
         String currentFuzzer = testCaseListener.getCurrentFuzzer();
         Assertions.assertThat(currentFuzzer).isEqualTo("RandomResources");
     }
@@ -814,7 +814,7 @@ class TestCaseListenerTest {
         Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
         TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
         testCaseListenerSpy.updateUnknownProgress(data);
-        Mockito.verify(testCaseListenerSpy).notifySummaryObservers(Mockito.eq("/test"));
+        Mockito.verify(testCaseListenerSpy).notifySummaryObservers("/test");
     }
 
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build, Runnable runnable) {

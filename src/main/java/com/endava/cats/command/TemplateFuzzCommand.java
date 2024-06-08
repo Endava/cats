@@ -9,11 +9,11 @@ import com.endava.cats.args.UserArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
 import com.google.common.net.HttpHeaders;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -191,7 +191,7 @@ public class TemplateFuzzCommand implements Runnable {
 
     private void beforeFuzz(String path, String method) throws IOException {
         testCaseListener.initReportingPath();
-        testCaseListener.beforeFuzz(templateFuzzer.getClass(), path, method);
+        testCaseListener.beforeFuzz(templateFuzzer.getClass(), path);
     }
 
     private Set<CatsHeader> getHeaders() {

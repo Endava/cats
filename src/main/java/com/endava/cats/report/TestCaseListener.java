@@ -131,7 +131,7 @@ public class TestCaseListener {
      *
      * @param fuzzer the class representing the fuzzer
      */
-    public void beforeFuzz(Class<?> fuzzer, String path, String method) {
+    public void beforeFuzz(Class<?> fuzzer, String path) {
         String clazz = ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()).replaceAll("[a-z]", "");
         MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, getKeyDefault().length(), Ansi.Color.MAGENTA));
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));

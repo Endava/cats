@@ -80,7 +80,7 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getContractPath().equalsIgnoreCase(entry.getKey()))
                     .forEach(customFuzzerExecution -> {
-                        testCaseListener.beforeFuzz(this.getClass(), customFuzzerExecution.getFuzzingData().getContractPath(), customFuzzerExecution.getFuzzingData().getMethod().name());
+                        testCaseListener.beforeFuzz(this.getClass(), customFuzzerExecution.getFuzzingData().getContractPath());
                         customFuzzerUtil.executeTestCases(customFuzzerExecution.getFuzzingData(), customFuzzerExecution.getTestId(),
                                 customFuzzerExecution.getTestEntry(), this);
                         testCaseListener.afterFuzz(customFuzzerExecution.getFuzzingData().getContractPath(), customFuzzerExecution.getFuzzingData().getMethod().name());
