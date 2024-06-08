@@ -8,7 +8,6 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -16,6 +15,7 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -40,7 +40,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.util.JsonUtils.NOT_SET;
 import static com.endava.cats.util.CatsDSLWords.CATS_BODY_FUZZ;
 import static com.endava.cats.util.CatsDSLWords.CATS_HEADERS;
 import static com.endava.cats.util.CatsDSLWords.CHECKS;
@@ -50,6 +49,7 @@ import static com.endava.cats.util.CatsDSLWords.ONE_OF_SELECTION;
 import static com.endava.cats.util.CatsDSLWords.OUTPUT;
 import static com.endava.cats.util.CatsDSLWords.RESERVED_WORDS;
 import static com.endava.cats.util.CatsDSLWords.VERIFY;
+import static com.endava.cats.util.JsonUtils.NOT_SET;
 
 /**
  * Common methods used by the FunctionalFuzzer and SecurityFuzzer.
@@ -332,7 +332,7 @@ public class CustomFuzzerUtil {
      * @param fuzzer The custom fuzzer used for generating individual test cases.
      */
     public void executeTestCases(FuzzingData data, String key, Object value, CustomFuzzerBase fuzzer) {
-        testCaseListener.notifySummaryObservers(data.getContractPath(), data.getMethod().name(), 0d);
+        testCaseListener.notifySummaryObservers(data.getContractPath());
         log.debug("Path [{}] for method [{}] has the following custom data [{}]", data.getContractPath(), data.getMethod(), value);
         boolean isValidOneOf = this.isValidOneOf(data, (Map<String, Object>) value);
         List<String> missingKeywords = this.getMissingKeywords(fuzzer, (Map<String, Object>) value);

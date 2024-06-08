@@ -813,17 +813,8 @@ class TestCaseListenerTest {
         FuzzingData data = FuzzingData.builder().contractPath("/test").method(HttpMethod.POST).path("/test").build();
         Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
         TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
-        testCaseListenerSpy.startUnknownProgress(data);
-        Mockito.verify(testCaseListenerSpy).notifySummaryObservers(Mockito.eq("/test"), Mockito.eq("POST"), Mockito.anyDouble());
-    }
-
-    @Test
-    void shouldUpdateUnknownProgress() {
-        FuzzingData data = FuzzingData.builder().contractPath("/test").method(HttpMethod.POST).path("/test").build();
-        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
-        TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
         testCaseListenerSpy.updateUnknownProgress(data);
-        Mockito.verify(testCaseListenerSpy, Mockito.times(1)).getCurrentTestCaseNumber();
+        Mockito.verify(testCaseListenerSpy).notifySummaryObservers(Mockito.eq("/test"));
     }
 
     private void prepareTestCaseListenerSimpleSetup(CatsResponse build, Runnable runnable) {

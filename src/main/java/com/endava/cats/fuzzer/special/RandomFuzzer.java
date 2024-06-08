@@ -11,7 +11,6 @@ import com.endava.cats.fuzzer.special.mutators.api.CustomMutator;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorKeywords;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -19,6 +18,7 @@ import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -95,7 +95,7 @@ public class RandomFuzzer implements Fuzzer {
         boolean shouldStop = false;
         Set<String> allCatsFields = data.getAllFieldsByHttpMethod();
 
-        testCaseListener.startUnknownProgress(data);
+        testCaseListener.updateUnknownProgress(data);
 
         while (!shouldStop) {
             String targetField = CatsUtil.selectRandom(allCatsFields);

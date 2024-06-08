@@ -61,7 +61,7 @@ import static org.fusesource.jansi.Ansi.ansi;
 @ApplicationScoped
 @DryRun
 public class TestCaseListener {
-    private final Iterator<String> cycle = Iterators.cycle("\\", "|", "/", "-");
+    private static final Iterator<Character> cycle = Iterators.cycle('\\', '\\', '\\', '|', '|', '|', '/', '/', '/', '-', '-', '-');
     private static final String DEFAULT = "*******";
     static final String ID = "id";
     private static final String FUZZER_KEY = "fuzzerKey";
@@ -91,8 +91,7 @@ public class TestCaseListener {
     @ConfigProperty(name = "app.timestamp", defaultValue = "1-1-1")
     String appBuildTime;
 
-    private final Map<String, Double> runPerPathListener = new HashMap<>();
-    private final Map<String, Integer> runTotals = new HashMap<>();
+    private final Deque<String> runPerPathListener = new ArrayDeque<>();
 
     /**
      * Constructs a TestCaseListener with the provided dependencies and configuration.
@@ -136,7 +135,7 @@ public class TestCaseListener {
         String clazz = ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()).replaceAll("[a-z]", "");
         MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, getKeyDefault().length(), Ansi.Color.MAGENTA));
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
-        this.notifySummaryObservers(path, method, 1);
+        this.notifySummaryObservers(path);
 
     }
 
@@ -147,8 +146,7 @@ public class TestCaseListener {
      * @param httpMethod the HTTP method for which fuzzing has been completed
      */
     public void afterFuzz(String path, String httpMethod) {
-        double chunkSize = 100d / runTotals.getOrDefault(path, 1) + 0.01;
-        this.notifySummaryObservers(path, httpMethod, chunkSize);
+        this.notifySummaryObservers(path);
 
         MDC.put(FUZZER, this.getKeyDefault());
         MDC.put(FUZZER_KEY, this.getKeyDefault());
@@ -201,16 +199,6 @@ public class TestCaseListener {
 
         testCaseMap.put(testId, new CatsTestCase());
         testCaseMap.get(testId).setTestId("Test " + testId);
-    }
-
-    /**
-     * Sets the total number of runs to be executed for a specific path.
-     *
-     * @param path         the path for which the total runs are being set
-     * @param totalToBeRun the total number of runs to be executed for the specified path
-     */
-    public void setTotalRunsPerPath(String path, Integer totalToBeRun) {
-        this.runTotals.put(path, totalToBeRun);
     }
 
     /**
@@ -326,49 +314,38 @@ public class TestCaseListener {
      * Notifies summary observers about the progress of a specific path and HTTP method during the testing session.
      * If configured to display summaries in the console, this method renders the progress dynamically.
      *
-     * @param path      the path for which the progress is being reported
-     * @param method    the HTTP method associated with the path
-     * @param chunkSize the chunk size representing the progress
+     * @param path the path for which the progress is being reported
      */
-    public void notifySummaryObservers(String path, String method, double chunkSize) {
-        if (reportingArguments.isSummaryInConsole()) {
-            double percentage = runPerPathListener.getOrDefault(path, 0d) + chunkSize;
-            String printPath = path + "  " + (percentage >= 100 ? executionStatisticsListener.resultAsStringPerPath(path) : method);
-
-            if (runPerPathListener.get(path) != null) {
-                ConsoleUtils.renderSameRow(printPath, percentage);
-            } else {
-                ConsoleUtils.renderNewRow(printPath, percentage);
-            }
-            runPerPathListener.merge(path, chunkSize, Double::sum);
-        }
-    }
-
-    /**
-     * Use this to start a summary progress when the number of tests to run is not known.
-     *
-     * @param data the FuzzingData context
-     */
-    public void startUnknownProgress(FuzzingData data) {
+    public void notifySummaryObservers(String path) {
         if (!reportingArguments.isSummaryInConsole()) {
             return;
         }
-        this.notifySummaryObservers(data.getContractPath(), data.getMethod().name(), 0d);
-        ConsoleUtils.renderSameRow(data.getPath() + "  " + data.getMethod(), cycle.next());
+        String printPath = path + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
+
+        if (runPerPathListener.contains(path)) {
+            ConsoleUtils.renderSameRow(printPath, cycle.next());
+        } else {
+            this.markPreviousPathAsDone();
+            runPerPathListener.push(path);
+            ConsoleUtils.renderNewRow(printPath, cycle.next());
+        }
+    }
+
+    private void markPreviousPathAsDone() {
+        String previousPath = runPerPathListener.peek();
+        if (previousPath != null) {
+            String toRenderPreviousPath = previousPath + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(previousPath);
+            ConsoleUtils.renderSameRow(toRenderPreviousPath, '✔');
+        }
     }
 
     /**
-     * Updates the progress with a new character to signla progress.
+     * Updates the progress with a new character to signal progress.
      *
      * @param data the FuzzingData context
      */
     public void updateUnknownProgress(FuzzingData data) {
-        if (!reportingArguments.isSummaryInConsole()) {
-            return;
-        }
-        if (this.getCurrentTestCaseNumber() % 20 == 0) {
-            ConsoleUtils.renderSameRow(data.getPath() + "  " + data.getMethod(), cycle.next());
-        }
+        this.notifySummaryObservers(data.getContractPath());
     }
 
     /**
@@ -432,6 +409,7 @@ public class TestCaseListener {
      * Additionally, prints execution details using the associated logger.
      */
     public void endSession() {
+        markPreviousPathAsDone();
         reportingArguments.enableAdditionalLoggingIfSummary();
         testCaseExporter.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
         testCaseExporter.writeHelperFiles();
@@ -571,7 +549,7 @@ public class TestCaseListener {
      */
     private void renderProgress(CatsResponse catsResponse) {
         if (reportingArguments.isPrintProgress()) {
-            ConsoleUtils.renderSameRow("+ " + catsResponse.getPath());
+            ConsoleUtils.renderSameRowAndMoveToNextLine("+ " + catsResponse.getPath());
         }
     }
 

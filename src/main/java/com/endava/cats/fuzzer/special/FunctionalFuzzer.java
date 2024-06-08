@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Executes functional tests written in Cats DSL.
@@ -77,9 +76,6 @@ public class FunctionalFuzzer implements CustomFuzzerBase {
     public void executeCustomFuzzerTests() {
         logger.debug("Executing {} functional tests.", executions.size());
         Collections.sort(executions);
-
-        executions.stream().collect(Collectors.groupingBy(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getContractPath(), Collectors.counting()))
-                .forEach((s, aLong) -> testCaseListener.setTotalRunsPerPath(s, aLong.intValue()));
 
         for (Map.Entry<String, Map<String, Object>> entry : filesArguments.getCustomFuzzerDetails().entrySet()) {
             executions.stream().filter(customFuzzerExecution -> customFuzzerExecution.getFuzzingData().getContractPath().equalsIgnoreCase(entry.getKey()))

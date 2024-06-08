@@ -14,16 +14,15 @@ import java.util.regex.Pattern;
  * Utility class for console-related operations.
  */
 public abstract class ConsoleUtils {
-
     private static final String QUARKUS_PROXY_SUFFIX = "_Subclass";
     private static final String REGEX_TO_REMOVE_FROM_FUZZER_NAMES = "TrimValidate|ValidateTrim|SanitizeValidate|ValidateSanitize|Fuzzer";
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getConsoleLogger();
 
     private static final Pattern ANSI_REMOVE_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
+    public static final String SEPARATOR = "  ";
 
     /**
-     * -- GETTER --
      * Get the width of the terminal.
      * <p>
      * Size is cached, so it won't reach to width changes during run.
@@ -35,6 +34,11 @@ public abstract class ConsoleUtils {
         //ntd
     }
 
+    /**
+     * Initialize the terminal width.
+     *
+     * @param spec The command spec.
+     */
     public static void initTerminalWidth(CommandLine.Model.CommandSpec spec) {
         try {
             terminalWidth = spec.usageMessage().width();
@@ -103,46 +107,35 @@ public abstract class ConsoleUtils {
     /**
      * Render a progress row on the same console row.
      *
-     * @param path       The path being processed.
-     * @param percentage The completion percentage.
-     */
-    public static void renderSameRow(String path, double percentage) {
-        renderRow("\r", path, ((int) Math.min(percentage, 100d)) + "%");
-    }
-
-    /**
-     * Render a progress row on the same console row.
-     *
      * @param path     The path being processed.
-     * @param progress A progress character.
+     * @param progress The progress character to be displayed.
      */
-    public static void renderSameRow(String path, String progress) {
+    public static void renderSameRow(String path, char progress) {
         renderRow("\r", path, progress);
     }
 
     /**
      * Render a progress row on a new console row.
      *
-     * @param path       The path being processed.
-     * @param percentage The completion percentage.
+     * @param path     The path being processed.
+     * @param progress The progress character to be displayed.
      */
-    public static void renderNewRow(String path, double percentage) {
-        renderRow(System.lineSeparator(), path, ((int) Math.min(percentage, 100d)) + "%");
+    public static void renderNewRow(String path, char progress) {
+        renderRow(System.lineSeparator(), path, progress);
     }
 
     /**
      * Render a progress row with a specific prefix.
      *
-     * @param prefix            The prefix for the progress row.
-     * @param path              The path being processed.
-     * @param rightTextToRender The text to be written on the right hand side of the screen.
+     * @param prefix The prefix for the progress row.
+     * @param path   The path being processed.
      */
-    public static void renderRow(String prefix, String path, String rightTextToRender) {
+    public static void renderRow(String prefix, String path, char progressChar) {
         String withoutAnsi = ANSI_REMOVE_PATTERN.matcher(path).replaceAll("");
-        int dots = Math.max(terminalWidth - withoutAnsi.length() - rightTextToRender.length() - 2, 1);
-        String firstPart = path.substring(0, path.indexOf("  "));
-        String secondPart = path.substring(path.indexOf("  ") + 1);
-        String toPrint = Ansi.ansi().bold().a(prefix + firstPart + " " + ".".repeat(dots) + secondPart + "  " + rightTextToRender).reset().toString();
+        int dots = Math.max(terminalWidth - withoutAnsi.length() - 2, 1);
+        String firstPart = path.substring(0, path.indexOf(SEPARATOR));
+        String secondPart = path.substring(path.indexOf(SEPARATOR) + 1);
+        String toPrint = Ansi.ansi().bold().a(prefix + firstPart + " " + ".".repeat(dots) + secondPart + " " + progressChar).reset().toString();
 
         //we just use system.out as the logger adds a new line
         System.out.print(toPrint);
@@ -174,7 +167,7 @@ public abstract class ConsoleUtils {
      *
      * @param message the message
      */
-    public static void renderSameRow(String message) {
+    public static void renderSameRowAndMoveToNextLine(String message) {
         int spacesToAdd = Math.max(getConsoleColumns(message.length()), 0);
 
         //we just use system.out as the logger adds a new line

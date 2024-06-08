@@ -15,10 +15,10 @@ import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorConfig;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -196,7 +196,7 @@ public class ListCommand implements Runnable {
         } else {
             logger.noFormat(path);
             for (PathDetailsEntry.OperationDetails operation : pathDetailsEntry.getOperations()) {
-                logger.noFormat("  ");
+                logger.noFormat(ConsoleUtils.SEPARATOR);
                 logger.noFormat(" ◼ Operation: " + operation.getOperationId());
                 logger.noFormat(" ◼ HTTP Method: " + operation.getHttpMethod());
                 logger.noFormat(" ◼ Response Codes: " + operation.getResponses());

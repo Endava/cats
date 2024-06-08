@@ -7,15 +7,15 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.KeyValuePair;
 import com.jayway.jsonpath.JsonPathException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -65,7 +65,7 @@ public class TemplateFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        testCaseListener.startUnknownProgress(data);
+        testCaseListener.updateUnknownProgress(data);
         for (String targetField : Optional.ofNullable(data.getTargetFields()).orElse(Collections.emptySet())) {
             int payloadSize = this.getPayloadSize(data, targetField);
 

@@ -356,19 +356,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .collect(Collectors.toSet());
 
         List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethods(allHttpMethodsFromFuzzingData);
-        int totalToRun = this.computeTotalsToRun(fuzzersToRun, filteredFuzzingData);
-        testCaseListener.setTotalRunsPerPath(pathItemEntry.getKey(), totalToRun);
         this.runFuzzers(filteredFuzzingData, fuzzersToRun);
         this.runFuzzers(filteredFuzzingData, filterArguments.getSecondPhaseFuzzers());
-    }
-
-    private int computeTotalsToRun(List<Fuzzer> fuzzersToRun, List<FuzzingData> filteredFuzzingData) {
-        int total = 0;
-        for (FuzzingData data : filteredFuzzingData) {
-            total = total + (int) fuzzersToRun.stream().filter(fuzzer -> !fuzzer.skipForHttpMethods().contains(data.getMethod())).count();
-        }
-
-        return total;
     }
 
     private void runFuzzers(List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, List<Fuzzer> configuredFuzzers) {
@@ -384,7 +373,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             filteredData.forEach(data -> {
                 logger.start("Starting Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
                 logger.debug("Fuzzing payload: {}", data.getPayload());
-                testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
+                if (!(fuzzer instanceof FunctionalFuzzer)) {
+                    testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
+                }
                 fuzzer.fuzz(data);
                 if (!(fuzzer instanceof FunctionalFuzzer)) {
                     testCaseListener.afterFuzz(data.getContractPath(), data.getMethod().name());
