@@ -55,6 +55,7 @@ jobs:
 
   build_linux_arm64:
     name: Building Linux arm64 for CATS ${{ github.event.inputs.releaseversion }}
+    needs: release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
