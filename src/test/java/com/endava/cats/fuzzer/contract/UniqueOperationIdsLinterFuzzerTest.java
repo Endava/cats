@@ -66,7 +66,7 @@ class UniqueOperationIdsLinterFuzzerTest {
 
         Mockito.reset(testCaseListener);
         uniqueOperationIdsLinterFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test

@@ -51,7 +51,7 @@ class TemplateFuzzerTest {
         FuzzingData data = FuzzingData.builder().contractPath("/path").method(HttpMethod.POST).targetFields(Collections.emptySet()).build();
 
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -65,7 +65,7 @@ class TemplateFuzzerTest {
                 .path("http://url")
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -154,7 +154,7 @@ class TemplateFuzzerTest {
                 .build();
         Mockito.when(userArguments.getWords()).thenReturn(new File("non_real"));
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test

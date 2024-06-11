@@ -191,6 +191,9 @@ public abstract class JsonUtils {
             return testForPrimitiveOrThrow(payload, property);
         } catch (PathNotFoundException e) {
             return false;
+        } catch (InvalidPathException e) {
+            LOGGER.debug("Invalid path {}", property);
+            return false;
         }
     }
 

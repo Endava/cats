@@ -68,7 +68,7 @@ class BaseFieldsFuzzerTest {
         Mockito.when(data.getPayload()).thenReturn("{}");
         testCaseListener.createAndExecuteTest(Mockito.mock(PrettyLogger.class), Mockito.mock(Fuzzer.class), () -> {
             baseFieldsFuzzer.process(data, "field", FuzzingStrategy.skip().withData("Skipping test"));
-        });
+        }, data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Skipping test"));
     }
 

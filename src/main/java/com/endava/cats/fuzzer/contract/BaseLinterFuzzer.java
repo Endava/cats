@@ -42,7 +42,7 @@ public abstract class BaseLinterFuzzer implements Fuzzer {
             return;
         }
 
-        testCaseListener.createAndExecuteTest(log, this, () -> addDefaultsAndProcess(data));
+        testCaseListener.createAndExecuteTest(log, this, () -> addDefaultsAndProcess(data), data);
         fuzzedPaths.add(this.runKey(data));
     }
 

@@ -46,7 +46,7 @@ public class NewFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         if (!JsonUtils.isEmptyPayload(data.getPayload())) {
-            testCaseListener.createAndExecuteTest(logger, this, () -> process(data));
+            testCaseListener.createAndExecuteTest(logger, this, () -> process(data), data);
         } else {
             logger.debug("Skip fuzzer as payload is empty");
         }

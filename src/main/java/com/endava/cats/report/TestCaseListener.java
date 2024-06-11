@@ -160,13 +160,13 @@ public class TestCaseListener {
      * @param fuzzer         the fuzzer associated with the test
      * @param s              the runnable representing the test logic
      */
-    public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s) {
-        this.startTestCase();
+    public void createAndExecuteTest(PrettyLogger externalLogger, Fuzzer fuzzer, Runnable s, FuzzingData data) {
+        this.startTestCase(data);
         try {
             s.run();
         } catch (Exception e) {
             CatsResultFactory.CatsResult catsResult = CatsResultFactory.createUnexpectedException(fuzzer.getClass().getSimpleName(), Optional.ofNullable(e.getMessage()).orElse(""));
-            this.reportResultError(externalLogger, FuzzingData.builder().path(DEFAULT_ERROR).contractPath(DEFAULT_ERROR).build(), catsResult.reason(), catsResult.message());
+            this.reportResultError(externalLogger, data, catsResult.reason(), catsResult.message());
             externalLogger.error("Exception while processing: {}", e.getMessage());
             externalLogger.debug("Detailed stacktrace", e);
             this.checkForIOErrors(e);
@@ -192,13 +192,17 @@ public class TestCaseListener {
         return TEST.get();
     }
 
-    private void startTestCase() {
+    private void startTestCase(FuzzingData data) {
         String testId = String.valueOf(TEST.incrementAndGet());
         MDC.put(ID, testId);
         MDC.put(ID_ANSI, ConsoleUtils.centerWithAnsiColor(testId, 7, Ansi.Color.MAGENTA));
 
-        testCaseMap.put(testId, new CatsTestCase());
-        testCaseMap.get(testId).setTestId("Test " + testId);
+        CatsTestCase testCase = new CatsTestCase();
+        testCase.setTestId("Test " + testId);
+        testCase.setContractPath(data.getContractPath());
+        testCase.setPath(data.getContractPath());
+        testCase.getRequest().setHttpMethod(String.valueOf(data.getMethod()));
+        testCaseMap.put(testId, testCase);
     }
 
     /**

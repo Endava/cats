@@ -77,6 +77,6 @@ public class SimpleExecutor {
             } else {
                 testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode(), context.isMatchResponseResult(), context.isMatchResponseContentType());
             }
-        });
+        }, context.getFuzzingData());
     }
 }

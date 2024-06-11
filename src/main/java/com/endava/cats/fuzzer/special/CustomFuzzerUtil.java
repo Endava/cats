@@ -342,7 +342,7 @@ public class CustomFuzzerUtil {
             this.pathsWithInputVariables.put(data.getContractPath(), (Map<String, Object>) value);
             List<Map<String, Object>> individualTestCases = this.createIndividualRequest((Map<String, Object>) value, data.getPayload());
             for (Map<String, Object> testCase : individualTestCases) {
-                testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase));
+                testCaseListener.createAndExecuteTest(log, fuzzer, () -> this.process(data, key, testCase), data);
             }
         } else if (!isValidOneOf) {
             log.skip("Skipping path [{}] as it does not match oneOfSelection", data.getContractPath());

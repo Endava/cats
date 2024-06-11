@@ -83,7 +83,7 @@ public class HeadersIteratorExecutor {
 
                             CatsResponse response = serviceCaller.call(serviceData);
                             this.reportResult(context, expectedResponseCode, response);
-                        });
+                        }, context.getFuzzingData());
                     } finally {
                         /* we reset back the current header */
                         header.withValue(previousHeaderValue);

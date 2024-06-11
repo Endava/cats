@@ -64,7 +64,7 @@ class EmptyPathsLinterFuzzerTest {
 
         Mockito.reset(testCaseListener);
         emptyPathsLinterFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test

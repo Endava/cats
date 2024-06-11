@@ -52,7 +52,7 @@ public class ZeroWidthCharsInNamesFieldsFuzzer implements Fuzzer {
                     .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
                     .limit(5)
                     .collect(Collectors.toSet())) {
-                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzValue));
+                testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzValue), data);
             }
         }
     }

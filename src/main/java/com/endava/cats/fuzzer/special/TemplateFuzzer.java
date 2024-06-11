@@ -87,7 +87,7 @@ public class TemplateFuzzer implements Fuzzer {
                             .url(replacedPath)
                             .build();
 
-                    testCaseListener.createAndExecuteTest(logger, this, () -> process(data, catsRequest, targetField, payload));
+                    testCaseListener.createAndExecuteTest(logger, this, () -> process(data, catsRequest, targetField, payload), data);
                     testCaseListener.updateUnknownProgress(data);
                 }
             }

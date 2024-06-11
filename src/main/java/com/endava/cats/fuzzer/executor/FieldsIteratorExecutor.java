@@ -91,7 +91,7 @@ public class FieldsIteratorExecutor {
             Schema<?> fuzzedFieldSchema = context.getFuzzingData().getRequestPropertyTypes().get(fuzzedField);
             if (context.getSchemaFilter().test(fuzzedFieldSchema) && context.getFieldFilter().test(fuzzedField)) {
                 for (Object currentValue : context.getFuzzValueProducer().apply(fuzzedFieldSchema, fuzzedField)) {
-                    testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> executeTestCase(context, fuzzedField, currentValue));
+                    testCaseListener.createAndExecuteTest(context.getLogger(), context.getFuzzer(), () -> executeTestCase(context, fuzzedField, currentValue), context.getFuzzingData());
                 }
             } else {
                 context.getLogger().debug("Skipping [{}]. " + context.getSkipMessage(), fuzzedField);
