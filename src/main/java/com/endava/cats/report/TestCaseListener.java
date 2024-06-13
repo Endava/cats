@@ -68,7 +68,6 @@ public class TestCaseListener {
     private static final String FUZZER = "fuzzer";
     private static final String ID_ANSI = "id_ansi";
     static final AtomicInteger TEST = new AtomicInteger(0);
-    private static final String DEFAULT_ERROR = "####";
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
     private static final List<String> CONTENT_TYPE_DONT_MATCH_SCHEMA = List.of("application/csv", "application/pdf");
