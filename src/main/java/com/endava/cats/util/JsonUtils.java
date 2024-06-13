@@ -136,6 +136,9 @@ public abstract class JsonUtils {
      * @return true if the 2 inputs are the same as JSON elements, false otherwise
      */
     public static boolean equalAsJson(String json1, String json2) {
+        if (!isValidJson(json1) || !isValidJson(json2)) {
+            return json1.equalsIgnoreCase(json2);
+        }
         return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
     }
 

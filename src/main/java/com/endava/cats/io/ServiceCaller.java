@@ -702,7 +702,6 @@ public class ServiceCaller {
                     if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
                         payload = JsonUtils.deleteNode(payload, entry.getKey());
                     } else {
-
                         FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
                         boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
                         payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();

@@ -218,4 +218,17 @@ class JsonUtilsTest {
                 "anArray[0].arrKey1",
                 "anArray[1].arrKey2");
     }
+
+    @Test
+    void shouldBeEqualAsStrings() {
+        String s1 = "test";
+        String s2 = "test";
+        Assertions.assertThat(JsonUtils.equalAsJson(s1, s2)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"test, {'test':true}", "{'test':false}, test2", "test, 1"})
+    void shouldNotBeEqualAsStrings(String s1, String s2) {
+        Assertions.assertThat(JsonUtils.equalAsJson(s1, s2)).isFalse();
+    }
 }
