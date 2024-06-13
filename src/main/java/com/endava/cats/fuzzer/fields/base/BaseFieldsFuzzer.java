@@ -77,6 +77,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
                         .stream().filter(fuzzingStrategy -> !fuzzingStrategy.isSkip())
                         .toList()) {
                     logger.debug("Running strategy {} for {}", fuzzingStrategy.name(), fuzzedField);
+                    logger.debug("Payload {}", data.getPayload());
                     testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField, fuzzingStrategy), data);
                 }
             }
