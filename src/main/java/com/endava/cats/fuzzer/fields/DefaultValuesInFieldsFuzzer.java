@@ -54,6 +54,7 @@ public class DefaultValuesInFieldsFuzzer implements Fuzzer {
                         .fuzzValueProducer(fuzzedValueProducer)
                         .skipMessage("It does not have a defined default value.")
                         .logger(logger)
+                        .simpleReplaceField(true)
                         .fuzzer(this)
                         .build());
     }
