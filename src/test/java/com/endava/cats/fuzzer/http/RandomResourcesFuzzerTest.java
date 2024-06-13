@@ -88,8 +88,9 @@ class RandomResourcesFuzzerTest {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}").
                 reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{}");
+        randomResourcesFuzzer.fuzz(data);
 
-        Assertions.assertThatThrownBy(() -> randomResourcesFuzzer.fuzz(data)).isInstanceOf(IllegalStateException.class).hasMessage("OpenAPI spec is missing definition for id");
+        Mockito.verifyNoInteractions(testCaseListener);
     }
 
     @Test
