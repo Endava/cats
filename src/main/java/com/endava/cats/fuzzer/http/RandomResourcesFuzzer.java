@@ -115,7 +115,10 @@ public class RandomResourcesFuzzer implements Fuzzer {
             }
             payloads.add(updatePayload);
         }
-
+        if (payloads.size() == 1 && payloads.contains(data.getPayload())) {
+            logger.warn("The payload is the same after fuzzing, this might indicate an issue with the contract definition");
+            return;
+        }
         this.executeTests(data, payloads);
     }
 
