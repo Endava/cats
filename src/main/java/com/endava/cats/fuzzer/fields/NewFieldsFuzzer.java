@@ -7,11 +7,11 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -54,6 +54,9 @@ public class NewFieldsFuzzer implements Fuzzer {
 
     private void process(FuzzingData data) {
         JsonElement fuzzedJson = this.addNewField(data);
+        if (JsonUtils.equalAsJson(fuzzedJson.toString(), data.getPayload())) {
+            return;
+        }
 
         ResponseCodeFamily expectedResultCode = ResponseCodeFamilyPredefined.TWOXX;
         if (HttpMethod.requiresBody(data.getMethod())) {
@@ -74,9 +77,11 @@ public class NewFieldsFuzzer implements Fuzzer {
 
         if (jsonElement instanceof JsonObject jsonObject) {
             jsonObject.addProperty(NEW_FIELD, NEW_FIELD);
-        } else {
-            for (JsonElement element : (JsonArray) jsonElement) {
-                ((JsonObject) element).addProperty(NEW_FIELD, NEW_FIELD);
+        } else if (jsonElement instanceof JsonArray jsonArray) {
+            for (JsonElement element : jsonArray) {
+                if (element instanceof JsonObject jsonObject) {
+                    jsonObject.addProperty(NEW_FIELD, NEW_FIELD);
+                }
             }
         }
 

@@ -90,6 +90,24 @@ class NewFieldsFuzzerTest {
         Assertions.assertThat(element.getAsJsonArray().get(0).getAsJsonObject().get(NEW_FIELD + "random")).isNull();
     }
 
+    @Test
+    void shouldNotRunWhenPayloadIsArrayOfPrimitives() {
+        String payload = "[1, 2, 3]";
+        data = FuzzingData.builder().payload(payload).reqSchema(new StringSchema()).build();
+        newFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldNotRunForPrimitivePayload() {
+        String payload = "1";
+        data = FuzzingData.builder().payload(payload).reqSchema(new StringSchema()).build();
+        newFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
     private void setup(HttpMethod method) {
         catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
         Map<String, List<String>> responses = new HashMap<>();
