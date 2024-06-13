@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -154,24 +155,48 @@ public class StringGenerator {
     public static String generate(String pattern, int min, int max) {
         LOGGER.debug("Generate for pattern {} min {} max {}", pattern, min, max);
         pattern = cleanPattern(pattern);
-        String initialVersion = generateUsingRgxGenerator(pattern, min, max);
-        if (initialVersion.matches(pattern)) {
-            LOGGER.debug("RGX generated value {} matched {}", initialVersion, pattern);
-            return initialVersion;
+
+        String generatedWithRgxGenerator = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, new GeneratorParams(pattern, min, max));
+        if (generatedWithRgxGenerator != null) {
+            return generatedWithRgxGenerator;
         }
-        String secondVersion = generateUsingRgxGenerator(removeLookaheadAssertions(pattern), min, max);
-        if (secondVersion.matches(pattern)) {
-            LOGGER.debug("RGX generated value with lookaheads removed {} matched {}", secondVersion, pattern);
-            return secondVersion;
+
+        String generatedUsingCatsRegexGenerator = callGenerateTwice(StringGenerator::generateUsingCatsRegexGenerator, new GeneratorParams(pattern, min, max));
+        if (generatedUsingCatsRegexGenerator != null) {
+            return generatedUsingCatsRegexGenerator;
+        }
+
+        String generateUsingRegexpGen = callGenerateTwice(StringGenerator::generateUsingRegexpGen, new GeneratorParams(pattern, min, max));
+        if (generateUsingRegexpGen != null) {
+            return generateUsingRegexpGen;
+        }
+
+        throw new IllegalArgumentException("Could not generate a string for pattern " + pattern + " with min " + min + " and max " + max);
+    }
+
+    public static String callGenerateTwice(Function<GeneratorParams, String> generator, GeneratorParams generatorParams) {
+        try {
+            String initialVersion = generator.apply(generatorParams);
+            if (initialVersion.matches(generatorParams.pattern)) {
+                LOGGER.info("Generated value " + initialVersion + " matched " + generatorParams.pattern);
+                return initialVersion;
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Generator {} failed #atempt 1", generator.getClass().getSimpleName());
         }
 
         try {
-            return generateUsingCatsRegexGenerator(pattern, min, max);
+            String secondVersion = generator.apply(new GeneratorParams(removeLookaheadAssertions(generatorParams.pattern), generatorParams.min, generatorParams.max));
+            if (secondVersion.matches(generatorParams.pattern)) {
+                LOGGER.info("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.pattern);
+                return secondVersion;
+            }
         } catch (Exception e) {
-            LOGGER.debug("Generation using CATS failed, using REGEXP generator");
-            return generateUsingRegexpGen(pattern, min, max);
+            LOGGER.debug("Generator {} failed #atempt 2", generator.getClass().getSimpleName());
         }
+        return null; // or handle this case appropriately
     }
+
 
     public static String cleanPattern(String pattern) {
         if (pattern.matches(".\\^.*")) {
@@ -185,7 +210,11 @@ public class StringGenerator {
         return pattern;
     }
 
-    private static String generateUsingRegexpGen(String pattern, int min, int max) {
+    private static String generateUsingRegexpGen(GeneratorParams generatorParams) {
+        String pattern = generatorParams.pattern;
+        int min = generatorParams.min;
+        int max = generatorParams.max;
+
         RegExpGen generator = REGEXPGEN_PROVIDER.matchingExact(pattern);
 
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
@@ -204,7 +233,11 @@ public class StringGenerator {
         return REGEXPGEN_PROVIDER.matchingExact(ALPHANUMERIC_PLUS).generate(REGEXP_RANDOM_GEN, min, max);
     }
 
-    private static String generateUsingCatsRegexGenerator(String pattern, int min, int max) {
+    private static String generateUsingCatsRegexGenerator(GeneratorParams generatorParams) {
+        String pattern = generatorParams.pattern;
+        int min = generatorParams.min;
+        int max = generatorParams.max;
+
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
             String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), EMPTY, min, max);
             String generatedString = composeString(secondVersionBase, min, max);
@@ -217,9 +250,13 @@ public class StringGenerator {
         throw new IllegalStateException("Could not generate regex ");
     }
 
-    private static String generateUsingRgxGenerator(String pattern, int min, int max) {
+    private static String generateUsingRgxGenerator(GeneratorParams generatorParams) {
         int attempts = 0;
         String generatedValue;
+        String pattern = generatorParams.pattern;
+        int min = generatorParams.min;
+        int max = generatorParams.max;
+
         try {
             do {
                 generatedValue = new RgxGen(pattern).generate();
@@ -404,5 +441,13 @@ public class StringGenerator {
         // Replace positive lookahead (?=) with an empty string
         regex = regex.replaceAll("\\(\\?=.+?\\)", "");
         return regex;
+    }
+
+    /**
+     * @param pattern
+     * @param min
+     * @param max
+     */
+    public record GeneratorParams(String pattern, int min, int max) {
     }
 }
