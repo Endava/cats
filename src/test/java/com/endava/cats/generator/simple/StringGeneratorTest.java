@@ -144,4 +144,17 @@ class StringGeneratorTest {
         String generated = StringGenerator.generateLeftBoundString(schema);
         Assertions.assertThat(generated).hasSize(4);
     }
+
+    @Test
+    void shouldGenerateEmptyWhenLengthZero() {
+        String generated = StringGenerator.generateExactLength("^[A-Z]{3}$", 0);
+        Assertions.assertThat(generated).isEmpty();
+    }
+
+    @Test
+    void shouldCleanPattern() {
+        String cleaned = StringGenerator.cleanPattern("/^[^<>]*$/");
+        Assertions.assertThat(cleaned).isEqualTo("^[^<>]*$");
+    }
+
 }

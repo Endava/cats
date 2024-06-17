@@ -126,16 +126,22 @@ public class StringGenerator {
      * @return a generated value of exact length provided
      */
     public static String generateExactLength(String regex, int length) {
-        regex = cleanPattern(regex);
-        StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(regex, length, length)));
+        if (length == 0) {
+            return EMPTY;
+        }
+
+        StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(cleanPattern(regex), length, length)));
+
+        if (initialValue.isEmpty()) {
+            return EMPTY;
+        }
 
         if (initialValue.length() != length) {
             int startingAt = initialValue.length() - 1;
             String toRepeat = initialValue.substring(startingAt);
-            initialValue.append(toRepeat);
-            while (initialValue.length() < length) {
+            do {
                 initialValue.append(toRepeat);
-            }
+            } while (initialValue.length() < length);
         }
 
         return initialValue.substring(0, length);
@@ -204,6 +210,9 @@ public class StringGenerator {
         }
         if (pattern.endsWith("$/")) {
             pattern = StringUtils.removeEnd(pattern, "/");
+        }
+        if (pattern.startsWith("/^")) {
+            pattern = StringUtils.removeStart(pattern, "/");
         }
         pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
         pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
@@ -335,7 +344,7 @@ public class StringGenerator {
         long minLength = schema.getMaxLength() != null ? schema.getMaxLength().longValue() + 10 : DEFAULT_MAX_LENGTH;
 
         if (minLength > Integer.MAX_VALUE) {
-            minLength = Integer.MAX_VALUE - 2L;
+            minLength = Integer.MAX_VALUE / 100;
         }
         return minLength;
     }
