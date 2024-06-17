@@ -55,6 +55,7 @@ public class NewFieldsFuzzer implements Fuzzer {
     private void process(FuzzingData data) {
         JsonElement fuzzedJson = this.addNewField(data);
         if (JsonUtils.equalAsJson(fuzzedJson.toString(), data.getPayload())) {
+            testCaseListener.skipTest(logger, "Could not fuzz the payload");
             return;
         }
 
