@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -188,7 +189,8 @@ class JsonUtilsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"$.sort[name][lastName],$.['sort[name][lastName]']", "$.sort[*],$.sort[*]", "$.sort[10],$.sort[10]", "$.sort[*].sort[name],$.sort[*].['sort[name]']"})
+    @CsvSource({"$.sort[name][lastName],$.['sort[name][lastName]']", "$.sort[*],$.sort[*]", "$.sort[10],$.sort[10]",
+            "$.sort[*].sort[name],$.sort[*].['sort[name]']", "platform_kubernetes_attributes[api_url],['platform_kubernetes_attributes[api_url]']"})
     void shouldProperlyEncloseJsonPathsWithSquareBrackets(String path, String expected) {
         String actual = JsonUtils.escapeFullPath(path);
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -230,5 +232,40 @@ class JsonUtilsTest {
     @CsvSource({"test, {'test':true}", "{'test':false}, test2", "test, 1"})
     void shouldNotBeEqualAsStrings(String s1, String s2) {
         Assertions.assertThat(JsonUtils.equalAsJson(s1, s2)).isFalse();
+    }
+
+    @Test
+    void shouldBeArrayFalseForNullPayload() {
+        Assertions.assertThat(JsonUtils.isArray("null", "test")).isFalse();
+        Assertions.assertThat(JsonUtils.isArray(null, "test")).isFalse();
+
+    }
+
+    @Test
+    void shouldBeEqualAsJsonString() {
+        String payload = """
+                {
+                    "key": "value",
+                    "anotherKey" : {
+                        "subKey": "subValue"
+                    },
+                    "anArray": [
+                        {"arrKey1":"arrValue1"},
+                        {"arrKey2":"arrValue2"}
+                    ]
+                }
+                """;
+        JsonElement parsed = JsonUtils.parseOrConvertToJsonElement(payload);
+        Assertions.assertThat(JsonUtils.equalAsJson(payload, parsed.toString())).isTrue();
+    }
+
+    @Test
+    void shouldBeEqualWithJsonAndKeyValuePair() {
+        String payload = """
+                {"test1": "value1", "test2": "value2"}
+                """;
+        String queryParams = "test1=value1&test2=value2";
+        JsonElement parsed = JsonUtils.parseOrConvertToJsonElement(queryParams);
+        Assertions.assertThat(JsonUtils.equalAsJson(payload, parsed.toString())).isTrue();
     }
 }

@@ -505,7 +505,7 @@ public class ServiceCaller {
 
 
     private String replacePathParams(String path, String processedPayload, ServiceData data) {
-        JsonElement jsonElement = JsonUtils.parseAsJsonElement(processedPayload);
+        JsonElement jsonElement = JsonUtils.parseOrConvertToJsonElement(processedPayload);
 
         String processedPath = path;
         if (processedPath.contains("{")) {
@@ -545,7 +545,8 @@ public class ServiceCaller {
 
     private List<KeyValuePair<String, String>> buildQueryParameters(String payload, ServiceData data) {
         List<KeyValuePair<String, String>> queryParams = new ArrayList<>();
-        JsonElement jsonElement = JsonUtils.parseAsJsonElement(payload);
+        JsonElement jsonElement = JsonUtils.parseOrConvertToJsonElement(payload);
+
         for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
             if (child.getValue().isJsonObject()) {
                 queryParams.addAll(this.buildQueryParameters(child.getValue().toString(), data));

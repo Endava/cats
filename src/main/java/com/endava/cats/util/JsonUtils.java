@@ -2,6 +2,7 @@ package com.endava.cats.util;
 
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.Splitter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -68,7 +69,7 @@ public abstract class JsonUtils {
      */
     public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
 
-    private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*)])+\\w*");
+    private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9_]*[a-zA-Z][a-zA-Z0-9]*)])+\\w*");
 
     /**
      * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
@@ -155,6 +156,23 @@ public abstract class JsonUtils {
     }
 
     /**
+     * If payload is key value pair, it will convert it to a JSON object.
+     *
+     * @param payload the given payload
+     * @return a JSON object
+     */
+    public static JsonElement parseOrConvertToJsonElement(String payload) {
+        if (JsonUtils.isValidJson(payload) || !payload.contains("=")) {
+            return JsonUtils.parseAsJsonElement(payload);
+        }
+        Map<String, String> keyValueMap = Splitter.on('&')
+                .withKeyValueSeparator('=')
+                .split(payload);
+
+        return JsonUtils.parseAsJsonElement(GSON.toJson(keyValueMap));
+    }
+
+    /**
      * Checks if the given string is a valid JSON. Empty strings are not considered valid JSONs.
      *
      * @param text the given text
@@ -174,6 +192,10 @@ public abstract class JsonUtils {
     }
 
     private static boolean testForPredicateOrThrow(String payload, String property, Predicate<JsonNode> testFunction) {
+        if (!isValidJson(payload)) {
+            return false;
+        }
+
         if (isJsonArray(payload)) {
             property = FIRST_ELEMENT_FROM_ROOT_ARRAY + property;
         }
@@ -192,8 +214,6 @@ public abstract class JsonUtils {
     public static boolean isPrimitive(String payload, String property) {
         try {
             return testForPrimitiveOrThrow(payload, property);
-        } catch (PathNotFoundException e) {
-            return false;
         } catch (InvalidPathException e) {
             LOGGER.debug("Invalid path {}", property);
             return false;
@@ -237,6 +257,9 @@ public abstract class JsonUtils {
      * @return {@code true} if the JSON payload is a JSON array, {@code false} otherwise.
      */
     public static boolean isJsonArray(String payload) {
+        if (!isValidJson(payload)) {
+            return false;
+        }
         return JsonPath.parse(payload).read("$") instanceof JSONArray;
     }
 
