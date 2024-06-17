@@ -329,12 +329,18 @@ components:
       properties:
         breedType:
           type: string
+          enum:
+            - Husky
+            - Labrador
     Labrador:
       required:
         - breedType
       properties:
         breedType:
           type: string
+          enum:
+            - Husky
+            - Labrador
     NewPet:
       required:
         - name

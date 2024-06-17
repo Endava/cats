@@ -3,9 +3,9 @@ package com.endava.cats.model.generator;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -103,6 +103,7 @@ public class OpenAPIModelGenerator {
             }
         }
         schemaRefMap.clear();
+        currentProperty = "";
         return Collections.emptyMap();
     }
 
@@ -340,11 +341,14 @@ public class OpenAPIModelGenerator {
         }
         if (CatsModelUtils.isComposedSchema(schema)) {
             this.populateWithComposedSchema(values, name, schema);
+            return values;
         } else {
             globalContext.getRequestDataTypes().put(currentProperty, schema);
+            if (!values.isEmpty()) {
+                return values;
+            }
             return this.resolvePropertyToExample(name, schema);
         }
-        return values;
     }
 
     private void processSchemaProperties(String name, Schema schema, Map<String, Object> values) {

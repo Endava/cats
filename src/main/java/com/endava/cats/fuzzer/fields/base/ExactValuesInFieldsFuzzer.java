@@ -63,23 +63,24 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
      */
     @Override
     public Object getBoundaryValue(Schema schema) {
-        if (getExactMethod().apply(schema) == null) {
+        Number fromSchemaLength = getExactMethod().apply(schema);
+        if (fromSchemaLength == null) {
             logger.debug("Null value for applied boundary function!");
             return null;
         }
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
-
+        logger.debug("This is what I get from schema {}", getExactMethod().apply(schema));
         /* Sometimes the regex generators will generate weird chars at the beginning or end of string.
           So we generate a larger one and substring the right size. */
-        int fromSchemaLength = getExactMethod().apply(schema).intValue();
-        int generatedStringLength = fromSchemaLength + 15;
+        int fromSchemaLengthAdjusted = (fromSchemaLength.intValue() > Integer.MAX_VALUE / 100 - 15) ? Integer.MAX_VALUE / 100 : fromSchemaLength.intValue();
+        int generatedStringLength = fromSchemaLengthAdjusted + 15;
 
         String generated = StringGenerator.generateExactLength(pattern, generatedStringLength);
         if (CatsModelUtils.isByteArraySchema(schema)) {
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
         }
 
-        return generated.substring(0, fromSchemaLength);
+        return generated.substring(0, fromSchemaLengthAdjusted);
     }
 
     @Override
