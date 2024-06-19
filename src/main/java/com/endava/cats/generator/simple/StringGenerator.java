@@ -47,7 +47,7 @@ public class StringGenerator {
 
     private static final String ALPHANUMERIC_VALUE = "CatsIsCool";
 
-    private static final String EMPTY_PATTERN = "(\\^\\$\\|)|(\\|\\^\\$)|(\\^\\$)";
+    private static final String EMPTY_PATTERN = "(\\(\\^\\$\\)\\|)|(\\^\\$\\)\\|)|(\\(\\^\\$\\|\\))|(\\(\\|\\^\\$\\))|(\\(\\^\\$\\))";
 
     /**
      * Represents an empty string.
