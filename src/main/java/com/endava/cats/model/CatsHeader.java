@@ -87,11 +87,8 @@ public class CatsHeader {
 
         if ("string".equalsIgnoreCase(schema.getType())) {
             String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
-            int minLength = schema.getMinLength() != null ? schema.getMinLength() : 0;
+            int minLength = schema.getMinLength() != null ? schema.getMinLength() : 1;
             int maxLength = schema.getMaxLength() != null ? schema.getMaxLength() : 30;
-            if (minLength == 0) {
-                minLength = maxLength / 2;
-            }
 
             return StringGenerator.generate(pattern, minLength, maxLength);
         }

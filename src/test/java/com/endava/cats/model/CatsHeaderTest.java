@@ -131,13 +131,12 @@ class CatsHeaderTest {
     void shouldGetValueMinLengthAsHalfOfMaxLengthWhenMinLengthZero() {
         Parameter parameter = new Parameter();
         StringSchema schema = new StringSchema();
-        schema.setMinLength(0);
         schema.setMaxLength(10);
         parameter.setName("header");
         parameter.setSchema(schema);
 
         CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
-        Assertions.assertThat(header.getValue()).hasSizeLessThanOrEqualTo(10).hasSizeGreaterThanOrEqualTo(10 / 2);
+        Assertions.assertThat(header.getValue()).hasSizeLessThanOrEqualTo(10).hasSizeGreaterThanOrEqualTo(1);
     }
 
     @Test
