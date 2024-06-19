@@ -70,7 +70,6 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -505,24 +504,17 @@ public class ServiceCaller {
 
 
     private String replacePathParams(String path, String processedPayload, ServiceData data) {
-        JsonElement jsonElement = JsonUtils.parseOrConvertToJsonElement(processedPayload);
+        String payloadAsJson = JsonUtils.parseOrConvertToJsonElement(processedPayload).toString();
 
-        String processedPath = path;
-        if (processedPath.contains("{")) {
-            for (Map.Entry<String, JsonElement> child : ((JsonObject) jsonElement).entrySet()) {
-                String toReplaceWith;
-                if (child.getValue().isJsonNull() || child.getValue().isJsonObject()) {
-                    toReplaceWith = "";
-                } else if (child.getValue().isJsonArray()) {
-                    toReplaceWith = URLEncoder.encode(child.getValue().getAsJsonArray().get(0).getAsString(), StandardCharsets.UTF_8);
-                } else {
-                    toReplaceWith = URLEncoder.encode(child.getValue().getAsString(), StandardCharsets.UTF_8);
-                }
-                processedPath = processedPath.replaceAll(Pattern.quote("{" + child.getKey() + "}"), toReplaceWith);
-                data.getPathParams().add(child.getKey());
-            }
-        }
-        return processedPath;
+        return Arrays.stream(OpenApiUtils.getPathElements(path))
+                .filter(pathElement -> pathElement.contains("{"))
+                .reduce(path,
+                        (currentPath, pathElement) -> {
+                            String pathElementWithoutBrackets = pathElement.replace("{", "").replace("}", "");
+                            Object pathElementValue = JsonUtils.getVariableFromJson(payloadAsJson, pathElementWithoutBrackets);
+                            data.getPathParams().add(pathElementWithoutBrackets);
+                            return currentPath.replace(pathElement, URLEncoder.encode(String.valueOf(pathElementValue), StandardCharsets.UTF_8));
+                        });
     }
 
     private void addMandatoryHeaders(ServiceData data, List<KeyValuePair<String, Object>> headers) {
