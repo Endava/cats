@@ -69,7 +69,7 @@ public abstract class JsonUtils {
      */
     public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
 
-    private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9_]*[a-zA-Z][a-zA-Z0-9]*)])+\\w*");
+    private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9_*]*[a-zA-Z][a-zA-Z0-9_*]*)])+\\w*");
 
     /**
      * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
