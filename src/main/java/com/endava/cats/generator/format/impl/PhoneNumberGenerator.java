@@ -20,8 +20,8 @@ public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFo
     @Override
     public boolean appliesTo(String format, String propertyName) {
         return "phone".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).endsWith("phone") ||
-                PropertySanitizer.sanitize(propertyName).endsWith("phonenumber");
+                PropertySanitizer.sanitize(propertyName).matches(".*phone(\\d)?$") ||
+                PropertySanitizer.sanitize(propertyName).matches(".*phonenumber(\\d)?$");
     }
 
     @Override
