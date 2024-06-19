@@ -105,7 +105,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
                 }
                 Object existingValue = JsonUtils.getVariableFromJson(updatePayload, pathVar);
                 if (JsonUtils.isNotSet(String.valueOf(existingValue))) {
-                    logger.fatal("OpenAPI spec is missing definition for " + pathVar);
+                    logger.fatal("OpenAPI spec is missing definition for {}, http method {}", pathVar, data.getMethod());
                     break;
                 }
                 Object newValue = generateNewValue(existingValue);
