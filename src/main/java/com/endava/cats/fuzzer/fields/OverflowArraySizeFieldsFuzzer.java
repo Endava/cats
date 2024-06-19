@@ -4,8 +4,9 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
@@ -36,8 +37,11 @@ public class OverflowArraySizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
     public BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext getContext(FuzzingData data) {
         BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer = (schema, string) -> {
             int size = schema.getMaxItems() != null ? schema.getMaxItems() : processingArguments.getLargeStringsSize();
+            logger.info("Fuzzing field [{}] with an array of size [{}]", string, size);
+
             String fieldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), string + "[0]"));
-            return List.of("[" + StringUtils.repeat(fieldValue, ",", size + 10) + "]");
+            int repetitions = CatsUtil.getMaxArraySizeBasedOnFieldsLength(fieldValue, size);
+            return List.of("[" + StringUtils.repeat(fieldValue, ",", repetitions) + "]");
         };
 
         return BaseReplaceFieldsFuzzer.BaseReplaceFieldsContext.builder()
