@@ -82,6 +82,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
 
 
     private void process(FuzzingData data, List<String> required, Set<String> subset) {
+        logger.debug("Payload {} and fields to remove {}", data.getPayload(), subset);
         String finalJsonPayload = this.getFuzzedJsonWithFieldsRemove(data.getPayload(), subset);
 
         if (!JsonUtils.equalAsJson(finalJsonPayload, data.getPayload())) {
