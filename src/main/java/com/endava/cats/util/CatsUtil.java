@@ -329,4 +329,19 @@ public abstract class CatsUtil {
 
         return value.substring(0, position - diffBasedOnReplace) + whatToInsert + value.substring(position + diffBasedOnReplace);
     }
+
+    /**
+     * Returns the maximum number of array elements that can be generated based on the length of the field value.
+     *
+     * @param fieldValue        The field value to be used for calculating the maximum number of array elements.
+     * @param maxSizeFromSchema The maximum size of the array as defined in the schema.
+     * @return The maximum number of array elements that can be generated.
+     */
+    public static int getMaxArraySizeBasedOnFieldsLength(String fieldValue, int maxSizeFromSchema) {
+        int maxArrayLength = Integer.MAX_VALUE;
+        int fieldLength = fieldValue.length();
+        int maxRepetitions = (maxArrayLength + 1) / (fieldLength + 1);
+
+        return Math.min(maxSizeFromSchema + 10, maxRepetitions);
+    }
 }
