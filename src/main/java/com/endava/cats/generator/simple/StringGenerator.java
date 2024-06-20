@@ -16,6 +16,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -211,6 +212,9 @@ public class StringGenerator {
         if (pattern.endsWith("$/")) {
             pattern = StringUtils.removeEnd(pattern, "/");
         }
+        if (pattern.endsWith("$")) {
+            pattern = StringUtils.removeEnd(pattern, "$");
+        }
         if (pattern.startsWith("/^")) {
             pattern = StringUtils.removeStart(pattern, "/");
         }
@@ -301,7 +305,10 @@ public class StringGenerator {
     }
 
     private static boolean hasLengthInline(String pattern) {
-        return pattern.endsWith("}") || pattern.endsWith("}$");
+        Pattern groupPattern = Pattern.compile("(\\^)?(\\[[^]]*]\\{\\d+}|\\(\\[[^]]*]\\{\\d+}\\)\\?)*(\\$)?");
+        Matcher groupMatcher = groupPattern.matcher(pattern);
+
+        return groupMatcher.matches();
     }
 
     private static String composeString(String initial, int min, int max) {
@@ -408,7 +415,7 @@ public class StringGenerator {
             return String.valueOf(property.getEnum().get(0));
         }
         int minLength = property.getMinLength() != null ? property.getMinLength() : 1;
-        int maxLength = property.getMaxLength() != null ? property.getMaxLength() - 1 : 50;
+        int maxLength = property.getMaxLength() != null ? property.getMaxLength() : 50;
         String pattern = StringUtils.isNotBlank(property.getPattern()) ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         if (maxLength < minLength) {
             maxLength = minLength;

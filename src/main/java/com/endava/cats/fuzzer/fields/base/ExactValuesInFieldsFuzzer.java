@@ -68,12 +68,27 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
             logger.debug("Null value for applied boundary function!");
             return null;
         }
-        String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
-        logger.debug("This is what I get from schema {}", getExactMethod().apply(schema));
+        logger.debug("This is what I get from schema {}", fromSchemaLength);
         /* Sometimes the regex generators will generate weird chars at the beginning or end of string.
           So we generate a larger one and substring the right size. */
-        int fromSchemaLengthAdjusted = (fromSchemaLength.intValue() > Integer.MAX_VALUE / 100 - 15) ? Integer.MAX_VALUE / 100 : fromSchemaLength.intValue();
-        int generatedStringLength = fromSchemaLengthAdjusted + 15;
+        try {
+            return generateWithAdjustedLength(schema, 15);
+        } catch (IllegalArgumentException e) {
+            try {
+                return generateWithAdjustedLength(schema, 0);
+            } catch (Exception ex) {
+                logger.fatal("Could not generate a value for patten {}", schema.getPattern());
+                return null;
+            }
+        }
+    }
+
+    private String generateWithAdjustedLength(Schema schema, int adjustedLength) {
+        Number fromSchemaLength = getExactMethod().apply(schema);
+        String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
+
+        int fromSchemaLengthAdjusted = (fromSchemaLength.intValue() > Integer.MAX_VALUE / 100 - adjustedLength) ? Integer.MAX_VALUE / 100 : fromSchemaLength.intValue();
+        int generatedStringLength = fromSchemaLengthAdjusted + adjustedLength;
 
         String generated = StringGenerator.generateExactLength(pattern, generatedStringLength);
         if (CatsModelUtils.isByteArraySchema(schema)) {
