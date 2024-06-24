@@ -435,7 +435,7 @@ public class TestCaseListener {
         if (recordedErrors.isEmpty()) {
             return;
         }
-        consoleLogger.noFormat(ansi().bold().fgRed().a("\nThere were errors executing the custom file: ").reset().toString());
+        consoleLogger.noFormat(ansi().bold().fgRed().a("\nThere were errors during fuzzers execution. It's recommended to fix them in order for all fuzzers to properly run: ").reset().toString());
         recordedErrors.forEach(error -> consoleLogger.noFormat("  -> " + error));
     }
 

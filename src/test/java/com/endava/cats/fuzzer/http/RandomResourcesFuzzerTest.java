@@ -40,7 +40,7 @@ class RandomResourcesFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        randomResourcesFuzzer = new RandomResourcesFuzzer(simpleExecutor, filesArguments);
+        randomResourcesFuzzer = new RandomResourcesFuzzer(simpleExecutor, filesArguments, testCaseListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
@@ -84,13 +84,13 @@ class RandomResourcesFuzzerTest {
     }
 
     @Test
-    void shouldThrowIllegalStateExceptionWhenPathParamNotDeclared() {
+    void shouldRecordErrorWhenPathParamNotDeclared() {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}").
                 reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{}");
         randomResourcesFuzzer.fuzz(data);
 
-        Mockito.verifyNoInteractions(testCaseListener);
+        Mockito.verify(testCaseListener, Mockito.times(10)).recordError(Mockito.eq("OpenAPI spec is missing definition for id, http method GET"));
     }
 
     @Test

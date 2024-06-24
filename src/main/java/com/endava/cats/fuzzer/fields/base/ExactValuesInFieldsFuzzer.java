@@ -68,7 +68,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
             logger.debug("Null value for applied boundary function!");
             return null;
         }
-        logger.debug("This is what I get from schema {}", fromSchemaLength);
+        logger.debug("Length from schema {}", fromSchemaLength);
         /* Sometimes the regex generators will generate weird chars at the beginning or end of string.
           So we generate a larger one and substring the right size. */
         try {
@@ -77,7 +77,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
             try {
                 return generateWithAdjustedLength(schema, 0);
             } catch (Exception ex) {
-                logger.fatal("Could not generate a value for patten {}", schema.getPattern());
+                testCaseListener.recordError("Fuzzer %s could not generate a value for patten %s".formatted(this.getClass().getSimpleName(), schema.getPattern()));
                 return null;
             }
         }
@@ -94,7 +94,7 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         if (CatsModelUtils.isByteArraySchema(schema)) {
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
         }
-
+        logger.debug("Generated value: {}, fromSchemaAdjusted: {}", generated, fromSchemaLengthAdjusted);
         return generated.substring(0, fromSchemaLengthAdjusted);
     }
 

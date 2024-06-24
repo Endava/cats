@@ -11,6 +11,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -35,6 +36,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(getClass());
     private final SimpleExecutor simpleExecutor;
     private final FilesArguments filesArguments;
+    private final TestCaseListener testCaseListener;
     private static final int ITERATIONS = 10;
 
     /**
@@ -43,9 +45,10 @@ public class RandomResourcesFuzzer implements Fuzzer {
      * @param simpleExecutor executor used to run the fuzz logic
      * @param filesArguments files argument
      */
-    public RandomResourcesFuzzer(SimpleExecutor simpleExecutor, FilesArguments filesArguments) {
+    public RandomResourcesFuzzer(SimpleExecutor simpleExecutor, FilesArguments filesArguments, TestCaseListener testCaseListener) {
         this.simpleExecutor = simpleExecutor;
         this.filesArguments = filesArguments;
+        this.testCaseListener = testCaseListener;
     }
 
     @Override
@@ -105,7 +108,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
                 }
                 Object existingValue = JsonUtils.getVariableFromJson(updatePayload, pathVar);
                 if (JsonUtils.isNotSet(String.valueOf(existingValue))) {
-                    logger.fatal("OpenAPI spec is missing definition for {}, http method {}", pathVar, data.getMethod());
+                    testCaseListener.recordError("OpenAPI spec is missing definition for %s, http method %s".formatted(pathVar, data.getMethod()));
                     break;
                 }
                 Object newValue = generateNewValue(existingValue);
