@@ -206,6 +206,10 @@ public class StringGenerator {
 
 
     public static String cleanPattern(String pattern) {
+        if (StringUtils.isBlank(pattern)) {
+            return ALPHANUMERIC_PLUS;
+        }
+
         if (pattern.matches(".\\^.*")) {
             pattern = pattern.substring(1);
         }
@@ -220,6 +224,7 @@ public class StringGenerator {
         }
         pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
         pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
+
         return pattern;
     }
 
@@ -465,5 +470,9 @@ public class StringGenerator {
      * @param max
      */
     public record GeneratorParams(String pattern, int min, int max) {
+    }
+
+    public static void main(String[] args) {
+        System.out.println(generate("^\\d{5}\\.\\d{5}\\s\\d{5}\\.\\d{6}\\s\\d{5}\\.\\d{6}\\s\\d{1}\\s\\d{14}$", 1, 2000));
     }
 }
