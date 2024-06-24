@@ -402,7 +402,7 @@ public abstract class JsonUtils {
 
         String interim = sb.toString();
         return Arrays.stream(interim.split("\\.", -1))
-                .map(item -> item.matches("^\\$[a-zA-Z]+") ? jsonPathEscape(item) : item)
+                .map(item -> item.matches("^\\$[a-zA-Z_-]+") ? jsonPathEscape(item) : item)
                 .collect(Collectors.joining("."));
     }
 
