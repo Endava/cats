@@ -218,7 +218,7 @@ public class OpenAPIModelGenerator {
             return generateBigDecimal(property);
         }
         if (property.getPattern() != null) {
-            return StringGenerator.generate(property.getPattern(), 1, 2000);
+            return StringGenerator.generate(property.getPattern(), -1, -1);
         }
         logger.trace("No constraints, generating alphanumeric string based on property length {}", propertyName);
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
