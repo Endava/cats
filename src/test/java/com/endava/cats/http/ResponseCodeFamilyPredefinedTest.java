@@ -10,24 +10,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 class ResponseCodeFamilyPredefinedTest {
 
 
-    @Test
-    void givenA3DigitsCode_whenCallingIsValidCode_thenTheCodeIsValid() {
-        Assertions.assertThat(ResponseCodeFamily.isValidCode("200")).isTrue();
-    }
-
-    @Test
-    void givenA4DigitsCode_whenCallingIsValidCode_thenTheCodeIsNotValid() {
-        Assertions.assertThat(ResponseCodeFamily.isValidCode("2000")).isFalse();
-    }
-
-    @Test
-    void givenANullCode_whenCallingIsValidCode_thenTheCodeIsNotValid() {
-        Assertions.assertThat(ResponseCodeFamily.isValidCode(null)).isFalse();
-    }
-
-    @Test
-    void givenA3CharactersCodeThatDoesNotStartWithADigit_whenCallingIsValidCode_thenTheCodeIsNotValid() {
-        Assertions.assertThat(ResponseCodeFamily.isValidCode("A00")).isFalse();
+    @ParameterizedTest
+    @CsvSource(value = {"200,true", "201,true", "202,true", "204,true", "400,true", "500,true", "000,false", "2000,false", "A00,false", "100,true", "600,false", "null,false", "099,false"}, nullValues = "null")
+    void shouldCheckValidCodes(String code, boolean expected) {
+        Assertions.assertThat(ResponseCodeFamily.isValidCode(code)).isEqualTo(expected);
     }
 
     @ParameterizedTest

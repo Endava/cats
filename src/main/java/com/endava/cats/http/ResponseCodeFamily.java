@@ -42,7 +42,11 @@ public interface ResponseCodeFamily {
      * @return True if the code is a valid HTTP status code, false otherwise.
      */
     static boolean isValidCode(String code) {
-        return code != null && code.length() == 3 && Character.isDigit(code.charAt(0));
+        if (code == null || code.length() != 3) {
+            return false;
+        }
+        char firstDigit = code.charAt(0);
+        return Character.isDigit(firstDigit) && Character.getNumericValue(firstDigit) >= 1 && Character.getNumericValue(firstDigit) <= 5;
     }
 
 

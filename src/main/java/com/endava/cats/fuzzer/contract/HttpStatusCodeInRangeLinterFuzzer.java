@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.LinterFuzzer;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -33,7 +34,7 @@ public class HttpStatusCodeInRangeLinterFuzzer extends BaseLinterFuzzer {
         testCaseListener.addExpectedResult(log, "All defined response codes must be between 100 and 599");
 
         Set<String> notMatchingResponseCodes = data.getResponseCodes().stream()
-                .filter(code -> !code.equalsIgnoreCase("default") && (Integer.parseInt(code) < 100 || Integer.parseInt(code) > 599)).collect(Collectors.toSet());
+                .filter(code -> !code.equalsIgnoreCase("default") && !ResponseCodeFamily.isValidCode(code)).collect(Collectors.toSet());
 
         if (notMatchingResponseCodes.isEmpty()) {
             testCaseListener.reportResultInfo(log, data, "All defined response codes are valid!");
