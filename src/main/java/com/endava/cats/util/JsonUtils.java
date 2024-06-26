@@ -19,7 +19,9 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.ParseContextImpl;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
+import com.jayway.jsonpath.spi.mapper.GsonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -30,6 +32,7 @@ import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -80,15 +83,20 @@ public abstract class JsonUtils {
             .disableHtmlEscaping()
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
+            .registerTypeAdapter(OffsetDateTime.class, new OffsetDatetimeTypeAdapter())
             .serializeNulls()
             .create();
+
     public static final Configuration SUPPRESS_EXCEPTIONS_CONFIGURATION = new Configuration.ConfigurationBuilder().options(Option.SUPPRESS_EXCEPTIONS).build();
+
+    public static final Configuration GSON_CONFIGURATION = Configuration.builder().jsonProvider(new GsonJsonProvider(GSON)).mappingProvider(new GsonMappingProvider(GSON)).build();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()
             .mappingProvider(new JacksonMappingProvider())
             .jsonProvider(new JacksonJsonNodeJsonProvider())
             .build();
+
     private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
 
     private JsonUtils() {

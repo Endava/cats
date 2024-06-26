@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import static com.endava.cats.util.CatsDSLWords.ADDITIONAL_PROPERTIES;
 import static com.endava.cats.util.CatsDSLWords.ELEMENT;
 import static com.endava.cats.util.CatsDSLWords.MAP_VALUES;
+import static com.endava.cats.util.JsonUtils.GSON_CONFIGURATION;
 
 /**
  * Some utility methods that don't fit in other classes.
@@ -115,7 +116,7 @@ public abstract class CatsUtil {
         if (JsonUtils.isJsonArray(payload)) {
             jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
         }
-        DocumentContext jsonDocument = JsonPath.parse(payload);
+        DocumentContext jsonDocument = JsonPath.parse(payload, GSON_CONFIGURATION);
         replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, with);
 
         return new FuzzingResult(jsonDocument.jsonString(), with);
