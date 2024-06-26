@@ -163,17 +163,19 @@ public class StringGenerator {
         LOGGER.debug("Generate for pattern {} min {} max {}", pattern, min, max);
         pattern = cleanPattern(pattern);
 
-        String generatedWithRgxGenerator = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, new GeneratorParams(pattern, min, max));
+        GeneratorParams generatorParams = new GeneratorParams(pattern, min, max);
+
+        String generatedWithRgxGenerator = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, generatorParams);
         if (generatedWithRgxGenerator != null) {
             return generatedWithRgxGenerator;
         }
 
-        String generatedUsingCatsRegexGenerator = callGenerateTwice(StringGenerator::generateUsingCatsRegexGenerator, new GeneratorParams(pattern, min, max));
+        String generatedUsingCatsRegexGenerator = callGenerateTwice(StringGenerator::generateUsingCatsRegexGenerator, generatorParams);
         if (generatedUsingCatsRegexGenerator != null) {
             return generatedUsingCatsRegexGenerator;
         }
 
-        String generateUsingRegexpGen = callGenerateTwice(StringGenerator::generateUsingRegexpGen, new GeneratorParams(pattern, min, max));
+        String generateUsingRegexpGen = callGenerateTwice(StringGenerator::generateUsingRegexpGen, generatorParams);
         if (generateUsingRegexpGen != null) {
             return generateUsingRegexpGen;
         }
@@ -257,7 +259,13 @@ public class StringGenerator {
         int max = generatorParams.max;
 
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
-            String secondVersionBase = RegexGenerator.generate(Pattern.compile(pattern), EMPTY, min, max);
+            Pattern compiledPattern = Pattern.compile(pattern);
+            String secondVersionBase = RegexGenerator.generate(compiledPattern, EMPTY, min, max);
+
+            if (secondVersionBase.matches(pattern)) {
+                LOGGER.debug("Generated using CATS generator {} and matches {}", secondVersionBase, pattern);
+                return secondVersionBase;
+            }
             String generatedString = composeString(secondVersionBase, min, max);
 
             if (generatedString.matches(pattern)) {
@@ -470,9 +478,5 @@ public class StringGenerator {
      * @param max
      */
     public record GeneratorParams(String pattern, int min, int max) {
-    }
-
-    public static void main(String[] args) {
-        System.out.println(generate("^\\d{5}\\.\\d{5}\\s\\d{5}\\.\\d{6}\\s\\d{5}\\.\\d{6}\\s\\d{1}\\s\\d{14}$", 1, 2000));
     }
 }
