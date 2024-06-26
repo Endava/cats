@@ -6,7 +6,6 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -412,7 +411,7 @@ public class OpenAPIModelGenerator {
             composedSchema.setDiscriminator(schema.getDiscriminator());
             schema.getProperties().get(schema.getDiscriminator().getPropertyName()).setEnum(new ArrayList<>(schema.getDiscriminator().getMapping().keySet()));
             globalContext.getDiscriminators().add(schema.getDiscriminator());
-            Schema<?> newSchema = new ObjectMapper().convertValue(schema, Schema.class);
+            Schema<?> newSchema = Json.mapper().convertValue(schema, Schema.class);
             newSchema.setName("CatsChanged" + name);
             newSchema.getDiscriminator().setMapping(null);
             globalContext.getSchemaMap().put(newSchema.getName(), newSchema);
