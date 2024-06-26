@@ -3,11 +3,11 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.annotations.SpecialFuzzer;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -93,7 +93,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
         List<String> missingRequiredKeywords = this.getMissingRequiredKeywords(individualTestConfig);
         if (!missingRequiredKeywords.isEmpty()) {
-            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getContractPath(), missingRequiredKeywords);
+            String message = "is missing the following mandatory entries: %s".formatted(missingRequiredKeywords);
             log.error(message);
             customFuzzerUtil.recordError(message);
             return;

@@ -89,7 +89,7 @@ class SecurityFuzzerTest {
         SecurityFuzzer spySecurityFuzzer = Mockito.spy(securityFuzzer);
         filesArguments.loadSecurityFuzzerFile();
         spySecurityFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(1)).recordError("Path [/pets/{id}/move] is missing the following mandatory entries: [httpMethod, targetFields or targetFieldTypes]");
+        Mockito.verify(testCaseListener, Mockito.times(1)).recordError("is missing the following mandatory entries: [httpMethod, targetFields or targetFieldTypes]");
     }
 
     @ParameterizedTest

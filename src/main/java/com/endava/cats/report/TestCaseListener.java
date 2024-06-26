@@ -67,6 +67,8 @@ public class TestCaseListener {
     private static final String FUZZER_KEY = "fuzzerKey";
     private static final String FUZZER = "fuzzer";
     private static final String ID_ANSI = "id_ansi";
+    private static final String HTTP_METHOD = "httpMethod";
+    private static final String CONTRACT_PATH = "contractPath";
     static final AtomicInteger TEST = new AtomicInteger(0);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
@@ -81,7 +83,7 @@ public class TestCaseListener {
     private final ReportingArguments reportingArguments;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
-    private final Set<String> recordedErrors = new HashSet<>();
+    private final Set<ProcessingError> recordedErrors = new HashSet<>();
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -130,10 +132,12 @@ public class TestCaseListener {
      *
      * @param fuzzer the class representing the fuzzer
      */
-    public void beforeFuzz(Class<?> fuzzer, String path) {
+    public void beforeFuzz(Class<?> fuzzer, String path, String httpMethod) {
         String clazz = ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()).replaceAll("[a-z]", "");
         MDC.put(FUZZER, ConsoleUtils.centerWithAnsiColor(clazz, getKeyDefault().length(), Ansi.Color.MAGENTA));
         MDC.put(FUZZER_KEY, ConsoleUtils.removeTrimSanitize(fuzzer.getSimpleName()));
+        MDC.put(CONTRACT_PATH, path);
+        MDC.put(HTTP_METHOD, httpMethod);
         this.notifySummaryObservers(path);
 
     }
@@ -141,14 +145,15 @@ public class TestCaseListener {
     /**
      * Performs cleanup actions after fuzzing for a specific path and HTTP method.
      *
-     * @param path       the path for which fuzzing has been completed
-     * @param httpMethod the HTTP method for which fuzzing has been completed
+     * @param path the path for which fuzzing has been completed
      */
-    public void afterFuzz(String path, String httpMethod) {
+    public void afterFuzz(String path) {
         this.notifySummaryObservers(path);
 
         MDC.put(FUZZER, this.getKeyDefault());
         MDC.put(FUZZER_KEY, this.getKeyDefault());
+        MDC.remove(CONTRACT_PATH);
+        MDC.remove(HTTP_METHOD);
     }
 
     /**
@@ -962,7 +967,11 @@ public class TestCaseListener {
     }
 
     public void recordError(String error) {
-        this.recordedErrors.add(error);
+        String contractPath = MDC.get(CONTRACT_PATH);
+        String httpMethod = MDC.get(HTTP_METHOD);
+
+        ProcessingError processingError = new ProcessingError(contractPath, httpMethod, error);
+        this.recordedErrors.add(processingError);
     }
 
     @Builder

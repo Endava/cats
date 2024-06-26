@@ -6,7 +6,6 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingConstraints;
 import com.endava.cats.model.FuzzingData;
@@ -15,6 +14,7 @@ import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.FuzzingResult;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
@@ -73,6 +73,7 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
             logger.skip("Skipped due to: no fields to fuzz!");
         } else {
             for (String fuzzedField : allFields) {
+                logger.debug("Fuzzing {}", fuzzedField);
                 for (FuzzingStrategy fuzzingStrategy : this.getFieldFuzzingStrategy(data, fuzzedField)
                         .stream().filter(fuzzingStrategy -> !fuzzingStrategy.isSkip())
                         .toList()) {

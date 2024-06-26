@@ -99,7 +99,7 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
-        Mockito.verify(testCaseListener, Mockito.times(0)).afterFuzz(Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).afterFuzz(Mockito.any());
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
@@ -112,7 +112,7 @@ class CatsCommandTest {
         catsMain.run();
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(0)).endSession();
-        Mockito.verify(testCaseListener, Mockito.times(0)).afterFuzz(Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(0)).afterFuzz(Mockito.any());
     }
 
     @Test
@@ -138,8 +138,8 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
-        Mockito.verify(testCaseListener, Mockito.times(20)).afterFuzz(Mockito.any(), Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(10)).beforeFuzz(Mockito.eq(PathTagsLinterFuzzer.class), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(20)).afterFuzz(Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(10)).beforeFuzz(Mockito.eq(PathTagsLinterFuzzer.class), Mockito.any(), Mockito.any());
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
@@ -169,9 +169,9 @@ class CatsCommandTest {
         Mockito.verify(spyMain).startFuzzing(Mockito.any());
         Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.any());
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(13)).afterFuzz(Mockito.any(), Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(9)).beforeFuzz(Mockito.eq(PathTagsLinterFuzzer.class), Mockito.anyString());
-        Mockito.verify(testCaseListener, Mockito.times(4)).beforeFuzz(Mockito.eq(CheckDeletedResourcesNotAvailableFuzzer.class), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(13)).afterFuzz(Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(9)).beforeFuzz(Mockito.eq(PathTagsLinterFuzzer.class), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(4)).beforeFuzz(Mockito.eq(CheckDeletedResourcesNotAvailableFuzzer.class), Mockito.any(), Mockito.any());
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");

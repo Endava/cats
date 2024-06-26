@@ -374,11 +374,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 logger.start("Starting Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
                 logger.debug("Fuzzing payload: {}", data.getPayload());
                 if (!(fuzzer instanceof FunctionalFuzzer)) {
-                    testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath());
+                    testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
                 }
                 fuzzer.fuzz(data);
                 if (!(fuzzer instanceof FunctionalFuzzer)) {
-                    testCaseListener.afterFuzz(data.getContractPath(), data.getMethod().name());
+                    testCaseListener.afterFuzz(data.getContractPath());
                 }
                 logger.complete("Finishing Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
                 logger.info("{}", SEPARATOR);

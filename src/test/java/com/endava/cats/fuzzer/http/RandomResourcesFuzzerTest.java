@@ -9,6 +9,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -88,9 +89,9 @@ class RandomResourcesFuzzerTest {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.GET).path("/test/{id}").
                 reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{}");
-        randomResourcesFuzzer.fuzz(data);
+        testCaseListener.createAndExecuteTest(Mockito.mock(PrettyLogger.class), randomResourcesFuzzer, () -> randomResourcesFuzzer.fuzz(data), data);
 
-        Mockito.verify(testCaseListener, Mockito.times(10)).recordError(Mockito.eq("OpenAPI spec is missing definition for id, http method GET"));
+        Mockito.verify(testCaseListener, Mockito.times(10)).recordError(Mockito.eq("OpenAPI spec is missing definition for id"));
     }
 
     @Test

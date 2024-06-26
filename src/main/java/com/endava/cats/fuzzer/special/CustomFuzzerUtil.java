@@ -348,7 +348,7 @@ public class CustomFuzzerUtil {
             log.skip("Skipping path [{}] as it does not match oneOfSelection", data.getContractPath());
             log.debug("Payload: {}", data.getPayload());
         } else {
-            String message = "Path [%s] is missing the following mandatory entries: %s".formatted(data.getContractPath(), missingKeywords);
+            String message = "is missing the following mandatory entries: %s".formatted(missingKeywords);
             log.warning(message);
             this.recordError(message);
         }

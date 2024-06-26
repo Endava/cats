@@ -142,9 +142,9 @@ public class TemplateFuzzCommand implements Runnable {
                     .targetFields(fieldsToFuzz)
                     .build();
 
-            beforeFuzz(fuzzingData.getContractPath());
+            beforeFuzz(fuzzingData.getContractPath(), fuzzingData.getMethod().name());
             templateFuzzer.fuzz(fuzzingData);
-            afterFuzz(fuzzingData.getContractPath(), fuzzingData.getMethod().name());
+            afterFuzz(fuzzingData.getContractPath());
         } catch (IOException e) {
             logger.debug("Exception while fuzzing given data!", e);
             logger.error("Something went wrong while fuzzing. The data file does not exist or is not reachable: {}. Error message: {}", data, e.getMessage());
@@ -183,15 +183,15 @@ public class TemplateFuzzCommand implements Runnable {
         return "";
     }
 
-    private void afterFuzz(String path, String method) {
+    private void afterFuzz(String path) {
         reportingArguments.enableAdditionalLoggingIfSummary();
-        testCaseListener.afterFuzz(path, method);
+        testCaseListener.afterFuzz(path);
         testCaseListener.endSession();
     }
 
-    private void beforeFuzz(String path) throws IOException {
+    private void beforeFuzz(String path, String method) throws IOException {
         testCaseListener.initReportingPath();
-        testCaseListener.beforeFuzz(templateFuzzer.getClass(), path);
+        testCaseListener.beforeFuzz(templateFuzzer.getClass(), path, method);
     }
 
     private Set<CatsHeader> getHeaders() {
