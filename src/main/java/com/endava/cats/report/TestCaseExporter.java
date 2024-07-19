@@ -2,17 +2,19 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.util.KeyValueSerializer;
-import com.endava.cats.util.LongTypeSerializer;
+import com.endava.cats.context.CatsConfiguration;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.CatsTestReport;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.KeyValueSerializer;
+import com.endava.cats.util.LongTypeSerializer;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -21,6 +23,7 @@ import com.google.gson.GsonBuilder;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
@@ -69,13 +72,18 @@ public abstract class TestCaseExporter {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
     ReportingArguments reportingArguments;
-
-    @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
-    String version;
+    CatsConfiguration catsConfiguration;
 
     private Path reportingPath;
     private long t0;
     private final Gson maskingSerializer;
+
+    @Getter
+    @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
+    String appVersion;
+
+    String osDetails;
+
 
     /**
      * Constructs a new instance of TestCaseExporter with the specified reporting arguments.
@@ -83,8 +91,9 @@ public abstract class TestCaseExporter {
      * @param reportingArguments the reporting arguments for configuring the TestCaseExporter
      */
     @Inject
-    protected TestCaseExporter(ReportingArguments reportingArguments) {
+    protected TestCaseExporter(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext) {
         this.reportingArguments = reportingArguments;
+        this.catsConfiguration = catsGlobalContext.getCatsConfiguration();
         maskingSerializer = new GsonBuilder()
                 .setLenient()
                 .setPrettyPrinting()
@@ -94,6 +103,8 @@ public abstract class TestCaseExporter {
                 .registerTypeAdapter(KeyValuePair.class, new KeyValueSerializer(reportingArguments.getMaskedHeaders()))
                 .serializeNulls()
                 .create();
+        this.osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
+
     }
 
     /**
@@ -248,6 +259,16 @@ public abstract class TestCaseExporter {
         context.put("EXECUTION", Duration.ofSeconds(report.getExecutionTime()).toString().toLowerCase(Locale.ROOT).substring(2));
         context.put("VERSION", report.getCatsVersion());
         context.put("JS", this.isJavascript());
+        context.put("OS", this.osDetails);
+
+        if (catsConfiguration != null) {
+            context.put("CONTRACT_NAME", catsConfiguration.contract());
+            context.put("BASE_URL", catsConfiguration.basePath());
+            context.put("HTTP_METHODS", catsConfiguration.httpMethods().toString());
+            context.put("FUZZERS", catsConfiguration.fuzzers());
+            context.put("PATHS", catsConfiguration.paths());
+        }
+
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
 
         try {
@@ -268,7 +289,7 @@ public abstract class TestCaseExporter {
                 .success(executionStatisticsListener.getSuccess()).totalTests(executionStatisticsListener.getAll())
                 .warnings(executionStatisticsListener.getWarns()).timestamp(OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME))
                 .executionTime(((System.currentTimeMillis() - t0) / 1000))
-                .catsVersion(this.version).build();
+                .catsVersion(appVersion).build();
     }
 
     /**
@@ -341,7 +362,7 @@ public abstract class TestCaseExporter {
         testCase.setMaskingSerializer(maskingSerializer);
         context.put("TEST_CASE", testCase);
         context.put("TIMESTAMP", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.RFC_1123_DATE_TIME));
-        context.put("VERSION", this.version);
+        context.put("VERSION", appVersion);
         context.put("JS", this.isJavascript());
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);

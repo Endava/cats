@@ -473,9 +473,11 @@ public class StringGenerator {
     }
 
     /**
-     * @param pattern
-     * @param min
-     * @param max
+     * A record that holds the parameters for the string generator.
+     *
+     * @param pattern the pattern to check
+     * @param min     the minimum length
+     * @param max     the maximum length
      */
     public record GeneratorParams(String pattern, int min, int max) {
     }

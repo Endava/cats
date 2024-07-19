@@ -10,6 +10,7 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.context.CatsConfiguration;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.factory.FuzzingDataFactory;
@@ -267,7 +268,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void initGlobalData(OpenAPI openAPI) {
-        globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties());
+        CatsConfiguration catsConfiguration = new CatsConfiguration(appVersion, apiArguments.getContract(), apiArguments.getServer(), filterArguments.getHttpMethods(),
+                filterArguments.getFirstPhaseFuzzersForPath().size() + "/" + filterArguments.getAllRegisteredFuzzers().size(),
+                filterArguments.getPathsToRun(openAPI).size() + "/" + openAPI.getPaths().size());
+
+        globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration);
 
         logger.debug("Fuzzers custom configuration: {}", globalContext.getFuzzersConfiguration());
         logger.debug("Schemas: {}", globalContext.getSchemaMap().keySet());

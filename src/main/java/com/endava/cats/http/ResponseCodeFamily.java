@@ -46,7 +46,7 @@ public interface ResponseCodeFamily {
             return false;
         }
         char firstDigit = code.charAt(0);
-        return Character.isDigit(firstDigit) && Character.getNumericValue(firstDigit) >= 1 && Character.getNumericValue(firstDigit) <= 5;
+        return Character.isDigit(firstDigit) && Character.digit(firstDigit, 10) >= 1 && Character.digit(firstDigit, 10) <= 5;
     }
 
 

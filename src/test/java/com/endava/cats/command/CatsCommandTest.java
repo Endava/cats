@@ -10,6 +10,7 @@ import com.endava.cats.fuzzer.contract.PathTagsLinterFuzzer;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;
@@ -51,6 +52,7 @@ class CatsCommandTest {
         Mockito.when(filterArguments.getHttpMethods()).thenReturn(HttpMethod.restMethods());
         ReflectionTestUtils.setField(reportingArguments, "verbosity", ReportingArguments.Verbosity.DETAILED);
         ReflectionTestUtils.setField(catsMain, "spec", Mockito.mock(CommandLine.Model.CommandSpec.class));
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
     }
 
     @Test

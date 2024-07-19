@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.context.CatsGlobalContext;
 import com.github.mustachejava.Mustache;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -19,9 +20,10 @@ public class TestCaseExporterHtmlJs extends TestCaseExporter {
      * Constructs a new instance of TestCaseExporterHtmlJs with the specified reporting arguments.
      *
      * @param reportingArguments the reporting arguments for configuring the TestCaseExporterHtmlJs
+     * @param catsGlobalContext  the global context for the CATS application
      */
-    public TestCaseExporterHtmlJs(ReportingArguments reportingArguments) {
-        super(reportingArguments);
+    public TestCaseExporterHtmlJs(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext) {
+        super(reportingArguments, catsGlobalContext);
     }
 
     @Override

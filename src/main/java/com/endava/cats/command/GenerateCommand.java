@@ -95,7 +95,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
 
             OpenAPI openAPI = OpenApiUtils.readOpenApi(contract);
             this.checkOpenAPI(openAPI);
-            this.globalContext.init(openAPI, List.of(contentType), new Properties());
+            this.globalContext.init(openAPI, List.of(contentType), new Properties(), null);
 
             PathItem pathItem = openAPI.getPaths().entrySet()
                     .stream().filter(openApiPath -> openApiPath.getKey().equalsIgnoreCase(path))

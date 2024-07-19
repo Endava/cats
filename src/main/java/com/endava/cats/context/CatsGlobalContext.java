@@ -33,6 +33,7 @@ public class CatsGlobalContext {
     private final Set<String> successfulDeletes = new HashSet<>();
     private final Properties fuzzersConfiguration = new Properties();
     private final Map<String, List<String>> generatedExamplesCache = new HashMap<>();
+    private CatsConfiguration catsConfiguration;
 
     /**
      * Returns the expected HTTP response code from the --fuzzConfig file
@@ -44,7 +45,7 @@ public class CatsGlobalContext {
         return this.fuzzersConfiguration.getProperty(fuzzer);
     }
 
-    public void init(OpenAPI openAPI, List<String> contentType, Properties fuzzersConfiguration) {
+    public void init(OpenAPI openAPI, List<String> contentType, Properties fuzzersConfiguration, CatsConfiguration catsConfiguration) {
         Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, contentType);
         this.getSchemaMap().putAll(allSchemasFromOpenApi);
         this.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
@@ -53,6 +54,7 @@ public class CatsGlobalContext {
 
         //sometimes OpenAPI generator adds a "" entry
         this.getSchemaMap().remove("");
+        this.catsConfiguration = catsConfiguration;
     }
 
     /**
