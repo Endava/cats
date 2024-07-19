@@ -43,7 +43,7 @@ public class SecuritySchemesLinterFuzzer extends BaseLinterFuzzer {
         List<SecurityRequirement> securityRequirementList = Optional.ofNullable(data.getOpenApi().getSecurity()).orElse(Collections.emptyList());
 
         boolean hasTopLevelSecuritySchemes = !securityRequirementList.isEmpty();
-        boolean areGlobalSecuritySchemesDefined = securityRequirementList.stream().allMatch(securityRequirement -> securitySchemeMap.keySet().containsAll(securityRequirement.keySet()));
+        boolean areGlobalSecuritySchemesDefined = securityRequirementList.stream().allMatch(securityRequirement -> Optional.ofNullable(securitySchemeMap).orElse(Collections.emptyMap()).keySet().containsAll(securityRequirement.keySet()));
 
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
 

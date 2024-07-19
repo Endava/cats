@@ -91,7 +91,7 @@ class RandomResourcesFuzzerTest {
         ReflectionTestUtils.setField(data, "processedPayload", "{}");
         testCaseListener.createAndExecuteTest(Mockito.mock(PrettyLogger.class), randomResourcesFuzzer, () -> randomResourcesFuzzer.fuzz(data), data);
 
-        Mockito.verify(testCaseListener, Mockito.times(10)).recordError(Mockito.eq("OpenAPI spec is missing definition for id"));
+        Mockito.verify(testCaseListener, Mockito.times(10)).recordError("OpenAPI spec is missing definition for id");
     }
 
     @Test

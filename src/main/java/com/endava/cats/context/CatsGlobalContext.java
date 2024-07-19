@@ -32,6 +32,7 @@ public class CatsGlobalContext {
     private final Map<String, Deque<String>> postSuccessfulResponses = new HashMap<>();
     private final Set<String> successfulDeletes = new HashSet<>();
     private final Properties fuzzersConfiguration = new Properties();
+    private final Map<String, List<String>> generatedExamplesCache = new HashMap<>();
 
     /**
      * Returns the expected HTTP response code from the --fuzzConfig file
@@ -52,5 +53,25 @@ public class CatsGlobalContext {
 
         //sometimes OpenAPI generator adds a "" entry
         this.getSchemaMap().remove("");
+    }
+
+    /**
+     * Checks if the example for a given key has already been generated
+     *
+     * @param key the key to check
+     * @return true if the example has already been generated, false otherwise
+     */
+    public boolean isExampleAlreadyGenerated(String key) {
+        return this.generatedExamplesCache.containsKey(key);
+    }
+
+    /**
+     * Adds a generated example to the cache
+     *
+     * @param key      the key to add
+     * @param examples the examples to add
+     */
+    public void addGeneratedExample(String key, List<String> examples) {
+        this.generatedExamplesCache.put(key, examples);
     }
 }

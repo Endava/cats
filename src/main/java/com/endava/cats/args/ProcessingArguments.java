@@ -36,6 +36,10 @@ public class ProcessingArguments {
             description = "Use examples from the OpenAPI contract or not. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useExamples = true;
 
+    @CommandLine.Option(names = {"--cachePayloads"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+            description = "Cache payload examples or generate for each schema occurrence. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean cachePayloads = true;
+
     @CommandLine.Option(names = {"--largeStringsSize"},
             description = "The size of the strings used by the Fuzzers sending large values like @|bold VeryLargeStringsFuzzer|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int largeStringsSize = 40000;

@@ -98,6 +98,7 @@ public abstract class OpenApiUtils {
             parseResult = getOpenAPI(new SwaggerConverter(), location, options);
             openApiParseResult.setVersion(OpenApiParseResult.OpenApiVersion.V20);
         }
+        LOGGER.debug("Messages {}", parseResult.getMessages());
         openApiParseResult.setSwaggerParseResult(parseResult);
         return openApiParseResult;
     }

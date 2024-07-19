@@ -452,6 +452,11 @@ public class FuzzingDataFactory {
     }
 
     private List<String> generateSample(String reqSchemaName, OpenAPIModelGenerator generator, boolean createXxxOfCombinations) {
+        if (globalContext.isExampleAlreadyGenerated(reqSchemaName) && processingArguments.isCachePayloads()) {
+            logger.debug("Example for schema name {} already generated, using cached value", reqSchemaName);
+            return globalContext.getGeneratedExamplesCache().get(reqSchemaName);
+        }
+
         long t0 = System.currentTimeMillis();
         logger.debug("Starting to generate example for schema name {}", reqSchemaName);
         Map<String, String> examples = generator.generate(reqSchemaName);
@@ -482,6 +487,8 @@ public class FuzzingDataFactory {
                     .limit(maxCombinations)
                     .toList();
         }
+        logger.debug("Cached example for schema name {}", reqSchemaName);
+        globalContext.addGeneratedExample(reqSchemaName, payloadCombinationsBasedOnOneOfAndAnyOf);
         return payloadCombinationsBasedOnOneOfAndAnyOf;
     }
 
