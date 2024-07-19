@@ -15,8 +15,11 @@ import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @QuarkusTest
 class RunCommandTest {
@@ -90,7 +93,7 @@ class RunCommandTest {
 
     public static File createUnreadableFile() throws IOException {
         File tempFile = File.createTempFile("testFile", ".txt");
-        try (FileWriter writer = new FileWriter(tempFile)) {
+        try (Writer writer = Files.newBufferedWriter(tempFile.toPath(), UTF_8)) {
             writer.write("Test content");
         }
         if (!tempFile.setReadable(false)) {

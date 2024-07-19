@@ -6,6 +6,7 @@ import com.endava.cats.model.ann.Exclude;
 import com.endava.cats.util.KeyValuePair;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
+import com.google.gson.Strictness;
 import com.google.gson.stream.JsonReader;
 import lombok.Getter;
 import lombok.Setter;
@@ -129,7 +130,7 @@ public class CatsTestCase {
     public String getRequestJson() {
         if (JsonUtils.isValidJson(request.getPayload())) {
             JsonReader reader = new JsonReader(new StringReader(request.getPayload()));
-            reader.setLenient(true);
+            reader.setStrictness(Strictness.LENIENT);
             return maskingSerializer.toJson(JsonParser.parseReader(reader));
         }
         return request.getPayload();

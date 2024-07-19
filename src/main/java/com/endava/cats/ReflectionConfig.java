@@ -45,7 +45,6 @@ import com.google.gson.internal.Streams;
 import com.google.gson.internal.UnsafeAllocator;
 import com.google.gson.internal.bind.ArrayTypeAdapter;
 import com.google.gson.internal.bind.CollectionTypeAdapterFactory;
-import com.google.gson.internal.bind.DateTypeAdapter;
 import com.google.gson.internal.bind.DefaultDateTypeAdapter;
 import com.google.gson.internal.bind.JsonAdapterAnnotationTypeAdapterFactory;
 import com.google.gson.internal.bind.JsonTreeReader;
@@ -202,7 +201,7 @@ import java.util.UUID;
         JsonElement.class, JsonReader.class, JsonToken.class, MalformedJsonException.class, JsonWriter.class, JsonIOException.class, TypeToken.class, TypeAdapter.class, JsonPrimitive.class, ConstructorConstructor.class,
         GsonBuildConfig.class, LazilyParsedNumber.class, JsonReaderInternalAccess.class, ReflectionHelper.class, ObjectConstructor.class, PreJava9DateFormatProvider.class, Streams.class,
         UnsafeAllocator.class, LinkedTreeMap.class, Primitives.class, TreeTypeAdapter.class, ObjectTypeAdapter.class, JsonAdapterAnnotationTypeAdapterFactory.class, JsonTreeReader.class,
-        DateTypeAdapter.class, NumberTypeAdapter.class, ISO8601Utils.class, ReflectiveTypeAdapterFactory.class, DefaultDateTypeAdapter.class,
+        NumberTypeAdapter.class, ISO8601Utils.class, ReflectiveTypeAdapterFactory.class, DefaultDateTypeAdapter.class,
         CollectionTypeAdapterFactory.class, MapTypeAdapterFactory.class, TypeAdapters.class, JsonTreeWriter.class, ArrayTypeAdapter.class, Excluder.class, JavaVersion.class,
         SqlTypesSupport.class, ToNumberPolicy.class, SerializedName.class, Expose.class, NumberTypeAdapter.class, com.google.gson.internal.$Gson$Types.class, DryRunEntry.class, CatsTestCaseSummary.class,
         JsonAdapter.class, Until.class, Since.class, TypeAdapterFactory.class, LongSerializationPolicy.class, FieldNamingPolicy.class, JsonSyntaxException.class,

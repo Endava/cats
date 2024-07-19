@@ -9,6 +9,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.Strictness;
 import com.google.gson.stream.JsonReader;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -78,7 +79,7 @@ public abstract class JsonUtils {
      * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
      */
     public static final Gson GSON = new GsonBuilder()
-            .setLenient()
+            .setStrictness(Strictness.LENIENT)
             .setPrettyPrinting()
             .disableHtmlEscaping()
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
@@ -159,7 +160,7 @@ public abstract class JsonUtils {
      */
     public static JsonElement parseAsJsonElement(String payload) {
         JsonReader reader = new JsonReader(new StringReader(payload));
-        reader.setLenient(true);
+        reader.setStrictness(Strictness.LENIENT);
         return JsonParser.parseReader(reader);
     }
 

@@ -20,6 +20,7 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.Strictness;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
@@ -95,7 +96,7 @@ public abstract class TestCaseExporter {
         this.reportingArguments = reportingArguments;
         this.catsConfiguration = catsGlobalContext.getCatsConfiguration();
         maskingSerializer = new GsonBuilder()
-                .setLenient()
+                .setStrictness(Strictness.LENIENT)
                 .setPrettyPrinting()
                 .disableHtmlEscaping()
                 .setExclusionStrategies(new ExcludeTestCaseStrategy())
