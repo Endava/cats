@@ -54,7 +54,7 @@ body.dark-mode {
 	justify-content: space-between;
 	background-color: black;
 	color: var(--white);
-	padding: 6px 120px;
+	padding: 6px 60px;
 }
 
 .flex-items-center {
@@ -77,7 +77,7 @@ header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 10px 120px;
+	padding: 10px 60px;
 	background-color: var(--white);
 }
 
