@@ -86,6 +86,16 @@ class ExactValuesInFieldsFuzzerTest {
         Assertions.assertThat(generated).asString().matches("^[A-Za-z0-9+/=]+\\Z");
     }
 
+    @Test
+    void shouldGenerateBoundaryValueWhenIllegalArgumentExceptionIsThrown() {
+        Schema<String> schema = new StringSchema();
+        schema.setMaxLength(10);
+        schema.setPattern("^[A-Z-a-z0-9]{4}[A-Z-a-z]{2}[A-Z-a-z0-9]{2}([A-Z-a-z0-9]{3})?$");
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).asString().matches(StringGenerator.ALPHANUMERIC_PLUS);
+    }
+
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {
 
         public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
