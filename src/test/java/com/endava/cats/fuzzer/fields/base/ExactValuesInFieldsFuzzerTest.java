@@ -89,11 +89,12 @@ class ExactValuesInFieldsFuzzerTest {
     @Test
     void shouldGenerateBoundaryValueWhenIllegalArgumentExceptionIsThrown() {
         Schema<String> schema = new StringSchema();
-        schema.setMaxLength(10);
-        schema.setPattern("^[A-Z-a-z0-9]{4}[A-Z-a-z]{2}[A-Z-a-z0-9]{2}([A-Z-a-z0-9]{3})?$");
+        String pattern = "^[A-Z-a-z0-9]{4}[A-Z-a-z]{2}[A-Z-a-z0-9]{2}([A-Z-a-z0-9]{3})?$";
+        schema.setMaxLength(11);
+        schema.setPattern(pattern);
         Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
 
-        Assertions.assertThat(generated).asString().matches(StringGenerator.ALPHANUMERIC_PLUS);
+        Assertions.assertThat(generated).asString().matches(pattern);
     }
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {

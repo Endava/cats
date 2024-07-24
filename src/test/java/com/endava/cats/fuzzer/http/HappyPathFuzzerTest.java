@@ -71,7 +71,7 @@ class HappyPathFuzzerTest {
         FuzzingData data = FuzzingData.builder().path("path1").method(HttpMethod.POST).payload("{'field':'oldValue'}")
                 .reqSchema(new StringSchema()).responseCodes(Collections.singleton("200"))
                 .requestContentTypes(List.of("application/json")).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException("something went wrong"));
+        Mockito.when(serviceCaller.call(Mockito.any())).thenThrow(new RuntimeException("this is deliberately thrown for testing"));
 
         happyFuzzer.fuzz(data);
 
