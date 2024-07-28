@@ -31,7 +31,7 @@ class OffsetDatetimeTypeAdapterTest {
 
         adapter.write(jsonWriter, dateTime);
 
-        Assertions.assertThat(stringWriter.toString()).isEqualTo("\"2023-07-24T12:34:56Z\"");
+        Assertions.assertThat(stringWriter).hasToString("\"2023-07-24T12:34:56Z\"");
     }
 
     @Test

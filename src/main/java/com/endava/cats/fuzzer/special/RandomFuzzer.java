@@ -108,7 +108,7 @@ public class RandomFuzzer implements Fuzzer {
 
             Mutator selectedRandomMutator = CatsUtil.selectRandom(mutatorsToRun);
             logger.debug("Selected mutator [{}]", selectedRandomMutator.getClass().getSimpleName());
-            
+
             String mutatedPayload = selectedRandomMutator.mutate(data.getPayload(), targetField);
             Collection<CatsHeader> mutatedHeaders = selectedRandomMutator.mutate(data.getHeaders());
 
