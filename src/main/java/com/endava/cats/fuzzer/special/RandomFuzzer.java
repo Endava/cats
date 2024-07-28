@@ -99,8 +99,16 @@ public class RandomFuzzer implements Fuzzer {
 
         while (!shouldStop) {
             String targetField = CatsUtil.selectRandom(allCatsFields);
+            logger.debug("Selected field to be mutated: [{}]", targetField);
+
+            if (!JsonUtils.isFieldInJson(data.getPayload(), targetField)) {
+                logger.debug("Field not in this payload, selecting another one...");
+                continue;
+            }
 
             Mutator selectedRandomMutator = CatsUtil.selectRandom(mutatorsToRun);
+            logger.debug("Selected mutator [{}]", selectedRandomMutator.getClass().getSimpleName());
+            
             String mutatedPayload = selectedRandomMutator.mutate(data.getPayload(), targetField);
             Collection<CatsHeader> mutatedHeaders = selectedRandomMutator.mutate(data.getHeaders());
 
