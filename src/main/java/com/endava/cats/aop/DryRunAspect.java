@@ -3,10 +3,10 @@ package com.endava.cats.aop;
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
@@ -94,8 +94,8 @@ public class DryRunAspect {
         } else {
             logger.noFormat("\n");
             CatsUtil.setCatsLogLevel("INFO");
-            logger.info("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
-            paths.forEach((s, integer) -> logger.star(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
+            logger.noFormat("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
+            paths.forEach((s, integer) -> logger.noFormat(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
         }
         return null;
     }
@@ -145,6 +145,12 @@ public class DryRunAspect {
                 return dontWriteTestCase();
             }
             if (context.getMethod().getName().startsWith("initReportingPath")) {
+                return 0;
+            }
+            if (context.getMethod().getName().startsWith("renderFuzzingHeader")) {
+                return 0;
+            }
+            if (context.getMethod().getName().startsWith("notifySummaryObservers")) {
                 return 0;
             }
         }
