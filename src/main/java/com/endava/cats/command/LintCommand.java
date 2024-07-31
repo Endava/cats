@@ -46,11 +46,11 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
     NamingArguments namingArguments;
 
     @CommandLine.Option(names = {"-c", "--contract"},
-            description = "The OpenAPI contract")
+            description = "The OpenAPI contract/spec")
     private String contract;
 
     @CommandLine.Option(names = {"--skipFuzzers"},
-            description = "A comma separated list of fuzzers you want to ignore. You can use full or partial Fuzzer names", split = ",")
+            description = "A comma separated list of fuzzers to be ignored. They can be full or partial Fuzzer names", split = ",")
     private List<String> skipFuzzers;
 
     @CommandLine.ParentCommand

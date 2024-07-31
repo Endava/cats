@@ -35,15 +35,15 @@ public class ValidateCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
     @CommandLine.Option(names = {"-c", "--contract"},
-            description = "The OpenAPI contract", required = true)
+            description = "The OpenAPI contract/spec", required = true)
     private String contract;
 
     @CommandLine.Option(names = {"-j", "--json"},
-            description = "Output to console in JSON format.")
+            description = "Output to console in JSON format")
     private boolean json;
 
     @CommandLine.Option(names = {"-d", "--detailed"},
-            description = "Display details about why contract is not valid.")
+            description = "Display details about why contract is not valid")
     private boolean detailed;
 
     @Override

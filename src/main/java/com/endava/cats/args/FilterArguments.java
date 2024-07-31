@@ -73,22 +73,26 @@ public class FilterArguments {
     }
 
     @CommandLine.Option(names = {"-f", "--fuzzers", "--fuzzer"},
-            description = "A comma separated list of fuzzers you want to run. You can use full or partial Fuzzer names. To list all available fuzzers run: @|bold cats list -f|@", split = ",")
+            description = "A comma separated list of fuzzers to be run. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@", split = ",")
     private List<String> suppliedFuzzers;
     @CommandLine.Option(names = {"-p", "--paths", "--path"},
-            description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. To list all available paths run: @|bold cats list -p -c api.yml|@", split = ",")
+            description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. All available paths can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
     @Setter
     private List<String> paths;
     @CommandLine.Option(names = {"--skipPaths", "--skipPath"},
-            description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. To list all available paths run: @|bold cats list -p -c api.yml|@", split = ",")
+            description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. All available paths can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
     private List<String> skipPaths;
     @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
-            description = "A comma separated list of fuzzers you want to ignore. You can use full or partial Fuzzer names. To list all available fuzzers run: @|bold cats list -f|@", split = ",")
+            description = "A comma separated list of fuzzers to ignore. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@", split = ",")
     private List<String> skipFuzzers;
     @CommandLine.Option(names = {"--httpMethods", "--httpMethod", "-X"},
-            description = "A comma separated list of HTTP methods. When supplied, only these methods will be considered for each contract path. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
+            description = "A comma separated list of HTTP methods to include. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
     @Setter
     private List<HttpMethod> httpMethods = HttpMethod.restMethods();
+    @CommandLine.Option(names = {"--skipHttpMethods", "--skipHttpMethod"},
+            description = "A comma separated list of HTTP methods to skip. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
+    @Setter
+    private List<HttpMethod> skippedHttpMethods = Collections.emptyList();
     @CommandLine.Option(names = {"-d", "--dryRun"},
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
     private boolean dryRun;
@@ -115,10 +119,10 @@ public class FilterArguments {
             description = "Skip fuzzing deprecated API operations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean skipDeprecated;
     @CommandLine.Option(names = {"-t", "--tags", "--tag"},
-            description = "A comma separated list of tags to include. If no tag is supplied, all tags will be considered. To list all available tags run: @|bold cats stats -c api.yml|@", split = ",")
+            description = "A comma separated list of tags to include. If no tag is supplied, all tags will be considered. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> tags;
     @CommandLine.Option(names = {"--skipTags", "--skipTag"},
-            description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. To list all available tags run: @|bold cats stats -c api.yml|@", split = ",")
+            description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> skipTags;
 
 
@@ -527,6 +531,18 @@ public class FilterArguments {
      * @return true if the http method is supplied, false otherwise
      */
     public boolean isHttpMethodSupplied(HttpMethod method) {
-        return this.httpMethods.contains(method);
+        return this.getHttpMethods().contains(method);
+    }
+
+    /**
+     * Returns the list of HTTP methods to be run excluding the ones that are skipped.
+     *
+     * @return a list of HTTP methods to be run
+     */
+    public List<HttpMethod> getHttpMethods() {
+        return this.httpMethods
+                .stream()
+                .filter(httpMethod -> !skippedHttpMethods.contains(httpMethod))
+                .toList();
     }
 }

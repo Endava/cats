@@ -47,11 +47,11 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
 
     @CommandLine.Option(names = {"-c", "--contract"},
-            description = "The OpenAPI contract", required = true)
+            description = "The OpenAPI contract/spec", required = true)
     private String contract;
 
     @CommandLine.Option(names = {"--httpMethod", "-X"},
-            description = "The HTTP method. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+            description = "The HTTP method. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     HttpMethod httpMethod = HttpMethod.POST;
 
     @CommandLine.Option(names = {"--path", "-p"},
@@ -59,11 +59,11 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
     private String path;
 
     @CommandLine.Option(names = {"--limit", "-l"},
-            description = "Max number of payloads to return. This might be useful when request body uses oneOf/anyOf combinations.")
+            description = "Max number of payloads to return. This might be useful when request body uses oneOf/anyOf combinations")
     private int limit;
 
     @CommandLine.Option(names = {"-D", "--debug"},
-            description = "Set CATS log level to ALL. Useful for diagnose when raising bugs")
+            description = "Sets CATS log level to ALL. Useful for diagnosis when raising bugs")
     private boolean debug;
 
     @CommandLine.Option(names = {"--pretty"},
@@ -71,7 +71,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
     private boolean pretty;
 
     @CommandLine.Option(names = {"--contentType"},
-            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+            description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String contentType = "application/json";
 
 

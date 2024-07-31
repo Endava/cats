@@ -67,15 +67,15 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     CommandLine.Model.CommandSpec spec;
 
     @CommandLine.Option(names = {"--headers"},
-            description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example")
+            description = "Specifies custom headers that will be passed along with the request. This can be used to pass oauth or JWT tokens for authentication")
     private File headersFile;
 
     @CommandLine.Option(names = {"--queryParams"},
-            description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params")
+            description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params")
     private File queryFile;
 
     @CommandLine.Option(names = {"-H"},
-            description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control use the `--headers` arg that requires a file.")
+            description = "Specifies headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control the `--headers` arg must be used")
     Map<String, Object> headersMap;
 
     @CommandLine.Option(names = {"--createRefData"},
@@ -89,11 +89,11 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private File refDataFile;
 
     @CommandLine.Option(names = {"--contentType"},
-            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning")
+            description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")
     private String contentType;
     @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
             description = "A @|bold name:value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
-                    " which result in multiple payloads for a single endpoint and http method.")
+                    " which result in multiple payloads for a single endpoint and http method")
     Map<String, String> xxxOfSelections;
 
 

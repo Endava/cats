@@ -77,7 +77,7 @@ public class ListCommand implements Runnable {
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
     @CommandLine.Option(names = {"-j", "--json"},
-            description = "Output to console in JSON format.")
+            description = "Output to console in JSON format")
     private boolean json;
 
     /**
@@ -327,7 +327,7 @@ public class ListCommand implements Runnable {
     static class ListStrategies {
         @CommandLine.Option(
                 names = {"-s", "--fieldsFuzzerStrategies", "fieldsFuzzerStrategies"},
-                description = "Display all current registered Fields Fuzzer Strategies",
+                description = "Display all current registered Fields Fuzzing Strategies",
                 required = true)
         boolean strategies;
     }
@@ -348,14 +348,14 @@ public class ListCommand implements Runnable {
 
         @CommandLine.Option(
                 names = {"--cmt", "--customMutatorTypes"},
-                description = "Display types supported by the custom mutator")
+                description = "Display types supported by the Custom Mutator")
         boolean customMutatorTypes;
     }
 
     static class ListContractOptions {
         @CommandLine.Option(
                 names = {"-p", "--paths", "paths"},
-                description = "Display all paths from the OpenAPI contract",
+                description = "Display all paths from the OpenAPI contract/spec",
                 required = true)
         boolean paths;
 
@@ -369,7 +369,7 @@ public class ListCommand implements Runnable {
 
         @CommandLine.Option(
                 names = {"-c", "--contract"},
-                description = "The OpenAPI contract",
+                description = "The OpenAPI contract/spec",
                 required = true)
         String contract;
     }

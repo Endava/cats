@@ -29,7 +29,7 @@ public class AuthArguments {
     private String sslKeyPwd;
 
     @CommandLine.Option(names = {"--basicAuth", "--basicauth"},
-            description = "A username:password pair, in case the service uses basic auth")
+            description = "A username:password pair, when using basic auth")
     private String basicAuth;
 
     @CommandLine.Option(names = {"--proxyHost"},
@@ -43,7 +43,7 @@ public class AuthArguments {
     @CommandLine.Option(names = {"--authRefreshScript", "--ars"},
             description = "Script to get executed after --authRefreshInterval in order to get new auth credentials. " +
                     "The script will replace any headers that have @|bold,underline aut_script|@ as value. " +
-                    "If you don't supply a --authRefreshInterval, but you supply a script, the script " +
+                    "If a --authRefreshInterval is not supplied, but a script is, the script " +
                     "will be used to get the initial auth credentials.")
     private String authRefreshScript = "";
 

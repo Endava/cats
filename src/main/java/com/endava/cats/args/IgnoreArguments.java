@@ -21,39 +21,39 @@ import java.util.stream.Stream;
 public class IgnoreArguments {
 
     @CommandLine.Option(names = {"--ignoreResponseCodeUndocumentedCheck", "--iu"},
-            description = "Don't check if the response code received from is documented inside the contract. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
+            description = "Don't check if the response code received from the service is documented inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseCodeUndocumentedCheck;
 
     @CommandLine.Option(names = {"--ignoreResponseBodyCheck", "--ib"},
-            description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
+            description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseBodyCheck;
 
     @CommandLine.Option(names = {"--ignoreResponseContentTypeCheck", "--it"},
-            description = "Don't check if the response content type received from the service matches the one supplied inside the contract. This will return the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
+            description = "Don't check if the response content type received from the service matches the one supplied inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseContentTypeCheck;
 
     @CommandLine.Option(names = {"-i", "--ignoreResponseCodes", "--ic"},
-            description = "A comma separated list of HTTP response codes that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped", split = ",")
+            description = "A comma separated list of HTTP response codes that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report them as @|bold,underline warn|@ or @|bold,underline error|@", split = ",")
     private List<String> ignoreResponseCodes;
 
     @CommandLine.Option(names = {"--ignoreResponseSize", "--is"},
-            description = "A comma separated list of response sizes that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped", split = ",")
+            description = "A comma separated list of response sizes that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report them as @|bold,underline warn|@ or @|bold,underline error|@", split = ",")
     private List<Long> ignoreResponseSizes;
 
     @CommandLine.Option(names = {"--ignoreResponseWords", "--iw"},
-            description = "A comma separated list of word counts in the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped", split = ",")
+            description = "A comma separated list of word counts in the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report them as @|bold,underline warn|@ or @|bold,underline error|@", split = ",")
     private List<Long> ignoreResponseWords;
 
     @CommandLine.Option(names = {"--ignoreResponseLines", "--il"},
-            description = "A comma separated list of number of line counts in the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped", split = ",")
+            description = "A comma separated list of number of line counts in the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report them as @|bold,underline warn|@ or @|bold,underline error|@", split = ",")
     private List<Long> ignoreResponseLines;
 
     @CommandLine.Option(names = {"--ignoreResponseRegex", "--ir"},
-            description = "A regex that will match against the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@. If provided, all Contract Fuzzers will be skipped")
+            description = "A regex that will match against the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@")
     private String ignoreResponseRegex;
 
     @CommandLine.Option(names = {"-k", "--skipReportingForIgnoredCodes", "--skipReportingForIgnored", "--sri"},
-            description = "Skip reporting entirely for the ignored response codes, sizes, words and lines provided in @|bold,underline --ignoreResponseXXX|@ arguments. Default: @|bold false|@ ")
+            description = "Skip reporting entirely for the ignored response codes, sizes, words and lines provided in the @|bold,underline --ignoreResponseXXX|@ arguments. Default: @|bold false|@ ")
     private boolean skipReportingForIgnoredCodes;
 
     @CommandLine.Option(names = {"--srs", "--skipReportingForSuccess"},

@@ -45,19 +45,19 @@ import java.util.Set;
 public class StatsCommand implements Runnable {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
     @CommandLine.Option(names = {"-j", "--json"},
-            description = "Output to console in JSON format.")
+            description = "Output to console in JSON format")
     private boolean json;
 
     @CommandLine.Option(names = {"-d", "--detailed"},
-            description = "Enumerate elements in components section.")
+            description = "Enumerate additional elements from the Components section")
     private boolean detailed;
 
     @CommandLine.Option(names = {"-c", "--contract"},
-            description = "The OpenAPI contract", required = true)
+            description = "The OpenAPI contract/spec", required = true)
     private String contract;
 
     @CommandLine.Option(names = {"-s", "--skip"},
-            description = "Details to skip printing on console. JSON output will still include them.", split = ",")
+            description = "Details to skip printing on console. JSON output will still include them", split = ",")
     private List<Details> skip = Collections.emptyList();
 
     /**

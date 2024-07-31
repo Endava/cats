@@ -54,7 +54,7 @@ public class ReplayCommand implements Runnable {
     private final TestCaseListener testCaseListener;
 
     @CommandLine.Parameters(
-            description = "The list of CATS tests. If you provide the .json extension it will be considered a path, " +
+            description = "The list of CATS tests. When providing a .json extension it will be considered a path, " +
                     "otherwise it will look for that test in the cats-report folder", split = ",", arity = "1..")
     String[] tests;
 
@@ -63,15 +63,15 @@ public class ReplayCommand implements Runnable {
     AuthArguments authArgs;
 
     @CommandLine.Option(names = {"-D", "--debug"},
-            description = "Set CATS log level to ALL. Useful for diagnose when raising bugs")
+            description = "Set CATS log level to ALL. Useful for diagnosing when raising bugs")
     private boolean debug;
 
     @CommandLine.Option(names = {"-H"},
-            description = "Specifies the headers to be passed with all requests and will override values from the replay files for the same header name")
+            description = "Specifies the headers to be passed with all the re-played tests. It will override values from the replay files for the same header name")
     Map<String, Object> headersMap = new HashMap<>();
 
     @CommandLine.Option(names = {"-s", "--server"},
-            description = "Base URL of the service. You can override the base URL from the initial test in order to replay it against other service instances")
+            description = "Base URL of the service. It can be used to overwrite the base URL from the initial test in order to replay it against other service instances")
     private String server;
 
     @CommandLine.Option(names = {"-o", "--output"},

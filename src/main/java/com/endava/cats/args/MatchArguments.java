@@ -35,7 +35,7 @@ public class MatchArguments {
     private List<Long> matchResponseLines;
 
     @CommandLine.Option(names = {"--matchResponseRegex", "--mr"},
-            description = "A regex that will match against the response that will be matched as @|bold,underline error|@. Non-matching responses will be ignored from the final report.")
+            description = "A regex that will match against the response that will be matched as @|bold,underline error|@. Non-matching responses will be ignored from the final report")
     private String matchResponseRegex;
 
     @CommandLine.Option(names = {"--matchInput", "--mi"},

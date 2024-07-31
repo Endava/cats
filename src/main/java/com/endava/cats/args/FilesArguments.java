@@ -48,7 +48,7 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
 
     @CommandLine.Option(names = {"--fuzzersConfig", "--fc"},
-            description = "A properties file with Fuzzer configuration that changes default behaviour. Configuration keys are prefixed with the fully qualified Fuzzer name")
+            description = "A properties file with Fuzzer configuration that changes default Fuzzer's expected HTTP response codes. Configuration keys are prefixed with the Fuzzer name")
     @Setter
     private File fuzzersConfig;
 
@@ -59,32 +59,32 @@ public class FilesArguments {
     private List<String> params;
 
     @CommandLine.Option(names = {"-P"},
-            description = "Specifies the url/path params to be replaced in request paths.")
+            description = "Specifies the url/path params to be replaced in request paths")
     @Setter
     @Getter
     Map<String, Object> urlParamsArguments;
 
     @CommandLine.Option(names = {"--headers"},
-            description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication purposed for example")
+            description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication")
     @Getter
     @Setter
     private File headersFile;
 
     @CommandLine.Option(names = {"-H"},
-            description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control use the `--headers` arg that requires a file.")
+            description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control, the `--headers` arg must be used")
     @Setter
     @Getter
     Map<String, Object> headersMap;
 
     @CommandLine.Option(names = {"--queryParams"},
-            description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params")
+            description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params")
     @Getter
     @Setter
     private File queryFile;
 
     @CommandLine.Option(names = {"-Q"},
-            description = "Specifies additional query parameters that will be passed along with request. This can be used to pass non-documented query params. When supplied it will be applied to ALL paths. " +
-                    "For per-path control use the `--queryParams` argument.")
+            description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params. When supplied it will be applied to ALL paths. " +
+                    "For per-path control, the `--queryParams` argument must be used")
     @Getter
     @Setter
     Map<String, Object> queryParamsArguments;
@@ -98,20 +98,20 @@ public class FilesArguments {
 
     @CommandLine.Option(names = {"-R"},
             description = "Specifies fields that must have a fixed value in order for requests to succeed. When supplied it will be applied to ALL paths. " +
-                    "For per-path control use the `--refData` argument.")
+                    "For per-path control, the `--refData` argument must be used")
     @Getter
     @Setter
     Map<String, Object> refDataArguments;
 
 
     @CommandLine.Option(names = {"--functionalFuzzerFile"},
-            description = "Specifies the file used by the @|bold FunctionalFuzzer|@ that will be used to create user-supplied payloads and tests")
+            description = "Specifies the file used by the @|bold FunctionalFuzzer|@ to create user-supplied payloads and tests")
     @Getter
     @Setter
     private File customFuzzerFile;
 
     @CommandLine.Option(names = {"--securityFuzzerFile"},
-            description = "Specifies the file used by the @|bold SecurityFuzzer|@ that will be used to inject special strings in order to exploit possible vulnerabilities")
+            description = "Specifies the file used by the @|bold SecurityFuzzer|@ to inject special strings in order to exploit possible vulnerabilities")
     @Getter
     @Setter
     private File securityFuzzerFile;

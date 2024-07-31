@@ -19,7 +19,7 @@ public class ApiArguments {
     private int maxRequestsPerMinute = 10000;
 
     @CommandLine.Option(names = {"--connectionTimeout"},
-            description = "Time period in seconds which CATS should establish a connection with the server. Default: @|bold,underline ${DEFAULT-VALUE}|@",
+            description = "Time period in seconds within which CATS should establish a connection with the server. Default: @|bold,underline ${DEFAULT-VALUE}|@",
             defaultValue = "10")
     private int connectionTimeout = 10;
 
@@ -39,7 +39,7 @@ public class ApiArguments {
 
     @Setter
     @CommandLine.Option(names = {"-c", "--contract"},
-            description = "The OpenAPI contract")
+            description = "The OpenAPI contract/spec")
     private String contract;
 
     @Setter

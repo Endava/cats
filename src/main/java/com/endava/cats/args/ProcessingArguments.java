@@ -17,7 +17,7 @@ import java.util.Optional;
 @Getter
 public class ProcessingArguments {
     @CommandLine.Option(names = {"--fieldsFuzzingStrategy"},
-            description = "The strategy for the fields fuzzers. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "The strategy used by some of the field fuzzers. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private SetFuzzingStrategy fieldsFuzzingStrategy = SetFuzzingStrategy.ONEBYONE;
 
     @CommandLine.Option(names = {"--maxFieldsToRemove"},
@@ -29,15 +29,15 @@ public class ProcessingArguments {
     private TrimmingStrategy edgeSpacesStrategy = TrimmingStrategy.TRIM_AND_VALIDATE;
 
     @CommandLine.Option(names = {"--sanitizationStrategy"},
-            description = "This can be either sanitizeAndValidation or validateAndSanitize. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "This can be either @|bold,underline SANITIZE_AND_VALIDATE|@ or @|bold,underline VALIDATE_AND_SANITIZE|@. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private SanitizationStrategy sanitizationStrategy = SanitizationStrategy.SANITIZE_AND_VALIDATE;
 
     @CommandLine.Option(names = {"--useExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "Use examples from the OpenAPI contract or not. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "When set to @|bold true|@, it will use examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useExamples = true;
 
     @CommandLine.Option(names = {"--cachePayloads"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "Cache payload examples or generate for each schema occurrence. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "When set to @|bold true|@, it will cache payload examples for same schema name instead of generating new ones for each occurrence. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean cachePayloads = true;
 
     @CommandLine.Option(names = {"--largeStringsSize"},
@@ -54,23 +54,23 @@ public class ProcessingArguments {
 
     @Setter
     @CommandLine.Option(names = {"--contentType"},
-            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning.")
+            description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")
     private String contentType;
 
     @Setter
     @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
             description = "A @|bold name=value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
-                    " which result in multiple payloads for a single endpoint and http method.")
+                    " which result in multiple payloads for a single endpoint and http method")
     Map<String, String> xxxOfSelections;
 
     @Setter
     @CommandLine.Option(names = {"--rfc7396"},
-            description = "When set to @|bold true|@ it will send Content-Type=application/merge-patch+json for PATCH requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "When set to @|bold true|@, it will send Content-Type=application/merge-patch+json for PATCH requests. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean rfc7396;
 
     @Setter
     @CommandLine.Option(names = {"--allowInvalidEnumValues"},
-            description = "When set to @|bold true|@ the InvalidValuesInEnumsFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "When set to @|bold true|@, the InvalidValuesInEnumsFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean allowInvalidEnumValues;
 
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
@@ -88,7 +88,7 @@ public class ProcessingArguments {
     private boolean filterXxxFromRequestPayloads = true;
 
     @CommandLine.Option(names = {"--useDefaults"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "If set to true, it will use the default values when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "If set to @|bold true|@, it will use default values (if set) when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useDefaults = true;
 
     /**

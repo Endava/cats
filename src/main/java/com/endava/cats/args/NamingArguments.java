@@ -18,7 +18,7 @@ public class NamingArguments {
     private Naming pathNaming = Naming.KEBAB;
 
     @CommandLine.Option(names = {"--pathVariablesNaming"},
-            description = "Naming strategy for paths variables. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for path variables. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming pathVariablesNaming = Naming.CAMEL;
 
     @CommandLine.Option(names = {"--queryParamsNaming"},
@@ -34,7 +34,7 @@ public class NamingArguments {
     private Naming jsonPropertiesNaming = Naming.CAMEL;
 
     @CommandLine.Option(names = {"--headersNaming"},
-            description = "Naming strategy for json object properties. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "Naming strategy for HTTP headers. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming headersNaming = Naming.HTTP_HEADER;
 
 

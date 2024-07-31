@@ -111,20 +111,20 @@ public class TemplateFuzzCommand implements Runnable {
     String appVersion;
 
     @CommandLine.Option(names = {"--headers", "-H"},
-            description = "Specifies the headers that will be passed along with the request and/or fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+            description = "Specifies the headers that will be passed along with the request and/or fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     Map<String, String> headers = Map.of(HttpHeaders.ACCEPT, "application/json", HttpHeaders.CONTENT_TYPE, "application/json");
 
     @CommandLine.Option(names = {"--data", "-d"},
             description = "Specifies the request body used for fuzzing. The request body must be a valid request for the supplied url." +
-                    "If the value of the argument starts with @|bold @|@ it will be considered a file.")
+                    "If the value of the argument starts with @|bold @|@ it will be considered a file")
     String data;
 
     @CommandLine.Option(names = {"--httpMethod", "-X"},
-            description = "The HTTP method. For HTTP method requiring a body you must also supply @|bold,underline --data|@. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+            description = "The HTTP method. For HTTP methods requiring a body, a valid @|bold,underline --data|@ argument is required. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     HttpMethod httpMethod = HttpMethod.POST;
 
     @CommandLine.Option(names = {"--targetFields", "-t"},
-            description = "A comma separated list of fully qualified request fields, HTTP headers, path and query parameters that the Fuzzers will apply to.", split = ",")
+            description = "A comma separated list of fully qualified request fields, HTTP headers, path and/or query parameters that the Fuzzers will apply to", split = ",")
     Set<String> targetFields;
 
     @Override

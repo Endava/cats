@@ -65,15 +65,15 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
     StopArguments stopArguments;
 
     @CommandLine.Option(names = {"--httpMethod", "-X"}, required = true,
-            description = "The HTTP method. For HTTP method requiring a body you must also supply a  @|bold,underline --template|@. Default: @|bold,underline ${DEFAULT-VALUE}|@.")
+            description = "The HTTP method. For HTTP methods requiring a body a  @|bold,underline --template|@ must be supplied. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     HttpMethod httpMethod = HttpMethod.POST;
 
     @CommandLine.Option(names = {"--contentType"},
-            description = "A custom mime type if the OpenAPI spec uses content type negotiation versioning")
+            description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")
     private String contentType;
     @CommandLine.Option(names = {"--oneOfSelection", "--anyOfSelection"},
-            description = "A @|bold name:value|@ list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions" +
-                    " which result in multiple payloads for a single endpoint and http method.")
+            description = "A @|bold name:value|@ list of discriminator names and values that can be used to filter request payloads when objects use oneOf or anyOf definitions" +
+                    " which result in multiple payloads for a single endpoint and http method")
     Map<String, String> xxxOfSelections;
 
     @CommandLine.Option(names = {"--path", "-p"}, required = true,
