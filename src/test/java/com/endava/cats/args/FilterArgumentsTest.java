@@ -385,4 +385,12 @@ class FilterArgumentsTest {
         int allFuzzersSize = filterArguments.getFirstPhaseFuzzersAsFuzzers().size();
         Assertions.assertThat(filteredFuzzers).hasSize(allFuzzersSize);
     }
+
+    @Test
+    void shouldSkipHttpMethods() {
+        List<HttpMethod> skipped = List.of(HttpMethod.DELETE);
+        filterArguments.setSkippedHttpMethods(skipped);
+
+        Assertions.assertThat(filterArguments.getHttpMethods()).doesNotContain(HttpMethod.DELETE);
+    }
 }
