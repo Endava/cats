@@ -23,6 +23,7 @@ import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import io.swagger.v3.parser.util.DeserializationUtils;
+import org.openapitools.codegen.utils.ModelUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -186,6 +187,19 @@ public abstract class OpenApiUtils {
             LOGGER.warn("Content-Type not supported. Found: {} for {}", content.keySet(), schemaName);
         }
         schemas.putIfAbsent(schemaName, schemaToAdd);
+    }
+
+    /**
+     * Gets ref definition name based on full reference.
+     *
+     * @param ref the full reference
+     * @return the simple reference name
+     */
+    public static String getSimpleRef(String ref) {
+        if (!ref.contains("/") || ref.startsWith("#/paths")) {
+            return ref;
+        }
+        return ModelUtils.getSimpleRef(ref);
     }
 
     /**
