@@ -33,7 +33,8 @@ public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
     private static final Pattern GENERATED_BODY_OBJECTS_1 = Pattern.compile("body_\\d*");
     private static final Pattern GENERATED_BODY_OBJECTS_2 = Pattern.compile("^\\w{1,30}_body");
     private static final Pattern INLINE_BODY_OBJECTS = Pattern.compile("^inline_response(?:_\\d{0,30}){1,50}$");
-    private static final List<Pattern> PATTERNS_TO_IGNORE = List.of(GENERATED_BODY_OBJECTS_1, GENERATED_BODY_OBJECTS_2, INLINE_BODY_OBJECTS);
+    private static final Pattern CROSS_PATHS_REFERENCES_PATTERN = Pattern.compile("^#/paths/.*");
+    private static final List<Pattern> PATTERNS_TO_IGNORE = List.of(GENERATED_BODY_OBJECTS_1, GENERATED_BODY_OBJECTS_2, INLINE_BODY_OBJECTS, CROSS_PATHS_REFERENCES_PATTERN);
     private static final Set<String> PROPERTIES_CHECKED = new HashSet<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;

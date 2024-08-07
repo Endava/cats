@@ -811,7 +811,7 @@ public class FuzzingDataFactory {
 
     private Content buildDefaultContent() {
         Content defaultContent = new Content();
-        defaultContent.addMediaType(processingArguments.getDefaultContentType(), new MediaType());
+        defaultContent.addMediaType(processingArguments.getDefaultContentType(), new MediaType().schema(new Schema<>()));
         return defaultContent;
     }
 
@@ -820,7 +820,10 @@ public class FuzzingDataFactory {
         for (String responseCode : operation.getResponses().keySet()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             if (apiResponse.get$ref() != null) {
-                apiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+                Object potentialApiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+                if (potentialApiResponse instanceof ApiResponse) {
+                    apiResponse = (ApiResponse) potentialApiResponse;
+                }
             }
 
             responses.put(responseCode, Optional.ofNullable(apiResponse.getHeaders()).orElse(Collections.emptyMap())
@@ -840,7 +843,10 @@ public class FuzzingDataFactory {
         for (String responseCode : operation.getResponses().keySet()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             if (apiResponse.get$ref() != null) {
-                apiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+                Object potentialApiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+                if (potentialApiResponse instanceof ApiResponse) {
+                    apiResponse = (ApiResponse) potentialApiResponse;
+                }
             }
             Content content = apiResponse.getContent();
             if (content == null || content.isEmpty()) {
@@ -879,7 +885,13 @@ public class FuzzingDataFactory {
         for (String contentType : processingArguments.getContentType()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
-                apiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+                logger.trace("Getting apiResponse from ref {}", apiResponse.get$ref());
+                Object possibleApiResponseResolved = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+                if (possibleApiResponseResolved instanceof ApiResponse) {
+                    apiResponse = (ApiResponse) possibleApiResponseResolved;
+                } else {
+                    return apiResponse.get$ref();
+                }
             }
             if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
                 Schema<?> respSchema = Optional.ofNullable(OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema()).orElse(new Schema<>());

@@ -427,6 +427,23 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateApiResponsesWithSimpleSchemas() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> dataList = setupFuzzingData("/comments", "src/test/resources/sellsy.yaml");
+
+        Assertions.assertThat(dataList).hasSize(3);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getResponses()).hasSize(2);
+        String response201 = firstData.getResponses().get("201").get(0);
+        Assertions.assertThat(response201).contains("facebook", "twitter", "business_segment");
+        Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.POST);
+        String response204 = firstData.getResponses().get("204").get(0);
+        Assertions.assertThat(response204).isEqualTo("null");
+    }
+
+    @Test
     void shouldFilterDeprecatedOperations() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
 
