@@ -3,6 +3,7 @@ package com.endava.cats.context;
 import com.endava.cats.factory.NoMediaType;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -19,7 +20,6 @@ import lombok.Setter;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -112,17 +112,17 @@ public class CatsGlobalContext {
     public Schema<?> getSchemaFromReference(String reference) {
         Schema<?> result = getSchemaFromSimpleReferenceName(reference);
 
-        if (reference.startsWith("#/components")) {
+        if (reference.startsWith("#/components") || reference.startsWith("#/definitions")) {
             result = getSchemaFromComponentsDefinitions(reference);
+        }
+
+        if (reference.startsWith("#/components") && result == null) {
+            result = (Schema<?>) getObjectFromPathsReference(reference);
         }
 
         if (reference.contains("#/paths")) {
             String shortRef = reference.substring(reference.lastIndexOf("#/paths"));
             result = (Schema<?>) getObjectFromPathsReference(shortRef);
-        }
-
-        if (reference.contains("/properties/") && !reference.startsWith("#/paths")) {
-            result = getSchemaFromPropertiesReference(reference);
         }
 
         if (result != null && result.get$ref() != null && !result.get$ref().endsWith(NoMediaType.EMPTY_BODY)) {
@@ -149,8 +149,8 @@ public class CatsGlobalContext {
      * @param reference the reference to get
      * @return the ApiResponse if found, null otherwise
      */
-    public ApiResponse getApiResponseFromReference(String reference) {
-        return (ApiResponse) getObjectFromPathsReference(reference);
+    public Object getApiResponseFromReference(String reference) {
+        return getObjectFromPathsReference(reference);
     }
 
     private Object getObjectFromPathsReference(String reference) {
@@ -177,9 +177,13 @@ public class CatsGlobalContext {
                 resolvedDefinition = mediaType.getSchema();
             } else if (resolvedDefinition instanceof Schema<?> schema) {
                 resolvedDefinition = this.extractFromSchema(part, schema, resolvedDefinition);
-            } else if (resolvedDefinition instanceof List asList)
+            } else if (resolvedDefinition instanceof List asList) {
                 resolvedDefinition = asList.get(Integer.parseInt(part));
-            else {
+            } else if ("components".equals(part)) {
+                resolvedDefinition = openAPI.getComponents();
+            } else if (resolvedDefinition instanceof Components components && "schemas".equals(part)) {
+                resolvedDefinition = components.getSchemas();
+            } else {
                 resolvedDefinition = null;
             }
         }
@@ -238,43 +242,11 @@ public class CatsGlobalContext {
         return resolvedDefinition;
     }
 
-    private Schema<?> getSchemaFromPropertiesReference(String reference) {
-        // Remove the initial '#/' and split the reference path
-        String[] parts = reference.substring(2).split("/");
-        List<String> pathComponents = Arrays.asList(parts);
-
-        // Begin traversal at the specified schema
-        Schema<?> currentSchema = schemaMap.get(pathComponents.get(2));
-        if (currentSchema == null) {
-            return null;
-        }
-
-        return traverseSchema(currentSchema, pathComponents, 2);
-    }
-
     private Schema getSchemaFromSimpleReferenceName(String reference) {
         return schemaMap.get(reference);
     }
 
     private Schema getSchemaFromComponentsDefinitions(String reference) {
         return schemaMap.get(CatsModelUtils.getSimpleRef(reference));
-    }
-
-    private Schema<?> traverseSchema(Schema<?> schema, List<String> pathComponents, int index) {
-        if (schema == null || index >= pathComponents.size() - 1) {
-            return schema;
-        }
-
-        String key = pathComponents.get(index + 2);
-        if (schema.get$ref() != null) {
-            schema = getSchemaFromReference(schema.get$ref());
-        }
-        Map<String, Schema> properties = schema.getProperties();
-
-        if (properties == null || !properties.containsKey(key)) {
-            return null;
-        }
-
-        return traverseSchema(properties.get(key), pathComponents, index + 2);
     }
 }
