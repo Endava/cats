@@ -91,6 +91,22 @@ public abstract class CatsModelUtils {
     }
 
     /**
+     * Gets ref definition name based on full reference.
+     *
+     * @param ref the full reference
+     * @return the simple reference name
+     */
+    public static String getSimpleRef(String ref) {
+        if (ref == null) {
+            return null;
+        }
+        if (!ref.contains("/") || ref.startsWith("#/paths")) {
+            return ref;
+        }
+        return ref.substring(ref.lastIndexOf('/') + 1);
+    }
+
+    /**
      * Returns all schema which don't seem to be used.
      *
      * @param openAPI the OpenAPI Spec

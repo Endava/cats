@@ -22,6 +22,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.openapitools.codegen.examples.ExampleGenerator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -224,6 +225,10 @@ class FuzzingDataFactoryTest {
         catsGlobalContext.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
         catsGlobalContext.getSchemaMap().remove("");
         PathItem pathItem = openAPI.getPaths().get(path);
+        catsGlobalContext.setOpenAPI(openAPI);
+        ExampleGenerator exampleGenerator = new ExampleGenerator(catsGlobalContext.getSchemaMap(), openAPI);
+
+        List<Map<String, String>> applicationFeedbackListAllRequest = exampleGenerator.generate(null, List.of("application/json"), "ApplicationFeedbackListAllRequest");
 
         Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
         return fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);
@@ -379,6 +384,46 @@ class FuzzingDataFactoryTest {
         FuzzingData firstData = dataList.get(0);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         Assertions.assertThat(JsonParser.parseString(firstData.getPayload()).isJsonArray()).isTrue();
+    }
+
+    @Test
+    void shouldGeneratePayloadsWithCrossPathsReferences() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+
+        List<FuzzingData> dataList = setupFuzzingData("/v2/account/keys", "src/test/resources/digitalocean.yaml");
+
+        Assertions.assertThat(dataList).hasSize(2);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getPayload()).contains("public_key", "name").doesNotContain("fingerprint", "id");
+        Assertions.assertThat(firstData.getReqSchemaName()).isEqualTo("#/paths/~1v2~1account~1keys/get/responses/200/content/application~1json/schema/allOf/0/properties/ssh_keys/items");
+        Assertions.assertThat(firstData.getResponseContentTypes().values()).allMatch(contentTypes -> contentTypes.contains("application/json")).allMatch(contentTypes -> contentTypes.size() == 1);
+        Assertions.assertThat(firstData.getResponseHeaders().values()).allMatch(headers -> headers.containsAll(List.of("ratelimit-limit", "ratelimit-remaining", "ratelimit-reset"))).allMatch(headers -> headers.size() == 3);
+    }
+
+    @Test
+    void shouldGenerateWhenCrossPathBodyReference() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+
+        List<FuzzingData> dataList = setupFuzzingData("/v2/account/keys/{ssh_key_identifier}", "src/test/resources/digitalocean.yaml");
+
+        Assertions.assertThat(dataList).hasSize(4);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getPayload()).contains("name");
+        Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.PUT);
+    }
+
+    @Test
+    void shouldGenerateCrossPathReferenceParameters() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+
+        List<FuzzingData> dataList = setupFuzzingData("/v2/actions", "src/test/resources/digitalocean.yaml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData firstData = dataList.get(0);
+        Assertions.assertThat(firstData.getResponses()).hasSize(5);
+        String response200 = firstData.getResponses().get("200").get(0);
+        Assertions.assertThat(response200).contains("region_slug", "resource_id", "resource_type");
+        Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.GET);
     }
 
     @Test
