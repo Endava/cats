@@ -31,6 +31,7 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -100,6 +101,9 @@ public class FuzzingDataFactory {
      * @return a list of FuzzingData items representing a template that will be used to apply the Fuzzers on
      */
     public List<FuzzingData> fromPathItem(String path, PathItem item, OpenAPI openAPI) {
+        if (item.get$ref() != null) {
+            item = globalContext.getPathItemFromReference(item.get$ref());
+        }
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         if (item.getPost() != null) {
             logger.debug("Identified POST method for path {}", path);
@@ -248,7 +252,7 @@ public class FuzzingDataFactory {
                             .headers(this.extractHeaders(operation))
                             .payload(payload)
                             .responseCodes(operation.getResponses().keySet())
-                            .reqSchema(globalContext.getSchemaMap().get(reqSchemaName))
+                            .reqSchema(globalContext.getSchemaFromReference(reqSchemaName))
                             .pathItem(item).responseContentTypes(responsesContentTypes)
                             .requestContentTypes(requestContentTypes)
                             .schemaMap(globalContext.getSchemaMap())
@@ -372,7 +376,7 @@ public class FuzzingDataFactory {
                     .stream()
                     .filter(example -> example.get$ref() != null)
                     .map(example -> {
-                        Example exampleFromSchemaMap = globalContext.getExampleMap().get(this.getSchemaName(example.get$ref()));
+                        Example exampleFromSchemaMap = globalContext.getExampleMap().get(CatsModelUtils.getSimpleRef(example.get$ref()));
                         if (exampleFromSchemaMap == null && example.get$ref().contains("/value/")) {
                             //this might be a multi-level example something like: #/components/examples/JSON_WORKER_EXAMPLES/value/WORKER_COMPENSATION_PAYRATE_POST_PATCH
 
@@ -407,30 +411,38 @@ public class FuzzingDataFactory {
                 currentRequestSchema = mediaType.getSchema().getItems().get$ref();
             }
             if (currentRequestSchema != null) {
-                reqSchemas.add(this.getSchemaName(currentRequestSchema));
+                reqSchemas.add(CatsModelUtils.getSimpleRef(currentRequestSchema));
             } else if (CatsModelUtils.isComposedSchema(mediaType.getSchema())) {
                 Schema<?> composedSchema = mediaType.getSchema();
                 if (composedSchema.getAnyOf() != null) {
-                    composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+                    composedSchema.getAnyOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
                 }
                 if (composedSchema.getOneOf() != null) {
-                    composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(this.getSchemaName(innerSchema.get$ref())));
+                    composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
                 }
+            } else {
+                String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.randomAlphabetic(5);
+                reqSchemas.add(refForSchema);
+                globalContext.putSchemaReference(refForSchema, mediaType.getSchema());
             }
         }
         return reqSchemas;
     }
 
-    private String getSchemaName(String currentRequestSchema) {
-        return currentRequestSchema.substring(Objects.requireNonNull(currentRequestSchema).lastIndexOf('/') + 1);
+    private String calculateSchemaRef(Schema innerSchema) {
+        if (innerSchema.get$ref() == null) {
+            String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.randomAlphabetic(5);
+            globalContext.putSchemaReference(refForSchema, innerSchema);
+            return refForSchema;
+        }
+        return CatsModelUtils.getSimpleRef(innerSchema.get$ref());
     }
-
 
     private MediaType getMediaType(Operation operation, OpenAPI openAPI) {
         for (String contentType : processingArguments.getContentType()) {
             if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
                 String reqBodyRef = operation.getRequestBody().get$ref();
-                return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent(), contentType);
+                return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(CatsModelUtils.getSimpleRef(reqBodyRef)).getContent(), contentType);
             } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), List.of(contentType))) {
                 return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), contentType);
             }
@@ -452,9 +464,10 @@ public class FuzzingDataFactory {
     }
 
     private List<String> generateSample(String reqSchemaName, OpenAPIModelGenerator generator, boolean createXxxOfCombinations) {
-        if (globalContext.isExampleAlreadyGenerated(reqSchemaName) && processingArguments.isCachePayloads()) {
-            logger.debug("Example for schema name {} already generated, using cached value", reqSchemaName);
-            return globalContext.getGeneratedExamplesCache().get(reqSchemaName);
+        String onlySchemaName = CatsModelUtils.getSimpleRef(reqSchemaName);
+        if (globalContext.isExampleAlreadyGenerated(onlySchemaName) && processingArguments.isCachePayloads()) {
+            logger.debug("Example for schema name {} already generated, using cached value", onlySchemaName);
+            return globalContext.getGeneratedExamplesCache().get(onlySchemaName);
         }
 
         long t0 = System.currentTimeMillis();
@@ -787,7 +800,7 @@ public class FuzzingDataFactory {
             Content defaultContent = buildDefaultContent();
             String reqBodyRef = operation.getRequestBody().get$ref();
             if (reqBodyRef != null) {
-                operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(this.getSchemaName(reqBodyRef)).getContent());
+                operation.getRequestBody().setContent(openAPI.getComponents().getRequestBodies().get(CatsModelUtils.getSimpleRef(reqBodyRef)).getContent());
             }
             requests.addAll(new ArrayList<>(Optional.ofNullable(operation.getRequestBody().getContent()).orElse(defaultContent).keySet()));
         } else {
@@ -806,6 +819,9 @@ public class FuzzingDataFactory {
         Map<String, Set<String>> responses = new HashMap<>();
         for (String responseCode : operation.getResponses().keySet()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
+            if (apiResponse.get$ref() != null) {
+                apiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+            }
 
             responses.put(responseCode, Optional.ofNullable(apiResponse.getHeaders()).orElse(Collections.emptyMap())
                     .entrySet()
@@ -823,6 +839,9 @@ public class FuzzingDataFactory {
         Map<String, List<String>> responses = new HashMap<>();
         for (String responseCode : operation.getResponses().keySet()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
+            if (apiResponse.get$ref() != null) {
+                apiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+            }
             Content content = apiResponse.getContent();
             if (content == null || content.isEmpty()) {
                 content = buildDefaultContent();
@@ -847,9 +866,7 @@ public class FuzzingDataFactory {
         for (String responseCode : operation.getResponses().keySet()) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
-                String respSchemaName = this.getSchemaName(responseSchemaRef);
-                List<String> samples = this.generateSample(respSchemaName, generator, processingArguments.isGenerateAllXxxCombinationsForResponses());
-
+                List<String> samples = this.generateSample(responseSchemaRef, generator, processingArguments.isGenerateAllXxxCombinationsForResponses());
                 responses.put(responseCode, samples);
             } else {
                 responses.put(responseCode, Collections.emptyList());
@@ -862,19 +879,35 @@ public class FuzzingDataFactory {
         for (String contentType : processingArguments.getContentType()) {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
-                return apiResponse.get$ref();
+                apiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
             }
             if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
                 Schema<?> respSchema = Optional.ofNullable(OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema()).orElse(new Schema<>());
 
-                if (CatsModelUtils.isArraySchema(respSchema)) {
-                    return respSchema.getItems().get$ref();
-                } else {
-                    return respSchema.get$ref();
-                }
+                return extractSchemaRef(respSchema, operation, responseCode);
             }
         }
         return null;
+    }
+
+    private String extractSchemaRef(Schema<?> respSchema, Operation operation, String responseCode) {
+        String refKey = Optional.ofNullable(operation.getOperationId()).orElse(RandomStringUtils.randomAlphabetic(5)) + responseCode;
+        String finalRef = refKey;
+
+        if (CatsModelUtils.isArraySchema(respSchema)) {
+            if (respSchema.getItems().get$ref() == null) {
+                globalContext.putSchemaReference(refKey, respSchema);
+            } else {
+                finalRef = respSchema.getItems().get$ref();
+            }
+        } else {
+            if (respSchema.get$ref() == null) {
+                globalContext.putSchemaReference(refKey, respSchema);
+            } else {
+                finalRef = respSchema.get$ref();
+            }
+        }
+        return finalRef;
     }
 
 
