@@ -37,7 +37,7 @@
         </sonar.coverage.exclusions>
         <sonar.cpd.exclusions>**/*Generator*.*,**/*Fuzzer*.*</sonar.cpd.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <maven-site-plugin.version>4.0.0-M15</maven-site-plugin.version>
+        <maven-site-plugin.version>4.0.0-M16</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.6.2</maven-project-info-reports-plugin.version>
         <spotbugs-maven-plugin.version>4.8.6.2</spotbugs-maven-plugin.version>
         <sonar-maven-plugin.version>4.0.0.4121</sonar-maven-plugin.version>
@@ -46,7 +46,7 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.12.3</quarkus.platform.version>
+        <quarkus.platform.version>3.13.0</quarkus.platform.version>
         <surefire-plugin.version>3.3.1</surefire-plugin.version>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -64,12 +64,12 @@
         <snakeyaml.version>2.2</snakeyaml.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.7.0</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.8.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
         <okio.version>3.9.0</okio.version>
-        <wiremock.version>3.9.0</wiremock.version>
+        <wiremock.version>3.9.1</wiremock.version>
         <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
