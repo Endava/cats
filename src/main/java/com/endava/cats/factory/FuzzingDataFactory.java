@@ -821,8 +821,8 @@ public class FuzzingDataFactory {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             if (apiResponse.get$ref() != null) {
                 Object potentialApiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
-                if (potentialApiResponse instanceof ApiResponse) {
-                    apiResponse = (ApiResponse) potentialApiResponse;
+                if (potentialApiResponse instanceof ApiResponse apiResponseCasted) {
+                    apiResponse = apiResponseCasted;
                 }
             }
 
@@ -844,8 +844,8 @@ public class FuzzingDataFactory {
             ApiResponse apiResponse = operation.getResponses().get(responseCode);
             if (apiResponse.get$ref() != null) {
                 Object potentialApiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
-                if (potentialApiResponse instanceof ApiResponse) {
-                    apiResponse = (ApiResponse) potentialApiResponse;
+                if (potentialApiResponse instanceof ApiResponse apiResponseCasted) {
+                    apiResponse = apiResponseCasted;
                 }
             }
             Content content = apiResponse.getContent();
@@ -887,8 +887,8 @@ public class FuzzingDataFactory {
             if (StringUtils.isNotEmpty(apiResponse.get$ref())) {
                 logger.trace("Getting apiResponse from ref {}", apiResponse.get$ref());
                 Object possibleApiResponseResolved = globalContext.getApiResponseFromReference(apiResponse.get$ref());
-                if (possibleApiResponseResolved instanceof ApiResponse) {
-                    apiResponse = (ApiResponse) possibleApiResponseResolved;
+                if (possibleApiResponseResolved instanceof ApiResponse apiResponseCasted) {
+                    apiResponse = apiResponseCasted;
                 } else {
                     return apiResponse.get$ref();
                 }

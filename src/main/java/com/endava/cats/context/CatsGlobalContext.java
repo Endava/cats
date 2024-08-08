@@ -161,31 +161,24 @@ public class CatsGlobalContext {
 
         for (String part : parts) {
             part = URLDecoder.decode(part.replace("~1", "/"), StandardCharsets.UTF_8);
-            if (resolvedDefinition instanceof Map map) {
-                resolvedDefinition = map.get(part);
-            } else if (part.equals("paths")) {
-                resolvedDefinition = openAPI.getPaths();
-            } else if (resolvedDefinition instanceof PathItem item) {
-                resolvedDefinition = item.readOperationsMap().get(PathItem.HttpMethod.valueOf(part.toUpperCase(Locale.ROOT)));
-            } else if (resolvedDefinition instanceof Operation operation) {
-                resolvedDefinition = this.extractFromOperation(part, operation, resolvedDefinition);
-            } else if (part.equals("content") && resolvedDefinition instanceof RequestBody requestBody) {
-                resolvedDefinition = requestBody.getContent();
-            } else if (resolvedDefinition instanceof ApiResponse apiResponse) {
-                resolvedDefinition = this.extractFromApiResponse(part, apiResponse, resolvedDefinition);
-            } else if (resolvedDefinition instanceof MediaType mediaType && "schema".equals(part)) {
-                resolvedDefinition = mediaType.getSchema();
-            } else if (resolvedDefinition instanceof Schema<?> schema) {
-                resolvedDefinition = this.extractFromSchema(part, schema, resolvedDefinition);
-            } else if (resolvedDefinition instanceof List asList) {
-                resolvedDefinition = asList.get(Integer.parseInt(part));
-            } else if ("components".equals(part)) {
-                resolvedDefinition = openAPI.getComponents();
-            } else if (resolvedDefinition instanceof Components components && "schemas".equals(part)) {
-                resolvedDefinition = components.getSchemas();
-            } else {
-                resolvedDefinition = null;
-            }
+            String finalPart = part;
+            resolvedDefinition = switch (resolvedDefinition) {
+                case Map map -> map.get(finalPart);
+                case OpenAPI api when finalPart.equals("paths") -> openAPI.getPaths();
+                case PathItem item ->
+                        item.readOperationsMap().get(PathItem.HttpMethod.valueOf(finalPart.toUpperCase(Locale.ROOT)));
+                case Operation operation -> extractFromOperation(finalPart, operation, resolvedDefinition);
+                case RequestBody requestBody when finalPart.equals("content") -> requestBody.getContent();
+                case ApiResponse apiResponse -> extractFromApiResponse(finalPart, apiResponse, resolvedDefinition);
+                case MediaType mediaType when "schema".equals(finalPart) -> mediaType.getSchema();
+                case Schema<?> schema -> extractFromSchema(finalPart, schema, resolvedDefinition);
+                case List asList -> asList.get(Integer.parseInt(finalPart));
+                case Object o when "components".equals(finalPart) -> openAPI.getComponents();
+                case Components components when "schemas".equals(finalPart) -> components.getSchemas();
+                default -> null;
+            };
+
+            if (resolvedDefinition == null) break;
         }
 
         return resolvedDefinition;

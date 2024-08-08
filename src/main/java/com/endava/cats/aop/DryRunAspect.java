@@ -125,35 +125,22 @@ public class DryRunAspect {
      */
     @AroundInvoke
     public Object intercept(InvocationContext context) throws Exception {
-        if (filterArguments.isDryRun()) {
-            if (context.getMethod().getName().startsWith("report")) {
-                return report(context);
-            }
-            if (context.getMethod().getName().startsWith("endSession")) {
-                return endSession();
-            }
-            if (context.getMethod().getName().startsWith("startSession")) {
-                return startSession(context);
-            }
-            if (context.getMethod().getName().startsWith("call")) {
-                return dontInvokeService();
-            }
-            if (context.getMethod().getName().startsWith("getErrors")) {
-                return 0;
-            }
-            if (context.getMethod().getName().startsWith("writeTestCase")) {
-                return dontWriteTestCase();
-            }
-            if (context.getMethod().getName().startsWith("initReportingPath")) {
-                return 0;
-            }
-            if (context.getMethod().getName().startsWith("renderFuzzingHeader")) {
-                return 0;
-            }
-            if (context.getMethod().getName().startsWith("notifySummaryObservers")) {
-                return 0;
-            }
+        if (!filterArguments.isDryRun()) {
+            return context.proceed();
         }
-        return context.proceed();
+
+        String methodName = context.getMethod().getName();
+        return switch (methodName) {
+            case String s when s.startsWith("report") -> report(context);
+            case String s when s.startsWith("endSession") -> endSession();
+            case String s when s.startsWith("startSession") -> startSession(context);
+            case String s when s.startsWith("call") -> dontInvokeService();
+            case String s when s.startsWith("writeTestCase") -> dontWriteTestCase();
+            case String s when s.startsWith("getErrors") ||
+                    s.startsWith("initReportingPath") ||
+                    s.startsWith("renderFuzzingHeader") ||
+                    s.startsWith("notifySummaryObservers") -> 0;
+            default -> context.proceed();
+        };
     }
 }
