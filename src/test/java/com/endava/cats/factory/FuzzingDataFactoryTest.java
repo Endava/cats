@@ -22,7 +22,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.openapitools.codegen.examples.ExampleGenerator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -226,9 +225,6 @@ class FuzzingDataFactoryTest {
         catsGlobalContext.getSchemaMap().remove("");
         PathItem pathItem = openAPI.getPaths().get(path);
         catsGlobalContext.setOpenAPI(openAPI);
-        ExampleGenerator exampleGenerator = new ExampleGenerator(catsGlobalContext.getSchemaMap(), openAPI);
-
-        List<Map<String, String>> applicationFeedbackListAllRequest = exampleGenerator.generate(null, List.of("application/json"), "ApplicationFeedbackListAllRequest");
 
         Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
         return fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);
@@ -445,6 +441,9 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldFilterDeprecatedOperations() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
 
         Assertions.assertThat(dataList).hasSize(4);
