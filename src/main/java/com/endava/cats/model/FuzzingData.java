@@ -292,7 +292,7 @@ public class FuzzingData {
      * @return the first element from the content types.
      */
     public String getFirstRequestContentType() {
-        return requestContentTypes.get(0);
+        return requestContentTypes.getFirst();
     }
 
     /**
@@ -330,7 +330,7 @@ public class FuzzingData {
                 return sets;
             }
             List<T> list = new ArrayList<>(originalSet);
-            T head = list.get(0);
+            T head = list.getFirst();
             Set<T> rest = new HashSet<>(list.subList(1, list.size()));
             for (Set<T> set : powerSet(rest)) {
                 Set<T> newSet = new HashSet<>();
@@ -365,7 +365,7 @@ public class FuzzingData {
             for (int i = startIndex; i < elements.size(); i++) {
                 partialList.add(elements.get(i));
                 backtrack(elements, k, i + 1, result, partialList);
-                partialList.remove(partialList.size() - 1);
+                partialList.removeLast();
             }
         }
 

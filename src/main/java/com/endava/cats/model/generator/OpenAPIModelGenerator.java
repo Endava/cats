@@ -59,7 +59,7 @@ public class OpenAPIModelGenerator {
     private final int selfReferenceDepth;
     private String currentProperty = "";
     private final Map<String, String> schemaRefMap;
-    private boolean useDefaults;
+    private final boolean useDefaults;
 
     /**
      * Constructs an OpenAPIModelGenerator with the specified configuration.
@@ -155,7 +155,7 @@ public class OpenAPIModelGenerator {
     private <T> Object getEnumOrDefault(Schema<T> propertySchema) {
         List<T> enumValues = propertySchema.getEnum();
         if (!CollectionUtils.isEmpty(enumValues)) {
-            return enumValues.stream().filter(Objects::nonNull).findAny().orElse(enumValues.get(0));
+            return enumValues.stream().filter(Objects::nonNull).findAny().orElse(enumValues.getFirst());
         }
 
         if (propertySchema.getDefault() != null && useDefaults) {
@@ -504,7 +504,7 @@ public class OpenAPIModelGenerator {
         }
         List<Schema> anyOfNonNullSchemas = this.excludeNullSchemas(composedSchema.getAnyOf());
         if (anyOfNonNullSchemas.size() == 1) {
-            values.put(propertyName, resolveModelToExample(propertyName, anyOfNonNullSchemas.get(0)));
+            values.put(propertyName, resolveModelToExample(propertyName, anyOfNonNullSchemas.getFirst()));
         } else if (composedSchema.getAnyOf() != null) {
             mapDiscriminator(composedSchema, anyOfNonNullSchemas);
             addXXXOfExamples(values, propertyName, anyOfNonNullSchemas, "ANY_OF");
@@ -512,7 +512,7 @@ public class OpenAPIModelGenerator {
 
         List<Schema> oneOfNonNullSchemas = this.excludeNullSchemas(composedSchema.getOneOf());
         if (oneOfNonNullSchemas.size() == 1) {
-            values.put(propertyName, resolveModelToExample(propertyName, oneOfNonNullSchemas.get(0)));
+            values.put(propertyName, resolveModelToExample(propertyName, oneOfNonNullSchemas.getFirst()));
         } else if (composedSchema.getOneOf() != null) {
             mapDiscriminator(composedSchema, oneOfNonNullSchemas);
             addXXXOfExamples(values, propertyName, oneOfNonNullSchemas, "ONE_OF");

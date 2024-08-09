@@ -164,7 +164,7 @@ public class CatsGlobalContext {
             String finalPart = part;
             resolvedDefinition = switch (resolvedDefinition) {
                 case Map map -> map.get(finalPart);
-                case OpenAPI api when finalPart.equals("paths") -> openAPI.getPaths();
+                case OpenAPI ignored when finalPart.equals("paths") -> openAPI.getPaths();
                 case PathItem item ->
                         item.readOperationsMap().get(PathItem.HttpMethod.valueOf(finalPart.toUpperCase(Locale.ROOT)));
                 case Operation operation -> extractFromOperation(finalPart, operation, resolvedDefinition);
@@ -173,7 +173,7 @@ public class CatsGlobalContext {
                 case MediaType mediaType when "schema".equals(finalPart) -> mediaType.getSchema();
                 case Schema<?> schema -> extractFromSchema(finalPart, schema, resolvedDefinition);
                 case List asList -> asList.get(Integer.parseInt(finalPart));
-                case Object o when "components".equals(finalPart) -> openAPI.getComponents();
+                case Object ignored when "components".equals(finalPart) -> openAPI.getComponents();
                 case Components components when "schemas".equals(finalPart) -> components.getSchemas();
                 default -> null;
             };

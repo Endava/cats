@@ -230,7 +230,6 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
      * @return a FuzzingStrategy with the specified repeated character for replacement
      */
     public static FuzzingStrategy getFuzzStrategyWithRepeatedCharacterReplacingValidValue(Schema<?> schema, String characterToRepeat) {
-        ;
         String spaceValue = characterToRepeat;
         if (schema != null && schema.getMinLength() != null) {
             spaceValue = StringUtils.repeat(spaceValue, (schema.getMinLength() / spaceValue.length()) + 1);

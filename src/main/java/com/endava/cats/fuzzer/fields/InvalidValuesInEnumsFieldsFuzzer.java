@@ -50,7 +50,7 @@ public class InvalidValuesInEnumsFieldsFuzzer extends BaseBoundaryFieldFuzzer {
     @Override
     public String getBoundaryValue(Schema schema) {
         if (schema.getEnum() != null) {
-            int length = String.valueOf(schema.getEnum().get(0)).length();
+            int length = String.valueOf(schema.getEnum().getFirst()).length();
             return StringGenerator.generate("[A-Z]+", length, length);
         }
         return null;
