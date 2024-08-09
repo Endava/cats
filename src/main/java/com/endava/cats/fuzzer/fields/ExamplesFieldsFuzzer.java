@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Fuzzer that sends examples from components.examples; from schema.example(s), MediaType.example(s) Example can be ref
+ * Fuzzer that sends examples from components.examples; from schema.example(s), MediaType.example(s) Example can be a ref.
  */
 @FieldFuzzer
 @Singleton

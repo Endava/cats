@@ -124,7 +124,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
                     .map(JsonUtils.GSON::toJson).toList();
         }
 
-        Object toPrint = toPrintList.size() == 1 ? toPrintList.get(0) : toPrintList;
+        Object toPrint = toPrintList.size() == 1 ? toPrintList.getFirst() : toPrintList;
 
         logger.noFormat(toPrint.toString());
     }

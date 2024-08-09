@@ -72,8 +72,8 @@ public abstract class TestCaseExporter {
     private static final String STACKTRACE = "Stacktrace";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
-    ReportingArguments reportingArguments;
-    CatsConfiguration catsConfiguration;
+    final ReportingArguments reportingArguments;
+    final CatsConfiguration catsConfiguration;
 
     private Path reportingPath;
     private long t0;
@@ -83,7 +83,7 @@ public abstract class TestCaseExporter {
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
 
-    String osDetails;
+    final String osDetails;
 
 
     /**
@@ -180,8 +180,8 @@ public abstract class TestCaseExporter {
                 .sorted(Comparator.comparingLong(CatsTestCaseExecutionSummary::responseTimeInMs))
                 .toList();
 
-        CatsTestCaseExecutionSummary bestCaseTestCase = sortedRuns.get(0);
-        CatsTestCaseExecutionSummary worstCaseTestCase = sortedRuns.get(sortedRuns.size() - 1);
+        CatsTestCaseExecutionSummary bestCaseTestCase = sortedRuns.getFirst();
+        CatsTestCaseExecutionSummary worstCaseTestCase = sortedRuns.getLast();
         List<TimeExecution> executions = sortedRuns.stream()
                 .map(tetCase -> TimeExecution.builder()
                         .testId(tetCase.testId())

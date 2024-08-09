@@ -96,14 +96,14 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     /**
      * What is the expected list of response codes.
      *
-     * @return a HTTP response code list
+     * @return an HTTP response code list
      */
     public abstract ResponseCodeFamily getResponseCodeFamily();
 
     /**
      * What is the expected response code.
      *
-     * @return a HTTP expected response code
+     * @return an HTTP expected response code
      */
     public abstract String getExpectedResponseCode();
 

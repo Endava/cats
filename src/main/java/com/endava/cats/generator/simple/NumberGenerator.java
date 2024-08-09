@@ -90,7 +90,7 @@ public class NumberGenerator {
      * Generates a right boundary integer value higher than schema's max value.
      *
      * @param schema the OpenAPI schema
-     * @return a integer higher than schema's max value
+     * @return an integer higher than schema's max value
      */
     public static Number generateRightBoundaryIntegerValue(Schema schema) {
         return generateRightBoundaryIntegerValue(schema, TEN_THOUSANDS);

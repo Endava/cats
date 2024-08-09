@@ -256,7 +256,7 @@ public class ServiceCaller {
      *
      * @param data             the service data context
      * @param processedPayload current payload
-     * @return a url with path params replaced by urlParams or refData + additional query params
+     * @return an url with path params replaced by urlParams or refData + additional query params
      */
     private String constructUrl(ServiceData data, String processedPayload) {
         if (!data.isReplaceUrlParams()) {
@@ -459,7 +459,7 @@ public class ServiceCaller {
         List<KeyValuePair<String, String>> responseHeaders = response.headers()
                 .toMultimap()
                 .entrySet().stream()
-                .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().get(0))).toList();
+                .map(header -> new KeyValuePair<>(header.getKey(), header.getValue().getFirst())).toList();
 
         String rawResponse = this.getAsRawString(response);
         String jsonResponse = JsonUtils.getAsJsonString(rawResponse);

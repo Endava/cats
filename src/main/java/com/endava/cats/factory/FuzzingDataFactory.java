@@ -234,7 +234,7 @@ public class FuzzingDataFactory {
 
         KeyValuePair<String, Schema<?>> paramsSchema = this.createSyntheticSchemaForGet(operation);
         //we need this in order to be able to generate path params if not supplied by the user
-        String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).get(0);
+        String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).getFirst();
 
         Set<String> examples = this.extractExamples(mediaType);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);

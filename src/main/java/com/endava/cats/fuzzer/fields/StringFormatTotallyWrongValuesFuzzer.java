@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * Fuzzer that iterates through each String field and get its 'format' value (i.e. email, ip, uuid, date, datetime, etc.)
- * and sends requests with values which are totally wrong (i.e. abcd for email, 1244. for ip, etc).
+ * and sends requests with values which are totally wrong (i.e. abcd for email, 1244. for ip, etc.).
  */
 @Singleton
 @FieldFuzzer

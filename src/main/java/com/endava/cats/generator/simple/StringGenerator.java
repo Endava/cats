@@ -377,7 +377,7 @@ public class StringGenerator {
      */
     public static String generateLeftBoundString(Schema<?> schema) {
         if (schema.getEnum() != null) {
-            String value = String.valueOf(schema.getEnum().get(0));
+            String value = String.valueOf(schema.getEnum().getFirst());
             return RandomStringUtils.randomAlphanumeric(Math.max(1, value.length()));
         }
 
@@ -425,7 +425,7 @@ public class StringGenerator {
      */
     public static String generateValueBasedOnMinMax(Schema<?> property) {
         if (!CollectionUtils.isEmpty(property.getEnum())) {
-            return String.valueOf(property.getEnum().get(0));
+            return String.valueOf(property.getEnum().getFirst());
         }
         int minLength = property.getMinLength() != null ? property.getMinLength() : 1;
         int maxLength = property.getMaxLength() != null ? property.getMaxLength() : 50;

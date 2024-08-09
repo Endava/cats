@@ -65,7 +65,7 @@ public abstract class OpenApiUtils {
     }
 
     /**
-     * Reads an OpenAPI spec file. Can parse both 2.x as well as 3.x specs.
+     * Reads an OpenAPI spec file. Can parse both 2.x and 3.x specs.
      *
      * @param location the location of the OpenAPI spec
      * @return an OpenAPI object with all details from the OpenAPI spec
