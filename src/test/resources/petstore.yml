@@ -47,6 +47,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /reference-pets:
+    $ref: '#/paths/~1pets~1{id}'
   /pets:
     get:
       summary: List all pets

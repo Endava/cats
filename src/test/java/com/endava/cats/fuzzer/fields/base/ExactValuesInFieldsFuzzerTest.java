@@ -97,6 +97,28 @@ class ExactValuesInFieldsFuzzerTest {
         Assertions.assertThat(generated).asString().matches(pattern);
     }
 
+    @Test
+    void shouldGenerateWithIntegerMaxInt() {
+        Schema<String> schema = new StringSchema();
+        schema.setPattern("[0-9]+");
+        schema.setMaxLength(Integer.MAX_VALUE);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).asString().matches("[0-9]+");
+    }
+
+    @Test
+    void shouldGenerateWithIntegerMinInt() {
+        Schema<String> schema = new StringSchema();
+        myBaseBoundaryFuzzer = new MyExactMinValueFuzzer(null, null, filesArguments);
+        schema.setPattern("[0-9]+");
+        schema.setMaxLength(Integer.MAX_VALUE);
+        schema.setMinLength(Integer.MIN_VALUE);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+
+        Assertions.assertThat(generated).asString().isEmpty();
+    }
+
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {
 
         public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
@@ -111,6 +133,23 @@ class ExactValuesInFieldsFuzzerTest {
         @Override
         protected Function<Schema, Number> getExactMethod() {
             return Schema::getMaxLength;
+        }
+    }
+
+    static class MyExactMinValueFuzzer extends ExactValuesInFieldsFuzzer {
+
+        public MyExactMinValueFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {
+            super(sc, lr, cp);
+        }
+
+        @Override
+        protected String exactValueTypeString() {
+            return null;
+        }
+
+        @Override
+        protected Function<Schema, Number> getExactMethod() {
+            return Schema::getMinLength;
         }
     }
 }

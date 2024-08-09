@@ -153,7 +153,7 @@ public class CatsGlobalContext {
         return getObjectFromPathsReference(reference);
     }
 
-    private Object getObjectFromPathsReference(String reference) {
+    public Object getObjectFromPathsReference(String reference) {
         String jsonPointer = reference.substring(2);
         String[] parts = jsonPointer.split("/");
 
@@ -163,7 +163,7 @@ public class CatsGlobalContext {
             part = URLDecoder.decode(part.replace("~1", "/"), StandardCharsets.UTF_8);
             String finalPart = part;
             resolvedDefinition = switch (resolvedDefinition) {
-                case Map map -> map.get(finalPart);
+                case Map<?, ?> map -> map.get(finalPart);
                 case OpenAPI ignored when finalPart.equals("paths") -> openAPI.getPaths();
                 case PathItem item ->
                         item.readOperationsMap().get(PathItem.HttpMethod.valueOf(finalPart.toUpperCase(Locale.ROOT)));
@@ -172,7 +172,7 @@ public class CatsGlobalContext {
                 case ApiResponse apiResponse -> extractFromApiResponse(finalPart, apiResponse, resolvedDefinition);
                 case MediaType mediaType when "schema".equals(finalPart) -> mediaType.getSchema();
                 case Schema<?> schema -> extractFromSchema(finalPart, schema, resolvedDefinition);
-                case List asList -> asList.get(Integer.parseInt(finalPart));
+                case List<?> asList -> asList.get(Integer.parseInt(finalPart));
                 case Object ignored when "components".equals(finalPart) -> openAPI.getComponents();
                 case Components components when "schemas".equals(finalPart) -> components.getSchemas();
                 default -> null;

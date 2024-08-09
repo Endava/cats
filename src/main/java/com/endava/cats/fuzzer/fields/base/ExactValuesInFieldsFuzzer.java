@@ -85,6 +85,9 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
 
     private String generateWithAdjustedLength(Schema schema, int adjustedLength) {
         Number fromSchemaLength = getExactMethod().apply(schema);
+        if (fromSchemaLength.intValue() <= 0) {
+            return "";
+        }
         String pattern = schema.getPattern() != null ? schema.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
 
         int fromSchemaLengthAdjusted = (fromSchemaLength.intValue() > Integer.MAX_VALUE / 100 - adjustedLength) ? Integer.MAX_VALUE / 100 : fromSchemaLength.intValue();

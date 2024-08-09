@@ -127,7 +127,7 @@ public class StringGenerator {
      * @return a generated value of exact length provided
      */
     public static String generateExactLength(String regex, int length) {
-        if (length == 0) {
+        if (length <= 0) {
             return EMPTY;
         }
 

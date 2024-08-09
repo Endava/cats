@@ -95,12 +95,10 @@ public final class HttpContent {
             for (KeyValuePair<String, Object> entry : nameValueCollection) {
                 String key = entry.getKey();
                 Object value = entry.getValue();
-                if (value instanceof File file) {
-                    multipartProcessor.addFileField(key, file.getName(), new FileInputStream(file));
-                } else if (value instanceof InputStream inputStream) {
-                    multipartProcessor.addFileField(key, "blob", inputStream);
-                } else {
-                    multipartProcessor.addFormField(key, (String) value);
+                switch (value) {
+                    case File file -> multipartProcessor.addFileField(key, file.getName(), new FileInputStream(file));
+                    case InputStream inputStream -> multipartProcessor.addFileField(key, "blob", inputStream);
+                    default -> multipartProcessor.addFormField(key, (String) value);
                 }
             }
             return new HttpContent(baos.toByteArray(), String.format("multipart/form-data; boundary=%s", boundary));
