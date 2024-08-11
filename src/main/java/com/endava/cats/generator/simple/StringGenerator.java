@@ -351,7 +351,7 @@ public class StringGenerator {
      */
     public static String generateRightBoundString(Schema<?> schema) {
         long minLength = getRightBoundaryLength(schema);
-        return StringUtils.repeat('a', (int) minLength);
+        return generate(ALPHANUMERIC_PLUS, (int) minLength, (int) minLength);
     }
 
     /**
@@ -386,9 +386,8 @@ public class StringGenerator {
         if (minLength <= 0) {
             return EMPTY;
         }
-        String pattern = ALPHANUMERIC + "{" + (minLength - 1) + "," + minLength + "}";
 
-        return new RgxGen(pattern).generate();
+        return generate(ALPHANUMERIC_PLUS, minLength, minLength);
     }
 
     /**

@@ -428,8 +428,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.GET);
 
         Object parameter = catsGlobalContext.getObjectFromPathsReference("#/paths/~1v2~1account~1keys~1%7Bssh_key_identifier%7D/get/parameters/0");
-        Assertions.assertThat(parameter).isNotNull();
-        Assertions.assertThat(parameter).isInstanceOf(Parameter.class);
+        Assertions.assertThat(parameter).isNotNull().isInstanceOf(Parameter.class);
     }
 
     @Test
@@ -450,8 +449,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(response401).containsOnly("ratelimit-limit", "ratelimit-remaining", "ratelimit-reset");
 
         Object header = catsGlobalContext.getObjectFromPathsReference("#/paths/~1v2~11-clicks/get/responses/200/headers/ratelimit-limit");
-        Assertions.assertThat(header).isNotNull();
-        Assertions.assertThat(header).isInstanceOf(Header.class);
+        Assertions.assertThat(header).isNotNull().isInstanceOf(Header.class);
     }
 
     @Test

@@ -159,4 +159,13 @@ class StringGeneratorTest {
         String cleaned = StringGenerator.cleanPattern(pattern);
         Assertions.assertThat(cleaned).isEqualTo(expected);
     }
+
+    @Test
+    void shouldGenerateMinLengthWhenMaxLengthHigherThanMinLength() {
+        Schema<String> schema = new StringSchema();
+        schema.setMinLength(10);
+        schema.setMaxLength(20);
+        String generated = StringGenerator.generateLeftBoundString(schema);
+        Assertions.assertThat(generated).hasSize(9);
+    }
 }
