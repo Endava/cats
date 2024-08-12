@@ -159,7 +159,16 @@ public class FuzzingDataFactory {
         syntheticSchema.setProperties(new LinkedHashMap<>());
         List<String> required = new ArrayList<>();
 
-        for (Parameter parameter : Optional.ofNullable(operationParameters).orElseGet(Collections::emptyList)) {
+        List<Parameter> resolvedParameters = Optional.ofNullable(operationParameters)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(parameter -> {
+                    if (parameter.get$ref() != null) {
+                        return (Parameter) globalContext.getObjectFromPathsReference(parameter.get$ref());
+                    }
+                    return parameter;
+                }).toList();
+        for (Parameter parameter : resolvedParameters) {
             boolean isPathParam = "path".equalsIgnoreCase(parameter.getIn());
             boolean isQueryParam = "query".equalsIgnoreCase(parameter.getIn());
 

@@ -262,6 +262,27 @@ components:
           additionalProperties:
             type: string
             maxLength: 256
+        creator:
+          title: ''
+          description: ''
+          type: object
+          properties:
+            id:
+              description: ''
+              type: string
+              example: 63d415e0dd0d828c3a878548
+              readOnly: true
+            email:
+              description: ''
+              type: string
+              example: fett@intergalactic.com
+              readOnly: true
+            displayName:
+              description: ''
+              type: string
+              example: Boba Fett
+              readOnly: true
+
     AdditionalPet:
       properties:
         id:

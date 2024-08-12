@@ -408,11 +408,24 @@ class FuzzingDataFactoryTest {
 
         List<FuzzingData> dataList = setupFuzzingData("/v2/account/keys/{ssh_key_identifier}", "src/test/resources/digitalocean.yaml");
 
-        Assertions.assertThat(dataList).hasSize(4);
+        Assertions.assertThat(dataList).hasSize(5);
         FuzzingData firstData = dataList.getFirst();
         Assertions.assertThat(firstData.getPayload()).contains("name");
         Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.PUT);
     }
+
+    @Test
+    void shouldResolveElementsWithEmptyTitle() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+
+        List<FuzzingData> dataList = setupFuzzingData("/pet-types", "src/test/resources/petstore.yml");
+
+        Assertions.assertThat(dataList).hasSize(2);
+        Schema<?> creatorSchema = catsGlobalContext.getOpenAPI().getComponents().getSchemas().get("MegaPet_creator");
+        Assertions.assertThat(creatorSchema).isNotNull();
+        Assertions.assertThat(creatorSchema.getProperties()).hasSize(3);
+    }
+
 
     @Test
     void shouldGenerateCrossPathReferenceParameters() throws Exception {
@@ -467,6 +480,22 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.POST);
         String response204 = firstData.getResponses().get("204").getFirst();
         Assertions.assertThat(response204).isEqualTo("null");
+    }
+
+    @Test
+    void shouldGenerateCrossPathParametersReferences() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> dataList = setupFuzzingData("/v2/account/keys/{ssh_key_identifier}", "src/test/resources/digitalocean.yaml");
+
+        Assertions.assertThat(dataList).hasSize(5);
+
+        List<FuzzingData> getData = dataList.stream().filter(data -> data.getMethod() == HttpMethod.GET).toList();
+        Assertions.assertThat(getData.stream().map(FuzzingData::getPayload)).hasSize(2).allMatch(data -> data.contains("ssh_key_identifier"));
+
+        List<FuzzingData> deleteData = dataList.stream().filter(data -> data.getMethod() == HttpMethod.DELETE).toList();
+        Assertions.assertThat(deleteData.stream().map(FuzzingData::getPayload)).hasSize(2).allMatch(data -> data.contains("ssh_key_identifier"));
     }
 
     @Test

@@ -153,6 +153,7 @@ public class CatsGlobalContext {
         return getObjectFromPathsReference(reference);
     }
 
+
     public Object getObjectFromPathsReference(String reference) {
         String jsonPointer = reference.substring(2);
         String[] parts = jsonPointer.split("/");
