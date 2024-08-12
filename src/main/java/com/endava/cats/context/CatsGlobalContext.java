@@ -45,6 +45,7 @@ public class CatsGlobalContext {
     private final Set<String> successfulDeletes = new HashSet<>();
     private final Properties fuzzersConfiguration = new Properties();
     private final Map<String, List<String>> generatedExamplesCache = new HashMap<>();
+
     private CatsConfiguration catsConfiguration;
     @Setter
     private OpenAPI openAPI;

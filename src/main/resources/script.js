@@ -62,12 +62,12 @@ function handleSearch() {
 		}
 	});
 
-	  const clearButton = document.querySelector('.search-clear-btn');
-  	if (searchText.length > 0) {
-    	clearButton.style.display = 'inline-block';
-  	} else {
-    	clearButton.style.display = 'none';
-  }
+	const clearButton = document.querySelector('.search-clear-btn');
+	if (searchText.length > 0) {
+		clearButton.style.display = 'inline-block';
+	} else {
+		clearButton.style.display = 'none';
+	}
 }
 
 function clearSearch() {
@@ -109,51 +109,45 @@ const themeIconLight = document.querySelector('.theme-icon-light');
 const themeIconDark = document.querySelector('.theme-icon-dark');
 const timeWhite = document.querySelector('.time-white');
 const timeDark = document.querySelector('.time-dark');
-const allWhite = document.querySelector('.all-white');
-const allDark = document.querySelector('.all-dark');
-const errorsWhite = document.querySelector('.errors-white');
-const errorsDark = document.querySelector('.errors-dark');
-const warnsWhite = document.querySelector('.warns-white');
-const warnsDark  = document.querySelector('.warns-dark');
-const successWhite = document.querySelector('.success-white');
-const successDark = document.querySelector('.success-dark');
+const methodsWhite = document.querySelector('.methods-white');
+const methodsDark = document.querySelector('.methods-dark');
+const fuzzersWhite = document.querySelector('.fuzzers-white');
+const fuzzersDark = document.querySelector('.fuzzers-dark');
+const linkWhite = document.querySelector('.link-white');
+const linkDark  = document.querySelector('.link-dark');
 
 function enableDarkMode() {
 	body.classList.add('dark-mode');
 	hideElement(logoWhite);
 	hideElement(themeIconDark);
 	hideElement(timeWhite);
-	hideElement(allWhite);
-	hideElement(errorsWhite);
-	hideElement(warnsWhite);
-	hideElement(successWhite);
+	hideElement(methodsWhite);
+	hideElement(fuzzersWhite);
+	hideElement(linkWhite);
 
 	displayElement(logoDark);
 	displayElement(themeIconLight);
 	displayElement(timeDark);
-	displayElement(allDark);
-	displayElement(errorsDark);
-	displayElement(warnsDark);
-	displayElement(successDark);
+	displayElement(methodsDark);
+	displayElement(fuzzersDark);
+	displayElement(linkDark);
 }
 
 function enableLightMode() {
-  	body.classList.remove('dark-mode');
+	body.classList.remove('dark-mode');
 	displayElement(logoWhite);
 	displayElement(themeIconDark);
 	displayElement(timeWhite);
-	displayElement(allWhite);
-	displayElement(errorsWhite);
-	displayElement(warnsWhite);
-	displayElement(successWhite);
+	displayElement(methodsWhite);
+	displayElement(fuzzersWhite);
+	displayElement(linkWhite);
 
 	hideElement(logoDark);
 	hideElement(themeIconLight);
 	hideElement(timeDark);
-	hideElement(allDark);
-	hideElement(errorsDark);
-	hideElement(warnsDark);
-	hideElement(successDark);
+	hideElement(methodsDark);
+	hideElement(fuzzersDark);
+	hideElement(linkDark);
 }
 
 function displayElement(element) {
@@ -169,18 +163,18 @@ function hideElement(element) {
 }
 
 function toggleTheme() {
-  if (body.classList.contains('dark-mode')) {
-    enableLightMode();
-  } else {
-    enableDarkMode();
-  }
+	if (body.classList.contains('dark-mode')) {
+		enableLightMode();
+	} else {
+		enableDarkMode();
+	}
 }
 
 const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 if (prefersDarkMode) {
-  enableDarkMode();
+	enableDarkMode();
 } else {
-  enableLightMode();
+	enableLightMode();
 }
 
 // Show the button after the initial rendering

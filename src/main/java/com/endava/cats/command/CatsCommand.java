@@ -269,7 +269,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     private void initGlobalData(OpenAPI openAPI) {
         CatsConfiguration catsConfiguration = new CatsConfiguration(appVersion, apiArguments.getContract(), apiArguments.getServer(), filterArguments.getHttpMethods(),
-                filterArguments.getFirstPhaseFuzzersForPath().size() + "/" + filterArguments.getAllRegisteredFuzzers().size(),
+                filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size(),
                 filterArguments.getPathsToRun(openAPI).size() + "/" + openAPI.getPaths().size());
 
         globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration);

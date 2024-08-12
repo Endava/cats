@@ -28,7 +28,7 @@ public class TestCaseExporterHtmlJs extends TestCaseExporter {
 
     @Override
     public String[] getSpecificHelperFiles() {
-        return new String[]{"styles.css", "script.js"};
+        return new String[]{"styles.css", "script.js", "chart.js"};
     }
 
     @Override

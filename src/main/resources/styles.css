@@ -126,16 +126,14 @@ button#theme-toggle {
 .card-wrapper {
 	border-radius: 16px;
 	background-color: var(--white);
-	padding: 32px;
+	padding: 16px;
 }
 
 .card-wrapper.large {
-	width: 464px;
 	margin: 0 12px 0 0;
 }
 
 .card-wrapper.small {
-	width: 720px;
 	margin: 0 12px;
 }
 
@@ -967,4 +965,121 @@ body.dark-mode .menu button {
 }
 .menu.active.menu-success button {
 	color: #c3ffa8;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: 1fr 2fr;
+	gap: 20px;
+}
+
+.card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: start;
+}
+.card-title {
+	font-size: 14px;
+	color: #6b7280;
+	margin: 0;
+}
+.info-icon {
+	width: 24px;
+	height: 24px;
+	border: 1px solid;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.big-number {
+	font-size: 36px;
+	font-weight: 600;
+	margin: 0;
+}
+
+.chart-container {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.pie-chart {
+	width: 200px;
+	height: 200px;
+	border-radius: 50%;
+	background: conic-gradient(#22c55e 0deg 180deg, #eab308 180deg 300deg, #ef4444 300deg);
+	padding: 50px;
+}
+.legend {
+	margin-left: 120px;
+}
+.legend-item {
+	display: flex;
+	align-items: center;
+	margin-bottom: 5px;
+}
+.legend-color {
+	width: 12px;
+	height: 12px;
+	margin-right: 8px;
+}
+.icon-card {
+	display: flex;
+	align-items: center;
+}
+.icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	margin-right: 45px;
+}
+
+.small-margin {
+	margin: 5px 0 0;
+}
+.chart-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-top: 20px;
+}
+
+.chart {
+	width: 100%;
+	height: 150px;
+}
+
+.chart-inner {
+	display: flex;
+	height: 100%;
+}
+
+.chart-bar {
+	height: 100%;
+	border-radius: 4px;
+	margin-right: 5px;
+}
+
+.chart-bar:nth-child(1) {
+	background-color: var(--error-color);
+}
+
+.chart-bar:nth-child(2) {
+	background-color: var(--warning-color);
+}
+
+.chart-bar:nth-child(3) {
+	background-color: var(--success-color);
+}
+
+.chart-labels {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	margin-top: 10px;
+}
+
+.chart-label {
+	color: var(--dark-gray);
 }

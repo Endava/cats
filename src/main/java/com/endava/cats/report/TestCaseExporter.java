@@ -73,7 +73,7 @@ public abstract class TestCaseExporter {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseExporter.class);
 
     final ReportingArguments reportingArguments;
-    final CatsConfiguration catsConfiguration;
+    final CatsGlobalContext catsGlobalContext;
 
     private Path reportingPath;
     private long t0;
@@ -94,7 +94,7 @@ public abstract class TestCaseExporter {
     @Inject
     protected TestCaseExporter(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext) {
         this.reportingArguments = reportingArguments;
-        this.catsConfiguration = catsGlobalContext.getCatsConfiguration();
+        this.catsGlobalContext = catsGlobalContext;
         maskingSerializer = new GsonBuilder()
                 .setStrictness(Strictness.LENIENT)
                 .setPrettyPrinting()
@@ -105,7 +105,6 @@ public abstract class TestCaseExporter {
                 .serializeNulls()
                 .create();
         this.osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
-
     }
 
     /**
@@ -262,10 +261,20 @@ public abstract class TestCaseExporter {
         context.put("JS", this.isJavascript());
         context.put("OS", this.osDetails);
 
+        double warnPercentage = (double) report.getWarnings() / report.getTotalTests() * 100;
+        double errorPercentage = (double) report.getErrors() / report.getTotalTests() * 100;
+        double successPercentage = (double) report.getSuccess() / report.getTotalTests() * 100;
+
+        context.put("WARN_PERCENTAGE", warnPercentage);
+        context.put("ERROR_PERCENTAGE", errorPercentage);
+        context.put("SUCCESS_PERCENTAGE", successPercentage);
+
+        CatsConfiguration catsConfiguration = catsGlobalContext.getCatsConfiguration();
+
         if (catsConfiguration != null) {
             context.put("CONTRACT_NAME", catsConfiguration.contract());
             context.put("BASE_URL", catsConfiguration.basePath());
-            context.put("HTTP_METHODS", catsConfiguration.httpMethods().toString());
+            context.put("HTTP_METHODS", catsConfiguration.httpMethods().stream().map(Enum::name).map(String::toLowerCase).toList());
             context.put("FUZZERS", catsConfiguration.fuzzers());
             context.put("PATHS", catsConfiguration.paths());
         }

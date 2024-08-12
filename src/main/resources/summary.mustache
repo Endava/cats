@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
+    <script src="chart.js"></script>
     <title>Cats</title>
 </head>
 <body>
@@ -40,47 +41,83 @@
 </header>
 <main class="container">
     <h2 class="title-section">Overview</h2>
-    <div class="overview-section-component">
-        <div class="card-wrapper large">
-            <img src="./assets/time.svg" alt="execution time" class="time-white">
-            <img src="./assets/time_dark.svg" alt="execution time" style="display: none;" class="time-dark">
-
-            <div class="execution-time-content">
-                <h3 class="action-tag">Execution time</h3>
-                <span class="total-tag">{{EXECUTION}}</span>
+    <div class="grid">
+        <div class="card-wrapper">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Total Tests Run</h2>
+                    <p class="big-number">{{TOTAL}} tests</p>
+                </div>
+                <div class="info-icon">i</div>
             </div>
+            {{#JS}}
+                <div style="height: 220px; margin-top:20px;">
+                    <canvas id="myChart"></canvas>
+                </div>
+            {{/JS}}
+            {{^JS}}
+                <div>
+                    <div class="chart-container">
+                        <div class="chart">
+                            <div class="chart-inner">
+                                <div class="chart-bar" style="width: {{ERROR_PERCENTAGE}}%"></div>
+                                <div class="chart-bar" style="width: {{WARN_PERCENTAGE}}%"></div>
+                                <div class="chart-bar" style="width: {{SUCCESS_PERCENTAGE}}%"></div>
+                            </div>
+                        </div>
+                        <div class="chart-labels">
+                            <div class="chart-label">Errors {{ERRORS}}</div>
+                            <div class="chart-label">Warnings {{WARNINGS}}</div>
+                            <div class="chart-label">Success {{SUCCESS}}</div>
+                        </div>
+                    </div>
+                </div>
+            {{/JS}}
         </div>
-        <div class="card-wrapper small">
-            <img src="./assets/all.svg" alt="total tests" class="all-white">
-            <img src="./assets/all_dark.svg" alt="total tests" style="display: none;" class="all-dark">
-            <div class="total-test-content">
-                <h3 class="action-tag">Total</h3>
-                <span class="total-tag">{{TOTAL}} tests</span>
+        <div class="grid" style="grid-template-columns: 0.7fr 1.5fr;">
+            <div class="card-wrapper icon-card">
+                <div class="icon">
+                    <img src="./assets/time.svg" alt="execution time" class="time-white">
+                    <img src="./assets/time_dark.svg" alt="execution time" style="display: none;" class="time-dark">
+                </div>
+                <div>
+                    <h2 class="action-tag">Execution Time</h2>
+                    <p class="big-number">{{EXECUTION}}</p>
+                </div>
             </div>
-        </div>
-        <div class="card-wrapper small">
-            <img src="./assets/errors.svg" alt="errors" class="errors-white">
-            <img src="./assets/errors_dark.svg" alt="errors" style="display: none;" class="errors-dark">
-
-            <div class="total-test-content">
-                <h3 class="action-tag">Errors</h3>
-                <span class="total-tag">{{ERRORS}} tests</span>
+            <div class="card-wrapper icon-card">
+                <div class="icon">
+                    <img src="./assets/methods.svg" alt="execution time" class="methods-white">
+                    <img src="./assets/methods_dark.svg" alt="execution time" style="display: none;" class="methods-dark">
+                </div>
+                <div>
+                    <h2 class="action-tag">Http Methods in scope</h2>
+                    {{#HTTP_METHODS}}
+                        <span class="active rounded rounded-{{.}}">{{.}}</span>
+                    {{/HTTP_METHODS}}
+                </div>
             </div>
-        </div>
-        <div class="card-wrapper small">
-            <img src="./assets/warns.svg" alt="warns" class="warns-white">
-            <img src="./assets/warns_dark.svg" alt="warns" style="display: none;" class="warns-dark">
-            <div class="total-test-content">
-                <h3 class="action-tag">Warnings</h3>
-                <span class="total-tag">{{WARNINGS}} tests</span>
+            <div class="card-wrapper icon-card">
+                <div class="icon">
+                    <img src="./assets/fuzzers.svg" alt="execution time" class="fuzzers-white">
+                    <img src="./assets/fuzzers_dark.svg" alt="execution time" style="display: none;" class="fuzzers-dark">
+                </div>
+                <div>
+                    <h2 class="action-tag">Fuzzers run</h2>
+                    <p class="big-number"><span style="color: #2078B6;">{{FUZZERS}}</span> <span style="color: #9ca3af; font-size: 18px;">out of</span> 144</p>
+                </div>
             </div>
-        </div>
-        <div class="card-wrapper small last-small">
-            <img src="./assets/success.svg" alt="success" class="success-white">
-            <img src="./assets/success_dark.svg" alt="success" style="display: none" class="success-dark">
-            <div class="total-test-content">
-                <h3 class="action-tag">Successful</h3>
-                <span class="total-tag">{{SUCCESS}} tests</span>
+            <div class="card-wrapper icon-card">
+                <div class="icon">
+                    <img src="./assets/link.svg" alt="execution time" class="link-white">
+                    <img src="./assets/link_dark.svg" alt="execution time" style="display: none;" class="link-dark">
+                </div>
+                <div>
+                    <h2 class="action-tag">Base path</h2>
+                    <p class="small-margin">{{BASE_URL}}</p>
+                    <h2 class="action-tag">Spec file name</h2>
+                    <p class="small-margin">{{CONTRACT_NAME}}</p>
+                </div>
             </div>
         </div>
     </div>
@@ -135,6 +172,48 @@
 </main>
 {{#JS}}
 <script src="script.js"></script>
+<script>
+    const ctx = document.getElementById('myChart').getContext('2d');
+
+    const data = {
+        labels: ['Errors {{ERRORS}}', 'Warns {{WARNINGS}}', 'Success {{SUCCESS}}'],
+        datasets: [{
+            data: [{{ERRORS}}, {{WARNINGS}}, {{SUCCESS}}],
+            backgroundColor: [
+                '#FE0000',
+                '#FFF205',
+                '#6FE910'
+            ],
+            hoverOffset: 4
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        font: {
+                            size: 14,
+                            weight: 500
+                        }
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            },
+            layout: {
+                padding: 0
+            }
+        }
+    });
+</script>
 {{/JS}}
 </body>
 </html>
