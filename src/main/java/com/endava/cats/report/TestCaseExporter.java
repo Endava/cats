@@ -39,6 +39,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -78,12 +80,19 @@ public abstract class TestCaseExporter {
     private Path reportingPath;
     private long t0;
     private final Gson maskingSerializer;
+    private static final DecimalFormat LARGE_NUMBER_FORMAT;
 
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
 
     final String osDetails;
+
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setGroupingSeparator(' '); // Set space as the grouping separator
+        LARGE_NUMBER_FORMAT = new DecimalFormat("#,###", symbols);
+    }
 
 
     /**
@@ -250,10 +259,10 @@ public abstract class TestCaseExporter {
         CatsTestReport report = this.createTestReport(summaries, executionStatisticsListener);
 
         Map<String, Object> context = new HashMap<>();
-        context.put("WARNINGS", report.getWarnings());
-        context.put("SUCCESS", report.getSuccess());
-        context.put("ERRORS", report.getErrors());
-        context.put("TOTAL", report.getTotalTests());
+        context.put("WARNINGS", LARGE_NUMBER_FORMAT.format(report.getWarnings()));
+        context.put("SUCCESS", LARGE_NUMBER_FORMAT.format(report.getSuccess()));
+        context.put("ERRORS", LARGE_NUMBER_FORMAT.format(report.getErrors()));
+        context.put("TOTAL", LARGE_NUMBER_FORMAT.format(report.getTotalTests()));
         context.put("TIMESTAMP", report.getTimestamp());
         context.put("TEST_CASES", report.getTestCases());
         context.put("EXECUTION", Duration.ofSeconds(report.getExecutionTime()).toString().toLowerCase(Locale.ROOT).substring(2));

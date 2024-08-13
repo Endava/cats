@@ -8,6 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&display=swap" rel="stylesheet">
     <script src="chart.js"></script>
+    <script>
+        const totalErr = parseInt('{{ERRORS}}'.replace(/ /g, ''));
+        const totalWrn = parseInt('{{WARNINGS}}'.replace(/ /g, ''));
+        const totalScs = parseInt('{{SUCCESS}}'.replace(/ /g, ''));
+    </script>
     <title>Cats</title>
 </head>
 <body>
@@ -51,9 +56,11 @@
                 <div class="info-icon">i</div>
             </div>
             {{#JS}}
-                <div style="height: 220px; margin-top:20px;">
+                <div class="chart-container">
                     <canvas id="myChart"></canvas>
+                    <div id="legend-container"></div>
                 </div>
+                <script src="draw_chart.js"></script>
             {{/JS}}
             {{^JS}}
                 <div>
@@ -172,48 +179,6 @@
 </main>
 {{#JS}}
 <script src="script.js"></script>
-<script>
-    const ctx = document.getElementById('myChart').getContext('2d');
-
-    const data = {
-        labels: ['Errors {{ERRORS}}', 'Warns {{WARNINGS}}', 'Success {{SUCCESS}}'],
-        datasets: [{
-            data: [{{ERRORS}}, {{WARNINGS}}, {{SUCCESS}}],
-            backgroundColor: [
-                '#FE0000',
-                '#FFF205',
-                '#6FE910'
-            ],
-            hoverOffset: 4
-        }]
-    };
-
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: data,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        font: {
-                            size: 14,
-                            weight: 500
-                        }
-                    },
-                    title: {
-                        display: false
-                    }
-                }
-            },
-            layout: {
-                padding: 0
-            }
-        }
-    });
-</script>
 {{/JS}}
 </body>
 </html>
