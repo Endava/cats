@@ -126,7 +126,7 @@ public class CatsGlobalContext {
             result = (Schema<?>) getObjectFromPathsReference(shortRef);
         }
 
-        if (result != null && result.get$ref() != null && !result.get$ref().endsWith(NoMediaType.EMPTY_BODY)) {
+        if (result != null && result.get$ref() != null && !result.get$ref().endsWith(NoMediaType.EMPTY_BODY) && !result.get$ref().equals(reference)) {
             result = getSchemaFromReference(result.get$ref());
         }
 
