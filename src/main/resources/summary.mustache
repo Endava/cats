@@ -50,10 +50,9 @@
         <div class="card-wrapper">
             <div class="card-header">
                 <div>
-                    <h2 class="card-title">Total Tests Run</h2>
+                    <h2 class="action-tag">Total Tests Run</h2>
                     <p class="big-number">{{TOTAL}} tests</p>
                 </div>
-                <div class="info-icon">i</div>
             </div>
             {{#JS}}
                 <div class="chart-container">
@@ -111,7 +110,7 @@
                 </div>
                 <div>
                     <h2 class="action-tag">Fuzzers run</h2>
-                    <p class="big-number"><span style="color: #2078B6;">{{FUZZERS}}</span> <span style="color: #9ca3af; font-size: 18px;">out of</span> 144</p>
+                    <p class="big-number"><span class="orange_text">{{FUZZERS}}</span> <span style="color: #9ca3af; font-size: 18px;">out of</span> 144</p>
                 </div>
             </div>
             <div class="card-wrapper icon-card">
@@ -121,9 +120,9 @@
                 </div>
                 <div>
                     <h2 class="action-tag">Base path</h2>
-                    <p class="small-margin">{{BASE_URL}}</p>
+                    <p class="small-margin link_text">{{BASE_URL}}</p>
                     <h2 class="action-tag">Spec file name</h2>
-                    <p class="small-margin">{{CONTRACT_NAME}}</p>
+                    <p class="small-margin link_text">{{CONTRACT_NAME}}</p>
                 </div>
             </div>
         </div>

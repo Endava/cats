@@ -120,6 +120,7 @@ button#theme-toggle {
 	color: var(--action-tag-color);
 	font-size: 14px;
 	margin-bottom: 0;
+	margin-top: 0;
 	font-weight: 500;
 }
 
@@ -981,6 +982,7 @@ body.dark-mode .menu button {
 	font-size: 14px;
 	color: #6b7280;
 	margin: 0;
+	font-weight: 500;
 }
 .info-icon {
 	width: 24px;
@@ -1002,7 +1004,7 @@ body.dark-mode .menu button {
 	width: 200px;
 	height: 200px;
 	border-radius: 50%;
-	background: conic-gradient(#22c55e 0deg 180deg, #eab308 180deg 300deg, #ef4444 300deg);
+	background: conic-gradient(#53ad0c 0deg 180deg, #ffc90a 180deg 300deg, #d20011 300deg);
 	padding: 50px;
 }
 .legend {
@@ -1023,10 +1025,10 @@ body.dark-mode .menu button {
 	align-items: center;
 }
 .icon {
-	width: 40px;
-	height: 40px;
+	/*width: 40px;*/
+	/*height: 40px;*/
 	border-radius: 50%;
-	margin-right: 45px;
+	margin-right: 25px;
 }
 
 .small-margin {
@@ -1099,14 +1101,27 @@ body.dark-mode .menu button {
 	align-items: center;
 }
 .color-box {
-	width: 20px;
-	height: 20px;
+	width: 25px;
+	height: 10px;
 	margin-right: 10px;
+	border-radius: 16px;
 }
 .legend-label {
 	margin-right: 10px;
 }
 .legend-value {
-	font-weight: bold;
+	/*font-weight: bold;*/
 	text-align: right;
+}
+
+.orange_text {
+	color: #FA8C16;
+}
+
+.orange_text .dark-mode {
+	color: #FFA940;
+}
+
+.link_text {
+	font-weight: 600;
 }

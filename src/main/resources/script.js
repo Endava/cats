@@ -118,6 +118,9 @@ const linkDark  = document.querySelector('.link-dark');
 
 function enableDarkMode() {
 	body.classList.add('dark-mode');
+	myChart.data.datasets[0].borderColor = '#1A1A1A';
+	myChart.update();
+
 	hideElement(logoWhite);
 	hideElement(themeIconDark);
 	hideElement(timeWhite);
@@ -135,6 +138,9 @@ function enableDarkMode() {
 
 function enableLightMode() {
 	body.classList.remove('dark-mode');
+	myChart.data.datasets[0].borderColor = '#fff';
+	myChart.update();
+
 	displayElement(logoWhite);
 	displayElement(themeIconDark);
 	displayElement(timeWhite);

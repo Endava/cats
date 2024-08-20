@@ -6,9 +6,9 @@ const data = {
     datasets: [{
         data: [totalErr, totalWrn, totalScs],
         backgroundColor: [
-            '#FE0000',
-            '#FFF205',
-            '#6FE910'
+            '#D20011',
+            '#FFC90A',
+            '#53AD0C'
         ],
         hoverOffset: 4
     }]
@@ -22,6 +22,21 @@ const myChart = new Chart(ctx, {
         plugins: {
             legend: {
                 display:false
+            },
+            tooltip: {
+                callbacks: {
+                    title: function() {
+                        return ''; // Disables the title
+                    },
+                    label: function(context) {
+                        let label = context.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        label += context.raw;
+                        return ' ' + label; // Single line tooltip text
+                    }
+                }
             }
         },
         layout: {
