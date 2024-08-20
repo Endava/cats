@@ -179,6 +179,9 @@ public class OpenAPIModelGenerator {
         if (CatsModelUtils.isBinarySchema(property) || CatsModelUtils.isByteArraySchema(property)) {
             return Base64.getDecoder().decode((byte[]) property.getExample());
         }
+        if (String.valueOf(property.getExample()).contains("\n")) {
+            return String.valueOf(property.getExample()).replace("\n", "");
+        }
         return property.getExample();
     }
 

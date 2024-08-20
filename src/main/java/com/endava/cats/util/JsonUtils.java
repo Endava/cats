@@ -31,6 +31,7 @@ import net.minidev.json.JSONValue;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.StringReader;
 import java.time.OffsetDateTime;
@@ -149,7 +150,13 @@ public abstract class JsonUtils {
         if (!isValidJson(json1) || !isValidJson(json2)) {
             return json1.equalsIgnoreCase(json2);
         }
-        return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
+        try {
+            return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
+        } catch (UnsupportedOperationException e) {
+            String json1Unescaped = StringEscapeUtils.unescapeJson(json1).replaceAll("^[\"']|[\"']$", "");
+            String json2Unescaped = StringEscapeUtils.unescapeJson(json2).replaceAll("^[\"']|[\"']$", "");
+            return JsonPath.parse(json1Unescaped).jsonString().contentEquals(JsonPath.parse(json2Unescaped).jsonString());
+        }
     }
 
     /**

@@ -191,7 +191,7 @@ class JsonUtilsTest {
     @ParameterizedTest
     @CsvSource({"$.sort[name][lastName],$.['sort[name][lastName]']", "$.sort[*],$.sort[*]", "$.sort[10],$.sort[10]",
             "$.sort[*].sort[name],$.sort[*].['sort[name]']", "platform_kubernetes_attributes[api_url],['platform_kubernetes_attributes[api_url]']",
-    "param_gwOptions_[*option*],['param_gwOptions_[*option*]']", "$idempotency_key,['$idempotency_key']"})
+            "param_gwOptions_[*option*],['param_gwOptions_[*option*]']", "$idempotency_key,['$idempotency_key']"})
     void shouldProperlyEncloseJsonPathsWithSquareBrackets(String path, String expected) {
         String actual = JsonUtils.escapeFullPath(path);
         Assertions.assertThat(actual).isEqualTo(expected);
@@ -268,5 +268,14 @@ class JsonUtilsTest {
         String queryParams = "test1=value1&test2=value2";
         JsonElement parsed = JsonUtils.parseOrConvertToJsonElement(queryParams);
         Assertions.assertThat(JsonUtils.equalAsJson(payload, parsed.toString())).isTrue();
+    }
+
+    @Test
+    void shouldBEqualWhenEscapedJson() {
+        String myString =
+                """
+                        "{\\"target\\":[\\"ENSG00000094755\\", \\"ENSG00000167207\\"], \\"disease\\":[\\"EFO_0003767\\"]}"\
+                        """;
+        Assertions.assertThat(JsonUtils.equalAsJson(myString, myString)).isTrue();
     }
 }
