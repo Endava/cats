@@ -237,13 +237,14 @@ public abstract class TestCaseExporter {
         String catsFinished = ansi().fgBlue().a("CATS finished in {}. Total requests {}. ").toString();
         String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
         String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
-        String errors = ansi().fgRed().bold().a("‼ errors: {}, ").toString();
+        String errors = ansi().fgRed().bold().a("‼ errors: {}").toString();
         String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + REPORT_HTML)).reset().toString();
-        String finalMessage = catsFinished + passed + warnings + errors + check;
+        String finalMessage = catsFinished + passed + warnings + errors;
         String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
 
         ConsoleUtils.emptyLine();
-        logger.star(finalMessage, duration, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+        logger.complete(finalMessage, duration, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+        logger.complete(check);
     }
 
 
@@ -257,6 +258,7 @@ public abstract class TestCaseExporter {
      */
     public void writeSummary(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
         CatsTestReport report = this.createTestReport(summaries, executionStatisticsListener);
+        double averageResponseTime = summaries.stream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInMs).sum() / summaries.size();
 
         Map<String, Object> context = new HashMap<>();
         context.put("WARNINGS", LARGE_NUMBER_FORMAT.format(report.getWarnings()));
@@ -269,6 +271,7 @@ public abstract class TestCaseExporter {
         context.put("VERSION", report.getCatsVersion());
         context.put("JS", this.isJavascript());
         context.put("OS", this.osDetails);
+        context.put("AVERAGE_RESPONSE_TIME", NumberFormat.getInstance().format(averageResponseTime));
 
         double warnPercentage = (double) report.getWarnings() / report.getTotalTests() * 100;
         double errorPercentage = (double) report.getErrors() / report.getTotalTests() * 100;
@@ -285,7 +288,8 @@ public abstract class TestCaseExporter {
             context.put("BASE_URL", catsConfiguration.basePath());
             context.put("HTTP_METHODS", catsConfiguration.httpMethods().stream().map(Enum::name).map(String::toLowerCase).toList());
             context.put("FUZZERS", catsConfiguration.fuzzers());
-            context.put("PATHS", catsConfiguration.paths());
+            context.put("PATHS", catsConfiguration.pathsToRun());
+            context.put("TOTAL_PATHS", catsConfiguration.totalPaths());
         }
 
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);

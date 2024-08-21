@@ -155,7 +155,7 @@ public class ReportingArguments {
      */
     public void enableAdditionalLoggingIfSummary() {
         if (this.isSummaryInConsole()) {
-            PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.NONE, PrettyLevel.INFO, PrettyLevel.TIMER, PrettyLevel.FATAL);
+            PrettyLogger.enableLevels(PrettyLevel.STAR, PrettyLevel.COMPLETE, PrettyLevel.NONE, PrettyLevel.INFO, PrettyLevel.TIMER, PrettyLevel.FATAL);
         }
     }
 

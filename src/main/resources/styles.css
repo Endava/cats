@@ -120,7 +120,7 @@ button#theme-toggle {
 	color: var(--action-tag-color);
 	font-size: 14px;
 	margin-bottom: 0;
-	margin-top: 0;
+	margin-top: 5px;
 	font-weight: 500;
 }
 
@@ -995,7 +995,7 @@ body.dark-mode .menu button {
 }
 
 .big-number {
-	font-size: 36px;
+	font-size: 20px;
 	font-weight: 600;
 	margin: 0;
 }

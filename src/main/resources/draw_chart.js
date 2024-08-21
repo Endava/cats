@@ -1,15 +1,17 @@
 const ctx = document.getElementById('myChart').getContext('2d');
 const legendContainer = document.getElementById('legend-container');
 
+const initialColors = [
+    'rgba(210, 0, 17, 0.8)', // #D20011
+    'rgba(255, 201, 10, 0.8)', // #FFC90A
+    'rgba(83, 173, 12, 0.8)'  // #53AD0C
+];
+
 const data = {
     labels: ['Errors ', 'Warns ', 'Success '],
     datasets: [{
         data: [totalErr, totalWrn, totalScs],
-        backgroundColor: [
-            '#D20011',
-            '#FFC90A',
-            '#53AD0C'
-        ],
+        backgroundColor: [...initialColors],
         hoverOffset: 4
     }]
 };
@@ -26,7 +28,7 @@ const myChart = new Chart(ctx, {
             tooltip: {
                 callbacks: {
                     title: function() {
-                        return ''; // Disables the title
+                        return '';
                     },
                     label: function(context) {
                         let label = context.label || '';
@@ -34,16 +36,38 @@ const myChart = new Chart(ctx, {
                             label += ': ';
                         }
                         label += context.raw;
-                        return ' ' + label; // Single line tooltip text
+                        return ' ' + label;
                     }
                 }
-            }
+            },
         },
         layout: {
             padding: 0
         }
     }
 });
+
+ctx.canvas.addEventListener('mouseleave', function() {
+    data.datasets[0].backgroundColor = [...initialColors];
+    myChart.update();
+});
+
+myChart.options.onHover = function(event, elements) {
+    if (elements.length === 0) {
+        data.datasets[0].backgroundColor = [...initialColors];
+        myChart.update();
+    } else {
+        const datasetIndex = elements[0].datasetIndex;
+        const index = elements[0].index;
+
+        data.datasets[datasetIndex].backgroundColor = initialColors.map((color, i) => {
+            return i === index
+                ? color.replace('0.2', '0.8')
+                : color.replace('0.8', '0.2');
+        });
+        myChart.update();
+    }
+};
 
 function formatNumberWithSpaces(number) {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
