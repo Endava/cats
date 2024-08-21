@@ -191,7 +191,7 @@ class JsonUtilsTest {
     @ParameterizedTest
     @CsvSource({"$.sort[name][lastName],$.['sort[name][lastName]']", "$.sort[*],$.sort[*]", "$.sort[10],$.sort[10]",
             "$.sort[*].sort[name],$.sort[*].['sort[name]']", "platform_kubernetes_attributes[api_url],['platform_kubernetes_attributes[api_url]']",
-            "param_gwOptions_[*option*],['param_gwOptions_[*option*]']", "$idempotency_key,['$idempotency_key']"})
+            "param_gwOptions_[*option*],['param_gwOptions_[*option*]']", "$idempotency_key,['$idempotency_key']","$.filter[],$.['filter[]']"})
     void shouldProperlyEncloseJsonPathsWithSquareBrackets(String path, String expected) {
         String actual = JsonUtils.escapeFullPath(path);
         Assertions.assertThat(actual).isEqualTo(expected);

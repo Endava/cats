@@ -75,6 +75,7 @@ public abstract class JsonUtils {
     public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
 
     private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9_*]*[a-zA-Z][a-zA-Z0-9_*]*)])+\\w*");
+    private static final Pattern EMPTY_SQUARE_BRACKETS = Pattern.compile("\\w+\\[]\\w*");
 
     /**
      * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
@@ -417,6 +418,10 @@ public abstract class JsonUtils {
         matcher.appendTail(sb);
 
         String interim = sb.toString();
+
+        Matcher emptyBracketMatcher = EMPTY_SQUARE_BRACKETS.matcher(interim);
+        interim = emptyBracketMatcher.replaceAll(match -> jsonPathEscape(match.group(0)));
+
         return Arrays.stream(interim.split("\\.", -1))
                 .map(item -> item.matches("^\\$[a-zA-Z_-]+") ? jsonPathEscape(item) : item)
                 .collect(Collectors.joining("."));
