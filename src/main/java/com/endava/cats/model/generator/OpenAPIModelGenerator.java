@@ -11,6 +11,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -285,7 +286,16 @@ public class OpenAPIModelGenerator {
         }
         if (innerType.get$ref() != null) {
             schemaRefMap.put(currentProperty, innerType.get$ref());
-            innerType = this.globalContext.getSchemaFromReference(innerType.get$ref());
+            Object potentialParam = this.globalContext.getObjectFromPathsReference(innerType.get$ref());
+            if (potentialParam instanceof Parameter parameter) {
+                if (CatsModelUtils.isArraySchema(parameter.getSchema())) {
+                    return getExampleFromArraySchema(propertyName, parameter.getSchema());
+                } else {
+                    innerType = parameter.getSchema();
+                }
+            } else {
+                innerType = this.globalContext.getSchemaFromReference(innerType.get$ref());
+            }
         }
         if (innerType != null) {
             int arrayLength = getArrayLength(property);

@@ -499,6 +499,22 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateQueryParametersThatAreReferingCrossPathInlineSchema() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> dataList = setupFuzzingData("/vehicles", "src/test/resources/enode.yaml");
+        Assertions.assertThat(dataList).hasSize(1);
+
+        FuzzingData getData = dataList.getFirst();
+        Assertions.assertThat(getData.getMethod()).isEqualByComparingTo(HttpMethod.GET);
+        Assertions.assertThat(getData.getPayload()).contains("field[]");
+
+        boolean isArray = JsonUtils.isArray(getData.getPayload(), "$.field[]");
+        Assertions.assertThat(isArray).isTrue();
+    }
+
+    @Test
     void shouldFilterDeprecatedOperations() throws Exception {
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
