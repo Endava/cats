@@ -211,7 +211,9 @@ public class StringGenerator {
         if (StringUtils.isBlank(pattern)) {
             return ALPHANUMERIC_PLUS;
         }
-
+        if (pattern.startsWith("/") && pattern.endsWith("/i")) {
+            pattern = pattern.substring(1, pattern.length() - 2);
+        }
         if (pattern.matches(".\\^.*")) {
             pattern = pattern.substring(1);
         }
@@ -221,9 +223,11 @@ public class StringGenerator {
         if (pattern.endsWith("$")) {
             pattern = StringUtils.removeEnd(pattern, "$");
         }
+
         if (pattern.startsWith("/^")) {
             pattern = StringUtils.removeStart(pattern, "/");
         }
+
         pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
         pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
 
