@@ -47,28 +47,6 @@ const myChart = new Chart(ctx, {
     }
 });
 
-ctx.canvas.addEventListener('mouseleave', function() {
-    data.datasets[0].backgroundColor = [...initialColors];
-    myChart.update();
-});
-
-myChart.options.onHover = function(event, elements) {
-    if (elements.length === 0) {
-        data.datasets[0].backgroundColor = [...initialColors];
-        myChart.update();
-    } else {
-        const datasetIndex = elements[0].datasetIndex;
-        const index = elements[0].index;
-
-        data.datasets[datasetIndex].backgroundColor = initialColors.map((color, i) => {
-            return i === index
-                ? color.replace('0.2', '0.8')
-                : color.replace('0.8', '0.2');
-        });
-        myChart.update();
-    }
-};
-
 function formatNumberWithSpaces(number) {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 }

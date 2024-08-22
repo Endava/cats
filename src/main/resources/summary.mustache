@@ -80,15 +80,16 @@
                 </div>
             {{/JS}}
         </div>
-        <div class="grid" style="grid-template-columns: 0.7fr 1.5fr;">
+        <div class="grid" style="grid-template-columns: 0.7fr 1.2fr;">
             <div class="card-wrapper icon-card">
                 <div class="icon">
                     <img src="./assets/time.svg" alt="execution time" class="time-white">
                     <img src="./assets/time_dark.svg" alt="execution time" style="display: none;" class="time-dark">
                 </div>
                 <div>
-                    <h2 class="action-tag">Execution Time</h2>
+                    <h2 class="action-tag no-top">Execution Time</h2>
                     <p class="big-number">{{EXECUTION}}</p>
+                    <div style="margin: 5px;"></div>
                     <h2 class="action-tag">Average Response Time</h2>
                     <p class="big-number">{{AVERAGE_RESPONSE_TIME}}ms</p>
                 </div>
@@ -99,9 +100,9 @@
                     <img src="./assets/methods_dark.svg" alt="execution time" style="display: none;" class="methods-dark">
                 </div>
                 <div>
-                    <h2 class="action-tag">Http Methods in scope</h2>
+                    <h2 class="action-tag no-top">Http Methods in scope</h2>
                     {{#HTTP_METHODS}}
-                        <span class="active rounded rounded-{{.}}">{{.}}</span>
+                        <span class="active rounded rounded-{{.}} small-margin">{{.}}</span>
                     {{/HTTP_METHODS}}
                 </div>
             </div>
@@ -111,8 +112,9 @@
                     <img src="./assets/fuzzers_dark.svg" alt="execution time" style="display: none;" class="fuzzers-dark">
                 </div>
                 <div>
-                    <h2 class="action-tag">Fuzzers run</h2>
+                    <h2 class="action-tag no-top">Fuzzers run</h2>
                     <p class="big-number"><span class="orange_text">{{FUZZERS}}</span> <span style="color: #9ca3af; font-size: 18px;">out of</span> 144</p>
+                    <div style="margin: 5px;"></div>
                     <h2 class="action-tag">Paths included</h2>
                     <p class="big-number"><span class="orange_text">{{PATHS}}</span> <span style="color: #9ca3af; font-size: 18px;">out of</span> {{TOTAL_PATHS}}</p>
                 </div>
@@ -123,8 +125,9 @@
                     <img src="./assets/link_dark.svg" alt="execution time" style="display: none;" class="link-dark">
                 </div>
                 <div>
-                    <h2 class="action-tag">Base path</h2>
+                    <h2 class="action-tag no-top">Base path</h2>
                     <p class="small-margin link_text">{{BASE_URL}}</p>
+                    <div style="margin: 5px;"></div>
                     <h2 class="action-tag">Spec file name</h2>
                     <p class="small-margin link_text">{{CONTRACT_NAME}}</p>
                 </div>

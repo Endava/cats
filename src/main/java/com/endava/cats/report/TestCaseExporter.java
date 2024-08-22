@@ -81,6 +81,7 @@ public abstract class TestCaseExporter {
     private long t0;
     private final Gson maskingSerializer;
     private static final DecimalFormat LARGE_NUMBER_FORMAT;
+    private static final DecimalFormat SINGLE_DECIMAL_FORMAT = new DecimalFormat("#0.0");
 
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
@@ -271,7 +272,7 @@ public abstract class TestCaseExporter {
         context.put("VERSION", report.getCatsVersion());
         context.put("JS", this.isJavascript());
         context.put("OS", this.osDetails);
-        context.put("AVERAGE_RESPONSE_TIME", NumberFormat.getInstance().format(averageResponseTime));
+        context.put("AVERAGE_RESPONSE_TIME", SINGLE_DECIMAL_FORMAT.format(averageResponseTime));
 
         double warnPercentage = (double) report.getWarnings() / report.getTotalTests() * 100;
         double errorPercentage = (double) report.getErrors() / report.getTotalTests() * 100;

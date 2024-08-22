@@ -301,7 +301,7 @@ tbody tr td a:hover {
 .rounded {
 	border-radius: 8px;
 	padding: 6px 12px;
-	margin-top: 14px;
+	margin-top: 10px;
 	line-height: 19px;
 	display: inline-block;
 }
@@ -1033,6 +1033,10 @@ body.dark-mode .menu button {
 
 .small-margin {
 	margin: 5px 0 0;
+}
+
+.no-top {
+	margin-top: 0;
 }
 
 .chart {
