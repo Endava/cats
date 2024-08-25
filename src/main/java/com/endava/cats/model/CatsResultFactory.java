@@ -28,7 +28,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createNotMatchingResponseSchema(String receivedResponseCode) {
         String message = "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT match the corresponding schema.".formatted(receivedResponseCode);
-        String reason = "Not Matching Response Schema";
+        String reason = "Not matching response schema";
 
         return new CatsResult(message, reason);
     }
@@ -52,7 +52,7 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotImplemented() {
-        return new CatsResult("Response HTTP code 501: you forgot to implement this functionality!", "Not Implemented");
+        return new CatsResult("Response HTTP code 501: you forgot to implement this functionality!", "Not implemented");
     }
 
     /**
@@ -61,7 +61,7 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotFound() {
-        return new CatsResult("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", "Not Found");
+        return new CatsResult("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", "Not found");
     }
 
     /**
@@ -87,7 +87,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedException(String fuzzer, String errorMessage) {
         String message = "Fuzzer [%s] failed due to [%s]".formatted(fuzzer, errorMessage);
-        String reason = "Unexpected Exception";
+        String reason = "Unexpected exception";
 
         return new CatsResult(message, reason);
     }
@@ -116,7 +116,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedResponseCode(String receivedResponseCode, String expectedResponseCode) {
         String message = "Response does NOT match expected result. Response code is NOT from a list of expected codes for this FUZZER: expected %s, actual [%s]".formatted(expectedResponseCode, receivedResponseCode);
-        String reason = "Unexpected Response Code: %s".formatted(receivedResponseCode);
+        String reason = "Unexpected response code: %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
@@ -131,7 +131,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUndocumentedResponseCode(String receivedResponseCode, String expectedResponseCode, String documentedResponseCodes) {
         String message = "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [%s], documented response codes: %s".formatted(expectedResponseCode, receivedResponseCode, documentedResponseCodes);
-        String reason = "Undocumented Response Code: %s".formatted(receivedResponseCode);
+        String reason = "Undocumented response code: %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
