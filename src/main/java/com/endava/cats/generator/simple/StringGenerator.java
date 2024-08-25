@@ -187,7 +187,7 @@ public class StringGenerator {
         try {
             String initialVersion = generator.apply(generatorParams);
             if (initialVersion.matches(generatorParams.pattern)) {
-                LOGGER.info("Generated value " + initialVersion + " matched " + generatorParams.pattern);
+                LOGGER.debug("Generated value " + initialVersion + " matched " + generatorParams.pattern);
                 return initialVersion;
             }
         } catch (Exception e) {
@@ -197,7 +197,7 @@ public class StringGenerator {
         try {
             String secondVersion = generator.apply(new GeneratorParams(removeLookaheadAssertions(generatorParams.pattern), generatorParams.min, generatorParams.max));
             if (secondVersion.matches(generatorParams.pattern)) {
-                LOGGER.info("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.pattern);
+                LOGGER.debug("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.pattern);
                 return secondVersion;
             }
         } catch (Exception e) {
