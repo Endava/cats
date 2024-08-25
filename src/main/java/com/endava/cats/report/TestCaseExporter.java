@@ -155,6 +155,29 @@ public abstract class TestCaseExporter {
     }
 
     /**
+     * Writes number of errors encountered by reason.
+     *
+     * @param testCaseSummaryDetails a list of test case summaries
+     */
+    public void writeErrorsByReason(List<CatsTestCaseSummary> testCaseSummaryDetails) {
+        if (testCaseSummaryDetails == null || testCaseSummaryDetails.isEmpty()) {
+            return;
+        }
+        Map<String, Long> resultReasonCounts = testCaseSummaryDetails.stream()
+                .filter(testCase -> StringUtils.isNotBlank(testCase.getResultReason()))
+                .filter(CatsTestCaseSummary::getError)
+                .collect(Collectors.groupingBy(CatsTestCaseSummary::getResultReason, Collectors.counting()));
+
+        if (resultReasonCounts.isEmpty()) {
+            return;
+        }
+        ConsoleUtils.emptyLine();
+        logger.info("Errors by reason:");
+        resultReasonCounts.forEach((reason, count) ->
+                logger.noFormat(" ❌ {}: {} errors", reason, count));
+    }
+
+    /**
      * Writes performance statistics for the executed test cases, including execution time details.
      * The method checks if printing execution statistics is enabled in the reporting arguments before generating and printing the report.
      *

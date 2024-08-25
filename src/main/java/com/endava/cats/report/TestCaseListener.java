@@ -421,6 +421,7 @@ public class TestCaseListener {
         reportingArguments.enableAdditionalLoggingIfSummary();
         testCaseExporter.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
         testCaseExporter.writeHelperFiles();
+        testCaseExporter.writeErrorsByReason(testCaseSummaryDetails);
         testCaseExporter.writePerformanceReport(testCaseExecutionDetails);
         testCaseExporter.printExecutionDetails(executionStatisticsListener);
         writeRecordedErrorsIfPresent();
