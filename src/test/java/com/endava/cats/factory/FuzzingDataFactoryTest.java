@@ -550,6 +550,23 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(nonExisting).hasToString("NOT_SET");
     }
 
+    @Test
+    void shouldAvoidCyclicDependenciesOnAdditionalPropertiesSecondCase() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> dataList = setupFuzzingData("/apis/{api}/{version}/rest", "src/test/resources/discovery.yaml");
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.GET);
+        String payload = dataList.getFirst().getPayload();
+
+        Assertions.assertThat(payload).contains("oauth_token");
+        String firstResponse = dataList.getFirst().getResponses().get("200").getFirst();
+        Object additionalProps = JsonUtils.getVariableFromJson(firstResponse, "$#methods#key#parameters#key");
+
+        Assertions.assertThat(additionalProps).doesNotHaveToString("NOT_SET");
+    }
+
 
     @Test
     void shouldOnlyIncludeProvidedTags() throws Exception {
