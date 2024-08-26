@@ -1,6 +1,6 @@
 # Field Fuzzers
 
-CATS has currently 58 registered `Field` Fuzzers:
+CATS has currently 60 registered `Field` Fuzzers:
 - `AbugidasInStringFields` - iterate through each field and send values containing abugidas chars
 - `DecimalFieldsLeftBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the left side in the targeted field
 - `DecimalFieldsRightBoundaryFuzzer` - iterate through each Number field (either float or double) and send requests with outside the range values on the right side in the targeted field
@@ -59,6 +59,8 @@ CATS has currently 58 registered `Field` Fuzzers:
 - `WithinSingleCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values containing single code point emojis
 - `WithinMultiCodePointEmojisInFieldsTrimValidateFuzzer` - iterate through each field and send values containing multi code point emojis
 - `ZalgoTextInStringFieldsValidateSanitizeFuzzer` - iterate through each field and send values containing zalgo text
+- `ZeroWidthCharsInNamesFields` - iterate through each field and insert zero-width characters in the field names
+- `ZeroWidthCharsInValuesFields` - iterate through each field and send values containing zero-width characters
 
 You can run only these Fuzzers by supplying the `--checkFields` argument.
 

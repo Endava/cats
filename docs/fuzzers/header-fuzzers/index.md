@@ -1,5 +1,5 @@
 # Header Fuzzers
-CATS has currently 36 registered `Header`  Fuzzers:
+CATS has currently 38 registered `Header`  Fuzzers:
 - `AbugidasCharsInHeadersFuzzer` -  iterate through each header and send requests with abugidas chars in the targeted header
 - `CRLFHeaders` - iterate through each header and send CR & LF characters in the targeted header
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
@@ -36,6 +36,8 @@ CATS has currently 36 registered `Header`  Fuzzers:
 - `VeryLargeStringsInHeadersFuzzer` - iterate through each header and send large values in the targeted header
 - `VeryLargeUnicodeStringsInHeadersFuzzer` - iterate through each header and send large unicode values in the targeted header
 - `ZalgoTextInHeadersFuzzer` - iterate through each header and send requests with zalgo text in the targeted header
+- `ZeroWidthCharsInNamesHeaders` - injects zero-width characters in the header names
+- `ZeroWidthCharsInValuesHeaders` - iterate through each header and send Zero-width characters in the targeted header
 
 You can run only these Fuzzers by supplying the `--checkHeaders` argument.
 

@@ -17,7 +17,8 @@ Usually a good OpenAPI contract must follow several good practices in order to m
 - avoid using `xml` payload unless there is a really good reason (like documenting an old API for example)
 - json types and properties do not use the same naming (like having a `Pet` with a property named `pet`)
 
-CATS has currently 14 registered `Linter` Fuzzers or Linters:
+CATS has currently 17 registered `Linter` Fuzzers or Linters:
+- `EmptyPathsLinter` - verifies that the current path contains at least one operation
 - `HeadersCaseLinter` - verifies that HTTP headers follow naming conventions
 - `HttpStatusCodeInValidRangeFuzzer` -  verifies that all HTTP response codes are within the range of 100 to 599
 - `JsonObjectsCaseLinter` - verifies that JSON elements follow naming conventions
@@ -32,6 +33,8 @@ CATS has currently 14 registered `Linter` Fuzzers or Linters:
 - `TopLevelElementsLinterFuzzer` - verifies that all OpenAPI contract level elements are present and provide meaningful information: API description, documentation, title, version, etc.
 - `VersionsLinterFuzzer` - verifies that a given path doesn't contain versioning information
 - `XmlContentTypeLinterFuzzer` - verifies that all OpenAPI contract paths responses and requests does not offer `application/xml` as a Content-Type
+- `TracingHeadersLinter` - verifies that all OpenAPI contract paths contain recommended headers like: CorrelationId/TraceId, etc.
+- `UniqueOperationIdsLinter` - verifies that all operationIds are unique
 
 You can run only these Fuzzers using `cats lint --contract=CONTRACT`.
 
