@@ -941,7 +941,7 @@ public class TestCaseListener {
     }
 
     private boolean matchesSingleElement(String responseSchema, JsonElement element, String name) {
-        if (element.isJsonObject() && globalContext.getAdditionalProperties().contains(name)) {
+        if (element.isJsonObject() && globalContext.getAdditionalProperties().containsKey(name)) {
             return true;
         }
         if (doesNotHaveAResponseSchema(responseSchema)) {

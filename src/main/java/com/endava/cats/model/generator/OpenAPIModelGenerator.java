@@ -242,8 +242,11 @@ public class OpenAPIModelGenerator {
     }
 
     Map<String, Object> getExampleFromAdditionalPropertiesSchema(String propertyName, Schema property) {
+        if (globalContext.getAdditionalProperties().containsKey(propertyName)) {
+            return globalContext.getAdditionalProperties().get(propertyName);
+        }
         Map<String, Object> mp = new HashMap<>();
-        globalContext.getAdditionalProperties().add(propertyName);
+
         if (property.getName() != null) {
             mp.put(property.getName(), resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties()));
         } else if (((Schema) property.getAdditionalProperties()).get$ref() != null) {
@@ -256,6 +259,8 @@ public class OpenAPIModelGenerator {
         } else {
             mp.put("key", resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties()));
         }
+
+        globalContext.getAdditionalProperties().put(propertyName, mp);
         return mp;
     }
 
