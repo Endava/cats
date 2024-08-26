@@ -3,6 +3,7 @@ package com.endava.cats.util;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
+import io.swagger.v3.oas.models.PathItem;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,9 +12,13 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @QuarkusTest
 class CatsUtilTest {
@@ -97,5 +102,29 @@ class CatsUtilTest {
         String finalString = CatsUtil.insertInTheMiddle("string", "YY", insertWithoutReplace);
 
         Assertions.assertThat(finalString).isEqualTo(toCheck);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "''; path1,path2; path1",
+            "path2; path1,path2; path2",
+            "path3; path1,path2,path3; path3",
+            "path4,path2; path1,path2,path3; path2"
+    }, delimiter = ';')
+    void testPathSorting(String pathsOrderString, String inputPathsString, String expectedFirstPath) {
+        List<String> pathsOrder = pathsOrderString.isEmpty() ?
+                Collections.emptyList() : Arrays.asList(pathsOrderString.split(","));
+
+        Map<String, PathItem> inputMap = Arrays.stream(inputPathsString.split(","))
+                .collect(Collectors.toMap(p -> p, p -> new PathItem()));
+
+        Comparator<Map.Entry<String, PathItem>> customComparator =
+                CatsUtil.createCustomComparatorBasedOnPathsOrder(pathsOrder);
+
+        LinkedHashSet<Map.Entry<String, PathItem>> sorted = inputMap.entrySet()
+                .stream().sorted(customComparator)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        Assertions.assertThat(sorted.getFirst().getKey()).isEqualTo(expectedFirstPath);
     }
 }

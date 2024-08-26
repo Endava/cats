@@ -9,6 +9,7 @@ import com.github.javafaker.Faker;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.swagger.v3.oas.models.PathItem;
 import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -18,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -344,5 +346,29 @@ public abstract class CatsUtil {
         int maxRepetitions = (maxArrayLength + 1) / (fieldLength + 1);
 
         return Math.min(maxSizeFromSchema + 10, maxRepetitions);
+    }
+
+
+    /**
+     * Creates a custom comparator based on the order of paths in the provided list.
+     *
+     * @param pathsOrder the list of paths to be used for sorting
+     * @return a custom comparator based on the order of paths in the list
+     */
+    public static Comparator<Map.Entry<String, PathItem>> createCustomComparatorBasedOnPathsOrder(List<String> pathsOrder) {
+        return (e1, e2) -> {
+            int index1 = pathsOrder.indexOf(e1.getKey());
+            int index2 = pathsOrder.indexOf(e2.getKey());
+
+            if (index1 != -1 && index2 != -1) {
+                return Integer.compare(index1, index2);
+            } else if (index1 != -1) {
+                return -1;
+            } else if (index2 != -1) {
+                return 1;
+            } else {
+                return e1.getKey().compareTo(e2.getKey());
+            }
+        };
     }
 }

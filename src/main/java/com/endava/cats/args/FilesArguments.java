@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ public class FilesArguments {
     private Map<String, Map<String, Object>> queryParams;
     private Map<String, Map<String, Object>> refData;
     private List<String> urlParams;
+    private List<String> pathsOrder;
 
     @Getter
     private Properties fuzzConfigProperties;
@@ -54,65 +56,60 @@ public class FilesArguments {
 
     @CommandLine.Option(names = {"--urlParams"},
             description = "A comma separated list of @|bold name:value|@ pairs of parameters to be replaced inside the URLs", split = ",")
-    @Getter
     @Setter
     private List<String> params;
 
     @CommandLine.Option(names = {"-P"},
             description = "Specifies the url/path params to be replaced in request paths")
     @Setter
-    @Getter
     Map<String, Object> urlParamsArguments;
 
     @CommandLine.Option(names = {"--headers"},
             description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication")
-    @Getter
     @Setter
     private File headersFile;
 
     @CommandLine.Option(names = {"-H"},
             description = "Specifies the headers that will be passed along with the request. When supplied it will be applied to ALL paths. For per-path control, the `--headers` arg must be used")
     @Setter
-    @Getter
     Map<String, Object> headersMap;
 
     @CommandLine.Option(names = {"--queryParams"},
             description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params")
-    @Getter
     @Setter
     private File queryFile;
+
+    @CommandLine.Option(names = {"--pathsRunOrder"},
+            description = "Specifies the order in which the paths will be executed. The paths are on each line. The order is the one in which they will be executed")
+    private File pathsOrderFile;
 
     @CommandLine.Option(names = {"-Q"},
             description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params. When supplied it will be applied to ALL paths. " +
                     "For per-path control, the `--queryParams` argument must be used")
-    @Getter
     @Setter
     Map<String, Object> queryParamsArguments;
 
     @CommandLine.Option(names = {"--refData"},
             description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
                     "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
-    @Getter
     @Setter
+    @Getter
     private File refDataFile;
 
     @CommandLine.Option(names = {"-R"},
             description = "Specifies fields that must have a fixed value in order for requests to succeed. When supplied it will be applied to ALL paths. " +
                     "For per-path control, the `--refData` argument must be used")
-    @Getter
     @Setter
     Map<String, Object> refDataArguments;
 
 
     @CommandLine.Option(names = {"--functionalFuzzerFile"},
             description = "Specifies the file used by the @|bold FunctionalFuzzer|@ to create user-supplied payloads and tests")
-    @Getter
     @Setter
     private File customFuzzerFile;
 
     @CommandLine.Option(names = {"--securityFuzzerFile"},
             description = "Specifies the file used by the @|bold SecurityFuzzer|@ to inject special strings in order to exploit possible vulnerabilities")
-    @Getter
     @Setter
     private File securityFuzzerFile;
 
@@ -125,7 +122,6 @@ public class FilesArguments {
 
     @CommandLine.Option(names = {"--mutators", "-m"},
             description = "A folder containing custom mutators. This argument is taken in consideration only when using the `cats random` command")
-    @Setter
     @Getter
     private File mutatorsFolder;
 
@@ -144,6 +140,19 @@ public class FilesArguments {
         loadQueryParams();
         loadFuzzConfigProperties();
         loadMutators();
+        loadPathsOrder();
+    }
+
+    public void loadPathsOrder() throws IOException {
+        if (pathsOrderFile == null) {
+            log.debug("No paths order file provided");
+            return;
+        }
+        pathsOrder = Files.readAllLines(pathsOrderFile.toPath());
+
+        log.config(Ansi.ansi().bold().a("Paths order file: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(pathsOrderFile.getCanonicalPath()));
+
     }
 
     public void loadMutators() throws IOException {
@@ -314,6 +323,15 @@ public class FilesArguments {
      */
     public Map<String, Object> getAdditionalQueryParamsForPath(String path) {
         return mergePathAndAll(queryParams, path);
+    }
+
+    /**
+     * Returns a list of paths as they are ordered in the pathsOrder file.
+     *
+     * @return a list of paths in the order they are defined in the pathsOrder file
+     */
+    public List<String> getPathsOrder() {
+        return Optional.ofNullable(pathsOrder).orElse(Collections.emptyList());
     }
 
     /**

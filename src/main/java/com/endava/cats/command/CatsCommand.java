@@ -37,6 +37,7 @@ import picocli.AutoComplete;
 import picocli.CommandLine;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -281,7 +282,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     void startFuzzing(OpenAPI openAPI) {
         List<String> suppliedPaths = filterArguments.getPathsToRun(openAPI);
 
-        for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI)) {
+        for (Map.Entry<String, PathItem> entry : this.sortPathsAlphabetically(openAPI, filesArguments.getPathsOrder())) {
             if (suppliedPaths.contains(entry.getKey())) {
                 this.fuzzPath(entry, openAPI);
             } else {
@@ -290,11 +291,18 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
     }
 
-    private LinkedHashSet<Map.Entry<String, PathItem>> sortPathsAlphabetically(OpenAPI openAPI) {
-        return openAPI.getPaths().entrySet()
-                .stream().sorted(Map.Entry.comparingByKey())
+    private LinkedHashSet<Map.Entry<String, PathItem>> sortPathsAlphabetically(OpenAPI openAPI, List<String> pathsOrder) {
+        Comparator<Map.Entry<String, PathItem>> customComparator = CatsUtil.createCustomComparatorBasedOnPathsOrder(pathsOrder);
+
+        LinkedHashSet<Map.Entry<String, PathItem>> pathsOrderedAlphabetically = openAPI.getPaths().entrySet()
+                .stream().sorted(customComparator)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        logger.debug("Paths ordered alphabetically: {}", pathsOrderedAlphabetically.stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+
+        return pathsOrderedAlphabetically;
     }
+
 
     private void executeCustomFuzzer() throws IOException {
         if (filterArguments.getSuppliedFuzzers().contains(FunctionalFuzzer.class.getSimpleName())) {
