@@ -55,6 +55,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.isFilterXxxFromRequestPayloads()).thenReturn(false);
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of(ProcessingArguments.JSON_WILDCARD, "application/x-www-form-urlencoded"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(3);
     }
 
     @Test
@@ -534,6 +535,23 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldAvoidCyclicDependenciesOnAdditionalProperties() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> dataList = setupFuzzingData("/containers", "src/test/resources/petstore.yml");
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.POST);
+        String payload = dataList.getFirst().getPayload();
+        Object existing = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key");
+        Object nonExisting = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key#containers");
+
+        Assertions.assertThat(existing).doesNotHaveToString("NOT_SET");
+        Assertions.assertThat(nonExisting).hasToString("NOT_SET");
+    }
+
+
+    @Test
     void shouldOnlyIncludeProvidedTags() throws Exception {
         Mockito.when(filterArguments.getTags()).thenReturn(List.of("pets"));
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
@@ -636,6 +654,8 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldDetectCyclicDependenciesWhenPropertiesNamesDontMatch() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(1);
+
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.getFirst();

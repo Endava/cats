@@ -158,6 +158,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /containers:
+    post:
+      description: Create containers
+      operationId: createPetContainer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceUtilizationReport'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
   /pet-types-rec:
     post:
       description: Creates a new pet in the store.  Duplicates are allowed
@@ -198,6 +214,15 @@ components:
         id: 1
         breed: dog-example
   schemas:
+    ResourceUtilizationReport:
+      description: Worker metrics exported from workers. This contains resource utilization metrics accumulated from a variety of sources. For more information, see go/df-resource-signals.
+      properties:
+        containers:
+          additionalProperties:
+            $ref: "#/components/schemas/ResourceUtilizationReport"
+          description: "Per container information. Key: container name."
+          type: object
+      type: object
     Pets:
       type: array
       items:
@@ -217,7 +242,7 @@ components:
               format: time
             colors:
               type: array
-              items: {}
+              items: { }
             breed:
               description: Sensitive data that will be kept encrypted in the vault, associated with the Token
               oneOf:

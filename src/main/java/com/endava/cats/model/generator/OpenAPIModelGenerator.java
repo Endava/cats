@@ -60,6 +60,7 @@ public class OpenAPIModelGenerator {
     private final int selfReferenceDepth;
     private String currentProperty = "";
     private final Map<String, String> schemaRefMap;
+    private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
 
     /**
@@ -77,6 +78,7 @@ public class OpenAPIModelGenerator {
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
         this.schemaRefMap = new LinkedHashMap<>();
+        this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
     }
 
@@ -247,11 +249,29 @@ public class OpenAPIModelGenerator {
         } else if (((Schema) property.getAdditionalProperties()).get$ref() != null) {
             Schema innerSchema = (Schema) property.getAdditionalProperties();
             Schema addPropSchema = this.globalContext.getSchemaFromReference(innerSchema.get$ref());
+            if (isCyclicAdditionalPropertiesCall()) {
+                return null;
+            }
             mp.put("key", resolvePropertyToExample(propertyName, addPropSchema));
         } else {
             mp.put("key", resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties()));
         }
         return mp;
+    }
+
+    /**
+     * This is only used for additionalProperties that are refer themselves.
+     *
+     * @return true if this is a cyclic call, false otherwise
+     */
+    private boolean isCyclicAdditionalPropertiesCall() {
+        int currentCount = callStackCounter.getOrDefault(currentProperty, 0);
+        if (currentCount > selfReferenceDepth) {
+            callStackCounter.remove(currentProperty);
+            return true;
+        }
+        callStackCounter.put(currentProperty, currentCount + 1);
+        return false;
     }
 
     private Object getExampleFromIntegerSchema(Schema<?> property) {
