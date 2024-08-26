@@ -4,8 +4,8 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseReplaceFieldsFuzzer;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.JsonUtils;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -41,8 +41,12 @@ public class OverflowMapSizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
             String firstKey = allMapKeys instanceof String s ? s : ((Set<String>) allMapKeys).iterator().next();
             Object firstKeyValue = JsonUtils.getVariableFromJson(data.getPayload(), field + "." + firstKey);
 
+            logger.debug("Fuzzing field {}", field);
+
             Map<String, Object> finalResult = new HashMap<>();
-            int arraySize = schema.getMaxProperties() != null ? schema.getMaxProperties() + 10 : processingArguments.getLargeStringsSize();
+            int possibleMax = schema.getMaxProperties() != null ? schema.getMaxProperties() : processingArguments.getLargeStringsSize();
+            int arraySize = Math.min(possibleMax, processingArguments.getLargeStringsSize() / 4) + 10;
+
             for (int i = 0; i < arraySize; i++) {
                 finalResult.put(firstKey + i, firstKeyValue);
             }
