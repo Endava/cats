@@ -328,7 +328,8 @@ public class TestCaseListener {
         if (!reportingArguments.isSummaryInConsole()) {
             return;
         }
-        String printPath = path + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
+        String prefix = ansi().fgBlue().a("(" + runPerPathListener.size() + "/" + globalContext.getCatsConfiguration().pathsToRun() + ") ").fgDefault().toString();
+        String printPath = prefix + path + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
 
         if (runPerPathListener.contains(path)) {
             ConsoleUtils.renderSameRow(printPath, cycle.next());

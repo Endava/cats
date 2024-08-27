@@ -2,6 +2,7 @@ package com.endava.cats.report;
 
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.context.CatsConfiguration;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.api.Fuzzer;
@@ -812,6 +813,8 @@ class TestCaseListenerTest {
     void shouldStartUnknownProgress() {
         FuzzingData data = FuzzingData.builder().contractPath("/test").method(HttpMethod.POST).path("/test").build();
         Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
+        ReflectionTestUtils.setField(catsGlobalContext, "catsConfiguration",
+                new CatsConfiguration("/test", "test", "test", List.of(), 1, 2, 3));
         TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
         testCaseListenerSpy.updateUnknownProgress(data);
         Mockito.verify(testCaseListenerSpy).notifySummaryObservers("/test");
