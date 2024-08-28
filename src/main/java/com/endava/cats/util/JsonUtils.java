@@ -154,8 +154,8 @@ public abstract class JsonUtils {
         try {
             return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
         } catch (UnsupportedOperationException e) {
-            String json1Unescaped = StringEscapeUtils.unescapeJson(json1).replaceAll("^[\"']|[\"']$", "");
-            String json2Unescaped = StringEscapeUtils.unescapeJson(json2).replaceAll("^[\"']|[\"']$", "");
+            String json1Unescaped = StringEscapeUtils.unescapeJson(json1).replaceAll("(^[\"'])|([\"']$)", "");
+            String json2Unescaped = StringEscapeUtils.unescapeJson(json2).replaceAll("(^[\"'])|([\"']$)", "");
             return JsonPath.parse(json1Unescaped).jsonString().contentEquals(JsonPath.parse(json2Unescaped).jsonString());
         }
     }

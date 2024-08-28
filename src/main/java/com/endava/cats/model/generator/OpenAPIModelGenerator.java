@@ -327,16 +327,24 @@ public class OpenAPIModelGenerator {
             Object[] objectProperties = new Object[arrayLength];
 
             for (int i = 0; i < arrayLength; i++) {
-                boolean isNullSchema = innerType.getType() == null && innerType.get$ref() == null && !CatsModelUtils.isComposedSchema(innerType) && innerType.getProperties() == null;
-                if (isNullSchema) {
-                    objectProperties[i] = StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
-                } else {
-                    objectProperties[i] = resolveModelToExample(propertyName, innerType);
-                }
+                objectProperties[i] = generateArrayElement(propertyName, innerType);
             }
             return objectProperties;
         }
         return "[]";
+    }
+
+    private Object generateArrayElement(String propertyName, Schema innerType) {
+        boolean isNullSchema = isNullSchema(innerType);
+        if (isNullSchema) {
+            return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
+        } else {
+            return resolveModelToExample(propertyName, innerType);
+        }
+    }
+
+    private static boolean isNullSchema(Schema innerType) {
+        return innerType.getType() == null && innerType.get$ref() == null && !CatsModelUtils.isComposedSchema(innerType) && innerType.getProperties() == null;
     }
 
     public static int getArrayLength(Schema<?> property) {
