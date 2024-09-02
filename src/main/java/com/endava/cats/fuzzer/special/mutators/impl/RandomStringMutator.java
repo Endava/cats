@@ -15,7 +15,7 @@ public class RandomStringMutator implements Mutator {
     @Override
     public String mutate(String inputJson, String selectedField) {
         int size = CatsUtil.random().nextInt(BOUND);
-        return CatsUtil.justReplaceField(inputJson, selectedField, RandomStringUtils.random(size)).json();
+        return CatsUtil.justReplaceField(inputJson, selectedField, RandomStringUtils.secure().next(size)).json();
     }
 
     @Override

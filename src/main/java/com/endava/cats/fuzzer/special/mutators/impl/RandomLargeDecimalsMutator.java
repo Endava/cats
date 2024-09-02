@@ -25,7 +25,7 @@ public class RandomLargeDecimalsMutator implements Mutator {
             if (i == ITERATIONS) {
                 largeNumberBuilder.append(".");
             }
-            largeNumberBuilder.append(RandomStringUtils.randomNumeric(LENGTH));
+            largeNumberBuilder.append(RandomStringUtils.secure().nextNumeric(LENGTH));
         }
 
         return CatsUtil.justReplaceField(inputJson, selectedField, new BigDecimal(largeNumberBuilder.toString())).json();

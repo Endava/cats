@@ -16,7 +16,7 @@ import java.util.List;
 public class IdnEmailGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        return RandomStringUtils.randomAlphabetic(5) + "cööl.cats@cats.io";
+        return RandomStringUtils.secure().nextAlphabetic(5) + "cööl.cats@cats.io";
     }
 
     @Override

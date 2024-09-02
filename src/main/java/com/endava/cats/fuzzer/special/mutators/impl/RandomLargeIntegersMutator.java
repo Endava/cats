@@ -20,7 +20,7 @@ public class RandomLargeIntegersMutator implements Mutator {
         int i = 0;
         StringBuilder largeNumberBuilder = new StringBuilder();
         while (i < ITERATIONS) {
-            largeNumberBuilder.append(RandomStringUtils.randomNumeric(LENGTH));
+            largeNumberBuilder.append(RandomStringUtils.secure().nextNumeric(LENGTH));
             i++;
         }
 

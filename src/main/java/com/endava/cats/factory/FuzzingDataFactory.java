@@ -430,7 +430,7 @@ public class FuzzingDataFactory {
                     composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
                 }
             } else {
-                String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.randomAlphabetic(5);
+                String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.secure().nextAlphabetic(5);
                 reqSchemas.add(refForSchema);
                 globalContext.putSchemaReference(refForSchema, mediaType.getSchema());
             }
@@ -440,7 +440,7 @@ public class FuzzingDataFactory {
 
     private String calculateSchemaRef(Schema innerSchema) {
         if (innerSchema.get$ref() == null) {
-            String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.randomAlphabetic(5);
+            String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.secure().nextAlphabetic(5);
             globalContext.putSchemaReference(refForSchema, innerSchema);
             return refForSchema;
         }
@@ -912,7 +912,7 @@ public class FuzzingDataFactory {
     }
 
     private String extractSchemaRef(Schema<?> respSchema, Operation operation, String responseCode) {
-        String refKey = Optional.ofNullable(operation.getOperationId()).orElse(RandomStringUtils.randomAlphabetic(5)) + responseCode;
+        String refKey = Optional.ofNullable(operation.getOperationId()).orElse(RandomStringUtils.secure().nextAlphabetic(5)) + responseCode;
         String finalRef = refKey;
 
         if (CatsModelUtils.isArraySchema(respSchema)) {

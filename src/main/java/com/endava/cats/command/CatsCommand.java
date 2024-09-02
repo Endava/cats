@@ -298,7 +298,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .stream().sorted(customComparator)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        logger.debug("Paths ordered alphabetically: {}", pathsOrderedAlphabetically.stream().map(Map.Entry::getKey).collect(Collectors.toList()));
+        logger.debug("Paths ordered alphabetically: {}", pathsOrderedAlphabetically.stream().map(Map.Entry::getKey).toList());
 
         return pathsOrderedAlphabetically;
     }

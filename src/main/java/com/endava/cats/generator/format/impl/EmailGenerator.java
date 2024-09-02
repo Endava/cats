@@ -22,7 +22,7 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public Object generate(Schema<?> schema) {
-        return RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT) + "cool.cats@cats.io";
+        return RandomStringUtils.secure().nextAlphabetic(5).toLowerCase(Locale.ROOT) + "cool.cats@cats.io";
     }
 
     @Override

@@ -51,7 +51,7 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
 
         for (int i = 0; i < processingArguments.getRandomHeadersNumber(); i++) {
             headers.add(CatsHeader.builder()
-                    .name(RandomStringUtils.randomAlphanumeric(10))
+                    .name(RandomStringUtils.secure().nextAlphanumeric(10))
                     .required(false)
                     .value(this.randomHeadersValueFunction().apply(10)).build());
         }

@@ -16,7 +16,7 @@ import java.util.List;
 public class IRIReferenceGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = RandomStringUtils.randomAlphabetic(5);
+        String generated = RandomStringUtils.secure().nextAlphabetic(5);
         return "/füzzing%s/".formatted(generated);
     }
 

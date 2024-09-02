@@ -17,7 +17,7 @@ import java.util.List;
 public class HostnameGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = RandomStringUtils.randomAlphabetic(5);
+        String generated = RandomStringUtils.secure().nextAlphabetic(5);
         return "www.cats%s.com".formatted(generated);
     }
 

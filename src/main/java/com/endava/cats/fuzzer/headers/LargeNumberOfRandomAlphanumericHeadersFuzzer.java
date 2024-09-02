@@ -35,6 +35,6 @@ public class LargeNumberOfRandomAlphanumericHeadersFuzzer extends BaseRandomHead
 
     @Override
     protected Function<Integer, String> randomHeadersValueFunction() {
-        return RandomStringUtils::randomAlphanumeric;
+        return RandomStringUtils.secure()::nextAlphanumeric;
     }
 }

@@ -19,7 +19,7 @@ public class ISBN13Generator implements ValidDataFormatGenerator, OpenAPIFormat 
 
     @Override
     public Object generate(Schema<?> schema) {
-        return RandomStringUtils.randomNumeric(13, 13);
+        return RandomStringUtils.secure().nextNumeric(13, 13);
     }
 
     @Override

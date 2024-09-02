@@ -16,7 +16,7 @@ import java.util.List;
 public class URIReferenceGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        return "/fuzzing%s/".formatted(RandomStringUtils.randomAlphabetic(4));
+        return "/fuzzing%s/".formatted(RandomStringUtils.secure().nextAlphabetic(4));
     }
 
     @Override

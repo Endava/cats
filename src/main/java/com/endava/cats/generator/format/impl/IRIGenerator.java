@@ -16,7 +16,7 @@ import java.util.List;
 public class IRIGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = RandomStringUtils.randomAlphabetic(6);
+        String generated = RandomStringUtils.secure().nextAlphabetic(6);
         return "http://ë%s.com/cats".formatted(generated);
     }
 

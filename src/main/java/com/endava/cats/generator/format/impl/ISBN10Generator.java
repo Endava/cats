@@ -21,7 +21,7 @@ public class ISBN10Generator implements ValidDataFormatGenerator, OpenAPIFormat 
 
     @Override
     public Object generate(Schema<?> schema) {
-        return RandomStringUtils.randomNumeric(10, 10);
+        return RandomStringUtils.secure().nextNumeric(10, 10);
     }
 
     @Override

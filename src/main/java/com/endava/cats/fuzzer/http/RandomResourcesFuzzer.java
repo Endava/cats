@@ -148,7 +148,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         return switch (randomChoice) {
             case 0 -> UUID.randomUUID().toString();
             case 1 -> NumberGenerator.generateRandomLong(0, Long.MAX_VALUE);
-            default -> RandomStringUtils.randomAlphanumeric(randomLength);
+            default -> RandomStringUtils.secure().nextAlphanumeric(randomLength);
         };
     }
 

@@ -20,7 +20,7 @@ public class RandomTransferEncodingHeaderMutator implements Mutator {
         Set<CatsHeader> clone = Cloner.cloneMe(headers);
         clone.add(CatsHeader.builder()
                 .name(HttpHeaders.TRANSFER_ENCODING)
-                .value(RandomStringUtils.random(10))
+                .value(RandomStringUtils.secure().next(10))
                 .build());
         return clone;
     }

@@ -21,7 +21,7 @@ public class URIGenerator implements ValidDataFormatGenerator, InvalidDataFormat
 
     @Override
     public Object generate(Schema<?> schema) {
-        return "http://cats%s.com/cats".formatted(RandomStringUtils.randomAlphabetic(6));
+        return "http://cats%s.com/cats".formatted(RandomStringUtils.secure().nextAlphabetic(6));
     }
 
     @Override

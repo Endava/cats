@@ -104,7 +104,7 @@ public class StringGenerator {
      * @return a random alphanumeric string
      */
     public static String generateRandomString() {
-        return FUZZ + RandomStringUtils.randomAlphabetic(4);
+        return FUZZ + RandomStringUtils.secure().nextAlphabetic(4);
     }
 
     /**
@@ -382,7 +382,7 @@ public class StringGenerator {
     public static String generateLeftBoundString(Schema<?> schema) {
         if (schema.getEnum() != null) {
             String value = String.valueOf(schema.getEnum().getFirst());
-            return RandomStringUtils.randomAlphanumeric(Math.max(1, value.length()));
+            return RandomStringUtils.secure().nextAlphanumeric(Math.max(1, value.length()));
         }
 
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
