@@ -49,9 +49,13 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "The OpenAPI contract/spec")
     private String contract;
 
-    @CommandLine.Option(names = {"--skipFuzzers"},
+    @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
             description = "A comma separated list of fuzzers to be ignored. They can be full or partial Fuzzer names", split = ",")
     private List<String> skipFuzzers;
+
+    @CommandLine.Option(names = {"--skipPaths", "--skipPath"},
+            description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. All available paths can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
+    private List<String> skipPaths;
 
     @CommandLine.ParentCommand
     private CatsCommand catsCommand;
@@ -63,6 +67,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
         catsCommand.apiArguments.setServer("http://empty");
         catsCommand.filterArguments.customFilter("Linter");
         catsCommand.filterArguments.getSkipFuzzers().addAll(Optional.ofNullable(skipFuzzers).orElse(Collections.emptyList()));
+        catsCommand.filterArguments.getSkipPaths().addAll(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
         catsCommand.processingArguments.setFilterXxxFromRequestPayloads(false);
         catsCommand.run();
