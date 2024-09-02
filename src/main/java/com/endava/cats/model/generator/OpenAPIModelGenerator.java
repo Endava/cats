@@ -253,7 +253,7 @@ public class OpenAPIModelGenerator {
             Schema innerSchema = (Schema) property.getAdditionalProperties();
             Schema addPropSchema = this.globalContext.getSchemaFromReference(innerSchema.get$ref());
             if (isCyclicAdditionalPropertiesCall()) {
-                return null;
+                return Map.of();
             }
             mp.put("key", resolvePropertyToExample(propertyName, addPropSchema));
         } else {

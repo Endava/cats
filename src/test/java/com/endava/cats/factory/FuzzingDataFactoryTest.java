@@ -546,8 +546,8 @@ class FuzzingDataFactoryTest {
         Object existing = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key");
         Object nonExisting = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key#containers");
 
-        Assertions.assertThat(existing).doesNotHaveToString("NOT_SET");
-        Assertions.assertThat(nonExisting).hasToString("NOT_SET");
+        Assertions.assertThat(existing).doesNotHaveToString("{}");
+        Assertions.assertThat(nonExisting).hasToString("{}");
     }
 
     @Test
