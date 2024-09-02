@@ -24,7 +24,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <commons-lang3.version>3.16.0</commons-lang3.version>
+        <commons-lang3.version>3.17.0</commons-lang3.version>
         <jansi.version>2.4.1</jansi.version>
         <lombok.version>1.18.34</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
@@ -46,8 +46,8 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.13.3</quarkus.platform.version>
-        <surefire-plugin.version>3.4.0</surefire-plugin.version>
+        <quarkus.platform.version>3.14.1</quarkus.platform.version>
+        <surefire-plugin.version>3.5.0</surefire-plugin.version>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <spring.version>6.1.12</spring.version>
@@ -61,10 +61,10 @@
         <json-smart.version>2.5.1</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
+        <snakeyaml.version>2.3</snakeyaml.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.8.0</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.10.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.5</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
