@@ -164,11 +164,18 @@ public class FuzzingDataFactory {
                 .stream()
                 .map(parameter -> {
                     if (parameter.get$ref() != null) {
-                        return (Parameter) globalContext.getObjectFromPathsReference(parameter.get$ref());
+                        Parameter param = (Parameter) globalContext.getObjectFromPathsReference(parameter.get$ref());
+                        if (param == null) {
+                            globalContext.recordError("Parameter definition for %s could not be resolved. It's either missing or is incorrect".formatted(parameter.get$ref()));
+                        }
+                        return param;
                     }
                     return parameter;
                 }).toList();
         for (Parameter parameter : resolvedParameters) {
+            if (parameter == null) {
+                continue;
+            }
             boolean isPathParam = "path".equalsIgnoreCase(parameter.getIn());
             boolean isQueryParam = "query".equalsIgnoreCase(parameter.getIn());
 
@@ -222,6 +229,7 @@ public class FuzzingDataFactory {
      * @return a list  of FuzzingData used to Fuzz
      */
     private List<FuzzingData> getFuzzDataForHttpMethod(String path, PathItem item, Operation operation, HttpMethod method, OpenAPI openAPI) {
+        globalContext.recordPathAndMethod(path, method);
         if (this.isDeprecated(operation)) {
             logger.info("Operation {} {} is deprecated and --skipDeprecatedOperations is on", path, method);
             return Collections.emptyList();
@@ -313,6 +321,7 @@ public class FuzzingDataFactory {
      * @return a list of FuzzingData objects
      */
     private List<FuzzingData> getFuzzDataForNonBodyMethods(String path, PathItem item, Operation operation, OpenAPI openAPI, HttpMethod method) {
+        globalContext.recordPathAndMethod(path, method);
         if (this.isDeprecated(operation)) {
             logger.info("Operation {} {} is deprecated and --skipDeprecatedOperations is on; skipping", path, method);
             return Collections.emptyList();

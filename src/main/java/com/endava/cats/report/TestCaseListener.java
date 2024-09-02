@@ -40,7 +40,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +51,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.endava.cats.context.CatsGlobalContext.CONTRACT_PATH;
+import static com.endava.cats.context.CatsGlobalContext.HTTP_METHOD;
 import static com.endava.cats.model.CatsTestCase.SKIP_REPORTING;
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -67,8 +68,6 @@ public class TestCaseListener {
     private static final String FUZZER_KEY = "fuzzerKey";
     private static final String FUZZER = "fuzzer";
     private static final String ID_ANSI = "id_ansi";
-    private static final String HTTP_METHOD = "httpMethod";
-    private static final String CONTRACT_PATH = "contractPath";
     static final AtomicInteger TEST = new AtomicInteger(0);
     private static final List<String> NOT_NECESSARILY_DOCUMENTED = Arrays.asList("406", "415", "414", "501", "413", "431");
     private static final String RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING = "Received response is marked as ignored... skipping!";
@@ -83,7 +82,6 @@ public class TestCaseListener {
     private final ReportingArguments reportingArguments;
     final List<CatsTestCaseSummary> testCaseSummaryDetails = new ArrayList<>();
     final List<CatsTestCaseExecutionSummary> testCaseExecutionDetails = new ArrayList<>();
-    private final Set<ProcessingError> recordedErrors = new HashSet<>();
 
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -139,7 +137,6 @@ public class TestCaseListener {
         MDC.put(CONTRACT_PATH, path);
         MDC.put(HTTP_METHOD, httpMethod);
         this.notifySummaryObservers(path);
-
     }
 
     /**
@@ -438,12 +435,7 @@ public class TestCaseListener {
     }
 
     private void writeRecordedErrorsIfPresent() {
-        PrettyLogger consoleLogger = PrettyLoggerFactory.getConsoleLogger();
-        if (recordedErrors.isEmpty()) {
-            return;
-        }
-        consoleLogger.noFormat(ansi().bold().fgRed().a("\nThere were errors during fuzzers execution. It's recommended to fix them in order for all fuzzers to properly run: ").reset().toString());
-        recordedErrors.forEach(error -> consoleLogger.noFormat("  -> " + error));
+        globalContext.writeRecordedErrorsIfPresent();
     }
 
     private void setResultReason(CatsResultFactory.CatsResult catsResult) {
@@ -969,11 +961,7 @@ public class TestCaseListener {
     }
 
     public void recordError(String error) {
-        String contractPath = MDC.get(CONTRACT_PATH);
-        String httpMethod = MDC.get(HTTP_METHOD);
-
-        ProcessingError processingError = new ProcessingError(contractPath, httpMethod, error);
-        this.recordedErrors.add(processingError);
+        globalContext.recordError(error);
     }
 
     @Builder

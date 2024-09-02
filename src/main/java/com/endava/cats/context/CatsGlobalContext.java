@@ -1,8 +1,12 @@
 package com.endava.cats.context;
 
 import com.endava.cats.factory.NoMediaType;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.report.ProcessingError;
 import com.endava.cats.util.CatsModelUtils;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -16,6 +20,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.MDC;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -29,12 +34,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static org.fusesource.jansi.Ansi.ansi;
+
 /**
  * Holds global variables which should not be recomputed for each path.
  */
 @Singleton
 @Getter
 public class CatsGlobalContext {
+    public static final String HTTP_METHOD = "httpMethod";
+    public static final String CONTRACT_PATH = "contractPath";
     public static final String ORIGINAL = "Original";
     private final Map<String, Schema> schemaMap = new HashMap<>();
     private final Map<String, Example> exampleMap = new HashMap<>();
@@ -45,6 +54,7 @@ public class CatsGlobalContext {
     private final Set<String> successfulDeletes = new HashSet<>();
     private final Properties fuzzersConfiguration = new Properties();
     private final Map<String, List<String>> generatedExamplesCache = new HashMap<>();
+    private final Set<ProcessingError> recordedErrors = new HashSet<>();
 
     private CatsConfiguration catsConfiguration;
     @Setter
@@ -155,6 +165,37 @@ public class CatsGlobalContext {
     }
 
 
+    /**
+     * Records an error in the global context.
+     *
+     * @param error the error to record
+     */
+    public void recordError(String error) {
+        String contractPath = MDC.get(CONTRACT_PATH);
+        String httpMethod = MDC.get(HTTP_METHOD);
+
+        ProcessingError processingError = new ProcessingError(contractPath, httpMethod, error);
+        this.recordedErrors.add(processingError);
+    }
+
+    /**
+     * Prints the recorded errors if present.
+     */
+    public void writeRecordedErrorsIfPresent() {
+        PrettyLogger consoleLogger = PrettyLoggerFactory.getConsoleLogger();
+        if (recordedErrors.isEmpty()) {
+            return;
+        }
+        consoleLogger.noFormat(ansi().bold().fgRed().a("\nThere were errors during fuzzers execution. It's recommended to fix them in order for all fuzzers to properly run: ").reset().toString());
+        recordedErrors.forEach(error -> consoleLogger.noFormat("  -> " + error));
+    }
+
+    /**
+     * Gets an object from the global context by reference.
+     *
+     * @param reference the reference to get
+     * @return the object if found, null otherwise
+     */
     public Object getObjectFromPathsReference(String reference) {
         String jsonPointer = reference.substring(2);
         String[] parts = jsonPointer.split("/");
@@ -177,6 +218,8 @@ public class CatsGlobalContext {
                 case List<?> asList -> asList.get(Integer.parseInt(finalPart));
                 case Object ignored when "components".equals(finalPart) -> openAPI.getComponents();
                 case Components components when "schemas".equals(finalPart) -> components.getSchemas();
+                case Components components when "parameters".equalsIgnoreCase(finalPart) -> components.getParameters();
+                case Components components when "headers".equalsIgnoreCase(finalPart) -> components.getHeaders();
                 default -> null;
             };
 
@@ -243,5 +286,11 @@ public class CatsGlobalContext {
 
     private Schema getSchemaFromComponentsDefinitions(String reference) {
         return schemaMap.get(CatsModelUtils.getSimpleRef(reference));
+    }
+
+
+    public void recordPathAndMethod(String path, HttpMethod method) {
+        MDC.put(CONTRACT_PATH, path);
+        MDC.put(HTTP_METHOD, method.toString());
     }
 }
