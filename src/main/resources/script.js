@@ -138,8 +138,11 @@ function enableDarkMode() {
 
 function enableLightMode() {
 	body.classList.remove('dark-mode');
-	myChart.data.datasets[0].borderColor = '#fff';
-	myChart.update();
+
+	if (myChart) {
+		myChart.data.datasets[0].borderColor = '#fff';
+		myChart.update();
+	}
 
 	displayElement(logoWhite);
 	displayElement(themeIconDark);
