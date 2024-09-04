@@ -55,7 +55,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         usageHelpAutoWidth = true,
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
-        description = "List Fuzzers, OpenAPI paths and FieldFuzzing strategies",
+        description = "List Fuzzers, OpenAPI paths, OpenAPI formats, Mutators, Custom Mutator Types and FieldFuzzing strategies",
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:Successful program execution",
                 "@|bold 191|@:Usage error: user input for the command was incorrect",
@@ -194,7 +194,7 @@ public class ListCommand implements Runnable {
         if (json) {
             logger.noFormat(JsonUtils.GSON.toJson(pathDetailsEntry));
         } else {
-            logger.noFormat(path);
+            logger.noFormat(ansi().bold().a(path + ":").reset().toString());
             for (PathDetailsEntry.OperationDetails operation : pathDetailsEntry.getOperations()) {
                 logger.noFormat(ConsoleUtils.SEPARATOR);
                 logger.noFormat(" ◼ Operation: " + operation.getOperationId());
