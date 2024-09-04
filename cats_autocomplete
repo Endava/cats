@@ -206,7 +206,7 @@ function _picocli_cats() {
 
   local commands="generate-completion help list replay run fuzz lint info stats validate random generate"
   local flag_opts="-A --checkHeaders -F --checkFields -T --checkHttp -C --checkContract --includeContract --includeLinters -W --includeWhitespaces -E --includeEmojis -U --includeControlChars --createRefData -d --dryRun --skipDeprecatedOperations --ignoreResponseCodeUndocumentedCheck --iu --ignoreResponseBodyCheck --ib --ignoreResponseContentTypeCheck --it -k --skipReportingForIgnoredCodes --skipReportingForIgnored --sri --srs --skipReportingForSuccess --srw --skipReportingForWarning -b --blackbox --useExamples --cachePayloads --rfc7396 --allowInvalidEnumValues --generateXxxCombinationsForResponses --filterXxxFromRequestPayloads --useDefaults -D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --printProgress --simpleReplace --matchInput --mi -h --help -V --version"
-  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --fuzzersConfig --fc --urlParams -P --headers -H --queryParams -Q --refData -R --functionalFuzzerFile --securityFuzzerFile --mutators -m -f --fuzzers --fuzzer -p --paths --path --skipPaths --skipPath --skipFuzzers --skipFuzzer --httpMethods --httpMethod -X --skipHttpMethods --skipHttpMethod --fieldTypes --fieldType --skipFieldTypes --skipFieldType --fieldFormats --fieldFormat --skipFieldFormats --skipFieldFormat --skipFields --skipField --skipHeaders --skipHeader -t --tags --tag --skipTags --skipTag -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection --limitXxxOfCombinations -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
+  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari --fuzzersConfig --fc --urlParams -P --headers -H --queryParams --pathsRunOrder -Q --refData -R --functionalFuzzerFile --securityFuzzerFile --mutators -m -f --fuzzers --fuzzer -p --paths --path --skipPaths --skipPath --skipFuzzers --skipFuzzer --httpMethods --httpMethod -X --skipHttpMethods --skipHttpMethod --fieldTypes --fieldType --skipFieldTypes --skipFieldType --fieldFormats --fieldFormat --skipFieldFormats --skipFieldFormat --skipFields --skipField --skipHeaders --skipHeader -t --tags --tag --skipTags --skipTag -i --ignoreResponseCodes --ic --ignoreResponseSize --is --ignoreResponseWords --iw --ignoreResponseLines --il --ignoreResponseRegex --ir --fieldsFuzzingStrategy --maxFieldsToRemove --edgeSpacesStrategy --sanitizationStrategy --largeStringsSize --randomHeadersNumber --selfReferenceDepth -L --contentType --oneOfSelection --anyOfSelection --limitXxxOfCombinations -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --words -w --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr"
   local httpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethods values
   local skippedHttpMethods_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --skipHttpMethods values
   local fieldTypes_option_args=("STRING" "NUMBER" "INTEGER" "BOOLEAN") # --fieldTypes values
@@ -289,6 +289,12 @@ function _picocli_cats() {
       return
       ;;
     --queryParams)
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    --pathsRunOrder)
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
@@ -921,7 +927,7 @@ function _picocli_cats_lint() {
 
   local commands=""
   local flag_opts="-D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --printProgress -h --help -V --version"
-  local arg_opts="-l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --pathNaming --pathVariablesNaming --queryParamsNaming --jsonObjectsNaming --jsonPropertiesNaming --headersNaming -c --contract --skipFuzzers"
+  local arg_opts="-l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --pathNaming --pathVariablesNaming --queryParamsNaming --jsonObjectsNaming --jsonPropertiesNaming --headersNaming -c --contract --skipFuzzers --skipFuzzer --skipPaths --skipPath"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local pathNaming_option_args=("SNAKE" "KEBAB" "HTTP_HEADER" "PASCAL" "CAMEL") # --pathNaming values
@@ -995,7 +1001,10 @@ function _picocli_cats_lint() {
     -c|--contract)
       return
       ;;
-    --skipFuzzers)
+    --skipFuzzers|--skipFuzzer)
+      return
+      ;;
+    --skipPaths|--skipPath)
       return
       ;;
   esac
@@ -1095,7 +1104,7 @@ function _picocli_cats_random() {
 
   local commands=""
   local flag_opts="-D --debug --printExecutionStatistics --printDetailedExecutionStatistics --timestampReports -j --json --checkUpdate --color --printProgress --matchInput --mi --createRefData -h --help -V --version"
-  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr --fuzzersConfig --fc --urlParams -P --headers -H --queryParams -Q --refData -R --functionalFuzzerFile --securityFuzzerFile --mutators -m --stopAfterTimeInSec --st --stopAfterErrors --se --stopAfterMutations --sm --httpMethod -X --contentType --oneOfSelection --anyOfSelection --path -p"
+  local arg_opts="--maxRequestsPerMinute --connectionTimeout --writeTimeout --readTimeout --userAgent -c --contract -s --server --sslKeystore --sslKeystorePwd --sslKeyPwd --basicAuth --basicauth --proxyHost --proxyPort --authRefreshScript --ars --authRefreshInterval --ari -l --log -g --skipLog -O --onlyLog --reportFormat -o --output --maxResponseTimeInMs --verbosity --maskHeaders --matchResponseCodes --mc --matchResponseSize --ms --matchResponseWords --mw --matchResponseLines --ml --matchResponseRegex --mr --fuzzersConfig --fc --urlParams -P --headers -H --queryParams --pathsRunOrder -Q --refData -R --functionalFuzzerFile --securityFuzzerFile --mutators -m --stopAfterTimeInSec --st --stopAfterErrors --se --stopAfterMutations --sm --httpMethod -X --contentType --oneOfSelection --anyOfSelection --path -p"
   local reportFormat_option_args=("HTML_ONLY" "HTML_JS" "JUNIT") # --reportFormat values
   local verbosity_option_args=("SUMMARY" "DETAILED") # --verbosity values
   local httpMethod_option_args=("POST" "PUT" "GET" "TRACE" "DELETE" "PATCH" "HEAD" "CONNECT" "COPY" "MOVE" "PROPPATCH" "PROPFIND" "MKCOL" "LOCK" "UNLOCK" "SEARCH" "BIND" "UNBIND" "REBIND" "MKREDIRECTREF" "UPDATEREDIRECTREF" "ORDERPATCH" "ACL" "REPORT" "DIFF" "VERIFY" "PUBLISH" "UNPUBLISH" "BATCH" "VIEW" "PURGE" "DEBUG" "SUBSCRIBE" "UNSUBSCRIBE" "MERGE" "INDEX") # --httpMethod values
@@ -1213,6 +1222,12 @@ function _picocli_cats_random() {
       return
       ;;
     --queryParams)
+      local IFS=$'\n'
+      type compopt &>/dev/null && compopt -o filenames
+      COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
+      return $?
+      ;;
+    --pathsRunOrder)
       local IFS=$'\n'
       type compopt &>/dev/null && compopt -o filenames
       COMPREPLY=( $( compgen -f -- "${curr_word}" ) ) # files
