@@ -80,7 +80,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         exitCodeOnExecutionException = 192,
         resourceBundle = "version",
         abbreviateSynopsis = true,
-        synopsisHeading = "Usage:%n",
+        synopsisHeading = "@|bold,underline Usage:|@%n",
         customSynopsis = {"@|bold cats|@ @|fg(yellow) -c|@ <CONTRACT> @|fg(yellow) -s|@ <SERVER> [ADDITIONAL OPTIONS]",
                 "@|bold cats (list | replay | run | fuzz | lint | info | stats | validate | random)|@ [OPTIONS]", "%n"},
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
