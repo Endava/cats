@@ -159,23 +159,9 @@ public class FuzzingDataFactory {
         syntheticSchema.setProperties(new LinkedHashMap<>());
         List<String> required = new ArrayList<>();
 
-        List<Parameter> resolvedParameters = Optional.ofNullable(operationParameters)
-                .orElseGet(Collections::emptyList)
-                .stream()
-                .map(parameter -> {
-                    if (parameter.get$ref() != null) {
-                        Parameter param = (Parameter) globalContext.getObjectFromPathsReference(parameter.get$ref());
-                        if (param == null) {
-                            globalContext.recordError("Parameter definition for %s could not be resolved. It's either missing or is incorrect".formatted(parameter.get$ref()));
-                        }
-                        return param;
-                    }
-                    return parameter;
-                }).toList();
+        List<Parameter> resolvedParameters = this.getResolvedParameters(operationParameters);
+
         for (Parameter parameter : resolvedParameters) {
-            if (parameter == null) {
-                continue;
-            }
             boolean isPathParam = "path".equalsIgnoreCase(parameter.getIn());
             boolean isQueryParam = "query".equalsIgnoreCase(parameter.getIn());
 
@@ -195,6 +181,24 @@ public class FuzzingDataFactory {
         }
         syntheticSchema.setRequired(required);
         return syntheticSchema;
+    }
+
+    private @NotNull List<Parameter> getResolvedParameters(List<Parameter> operationParameters) {
+        return Optional.ofNullable(operationParameters)
+                .orElseGet(Collections::emptyList)
+                .stream()
+                .map(parameter -> {
+                    if (parameter.get$ref() != null) {
+                        Parameter param = (Parameter) globalContext.getObjectFromPathsReference(parameter.get$ref());
+                        if (param == null) {
+                            globalContext.recordError("Parameter definition for %s could not be resolved. It's either missing or is incorrect".formatted(parameter.get$ref()));
+                        }
+                        return param;
+                    }
+                    return parameter;
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private List<FuzzingData> getFuzzDataForPost(String path, PathItem item, Operation operation, OpenAPI openAPI) {

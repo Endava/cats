@@ -551,6 +551,19 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldParseParametersFromPathRoot() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> dataList = setupFuzzingData("/payments", "src/test/resources/sellsy.yaml");
+        Assertions.assertThat(dataList).hasSize(2);
+        Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.GET);
+        String payload = dataList.getFirst().getPayload();
+        boolean isArray = JsonUtils.isArray(payload, "$.embed");
+        Assertions.assertThat(isArray).isTrue();
+    }
+
+    @Test
     void shouldAvoidCyclicDependenciesOnAdditionalPropertiesSecondCase() throws Exception {
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");

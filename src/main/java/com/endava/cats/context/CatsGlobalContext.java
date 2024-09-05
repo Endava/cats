@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
@@ -198,7 +199,7 @@ public class CatsGlobalContext {
      */
     public Object getObjectFromPathsReference(String reference) {
         String jsonPointer = reference.substring(2);
-        String[] parts = jsonPointer.split("/");
+        String[] parts = jsonPointer.split("/", -1);
 
         Object resolvedDefinition = openAPI;
 
@@ -208,6 +209,7 @@ public class CatsGlobalContext {
             resolvedDefinition = switch (resolvedDefinition) {
                 case Map<?, ?> map -> map.get(finalPart);
                 case OpenAPI ignored when finalPart.equals("paths") -> openAPI.getPaths();
+                case PathItem item when finalPart.equalsIgnoreCase("parameters") -> extractParameters(item);
                 case PathItem item ->
                         item.readOperationsMap().get(PathItem.HttpMethod.valueOf(finalPart.toUpperCase(Locale.ROOT)));
                 case Operation operation -> extractFromOperation(finalPart, operation, resolvedDefinition);
@@ -227,6 +229,14 @@ public class CatsGlobalContext {
         }
 
         return resolvedDefinition;
+    }
+
+    private static List<Parameter> extractParameters(PathItem item) {
+        List<Parameter> parameters = item.getParameters();
+        if (parameters == null) {
+            return item.readOperations().getFirst().getParameters();
+        }
+        return parameters;
     }
 
     private Object extractFromApiResponse(String part, ApiResponse apiResponse, Object resolvedDefinition) {
