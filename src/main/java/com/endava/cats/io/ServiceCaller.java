@@ -51,6 +51,7 @@ import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -259,8 +260,9 @@ public class ServiceCaller {
      * @return an url with path params replaced by urlParams or refData + additional query params
      */
     private String constructUrl(ServiceData data, String processedPayload) {
+        String decodedUrl = URLDecoder.decode(apiArguments.getServer() + data.getRelativePath(), StandardCharsets.UTF_8);
         if (!data.isReplaceUrlParams()) {
-            String actualUrl = this.replacePathParams(apiArguments.getServer() + data.getRelativePath(), processedPayload, data);
+            String actualUrl = this.replacePathParams(decodedUrl, processedPayload, data);
             return this.replaceRemovedParams(actualUrl);
         }
 
@@ -276,7 +278,11 @@ public class ServiceCaller {
     }
 
     String addPathParamsIfNotReplaced(String url, String pathParamsPayload) {
+        logger.debug("Using the following path params payload {} for path {}", pathParamsPayload, url);
+
         Set<String> pathVariables = OpenApiUtils.getPathVariables(url);
+        logger.debug("Path variables found in the URL: {}", pathVariables);
+
         for (String pathVariable : pathVariables) {
             String pathValue = String.valueOf(JsonUtils.getVariableFromJson(pathParamsPayload, pathVariable));
             url = url.replace("{" + pathVariable + "}", pathValue);
@@ -291,7 +297,7 @@ public class ServiceCaller {
             httpUrl.addQueryParameter(queryParamEntry.getKey(), String.valueOf(queryParamEntry.getValue()));
         }
 
-        return httpUrl.build().toString();
+        return URLDecoder.decode(httpUrl.build().toString(), StandardCharsets.UTF_8);
     }
 
     String convertPayloadInSpecificContentType(String payload, ServiceData data) {
