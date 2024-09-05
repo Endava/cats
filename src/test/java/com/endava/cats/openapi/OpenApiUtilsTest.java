@@ -258,4 +258,12 @@ class OpenApiUtilsTest {
         Assertions.assertThat(extensions).containsExactly("v3");
     }
 
+    @ParameterizedTest
+    @CsvSource({"/pets/{id},id", "/pets/{id}/status,id", "/pets/{id}/status/{status},id|status"})
+    void shouldGetPathVariables(String path, String variables) {
+        Set<String> pathVariables = OpenApiUtils.getPathVariables(path);
+
+        Assertions.assertThat(pathVariables).containsExactlyInAnyOrder(variables.split("\\|"));
+    }
+
 }
