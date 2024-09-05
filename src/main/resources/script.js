@@ -118,8 +118,11 @@ const linkDark  = document.querySelector('.link-dark');
 
 function enableDarkMode() {
 	body.classList.add('dark-mode');
-	myChart.data.datasets[0].borderColor = '#1A1A1A';
-	myChart.update();
+
+	if (typeof myChart != "undefined") {
+		myChart.data.datasets[0].borderColor = '#1A1A1A';
+		myChart.update();
+	}
 
 	hideElement(logoWhite);
 	hideElement(themeIconDark);
@@ -139,7 +142,7 @@ function enableDarkMode() {
 function enableLightMode() {
 	body.classList.remove('dark-mode');
 
-	if (myChart) {
+	if (typeof myChart != "undefined") {
 		myChart.data.datasets[0].borderColor = '#fff';
 		myChart.update();
 	}
