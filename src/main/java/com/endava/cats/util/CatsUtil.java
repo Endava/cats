@@ -371,4 +371,18 @@ public abstract class CatsUtil {
             }
         };
     }
+
+    /**
+     * Unescapes curly brackets in a given URL.
+     *
+     * @param encodedURL the URL to be unescaped
+     * @return the URL with unescaped curly brackets
+     */
+    public static String unescapeCurlyBrackets(String encodedURL) {
+        if (encodedURL == null) {
+            return null;
+        }
+
+        return encodedURL.replace("%7B", "{").replace("%7D", "}");
+    }
 }

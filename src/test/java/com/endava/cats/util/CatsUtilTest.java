@@ -127,4 +127,16 @@ class CatsUtilTest {
 
         Assertions.assertThat(sorted.getFirst().getKey()).isEqualTo(expectedFirstPath);
     }
+
+    @ParameterizedTest
+    @CsvSource(value = {"http://localhost:8080/tests/%7Btest%7D|http://localhost:8080/tests/{test}",
+            "http://localhost:8080/tests/%7Btest%7D%7Btest2%7D|http://localhost:8080/tests/{test}{test2}",
+            "http://localhost:8080/tests/%7Btest%7D%7Btest2%7D%7Btest3%7D|http://localhost:8080/tests/{test}{test2}{test3}",
+            "http://localhost:8080/tests/%7Btest%7D%7Btest2%7D%7Btest3%7D%7Btest4%7D|http://localhost:8080/tests/{test}{test2}{test3}{test4}",
+            "http://localhost:8080/tests/%7Btest%7D%7Btest2%7D%7Btest3%7D%7Btest4%7D%7Btest5%7D|http://localhost:8080/tests/{test}{test2}{test3}{test4}{test5}",
+            "null|null"}, delimiter = '|', nullValues = "null")
+    void shouldUnescapeCurlyBrackets(String url, String expected) {
+        String result = CatsUtil.unescapeCurlyBrackets(url);
+        Assertions.assertThat(result).isEqualTo(expected);
+    }
 }

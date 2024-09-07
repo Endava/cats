@@ -51,7 +51,6 @@ import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -259,8 +258,8 @@ public class ServiceCaller {
      * @param processedPayload current payload
      * @return an url with path params replaced by urlParams or refData + additional query params
      */
-    private String constructUrl(ServiceData data, String processedPayload) {
-        String decodedUrl = URLDecoder.decode(apiArguments.getServer() + data.getRelativePath(), StandardCharsets.UTF_8);
+    String constructUrl(ServiceData data, String processedPayload) {
+        String decodedUrl = CatsUtil.unescapeCurlyBrackets(apiArguments.getServer() + data.getRelativePath());
         if (!data.isReplaceUrlParams()) {
             String actualUrl = this.replacePathParams(decodedUrl, processedPayload, data);
             return this.replaceRemovedParams(actualUrl);
@@ -272,8 +271,8 @@ public class ServiceCaller {
             url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
             url = this.addUriParams(processedPayload, data, url);
         }
-        url = this.addAdditionalQueryParams(url, data.getRelativePath());
         url = this.addPathParamsIfNotReplaced(url, data.getPathParamsPayload());
+        url = this.addAdditionalQueryParams(url, data.getRelativePath());
         return url;
     }
 
@@ -297,7 +296,7 @@ public class ServiceCaller {
             httpUrl.addQueryParameter(queryParamEntry.getKey(), String.valueOf(queryParamEntry.getValue()));
         }
 
-        return URLDecoder.decode(httpUrl.build().toString(), StandardCharsets.UTF_8);
+        return httpUrl.build().toString();
     }
 
     String convertPayloadInSpecificContentType(String payload, ServiceData data) {

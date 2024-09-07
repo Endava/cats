@@ -383,7 +383,7 @@ class ServiceCallerTest {
         List<KeyValuePair<String, Object>> catsHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).toList();
 
         Assertions.assertThat(catsHeader).hasSize(1);
-        Assertions.assertThat(catsHeader.get(0).getValue()).isEqualTo("  cats");
+        Assertions.assertThat(catsHeader.getFirst().getValue()).isEqualTo("  cats");
     }
 
     @Test
@@ -495,5 +495,27 @@ class ServiceCallerTest {
         String url = "http://localhost:8080/configs/{configId}/tenants/{tenantId}";
         String result = serviceCaller.addPathParamsIfNotReplaced(url, json);
         Assertions.assertThat(result).isEqualTo("http://localhost:8080/configs/123/tenants/abcd");
+    }
+
+    @Test
+    void shouldReplacePathParamsWhenMethodPost() {
+        String json = """
+                {
+                    "configId": "123",
+                    "tenantId": "abcd"
+                }
+                """;
+        String url = "/configs/{configId}/tenants/{tenantId}";
+        ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").pathParamsPayload(json).httpMethod(HttpMethod.POST).build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).endsWith("/configs/123/tenants/abcd");
+    }
+
+    @Test
+    void shouldNotReplacePathParamsWhenNotAvailable() {
+        String url = "/configs/{configId}/tenants/{tenantId}";
+        ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").httpMethod(HttpMethod.POST).build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).endsWith("/configs/NOT_SET/tenants/NOT_SET");
     }
 }
