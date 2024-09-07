@@ -320,7 +320,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(100);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
-                .hasSize(0);
+                .isEmpty();
 
         FuzzingData firstData = dataList.getFirst();
         boolean isActionsArray = JsonUtils.isArray(firstData.getPayload(), "$.subject-profile.claims");

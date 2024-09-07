@@ -77,8 +77,7 @@ class NewFieldsFuzzerTest {
         setup(HttpMethod.POST);
         String element = newFieldsFuzzer.addNewField(data);
 
-        Assertions.assertThat(element).contains(NEW_FIELD);
-        Assertions.assertThat(element).doesNotContain(NEW_FIELD + "random");
+        Assertions.assertThat(element).contains(NEW_FIELD).doesNotContain(NEW_FIELD + "random");
     }
 
     @Test
