@@ -45,16 +45,12 @@ public class NewFieldsFuzzer implements Fuzzer {
 
     @Override
     public void fuzz(FuzzingData data) {
-        if (!JsonUtils.isEmptyPayload(data.getPayload())) {
-            testCaseListener.createAndExecuteTest(logger, this, () -> process(data), data);
-        } else {
-            logger.debug("Skip fuzzer as payload is empty");
-        }
+        testCaseListener.createAndExecuteTest(logger, this, () -> process(data), data);
     }
 
     private void process(FuzzingData data) {
-        JsonElement fuzzedJson = this.addNewField(data);
-        if (JsonUtils.equalAsJson(fuzzedJson.toString(), data.getPayload())) {
+        String fuzzedJson = this.addNewField(data);
+        if (JsonUtils.equalAsJson(fuzzedJson, data.getPayload())) {
             testCaseListener.skipTest(logger, "Could not fuzz the payload");
             return;
         }
@@ -67,13 +63,17 @@ public class NewFieldsFuzzer implements Fuzzer {
         testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", expectedResultCode.asString());
 
         CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzedJson.toString()).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
+                .payload(fuzzedJson).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
                 .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload())
                 .build());
         testCaseListener.reportResult(logger, data, response, expectedResultCode);
     }
 
-    JsonElement addNewField(FuzzingData data) {
+    String addNewField(FuzzingData data) {
+        if (JsonUtils.isEmptyPayload(data.getPayload())) {
+            return "{\"" + NEW_FIELD + "\":\"" + NEW_FIELD + "\"}";
+        }
+
         JsonElement jsonElement = JsonParser.parseString(data.getPayload());
 
         if (jsonElement instanceof JsonObject jsonObject) {
@@ -86,7 +86,7 @@ public class NewFieldsFuzzer implements Fuzzer {
             }
         }
 
-        return jsonElement;
+        return jsonElement.toString();
     }
 
     @Override
