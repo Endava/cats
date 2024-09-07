@@ -11,6 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.generator.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.JsonSet;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -570,7 +571,7 @@ public class FuzzingDataFactory {
     private List<String> addNewCombination(JsonElement jsonElement) {
         Set<String> result = new TreeSet<>();
         Deque<JsonElement> stack = new ArrayDeque<>();
-        Set<String> visited = new HashSet<>();
+        JsonSet visited = new JsonSet();
 
         stack.push(jsonElement);
 
@@ -595,8 +596,13 @@ public class FuzzingDataFactory {
 
                 result.clear();
                 anyOfOrOneOf.forEach((key, value) ->
-                        interimCombinationList.forEach(payload ->
-                                result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()))));
+                        interimCombinationList.forEach(payload -> {
+                            if (payload.contains(ANY_OF) || payload.contains(ONE_OF)) {
+                                result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()));
+                            } else {
+                                result.add(payload);
+                            }
+                        }));
 
                 // Add elements to the stack for further processing
                 result.stream()

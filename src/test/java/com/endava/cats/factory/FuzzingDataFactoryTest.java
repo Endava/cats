@@ -302,7 +302,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(50);
         List<FuzzingData> dataList = setupFuzzingData("/api/v1/studies", "src/test/resources/prolific.yaml");
 
-        Assertions.assertThat(dataList).hasSize(31);
+        Assertions.assertThat(dataList).hasSize(29);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
                 .hasSize(1);
@@ -320,7 +320,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(100);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
-                .hasSize(3);
+                .hasSize(0);
 
         FuzzingData firstData = dataList.getFirst();
         boolean isActionsArray = JsonUtils.isArray(firstData.getPayload(), "$.subject-profile.claims");
@@ -337,10 +337,10 @@ class FuzzingDataFactoryTest {
                 .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
 
         FuzzingData data = dataList.get(4);
-        Object createPermision = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.create[0]");
+        Object createPermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.create[0]");
         Object updatePermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.update[0]");
 
-        Assertions.assertThat(createPermision).asString().isEqualTo("database");
+        Assertions.assertThat(createPermission).asString().isEqualTo("database");
         Assertions.assertThat(updatePermission).asString().isEqualTo("database");
     }
 
@@ -367,7 +367,7 @@ class FuzzingDataFactoryTest {
     void shouldProperlyParseRootAllOfAndOneOfElements() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/payouts", "src/test/resources/token.yml");
 
-        Assertions.assertThat(dataList).hasSize(11);
+        Assertions.assertThat(dataList).hasSize(10);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.getFirst();
