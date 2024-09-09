@@ -141,7 +141,7 @@ class FilesArgumentsTest {
 
     @Test
     void shouldProperlyParseYamlFile() throws Exception {
-        Map<String, Map<String, Object>> yaml = new FilesArguments().parseYaml("src/test/resources/test.yml");
+        Map<String, Map<String, Object>> yaml = FilesArguments.parseYaml("src/test/resources/test.yml");
 
         org.assertj.core.api.Assertions.assertThat(yaml.get("all")).isNotNull();
         org.assertj.core.api.Assertions.assertThat(yaml.get("all").get("Authorization")).isNotNull();
@@ -201,5 +201,21 @@ class FilesArgumentsTest {
         filesArguments.loadURLParams();
         String urlParamValue = filesArguments.getUrlParam("param3");
         org.assertj.core.api.Assertions.assertThat(urlParamValue).isEqualTo("value3");
+    }
+
+    @Test
+    void shouldLoadPathsOrder() throws Exception {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setPathsOrderFile(new File("src/test/resources/paths.order"));
+        filesArguments.loadPathsOrder();
+        org.assertj.core.api.Assertions.assertThat(filesArguments.getPathsOrder()).hasSize(2).containsExactly("/path1", "/path2");
+    }
+
+    @Test
+    void shouldLoadMutators() throws Exception {
+        FilesArguments filesArguments = new FilesArguments();
+        filesArguments.setMutatorsFolder(new File("src/test/resources/mutators"));
+
+        org.assertj.core.api.Assertions.assertThat(filesArguments.getMutatorsFolder()).isDirectory();
     }
 }

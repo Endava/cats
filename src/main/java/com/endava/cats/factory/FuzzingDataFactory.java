@@ -184,7 +184,7 @@ public class FuzzingDataFactory {
         return syntheticSchema;
     }
 
-    private @NotNull List<Parameter> getResolvedParameters(List<Parameter> operationParameters) {
+    List<Parameter> getResolvedParameters(List<Parameter> operationParameters) {
         return Optional.ofNullable(operationParameters)
                 .orElseGet(Collections::emptyList)
                 .stream()
@@ -384,7 +384,7 @@ public class FuzzingDataFactory {
         return new KeyValuePair<>(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
     }
 
-    private Set<String> extractExamples(MediaType mediaType) {
+    Set<String> extractExamples(MediaType mediaType) {
         Set<String> examples = new HashSet<>();
         examples.add(Optional.ofNullable(mediaType.getExample()).orElse("").toString());
         if (mediaType.getExamples() != null) {

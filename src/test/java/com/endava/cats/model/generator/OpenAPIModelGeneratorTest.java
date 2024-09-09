@@ -2,8 +2,8 @@ package com.endava.cats.model.generator;
 
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.JsonUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -16,8 +16,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -102,6 +107,60 @@ class OpenAPIModelGeneratorTest {
         schema.setMaxItems(max);
         int result = OpenAPIModelGenerator.getArrayLength(schema);
         Assertions.assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldFormatDateExample() throws Exception {
+        Schema<Date> schema = new Schema<>();
+        OpenAPIModelGenerator generator = setupPayloadGenerator();
+        schema.setExample(Date.from(Instant.parse("2020-01-02T00:00:00Z")));
+        schema.setType("string");
+        schema.setFormat("date");
+
+        Object formatted = generator.formatExampleIfNeeded(schema);
+
+        Assertions.assertThat(formatted).hasToString("2020-01-02");
+    }
+
+    @Test
+    void shouldRemoveNewLine() throws Exception {
+        Schema<String> schema = new Schema<>();
+        OpenAPIModelGenerator generator = setupPayloadGenerator();
+        schema.setType("string");
+        schema.setExample("This is a string\nwith a new line");
+
+        Object formatted = generator.formatExampleIfNeeded(schema);
+
+        Assertions.assertThat(formatted).hasToString("This is a stringwith a new line");
+    }
+
+    @Test
+    void shouldFormatDateTimeExample() throws Exception {
+        Schema<Date> schema = new Schema<>();
+        OpenAPIModelGenerator generator = setupPayloadGenerator();
+        schema.setExample(OffsetDateTime.of(2020, 1, 2, 0, 0, 0, 0, OffsetDateTime.now(ZoneId.of("UTC")).getOffset()));
+        schema.setType("string");
+        schema.setFormat("date-time");
+
+        Object formatted = generator.formatExampleIfNeeded(schema);
+
+        Assertions.assertThat(formatted).hasToString("2020-01-02T00:00:00Z");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"binary,Y2F0c0lzQ29vbA==", "byte,Y2F0c0lzQ29vbA=="})
+    void shouldFormatBinaryExample(String format, String value) throws Exception {
+        Schema<byte[]> schema = new Schema<>();
+        OpenAPIModelGenerator generator = setupPayloadGenerator();
+        schema.setFormat(format);
+        schema.setType("string");
+        schema.setExample(value.getBytes(StandardCharsets.UTF_8));
+
+        Object formatted = generator.formatExampleIfNeeded(schema);
+
+        Assertions.assertThat(formatted).isInstanceOf(byte[].class);
+        String decoded = new String((byte[]) formatted, StandardCharsets.UTF_8);
+        Assertions.assertThat(decoded).isEqualTo("catsIsCool");
     }
 
     private OpenAPIModelGenerator setupPayloadGenerator() throws IOException {

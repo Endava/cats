@@ -39,11 +39,6 @@ public class StringGenerator {
      */
     public static final String ALPHANUMERIC_PLUS = "[a-zA-Z0-9]+";
 
-    /**
-     * Default alphanumeric pattern.
-     */
-    public static final String ALPHANUMERIC = "[a-zA-Z0-9]";
-
     private static final int MAX_ATTEMPTS_GENERATE = 5;
 
     private static final String ALPHANUMERIC_VALUE = "CatsIsCool";

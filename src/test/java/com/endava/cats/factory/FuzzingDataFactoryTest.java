@@ -10,12 +10,16 @@ import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.headers.Header;
+import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.parser.core.models.ParseOptions;
@@ -725,5 +729,33 @@ class FuzzingDataFactoryTest {
                 "age",
                 "category#id",
                 "residency");
+    }
+
+    @Test
+    void shouldRecordErrorWhenParamRefDoesNotExist() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pet-types", "src/test/resources/petstore.yml");
+        Assertions.assertThat(dataList).hasSize(2);
+
+        Parameter param1 = new Parameter();
+        param1.set$ref("#/components/parameters/param1");
+        Assertions.assertThat(catsGlobalContext.getRecordedErrors()).isEmpty();
+
+        List<Parameter> resolvedParameters = fuzzingDataFactory.getResolvedParameters(List.of(param1));
+        Assertions.assertThat(resolvedParameters).isEmpty();
+        Assertions.assertThat(catsGlobalContext.getRecordedErrors()).hasSize(1);
+    }
+
+    @Test
+    void shouldExtractMultiLevelExamples() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode exampleMapObject = objectMapper.createObjectNode();
+        exampleMapObject.set("WORKER_COMPENSATION_PAYRATE_POST_PATCH", objectMapper.createObjectNode().put("value", "catsIsCool"));
+        catsGlobalContext.getExampleMap().put("JSON_WORKER_EXAMPLES", new Example().value(exampleMapObject));
+        MediaType mediaType = new MediaType();
+        mediaType.setExamples(Map.of("example1", new Example().$ref("#/components/examples/JSON_WORKER_EXAMPLES/value/WORKER_COMPENSATION_PAYRATE_POST_PATCH"), "example2", new Example().value("example2")));
+
+        Set<String> examples = fuzzingDataFactory.extractExamples(mediaType);
+
+        Assertions.assertThat(examples).hasSize(2).containsExactly("example2", "\"catsIsCool\"");
     }
 }

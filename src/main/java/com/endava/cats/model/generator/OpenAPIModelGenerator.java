@@ -172,7 +172,7 @@ public class OpenAPIModelGenerator {
         return currentProperty.startsWith(SYNTH_SCHEMA_NAME);
     }
 
-    private <T> Object formatExampleIfNeeded(Schema<T> property) {
+    <T> Object formatExampleIfNeeded(Schema<T> property) {
         if (CatsModelUtils.isDateSchema(property)) {
             return DATE_FORMATTER.format(LocalDate.ofInstant(((Date) property.getExample()).toInstant(), ZoneId.systemDefault()));
         }

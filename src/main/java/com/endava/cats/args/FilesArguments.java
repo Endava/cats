@@ -81,6 +81,7 @@ public class FilesArguments {
 
     @CommandLine.Option(names = {"--pathsRunOrder"},
             description = "Specifies the order in which the paths will be executed. The paths are on each line. The order is the one in which they will be executed")
+    @Setter
     private File pathsOrderFile;
 
     @CommandLine.Option(names = {"-Q"},
@@ -123,6 +124,7 @@ public class FilesArguments {
     @CommandLine.Option(names = {"--mutators", "-m"},
             description = "A folder containing custom mutators. This argument is taken in consideration only when using the `cats random` command")
     @Getter
+    @Setter
     private File mutatorsFolder;
 
 
