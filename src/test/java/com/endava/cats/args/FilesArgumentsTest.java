@@ -215,6 +215,7 @@ class FilesArgumentsTest {
     void shouldLoadMutators() throws Exception {
         FilesArguments filesArguments = new FilesArguments();
         filesArguments.setMutatorsFolder(new File("src/test/resources/mutators"));
+        filesArguments.loadMutators();
 
         org.assertj.core.api.Assertions.assertThat(filesArguments.getMutatorsFolder()).isDirectory();
     }

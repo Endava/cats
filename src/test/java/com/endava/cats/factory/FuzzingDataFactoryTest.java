@@ -746,7 +746,7 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldExtractMultiLevelExamples() throws Exception {
+    void shouldExtractMultiLevelExamples() {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode exampleMapObject = objectMapper.createObjectNode();
         exampleMapObject.set("WORKER_COMPENSATION_PAYRATE_POST_PATCH", objectMapper.createObjectNode().put("value", "catsIsCool"));
