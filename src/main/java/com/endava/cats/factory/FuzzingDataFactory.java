@@ -956,11 +956,32 @@ public class FuzzingDataFactory {
         if (operation.getParameters() != null) {
             for (Parameter param : operation.getParameters()) {
                 if ("header".equalsIgnoreCase(param.getIn())) {
+                    this.inlineSchemaIfNeeded(param);
                     headers.add(CatsHeader.fromHeaderParameter(param));
                 }
             }
         }
 
         return headers;
+    }
+
+    /**
+     * If the parameter does not have a schema, we need to inline it.
+     *
+     * @param parameter the current parameter
+     */
+    private void inlineSchemaIfNeeded(Parameter parameter) {
+        if (parameter.getSchema() != null || parameter.getContent() == null) {
+            return;
+        }
+
+        Schema<?> schema = parameter.getContent().values().iterator().next().getSchema();
+
+        parameter.setSchema(schema);
+
+        List<String> examples = this.generateSample(schema.get$ref(), new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults()), false);
+
+        schema.setExample(examples.getFirst());
     }
 }

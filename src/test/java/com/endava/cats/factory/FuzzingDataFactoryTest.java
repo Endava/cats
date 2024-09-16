@@ -7,6 +7,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsField;
+import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
@@ -59,7 +60,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.isFilterXxxFromRequestPayloads()).thenReturn(false);
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of(ProcessingArguments.JSON_WILDCARD, "application/x-www-form-urlencoded"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(3);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(4);
     }
 
     @Test
@@ -701,7 +702,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldConsiderSelfReferenceDepthWhenDetectingCyclicDependencies() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(4);
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.getFirst();
@@ -743,6 +744,18 @@ class FuzzingDataFactoryTest {
         List<Parameter> resolvedParameters = fuzzingDataFactory.getResolvedParameters(List.of(param1));
         Assertions.assertThat(resolvedParameters).isEmpty();
         Assertions.assertThat(catsGlobalContext.getRecordedErrors()).hasSize(1);
+    }
+
+    @Test
+    void shouldGenerateHeadersWhenParamsHaveContentType() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore.yml");
+        Assertions.assertThat(dataList).hasSize(3);
+
+        FuzzingData getData = dataList.stream().filter(data -> data.getMethod() == HttpMethod.GET).findFirst().orElseThrow();
+        Assertions.assertThat(getData.getHeaders()).hasSize(1);
+        CatsHeader header = getData.getHeaders().iterator().next();
+        Assertions.assertThat(header.getName()).isEqualTo("x-metadata");
+        Assertions.assertThat(header.getValue()).contains("red", "green", "blue");
     }
 
     @Test

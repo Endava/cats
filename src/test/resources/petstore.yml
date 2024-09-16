@@ -63,6 +63,7 @@ paths:
           schema:
             type: integer
             format: int32
+        - $ref: "#/components/parameters/metadata"
       responses:
         '200':
           description: A paged array of pets
@@ -213,6 +214,16 @@ components:
       value:
         id: 1
         breed: dog-example
+  parameters:
+    metadata:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Color"
+      description: Metadata to attach to the file
+      in: header
+      name: x-metadata
+      required: true
   schemas:
     ResourceUtilizationReport:
       description: Worker metrics exported from workers. This contains resource utilization metrics accumulated from a variety of sources. For more information, see go/df-resource-signals.
