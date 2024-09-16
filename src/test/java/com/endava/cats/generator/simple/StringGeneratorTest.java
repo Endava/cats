@@ -174,4 +174,10 @@ class StringGeneratorTest {
         String generated = StringGenerator.generate("/^.*[a-z]+.*$/i", -1, -1);
         Assertions.assertThat(generated).isNotBlank();
     }
+
+    @Test
+    void shouldGenerate() {
+        String generated = StringGenerator.generate("(^[A-Z][0-9]+$)|(^[ABCDEFGHJKLMNPRSTVWX1-9][5CMBL][ED][0-5][0-9][0-7][0-9][0-9][0-9]$)", -1, -1);
+        Assertions.assertThat(generated).hasSizeGreaterThan(5);
+    }
 }

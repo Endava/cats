@@ -209,7 +209,7 @@ public class StringGenerator {
         if (pattern.startsWith("/") && pattern.endsWith("/i")) {
             pattern = pattern.substring(1, pattern.length() - 2);
         }
-        if (pattern.matches(".\\^.*")) {
+        if (pattern.matches("(?!\\().\\^.*")) {
             pattern = pattern.substring(1);
         }
         if (pattern.endsWith("$/")) {
