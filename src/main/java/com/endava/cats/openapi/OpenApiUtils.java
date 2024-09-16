@@ -25,6 +25,7 @@ import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import io.swagger.v3.parser.util.DeserializationUtils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -109,7 +110,7 @@ public abstract class OpenApiUtils {
             return parserExtension.readLocation(location, null, options);
         } else {
             LOGGER.debug("Load local contract {}", location);
-            return parserExtension.readContents(Files.readString(Paths.get(location)), null, options);
+            return parserExtension.readContents(Files.readString(Paths.get(location), StandardCharsets.UTF_8), null, options);
         }
     }
 

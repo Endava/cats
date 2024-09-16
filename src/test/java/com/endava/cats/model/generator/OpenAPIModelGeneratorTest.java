@@ -148,8 +148,8 @@ class OpenAPIModelGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"binary,Y2F0c0lzQ29vbA==", "byte,Y2F0c0lzQ29vbA=="})
-    void shouldFormatBinaryExample(String format, String value) throws Exception {
+    @CsvSource({"binary,Y2F0c0lzQ29vbA==,catsIsCool", "byte,Y2F0c0lzQ29vbA==,catsIsCool", "binary,<binary string>,<binary string>"})
+    void shouldFormatBinaryExample(String format, String value, String expected) throws Exception {
         Schema<byte[]> schema = new Schema<>();
         OpenAPIModelGenerator generator = setupPayloadGenerator();
         schema.setFormat(format);
@@ -160,7 +160,7 @@ class OpenAPIModelGeneratorTest {
 
         Assertions.assertThat(formatted).isInstanceOf(byte[].class);
         String decoded = new String((byte[]) formatted, StandardCharsets.UTF_8);
-        Assertions.assertThat(decoded).isEqualTo("catsIsCool");
+        Assertions.assertThat(decoded).isEqualTo(expected);
     }
 
     private OpenAPIModelGenerator setupPayloadGenerator() throws IOException {

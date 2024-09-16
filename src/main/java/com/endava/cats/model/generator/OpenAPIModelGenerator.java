@@ -180,7 +180,11 @@ public class OpenAPIModelGenerator {
             return ((OffsetDateTime) property.getExample()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         }
         if (CatsModelUtils.isBinarySchema(property) || CatsModelUtils.isByteArraySchema(property)) {
-            return Base64.getDecoder().decode((byte[]) property.getExample());
+            try {
+                return Base64.getDecoder().decode((byte[]) property.getExample());
+            } catch (IllegalArgumentException e) {
+                return property.getExample();
+            }
         }
         if (String.valueOf(property.getExample()).contains("\n")) {
             return String.valueOf(property.getExample()).replace("\n", "");
@@ -412,7 +416,8 @@ public class OpenAPIModelGenerator {
         String previousPropertyValue = currentProperty;
 
         for (Object propertyName : schema.getProperties().keySet()) {
-            if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
+            if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)
+                    || JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth)) {
                 return;
             }
             if (propertyName == null) {

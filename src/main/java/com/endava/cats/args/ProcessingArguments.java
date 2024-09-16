@@ -50,7 +50,7 @@ public class ProcessingArguments {
 
     @CommandLine.Option(names = {"--selfReferenceDepth", "-L"},
             description = "Max depth for objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private int selfReferenceDepth = 3;
+    private int selfReferenceDepth = 4;
 
     @Setter
     @CommandLine.Option(names = {"--contentType"},
