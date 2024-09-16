@@ -423,7 +423,7 @@ public abstract class JsonUtils {
         interim = emptyBracketMatcher.replaceAll(match -> jsonPathEscape(match.group(0)));
 
         return Arrays.stream(interim.split("\\.", -1))
-                .map(item -> item.matches("^\\$[a-zA-Z_-]+") ? jsonPathEscape(item) : item)
+                .map(item -> item.matches("^[$@][a-zA-Z_-]+") ? jsonPathEscape(item) : item)
                 .collect(Collectors.joining("."));
     }
 
