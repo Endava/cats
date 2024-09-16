@@ -54,8 +54,8 @@ Even more, you can leverage the fact that CATS generates request payloads dynami
 # Tutorials on how to use CATS
 
 This is a list of articles with step-by-step guides on how to use CATS:
-* [Testing the GitHub API with CATS](https://ludovicianul.github.io/2020/10/05/github-api-testing/)
-* [How to write self-healing functional tests with no coding effort](https://ludovicianul.github.io/2020/09/09/cats/)
+* [Testing the GitHub API with CATS](https://ludovicianul.github.io/posts/github-api-testing/)
+* [How to write self-healing functional tests with no coding effort](https://ludovicianul.github.io/posts/self-healing-api-tests/)
 
 # Some bugs found by CATS
 
