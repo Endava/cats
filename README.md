@@ -92,7 +92,7 @@ To get persistent autocomplete, add the above line in `.zshrc` or `.bashrc`, but
 
 You can also check the `cats_autocomplete` source for alternative setup.
 
-There is no native binary for Windows, but you can use the uberjar version. This requires Java 17+ to be installed.
+There is no native binary for Windows, but you can use the uberjar version. This requires Java 21+ to be installed.
 
 You can run it as `java -jar cats.jar`.
 
@@ -100,7 +100,7 @@ Head to the releases page to download the latest version: [https://github.com/En
 
 ## Build from sources
 
-You can build CATS from sources on you local box. You need [Java 17+](https://sdkman.io/jdks). Maven is already bundled.
+You can build CATS from sources on you local box. You need [Java 21+](https://sdkman.io/jdks). Maven is already bundled.
 
 > Before running the first build, please make sure you do a `./mvnw clean`. CATS uses a fork of [OKHttp](https://square.github.io/okhttp/) which will install locally
 under the `4.11.0-CATS` version, so don't worry about overriding the official versions.
