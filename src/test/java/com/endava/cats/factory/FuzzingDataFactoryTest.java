@@ -541,7 +541,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldAvoidCyclicDependenciesOnAdditionalProperties() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(6);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
 
         List<FuzzingData> dataList = setupFuzzingData("/containers", "src/test/resources/petstore.yml");
@@ -551,8 +551,8 @@ class FuzzingDataFactoryTest {
         Object existing = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key");
         Object nonExisting = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key#containers");
 
-        Assertions.assertThat(existing).doesNotHaveToString("{}");
-        Assertions.assertThat(nonExisting).hasToString("{}");
+        Assertions.assertThat(existing).hasToString("{}");
+        Assertions.assertThat(nonExisting).hasToString("NOT_SET");
     }
 
     @Test

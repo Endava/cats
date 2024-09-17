@@ -194,10 +194,16 @@ public class OpenAPIModelGenerator {
 
     private Object resolveProperties(Schema<?> schema) {
         if (schema.getProperties() != null) {
+            String previousPropertyValue = currentProperty;
+
             Map<String, Object> result = new HashMap<>();
             for (Map.Entry<String, Schema> property : schema.getProperties().entrySet()) {
+                currentProperty = StringUtils.isBlank(previousPropertyValue) ? String.valueOf(property.getKey()) : previousPropertyValue + "#" + property.getKey();
                 result.put(property.getKey(), this.resolvePropertyToExample(property.getKey(), property.getValue()));
             }
+
+            currentProperty = previousPropertyValue;
+            schema.setExample(result);
             return result;
         }
         return schema.getExample();
