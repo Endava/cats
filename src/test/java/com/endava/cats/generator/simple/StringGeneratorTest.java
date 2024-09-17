@@ -176,8 +176,21 @@ class StringGeneratorTest {
     }
 
     @Test
-    void shouldGenerate() {
+    void shouldGenerateWhenOrAndFixLength() {
         String generated = StringGenerator.generate("(^[A-Z][0-9]+$)|(^[ABCDEFGHJKLMNPRSTVWX1-9][5CMBL][ED][0-5][0-9][0-7][0-9][0-9][0-9]$)", -1, -1);
         Assertions.assertThat(generated).hasSizeGreaterThan(5);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"[A-Z0-9];false", "[A-Z]+;true", "[A-Z]{3};true", "[A-Z]{3,};true", "[A-Z]{,3};false"}, delimiter = ';')
+    void shouldTestInlineLength(String pattern, boolean expected) {
+        boolean actual = StringGenerator.hasLength(pattern);
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldGenerateWhenPatternDoesNotHaveLengthButHasMinOrMax() {
+        String generated = StringGenerator.generate("[A-Z]", 4, 4);
+        Assertions.assertThat(generated).hasSize(4);
     }
 }

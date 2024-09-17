@@ -45,6 +45,10 @@ public class StringGenerator {
 
     private static final String EMPTY_PATTERN = "(\\(\\^\\$\\)\\|)|(\\^\\$\\)\\|)|(\\(\\^\\$\\|\\))|(\\(\\|\\^\\$\\))|(\\(\\^\\$\\))";
 
+    private static final Pattern HAS_LENGTH_PATTERN = Pattern.compile("(\\*|\\+|\\?|\\{\\d+(,\\d*)?\\})");
+
+    private static final Pattern LENGTH_INLINE_PATTERN = Pattern.compile("(\\^)?(\\[[^]]*]\\{\\d+}|\\(\\[[^]]*]\\{\\d+}\\)\\?)*(\\$)?");
+
     /**
      * Represents an empty string.
      */
@@ -88,6 +92,8 @@ public class StringGenerator {
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(StringGenerator.class);
     public static final String CASE_INSENSITIVE = "(?i)";
+    public static final int DEFAULT_MAX_WHEN_NOT_PRESENT = 256;
+    public static final int DEFAULT_MIN_WHEN_NOT_PRESENT = 1;
 
     private StringGenerator() {
         //ntd
@@ -317,10 +323,15 @@ public class StringGenerator {
     }
 
     private static boolean hasLengthInline(String pattern) {
-        Pattern groupPattern = Pattern.compile("(\\^)?(\\[[^]]*]\\{\\d+}|\\(\\[[^]]*]\\{\\d+}\\)\\?)*(\\$)?");
-        Matcher groupMatcher = groupPattern.matcher(pattern);
+        Matcher groupMatcher = LENGTH_INLINE_PATTERN.matcher(pattern);
 
         return groupMatcher.matches();
+    }
+
+    static boolean hasLength(String pattern) {
+        Matcher groupMatcher = HAS_LENGTH_PATTERN.matcher(pattern);
+
+        return groupMatcher.find();
     }
 
     private static String composeString(String initial, int min, int max) {
@@ -377,7 +388,7 @@ public class StringGenerator {
     public static String generateLeftBoundString(Schema<?> schema) {
         if (schema.getEnum() != null) {
             String value = String.valueOf(schema.getEnum().getFirst());
-            return RandomStringUtils.secure().nextAlphanumeric(Math.max(1, value.length()));
+            return RandomStringUtils.secure().nextAlphanumeric(Math.max(DEFAULT_MIN_WHEN_NOT_PRESENT, value.length()));
         }
 
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
@@ -425,8 +436,8 @@ public class StringGenerator {
         if (!CollectionUtils.isEmpty(property.getEnum())) {
             return String.valueOf(property.getEnum().getFirst());
         }
-        int minLength = property.getMinLength() != null ? property.getMinLength() : 1;
-        int maxLength = property.getMaxLength() != null ? property.getMaxLength() : 50;
+        int minLength = property.getMinLength() != null ? property.getMinLength() : DEFAULT_MIN_WHEN_NOT_PRESENT;
+        int maxLength = property.getMaxLength() != null ? property.getMaxLength() : DEFAULT_MAX_WHEN_NOT_PRESENT;
         String pattern = StringUtils.isNotBlank(property.getPattern()) ? property.getPattern() : StringGenerator.ALPHANUMERIC_PLUS;
         if (maxLength < minLength) {
             maxLength = minLength;
@@ -478,5 +489,22 @@ public class StringGenerator {
      * @param max     the maximum length
      */
     public record GeneratorParams(String pattern, int min, int max) {
+        /**
+         * Instantiates a new Generator params.
+         *
+         * @param pattern the pattern
+         * @param min     the min
+         * @param max     the max
+         */
+        public GeneratorParams(String pattern, int min, int max) {
+            this.min = min;
+            this.max = max;
+
+            if (!hasLength(pattern) && (min > 0 || max > 0)) {
+                this.pattern = pattern + "{" + min + "," + max + "}";
+            } else {
+                this.pattern = pattern;
+            }
+        }
     }
 }
