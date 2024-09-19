@@ -23,6 +23,13 @@ class PasswordGeneratorTest {
         Assertions.assertThat(passwordGenerator.appliesTo(format, "")).isEqualTo(expected);
     }
 
+    @ParameterizedTest
+    @CsvSource({"password,true", "other,false"})
+    void shouldApplyToPropertyName(String property, boolean expected) {
+        PasswordGenerator passwordGenerator = new PasswordGenerator();
+        Assertions.assertThat(passwordGenerator.appliesTo("", property)).isEqualTo(expected);
+    }
+
     @Test
     void givenAPasswordFormatGeneratorStrategy_whenGettingTheAlmostValidValue_thenTheValueIsReturnedAsExpected() {
         PasswordGenerator strategy = new PasswordGenerator();

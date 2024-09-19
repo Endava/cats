@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * A generator class implementing interfaces for generating valid and invalid password data formats.
@@ -21,7 +22,7 @@ public class PasswordGenerator implements ValidDataFormatGenerator, InvalidDataF
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return "password".equalsIgnoreCase(format);
+        return "password".equalsIgnoreCase(format) || propertyName.toLowerCase(Locale.ROOT).endsWith("password");
     }
 
     @Override

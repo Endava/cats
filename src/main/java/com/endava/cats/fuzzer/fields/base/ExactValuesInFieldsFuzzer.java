@@ -93,7 +93,8 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         int fromSchemaLengthAdjusted = (fromSchemaLength.intValue() > Integer.MAX_VALUE / 100 - adjustedLength) ? Integer.MAX_VALUE / 100 : fromSchemaLength.intValue();
         int generatedStringLength = fromSchemaLengthAdjusted + adjustedLength;
 
-        String generated = StringGenerator.generateExactLength(pattern, generatedStringLength);
+        String generated = StringGenerator.generateExactLength(schema, pattern, generatedStringLength);
+
         if (CatsModelUtils.isByteArraySchema(schema)) {
             return Base64.getEncoder().encodeToString(generated.getBytes(StandardCharsets.UTF_8));
         }

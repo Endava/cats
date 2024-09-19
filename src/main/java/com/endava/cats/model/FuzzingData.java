@@ -1,8 +1,8 @@
 package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -163,6 +163,8 @@ public class FuzzingData {
 
         return catsFields.stream()
                 .filter(catsField -> this.getRequestPropertyTypes().get(catsField.getName()) != null)
+                //this is a bit of a hack that might be abused in the future to include a full object as extension. currently it only holds the field name
+                .peek(catsField -> catsField.getSchema().addExtension(CatsModelUtils.X_CATS_FIELD_NAME, catsField.getName()))
                 .collect(Collectors.toSet());
     }
 

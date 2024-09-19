@@ -1,5 +1,6 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.github.curiousoddman.rgxgen.RgxGen;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -14,11 +15,18 @@ import org.cornutum.regexpgen.random.RandomBoundsGen;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static com.endava.cats.util.CatsModelUtils.isEmail;
+import static com.endava.cats.util.CatsModelUtils.isPassword;
+import static com.endava.cats.util.CatsModelUtils.isUri;
 
 /**
  * Generates strings based on different criteria.
@@ -48,6 +56,11 @@ public class StringGenerator {
     private static final Pattern HAS_LENGTH_PATTERN = Pattern.compile("(\\*|\\+|\\?|\\{\\d+(,\\d*)?\\})");
 
     private static final Pattern LENGTH_INLINE_PATTERN = Pattern.compile("(\\^)?(\\[[^]]*]\\{\\d+}|\\(\\[[^]]*]\\{\\d+}\\)\\?)*(\\$)?");
+
+    private static final String ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final String[] DOMAINS = {"example", "cats", "google", "yahoo"};
+    private static final String[] TLDS = {".com", ".net", ".org", ".io"};
+    private static final String[] URI_SCHEMES = {"http", "https", "ftp", "file"};
 
     /**
      * Represents an empty string.
@@ -127,12 +140,17 @@ public class StringGenerator {
      * @param length the desired length
      * @return a generated value of exact length provided
      */
-    public static String generateExactLength(String regex, int length) {
+    public static String generateExactLength(Schema<?> schema, String regex, int length) {
         if (length <= 0) {
             return EMPTY;
         }
 
-        StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(cleanPattern(regex), length, length)));
+        String stringFromComplexRegex = generateComplexRegex(schema, length);
+        if (stringFromComplexRegex != null) {
+            return stringFromComplexRegex;
+        }
+
+        StringBuilder initialValue = new StringBuilder(StringGenerator.sanitize(generate(regex, length, length)));
 
         if (initialValue.isEmpty()) {
             return EMPTY;
@@ -162,9 +180,10 @@ public class StringGenerator {
      */
     public static String generate(String pattern, int min, int max) {
         LOGGER.debug("Generate for pattern {} min {} max {}", pattern, min, max);
-        pattern = cleanPattern(pattern);
+        String cleanedPattern = cleanPattern(pattern);
+        String flattenedPattern = RegexFlattener.flattenRegex(cleanedPattern);
 
-        GeneratorParams generatorParams = new GeneratorParams(pattern, min, max);
+        GeneratorParams generatorParams = new GeneratorParams(flattenedPattern, min, max, cleanedPattern);
 
         String generatedWithRgxGenerator = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, generatorParams);
         if (generatedWithRgxGenerator != null) {
@@ -187,8 +206,8 @@ public class StringGenerator {
     public static String callGenerateTwice(Function<GeneratorParams, String> generator, GeneratorParams generatorParams) {
         try {
             String initialVersion = generator.apply(generatorParams);
-            if (initialVersion.matches(generatorParams.pattern)) {
-                LOGGER.debug("Generated value " + initialVersion + " matched " + generatorParams.pattern);
+            if (initialVersion.matches(generatorParams.originalPattern())) {
+                LOGGER.debug("Generated value " + initialVersion + " matched " + generatorParams.originalPattern());
                 return initialVersion;
             }
         } catch (Exception e) {
@@ -196,9 +215,9 @@ public class StringGenerator {
         }
 
         try {
-            String secondVersion = generator.apply(new GeneratorParams(removeLookaheadAssertions(generatorParams.pattern), generatorParams.min, generatorParams.max));
-            if (secondVersion.matches(generatorParams.pattern)) {
-                LOGGER.debug("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.pattern);
+            String secondVersion = generator.apply(new GeneratorParams(removeLookaheadAssertions(generatorParams.cleanedPattern()), generatorParams.min, generatorParams.max, generatorParams.originalPattern()));
+            if (secondVersion.matches(generatorParams.originalPattern())) {
+                LOGGER.debug("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.originalPattern());
                 return secondVersion;
             }
         } catch (Exception e) {
@@ -236,7 +255,8 @@ public class StringGenerator {
     }
 
     private static String generateUsingRegexpGen(GeneratorParams generatorParams) {
-        String pattern = generatorParams.pattern;
+        String pattern = generatorParams.cleanedPattern();
+        String originalPattern = generatorParams.originalPattern();
         int min = generatorParams.min;
         int max = generatorParams.max;
 
@@ -248,7 +268,7 @@ public class StringGenerator {
             }
             String generated = generator.generate(REGEXP_RANDOM_GEN, min, max);
 
-            if (generated.matches(pattern)) {
+            if (generated.matches(originalPattern)) {
                 LOGGER.debug("Generated using REGEXP {} matches {}", generated, pattern);
                 return generated;
             }
@@ -259,7 +279,8 @@ public class StringGenerator {
     }
 
     private static String generateUsingCatsRegexGenerator(GeneratorParams generatorParams) {
-        String pattern = generatorParams.pattern;
+        String pattern = generatorParams.cleanedPattern();
+        String originalPattern = generatorParams.originalPattern();
         int min = generatorParams.min;
         int max = generatorParams.max;
 
@@ -267,13 +288,13 @@ public class StringGenerator {
             Pattern compiledPattern = Pattern.compile(pattern);
             String secondVersionBase = RegexGenerator.generate(compiledPattern, EMPTY, min, max);
 
-            if (secondVersionBase.matches(pattern)) {
+            if (secondVersionBase.matches(originalPattern)) {
                 LOGGER.debug("Generated using CATS generator {} and matches {}", secondVersionBase, pattern);
                 return secondVersionBase;
             }
             String generatedString = composeString(secondVersionBase, min, max);
 
-            if (generatedString.matches(pattern)) {
+            if (generatedString.matches(originalPattern)) {
                 LOGGER.debug("Generated using CATS generator {} and matches {}", generatedString, pattern);
                 return generatedString;
             }
@@ -284,19 +305,20 @@ public class StringGenerator {
     private static String generateUsingRgxGenerator(GeneratorParams generatorParams) {
         int attempts = 0;
         String generatedValue;
-        String pattern = generatorParams.pattern;
+        String pattern = generatorParams.cleanedPattern();
+        String originalPattern = generatorParams.originalPattern();
         int min = generatorParams.min;
         int max = generatorParams.max;
 
         try {
             do {
                 generatedValue = new RgxGen(pattern).generate();
-                if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(pattern)) {
+                if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(originalPattern)) {
                     return generatedValue;
                 }
                 generatedValue = composeString(generatedValue, min, max);
                 attempts++;
-            } while (attempts < MAX_ATTEMPTS_GENERATE && !generatedValue.matches(pattern));
+            } while (attempts < MAX_ATTEMPTS_GENERATE && !generatedValue.matches(originalPattern));
         } catch (Exception e) {
             LOGGER.debug("RGX generator failed, returning empty.", e);
             return ALPHANUMERIC_VALUE;
@@ -443,6 +465,11 @@ public class StringGenerator {
             maxLength = minLength;
         }
 
+        String complexRegexGenerated = generateComplexRegex(property, Math.max(1, maxLength));
+        if (complexRegexGenerated != null) {
+            return complexRegexGenerated;
+        }
+
         return StringGenerator.generate(pattern, minLength, maxLength);
     }
 
@@ -481,30 +508,103 @@ public class StringGenerator {
         return regex;
     }
 
+    public static String generateFixedLengthEmail(int length) {
+        String domain = DOMAINS[CatsUtil.random().nextInt(DOMAINS.length)];
+        String tld = TLDS[CatsUtil.random().nextInt(TLDS.length)];
+
+        int localPartLength = length - domain.length() - tld.length() - 1; // -1 for '@'
+
+        StringBuilder localPart = new StringBuilder();
+        for (int i = 0; i < localPartLength; i++) {
+            localPart.append(ALPHANUMERIC.charAt(CatsUtil.random().nextInt(ALPHANUMERIC.length())));
+        }
+
+        return localPart + "@" + domain + tld;
+    }
+
+    public static String generateFixedLengthUri(int length) {
+        String scheme = URI_SCHEMES[CatsUtil.random().nextInt(URI_SCHEMES.length)];
+
+        String domain = DOMAINS[CatsUtil.random().nextInt(DOMAINS.length)];
+        String tld = TLDS[CatsUtil.random().nextInt(TLDS.length)];
+
+        String fixedPart = scheme + "://" + domain + tld;
+
+        int pathLength = length - fixedPart.length();
+        if (pathLength <= 0) {
+            return fixedPart.substring(0, length);
+        }
+
+        StringBuilder path = new StringBuilder();
+        path.append("/");
+        for (int i = 0; i < pathLength - 1; i++) {
+            path.append(ALPHANUMERIC.charAt(CatsUtil.random().nextInt(ALPHANUMERIC.length())));
+        }
+
+        return fixedPart + path;
+    }
+
+    /**
+     * There are complex regexes which will fail to generate a string of a given length, especially for a fixed and large length.
+     * This is particularly true for email addresses and URIs where patterns can be quite complex.
+     * Sometimes, for large generated strings, the match of the generated string against the given regex will fail with StackOverflowError.
+     * <p>
+     * This method tries to generate a string of a given length for such complex regexes. It only supports URIs and emails for now.
+     *
+     * @param schema the schema
+     * @param length the length
+     * @return a string of given length matching patterns schema
+     */
+    private static String generateComplexRegex(Schema<?> schema, int length) {
+        if (StringUtils.isBlank(schema.getPattern())) {
+            return null;
+        }
+
+        String lowerField = Optional.ofNullable(schema.getExtensions()).orElse(Collections.emptyMap()).getOrDefault(CatsModelUtils.X_CATS_FIELD_NAME, "").toString().toLowerCase(Locale.ROOT);
+        String pattern = schema.getPattern();
+
+        if (isUri(pattern, lowerField)) {
+            return generateFixedLengthUri(length);
+        }
+        if (isEmail(pattern, lowerField)) {
+            return generateFixedLengthEmail(length);
+        }
+        if (isPassword(pattern, lowerField)) {
+            return "catsISC00l#" + RandomStringUtils.secure().nextPrint(length - 11);
+        }
+
+        return null;
+    }
+
     /**
      * A record that holds the parameters for the string generator.
      *
-     * @param pattern the pattern to check
-     * @param min     the minimum length
-     * @param max     the maximum length
+     * @param cleanedPattern  the pattern to check
+     * @param min             the minimum length
+     * @param max             the maximum length
+     * @param originalPattern the original pattern
      */
-    public record GeneratorParams(String pattern, int min, int max) {
+    public record GeneratorParams(String cleanedPattern, int min, int max, String originalPattern) {
         /**
          * Instantiates a new Generator params.
          *
-         * @param pattern the pattern
-         * @param min     the min
-         * @param max     the max
+         * @param cleanedPattern  the pattern
+         * @param min             the min
+         * @param max             the max
+         * @param originalPattern the original pattern
          */
-        public GeneratorParams(String pattern, int min, int max) {
+        public GeneratorParams(String cleanedPattern, int min, int max, String originalPattern) {
             this.min = min;
             this.max = max;
+            this.originalPattern = inlineLengthIfNeeded(originalPattern, min, max);
+            this.cleanedPattern = inlineLengthIfNeeded(cleanedPattern, min, max);
+        }
 
+        private String inlineLengthIfNeeded(String pattern, int min, int max) {
             if (!hasLength(pattern) && (min > 0 || max > 0)) {
-                this.pattern = pattern + "{" + min + "," + max + "}";
-            } else {
-                this.pattern = pattern;
+                return pattern + "{" + min + "," + max + "}";
             }
+            return pattern;
         }
     }
 }

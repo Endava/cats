@@ -5,9 +5,13 @@ import io.swagger.v3.oas.models.media.MapSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.openapitools.codegen.utils.ModelUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -15,6 +19,7 @@ import java.util.stream.Stream;
  * some particular conditions needed by CATS.
  */
 public abstract class CatsModelUtils {
+    public static final String X_CATS_FIELD_NAME = "x-cats-field-name";
 
     private CatsModelUtils() {
         //ntd
@@ -141,5 +146,55 @@ public abstract class CatsModelUtils {
                     }
                 })
                 .orElse("");
+    }
+
+    /**
+     * Checks if the field name contains a complex regex. For now, this is used to determine if the field is an email or a URI.
+     * This is of course not 100% accurate, but it's a good start.
+     *
+     * @param schema the schema to be checked
+     * @return true if the field name contains a complex regex, false otherwise
+     */
+    public static boolean isComplexRegex(Schema<?> schema) {
+        if (StringUtils.isBlank(schema.getPattern())) {
+            return false;
+        }
+
+        String lowerField = Optional.ofNullable(schema.getExtensions()).orElse(Collections.emptyMap()).getOrDefault(X_CATS_FIELD_NAME, "").toString().toLowerCase(Locale.ROOT);
+        String pattern = schema.getPattern();
+        return isEmail(pattern, lowerField) || isUri(pattern, lowerField) || isPassword(pattern, lowerField);
+    }
+
+    /**
+     * Checks if the given combination or pattern and field name is a URI.
+     *
+     * @param pattern    the pattern of the field
+     * @param lowerField the name of the field
+     * @return true if the field name contains a complex regex, false otherwise
+     */
+    public static boolean isUri(String pattern, String lowerField) {
+        return (lowerField.contains("url") || lowerField.contains("uri")) && ("http://www.test.com".matches(pattern) || "https://www.test.com".matches(pattern));
+    }
+
+    /**
+     * Checks if the given combination or pattern and field name is an email.
+     *
+     * @param pattern    the pattern of the field
+     * @param lowerField the name of the field
+     * @return true if the field name contains a complex regex, false otherwise
+     */
+    public static boolean isEmail(String pattern, String lowerField) {
+        return lowerField.contains("email") && "test@test.com".matches(pattern);
+    }
+
+    /**
+     * Checks if the given combination or pattern and field name is a password.
+     *
+     * @param pattern    the pattern of the field
+     * @param lowerField the name of the field
+     * @return true if the field name contains a complex regex, false otherwise
+     */
+    public static boolean isPassword(String pattern, String lowerField) {
+        return lowerField.contains("password") && "catsISc00l?!useIt#".matches(pattern);
     }
 }

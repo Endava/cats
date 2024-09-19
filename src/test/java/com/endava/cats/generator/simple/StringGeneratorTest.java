@@ -1,5 +1,6 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.util.CatsModelUtils;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -114,7 +115,7 @@ class StringGeneratorTest {
     @ParameterizedTest
     @CsvSource(value = {"^\\+?[1-9]\\d{6,15}$;16", "[A-Z]+;20", "[A-Z0-9]{13,18};18", "[0-9]+;10", "^(?=[^\\s])(?=.*[^\\s]$)(?=^(?:(?!<|>|%3e|%3c).)*$).*$;2048", "M|F;1"}, delimiterString = ";")
     void shouldGenerateFixedLength(String pattern, int length) {
-        String fixedLengthGenerated = StringGenerator.generateExactLength(pattern, length);
+        String fixedLengthGenerated = StringGenerator.generateExactLength(new Schema<String>(), pattern, length);
 
         Assertions.assertThat(fixedLengthGenerated).hasSize(length).matches(pattern);
     }
@@ -148,7 +149,7 @@ class StringGeneratorTest {
 
     @Test
     void shouldGenerateEmptyWhenLengthZero() {
-        String generated = StringGenerator.generateExactLength("^[A-Z]{3}$", 0);
+        String generated = StringGenerator.generateExactLength(new Schema<String>(), "^[A-Z]{3}$", 0);
         Assertions.assertThat(generated).isEmpty();
     }
 
@@ -192,5 +193,43 @@ class StringGeneratorTest {
     void shouldGenerateWhenPatternDoesNotHaveLengthButHasMinOrMax() {
         String generated = StringGenerator.generate("[A-Z]", 4, 4);
         Assertions.assertThat(generated).hasSize(4);
+    }
+
+    @Test
+    void shouldGenerateComplexEmailRegex() {
+        String regex = "^((([a-z]|\\d|[!#\\$%&'\\\\+\\-\\/=\\?\\^_`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+(\\.([a-z]|\\d|[!#\\$%&'\\\\+\\-\\/=\\?\\^`{\\|}~]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+))|((\\x22)((((\\x20|\\x09)(\\x0d\\x0a))?(\\x20|\\x09)+)?(([\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f]|\\x21|[\\x23-\\x5b]|[\\x5d-\\x7e]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(\\\\([\\x01-\\x09\\x0b\\x0c\\x0d-\\x7f]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF]))))(((\\x20|\\x09)(\\x0d\\x0a))?(\\x20|\\x09)+)?(\\x22)))@((([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])|(([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])([a-z]|\\d|-|||~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])*([a-z]|\\d|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))\\.)+(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+|(([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])+([a-z]+|\\d|-|\\.{0,1}|_|~|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])?([a-z]|[\\u00A0-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF])))$";
+        String generated = StringGenerator.generate(regex, 1, 6000);
+        Assertions.assertThat(generated).hasSizeBetween(1, 6000);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+            "[a-zA-Z0-9_]+@[a-zA-Z0-9_]+\\.[a-zA-Z]{2,4};\\w+@\\w+\\.[a-zA-Z]{2,4}",
+            "ab{1,}c{1}d{0,1};ab+c{1}d?"},
+            delimiter = ';')
+    void shouldFlatten(String regex, String expected) {
+        String flattened = RegexFlattener.flattenRegex(regex);
+        Assertions.assertThat(flattened).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldGenerateEmail() {
+        Schema<String> schema = new Schema<>();
+        schema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "email");
+        schema.setPattern("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+        String generated = StringGenerator.generateExactLength(schema, "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", 200);
+
+        Assertions.assertThat(generated).hasSize(200);
+    }
+
+    @Test
+    void shouldGenerateEmailBasedOnMixMax() {
+        Schema<String> schema = new Schema<>();
+        schema.setPattern("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}");
+        schema.setMaxLength(100);
+        schema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, "email");
+        String generated = StringGenerator.generateValueBasedOnMinMax(schema);
+
+        Assertions.assertThat(generated).hasSize(100);
     }
 }
