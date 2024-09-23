@@ -56,6 +56,7 @@ public class StringGenerator {
     private static final Pattern HAS_LENGTH_PATTERN = Pattern.compile("(\\*|\\+|\\?|\\{\\d+(,\\d*)?\\})");
 
     private static final Pattern LENGTH_INLINE_PATTERN = Pattern.compile("(\\^)?(\\[[^]]*]\\{\\d+}|\\(\\[[^]]*]\\{\\d+}\\)\\?)*(\\$)?");
+    private static final List<String> WILD_CARDS = List.of(".^");
 
     private static final String ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final String[] DOMAINS = {"example", "cats", "google", "yahoo"};
@@ -229,6 +230,9 @@ public class StringGenerator {
 
     public static String cleanPattern(String pattern) {
         if (StringUtils.isBlank(pattern)) {
+            return ALPHANUMERIC_PLUS;
+        }
+        if (WILD_CARDS.contains(pattern)) {
             return ALPHANUMERIC_PLUS;
         }
         if (pattern.startsWith("/") && pattern.endsWith("/i")) {
