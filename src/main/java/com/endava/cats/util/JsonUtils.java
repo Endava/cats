@@ -77,12 +77,22 @@ public abstract class JsonUtils {
     private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9_*]*[a-zA-Z][a-zA-Z0-9_*]*)])+\\w*");
     private static final Pattern EMPTY_SQUARE_BRACKETS = Pattern.compile("\\w+\\[]\\w*");
 
+
     /**
-     * To not be used to serialize data ending in console of files. Use the TestCaseExporter serializer for that.
+     * To not be used to serialize data ending in console or files. Use the TestCaseExporter serializer for that.
      */
     public static final Gson GSON = new GsonBuilder()
             .setStrictness(Strictness.LENIENT)
             .setPrettyPrinting()
+            .disableHtmlEscaping()
+            .setExclusionStrategies(new ExcludeTestCaseStrategy())
+            .registerTypeAdapter(Long.class, new LongTypeSerializer())
+            .registerTypeAdapter(OffsetDateTime.class, new OffsetDatetimeTypeAdapter())
+            .serializeNulls()
+            .create();
+
+    public static final Gson GSON_NO_PRETTY_PRINTING = new GsonBuilder()
+            .setStrictness(Strictness.LENIENT)
             .disableHtmlEscaping()
             .setExclusionStrategies(new ExcludeTestCaseStrategy())
             .registerTypeAdapter(Long.class, new LongTypeSerializer())
