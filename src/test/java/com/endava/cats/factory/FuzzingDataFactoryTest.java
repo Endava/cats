@@ -141,7 +141,7 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldGenerateArraySchemaBasedOnMixItemsAndMaxItems() throws Exception {
+    void shouldGenerateArraySchemaBasedOnMinItemsAndMaxItems() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/api/some-endpoint", "src/test/resources/issue66_2.yml");
         Assertions.assertThat(data).hasSize(2);
         String firstPayload = data.get(1).getPayload();
@@ -149,7 +149,7 @@ class FuzzingDataFactoryTest {
         int secondArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1[0].length()").toString());
         int thirdArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1[0][0].length()").toString());
 
-        Assertions.assertThat(firstArraySize).isEqualTo(1);
+        Assertions.assertThat(firstArraySize).isEqualTo(2);
         Assertions.assertThat(secondArraySize).isEqualTo(4);
         Assertions.assertThat(thirdArraySize).isEqualTo(2);
     }
@@ -395,6 +395,16 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldGenerateRequestWhenContentTypeFormUrlEncoded() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pet/url-encoded/{hook_id}", "src/test/resources/petstore.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData firstData = dataList.getFirst();
+        Assertions.assertThat(firstData.getPayload()).contains("code", "message");
+    }
+
+
+    @Test
     void shouldGeneratePayloadsWithCrossPathsReferences() throws Exception {
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
 
@@ -486,6 +496,28 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.POST);
         String response204 = firstData.getResponses().get("204").getFirst();
         Assertions.assertThat(response204).isEqualTo("null");
+    }
+
+    @Test
+    void shouldGenerateRequestWhenArrayOfArrayOfString() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> dataList = setupFuzzingData("/mimic/agent/{agentNum}/value/mset", "src/test/resources/petstore.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData firstData = dataList.getFirst();
+        boolean isArray = JsonUtils.isJsonArray(firstData.getPayload());
+        Assertions.assertThat(isArray).isTrue();
+        int firstArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstData.getPayload(), "$.length()").toString());
+        int innerArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstData.getPayload(), "$[0].length()").toString());
+        Object thirdLevelArraySize = JsonUtils.getVariableFromJson(firstData.getPayload(), "$[0][0]");
+        Object doesNotHaveLength = JsonUtils.getVariableFromJson(firstData.getPayload(), "$[0][0].length()");
+
+        Assertions.assertThat(firstArraySize).isEqualTo(2);
+        Assertions.assertThat(innerArraySize).isEqualTo(2);
+        Assertions.assertThat(thirdLevelArraySize).isNotNull();
+        Assertions.assertThat(doesNotHaveLength).isNull();
     }
 
     @Test
@@ -702,7 +734,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldConsiderSelfReferenceDepthWhenDetectingCyclicDependencies() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(4);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(6);
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.getFirst();

@@ -5,7 +5,12 @@ import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.DepthLimitingSerializer;
 import com.endava.cats.util.JsonUtils;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -15,6 +20,8 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -62,6 +69,8 @@ public class OpenAPIModelGenerator {
     private final Map<String, String> schemaRefMap;
     private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
+    private final int arraySize;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     /**
      * Constructs an OpenAPIModelGenerator with the specified configuration.
@@ -71,7 +80,7 @@ public class OpenAPIModelGenerator {
      * @param useExamplesArgument Flag indicating whether to use examples from the OpenAPI specification.
      * @param selfReferenceDepth  The maximum depth for generating self-referencing models.
      */
-    public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth, boolean useDefaults) {
+    public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int arraySize) {
         this.globalContext = catsGlobalContext;
         this.random = CatsUtil.random();
         this.useExamples = useExamplesArgument;
@@ -80,6 +89,11 @@ public class OpenAPIModelGenerator {
         this.schemaRefMap = new LinkedHashMap<>();
         this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
+        this.arraySize = arraySize;
+        SimpleModule module = new SimpleModule();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);  // Exclude null values
+        module.addSerializer(Object.class, new DepthLimitingSerializer());
+        mapper.registerModule(module);
     }
 
 
@@ -96,7 +110,13 @@ public class OpenAPIModelGenerator {
         if (modelName != null) {
             final Schema schema = this.globalContext.getSchemaFromReference(modelName);
             if (schema != null) {
-                String example = Json.pretty(this.resolveModelToExample(modelName, schema));
+                Object exampleObject = this.resolveModelToExample(modelName, schema);
+                String example = tryToSerializeExample(exampleObject);
+
+                if (example == null) {
+                    example = writeObjectAsString(exampleObject);
+                    globalContext.recordError("Generate sample it's too large to be processed in memory. CATS used a limiting depth serializer which might not include all expected fields. Re-run CATS with a smaller --selfReferenceDepth value, like --selfReferenceDepth 2");
+                }
 
                 if (example != null) {
                     kv.put(EXAMPLE, example);
@@ -107,6 +127,27 @@ public class OpenAPIModelGenerator {
         schemaRefMap.clear();
         currentProperty = "";
         return Collections.emptyMap();
+    }
+
+    private String writeObjectAsString(Object exampleObject) {
+        try {
+            StringWriter stringWriter = new StringWriter();
+            JsonGenerator jsonGenerator = mapper.getFactory().createGenerator(stringWriter);
+            mapper.writeValue(jsonGenerator, exampleObject);
+            return stringWriter.toString();
+        } catch (IOException e) {
+            logger.debug("Error writing large object as string: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public String tryToSerializeExample(Object obj) {
+        try {
+            return Json.pretty().writeValueAsString(obj);
+        } catch (Exception e) {
+            logger.debug("Generated object is too large. Switching to custom depth aware serializer...");
+            return null;
+        }
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
@@ -124,7 +165,7 @@ public class OpenAPIModelGenerator {
 
         if (generatedValueFromFormat != null) {
             return generatedValueFromFormat;
-        } else if (propertySchema.getExample() != null && canUseExamples(propertySchema)) {
+        } else if (getExample(propertySchema) != null && canUseExamples(propertySchema)) {
             logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
             return this.formatExampleIfNeeded(propertySchema);
         } else if (CatsModelUtils.isStringSchema(propertySchema)) {
@@ -144,6 +185,16 @@ public class OpenAPIModelGenerator {
         }
 
         return resolveProperties(propertySchema);
+    }
+
+    private Object getExample(Schema<?> schema) {
+        if (schema.getExample() != null) {
+            return schema.getExample();
+        }
+        if (schema.getExamples() != null && !schema.getExamples().isEmpty()) {
+            return schema.getExamples().getFirst();
+        }
+        return null;
     }
 
     private <T> Object generateStringValue(String propertyName, Schema<T> propertySchema) {
@@ -173,23 +224,27 @@ public class OpenAPIModelGenerator {
     }
 
     <T> Object formatExampleIfNeeded(Schema<T> property) {
+        Object example = getExample(property);
+        if (example == null) {
+            return null;
+        }
         if (CatsModelUtils.isDateSchema(property)) {
-            return DATE_FORMATTER.format(LocalDate.ofInstant(((Date) property.getExample()).toInstant(), ZoneId.systemDefault()));
+            return DATE_FORMATTER.format(LocalDate.ofInstant(((Date) example).toInstant(), ZoneId.systemDefault()));
         }
         if (CatsModelUtils.isDateTimeSchema(property)) {
-            return ((OffsetDateTime) property.getExample()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return ((OffsetDateTime) example).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         }
         if (CatsModelUtils.isBinarySchema(property) || CatsModelUtils.isByteArraySchema(property)) {
             try {
-                return Base64.getDecoder().decode((byte[]) property.getExample());
+                return Base64.getDecoder().decode((byte[]) example);
             } catch (IllegalArgumentException e) {
-                return property.getExample();
+                return example;
             }
         }
-        if (String.valueOf(property.getExample()).contains("\n")) {
-            return String.valueOf(property.getExample()).replace("\n", "");
+        if (String.valueOf(example).contains("\n")) {
+            return String.valueOf(example).replace("\n", "");
         }
-        return property.getExample();
+        return example;
     }
 
     private Object resolveProperties(Schema<?> schema) {
@@ -203,10 +258,9 @@ public class OpenAPIModelGenerator {
             }
 
             currentProperty = previousPropertyValue;
-            schema.setExample(result);
             return result;
         }
-        return schema.getExample();
+        return getExample(schema);
     }
 
     private <T> boolean canUseExamples(Schema<T> property) {
@@ -214,9 +268,11 @@ public class OpenAPIModelGenerator {
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
-        if (property.getExample() != null) {
-            return property.getExample();
+        Object example = getExample(property);
+        if (example != null) {
+            return example;
         }
+
         if (property.getProperties() == null || property.getProperties().isEmpty()) {
             return new HashMap<>();
         }
@@ -357,10 +413,11 @@ public class OpenAPIModelGenerator {
         return innerType.getType() == null && innerType.get$ref() == null && !CatsModelUtils.isComposedSchema(innerType) && innerType.getProperties() == null;
     }
 
-    public static int getArrayLength(Schema<?> property) {
-        int minLength = null == property.getMinItems() ? 2 : property.getMinItems();
+    int getArrayLength(Schema<?> property) {
+        int min = null == property.getMinItems() ? 1 : property.getMinItems();
+        int max = null == property.getMaxItems() ? 2 : property.getMaxItems();
 
-        return null == property.getMaxItems() || property.getMaxItems() == 0 ? minLength : Math.min(5, property.getMaxItems());
+        return Math.max(min, Math.min(this.arraySize, max));
     }
 
     double randomNumber(Double min, Double max) {
@@ -442,11 +499,12 @@ public class OpenAPIModelGenerator {
             processInnerSchema(name, schema, values, propertyName, innerSchema);
         }
         currentProperty = previousPropertyValue;
-        schema.setExample(values);
+//        schema.setExample(values);
         catsGeneratedExamples.add(schema);
     }
 
-    private void processInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName, Schema innerSchema) {
+    private void processInnerSchema(String name, Schema schema, Map<String, Object> values, Object
+            propertyName, Schema innerSchema) {
         if (innerSchema == null) {
             this.parseFromInnerSchema(name, schema, values, propertyName);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {

@@ -100,12 +100,14 @@ class OpenAPIModelGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"null,1,1", "null,null,2", "1,null,1", "2,3,3"}, nullValues = "null")
-    void shouldComputeProperArrayLength(Integer min, Integer max, int expected) {
+    @CsvSource(value = {"null,1,1", "0,1,1", "null,null,2", "1,null,2", "2,3,2"}, nullValues = "null")
+    void shouldComputeProperArrayLength(Integer min, Integer max, int expected) throws Exception {
+        OpenAPIModelGenerator generator = setupPayloadGenerator();
+
         Schema<?> schema = new Schema<>();
         schema.setMinItems(min);
         schema.setMaxItems(max);
-        int result = OpenAPIModelGenerator.getArrayLength(schema);
+        int result = generator.getArrayLength(schema);
         Assertions.assertThat(result).isEqualTo(expected);
     }
 
@@ -171,6 +173,6 @@ class OpenAPIModelGeneratorTest {
         OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         globalContext.getSchemaMap().putAll(schemas);
-        return new OpenAPIModelGenerator(globalContext, validDataFormat, true, 3, true);
+        return new OpenAPIModelGenerator(globalContext, validDataFormat, true, 3, true, 2);
     }
 }

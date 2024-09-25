@@ -65,6 +65,9 @@ public class FuzzingDataFactory {
     private static final String ANY_OF_ARRAY = "ANY_OF#array";
     private static final String ONE_OF_ARRAY = "ONE_OF#array";
     private static final String ARRAY_WILDCARD = "[*]";
+    private static final int RESPONSES_ARRAY_SIZE = 1;
+    private static final int REQUEST_ARRAY_SIZE = 2;
+
     public static final String OF = "_OF";
     public static final String ALL_OF = "ALL_OF";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingDataFactory.class);
@@ -475,13 +478,19 @@ public class FuzzingDataFactory {
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
         OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
-                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults());
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE);
 
         List<String> result = this.generateSample(reqSchemaName, generator, true);
 
         if (mediaType != null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
             /*when dealing with ArraySchemas we make sure we have 2 elements in the array*/
-            result = result.stream().map(payload -> "[" + payload + "," + payload + "]").toList();
+            result = result.stream()
+                    .map(payload -> {
+                        if (JsonUtils.isJsonArray(payload)) {
+                            return payload;
+                        }
+                        return "[" + payload + "," + payload + "]";
+                    }).toList();
         }
         return result;
     }
@@ -895,7 +904,7 @@ public class FuzzingDataFactory {
     private Map<String, List<String>> getResponsePayloads(Operation operation) {
         Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
-                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults());
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), RESPONSES_ARRAY_SIZE);
 
         for (String responseCode : operation.getResponses().keySet()) {
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
@@ -922,7 +931,12 @@ public class FuzzingDataFactory {
                 }
             }
             if (OpenApiUtils.hasContentType(apiResponse.getContent(), processingArguments.getContentType())) {
-                Schema<?> respSchema = Optional.ofNullable(OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType).getSchema()).orElse(new Schema<>());
+                MediaType mediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), contentType);
+                if (mediaType == null) {
+                    continue;
+                }
+
+                Schema<?> respSchema = Optional.ofNullable(mediaType.getSchema()).orElse(new Schema<>());
 
                 return extractSchemaRef(respSchema, operation, responseCode);
             }
@@ -980,7 +994,7 @@ public class FuzzingDataFactory {
         parameter.setSchema(schema);
 
         List<String> examples = this.generateSample(schema.get$ref(), new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
-                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults()), false);
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE), false);
 
         schema.setExample(examples.getFirst());
     }
