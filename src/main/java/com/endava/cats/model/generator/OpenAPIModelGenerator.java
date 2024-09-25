@@ -70,7 +70,8 @@ public class OpenAPIModelGenerator {
     private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
     private final int arraySize;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper customDepthMapper = new ObjectMapper();
+    private final ObjectMapper simpleObjectMapper = new ObjectMapper();
 
     /**
      * Constructs an OpenAPIModelGenerator with the specified configuration.
@@ -91,9 +92,10 @@ public class OpenAPIModelGenerator {
         this.useDefaults = useDefaults;
         this.arraySize = arraySize;
         SimpleModule module = new SimpleModule();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);  // Exclude null values
+        customDepthMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);  // Exclude null values
         module.addSerializer(Object.class, new DepthLimitingSerializer());
-        mapper.registerModule(module);
+        customDepthMapper.registerModule(module);
+        simpleObjectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);  // Exclude null values
     }
 
 
@@ -117,7 +119,7 @@ public class OpenAPIModelGenerator {
                     example = writeObjectAsString(exampleObject);
                     globalContext.recordError("Generate sample it's too large to be processed in memory. CATS used a limiting depth serializer which might not include all expected fields. Re-run CATS with a smaller --selfReferenceDepth value, like --selfReferenceDepth 2");
                 }
-
+                resetCatsGeneratedExamples();
                 if (example != null) {
                     kv.put(EXAMPLE, example);
                     return Map.copyOf(kv);
@@ -129,11 +131,17 @@ public class OpenAPIModelGenerator {
         return Collections.emptyMap();
     }
 
+    private void resetCatsGeneratedExamples() {
+        for (Schema<?> schema : catsGeneratedExamples) {
+            schema.setExample(null);
+        }
+    }
+
     private String writeObjectAsString(Object exampleObject) {
         try {
             StringWriter stringWriter = new StringWriter();
-            JsonGenerator jsonGenerator = mapper.getFactory().createGenerator(stringWriter);
-            mapper.writeValue(jsonGenerator, exampleObject);
+            JsonGenerator jsonGenerator = customDepthMapper.getFactory().createGenerator(stringWriter);
+            customDepthMapper.writeValue(jsonGenerator, exampleObject);
             return stringWriter.toString();
         } catch (IOException e) {
             logger.debug("Error writing large object as string: {}", e.getMessage());
@@ -143,7 +151,7 @@ public class OpenAPIModelGenerator {
 
     public String tryToSerializeExample(Object obj) {
         try {
-            return Json.pretty().writeValueAsString(obj);
+            return simpleObjectMapper.writeValueAsString(obj);
         } catch (Exception e) {
             logger.debug("Generated object is too large. Switching to custom depth aware serializer...");
             return null;
@@ -708,11 +716,7 @@ public class OpenAPIModelGenerator {
         for (Schema allOfSchema : allOf) {
             String fullSchemaRef = allOfSchema.get$ref();
             String schemaRef;
-
-            if (CatsModelUtils.isArraySchema(allOfSchema)) {
-                fullSchemaRef = allOfSchema.getItems().get$ref();
-            }
-
+            
             Schema schemaToExample = allOfSchema;
             if (fullSchemaRef != null) {
                 schemaRef = CatsModelUtils.getSimpleRef(fullSchemaRef);
