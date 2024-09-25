@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -56,8 +57,15 @@ public class JsonSet {
 
         public JsonKeyWrapper(String jsonString) {
             if (JsonUtils.isValidJson(jsonString)) {
-                JsonObject jsonObject = JsonParser.parseString(jsonString).getAsJsonObject();
-                this.keyTypeSet = extractKeyTypes(jsonObject);
+                JsonElement jsonElement = JsonParser.parseString(jsonString);
+                if (jsonElement.isJsonObject()) {
+                    this.keyTypeSet = extractKeyTypes(jsonElement.getAsJsonObject());
+                } else if (jsonElement.isJsonArray()) {
+                    this.keyTypeSet = extractArrayKeyTypes(jsonElement.getAsJsonArray());
+                } else {
+                    this.keyTypeSet = new HashSet<>();
+                    this.keyTypeSet.add(jsonString);
+                }
             } else {
                 this.keyTypeSet = new HashSet<>();
                 this.keyTypeSet.add(jsonString);
@@ -89,7 +97,7 @@ public class JsonSet {
             return keyTypes;
         }
 
-        private Set<String> extractArrayKeyTypes(com.google.gson.JsonArray jsonArray) {
+        private Set<String> extractArrayKeyTypes(JsonArray jsonArray) {
             Set<String> keyTypes = new HashSet<>();
             for (JsonElement element : jsonArray) {
                 if (element.isJsonObject()) {
