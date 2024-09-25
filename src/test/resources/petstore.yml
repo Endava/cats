@@ -49,6 +49,66 @@ paths:
                 $ref: '#/components/schemas/Error'
   /reference-pets:
     $ref: '#/paths/~1pets~1{id}'
+  /pet/url-encoded/{hook_id}:
+    put:
+      description: Updates a hook configuration.
+      operationId: updateHook
+      parameters:
+        - description: Hook ID
+          in: path
+          name: hook_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/Error"
+        description: Request body updates given hook.
+        required: true
+      responses:
+        "200":
+          content:
+            application/x-www-form-urlencoded:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: "My error"
+  /mimic/agent/{agentNum}/value/mset:
+    put:
+      description: This is a performance optimization of the mimic value set command, to be used when many variables are to be set.
+      operationId: mset_value
+      parameters:
+        - description: Agent of the value space
+          in: path
+          name: agentNum
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                items:
+                  type: string
+                type: array
+              type: array
+        description: objInsVarValArray
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: successful operation
+        "400":
+          description: Invalid agent number value
+      summary: Set multiple variables in the Value Space.
+      tags:
+        - Valuespace
+
   /pets:
     get:
       summary: List all pets
