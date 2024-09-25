@@ -54,7 +54,7 @@ public class StringGenerator {
     private static final String EMPTY_PATTERN = "(\\(\\^\\$\\)\\|)|(\\^\\$\\)\\|)|(\\(\\^\\$\\|\\))|(\\(\\|\\^\\$\\))|(\\(\\^\\$\\))";
 
     private static final Pattern HAS_LENGTH_PATTERN = Pattern.compile("(\\*|\\+|\\?|\\{\\d+(,\\d*)?\\})");
-
+    private static final Pattern SINGLE_CHAR_PATTERN = Pattern.compile("^\\[[^\\]]+\\]$");
     private static final Pattern LENGTH_INLINE_PATTERN = Pattern.compile("(\\^)?(\\[[^]]*]\\{\\d+}|\\(\\[[^]]*]\\{\\d+}\\)\\?)*(\\$)?");
     private static final List<String> WILD_CARDS = List.of(".^");
 
@@ -360,6 +360,12 @@ public class StringGenerator {
         return groupMatcher.find();
     }
 
+    static boolean isSingleChar(String pattern) {
+        Matcher groupMatcher = SINGLE_CHAR_PATTERN.matcher(pattern);
+
+        return groupMatcher.find();
+    }
+
     private static String composeString(String initial, int min, int max) {
         if (min <= 0 && max <= 0) {
             return initial;
@@ -605,7 +611,7 @@ public class StringGenerator {
         }
 
         private String inlineLengthIfNeeded(String pattern, int min, int max) {
-            if (!hasLength(pattern) && (min > 0 || max > 0)) {
+            if (isSingleChar(pattern) && (min > 0 || max > 0)) {
                 return pattern + "{" + min + "," + max + "}";
             }
             return pattern;

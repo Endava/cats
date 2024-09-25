@@ -189,10 +189,11 @@ class StringGeneratorTest {
         Assertions.assertThat(actual).isEqualTo(expected);
     }
 
-    @Test
-    void shouldGenerateWhenPatternDoesNotHaveLengthButHasMinOrMax() {
-        String generated = StringGenerator.generate("[A-Z]", 4, 4);
-        Assertions.assertThat(generated).hasSize(4);
+    @ParameterizedTest
+    @CsvSource(value = {"[A-Z];4;4", "[A-Z][A-Z];2;2", "[A-Z];1;1", "[A-Z][0-9];2;3"}, delimiter = ';')
+    void shouldGenerateWhenPatternDoesNotHaveLengthButHasMinOrMax(String regex, int min, int max) {
+        String generated = StringGenerator.generate(regex, min, max);
+        Assertions.assertThat(generated).hasSize(min);
     }
 
     @Test
@@ -205,11 +206,21 @@ class StringGeneratorTest {
     @ParameterizedTest
     @CsvSource(value = {
             "[a-zA-Z0-9_]+@[a-zA-Z0-9_]+\\.[a-zA-Z]{2,4};\\w+@\\w+\\.[a-zA-Z]{2,4}",
-            "ab{1,}c{1}d{0,1};ab+c{1}d?"},
+            "ab{1,}c{1}d{0,1};ab+c{1}d?",
+            "^(https?://)?([a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)+)(/[a-zA-Z0-9_\\.~\\(\\)\\-]+)*/?$;^(https?://)?(\\w+(\\.\\w+)+)(/[a-zA-Z0-9_\\.~\\(\\)\\-]+)*/?$",
+            "^[a-zA-Z0-9_]+([\\.-]?[a-zA-Z0-9_]+)*@[a-zA-Z0-9_]+(\\.[a-zA-Z0-9_]+)*\\.[a-zA-Z]{2,}$;^\\w+([\\.-]?\\w+)*@\\w+(\\.\\w+)*\\.[a-zA-Z]{2,}$",
+            "(19|20)[0-9]{2}[\\s\\t\\r\\n\\f]{0,1}(0[1-9]|1[012])[\\s\\t\\r\\n\\f]{0,1}(0[1-9]|[12][0-9]|3[01]);(19|20)\\d{2}\\s?(0[1-9]|1[012])\\s?(0[1-9]|[12]\\d|3[01])",
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^\\da-zA-Z])(?=.*[^\\w]).{8,}$;^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z])(?=.*W).{8,}$",
+            "^([0-9]{1,3}\\.){3}[0-9]{1,3}(:[0-9]{1,5})?$;^(\\d{1,3}\\.){3}\\d{1,3}(:\\d{1,5})?$",
+            "^([0-9]{4}-[0-9]{2}-[0-9]{2}[\\s\\t\\r\\n\\f]{0,1}[0-9]{2}:[0-9]{2}:[0-9]{2})\\s\\[([^\\]]+)\\]\\s(.*)$;^(\\d{4}-\\d{2}-\\d{2}\\s?\\d{2}:\\d{2}:\\d{2})\\s\\[([^\\]]+)\\]\\s(.*)$",
+            "^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12})$;^(?:4\\d{12}(?:\\d{3})?|5[1-5]\\d{14}|3[47]\\d{13}|3(?:0[0-5]|[68]\\d)\\d{11}|6(?:011|5\\d{2})\\d{12})$",},
             delimiter = ';')
     void shouldFlatten(String regex, String expected) {
         String flattened = RegexFlattener.flattenRegex(regex);
         Assertions.assertThat(flattened).isEqualTo(expected);
+
+        String generated = StringGenerator.generate(flattened, 1, 6000);
+        Assertions.assertThat(generated).hasSizeBetween(1, 6000).matches(regex);
     }
 
     @Test
@@ -232,4 +243,5 @@ class StringGeneratorTest {
 
         Assertions.assertThat(generated).hasSize(100);
     }
+
 }
