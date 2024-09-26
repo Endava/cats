@@ -16,11 +16,12 @@ import java.util.Map;
  * to exceed the maximum size that Jackson can serialize without streaming.
  */
 public class DepthLimitingSerializer extends JsonSerializer<Object> {
-    private static final int MAX_DEPTH = 25;
+    private static int maxDepth;
     private final ObjectMapper mapper = new ObjectMapper();
     private final ThreadLocal<Integer> currentDepth = ThreadLocal.withInitial(() -> 0);
 
-    public DepthLimitingSerializer() {
+    public DepthLimitingSerializer(int depth) {
+        maxDepth = depth * 6;
         this.mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
@@ -37,7 +38,7 @@ public class DepthLimitingSerializer extends JsonSerializer<Object> {
     private void serializeWithDepth(Object value, JsonGenerator gen) throws IOException {
         int depth = currentDepth.get();
 
-        if (depth >= MAX_DEPTH || value == null) {
+        if (depth >= maxDepth || value == null) {
             return;
         }
 
@@ -58,7 +59,7 @@ public class DepthLimitingSerializer extends JsonSerializer<Object> {
                 gen.writeStartObject();
                 for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
                     if (entry.getKey() != null && entry.getValue() != null) {
-                        if (currentDepth.get() < MAX_DEPTH) {
+                        if (currentDepth.get() < maxDepth) {
                             gen.writeFieldName(entry.getKey().toString());
                             serializeWithDepth(entry.getValue(), gen);
                         }
