@@ -10,6 +10,7 @@ import com.endava.cats.util.JsonUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -59,7 +60,6 @@ public class OpenAPIModelGenerator {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGenerator.class);
-    private final Set<Schema<?>> catsGeneratedExamples = new HashSet<>();
     private final Random random;
     private final boolean useExamples;
     private final CatsGlobalContext globalContext;
@@ -91,11 +91,22 @@ public class OpenAPIModelGenerator {
         this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
         this.arraySize = arraySize;
+
+        configureDepthAwareJacksonMapper(selfReferenceDepth);
+        configureDefaultJacksonMapper();
+    }
+
+    private void configureDefaultJacksonMapper() {
+        simpleObjectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        simpleObjectMapper.disable(SerializationFeature.INDENT_OUTPUT);
+    }
+
+    private void configureDepthAwareJacksonMapper(int selfReferenceDepth) {
         SimpleModule module = new SimpleModule();
-        customDepthMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);  // Exclude null values
-        module.addSerializer(Object.class, new DepthLimitingSerializer());
+        customDepthMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        module.addSerializer(Object.class, new DepthLimitingSerializer(selfReferenceDepth));
         customDepthMapper.registerModule(module);
-        simpleObjectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);  // Exclude null values
+        customDepthMapper.disable(SerializationFeature.INDENT_OUTPUT);
     }
 
 
@@ -119,7 +130,6 @@ public class OpenAPIModelGenerator {
                     example = writeObjectAsString(exampleObject);
                     globalContext.recordError("Generate sample it's too large to be processed in memory. CATS used a limiting depth serializer which might not include all expected fields. Re-run CATS with a smaller --selfReferenceDepth value, like --selfReferenceDepth 2");
                 }
-                resetCatsGeneratedExamples();
                 if (example != null) {
                     kv.put(EXAMPLE, example);
                     return Map.copyOf(kv);
@@ -129,12 +139,6 @@ public class OpenAPIModelGenerator {
         schemaRefMap.clear();
         currentProperty = "";
         return Collections.emptyMap();
-    }
-
-    private void resetCatsGeneratedExamples() {
-        for (Schema<?> schema : catsGeneratedExamples) {
-            schema.setExample(null);
-        }
     }
 
     private String writeObjectAsString(Object exampleObject) {
@@ -173,7 +177,7 @@ public class OpenAPIModelGenerator {
 
         if (generatedValueFromFormat != null) {
             return generatedValueFromFormat;
-        } else if (getExample(propertySchema) != null && canUseExamples(propertySchema)) {
+        } else if (getExample(propertySchema) != null && useExamples) {
             logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
             return this.formatExampleIfNeeded(propertySchema);
         } else if (CatsModelUtils.isStringSchema(propertySchema)) {
@@ -269,10 +273,6 @@ public class OpenAPIModelGenerator {
             return result;
         }
         return getExample(schema);
-    }
-
-    private <T> boolean canUseExamples(Schema<T> property) {
-        return useExamples || catsGeneratedExamples.contains(property);
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
@@ -507,8 +507,6 @@ public class OpenAPIModelGenerator {
             processInnerSchema(name, schema, values, propertyName, innerSchema);
         }
         currentProperty = previousPropertyValue;
-//        schema.setExample(values);
-        catsGeneratedExamples.add(schema);
     }
 
     private void processInnerSchema(String name, Schema schema, Map<String, Object> values, Object
@@ -615,7 +613,7 @@ public class OpenAPIModelGenerator {
             if (innerAllOff) {
                 values.clear();
                 values.put(newKey, finalMap);
-            } else {
+            } else if (!finalMap.isEmpty()) {
                 values.put(propertyName, finalMap);
             }
             values = values.entrySet()
@@ -680,11 +678,19 @@ public class OpenAPIModelGenerator {
     }
 
     private void createMergedSchema(String schemaName, List<Schema> allOfSchema) {
+        Collection<Schema> allOfSchemasSanitized = allOfSchema
+                .stream()
+                .filter(CatsModelUtils::isNotEmptySchema)
+                .toList();
+        if (allOfSchemasSanitized.size() == 1) {
+            return;
+        }
+
         Schema<?> newSchema = new Schema<>();
         newSchema.properties(new LinkedHashMap<>());
         newSchema.required(new ArrayList<>());
 
-        for (Schema<?> schema : allOfSchema) {
+        for (Schema<?> schema : allOfSchemasSanitized) {
             if (schema.get$ref() != null) {
                 schema = globalContext.getSchemaFromReference(schema.get$ref());
             }
@@ -710,29 +716,38 @@ public class OpenAPIModelGenerator {
     }
 
     private void addXXXOfExamples(Map<String, Object> values, Object propertyName, Collection<Schema> allOf, String of) {
-        Set<String> storedSchemaRefs = new HashSet<>();
-        int i = 0;
+        Collection<Schema> allOfSchemasSanitized = allOf
+                .stream()
+                .filter(CatsModelUtils::isNotEmptySchema)
+                .toList();
 
-        for (Schema allOfSchema : allOf) {
-            String fullSchemaRef = allOfSchema.get$ref();
-            String schemaRef;
-            
-            Schema schemaToExample = allOfSchema;
-            if (fullSchemaRef != null) {
-                schemaRef = CatsModelUtils.getSimpleRef(fullSchemaRef);
-                schemaToExample = this.globalContext.getSchemaFromReference(fullSchemaRef);
-            } else {
-                schemaRef = schemaToExample.getType();
+        if (allOfSchemasSanitized.size() == 1) {
+            values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), allOfSchemasSanitized.iterator().next()));
+        } else {
+            Set<String> storedSchemaRefs = new HashSet<>();
+            int i = 0;
 
-                if (storedSchemaRefs.contains(schemaRef)) {
-                    schemaRef = schemaRef + ++i;
+            for (Schema allOfSchema : allOfSchemasSanitized) {
+                String fullSchemaRef = allOfSchema.get$ref();
+                String schemaRef;
+
+                Schema schemaToExample = allOfSchema;
+                if (fullSchemaRef != null) {
+                    schemaRef = CatsModelUtils.getSimpleRef(fullSchemaRef);
+                    schemaToExample = this.globalContext.getSchemaFromReference(fullSchemaRef);
+                } else {
+                    schemaRef = schemaToExample.getType();
+
+                    if (storedSchemaRefs.contains(schemaRef)) {
+                        schemaRef = schemaRef + ++i;
+                    }
+                    fullSchemaRef = "#" + schemaRef;
+                    storedSchemaRefs.add(schemaRef);
                 }
-                fullSchemaRef = "#" + schemaRef;
-                storedSchemaRefs.add(schemaRef);
+                String propertyKey = propertyName.toString() + "_" + schemaRef;
+                String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1) : currentProperty;
+                values.put(keyToStore + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
             }
-            String propertyKey = propertyName.toString() + "_" + schemaRef;
-            String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1) : currentProperty;
-            values.put(keyToStore + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
         }
     }
 }

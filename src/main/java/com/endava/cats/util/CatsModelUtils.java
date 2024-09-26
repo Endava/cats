@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.codegen.utils.ModelUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -173,7 +174,7 @@ public abstract class CatsModelUtils {
      * @return true if the field name contains a complex regex, false otherwise
      */
     public static boolean isUri(String pattern, String lowerField) {
-        return (lowerField.contains("url") || lowerField.contains("uri")) && ("http://www.test.com".matches(pattern) || "https://www.test.com".matches(pattern));
+        return (lowerField.contains("url") || lowerField.contains("uri") || lowerField.contains("link")) && ("http://www.test.com".matches(pattern) || "https://www.test.com".matches(pattern));
     }
 
     /**
@@ -196,5 +197,18 @@ public abstract class CatsModelUtils {
      */
     public static boolean isPassword(String pattern, String lowerField) {
         return lowerField.contains("password") && "catsISc00l?!useIt#".matches(pattern);
+    }
+
+    public static boolean isNotEmptySchema(Schema schema) {
+        return schema != null &&
+                (StringUtils.isNotBlank(schema.get$ref()) ||
+                        StringUtils.isNotBlank(schema.getType()) ||
+                        !CollectionUtils.isEmpty(schema.getTypes()) ||
+                        !CollectionUtils.isEmpty(schema.getProperties()) ||
+                        !CollectionUtils.isEmpty(schema.getAllOf()) ||
+                        !CollectionUtils.isEmpty(schema.getAnyOf()) ||
+                        !CollectionUtils.isEmpty(schema.getOneOf()) ||
+                        schema.getItems() != null ||
+                        !CollectionUtils.isEmpty(schema.getRequired()));
     }
 }

@@ -235,6 +235,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Pet'
+  /arns:
+    post:
+      description: Create containers
+      operationId: createPetContainer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Name
+              properties:
+                Name:
+                  description: 'A descriptive name for the analysis that you''re creating. This name displays for the analysis in the Amazon QuickSight console. '
+                  type: string
+                  minLength: 1
+                  maxLength: 2048
+                Parameters:
+                  description: A list of Amazon QuickSight parameters and the list's override values.
+                  type: object
+                  properties:
+                    StringParameters:
+                      allOf:
+                        - $ref: '#/components/schemas/StringParameterList'
+                        - description: The parameters that have a data type of string.
+                SourceEntity:
+                  description: The source entity of an analysis.
+                  type: object
+                  properties:
+                    SourceTemplate:
+                      allOf:
+                        - $ref: '#/components/schemas/AnalysisSourceTemplate'
+                        - description: The source template for the source entity of the analysis.
+
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
   /pet-types-rec:
     post:
       description: Creates a new pet in the store.  Duplicates are allowed
@@ -294,10 +336,41 @@ components:
           description: "Per container information. Key: container name."
           type: object
       type: object
+    StringParameterList:
+      type: array
+      items:
+        $ref: '#/components/schemas/StringParameter'
+      maxItems: 100
+    StringParameter:
+      type: object
+      required:
+        - Name
+        - Values
+      properties:
+        Name:
+          allOf:
+            - $ref: '#/components/schemas/NonEmptyString'
+            - description: A display name for a string parameter.
+    NonEmptyString:
+      type: string
+      pattern: .*\S.*
+    Arn:
+      type: string
     Pets:
       type: array
       items:
         $ref: "#/components/schemas/Pet"
+    AnalysisSourceTemplate:
+      type: object
+      required:
+        - DataSetReferences
+        - Arn
+      properties:
+        Arn:
+          allOf:
+            - $ref: '#/components/schemas/Arn'
+            - description: The Amazon Resource Name (ARN) of the source template of an analysis.
+      description: The source template of an analysis.
     Pet:
       allOf:
         - $ref: '#/components/schemas/NewPet'

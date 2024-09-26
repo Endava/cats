@@ -17,12 +17,15 @@ import com.google.gson.JsonParser;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.headers.Header;
+import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -403,7 +406,6 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(firstData.getPayload()).contains("code", "message");
     }
 
-
     @Test
     void shouldGeneratePayloadsWithCrossPathsReferences() throws Exception {
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
@@ -720,6 +722,21 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldResolveWhenOpenApiHasMalformedAllOfSchemas() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/arns", "src/test/resources/petstore.yml");
+        Assertions.assertThat(dataList).hasSize(1);
+        String payload = dataList.getFirst().getPayload();
+        int parametersArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(payload, "$.Parameters.StringParameters.length()").toString());
+        Object arn = JsonUtils.getVariableFromJson(payload, "$.SourceEntity.Arn");
+        Object name = JsonUtils.getVariableFromJson(payload, "$.Name");
+
+        Assertions.assertThat(parametersArraySize).isEqualTo(2);
+        Assertions.assertThat(arn).isNotEqualTo("NOT_SET");
+        Assertions.assertThat(name).isNotEqualTo("NOT_SET");
+    }
+
+
+    @Test
     void shouldDetectCyclicDependenciesWhenPropertiesNamesDontMatch() throws Exception {
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(1);
 
@@ -802,5 +819,31 @@ class FuzzingDataFactoryTest {
         Set<String> examples = fuzzingDataFactory.extractExamples(mediaType);
 
         Assertions.assertThat(examples).hasSize(2).containsExactly("example2", "\"catsIsCool\"");
+    }
+
+    @Test
+    void shouldHaveContentWhenContentNotNull() {
+        Operation operation = new Operation();
+        RequestBody requestBody = new RequestBody();
+        requestBody.setContent(new Content());
+        operation.setRequestBody(requestBody);
+
+        Assertions.assertThat(FuzzingDataFactory.hasContent(operation)).isTrue();
+    }
+
+    @Test
+    void shouldNotHaveContentWhenContentIsNull() {
+        Operation operation = new Operation();
+        RequestBody requestBody = new RequestBody();
+        operation.setRequestBody(requestBody);
+
+        Assertions.assertThat(FuzzingDataFactory.hasContent(operation)).isFalse();
+    }
+
+    @Test
+    void shouldNotHaveContentWhenRequestBodyIsNull() {
+        Operation operation = new Operation();
+
+        Assertions.assertThat(FuzzingDataFactory.hasContent(operation)).isFalse();
     }
 }
