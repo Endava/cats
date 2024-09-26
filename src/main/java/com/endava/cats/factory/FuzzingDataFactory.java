@@ -473,7 +473,11 @@ public class FuzzingDataFactory {
                 return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), contentType);
             }
         }
-        return operation.getRequestBody() != null ? operation.getRequestBody().getContent().get("*/*") : new NoMediaType();
+        return hasContent(operation) ? operation.getRequestBody().getContent().get("*/*") : new NoMediaType();
+    }
+
+    static boolean hasContent(Operation operation) {
+        return operation.getRequestBody() != null && operation.getRequestBody().getContent() != null;
     }
 
     private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
