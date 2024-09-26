@@ -238,7 +238,7 @@ public class StringGenerator {
         if (pattern.startsWith("/") && pattern.endsWith("/i")) {
             pattern = pattern.substring(1, pattern.length() - 2);
         }
-        if (pattern.matches("(?!\\().\\^.*")) {
+        if (pattern.matches("(?!\\().?\\^.*")) {
             pattern = pattern.substring(1);
         }
         if (pattern.endsWith("$/")) {
@@ -254,8 +254,63 @@ public class StringGenerator {
 
         pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
         pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
+        pattern = removeMisplacedDollarSigns(pattern);
 
         return pattern;
+    }
+
+    private static String removeMisplacedDollarSigns(String regex) {
+        StringBuilder result = new StringBuilder();
+        boolean inCharClass = false;
+        boolean escapeNext = false;
+        int parenDepth = 0; // Tracks depth of parentheses
+        int length = regex.length();
+
+        for (int i = 0; i < length; i++) {
+            char c = regex.charAt(i);
+
+            if (escapeNext) {
+                // Current character is escaped; add it and reset escape flag
+                result.append(c);
+                escapeNext = false;
+            } else if (c == '\\') {
+                // Next character is escaped
+                result.append(c);
+                escapeNext = true;
+            } else if (c == '[') {
+                // Entering character class
+                result.append(c);
+                inCharClass = true;
+            } else if (c == ']') {
+                // Exiting character class
+                result.append(c);
+                inCharClass = false;
+            } else if (c == '(') {
+                // Entering parentheses group
+                result.append(c);
+                parenDepth++;
+            } else if (c == ')') {
+                // Exiting parentheses group
+                result.append(c);
+                if (parenDepth > 0) {
+                    parenDepth--;
+                }
+            } else if (c == '$') {
+                if (i == length - 1) {
+                    // Dollar sign at the end; keep it
+                    result.append(c);
+                } else if (inCharClass) {
+                    // Dollar sign inside character class; keep it
+                    result.append(c);
+                } else if (parenDepth > 0) {
+                    // Dollar sign inside parentheses; keep it
+                    result.append(c);
+                }
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 
     private static String generateUsingRegexpGen(GeneratorParams generatorParams) {

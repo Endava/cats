@@ -134,9 +134,10 @@ class StringGeneratorTest {
 
     @Test
     void shouldRemoveCaseInsensitive() {
-        String generated = StringGenerator.cleanPattern("^(?i)(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)$");
-        Assertions.assertThat(generated).isEqualTo("^(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)");
-        Assertions.assertThat(StringGenerator.generate(generated, 100, 100)).hasSize(100);
+        String pattern = "^(?i)(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)$";
+        String cleanedPattern = StringGenerator.cleanPattern(pattern);
+        Assertions.assertThat(cleanedPattern).isEqualTo("(http:\\/\\/|https:\\/\\/)([a-z0-9./\\-_.~+=:;%&?]+)");
+        Assertions.assertThat(StringGenerator.generate(cleanedPattern, 100, 100)).hasSize(100).matches(pattern);
     }
 
     @Test
@@ -155,7 +156,7 @@ class StringGeneratorTest {
 
     @ParameterizedTest
     @CsvSource(value = {"(^$)|^(((\\+|00)(9[976]\\d|8[987530]\\d|6[987]\\d|5[90]\\d|42\\d|3[875]\\d|2[98654321]\\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)([[:space:]]?))?([\\d]{4}\\d{1,9})$);^(((\\+|00)(9[976]\\d|8[987530]\\d|6[987]\\d|5[90]\\d|42\\d|3[875]\\d|2[98654321]\\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)([[:space:]]?))?([\\d]{4}\\d{1,9})$)",
-            "/^[^<>]*$/;^[^<>]*", "^[A-Z-a-z0-9]{4}[A-Z-a-z]{2}[A-Z-a-z0-9]{2}([A-Z-a-z0-9]{3})?$;^[A-Z-a-z0-9]{4}[A-Z-a-z]{2}[A-Z-a-z0-9]{2}([A-Z-a-z0-9]{3})?", "/^.*[a-z]+.*$/i;^.*[a-z]+.*", ";[a-zA-Z0-9]+", "/^[a-z];^[a-z]"}, delimiter = ';')
+            "/^[^<>]*$/;^[^<>]*", "^[A-Z-a-z0-9]{4}[A-Z-a-z]{2}[A-Z-a-z0-9]{2}([A-Z-a-z0-9]{3})?$;[A-Z-a-z0-9]{4}[A-Z-a-z]{2}[A-Z-a-z0-9]{2}([A-Z-a-z0-9]{3})?", "/^.*[a-z]+.*$/i;.*[a-z]+.*", ";[a-zA-Z0-9]+", "/^[a-z];^[a-z]", "^([0-1]\\d|2[0-3]):[0-5]\\d$:[0-5]\\d$;([0-1]\\d|2[0-3]):[0-5]\\d:[0-5]\\d"}, delimiter = ';')
     void shouldCleanPattern(String pattern, String expected) {
         String cleaned = StringGenerator.cleanPattern(pattern);
         Assertions.assertThat(cleaned).isEqualTo(expected);
@@ -213,7 +214,9 @@ class StringGeneratorTest {
             "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^\\da-zA-Z])(?=.*[^\\w]).{8,}$;^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z])(?=.*W).{8,}$",
             "^([0-9]{1,3}\\.){3}[0-9]{1,3}(:[0-9]{1,5})?$;^(\\d{1,3}\\.){3}\\d{1,3}(:\\d{1,5})?$",
             "^([0-9]{4}-[0-9]{2}-[0-9]{2}[\\s\\t\\r\\n\\f]{0,1}[0-9]{2}:[0-9]{2}:[0-9]{2})\\s\\[([^\\]]+)\\]\\s(.*)$;^(\\d{4}-\\d{2}-\\d{2}\\s?\\d{2}:\\d{2}:\\d{2})\\s\\[([^\\]]+)\\]\\s(.*)$",
-            "^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12})$;^(?:4\\d{12}(?:\\d{3})?|5[1-5]\\d{14}|3[47]\\d{13}|3(?:0[0-5]|[68]\\d)\\d{11}|6(?:011|5\\d{2})\\d{12})$",},
+            "^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12})$;^(?:4\\d{12}(?:\\d{3})?|5[1-5]\\d{14}|3[47]\\d{13}|3(?:0[0-5]|[68]\\d)\\d{11}|6(?:011|5\\d{2})\\d{12})$",
+            ".*(^arn:((aws)|(aws-cn)|(aws-us-gov)):s3:::)([a-zA-Z0-9_-]+$).*;(^arn:((aws)|(aws-cn)|(aws-us-gov)):s3:::)([a-zA-Z0-9_-]+$)+", ".*;.*", "^(?!\\s*$).+;^(?!\\s*$).+",
+            "^[^\\u0000-\\u00FF]+$;^[\\u0100-\\uFFFF]+$"},
             delimiter = ';')
     void shouldFlatten(String regex, String expected) {
         String flattened = RegexFlattener.flattenRegex(regex);
@@ -244,4 +247,27 @@ class StringGeneratorTest {
         Assertions.assertThat(generated).hasSize(100);
     }
 
+    @Test
+    void shouldGenerateWithInnerDollarSign() {
+        String pattern = "^([0-1]\\d|2[0-3]):[0-5]\\d$:[0-5]\\d$";
+        String generated = StringGenerator.generate(pattern, -1, -1);
+        Assertions.assertThat(generated).hasSize(8);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "'(^$)|^(((\\+|00)(9[976]\\d|8[987530]\\d|6[987]\\d|5[90]\\d|42\\d|3[875]\\d|2[98654321]\\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)([[:space:]]?))?([\\d]{4}\\d{1,9})$)', 1, 6000",
+            "'^(?!\\s*$).+', 1, 128",
+            "'^[^\\u0000-\\u00FF]$', -1, -1",
+            "'arn:aws:logs:[a-z\\-0-9]*:[0-9]{12}:log-group:([\\.\\-_/#A-Za-z0-9]+):\\*$', 47, 562",
+            ".*(^arn:((aws)|(aws-cn)|(aws-us-gov)):s3:::)([a-zA-Z0-9_-]+$).*, 1, 6000",
+    })
+    void shouldGenerateRegex(String pattern, int minSize, int maxSize) {
+        String generated = StringGenerator.generate(pattern, minSize, maxSize);
+        if (minSize == -1 && maxSize == -1) {
+            Assertions.assertThat(generated).hasSize(1).matches(pattern);
+        } else {
+            Assertions.assertThat(generated).hasSizeBetween(minSize, maxSize).matches(pattern);
+        }
+    }
 }

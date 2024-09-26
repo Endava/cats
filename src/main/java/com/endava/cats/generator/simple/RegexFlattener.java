@@ -21,6 +21,21 @@ public abstract class RegexFlattener {
     public static String flattenRegex(String regex) {
         regex = simplifyCharacterClasses(regex);
         regex = simplifyQuantifiers(regex);
+        regex = removeStartEndAnyChar(regex);
+
+        return regex;
+    }
+
+    private static String removeStartEndAnyChar(String regex) {
+        if (regex.equals(".*")) {
+            return regex;
+        }
+
+        // Remove leading unescaped '.*' or '*' patterns
+        regex = regex.replaceAll("^(?:(?<!\\\\)\\*+\\.*|\\.*(?<!\\\\)\\*+)", "");
+
+        // Remove trailing unescaped '.*' or '*' patterns
+        regex = regex.replaceAll("(?:(?<!\\\\)\\*+\\.*|\\.*(?<!\\\\)\\*+)$", "+");
 
         return regex;
     }
@@ -31,6 +46,7 @@ public abstract class RegexFlattener {
         flattenedRegex = flattenedRegex.replace("[a-zA-Z0-9_]", "\\w");
         flattenedRegex = flattenedRegex.replace("[0-9]", "\\d");
         flattenedRegex = flattenedRegex.replace("[\\s\\t\\r\\n\\f]", "\\s");
+        flattenedRegex = flattenedRegex.replace("^\\u0000-\\u00FF", "\\u0100-\\uFFFF");
 
         flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\d", "\\D");
         flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\w", "\\W");
