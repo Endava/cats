@@ -18,6 +18,7 @@ import java.util.Locale;
 public class URIGenerator implements ValidDataFormatGenerator, InvalidDataFormatGenerator, OpenAPIFormat {
     private static final String URL = "url";
     private static final String URI = "uri";
+    private static final String LINK = "link";
 
     @Override
     public Object generate(Schema<?> schema) {
@@ -28,7 +29,8 @@ public class URIGenerator implements ValidDataFormatGenerator, InvalidDataFormat
     public boolean appliesTo(String format, String propertyName) {
         return URI.equals(format) || URL.equals(format)
                 || propertyName.toLowerCase(Locale.ROOT).endsWith(URL)
-                || propertyName.toLowerCase(Locale.ROOT).endsWith(URI);
+                || propertyName.toLowerCase(Locale.ROOT).endsWith(URI)
+                || propertyName.toLowerCase(Locale.ROOT).endsWith(LINK);
     }
 
     @Override

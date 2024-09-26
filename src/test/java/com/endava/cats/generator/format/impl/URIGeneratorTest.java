@@ -18,7 +18,7 @@ class URIGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"not,url,true", "not,uri,true", "not,addressurl,true", "not,addressuri,true", "not,not,false", "url,not,true", "uri,not,true"})
+    @CsvSource({"not,url,true", "not,uri,true", "not,addressurl,true", "not,addressuri,true", "not,not,false", "url,not,true", "uri,not,true", "not,link,true"})
     void shouldRecognizeUrl(String format, String property, boolean expected) {
         boolean isIp = uriGenerator.appliesTo(format, property);
         Assertions.assertThat(isIp).isEqualTo(expected);
