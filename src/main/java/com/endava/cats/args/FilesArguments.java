@@ -65,7 +65,7 @@ public class FilesArguments {
     Map<String, Object> urlParamsArguments;
 
     @CommandLine.Option(names = {"--headers"},
-            description = "Specifies custom headers that will be passed along with request. This can be used to pass oauth or JWT tokens for authentication")
+            description = "A YAML file with custom headers that will be passed along with the request. Root elements are paths, while children are header_name:header_value pairs. This can be used to pass oauth or JWT tokens for authentication")
     @Setter
     private File headersFile;
 
@@ -75,12 +75,12 @@ public class FilesArguments {
     Map<String, Object> headersMap;
 
     @CommandLine.Option(names = {"--queryParams"},
-            description = "Specifies additional query parameters that will be passed along with the request. This can be used to pass non-documented query params")
+            description = "A YAML file with additional query parameters that will be passed along with the request. This can be used to pass non-documented query params")
     @Setter
     private File queryFile;
 
     @CommandLine.Option(names = {"--pathsRunOrder"},
-            description = "Specifies the order in which the paths will be executed. The paths are on each line. The order is the one in which they will be executed")
+            description = "A file with the order in which the paths will be executed. The paths are on each line. The order from file will drive the execution order")
     @Setter
     private File pathsOrderFile;
 
@@ -91,7 +91,7 @@ public class FilesArguments {
     Map<String, Object> queryParamsArguments;
 
     @CommandLine.Option(names = {"--refData"},
-            description = "Specifies the file with fields that must have a fixed value in order for requests to succeed. " +
+            description = "A YAML file with fields that must have a fixed value in order for requests to succeed. " +
                     "If this is supplied when @|bold FunctionalFuzzer|@ is also enabled, the @|bold FunctionalFuzzer|@ will consider it a @|bold refData|@ template and try to replace any variables")
     @Setter
     @Getter
@@ -105,12 +105,12 @@ public class FilesArguments {
 
 
     @CommandLine.Option(names = {"--functionalFuzzerFile"},
-            description = "Specifies the file used by the @|bold FunctionalFuzzer|@ to create user-supplied payloads and tests")
+            description = "The file used by the @|bold FunctionalFuzzer|@ to create user-supplied payloads and tests")
     @Setter
     private File customFuzzerFile;
 
     @CommandLine.Option(names = {"--securityFuzzerFile"},
-            description = "Specifies the file used by the @|bold SecurityFuzzer|@ to inject special strings in order to exploit possible vulnerabilities")
+            description = "The file used by the @|bold SecurityFuzzer|@ to inject special strings in order to exploit possible vulnerabilities")
     @Setter
     private File securityFuzzerFile;
 
@@ -122,7 +122,7 @@ public class FilesArguments {
     private boolean createRefData;
 
     @CommandLine.Option(names = {"--mutators", "-m"},
-            description = "A folder containing custom mutators. This argument is taken in consideration only when using the `cats random` command")
+            description = "A folder containing custom mutators. This argument is taken in consideration only when using the `cats random` sub-command")
     @Getter
     @Setter
     private File mutatorsFolder;
@@ -154,7 +154,6 @@ public class FilesArguments {
 
         log.config(Ansi.ansi().bold().a("Paths order file: {}").reset().toString(),
                 Ansi.ansi().fg(Ansi.Color.BLUE).a(pathsOrderFile.getCanonicalPath()));
-
     }
 
     public void loadMutators() throws IOException {
@@ -269,6 +268,12 @@ public class FilesArguments {
                 .split(":", 2)[1];
     }
 
+    /**
+     * Tests if a given parameter is not present in the --urlParams argument.
+     *
+     * @param parameter the parameter to be tested
+     * @return true if the parameter is not present in the --urlParams argument, false otherwise
+     */
     public boolean isNotUrlParam(String parameter) {
         return this.getUrlParamsList()
                 .stream()
@@ -283,11 +288,14 @@ public class FilesArguments {
      * @return the initial URL with the parameters replaced with --urlParams supplied values: {@code http://localhost:8080/123}
      */
     public String replacePathWithUrlParams(String startingUrl) {
-        for (String line : this.getUrlParamsList()) {
-            String[] urlParam = line.split(":", -1);
-            String pathVar = "{" + urlParam[0] + "}";
+        for (String nameValueParam : this.getUrlParamsList()) {
+            final int name = 0;
+            final int value = 1;
 
-            startingUrl = startingUrl.replace(pathVar, urlParam[1]);
+            String[] urlParam = nameValueParam.split(":", -1);
+            String pathVar = "{" + urlParam[name] + "}";
+
+            startingUrl = startingUrl.replace(pathVar, urlParam[value]);
         }
         return startingUrl;
     }
@@ -368,8 +376,7 @@ public class FilesArguments {
         return mergedMap;
     }
 
-    private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws
-            IOException {
+    private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
         try {
             if (file == null) {
                 log.debug("No {} file provided!", fileType);

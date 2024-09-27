@@ -21,12 +21,12 @@ import java.util.List;
 @Setter
 public class UserArguments {
     @CommandLine.Option(names = {"--words", "-w"},
-            description = "Specifies a custom user dictionary that will be used for fields and/or headers fuzzing")
+            description = "Specifies a custom user dictionary that will be used for fields and/or headers values fuzzing")
     File words;
 
-    @CommandLine.Option(names = {"--simpleReplace"},
+    @CommandLine.Option(names = {"--nameReplace", "--simpleReplace"},
             description = "If set to true, it will simply do a replace between the targetFields names provided and the fuzz values")
-    boolean simpleReplace;
+    boolean nameReplace;
 
     /**
      * Gets the custom provided dictionary as a list of strings where each row is an item.

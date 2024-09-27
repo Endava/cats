@@ -31,7 +31,11 @@ import static org.fusesource.jansi.Ansi.ansi;
 public class DryRunAspect {
 
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
+    /**
+     * Holds number of tests executed per path + http method.
+     */
     private final Map<String, Integer> paths = new TreeMap<>();
+
     @Inject
     FilterArguments filterArguments;
 

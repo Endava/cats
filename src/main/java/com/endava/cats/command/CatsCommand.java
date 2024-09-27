@@ -108,9 +108,11 @@ import static org.fusesource.jansi.Ansi.ansi;
                 GenerateCommand.class
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
+
     private final PrettyLogger logger;
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
     @Inject
@@ -121,33 +123,43 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
     ApiArguments apiArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
     AuthArguments authArgs;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Check Options:|@%n", exclusive = false)
     CheckArguments checkArgs;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Files Options:|@%n", exclusive = false)
     FilesArguments filesArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Filter Options:|@%n", exclusive = false)
     FilterArguments filterArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
     IgnoreArguments ignoreArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Processing Options:|@%n", exclusive = false)
     ProcessingArguments processingArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
     ReportingArguments reportingArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Dictionary Options:|@%n", exclusive = false)
     UserArguments userArguments;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options (they are only active when supplying a custom dictionary):|@%n", exclusive = false)
     MatchArguments matchArguments;
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -165,7 +177,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     String appVersion;
 
     private int exitCodeDueToErrors;
-
 
     /**
      * Creates a new instance of CatsCommand.
@@ -221,7 +232,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void doLogic() throws IOException {
-        this.doFirst();
+        this.prepareRun();
         OpenAPI openAPI = this.createOpenAPI();
         this.checkOpenAPI(openAPI);
         //reporting path is initialized only if OpenAPI spec is successfully parsed
@@ -319,7 +330,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         return openAPI;
     }
 
-    void doFirst() throws IOException {
+    void prepareRun() throws IOException {
         //this is a hack to set terminal width here in order to avoid importing a full-blown library like jline
         // just for getting the terminal width
         ConsoleUtils.initTerminalWidth(spec);
@@ -377,26 +388,44 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         /*We only run the fuzzers supplied and exclude those that do not apply for certain HTTP methods*/
 
         for (Fuzzer fuzzer : configuredFuzzers) {
-            List<FuzzingData> filteredData = CatsUtil.filterAndPrintNotMatching(
-                    fuzzingDataListWithHttpMethodsFiltered,
-                    data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
-                    logger,
-                    "HTTP method {} is not supported by {}",
-                    t -> t.getMethod().toString(), fuzzer.toString());
-            filteredData.forEach(data -> {
-                logger.start("Starting Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
-                logger.debug("Fuzzing payload: {}", data.getPayload());
-                if (!(fuzzer instanceof FunctionalFuzzer)) {
-                    testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
-                }
-                fuzzer.fuzz(data);
-                if (!(fuzzer instanceof FunctionalFuzzer)) {
-                    testCaseListener.afterFuzz(data.getContractPath());
-                }
-                logger.complete("Finishing Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
-                logger.info("{}", SEPARATOR);
-            });
+            List<FuzzingData> filteredData = this.filterFuzzingData(fuzzingDataListWithHttpMethodsFiltered, fuzzer);
+            filteredData.forEach(data -> runSingleFuzzer(fuzzer, data));
         }
+    }
+
+    private void runSingleFuzzer(Fuzzer fuzzer, FuzzingData data) {
+        logFuzzerStart(fuzzer, data);
+
+        if (!(fuzzer instanceof FunctionalFuzzer)) {
+            testCaseListener.beforeFuzz(fuzzer.getClass(), data.getContractPath(), data.getMethod().name());
+        }
+
+        fuzzer.fuzz(data);
+
+        if (!(fuzzer instanceof FunctionalFuzzer)) {
+            testCaseListener.afterFuzz(data.getContractPath());
+        }
+
+        logFuzzerEnd(fuzzer, data);
+    }
+
+    private void logFuzzerEnd(Fuzzer fuzzer, FuzzingData data) {
+        logger.complete("Finishing Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
+        logger.info("{}", SEPARATOR);
+    }
+
+    private void logFuzzerStart(Fuzzer fuzzer, FuzzingData data) {
+        logger.start("Starting Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
+        logger.debug("Fuzzing payload: {}", data.getPayload());
+    }
+
+    private List<FuzzingData> filterFuzzingData(List<FuzzingData> fuzzingDataListWithHttpMethodsFiltered, Fuzzer fuzzer) {
+        return CatsUtil.filterAndPrintNotMatching(
+                fuzzingDataListWithHttpMethodsFiltered,
+                data -> !fuzzer.skipForHttpMethods().contains(data.getMethod()),
+                logger,
+                "HTTP method {} is not supported by {}",
+                t -> t.getMethod().toString(), fuzzer.toString());
     }
 
     @Override

@@ -95,7 +95,7 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     String replacePath(FuzzingData data, String withData, String targetField) {
-        if (userArguments.isSimpleReplace()) {
+        if (userArguments.isNameReplace()) {
             return data.getPath().replace(targetField, Optional.ofNullable(withData).orElse(EMPTY));
         }
 
@@ -165,7 +165,7 @@ public class TemplateFuzzer implements Fuzzer {
     }
 
     private String replacePayload(FuzzingData data, String withData, String targetField) {
-        if (userArguments.isSimpleReplace()) {
+        if (userArguments.isNameReplace()) {
             return data.getPayload().replace(targetField, withData);
         }
         try {

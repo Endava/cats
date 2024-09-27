@@ -36,6 +36,7 @@ public class VersionChecker {
         String downloadLink = null;
         String latestVersion = null;
         String releaseNotes = null;
+
         try (Response response = httpClient.newCall(new Request.Builder().url(baseUrl).build()).execute()) {
             if (response.body() != null) {
                 String responseBody = response.body().string();

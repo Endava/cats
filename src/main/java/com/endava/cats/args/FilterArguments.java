@@ -34,34 +34,39 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Arguments used to restrict CATS run footprint. The difference between Filter and Ignore arguments
  * is that Filter arguments are focused on input filtering while Ignore are focused on response filtering.
  */
 @Singleton
-@Getter
+//@Getter
 public class FilterArguments {
+    /* local caches to avoid recompute */
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
     static final List<String> PATHS_TO_INCLUDE = new ArrayList<>();
-    private static final String EXCLUDE_FRON_ALL_FUZZERS_MARK = "!";
+    private static final String EXCLUDE_FROM_ALL_FUZZERS_MARK = "!";
 
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FilterArguments.class);
 
     @Inject
     Instance<Fuzzer> fuzzers;
     @Inject
+    @Getter
     CheckArguments checkArguments;
     @Inject
+    @Getter
     ProcessingArguments processingArguments;
     @Inject
+    @Getter
     UserArguments userArguments;
 
     enum FieldType {
@@ -75,52 +80,69 @@ public class FilterArguments {
     @CommandLine.Option(names = {"-f", "--fuzzers", "--fuzzer"},
             description = "A comma separated list of fuzzers to be run. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@", split = ",")
     private List<String> suppliedFuzzers;
+
     @CommandLine.Option(names = {"-p", "--paths", "--path"},
             description = "A comma separated list of paths to test. If no path is supplied, all paths will be considered. All available paths can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
     @Setter
     private List<String> paths;
+
     @CommandLine.Option(names = {"--skipPaths", "--skipPath"},
             description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. All available paths can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
     private List<String> skipPaths;
+
     @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
             description = "A comma separated list of fuzzers to ignore. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@", split = ",")
     private List<String> skipFuzzers;
+
     @CommandLine.Option(names = {"--httpMethods", "--httpMethod", "-X"},
             description = "A comma separated list of HTTP methods to include. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
     @Setter
     private List<HttpMethod> httpMethods = HttpMethod.restMethods();
+
     @CommandLine.Option(names = {"--skipHttpMethods", "--skipHttpMethod"},
             description = "A comma separated list of HTTP methods to skip. Default: @|bold,underline ${DEFAULT-VALUE}|@", split = ",")
     @Setter
     private List<HttpMethod> skippedHttpMethods = Collections.emptyList();
+
     @CommandLine.Option(names = {"-d", "--dryRun"},
             description = "Simulate a possible run without actually invoking the service. This will print how many tests will actually be executed and with which Fuzzers")
+    @Getter
     private boolean dryRun;
+
     @CommandLine.Option(names = {"--fieldTypes", "--fieldType"},
             description = "A comma separated list of OpenAPI data types to include. It only supports standard types: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FieldType> fieldTypes;
+
     @CommandLine.Option(names = {"--skipFieldTypes", "--skipFieldType"},
             description = "A comma separated list of OpenAPI data types to skip. It only supports standard types: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FieldType> skipFieldTypes;
+
     @CommandLine.Option(names = {"--fieldFormats", "--fieldFormat"},
             description = "A comma separated list of OpenAPI data formats to include. It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FormatType> fieldFormats;
+
     @CommandLine.Option(names = {"--skipFieldFormats", "--skipFieldFormat"},
             description = "A comma separated list of OpenAPI data formats to skip.  It supports formats mentioned in the documentation: @|underline https://swagger.io/docs/specification/data-models/data-types|@", split = ",")
     private List<FormatType> skipFieldFormats;
+
     @CommandLine.Option(names = {"--skipFields", "--skipField"},
             description = "A comma separated list of fields that will be skipped by replacement Fuzzers like @|bold EmptyStringsInFields|@, @|bold NullValuesInFields|@, etc. " +
                     "If the field name starts with @|bold !|@ the field will be skipped by @|bold all|@ fuzzers. ", split = ",")
     private List<String> skipFields;
+
     @CommandLine.Option(names = {"--skipHeaders", "--skipHeader"},
             description = "A comma separated list of headers that will be skipped by all Fuzzers", split = ",")
     private List<String> skipHeaders;
+
     @CommandLine.Option(names = {"--skipDeprecatedOperations"},
             description = "Skip fuzzing deprecated API operations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    @Getter
     private boolean skipDeprecated;
+
     @CommandLine.Option(names = {"-t", "--tags", "--tag"},
             description = "A comma separated list of tags to include. If no tag is supplied, all tags will be considered. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> tags;
+
     @CommandLine.Option(names = {"--skipTags", "--skipTag"},
             description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> skipTags;
@@ -143,7 +165,7 @@ public class FilterArguments {
      */
     public List<String> getSkipFieldsToBeSkippedForAllFuzzers() {
         return this.getSkipFields().stream()
-                .filter(field -> field.startsWith(EXCLUDE_FRON_ALL_FUZZERS_MARK))
+                .filter(field -> field.startsWith(EXCLUDE_FROM_ALL_FUZZERS_MARK))
                 .map(field -> field.substring(1))
                 .toList();
     }
@@ -280,25 +302,33 @@ public class FilterArguments {
      * @return a list of fuzzers to be run in phase 1
      */
     public List<String> getFirstPhaseFuzzersForPath() {
-        if (FUZZERS_TO_BE_RUN.isEmpty()) {
-            List<String> allowedFuzzers = processSuppliedFuzzers();
-            allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
-            allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
-            allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
-            allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
+        List<String> fuzzersToBeRun;
 
-            FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
+        if (FUZZERS_TO_BE_RUN.isEmpty()) {
+            Function<List<String>, List<String>> fuzzerFilterPipeline = Function.<List<String>>identity()
+                    .andThen(this::removeSkippedFuzzersGlobally)
+                    .andThen(this::removeSpecialFuzzers)
+                    .andThen(this::removeBasedOnTrimStrategy)
+                    .andThen(this::removeBasedOnSanitizationStrategy);
+
+            fuzzersToBeRun = fuzzerFilterPipeline.apply(this.processSuppliedFuzzers());
+        } else {
+            fuzzersToBeRun = new ArrayList<>(FUZZERS_TO_BE_RUN);
         }
 
         if (userArguments.isUserDictionarySupplied()) {
-            FUZZERS_TO_BE_RUN.clear();
-            // if a custom dictionary is supplied, we only keep these 2 fuzzers
-            FUZZERS_TO_BE_RUN.addAll(List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer"));
+            fuzzersToBeRun = List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer");
         } else {
-            //second phase fuzzers are removed
-            FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers().stream().map(Object::toString).toList()::contains);
+            Set<String> secondPhaseFuzzers = this.getSecondPhaseFuzzers().stream()
+                    .map(Object::toString)
+                    .collect(Collectors.toSet());
+
+            fuzzersToBeRun = fuzzersToBeRun.stream()
+                    .filter(fuzzer -> !secondPhaseFuzzers.contains(fuzzer))
+                    .collect(Collectors.toList());
         }
-        return FUZZERS_TO_BE_RUN;
+
+        return fuzzersToBeRun;
     }
 
     /**
@@ -313,22 +343,22 @@ public class FilterArguments {
                     .filter(fuzzer -> secondPhaseFuzzersAsString.contains(fuzzer.toString()))
                     .toList());
         }
-        if (onlySpecialFuzzers(this.getSuppliedFuzzers())) {
+        if (containsOnlySpecialFuzzers(this.getSuppliedFuzzers())) {
             return Collections.emptyList();
         }
         return List.copyOf(SECOND_PHASE_FUZZERS_TO_BE_RUN);
     }
 
     private List<String> removeSpecialFuzzers(List<String> allowedFuzzers) {
-        if (onlySpecialFuzzers(allowedFuzzers)) {
+        if (containsOnlySpecialFuzzers(allowedFuzzers)) {
             return allowedFuzzers;
         }
-        List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SpecialFuzzer.class);
+        List<String> specialFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SpecialFuzzer.class);
 
-        return allowedFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();
+        return allowedFuzzers.stream().filter(fuzzer -> !specialFuzzers.contains(fuzzer)).toList();
     }
 
-    private boolean onlySpecialFuzzers(List<String> candidates) {
+    private boolean containsOnlySpecialFuzzers(List<String> candidates) {
         List<String> specialFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SpecialFuzzer.class);
 
         return !candidates.isEmpty() && new HashSet<>(specialFuzzers).containsAll(candidates);
@@ -480,9 +510,11 @@ public class FilterArguments {
      */
     public List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
         List<String> allSuppliedPaths = matchWildCardPaths(this.getPaths(), openAPI);
+
         if (this.getPaths().isEmpty()) {
             allSuppliedPaths.addAll(openAPI.getPaths().keySet());
         }
+
         List<String> allSkippedPaths = matchWildCardPaths(this.getSkipPaths(), openAPI);
         allSuppliedPaths = allSuppliedPaths.stream().filter(path -> !allSkippedPaths.contains(path)).toList();
 
@@ -495,30 +527,29 @@ public class FilterArguments {
                 Object::toString);
         logger.debug("Supplied paths after filtering {}", allSuppliedPaths);
 
-
         return allSuppliedPaths;
     }
 
     private List<String> matchWildCardPaths(List<String> paths, OpenAPI openAPI) {
         Set<String> allContractPaths = openAPI.getPaths().keySet();
-        Map<Boolean, List<String>> pathsByWildcard = paths.stream().collect(Collectors.partitioningBy(path -> path.contains("*")));
 
-        List<String> pathsWithoutWildcard = pathsByWildcard.get(false);
-        List<String> pathsWithWildcard = pathsByWildcard.get(true);
+        List<String> result = paths.stream()
+                .flatMap(path -> {
+                    if (!path.contains("*")) {
+                        return Stream.of(path);
+                    } else {
+                        String regex = path
+                                .replace("*", ".*")
+                                .replace("{", "\\{")
+                                .replace("}", "\\}");
+                        Pattern pattern = Pattern.compile(regex);
 
-        List<String> result = new ArrayList<>(pathsWithoutWildcard);
-
-        for (String wildCardPath : pathsWithWildcard) {
-            String regex = wildCardPath
-                    .replace("*", ".*")
-                    .replace("{", "\\{")
-                    .replace("}", "\\}");
-            Pattern pattern = Pattern.compile(regex);
-            result.addAll(allContractPaths
-                    .stream()
-                    .filter(path -> pattern.matcher(path).matches())
-                    .toList());
-        }
+                        return allContractPaths.stream()
+                                .filter(contractPath -> pattern.matcher(contractPath).matches());
+                    }
+                })
+                .distinct()
+                .collect(Collectors.toList());
 
         logger.debug("Final list of matching wildcard paths: {}", result);
         return result;
