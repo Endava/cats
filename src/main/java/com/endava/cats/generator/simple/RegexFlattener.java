@@ -22,7 +22,18 @@ public abstract class RegexFlattener {
         regex = simplifyCharacterClasses(regex);
         regex = simplifyQuantifiers(regex);
         regex = removeStartEndAnyChar(regex);
+        regex = removeEndOrEmpty(regex);
 
+        return regex;
+    }
+
+    private static String removeEndOrEmpty(String regex) {
+        if (regex.endsWith("|")) {
+            return regex.substring(0, regex.length() - 1);
+        }
+        if (regex.endsWith("|^")) {
+            return regex.substring(0, regex.length() - 2);
+        }
         return regex;
     }
 
