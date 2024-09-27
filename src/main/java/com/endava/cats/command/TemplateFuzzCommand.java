@@ -4,8 +4,11 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.context.CatsConfiguration;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -19,6 +22,8 @@ import com.google.common.net.HttpHeaders;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.arc.Unremovable;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.inject.Inject;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +34,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -106,6 +113,9 @@ public class TemplateFuzzCommand implements Runnable {
     @Inject
     TestCaseListener testCaseListener;
 
+    @Inject
+    CatsGlobalContext catsGlobalContext;
+
     @Getter
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
@@ -126,6 +136,8 @@ public class TemplateFuzzCommand implements Runnable {
     @CommandLine.Option(names = {"--targetFields", "-t"},
             description = "A comma separated list of fully qualified request fields, HTTP headers, path and/or query parameters that the Fuzzers will apply to", split = ",")
     Set<String> targetFields;
+    @Inject
+    ProcessingArguments processingArguments;
 
     @Override
     public void run() {
@@ -157,6 +169,12 @@ public class TemplateFuzzCommand implements Runnable {
         ConsoleUtils.initTerminalWidth(spec);
         validateRequiredFields();
         testCaseListener.renderFuzzingHeader();
+        initCatsGlobalContext();
+    }
+
+    private void initCatsGlobalContext() {
+        CatsConfiguration catsConfiguration = new CatsConfiguration(appVersion, "template", url, List.of(httpMethod), 1, 1, 1);
+        catsGlobalContext.init(new OpenAPI().components(new Components()), List.of(), new Properties(), catsConfiguration);
     }
 
     private Set<String> getFieldsToFuzz(String payload, String url) {
@@ -170,7 +188,7 @@ public class TemplateFuzzCommand implements Runnable {
                 return new HashSet<>(JsonUtils.getAllFieldsOf(payload));
             }
             //When FUZZ keyword is supplied, set simple replace to true in order to do a simple replace(FUZZ, fuzzValue)
-            userArguments.setSimpleReplace(true);
+            userArguments.setNameReplace(true);
             return Set.of(fuzzKeyword);
         }
         return targetFields;
