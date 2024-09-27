@@ -224,7 +224,7 @@ public class StringGenerator {
         } catch (Exception e) {
             LOGGER.debug("Generator {} failed #atempt 2", generator.getClass().getSimpleName());
         }
-        return null; // or handle this case appropriately
+        return null;
     }
 
 
@@ -238,7 +238,7 @@ public class StringGenerator {
         if (pattern.startsWith("/") && pattern.endsWith("/i")) {
             pattern = pattern.substring(1, pattern.length() - 2);
         }
-        if (pattern.matches("(?!\\().?\\^.*")) {
+        if (pattern.matches("(?!\\().?(?<!\\[)\\^.*")) {
             pattern = pattern.substring(1);
         }
         if (pattern.endsWith("$/")) {
