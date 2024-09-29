@@ -174,7 +174,7 @@ public abstract class CatsModelUtils {
      * @return true if the field name contains a complex regex, false otherwise
      */
     public static boolean isUri(String pattern, String lowerField) {
-        return (lowerField.contains("url") || lowerField.contains("uri") || lowerField.contains("link")) && ("http://www.test.com".matches(pattern) || "https://www.test.com".matches(pattern));
+        return (lowerField.endsWith("url") || lowerField.endsWith("uri") || lowerField.endsWith("link")) && ("http://www.test.com".matches(pattern) || "https://www.test.com".matches(pattern));
     }
 
     /**
@@ -185,7 +185,7 @@ public abstract class CatsModelUtils {
      * @return true if the field name contains a complex regex, false otherwise
      */
     public static boolean isEmail(String pattern, String lowerField) {
-        return lowerField.contains("email") && "test@test.com".matches(pattern);
+        return lowerField.endsWith("email") && "test@test.com".matches(pattern);
     }
 
     /**
@@ -196,7 +196,7 @@ public abstract class CatsModelUtils {
      * @return true if the field name contains a complex regex, false otherwise
      */
     public static boolean isPassword(String pattern, String lowerField) {
-        return lowerField.contains("password") && "catsISc00l?!useIt#".matches(pattern);
+        return lowerField.endsWith("password") && "catsISc00l?!useIt#".matches(pattern);
     }
 
     public static boolean isNotEmptySchema(Schema schema) {
