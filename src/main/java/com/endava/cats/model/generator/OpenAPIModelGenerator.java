@@ -431,7 +431,7 @@ public class OpenAPIModelGenerator {
         int min = null == property.getMinItems() ? 1 : property.getMinItems();
         int max = null == property.getMaxItems() ? 2 : property.getMaxItems();
 
-        return Math.max(min, Math.min(this.arraySize, max));
+        return Math.clamp(this.arraySize, min, max);
     }
 
     double randomNumber(Double min, Double max) {

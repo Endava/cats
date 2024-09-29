@@ -325,7 +325,7 @@ public class FilterArguments {
 
             fuzzersToBeRun = fuzzersToBeRun.stream()
                     .filter(fuzzer -> !secondPhaseFuzzers.contains(fuzzer))
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         return fuzzersToBeRun;
@@ -420,7 +420,7 @@ public class FilterArguments {
         finalList.addAll(this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(checkArguments.isCheckHttp(), HttpFuzzer.class));
 
         if (finalList.isEmpty()) {
-            finalList = fuzzers.stream().map(Object::toString).collect(Collectors.toList());
+            finalList = fuzzers.stream().map(Object::toString).toList();
         }
 
         this.removeIfNotSupplied(checkArguments.isIncludeControlChars(), ControlCharFuzzer.class, finalList);

@@ -284,54 +284,46 @@ public class StringGenerator {
     }
 
     private static String removeMisplacedDollarSigns(String regex) {
-        StringBuilder result = new StringBuilder();
+        StringBuilder result = new StringBuilder(regex.length());
         boolean inCharClass = false;
-        boolean escapeNext = false;
-        int parenDepth = 0; // Tracks depth of parentheses
+        int parenDepth = 0;
         int length = regex.length();
 
         for (int i = 0; i < length; i++) {
             char c = regex.charAt(i);
 
-            if (escapeNext) {
-                // Current character is escaped; add it and reset escape flag
-                result.append(c);
-                escapeNext = false;
-            } else if (c == '\\') {
-                // Next character is escaped
-                result.append(c);
-                escapeNext = true;
-            } else if (c == '[') {
-                // Entering character class
-                result.append(c);
-                inCharClass = true;
-            } else if (c == ']') {
-                // Exiting character class
-                result.append(c);
-                inCharClass = false;
-            } else if (c == '(') {
-                // Entering parentheses group
-                result.append(c);
-                parenDepth++;
-            } else if (c == ')') {
-                // Exiting parentheses group
-                result.append(c);
-                if (parenDepth > 0) {
-                    parenDepth--;
-                }
-            } else if (c == '$') {
-                if (i == length - 1) {
-                    // Dollar sign at the end; keep it
+            switch (c) {
+                case '\\':
                     result.append(c);
-                } else if (inCharClass) {
-                    // Dollar sign inside character class; keep it
+                    if (i + 1 < length) {
+                        result.append(regex.charAt(++i));
+                    }
+                    break;
+                case '[':
+                    inCharClass = true;
                     result.append(c);
-                } else if (parenDepth > 0) {
-                    // Dollar sign inside parentheses; keep it
+                    break;
+                case ']':
+                    inCharClass = false;
                     result.append(c);
-                }
-            } else {
-                result.append(c);
+                    break;
+                case '(':
+                    parenDepth++;
+                    result.append(c);
+                    break;
+                case ')':
+                    if (parenDepth > 0) {
+                        parenDepth--;
+                    }
+                    result.append(c);
+                    break;
+                case '$':
+                    if (i == length - 1 || inCharClass || parenDepth > 0) {
+                        result.append(c);
+                    }
+                    break;
+                default:
+                    result.append(c);
             }
         }
         return result.toString();
