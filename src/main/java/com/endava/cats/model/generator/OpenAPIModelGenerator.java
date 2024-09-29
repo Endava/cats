@@ -429,7 +429,7 @@ public class OpenAPIModelGenerator {
 
     int getArrayLength(Schema<?> property) {
         int min = null == property.getMinItems() ? 1 : property.getMinItems();
-        int max = null == property.getMaxItems() ? 2 : property.getMaxItems();
+        int max = null == property.getMaxItems() ? min + 1 : property.getMaxItems();
 
         return Math.clamp(this.arraySize, min, max);
     }

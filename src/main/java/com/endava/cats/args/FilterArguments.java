@@ -423,25 +423,24 @@ public class FilterArguments {
             finalList = fuzzers.stream().map(Object::toString).toList();
         }
 
-        this.removeIfNotSupplied(checkArguments.isIncludeControlChars(), ControlCharFuzzer.class, finalList);
-        this.removeIfNotSupplied(checkArguments.isIncludeEmojis(), EmojiFuzzer.class, finalList);
-        this.removeIfNotSupplied(checkArguments.isIncludeWhitespaces(), WhitespaceFuzzer.class, finalList);
-        this.removeIfNotSupplied(checkArguments.isIncludeContract(), LinterFuzzer.class, finalList);
+        finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeControlChars(), ControlCharFuzzer.class, finalList);
+        finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeEmojis(), EmojiFuzzer.class, finalList);
+        finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeWhitespaces(), WhitespaceFuzzer.class, finalList);
+        finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeContract(), LinterFuzzer.class, finalList);
 
         return finalList;
     }
 
-    private void removeIfNotSupplied(boolean includeArgument, Class<? extends Annotation> annotation, List<String> currentFuzzers) {
+    private List<String> filterByAnnotationAndIncludeArgument(boolean includeArgument, Class<? extends Annotation> annotation, List<String> currentFuzzers) {
         if (includeArgument) {
-            // if special characters fuzzers are included, we exit and don't remove them
-            return;
+            return currentFuzzers;
         }
 
-        for (Fuzzer fuzzer : fuzzers) {
-            if (AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null) {
-                currentFuzzers.remove(fuzzer.toString());
-            }
-        }
+        return currentFuzzers.stream()
+                .filter(fuzzerStr -> fuzzers.stream()
+                        .noneMatch(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), annotation) != null
+                                && fuzzer.toString().equals(fuzzerStr)))
+                .toList();
     }
 
     private List<String> filterFuzzersByAnnotationWhenCheckArgumentSupplied(boolean checkArgument, Class<? extends Annotation> annotation) {
