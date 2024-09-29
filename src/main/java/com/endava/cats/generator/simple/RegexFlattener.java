@@ -28,11 +28,11 @@ public abstract class RegexFlattener {
     }
 
     private static String removeEndOrEmpty(String regex) {
-        if (regex.endsWith("|")) {
-            return regex.substring(0, regex.length() - 1);
-        }
-        if (regex.endsWith("|^")) {
+        if (regex.endsWith("|^") || regex.endsWith("^+")) {
             return regex.substring(0, regex.length() - 2);
+        }
+        if (regex.endsWith("|") || regex.endsWith("^")) {
+            return regex.substring(0, regex.length() - 1);
         }
         return regex;
     }
