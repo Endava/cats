@@ -261,7 +261,9 @@ class StringGeneratorTest {
             "'^[^\\u0000-\\u00FF]$'; -1; -1",
             "'arn:aws:logs:[a-z\\-0-9]*:[0-9]{12}:log-group:([\\.\\-_/#A-Za-z0-9]+):\\*$'; 47; 562",
             ".*(^arn:((aws)|(aws-cn)|(aws-us-gov)):s3:::)([a-zA-Z0-9_-]+$).*; 1; 6000",
-            "[^\\r\\n]; 1; 1", "^arn:[^:]{1,63}:ec2:[^:]{0,63}:[^:]{0,63}:subnet\\/subnet-[0-9a-f]{8,17}$|^$;2;100"
+            "[^\\r\\n]; 1; 1", "^arn:[^:]{1,63}:ec2:[^:]{0,63}:[^:]{0,63}:subnet\\/subnet-[0-9a-f]{8,17}$|^$;2;100",
+            "(?=^.{8,64}$)((?=.*\\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[^A-Za-z0-9\\s])(?=.*[a-z])|(?=.*[^A-Za-z0-9\\s])(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9\\s]))^.*; 1; 256",
+            "^urn:tdm:(([a-z]{2}-(gov-)?[a-z]{4,9}-[0-9]{1,3}/[0-9]+/)*[\\p{Alnum}_]+(/[\\p{Alnum}_]+)*):([\\p{Alpha}]*):([\\p{Alnum}_]+(/[\\p{Alnum}_]+)*)$;1;200"
     }, delimiter = ';')
     void shouldGenerateRegex(String pattern, int minSize, int maxSize) {
         String generated = StringGenerator.generate(pattern, minSize, maxSize);

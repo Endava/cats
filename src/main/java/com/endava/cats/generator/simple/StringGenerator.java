@@ -63,6 +63,8 @@ public class StringGenerator {
     private static final String[] TLDS = {".com", ".net", ".org", ".io"};
     private static final String[] URI_SCHEMES = {"http", "https", "ftp", "file"};
 
+    private static final List<String> SIMPLE_REGEXES = List.of("[A-Z]+", "[a-z]+", "[A-Za-z]+", "[0-9]+", "[A-Za-z0-9]+", "[A-Z0-9]+", "[a-z0-9]+", "\\w+", "[A-Za-z0-9_-#!]");
+
     /**
      * Represents an empty string.
      */
@@ -184,11 +186,22 @@ public class StringGenerator {
         String cleanedPattern = cleanPattern(pattern);
         String flattenedPattern = RegexFlattener.flattenRegex(cleanedPattern);
 
+        String valueBasedOnSimpleRegexes = tryGenerateWithSimpleRegexes(pattern, min, max, cleanedPattern);
+
+        if (valueBasedOnSimpleRegexes != null) {
+            return valueBasedOnSimpleRegexes;
+        }
+
         GeneratorParams generatorParams = new GeneratorParams(flattenedPattern, min, max, cleanedPattern);
 
         String generatedWithRgxGenerator = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, generatorParams);
         if (generatedWithRgxGenerator != null) {
             return generatedWithRgxGenerator;
+        }
+
+        if (min == -1 && max == -1) {
+            GeneratorParams generatorParamsWithMinMax = new GeneratorParams(flattenedPattern, 0, 300, cleanedPattern);
+            return generateUsingRegexpGen(generatorParamsWithMinMax);
         }
 
         String generatedUsingCatsRegexGenerator = callGenerateTwice(StringGenerator::generateUsingCatsRegexGenerator, generatorParams);
@@ -202,6 +215,17 @@ public class StringGenerator {
         }
 
         throw new IllegalArgumentException("Could not generate a string for pattern " + pattern + " with min " + min + " and max " + max);
+    }
+
+    public static String tryGenerateWithSimpleRegexes(String originalPattern, int min, int max, String cleanedPattern) {
+        for (String simpleRegex : SIMPLE_REGEXES) {
+            String generated = generateUsingRgxGenerator(new GeneratorParams(simpleRegex, min, max, simpleRegex));
+            if (generated.matches(originalPattern) || generated.matches(cleanedPattern)) {
+                LOGGER.debug("Generated value {} with simple regex matches original pattern {}", generated, originalPattern);
+                return generated;
+            }
+        }
+        return null;
     }
 
     public static String callGenerateTwice(Function<GeneratorParams, String> generator, GeneratorParams generatorParams) {
@@ -566,10 +590,9 @@ public class StringGenerator {
      * @return a regex with lookaheads removed
      */
     public static String removeLookaheadAssertions(String regex) {
-        // Replace negative lookahead (?!) with an empty string
         regex = regex.replaceAll("\\(\\?!.*?\\)", "");
-        // Replace positive lookahead (?=) with an empty string
         regex = regex.replaceAll("\\(\\?=.+?\\)", "");
+
         return regex;
     }
 
@@ -625,16 +648,17 @@ public class StringGenerator {
             return null;
         }
 
-        String lowerField = Optional.ofNullable(schema.getExtensions()).orElse(Collections.emptyMap()).getOrDefault(CatsModelUtils.X_CATS_FIELD_NAME, "").toString().toLowerCase(Locale.ROOT);
+        String lowerCaseFieldName = Optional.ofNullable(schema.getExtensions()).orElse(Collections.emptyMap()).getOrDefault(CatsModelUtils.X_CATS_FIELD_NAME, "").toString().toLowerCase(Locale.ROOT);
         String pattern = schema.getPattern();
+        LOGGER.debug("Checking if the field {} with pattern {} is a complex regex", lowerCaseFieldName, pattern);
 
-        if (isUri(pattern, lowerField)) {
+        if (isUri(pattern, lowerCaseFieldName)) {
             return generateFixedLengthUri(length);
         }
-        if (isEmail(pattern, lowerField)) {
+        if (isEmail(pattern, lowerCaseFieldName)) {
             return generateFixedLengthEmail(length);
         }
-        if (isPassword(pattern, lowerField)) {
+        if (isPassword(pattern, lowerCaseFieldName)) {
             return "catsISC00l#" + RandomStringUtils.secure().nextPrint(length - 11);
         }
 
