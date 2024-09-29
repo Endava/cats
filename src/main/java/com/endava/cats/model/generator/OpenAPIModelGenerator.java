@@ -168,19 +168,25 @@ public class OpenAPIModelGenerator {
         }
 
         Object enumOrDefault = this.getEnumOrDefault(propertySchema);
-
         if (enumOrDefault != null) {
             return enumOrDefault;
         }
 
         Object generatedValueFromFormat = this.generateStringValue(propertyName, propertySchema);
-
         if (generatedValueFromFormat != null) {
             return generatedValueFromFormat;
-        } else if (getExample(propertySchema) != null && useExamples) {
+        }
+
+        if (extractExampleFromSchema(propertySchema) != null && useExamples) {
             logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
             return this.formatExampleIfNeeded(propertySchema);
-        } else if (CatsModelUtils.isStringSchema(propertySchema)) {
+        }
+
+        return generateExampleBySchemaType(propertyName, propertySchema);
+    }
+
+    private <T> Object generateExampleBySchemaType(String propertyName, Schema<T> propertySchema) {
+        if (CatsModelUtils.isStringSchema(propertySchema)) {
             return this.getExampleFromStringSchema(propertyName, propertySchema);
         } else if (CatsModelUtils.isBooleanSchema(propertySchema)) {
             return this.getExampleFromBooleanSchema();
@@ -199,7 +205,7 @@ public class OpenAPIModelGenerator {
         return resolveProperties(propertySchema);
     }
 
-    private Object getExample(Schema<?> schema) {
+    private Object extractExampleFromSchema(Schema<?> schema) {
         if (schema.getExample() != null) {
             return schema.getExample();
         }
@@ -236,7 +242,7 @@ public class OpenAPIModelGenerator {
     }
 
     <T> Object formatExampleIfNeeded(Schema<T> property) {
-        Object example = getExample(property);
+        Object example = extractExampleFromSchema(property);
         if (example == null) {
             return null;
         }
@@ -272,11 +278,11 @@ public class OpenAPIModelGenerator {
             currentProperty = previousPropertyValue;
             return result;
         }
-        return getExample(schema);
+        return extractExampleFromSchema(schema);
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
-        Object example = getExample(property);
+        Object example = extractExampleFromSchema(property);
         if (example != null) {
             return example;
         }
@@ -466,7 +472,7 @@ public class OpenAPIModelGenerator {
             this.populateWithComposedSchema(values, name, schema);
             return values;
         } else {
-            globalContext.getRequestDataTypes().put(currentProperty, schema);
+            globalContext.recordRequestSchema(currentProperty, schema);
             if (!values.isEmpty()) {
                 return values;
             }
@@ -569,12 +575,12 @@ public class OpenAPIModelGenerator {
             this.populateWithComposedSchema(values, propertyName.toString(), innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
             values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
-            globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
+            globalContext.recordRequestSchema(currentProperty, innerSchema);
         } else {//maybe here a check for array schema
             logger.trace("Resolving {}", propertyName);
             Object example = this.resolvePropertyToExample(propertyName.toString(), innerSchema);
             values.put(propertyName.toString(), example);
-            globalContext.getRequestDataTypes().put(currentProperty, innerSchema);
+            globalContext.recordRequestSchema(currentProperty, innerSchema);
         }
     }
 
@@ -716,38 +722,46 @@ public class OpenAPIModelGenerator {
     }
 
     private void addXXXOfExamples(Map<String, Object> values, Object propertyName, Collection<Schema> allOf, String of) {
-        Collection<Schema> allOfSchemasSanitized = allOf
+        List<Schema> sanitizedSchemes = allOf
                 .stream()
                 .filter(CatsModelUtils::isNotEmptySchema)
                 .toList();
 
-        if (allOfSchemasSanitized.size() == 1) {
-            values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), allOfSchemasSanitized.iterator().next()));
+        if (sanitizedSchemes.size() == 1) {
+            addSingleSchemaExample(values, propertyName, sanitizedSchemes.getFirst());
         } else {
-            Set<String> storedSchemaRefs = new HashSet<>();
-            int i = 0;
-
-            for (Schema allOfSchema : allOfSchemasSanitized) {
-                String fullSchemaRef = allOfSchema.get$ref();
-                String schemaRef;
-
-                Schema schemaToExample = allOfSchema;
-                if (fullSchemaRef != null) {
-                    schemaRef = CatsModelUtils.getSimpleRef(fullSchemaRef);
-                    schemaToExample = this.globalContext.getSchemaFromReference(fullSchemaRef);
-                } else {
-                    schemaRef = schemaToExample.getType();
-
-                    if (storedSchemaRefs.contains(schemaRef)) {
-                        schemaRef = schemaRef + ++i;
-                    }
-                    fullSchemaRef = "#" + schemaRef;
-                    storedSchemaRefs.add(schemaRef);
-                }
-                String propertyKey = propertyName.toString() + "_" + schemaRef;
-                String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1) : currentProperty;
-                values.put(keyToStore + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
-            }
+            addMultipleSchemaExample(values, propertyName, of, sanitizedSchemes);
         }
+    }
+
+    private void addMultipleSchemaExample(Map<String, Object> values, Object propertyName, String of, List<Schema> sanitizedSchemes) {
+        Set<String> storedSchemaRefs = new HashSet<>();
+        int deduplicator = 0;
+
+        for (Schema allOfSchema : sanitizedSchemes) {
+            String fullSchemaRef = allOfSchema.get$ref();
+            String schemaRef;
+
+            Schema schemaToExample = allOfSchema;
+            if (fullSchemaRef != null) {
+                schemaRef = CatsModelUtils.getSimpleRef(fullSchemaRef);
+                schemaToExample = this.globalContext.getSchemaFromReference(fullSchemaRef);
+            } else {
+                schemaRef = schemaToExample.getType();
+
+                if (storedSchemaRefs.contains(schemaRef)) {
+                    schemaRef = schemaRef + ++deduplicator;
+                }
+                fullSchemaRef = "#" + schemaRef;
+                storedSchemaRefs.add(schemaRef);
+            }
+            String propertyKey = propertyName.toString() + "_" + schemaRef;
+            String keyToStore = currentProperty.contains("#") ? currentProperty.substring(currentProperty.lastIndexOf("#") + 1) : currentProperty;
+            values.put(keyToStore + of + fullSchemaRef, resolveModelToExample(propertyKey, schemaToExample));
+        }
+    }
+
+    private void addSingleSchemaExample(Map<String, Object> values, Object propertyName, Schema<?> schema) {
+        values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), schema));
     }
 }

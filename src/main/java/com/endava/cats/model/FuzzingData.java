@@ -163,8 +163,6 @@ public class FuzzingData {
 
         return catsFields.stream()
                 .filter(catsField -> this.getRequestPropertyTypes().get(catsField.getName()) != null)
-                //this is a bit of a hack that might be abused in the future to include a full object as extension. currently it only holds the field name
-                .peek(catsField -> catsField.getSchema().addExtension(CatsModelUtils.X_CATS_FIELD_NAME, catsField.getName()))
                 .collect(Collectors.toSet());
     }
 

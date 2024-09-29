@@ -303,4 +303,10 @@ public class CatsGlobalContext {
         MDC.put(CONTRACT_PATH, path);
         MDC.put(HTTP_METHOD, method.toString());
     }
+
+    public void recordRequestSchema(String propertyName, Schema<?> schema) {
+        requestDataTypes.put(propertyName, schema);
+        //this is a bit of a hack that might be abused in the future to include a full object as extension. currently it only holds the field name
+        schema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, propertyName);
+    }
 }
