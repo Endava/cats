@@ -46,7 +46,7 @@ public abstract class RegexFlattener {
         regex = regex.replaceAll("^(?:(?<!\\\\)\\*+\\.*|\\.*(?<!\\\\)\\*+)", "");
 
         // Remove trailing unescaped '.*' or '*' patterns
-        regex = regex.replaceAll("(?:(?<!\\\\)\\*+\\.*|\\.*(?<!\\\\)\\*+)$", "+");
+        regex = regex.replaceAll("(?:(?<!\\\\)\\*+\\.*|\\.*(?<!\\\\)\\*+)$", "\\\\w*");
 
         return regex;
     }
@@ -59,9 +59,9 @@ public abstract class RegexFlattener {
         flattenedRegex = flattenedRegex.replace("[\\s\\t\\r\\n\\f]", "\\s");
         flattenedRegex = flattenedRegex.replace("^\\u0000-\\u00FF", "\\u0100-\\uFFFF");
 
-        flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\d", "\\D");
-        flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\w", "\\W");
-        flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\s", "\\S");
+        flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\d", "\\\\D");
+        flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\w", "\\\\W");
+        flattenedRegex = simplifyNegatedClass(flattenedRegex, "\\s", "\\\\S");
 
         return flattenedRegex;
     }

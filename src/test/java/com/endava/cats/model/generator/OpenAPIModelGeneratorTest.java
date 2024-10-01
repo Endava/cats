@@ -4,6 +4,8 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -14,6 +16,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -163,6 +167,21 @@ class OpenAPIModelGeneratorTest {
         Assertions.assertThat(formatted).isInstanceOf(byte[].class);
         String decoded = new String((byte[]) formatted, StandardCharsets.UTF_8);
         Assertions.assertThat(decoded).isEqualTo(expected);
+    }
+
+    @Test
+    void shouldSerializeWithTheDepthAwareSerializer() throws Exception {
+        OpenAPIModelGenerator generator = setupPayloadGenerator();
+        Schema<?> schema = new Schema<>();
+        schema.setType("object");
+        schema.setProperties(Map.of("field1", new Schema<>(), "field2", new Schema<>()));
+        schema.setExample(Map.of("field1", Map.of("field2", Map.of("field3", "value"))));
+        ObjectMapper mockMapper = Mockito.mock(ObjectMapper.class);
+        Mockito.when(mockMapper.writeValueAsString(Mockito.any())).thenThrow(new JsonParseException("simulating issue"));
+        ReflectionTestUtils.setField(generator, "simpleObjectMapper", mockMapper);
+        String result = generator.tryToSerializeExample(schema);
+
+        Assertions.assertThat(result).isNull();
     }
 
     private OpenAPIModelGenerator setupPayloadGenerator() throws IOException {

@@ -238,7 +238,6 @@ public class StringGenerator {
         } catch (Exception e) {
             LOGGER.debug("Generator {} failed #atempt 1", generator.getClass().getSimpleName());
         }
-
         try {
             String secondVersion = generator.apply(new GeneratorParams(removeLookaheadAssertions(generatorParams.cleanedPattern()), generatorParams.min, generatorParams.max, generatorParams.originalPattern()));
             if (secondVersion.matches(generatorParams.originalPattern())) {
@@ -280,6 +279,10 @@ public class StringGenerator {
         pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
         pattern = removeMisplacedDollarSigns(pattern);
 
+        if (pattern.startsWith("|")) {
+            pattern = pattern.substring(1);
+        }
+
         return pattern;
     }
 
@@ -287,46 +290,55 @@ public class StringGenerator {
         StringBuilder result = new StringBuilder(regex.length());
         boolean inCharClass = false;
         int parenDepth = 0;
-        int length = regex.length();
+        boolean escape = false;
 
-        for (int i = 0; i < length; i++) {
-            char c = regex.charAt(i);
+        for (int i = 0; i < regex.length(); i++) {
+            char currentChar = regex.charAt(i);
 
-            switch (c) {
+            if (escape) {
+                result.append(currentChar);
+                escape = false;
+                continue;
+            }
+
+            switch (currentChar) {
                 case '\\':
-                    result.append(c);
-                    if (i + 1 < length) {
-                        result.append(regex.charAt(++i));
-                    }
+                    result.append(currentChar);
+                    escape = true;
                     break;
                 case '[':
                     inCharClass = true;
-                    result.append(c);
+                    result.append(currentChar);
                     break;
                 case ']':
                     inCharClass = false;
-                    result.append(c);
+                    result.append(currentChar);
                     break;
                 case '(':
                     parenDepth++;
-                    result.append(c);
+                    result.append(currentChar);
                     break;
                 case ')':
                     if (parenDepth > 0) {
                         parenDepth--;
                     }
-                    result.append(c);
+                    result.append(currentChar);
                     break;
                 case '$':
-                    if (i == length - 1 || inCharClass || parenDepth > 0) {
-                        result.append(c);
+                    if (shouldAppendDollar(i, regex.length(), inCharClass, parenDepth)) {
+                        result.append(currentChar);
                     }
                     break;
                 default:
-                    result.append(c);
+                    result.append(currentChar);
             }
         }
+
         return result.toString();
+    }
+
+    private static boolean shouldAppendDollar(int currentIndex, int length, boolean inCharClass, int parenDepth) {
+        return currentIndex == length - 1 || inCharClass || parenDepth > 0;
     }
 
     private static String generateUsingRegexpGen(GeneratorParams generatorParams) {
@@ -386,9 +398,10 @@ public class StringGenerator {
         int max = generatorParams.max;
 
         try {
+            RgxGen rgxGen = new RgxGen(pattern);
             do {
-                generatedValue = new RgxGen(pattern).generate();
-                if ((hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0)) && generatedValue.matches(originalPattern)) {
+                generatedValue = rgxGen.generate();
+                if (matchesLength(pattern, min, max, generatedValue) && generatedValue.matches(originalPattern)) {
                     return generatedValue;
                 }
                 generatedValue = composeString(generatedValue, min, max);
@@ -400,6 +413,14 @@ public class StringGenerator {
         }
         LOGGER.debug("Generated using RGX {}", generatedValue);
         return generatedValue;
+    }
+
+    private static boolean matchesLength(String pattern, int min, int max, String generatedValue) {
+        return hasLengthInline(pattern) || isSetOfAlternatives(pattern) || (min <= 0 && max <= 0) || hasLengthBetween(generatedValue, min, max);
+    }
+
+    private static boolean hasLengthBetween(String string, int min, int max) {
+        return string.length() >= min && string.length() <= max;
     }
 
     private static boolean isSetOfAlternatives(String regex) {
@@ -582,8 +603,10 @@ public class StringGenerator {
      * @return a regex with lookaheads removed
      */
     public static String removeLookaheadAssertions(String regex) {
-        regex = regex.replaceAll("\\(\\?!.*?\\)", "");
-        regex = regex.replaceAll("\\(\\?=.+?\\)", "");
+        regex = regex.replaceAll("\\(\\?=([^)]*)\\)", "($1)");
+        regex = regex.replaceAll("\\(\\?!([^)]*)\\)", "(^$1)");
+        regex = regex.replaceAll("\\(\\?<=([^)]*)\\)", "($1)");
+        regex = regex.replaceAll("\\(\\?<!([^)]*)\\)", "(^$1)");
 
         return regex;
     }
