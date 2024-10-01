@@ -21,7 +21,7 @@ public class DepthLimitingSerializer extends JsonSerializer<Object> {
     private final ThreadLocal<Integer> currentDepth = ThreadLocal.withInitial(() -> 0);
 
     public DepthLimitingSerializer(int depth) {
-        maxDepth = depth * 6;
+        maxDepth = depth;
         this.mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
 
@@ -46,39 +46,57 @@ public class DepthLimitingSerializer extends JsonSerializer<Object> {
 
         try {
             if (value.getClass().isArray()) {
-                gen.writeStartArray();
-                int length = Array.getLength(value);
-                for (int i = 0; i < length; i++) {
-                    Object item = Array.get(value, i);
-                    if (item != null) {
-                        serializeWithDepth(item, gen);
-                    }
-                }
-                gen.writeEndArray();
+                serializeArray(value, gen);
             } else if (value instanceof Map) {
-                gen.writeStartObject();
-                for (Map.Entry<?, ?> entry : ((Map<?, ?>) value).entrySet()) {
-                    if (entry.getKey() != null && entry.getValue() != null) {
-                        if (currentDepth.get() < maxDepth) {
-                            gen.writeFieldName(entry.getKey().toString());
-                            serializeWithDepth(entry.getValue(), gen);
-                        }
-                    }
-                }
-                gen.writeEndObject();
+                serializeMap((Map<?, ?>) value, gen);
             } else if (value instanceof Collection) {
-                gen.writeStartArray();
-                for (Object item : (Collection<?>) value) {
-                    if (item != null) {
-                        serializeWithDepth(item, gen);
-                    }
-                }
-                gen.writeEndArray();
+                serializeCollection((Collection<?>) value, gen);
             } else {
-                mapper.writeValue(gen, value);
+                serializePrimitive(value, gen);
             }
         } finally {
             currentDepth.set(depth);
         }
+    }
+
+    private void serializePrimitive(Object value, JsonGenerator gen) throws IOException {
+        mapper.writeValue(gen, value);
+    }
+
+    private void serializeCollection(Collection<?> value, JsonGenerator gen) throws IOException {
+        gen.writeStartArray();
+        for (Object item : value) {
+            if (item != null) {
+                serializeWithDepth(item, gen);
+            }
+        }
+        gen.writeEndArray();
+    }
+
+    private void serializeMap(Map<?, ?> value, JsonGenerator gen) throws IOException {
+        gen.writeStartObject();
+        for (Map.Entry<?, ?> entry : value.entrySet()) {
+            if (isValidMapEntry(entry)) {
+                gen.writeFieldName(entry.getKey().toString());
+                serializeWithDepth(entry.getValue(), gen);
+            }
+        }
+        gen.writeEndObject();
+    }
+
+    private boolean isValidMapEntry(Map.Entry<?, ?> entry) {
+        return entry.getKey() != null && entry.getValue() != null && currentDepth.get() < maxDepth;
+    }
+
+    private void serializeArray(Object value, JsonGenerator gen) throws IOException {
+        gen.writeStartArray();
+        int length = Array.getLength(value);
+        for (int i = 0; i < length; i++) {
+            Object item = Array.get(value, i);
+            if (item != null) {
+                serializeWithDepth(item, gen);
+            }
+        }
+        gen.writeEndArray();
     }
 }
