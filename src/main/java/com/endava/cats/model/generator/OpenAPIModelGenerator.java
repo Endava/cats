@@ -10,8 +10,8 @@ import com.endava.cats.util.JsonUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -33,6 +33,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.endava.cats.generator.simple.StringGenerator.generateValueBasedOnMinMax;
+import static com.fasterxml.jackson.core.JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN;
+import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
+import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_ENUMS_USING_TO_STRING;
 
 /**
  * A modified version of {@code io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -59,6 +64,7 @@ public class OpenAPIModelGenerator {
     public static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
+    public static final int SELF_REF_DEPTH_MULTIPLIER = 6;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGenerator.class);
     private final Random random;
     private final boolean useExamples;
@@ -97,16 +103,26 @@ public class OpenAPIModelGenerator {
     }
 
     private void configureDefaultJacksonMapper() {
-        simpleObjectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        simpleObjectMapper.disable(SerializationFeature.INDENT_OUTPUT);
+        configureObjectMapper(simpleObjectMapper);
     }
 
     private void configureDepthAwareJacksonMapper(int selfReferenceDepth) {
+        int finalDepth = selfReferenceDepth * SELF_REF_DEPTH_MULTIPLIER;
         SimpleModule module = new SimpleModule();
-        customDepthMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        module.addSerializer(Object.class, new DepthLimitingSerializer(selfReferenceDepth));
+        module.addSerializer(Object.class, new DepthLimitingSerializer(finalDepth));
         customDepthMapper.registerModule(module);
-        customDepthMapper.disable(SerializationFeature.INDENT_OUTPUT);
+
+        configureObjectMapper(customDepthMapper);
+    }
+
+    private void configureObjectMapper(ObjectMapper mapper) {
+        mapper.registerModule(new JavaTimeModule());
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.disable(FAIL_ON_EMPTY_BEANS);
+        mapper.enable(WRITE_ENUMS_USING_TO_STRING);
+        mapper.enable(WRITE_BIGDECIMAL_AS_PLAIN);
+        mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
+        mapper.disable(INDENT_OUTPUT);
     }
 
 
@@ -157,6 +173,7 @@ public class OpenAPIModelGenerator {
         try {
             return simpleObjectMapper.writeValueAsString(obj);
         } catch (Exception e) {
+
             logger.debug("Generated object is too large. Switching to custom depth aware serializer...");
             return null;
         }
@@ -385,6 +402,7 @@ public class OpenAPIModelGenerator {
     }
 
     private Object getExampleFromArraySchema(String propertyName, Schema property) {
+        logger.debug("Array property {}", propertyName);
         Schema innerType = property.getItems();
         if (innerType == null) {
             return "[]";
@@ -428,9 +446,13 @@ public class OpenAPIModelGenerator {
     }
 
     int getArrayLength(Schema<?> property) {
-        int min = null == property.getMinItems() ? 1 : property.getMinItems();
-        int max = null == property.getMaxItems() ? min + 1 : property.getMaxItems();
+        int min = Optional.ofNullable(property.getMinItems()).orElse(1);
 
+        int max = Optional.ofNullable(property.getMaxItems())
+                .filter(maxVal -> maxVal != 0)
+                .orElse(min + 1);
+
+        logger.debug("Clamping array size between {} and {}, array size {}", min, max, this.arraySize);
         return Math.clamp(this.arraySize, min, max);
     }
 

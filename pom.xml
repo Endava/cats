@@ -77,6 +77,7 @@
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
         <kotlin-reflect.version>2.0.20</kotlin-reflect.version>
+        <jackson-datatype-jsr310.version>2.15.2</jackson-datatype-jsr310.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -620,6 +621,11 @@
             <artifactId>kotlin-reflect</artifactId>
             <version>${kotlin-reflect.version}</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson-datatype-jsr310.version}</version>
         </dependency>
     </dependencies>
 </project>

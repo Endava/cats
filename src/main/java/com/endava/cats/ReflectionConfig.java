@@ -18,6 +18,7 @@ import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.util.KeyValuePair;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.curiousoddman.rgxgen.RgxGen;
 import com.github.curiousoddman.rgxgen.config.RgxGenOption;
 import com.github.curiousoddman.rgxgen.config.RgxGenProperties;
@@ -294,7 +295,7 @@ import java.util.UUID;
         Name.class, Address.class, EnFile.class, FakeValuesGrouping.class, FakeValues.class, RandomService.class, FakeValuesService.class, UUID.class, net.minidev.asm.ConvertDate.class, net.minidev.asm.DefaultConverter.class, OffsetDateTime.class, LocalDateTime.class, LocalDate.class, OffsetTime.class,
         RgxGenOption.class, RgxGenProperties.class, ArrayIteratorSupplier.class, ChoiceIteratorSupplier.class, GroupIteratorSupplier.class,  IncrementalLengthIteratorSupplier.class, NegativeIteratorSupplier.class, PermutationsIteratorSupplier.class, ReferenceIteratorSupplier.class, SingleCaseInsensitiveValueIteratorSupplier.class, SingleValueIteratorSupplier.class, ArrayIterator.class, CaseVariationIterator.class, ChoiceIterator.class, IncrementalLengthIterator.class, NegativeStringIterator.class, PermutationsIterator.class, ReferenceIterator.class, SingleValueIterator.class,
         StringIterator.class, Choice.class, FinalSymbol.class, Group.class, GroupRef.class, Node.class, NotSymbol.class, Repeat.class, Sequence.class, SymbolSet.class, CharIterator.class, DefaultTreeBuilder.class, NodeTreeBuilder.class, Util.class, GenerationVisitor.class,
-        GenerationVisitorBuilder.class, GenerationVisitorCaseInsensitive.class, NodeVisitor.class, NotMatchingCaseInsensitiveGenerationVisitor.class, NotMatchingGenerationVisitor.class, UniqueGenerationVisitor.class, UniqueValuesCountingVisitor.class, RgxGen.class
+        GenerationVisitorBuilder.class, GenerationVisitorCaseInsensitive.class, NodeVisitor.class, NotMatchingCaseInsensitiveGenerationVisitor.class, NotMatchingGenerationVisitor.class, UniqueGenerationVisitor.class, UniqueValuesCountingVisitor.class, RgxGen.class, JavaTimeModule.class
 
 })
 public class ReflectionConfig {
