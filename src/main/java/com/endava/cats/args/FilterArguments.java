@@ -36,9 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -302,33 +300,25 @@ public class FilterArguments {
      * @return a list of fuzzers to be run in phase 1
      */
     public List<String> getFirstPhaseFuzzersForPath() {
-        List<String> fuzzersToBeRun;
-
         if (FUZZERS_TO_BE_RUN.isEmpty()) {
-            Function<List<String>, List<String>> fuzzerFilterPipeline = Function.<List<String>>identity()
-                    .andThen(this::removeSkippedFuzzersGlobally)
-                    .andThen(this::removeSpecialFuzzers)
-                    .andThen(this::removeBasedOnTrimStrategy)
-                    .andThen(this::removeBasedOnSanitizationStrategy);
+            List<String> allowedFuzzers = processSuppliedFuzzers();
+            allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
+            allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
+            allowedFuzzers = this.removeBasedOnTrimStrategy(allowedFuzzers);
+            allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
 
-            fuzzersToBeRun = fuzzerFilterPipeline.apply(this.processSuppliedFuzzers());
-        } else {
-            fuzzersToBeRun = new ArrayList<>(FUZZERS_TO_BE_RUN);
+            FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
         }
 
         if (userArguments.isUserDictionarySupplied()) {
-            fuzzersToBeRun = List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer");
+            FUZZERS_TO_BE_RUN.clear();
+            // if a custom dictionary is supplied, we only keep these 2 fuzzers
+            FUZZERS_TO_BE_RUN.addAll(List.of("UserDictionaryFieldsFuzzer", "UserDictionaryHeadersFuzzer"));
         } else {
-            Set<String> secondPhaseFuzzers = this.getSecondPhaseFuzzers().stream()
-                    .map(Object::toString)
-                    .collect(Collectors.toSet());
-
-            fuzzersToBeRun = fuzzersToBeRun.stream()
-                    .filter(fuzzer -> !secondPhaseFuzzers.contains(fuzzer))
-                    .toList();
+            //second phase fuzzers are removed
+            FUZZERS_TO_BE_RUN.removeIf(this.getSecondPhaseFuzzers().stream().map(Object::toString).toList()::contains);
         }
-
-        return fuzzersToBeRun;
+        return FUZZERS_TO_BE_RUN;
     }
 
     /**
@@ -508,7 +498,7 @@ public class FilterArguments {
      * @return the list of paths from the contract matching the supplied list
      */
     public List<String> matchSuppliedPathsWithContractPaths(OpenAPI openAPI) {
-        List<String> allSuppliedPaths = matchWildCardPaths(this.getPaths(), openAPI);
+        List<String> allSuppliedPaths = new ArrayList<>(matchWildCardPaths(this.getPaths(), openAPI));
 
         if (this.getPaths().isEmpty()) {
             allSuppliedPaths.addAll(openAPI.getPaths().keySet());
@@ -548,7 +538,7 @@ public class FilterArguments {
                     }
                 })
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         logger.debug("Final list of matching wildcard paths: {}", result);
         return result;
