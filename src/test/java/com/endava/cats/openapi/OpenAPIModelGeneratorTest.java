@@ -1,10 +1,9 @@
-package com.endava.cats.model.generator;
+package com.endava.cats.openapi;
 
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
-import com.endava.cats.openapi.OpenAPIModelGenerator;
-import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.QuarkusTest;

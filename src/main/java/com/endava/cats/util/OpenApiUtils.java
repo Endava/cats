@@ -1,7 +1,5 @@
-package com.endava.cats.openapi;
+package com.endava.cats.util;
 
-import com.endava.cats.util.CatsModelUtils;
-import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.ExternalDocumentation;

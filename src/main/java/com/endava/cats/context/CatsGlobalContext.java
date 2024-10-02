@@ -1,9 +1,10 @@
 package com.endava.cats.context;
 
-import com.endava.cats.factory.NoMediaType;
+import com.endava.cats.model.NoMediaType;
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.openapi.OpenApiUtils;
-import com.endava.cats.report.ProcessingError;
+import com.endava.cats.model.CatsConfiguration;
+import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.model.ProcessingError;
 import com.endava.cats.util.CatsModelUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;

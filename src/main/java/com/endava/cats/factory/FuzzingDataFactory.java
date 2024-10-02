@@ -8,8 +8,9 @@ import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.model.generator.OpenAPIModelGenerator;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.model.NoMediaType;
+import com.endava.cats.openapi.OpenAPIModelGenerator;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonSet;
 import com.endava.cats.util.JsonUtils;
@@ -53,7 +54,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.endava.cats.model.generator.OpenAPIModelGenerator.SYNTH_SCHEMA_NAME;
+import static com.endava.cats.openapi.OpenAPIModelGenerator.SYNTH_SCHEMA_NAME;
 
 /**
  * This class is responsible for creating {@link com.endava.cats.model.FuzzingData} objects based on the supplied OpenApi paths

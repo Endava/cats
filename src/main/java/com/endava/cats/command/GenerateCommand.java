@@ -4,7 +4,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
 import com.google.gson.JsonParser;

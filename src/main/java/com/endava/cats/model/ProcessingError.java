@@ -1,4 +1,4 @@
-package com.endava.cats.report;
+package com.endava.cats.model;
 
 /**
  * Represents an error that occurred during the fuzzer processing.

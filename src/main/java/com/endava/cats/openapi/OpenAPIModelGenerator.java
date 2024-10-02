@@ -1,4 +1,4 @@
-package com.endava.cats.model.generator;
+package com.endava.cats.openapi;
 
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;

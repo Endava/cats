@@ -91,14 +91,6 @@ public class ProcessingArguments {
             description = "If set to @|bold true|@, it will use default values (if set) when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useDefaults = true;
 
-    /**
-     * Represents a wildcard pattern for JSON content type with optional parameters.
-     */
-    public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
-    /**
-     * Represents the JSON Patch content type.
-     */
-    public static final String JSON_PATCH = "application/merge-patch+json";
 
     /**
      * Checks if the payload matches any of the supplied --oneOfSelection or --anyOfSelection argument
@@ -124,7 +116,7 @@ public class ProcessingArguments {
      */
     public List<String> getContentType() {
         if (contentType == null) {
-            return List.of(JSON_WILDCARD, "application/x-www-form-urlencoded");
+            return List.of(JsonUtils.JSON_WILDCARD, "application/x-www-form-urlencoded");
         }
         return List.of(contentType);
     }

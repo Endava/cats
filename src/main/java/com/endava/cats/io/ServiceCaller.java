@@ -12,7 +12,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.util.FormEncoder;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
@@ -530,7 +530,7 @@ public class ServiceCaller {
     }
 
     private String getContentType(HttpMethod method, String defaultContentType) {
-        return method == HttpMethod.PATCH && processingArguments.isRfc7396() ? ProcessingArguments.JSON_PATCH : defaultContentType;
+        return method == HttpMethod.PATCH && processingArguments.isRfc7396() ? JsonUtils.JSON_PATCH : defaultContentType;
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<KeyValuePair<String, Object>> headers) {

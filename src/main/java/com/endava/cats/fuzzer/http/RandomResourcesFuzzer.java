@@ -10,7 +10,7 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;

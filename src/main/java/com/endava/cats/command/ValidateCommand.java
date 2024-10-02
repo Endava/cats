@@ -2,8 +2,8 @@ package com.endava.cats.command;
 
 import com.endava.cats.command.model.ValidContractEntry;
 import com.endava.cats.util.JsonUtils;
-import com.endava.cats.openapi.OpenApiParseResult;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.OpenApiParseResult;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;

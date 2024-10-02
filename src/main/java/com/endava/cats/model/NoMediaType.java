@@ -1,4 +1,4 @@
-package com.endava.cats.factory;
+package com.endava.cats.model;
 
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;

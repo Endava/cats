@@ -72,10 +72,21 @@ public abstract class JsonUtils {
     /**
      * A more strict JSON parser adhering to the RFC4627.
      */
-    public static final JSONParser JSON_STRICT_PARSER = new JSONParser(JSONParser.MODE_RFC4627);
+    public static final Gson JSON_STRICT_PARSER = new GsonBuilder()
+            .setStrictness(Strictness.STRICT)
+            .disableHtmlEscaping()
+            .create();
 
     private static final Pattern JSON_SQUARE_BR_KEYS = Pattern.compile("\\w+(\\[(?>[a-zA-Z0-9_*]*[a-zA-Z][a-zA-Z0-9_*]*)])+\\w*");
     private static final Pattern EMPTY_SQUARE_BRACKETS = Pattern.compile("\\w+\\[]\\w*");
+    /**
+     * Represents a wildcard pattern for JSON content type with optional parameters.
+     */
+    public static final String JSON_WILDCARD = "application\\/.*\\+?json;?.*";
+    /**
+     * Represents the JSON Patch content type.
+     */
+    public static final String JSON_PATCH = "application/merge-patch+json";
 
 
     /**
@@ -206,8 +217,11 @@ public abstract class JsonUtils {
      * @return true if the input is a payload, false otherwise
      */
     public static boolean isValidJson(String text) {
+        if (text == null) {
+            return false;
+        }
         try {
-            JSON_STRICT_PARSER.parse(text);
+            JSON_STRICT_PARSER.fromJson(text, Object.class);
         } catch (Exception e) {
             return false;
         }

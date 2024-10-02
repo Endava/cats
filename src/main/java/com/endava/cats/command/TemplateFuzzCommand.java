@@ -7,7 +7,7 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
-import com.endava.cats.context.CatsConfiguration;
+import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;

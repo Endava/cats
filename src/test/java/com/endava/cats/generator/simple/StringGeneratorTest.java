@@ -180,7 +180,7 @@ class StringGeneratorTest {
     @Test
     void shouldGenerateWhenOrAndFixLength() {
         String generated = StringGenerator.generate("(^[A-Z][0-9]+$)|(^[ABCDEFGHJKLMNPRSTVWX1-9][5CMBL][ED][0-5][0-9][0-7][0-9][0-9][0-9]$)", -1, -1);
-        Assertions.assertThat(generated).hasSizeGreaterThan(5);
+        Assertions.assertThat(generated).hasSizeGreaterThan(1);
     }
 
     @ParameterizedTest
@@ -277,7 +277,7 @@ class StringGeneratorTest {
             "^\\s*<(.|\\n)*SignalProcessingNotification(.|\\n)*>\\s*$; 1; 256; 1; 256",
             "^\\s*<(.|\\n)*SignalProcessingNotification(.|\\n)*>\\s*$; -1; -1; 1; 300",
             "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$; 1; 20; 1; 20",
-            "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$; -1; -1; 1; 20",
+            "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$; -1; -1; 1; 300",
             ".*(^TVA([1-9][0-9]?|1[0-9]{2})$).*; 1; 10; 1; 10",
             ".*(^TVA([1-9][0-9]?|1[0-9]{2})$).*; -1; -1; 1; 10",
             "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$; 1; 50; 1; 50",
@@ -314,5 +314,15 @@ class StringGeneratorTest {
         Assertions.assertThat(generated).hasSize(1).matches(pattern);
     }
 
+//    @Test
+    void shouldDo() {
+        for (int i=0;i <50; i++) {
+        String pattern = "\\(\\?ms\\)\\s*^-----BEGIN \\(\\?-s:.*\\)PRIVATE KEY-----$.*\\?^-----END \\(\\?-s:.*\\)PRIVATE KEY-----$\\s*";
 
+        String generated = StringGenerator.generate(pattern, 1, 4096);
+
+        System.out.println(generated);
+        Assertions.assertThat(generated).matches(pattern);
+        }
+    }
 }

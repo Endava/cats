@@ -72,12 +72,13 @@ public abstract class ExactValuesInFieldsFuzzer extends BaseBoundaryFieldFuzzer 
         /* Sometimes the regex generators will generate weird chars at the beginning or end of string.
           So we generate a larger one and substring the right size. */
         try {
-            return generateWithAdjustedLength(schema, 15);
+            return generateWithAdjustedLength(schema, 0);
         } catch (IllegalArgumentException e) {
             try {
-                return generateWithAdjustedLength(schema, 0);
+                return generateWithAdjustedLength(schema, 15);
             } catch (Exception ex) {
-                testCaseListener.recordError("Fuzzer %s could not generate a value for patten %s".formatted(this.getClass().getSimpleName(), schema.getPattern()));
+                testCaseListener.recordError("Fuzzer %s could not generate a value for patten %s, min %s, max %s"
+                        .formatted(this.getClass().getSimpleName(), schema.getPattern(), schema.getMinLength(), schema.getMaxLength()));
                 return null;
             }
         }

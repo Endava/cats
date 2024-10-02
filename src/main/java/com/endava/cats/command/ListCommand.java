@@ -16,7 +16,7 @@ import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;

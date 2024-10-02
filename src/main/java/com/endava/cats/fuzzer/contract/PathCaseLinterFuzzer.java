@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;

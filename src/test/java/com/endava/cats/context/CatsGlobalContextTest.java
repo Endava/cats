@@ -1,5 +1,6 @@
 package com.endava.cats.context;
 
+import com.endava.cats.model.CatsConfiguration;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

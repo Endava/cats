@@ -2,7 +2,7 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.context.CatsConfiguration;
+import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;

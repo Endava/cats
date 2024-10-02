@@ -1,4 +1,4 @@
-package com.endava.cats.openapi;
+package com.endava.cats.util;
 
 import io.swagger.v3.oas.models.SpecVersion;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;

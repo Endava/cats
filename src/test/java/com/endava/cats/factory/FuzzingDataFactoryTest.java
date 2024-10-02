@@ -9,7 +9,8 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.model.NoMediaType;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -61,7 +62,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(10);
         Mockito.when(processingArguments.isGenerateAllXxxCombinationsForResponses()).thenReturn(true);
         Mockito.when(processingArguments.isFilterXxxFromRequestPayloads()).thenReturn(false);
-        Mockito.when(processingArguments.getContentType()).thenReturn(List.of(ProcessingArguments.JSON_WILDCARD, "application/x-www-form-urlencoded"));
+        Mockito.when(processingArguments.getContentType()).thenReturn(List.of(JsonUtils.JSON_WILDCARD, "application/x-www-form-urlencoded"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(4);
     }

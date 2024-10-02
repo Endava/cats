@@ -1,4 +1,4 @@
-package com.endava.cats.context;
+package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
 

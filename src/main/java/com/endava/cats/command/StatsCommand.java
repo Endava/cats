@@ -1,7 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.util.JsonUtils;
-import com.endava.cats.openapi.OpenApiUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
