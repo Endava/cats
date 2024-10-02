@@ -32,7 +32,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.endava.cats.generator.simple.StringGenerator.generateValueBasedOnMinMax;
 import static com.fasterxml.jackson.core.JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN;
 import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
 import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
@@ -314,7 +313,7 @@ public class OpenAPIModelGenerator {
         logger.trace("String property {}", propertyName);
 
         if (property.getMinLength() != null || property.getMaxLength() != null) {
-            return generateValueBasedOnMinMax(property);
+            return StringGenerator.generateValueBasedOnMinMax(property);
         }
         if (CatsModelUtils.isDecimalSchema(property)) {
             return generateBigDecimal(property);

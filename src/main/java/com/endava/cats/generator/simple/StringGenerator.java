@@ -47,24 +47,21 @@ public class StringGenerator {
      * Default alphanumeric pattern.
      */
     public static final String ALPHANUMERIC_PLUS = "[a-zA-Z0-9]+";
-
     private static final int MAX_ATTEMPTS_GENERATE = 5;
-
     private static final String ALPHANUMERIC_VALUE = "CatsIsCool";
-
-    private static final String EMPTY_PATTERN = "(\\(\\^\\$\\)\\|)|(\\^\\$\\)\\|)|(\\(\\^\\$\\|\\))|(\\(\\|\\^\\$\\))|(\\(\\^\\$\\))";
 
     private static final Pattern HAS_LENGTH_PATTERN = Pattern.compile("(\\*|\\+|\\?|\\{\\d+(,\\d*)?\\})");
     private static final Pattern SINGLE_CHAR_PATTERN = Pattern.compile("^\\[[^\\]]+\\]$");
     private static final Pattern LENGTH_INLINE_PATTERN = Pattern.compile("(\\^)?(\\[[^]]*]\\{\\d+}|\\(\\[[^]]*]\\{\\d+}\\)\\?)*(\\$)?");
-    private static final List<String> WILD_CARDS = List.of(".^");
 
     private static final String ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final String[] DOMAINS = {"example", "cats", "google", "yahoo"};
     private static final String[] TLDS = {".com", ".net", ".org", ".io"};
     private static final String[] URI_SCHEMES = {"http", "https", "ftp", "file"};
 
-    private static final List<String> SIMPLE_REGEXES = List.of("[A-Z]+", "[a-z]+", "[A-Za-z]+", "[0-9]+", "[A-Za-z0-9]+", "[A-Z0-9]+", "[a-z0-9]+", "\\w+", "[A-Za-z0-9_-#!]");
+    private static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "changeOrSimplifyThePattern";
+
+    private static final List<String> SIMPLE_REGEXES = List.of("[A-Z]+", "[a-z]+", "[A-Za-z]+", "[0-9]+", "[A-Za-z0-9]+", "[A-Z0-9]+", "[a-z0-9]+", "\\w+", "[A-Za-z0-9_\\-#!]");
 
     /**
      * Represents an empty string.
@@ -108,7 +105,6 @@ public class StringGenerator {
     private static final org.cornutum.regexpgen.Provider REGEXPGEN_PROVIDER = Provider.forEcmaScript();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(StringGenerator.class);
-    public static final String CASE_INSENSITIVE = "(?i)";
     public static final int DEFAULT_MAX_WHEN_NOT_PRESENT = 256;
     public static final int DEFAULT_MIN_WHEN_NOT_PRESENT = 1;
 
@@ -184,7 +180,7 @@ public class StringGenerator {
      */
     public static String generate(String pattern, int min, int max) {
         LOGGER.debug("Generate for pattern {} min {} max {}", pattern, min, max);
-        String cleanedPattern = cleanPattern(pattern);
+        String cleanedPattern = RegexCleaner.cleanPattern(pattern);
         String flattenedPattern = RegexFlattener.flattenRegex(cleanedPattern);
 
         List<Supplier<Optional<String>>> attempts = List.of(
@@ -203,6 +199,17 @@ public class StringGenerator {
                 ));
     }
 
+    /**
+     * Generates a random string based on the given pattern and min/max restrictions.
+     * It tries to generate a valid value using 3 types of generators in a fallback manner.
+     *
+     * @param pattern          the regex pattern
+     * @param min              min length of the generated string
+     * @param max              max length of the generated string
+     * @param cleanedPattern   the cleaned pattern
+     * @param flattenedPattern the flattened pattern
+     * @return a random string corresponding to the given pattern and min, max restrictions
+     */
     private static Optional<String> generateString(String pattern, int min, int max, String cleanedPattern, String flattenedPattern) {
         String valueBasedOnSimpleRegexes = tryGenerateWithSimpleRegexes(pattern, min, max, cleanedPattern);
 
@@ -229,6 +236,12 @@ public class StringGenerator {
         return Optional.empty();
     }
 
+    /**
+     * Calls the generators in a specific order and returns the first successful result.
+     *
+     * @param generatorParams the generator parameters
+     * @return the generated string
+     */
     private static Optional<String> callGeneratorsInOrder(GeneratorParams generatorParams) {
         String rgxGeneratedWithMinMax = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, generatorParams);
         if (rgxGeneratedWithMinMax != null) {
@@ -283,96 +296,6 @@ public class StringGenerator {
         return null;
     }
 
-
-    public static String cleanPattern(String pattern) {
-        if (StringUtils.isBlank(pattern)) {
-            return ALPHANUMERIC_PLUS;
-        }
-        if (WILD_CARDS.contains(pattern)) {
-            return ALPHANUMERIC_PLUS;
-        }
-        if (pattern.startsWith("/") && pattern.endsWith("/i")) {
-            pattern = pattern.substring(1, pattern.length() - 2);
-        }
-        if (pattern.matches("(?!\\().?(?<!\\[)\\^.*")) {
-            pattern = pattern.substring(1);
-        }
-        if (pattern.endsWith("$/")) {
-            pattern = StringUtils.removeEnd(pattern, "/");
-        }
-        if (pattern.endsWith("$")) {
-            pattern = StringUtils.removeEnd(pattern, "$");
-        }
-
-        if (pattern.startsWith("/^")) {
-            pattern = StringUtils.removeStart(pattern, "/");
-        }
-
-        pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
-        pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
-        pattern = removeMisplacedDollarSigns(pattern);
-
-        if (pattern.startsWith("|")) {
-            pattern = pattern.substring(1);
-        }
-
-        return pattern;
-    }
-
-    private static String removeMisplacedDollarSigns(String regex) {
-        StringBuilder result = new StringBuilder(regex.length());
-        boolean inCharClass = false;
-        int parenDepth = 0;
-        boolean escape = false;
-
-        for (int i = 0; i < regex.length(); i++) {
-            char currentChar = regex.charAt(i);
-
-            if (escape) {
-                result.append(currentChar);
-                escape = false;
-                continue;
-            }
-
-            switch (currentChar) {
-                case '\\':
-                    result.append(currentChar);
-                    escape = true;
-                    break;
-                case '[':
-                    inCharClass = true;
-                    result.append(currentChar);
-                    break;
-                case ']':
-                    inCharClass = false;
-                    result.append(currentChar);
-                    break;
-                case '(':
-                    parenDepth++;
-                    result.append(currentChar);
-                    break;
-                case ')':
-                    if (parenDepth > 0) {
-                        parenDepth--;
-                    }
-                    result.append(currentChar);
-                    break;
-                case '$':
-                    if (shouldAppendDollar(i, regex.length(), inCharClass, parenDepth)) {
-                        result.append(currentChar);
-                    }
-                    break;
-                default:
-                    result.append(currentChar);
-            }
-        }
-
-        return result.toString();
-    }
-
-    private static boolean shouldAppendDollar(int currentIndex, int length, boolean inCharClass, int parenDepth) {
-        return currentIndex == length - 1 || inCharClass || parenDepth > 0;
-    }
 
     private static String generateUsingRegexpGen(GeneratorParams generatorParams) {
         String pattern = generatorParams.cleanedPattern();
@@ -517,8 +440,8 @@ public class StringGenerator {
      * @return a random String whose length is bigger than maxLength
      */
     public static String generateRightBoundString(Schema<?> schema) {
-        long minLength = getRightBoundaryLength(schema);
-        return generate(ALPHANUMERIC_PLUS, (int) minLength, (int) minLength);
+        long maxLength = getRightBoundaryLength(schema);
+        return generate(ALPHANUMERIC_PLUS, (int) maxLength, (int) maxLength);
     }
 
     /**
@@ -528,12 +451,12 @@ public class StringGenerator {
      * @return a string larger than Schema's maxLength
      */
     public static long getRightBoundaryLength(Schema<?> schema) {
-        long minLength = schema.getMaxLength() != null ? schema.getMaxLength().longValue() + 10 : DEFAULT_MAX_LENGTH;
+        long maxLength = schema.getMaxLength() != null ? schema.getMaxLength().longValue() + 10 : DEFAULT_MAX_LENGTH;
 
-        if (minLength > Integer.MAX_VALUE) {
-            minLength = Integer.MAX_VALUE / 100;
+        if (maxLength > Integer.MAX_VALUE) {
+            maxLength = Integer.MAX_VALUE / 100;
         }
-        return minLength;
+        return maxLength;
     }
 
     /**
