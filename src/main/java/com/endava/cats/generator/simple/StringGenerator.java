@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -186,35 +187,64 @@ public class StringGenerator {
         String cleanedPattern = cleanPattern(pattern);
         String flattenedPattern = RegexFlattener.flattenRegex(cleanedPattern);
 
+        List<Supplier<Optional<String>>> attempts = List.of(
+                () -> generateString(pattern, min, max, cleanedPattern, flattenedPattern),
+                () -> generateString(cleanedPattern, min, max, cleanedPattern, flattenedPattern),
+                () -> generateString(cleanedPattern, min, max, cleanedPattern, cleanedPattern),
+                () -> generateString(flattenedPattern, min, max, cleanedPattern, flattenedPattern),
+                () -> generateString(flattenedPattern, min, max, flattenedPattern, flattenedPattern)
+        );
+
+        return attempts.stream()
+                .flatMap(attempt -> attempt.get().stream())
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        String.format("Could not generate a string for pattern %s with min %d and max %d", pattern, min, max)
+                ));
+    }
+
+    private static Optional<String> generateString(String pattern, int min, int max, String cleanedPattern, String flattenedPattern) {
         String valueBasedOnSimpleRegexes = tryGenerateWithSimpleRegexes(pattern, min, max, cleanedPattern);
 
         if (valueBasedOnSimpleRegexes != null) {
-            return valueBasedOnSimpleRegexes;
+            return Optional.of(valueBasedOnSimpleRegexes);
         }
 
         GeneratorParams generatorParams = new GeneratorParams(flattenedPattern, min, max, cleanedPattern);
 
-        String generatedWithRgxGenerator = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, generatorParams);
-        if (generatedWithRgxGenerator != null) {
-            return generatedWithRgxGenerator;
+        Optional<String> generatedWithInitialMinMax = callGeneratorsInOrder(generatorParams);
+        if (generatedWithInitialMinMax.isPresent()) {
+            return generatedWithInitialMinMax;
         }
 
         if (min == -1 && max == -1) {
-            GeneratorParams generatorParamsWithMinMax = new GeneratorParams(flattenedPattern, 0, 300, cleanedPattern);
-            return generateUsingRegexpGen(generatorParamsWithMinMax);
+            GeneratorParams generatorParamsWithMinMax = new GeneratorParams(flattenedPattern, 1, 300, cleanedPattern);
+
+            Optional<String> generatedWithAdjustedMinMax = callGeneratorsInOrder(generatorParamsWithMinMax);
+            if (generatedWithAdjustedMinMax.isPresent()) {
+                return generatedWithAdjustedMinMax;
+            }
         }
 
-        String generatedUsingCatsRegexGenerator = callGenerateTwice(StringGenerator::generateUsingCatsRegexGenerator, generatorParams);
-        if (generatedUsingCatsRegexGenerator != null) {
-            return generatedUsingCatsRegexGenerator;
+        return Optional.empty();
+    }
+
+    private static Optional<String> callGeneratorsInOrder(GeneratorParams generatorParams) {
+        String rgxGeneratedWithMinMax = callGenerateTwice(StringGenerator::generateUsingRgxGenerator, generatorParams);
+        if (rgxGeneratedWithMinMax != null) {
+            return Optional.of(rgxGeneratedWithMinMax);
         }
 
-        String generateUsingRegexpGen = callGenerateTwice(StringGenerator::generateUsingRegexpGen, generatorParams);
-        if (generateUsingRegexpGen != null) {
-            return generateUsingRegexpGen;
+        String generatedWithCatsRegexGenerator = callGenerateTwice(StringGenerator::generateUsingCatsRegexGenerator, generatorParams);
+        if (generatedWithCatsRegexGenerator != null) {
+            return Optional.of(generatedWithCatsRegexGenerator);
         }
 
-        throw new IllegalArgumentException("Could not generate a string for pattern " + pattern + " with min " + min + " and max " + max);
+        String generatedWithRegexpGen = callGenerateTwice(StringGenerator::generateUsingRegexpGen, generatorParams);
+        if (generatedWithRegexpGen != null) {
+            return Optional.of(generatedWithRegexpGen);
+        }
+        return Optional.empty();
     }
 
     public static String tryGenerateWithSimpleRegexes(String originalPattern, int min, int max, String cleanedPattern) {
@@ -239,7 +269,10 @@ public class StringGenerator {
             LOGGER.debug("Generator {} failed #atempt 1", generator.getClass().getSimpleName());
         }
         try {
-            String secondVersion = generator.apply(new GeneratorParams(removeLookaheadAssertions(generatorParams.cleanedPattern()), generatorParams.min, generatorParams.max, generatorParams.originalPattern()));
+            String patternWithLookaheadsRemoved = removeLookaheadAssertions(generatorParams.cleanedPattern());
+            LOGGER.debug("Pattern with lookaheads removed {}", patternWithLookaheadsRemoved);
+
+            String secondVersion = generator.apply(new GeneratorParams(patternWithLookaheadsRemoved, generatorParams.min, generatorParams.max, generatorParams.originalPattern()));
             if (secondVersion.matches(generatorParams.originalPattern())) {
                 LOGGER.debug("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.originalPattern());
                 return secondVersion;
@@ -604,7 +637,7 @@ public class StringGenerator {
      */
     public static String removeLookaheadAssertions(String regex) {
         regex = regex.replaceAll("\\(\\?=([^)]*)\\)", "($1)");
-        regex = regex.replaceAll("\\(\\?!([^)]*)\\)", "(^$1)");
+        regex = regex.replaceAll("\\(\\?!([^)]*)\\)", "");
         regex = regex.replaceAll("\\(\\?<=([^)]*)\\)", "($1)");
         regex = regex.replaceAll("\\(\\?<!([^)]*)\\)", "(^$1)");
 

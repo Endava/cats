@@ -42,11 +42,8 @@ public abstract class RegexFlattener {
             return regex;
         }
 
-        // Remove leading unescaped '.*' or '*' patterns
         regex = regex.replaceAll("^(?:(?<!\\\\)\\*+\\.*|\\.*(?<!\\\\)\\*+)", "");
-
-        // Remove trailing unescaped '.*' or '*' patterns
-        regex = regex.replaceAll("(?:(?<!\\\\)\\*+\\.*|\\.*(?<!\\\\)\\*+)$", "\\\\w*");
+        regex = regex.replaceAll("(?<!\\\\)\\.\\*$", "");
 
         return regex;
     }
