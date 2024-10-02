@@ -1,5 +1,6 @@
 package com.endava.cats.report;
 
+import com.endava.cats.model.ProcessingError;
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;

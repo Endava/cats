@@ -1,7 +1,7 @@
 package com.endava.cats.openapi;
 
-import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.ExternalDocumentation;
@@ -149,7 +149,7 @@ public abstract class OpenApiUtils {
         }
         Optional.ofNullable(openAPI.getComponents().getResponses())
                 .orElseGet(Collections::emptyMap)
-                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), ProcessingArguments.JSON_WILDCARD));
+                .forEach((key, value) -> addToSchemas(schemas, key, value.get$ref(), value.getContent(), JsonUtils.JSON_WILDCARD));
 
         return schemas;
     }

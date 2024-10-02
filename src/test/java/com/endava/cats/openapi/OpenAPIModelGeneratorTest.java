@@ -2,6 +2,7 @@ package com.endava.cats.model.generator;
 
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
+import com.endava.cats.openapi.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
 import com.fasterxml.jackson.core.JsonParseException;

@@ -1,5 +1,6 @@
 package com.endava.cats.openapi;
 
+import com.endava.cats.util.OpenApiParseResult;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.SpecVersion;
 import org.assertj.core.api.Assertions;

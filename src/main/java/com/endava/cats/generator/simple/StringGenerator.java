@@ -19,6 +19,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -58,7 +61,7 @@ public class StringGenerator {
     private static final String[] DOMAINS = {"example", "cats", "google", "yahoo"};
     private static final String[] TLDS = {".com", ".net", ".org", ".io"};
     private static final String[] URI_SCHEMES = {"http", "https", "ftp", "file"};
-
+    private static final int TIMEOUT_MS = 200;
     private static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "changeOrSimplifyThePattern";
 
     private static final List<String> SIMPLE_REGEXES = List.of("[A-Z]+", "[a-z]+", "[A-Za-z]+", "[0-9]+", "[A-Za-z0-9]+", "[A-Z0-9]+", "[a-z0-9]+", "\\w+", "[A-Za-z0-9_\\-#!]");
@@ -329,7 +332,7 @@ public class StringGenerator {
 
         for (int i = 0; i < MAX_ATTEMPTS_GENERATE; i++) {
             Pattern compiledPattern = Pattern.compile(pattern);
-            String secondVersionBase = RegexGenerator.generate(compiledPattern, EMPTY, min, max);
+            String secondVersionBase = generateWithTimeout(compiledPattern, min, max);
 
             if (secondVersionBase.matches(originalPattern)) {
                 LOGGER.debug("Generated using CATS generator {} and matches {}", secondVersionBase, pattern);
@@ -343,6 +346,29 @@ public class StringGenerator {
             }
         }
         throw new IllegalStateException("Could not generate regex ");
+    }
+
+    public static String generateWithTimeout(Pattern compiledPattern, int min, int max) {
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                return RegexGenerator.generate(compiledPattern, EMPTY, min, max);
+            } catch (Exception e) {
+                LOGGER.trace("Error in RegexGenerator.generate()", e);
+                return EMPTY;
+            }
+        });
+
+        try {
+            return future.get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            LOGGER.trace("RegexGenerator.generate() timed out after " + TIMEOUT_MS + " ms {}", e.getMessage());
+            throw new IllegalStateException("Could not generate regex");
+        } catch (Exception e) {
+            LOGGER.trace("Error in RegexGenerator.generate(): {}", e.getMessage());
+        }
+
+        return EMPTY;
     }
 
     private static String generateUsingRgxGenerator(GeneratorParams generatorParams) {
@@ -426,7 +452,7 @@ public class StringGenerator {
             return trimmed.substring(0, max - random);
         }
 
-        return trimmed;
+        return initial;
     }
 
     /**
