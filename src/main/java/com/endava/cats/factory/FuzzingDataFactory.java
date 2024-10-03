@@ -30,6 +30,7 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -77,6 +78,7 @@ public class FuzzingDataFactory {
     private final CatsGlobalContext globalContext;
     private final ValidDataFormat validDataFormat;
     private final FilterArguments filterArguments;
+    private final CatsGlobalContext catsGlobalContext;
 
     /**
      * Constructs a new {@code FuzzingDataFactory} with the specified arguments.
@@ -94,6 +96,7 @@ public class FuzzingDataFactory {
         this.globalContext = catsGlobalContext;
         this.validDataFormat = validDataFormat;
         this.filterArguments = filterArguments;
+        this.catsGlobalContext = catsGlobalContext;
     }
 
     /**
@@ -469,7 +472,12 @@ public class FuzzingDataFactory {
         for (String contentType : processingArguments.getContentType()) {
             if (operation.getRequestBody() != null && operation.getRequestBody().get$ref() != null) {
                 String reqBodyRef = operation.getRequestBody().get$ref();
-                return OpenApiUtils.getMediaTypeFromContent(openAPI.getComponents().getRequestBodies().get(CatsModelUtils.getSimpleRef(reqBodyRef)).getContent(), contentType);
+
+                RequestBody requestBody = openAPI.getComponents().getRequestBodies().get(CatsModelUtils.getSimpleRef(reqBodyRef));
+                if (requestBody.get$ref() != null) {
+                    requestBody = (RequestBody) globalContext.getObjectFromPathsReference(requestBody.get$ref());
+                }
+                return OpenApiUtils.getMediaTypeFromContent(requestBody.getContent(), contentType);
             } else if (operation.getRequestBody() != null && OpenApiUtils.hasContentType(operation.getRequestBody().getContent(), List.of(contentType))) {
                 return OpenApiUtils.getMediaTypeFromContent(operation.getRequestBody().getContent(), contentType);
             }

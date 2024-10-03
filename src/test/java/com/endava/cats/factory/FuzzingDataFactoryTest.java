@@ -106,14 +106,14 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldAddDefaultContentTypeForResponses2() throws Exception {
+    void shouldResolveResponseBodyWhenRefInRef() throws Exception {
         Mockito.doCallRealMethod().when(processingArguments).getDefaultContentType();
-        List<FuzzingData> data = setupFuzzingData("/api/projects/{project_id}/query", "/Users/madalinilie/repos/openapi-examples/posthog/openapi.yaml");
+        List<FuzzingData> data = setupFuzzingData("/api/v1/auditevents", "src/test/resources/1password.yaml");
 
         Assertions.assertThat(data).hasSizeGreaterThanOrEqualTo(2);
-        Optional<FuzzingData> getRequest = data.stream().filter(fuzzingData -> fuzzingData.getMethod() == HttpMethod.GET).findFirst();
-        Assertions.assertThat(getRequest).isPresent();
-        Assertions.assertThat(getRequest.get().getResponseContentTypes().values()).containsOnly(List.of("application/json"));
+        FuzzingData firstData = data.getFirst();
+
+        Assertions.assertThat(firstData.getResponseContentTypes().values()).containsOnly(List.of("application/json"));
     }
 
     @Test

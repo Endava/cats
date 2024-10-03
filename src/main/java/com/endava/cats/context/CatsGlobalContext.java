@@ -222,6 +222,7 @@ public class CatsGlobalContext {
                 case Components components when "schemas".equals(finalPart) -> components.getSchemas();
                 case Components components when "parameters".equalsIgnoreCase(finalPart) -> components.getParameters();
                 case Components components when "headers".equalsIgnoreCase(finalPart) -> components.getHeaders();
+                case Components components when "requestBodies".equalsIgnoreCase(finalPart) -> components.getRequestBodies();
                 default -> null;
             };
 
