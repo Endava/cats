@@ -363,6 +363,9 @@ public class StringGenerator {
             future.cancel(true);
             LOGGER.trace("RegexGenerator.generate() timed out after " + TIMEOUT_MS + " ms {}", e.getMessage());
             throw new IllegalStateException("Could not generate regex");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.debug("RegexGenerator.generate() interrupted {}", e.getMessage());
         } catch (Exception e) {
             LOGGER.trace("Error in RegexGenerator.generate(): {}", e.getMessage());
         }

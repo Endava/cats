@@ -124,6 +124,15 @@ paths:
             type: integer
             format: int32
         - $ref: "#/components/parameters/metadata"
+        - name: Bad-Constraints
+          in: header
+          description: Header with bad constraints
+          required: true
+          schema:
+            type: string
+            pattern: '[A-Z]{30,40}'
+            minLength: 3
+            maxLength: 20
       responses:
         '200':
           description: A paged array of pets

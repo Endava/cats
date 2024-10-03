@@ -31,6 +31,12 @@ public class CatsHeader {
         this.value = this.generateValue(param.getSchema());
     }
 
+    private CatsHeader(String name, String value, Boolean required) {
+        this.name = name;
+        this.required = required != null && required;
+        this.value = value;
+    }
+
     /**
      * Creates a new CatsHeader from a OpenAPI Parameter object.
      *
@@ -39,6 +45,18 @@ public class CatsHeader {
      */
     public static CatsHeader fromHeaderParameter(Parameter param) {
         return new CatsHeader(param);
+    }
+
+    /**
+     * Creates a new CatsHeader object.
+     *
+     * @param name     the name of the header
+     * @param value    the value of the header
+     * @param required whether the header is required or not
+     * @return a new CatsHeader object
+     */
+    public static CatsHeader from(String name, String value, Boolean required) {
+        return new CatsHeader(name, value, required);
     }
 
     /**

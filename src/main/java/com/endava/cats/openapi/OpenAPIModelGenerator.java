@@ -31,6 +31,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.core.JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN;
@@ -78,6 +79,7 @@ public class OpenAPIModelGenerator {
     private final int arraySize;
     private final ObjectMapper customDepthMapper = new ObjectMapper();
     private final ObjectMapper simpleObjectMapper = new ObjectMapper();
+    public static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "changeOrSimplifyThePattern";
 
     @Getter
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
@@ -317,15 +319,15 @@ public class OpenAPIModelGenerator {
         logger.trace("String property {}", propertyName);
 
         if (property.getMinLength() != null || property.getMaxLength() != null) {
-            return CatsUtil.generateAndRecordIfExceptionThrown(propertyName, property.getPattern(),
-                    () -> StringGenerator.generateValueBasedOnMinMax(property), globalContext);
+            return generateAndRecordIfExceptionThrown(propertyName, property.getPattern(),
+                    () -> StringGenerator.generateValueBasedOnMinMax(property));
         }
         if (CatsModelUtils.isDecimalSchema(property)) {
             return generateBigDecimal(property);
         }
         if (property.getPattern() != null) {
-            return CatsUtil.generateAndRecordIfExceptionThrown(propertyName, property.getPattern(),
-                    () -> StringGenerator.generate(property.getPattern(), -1, -1), globalContext);
+            return generateAndRecordIfExceptionThrown(propertyName, property.getPattern(),
+                    () -> StringGenerator.generate(property.getPattern(), -1, -1));
         }
         logger.trace("No constraints, generating alphanumeric string based on property length {}", propertyName);
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);
@@ -796,5 +798,22 @@ public class OpenAPIModelGenerator {
         requestDataTypes.put(propertyName, schema);
         //this is a bit of a hack that might be abused in the future to include a full object as extension. currently it only holds the field name
         schema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, propertyName);
+    }
+
+    /**
+     * Tries to execute a given supplier and records any exceptions thrown in the global context.
+     *
+     * @param toExecute    the supplier to execute
+     * @param propertyName the name of the property to be used for recording exceptions
+     * @param pattern      the pattern to be used for recording exceptions and that failed to generate a valid string
+     * @return the result of the supplier execution, or null if an exception is thrown
+     */
+    public String generateAndRecordIfExceptionThrown(String propertyName, String pattern, Supplier<String> toExecute) {
+        try {
+            return toExecute.get();
+        } catch (Exception e) {
+            globalContext.recordError("A valid string could not be generated for the property '" + propertyName + "' using the pattern '" + pattern + "'. Please consider either changing the pattern or simplifying it.");
+            return DEFAULT_STRING_WHEN_GENERATION_FAILS;
+        }
     }
 }

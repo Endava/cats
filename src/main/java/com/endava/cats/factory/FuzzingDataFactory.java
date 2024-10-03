@@ -976,7 +976,12 @@ public class FuzzingDataFactory {
             for (Parameter param : operation.getParameters()) {
                 if ("header".equalsIgnoreCase(param.getIn())) {
                     this.inlineSchemaIfNeeded(param);
-                    headers.add(CatsHeader.fromHeaderParameter(param));
+                    try {
+                        headers.add(CatsHeader.fromHeaderParameter(param));
+                    } catch (IllegalArgumentException e) {
+                        globalContext.recordError("A valid string could not be generated for the header '" + param.getName() + "' using the pattern '" + param.getSchema().getPattern() + "'. Please consider either changing the pattern or simplifying it.");
+                        headers.add(CatsHeader.from(param.getName(), OpenAPIModelGenerator.DEFAULT_STRING_WHEN_GENERATION_FAILS, param.getRequired()));
+                    }
                 }
             }
         }

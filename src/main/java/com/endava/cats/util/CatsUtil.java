@@ -1,6 +1,5 @@
 package com.endava.cats.util;
 
-import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
@@ -30,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -48,7 +46,6 @@ public abstract class CatsUtil {
     /**
      * Default string to return when generation fails.
      */
-    private static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "changeOrSimplifyThePattern";
     private static final Faker FAKER = new Faker(random());
 
     private CatsUtil() {
@@ -389,23 +386,5 @@ public abstract class CatsUtil {
         }
 
         return encodedURL.replace("%7B", "{").replace("%7D", "}");
-    }
-
-    /**
-     * Tries to execute a given supplier and records any exceptions thrown in the global context.
-     *
-     * @param toExecute     the supplier to execute
-     * @param propertyName  the name of the property to be used for recording exceptions
-     * @param pattern       the pattern to be used for recording exceptions and that failed to generate a valid string
-     * @param globalContext the global context to use for recording exceptions
-     * @return the result of the supplier execution, or null if an exception is thrown
-     */
-    public static String generateAndRecordIfExceptionThrown(String propertyName, String pattern, Supplier<String> toExecute, CatsGlobalContext globalContext) {
-        try {
-            return toExecute.get();
-        } catch (Exception e) {
-            globalContext.recordError("A valid string could not be generated for the property '" + propertyName + "' using the pattern '" + pattern + "'. Please consider either changing the pattern or simplifying it.");
-            return DEFAULT_STRING_WHEN_GENERATION_FAILS;
-        }
     }
 }

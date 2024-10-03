@@ -75,6 +75,7 @@ public class ProcessingArguments {
 
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
             description = "Max number of anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    @Setter
     private int limitXxxOfCombinations = 20;
 
     @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"},

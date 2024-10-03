@@ -65,6 +65,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of(JsonUtils.JSON_WILDCARD, "application/x-www-form-urlencoded"));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(4);
+        catsGlobalContext.getRecordedErrors().clear();
     }
 
     @Test
@@ -77,7 +78,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData firstData = dataList.get(1);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF");
-        Assertions.assertThat(firstData.getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
+        Assertions.assertThat(firstData.getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
     }
 
     @Test
@@ -90,13 +91,24 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(responses).hasSize(2);
         Assertions.assertThat(responses.getFirst()).doesNotContain("Variant").contains("option1");
         Assertions.assertThat(responses.get(1)).doesNotContain("Variant").contains("option2");
-        Assertions.assertThat(firstData.getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
+        Assertions.assertThat(firstData.getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
     }
 
     @Test
     void shouldAddDefaultContentTypeForResponses() throws Exception {
         Mockito.doCallRealMethod().when(processingArguments).getDefaultContentType();
         List<FuzzingData> data = setupFuzzingData("/parents", "src/test/resources/issue127.json");
+
+        Assertions.assertThat(data).hasSizeGreaterThanOrEqualTo(2);
+        Optional<FuzzingData> getRequest = data.stream().filter(fuzzingData -> fuzzingData.getMethod() == HttpMethod.GET).findFirst();
+        Assertions.assertThat(getRequest).isPresent();
+        Assertions.assertThat(getRequest.get().getResponseContentTypes().values()).containsOnly(List.of("application/json"));
+    }
+
+    @Test
+    void shouldAddDefaultContentTypeForResponses2() throws Exception {
+        Mockito.doCallRealMethod().when(processingArguments).getDefaultContentType();
+        List<FuzzingData> data = setupFuzzingData("/api/projects/{project_id}/query", "/Users/madalinilie/repos/openapi-examples/posthog/openapi.yaml");
 
         Assertions.assertThat(data).hasSizeGreaterThanOrEqualTo(2);
         Optional<FuzzingData> getRequest = data.stream().filter(fuzzingData -> fuzzingData.getMethod() == HttpMethod.GET).findFirst();
@@ -112,7 +124,7 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF");
         Assertions.assertThat(data.get(1).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
-        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -122,7 +134,7 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data.getFirst().getPayload()).contains("dateFrom");
         Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF");
-        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -130,7 +142,7 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore_empty_body.json");
         Assertions.assertThat(data).hasSize(1);
         Assertions.assertThat(data.getFirst().getMethod()).isEqualTo(HttpMethod.GET);
-        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -148,7 +160,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).hasSize(2);
         Assertions.assertThat(data.get(1).getPayload()).contains("someSubObjectKey3");
         Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("someSubObjectKey3");
-        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -195,7 +207,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).hasSize(1);
         FuzzingData fuzzingData = data.getFirst();
         Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactly("legs", "breed", "id").doesNotContain("color");
-        Assertions.assertThat(fuzzingData.getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(fuzzingData.getRequestPropertyTypes().size());
+        Assertions.assertThat(fuzzingData.getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(fuzzingData.getRequestPropertyTypes().size());
     }
 
     @Test
@@ -810,10 +822,17 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(3);
 
         FuzzingData getData = dataList.stream().filter(data -> data.getMethod() == HttpMethod.GET).findFirst().orElseThrow();
-        Assertions.assertThat(getData.getHeaders()).hasSize(1);
-        CatsHeader header = getData.getHeaders().iterator().next();
-        Assertions.assertThat(header.getName()).isEqualTo("x-metadata");
-        Assertions.assertThat(header.getValue()).contains("red", "green", "blue");
+        Assertions.assertThat(getData.getHeaders()).hasSize(2);
+
+        List<CatsHeader> metadata = getData.getHeaders().stream().filter(header -> header.getName().equals("x-metadata")).toList();
+        Assertions.assertThat(metadata).hasSize(1);
+        Assertions.assertThat(metadata.getFirst().getName()).isEqualTo("x-metadata");
+        Assertions.assertThat(metadata.getFirst().getValue()).contains("red", "green", "blue");
+
+        List<CatsHeader> badConstraints = getData.getHeaders().stream().filter(header -> header.getName().equals("Bad-Constraints")).toList();
+        Assertions.assertThat(badConstraints).hasSize(1);
+        Assertions.assertThat(badConstraints.getFirst().getName()).isEqualTo("Bad-Constraints");
+        Assertions.assertThat(badConstraints.getFirst().getValue()).isEqualTo("changeOrSimplifyThePattern");
     }
 
     @Test
