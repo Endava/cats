@@ -313,16 +313,4 @@ class StringGeneratorTest {
         String generated = StringGenerator.generate(pattern, -1, -1);
         Assertions.assertThat(generated).hasSize(1).matches(pattern);
     }
-
-//    @Test
-    void shouldDo() {
-        for (int i=0;i <50; i++) {
-        String pattern = "\\(\\?ms\\)\\s*^-----BEGIN \\(\\?-s:.*\\)PRIVATE KEY-----$.*\\?^-----END \\(\\?-s:.*\\)PRIVATE KEY-----$\\s*";
-
-        String generated = StringGenerator.generate(pattern, 1, 4096);
-
-        System.out.println(generated);
-        Assertions.assertThat(generated).matches(pattern);
-        }
-    }
 }

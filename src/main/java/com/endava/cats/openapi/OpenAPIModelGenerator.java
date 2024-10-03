@@ -313,13 +313,15 @@ public class OpenAPIModelGenerator {
         logger.trace("String property {}", propertyName);
 
         if (property.getMinLength() != null || property.getMaxLength() != null) {
-            return StringGenerator.generateValueBasedOnMinMax(property);
+            return CatsUtil.generateAndRecordIfExceptionThrown(propertyName, property.getPattern(),
+                    () -> StringGenerator.generateValueBasedOnMinMax(property), globalContext);
         }
         if (CatsModelUtils.isDecimalSchema(property)) {
             return generateBigDecimal(property);
         }
         if (property.getPattern() != null) {
-            return StringGenerator.generate(property.getPattern(), -1, -1);
+            return CatsUtil.generateAndRecordIfExceptionThrown(propertyName, property.getPattern(),
+                    () -> StringGenerator.generate(property.getPattern(), -1, -1), globalContext);
         }
         logger.trace("No constraints, generating alphanumeric string based on property length {}", propertyName);
         return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, propertyName.length(), propertyName.length() + 4);

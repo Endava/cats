@@ -37,8 +37,7 @@ public class AbugidasInStringFieldsSanitizeValidateFuzzer extends ExpectOnly2XXB
 
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        return FuzzingStrategy.getFuzzingStrategies(fuzzedFieldSchema, UnicodeGenerator.getAbugidasChars(), false);
+        return FuzzingStrategy.getFuzzingStrategies(data, fuzzedField, UnicodeGenerator.getAbugidasChars(), false);
     }
 
     @Override

@@ -1,9 +1,10 @@
 package com.endava.cats.strategy;
 
 import com.endava.cats.generator.simple.StringGenerator;
-import com.endava.cats.util.JsonUtils;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.FuzzingResult;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.WordUtils;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
@@ -281,14 +282,18 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
     /**
      * Retrieves a list of fuzzing strategies based on the characteristics of the provided field schema.
      *
-     * @param fuzzedFieldSchema The schema representing the characteristics of the field to be fuzzed.
-     * @param invisibleChars    A list of invisible characters to be used in fuzzing strategies.
-     * @param maintainSize      If true, maintains the size of the field during fuzzing; if false, allows size modification.
+     * @param data           The fuzzing data containing the payload and the request property types.
+     * @param fuzzedField    The field to be fuzzed.
+     * @param invisibleChars A list of invisible characters to be used in fuzzing strategies.
+     * @param maintainSize   If true, maintains the size of the field during fuzzing; if false, allows size modification.
      * @return A list of {@link FuzzingStrategy} objects representing different fuzzing strategies for the field.
      * It returns {@code FuzzingStrategy.skip()} If the field schema type is not "string" or has a binary/byte format.
      * @throws NullPointerException If 'fuzzedFieldSchema' or 'invisibleChars' is null.
      */
-    public static List<FuzzingStrategy> getFuzzingStrategies(Schema<?> fuzzedFieldSchema, List<String> invisibleChars, boolean maintainSize) {
+    public static List<FuzzingStrategy> getFuzzingStrategies(FuzzingData data, String fuzzedField, List<String> invisibleChars, boolean maintainSize) {
+        Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        String initialValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), fuzzedField));
+
         boolean isNotString = !"string".equalsIgnoreCase(fuzzedFieldSchema.getType());
         boolean isBinaryFormat = "binary".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
         boolean isByteFormat = "byte".equalsIgnoreCase(fuzzedFieldSchema.getFormat());
@@ -296,7 +301,6 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         if (isNotString || isBinaryFormat || isByteFormat) {
             return Collections.singletonList(FuzzingStrategy.skip().withData("Field does not match String schema or has binary/byte format"));
         }
-        String initialValue = StringGenerator.generateValueBasedOnMinMax(fuzzedFieldSchema);
 
         /* independent of the supplied strategy, we still maintain sizes for enums */
         final boolean insertWithoutReplace = !maintainSize || !CollectionUtils.isEmpty(fuzzedFieldSchema.getEnum());

@@ -10,7 +10,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -37,8 +36,7 @@ public class WithinSingleCodePointEmojisInStringFieldsTrimValidateFuzzer extends
 
     @Override
     public List<FuzzingStrategy> getFieldFuzzingStrategy(FuzzingData data, String fuzzedField) {
-        Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        return FuzzingStrategy.getFuzzingStrategies(fuzzedFieldSchema, this.getInvisibleChars(), false);
+        return FuzzingStrategy.getFuzzingStrategies(data, fuzzedField, this.getInvisibleChars(), false);
     }
 
     @Override

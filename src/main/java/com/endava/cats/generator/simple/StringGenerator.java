@@ -62,7 +62,6 @@ public class StringGenerator {
     private static final String[] TLDS = {".com", ".net", ".org", ".io"};
     private static final String[] URI_SCHEMES = {"http", "https", "ftp", "file"};
     private static final int TIMEOUT_MS = 200;
-    private static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "changeOrSimplifyThePattern";
 
     private static final List<String> SIMPLE_REGEXES = List.of("[A-Z]+", "[a-z]+", "[A-Za-z]+", "[0-9]+", "[A-Za-z0-9]+", "[A-Z0-9]+", "[a-z0-9]+", "\\w+", "[A-Za-z0-9_\\-#!]");
 

@@ -1,5 +1,7 @@
 package com.endava.cats.strategy;
 
+import com.endava.cats.generator.simple.StringGenerator;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.FuzzingResult;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
@@ -9,8 +11,10 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mockito;
 
 import java.util.List;
+import java.util.Map;
 
 @QuarkusTest
 class FuzzingStrategyTest {
@@ -200,7 +204,13 @@ class FuzzingStrategyTest {
         schema.setType(type);
         schema.setFormat(format);
 
-        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of("YY"), true);
+        Map<String, Schema> reqTypes = Map.of("field", schema);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+        Mockito.when(data.getPayload()).thenReturn("{\"field\": \"" + StringGenerator.generateValueBasedOnMinMax(schema) + "\"}");
+
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(data, "field", List.of("YY"), true);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);
         Assertions.assertThat(fuzzingStrategyList.get(0).name()).isEqualTo(FuzzingStrategy.skip().name());
@@ -213,10 +223,15 @@ class FuzzingStrategyTest {
         schema.setMinLength(length);
         schema.setMaxLength(length);
 
-        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of(YY), false);
+        Map<String, Schema> reqTypes = Map.of("field", schema);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+        Mockito.when(data.getPayload()).thenReturn("{\"field\": \"" + StringGenerator.generateValueBasedOnMinMax(schema) + "\"}");
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(data, "field", List.of(YY), false);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);
-        Assertions.assertThat(fuzzingStrategyList.get(0).getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length + YY.length());
+        Assertions.assertThat(fuzzingStrategyList.getFirst().getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length + YY.length());
     }
 
     @Test
@@ -226,10 +241,16 @@ class FuzzingStrategyTest {
         schema.setMinLength(length);
         schema.setMaxLength(length);
 
-        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of(YY), true);
+        Map<String, Schema> reqTypes = Map.of("field", schema);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+        Mockito.when(data.getPayload()).thenReturn("{\"field\": \"" + StringGenerator.generateValueBasedOnMinMax(schema) + "\"}");
+
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(data, "field", List.of(YY), true);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);
-        Assertions.assertThat(fuzzingStrategyList.get(0).getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length);
+        Assertions.assertThat(fuzzingStrategyList.getFirst().getData().toString()).contains(YY).doesNotStartWith(YY).doesNotEndWith(YY).hasSize(length);
     }
 
     @Test
@@ -237,10 +258,16 @@ class FuzzingStrategyTest {
         StringSchema schema = new StringSchema();
         schema.setEnum(List.of("ENUM"));
 
-        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(schema, List.of(YY), false);
+        Map<String, Schema> reqTypes = Map.of("field", schema);
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+        Mockito.when(data.getPayload()).thenReturn("{\"field\": \"" + StringGenerator.generateValueBasedOnMinMax(schema) + "\"}");
+
+
+        List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(data, "field", List.of(YY), false);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);
-        Assertions.assertThat(fuzzingStrategyList.get(0).getData()).isEqualTo("EN" + YY + "UM");
+        Assertions.assertThat(fuzzingStrategyList.getFirst().getData()).isEqualTo("EN" + YY + "UM");
     }
 
     @Test
