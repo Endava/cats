@@ -18,6 +18,7 @@ import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
@@ -42,7 +43,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_ENUMS_US
  * A modified version of {@code io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
  * setups including complex objects and array of objects.
  * <p>
- * This is a stateful object. Don't use it through dependency injection.
+ * This is a <b>stateful</b> object. Don't use it through dependency injection.
  * <p>
  * Supported String formats:
  * <ul>
@@ -77,6 +78,9 @@ public class OpenAPIModelGenerator {
     private final int arraySize;
     private final ObjectMapper customDepthMapper = new ObjectMapper();
     private final ObjectMapper simpleObjectMapper = new ObjectMapper();
+
+    @Getter
+    private final Map<String, Schema> requestDataTypes = new HashMap<>();
 
     /**
      * Constructs an OpenAPIModelGenerator with the specified configuration.
@@ -495,7 +499,7 @@ public class OpenAPIModelGenerator {
             this.populateWithComposedSchema(values, name, schema);
             return values;
         } else {
-            globalContext.recordRequestSchema(currentProperty, schema);
+            this.recordRequestSchema(currentProperty, schema);
             if (!values.isEmpty()) {
                 return values;
             }
@@ -598,12 +602,12 @@ public class OpenAPIModelGenerator {
             this.populateWithComposedSchema(values, propertyName.toString(), innerSchema);
         } else if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName.toString())) {
             values.put(propertyName.toString(), this.matchToEnumOrEmpty(name, innerSchema, propertyName.toString()));
-            globalContext.recordRequestSchema(currentProperty, innerSchema);
+            this.recordRequestSchema(currentProperty, innerSchema);
         } else {//maybe here a check for array schema
             logger.trace("Resolving {}", propertyName);
             Object example = this.resolvePropertyToExample(propertyName.toString(), innerSchema);
             values.put(propertyName.toString(), example);
-            globalContext.recordRequestSchema(currentProperty, innerSchema);
+            this.recordRequestSchema(currentProperty, innerSchema);
         }
     }
 
@@ -786,5 +790,11 @@ public class OpenAPIModelGenerator {
 
     private void addSingleSchemaExample(Map<String, Object> values, Object propertyName, Schema<?> schema) {
         values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), schema));
+    }
+
+    private void recordRequestSchema(String propertyName, Schema<?> schema) {
+        requestDataTypes.put(propertyName, schema);
+        //this is a bit of a hack that might be abused in the future to include a full object as extension. currently it only holds the field name
+        schema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, propertyName);
     }
 }

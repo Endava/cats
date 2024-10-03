@@ -10,11 +10,11 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.openapi.OpenAPIModelGenerator;
-import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonSet;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -260,7 +260,7 @@ public class FuzzingDataFactory {
 
         KeyValuePair<String, Schema<?>> paramsSchema = this.createSyntheticSchemaForGet(operation);
         //we need this in order to be able to generate path params if not supplied by the user
-        String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).getFirst();
+        String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).examplePayloads().getFirst();
 
         Set<String> examples = this.extractExamples(mediaType);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);
@@ -270,8 +270,8 @@ public class FuzzingDataFactory {
         logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
         for (String reqSchemaName : reqSchemaNames) {
-            List<String> payloadSamples = this.getRequestPayloadsSamples(mediaType, reqSchemaName);
-            fuzzingDataList.addAll(payloadSamples.stream()
+            GenerationResult generationResult = this.getRequestPayloadsSamples(mediaType, reqSchemaName);
+            fuzzingDataList.addAll(generationResult.examplePayloads().stream()
                     .map(payload -> FuzzingData.builder()
                             .method(method).path(path)
                             .contractPath(path)
@@ -283,7 +283,7 @@ public class FuzzingDataFactory {
                             .requestContentTypes(requestContentTypes)
                             .schemaMap(globalContext.getSchemaMap())
                             .responses(responses)
-                            .requestPropertyTypes(globalContext.getRequestDataTypes())
+                            .requestPropertyTypes(generationResult.requestDataTypes())
                             .openApi(openAPI)
                             .tags(operation.getTags())
                             .reqSchemaName(reqSchemaName)
@@ -344,7 +344,7 @@ public class FuzzingDataFactory {
         Set<String> queryParams = this.extractQueryParams(syntheticSchema.getValue());
         logger.debug("Query params for path {}, method {}: {}", path, method, queryParams);
 
-        List<String> payloadSamples = this.getRequestPayloadsSamples(null, syntheticSchema.getKey());
+        GenerationResult generationResult = this.getRequestPayloadsSamples(null, syntheticSchema.getKey());
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
@@ -352,7 +352,7 @@ public class FuzzingDataFactory {
 
         logger.debug("Request content types for path {}, method {}: {}", path, method, requestContentTypes);
 
-        return payloadSamples.stream()
+        return generationResult.examplePayloads().stream()
                 .map(payload -> FuzzingData.builder()
                         .method(method).path(path)
                         .contractPath(path)
@@ -364,7 +364,7 @@ public class FuzzingDataFactory {
                         .schemaMap(globalContext.getSchemaMap())
                         .responses(responses)
                         .responseContentTypes(responsesContentTypes)
-                        .requestPropertyTypes(globalContext.getRequestDataTypes())
+                        .requestPropertyTypes(generationResult.requestDataTypes())
                         .requestContentTypes(requestContentTypes)
                         .queryParams(queryParams)
                         .openApi(openAPI)
@@ -481,7 +481,7 @@ public class FuzzingDataFactory {
         return operation.getRequestBody() != null && operation.getRequestBody().getContent() != null;
     }
 
-    private List<String> getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
+    private GenerationResult getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
         OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE);
 
@@ -497,7 +497,7 @@ public class FuzzingDataFactory {
                         return "[" + payload + "," + payload + "]";
                     }).toList();
         }
-        return result;
+        return new GenerationResult(result, generator.getRequestDataTypes());
     }
 
     private List<String> generateSample(String reqSchemaName, OpenAPIModelGenerator generator, boolean createXxxOfCombinations) {
@@ -1002,5 +1002,8 @@ public class FuzzingDataFactory {
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE), false);
 
         schema.setExample(examples.getFirst());
+    }
+
+    public record GenerationResult(List<String> examplePayloads, Map<String, Schema> requestDataTypes) {
     }
 }

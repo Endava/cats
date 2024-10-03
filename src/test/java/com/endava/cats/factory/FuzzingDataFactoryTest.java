@@ -10,8 +10,8 @@ import com.endava.cats.model.CatsField;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
-import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonParser;
@@ -77,6 +77,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData firstData = dataList.get(1);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF");
+        Assertions.assertThat(firstData.getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
     }
 
     @Test
@@ -84,10 +85,12 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> data = setupFuzzingData("/variant", "src/test/resources/issue_69.yml");
         Assertions.assertThat(data).hasSize(1);
 
-        List<String> responses = data.getFirst().getResponses().get("200");
+        FuzzingData firstData = data.getFirst();
+        List<String> responses = firstData.getResponses().get("200");
         Assertions.assertThat(responses).hasSize(2);
         Assertions.assertThat(responses.getFirst()).doesNotContain("Variant").contains("option1");
         Assertions.assertThat(responses.get(1)).doesNotContain("Variant").contains("option2");
+        Assertions.assertThat(firstData.getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
     }
 
     @Test
@@ -109,6 +112,7 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF");
         Assertions.assertThat(data.get(1).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -118,6 +122,7 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data.getFirst().getPayload()).contains("dateFrom");
         Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF");
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -125,6 +130,7 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore_empty_body.json");
         Assertions.assertThat(data).hasSize(1);
         Assertions.assertThat(data.getFirst().getMethod()).isEqualTo(HttpMethod.GET);
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -142,6 +148,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).hasSize(2);
         Assertions.assertThat(data.get(1).getPayload()).contains("someSubObjectKey3");
         Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("someSubObjectKey3");
+        Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
     @Test
@@ -188,6 +195,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).hasSize(1);
         FuzzingData fuzzingData = data.getFirst();
         Assertions.assertThat(fuzzingData.getAllRequiredFields()).containsExactly("legs", "breed", "id").doesNotContain("color");
+        Assertions.assertThat(fuzzingData.getAllFieldsAsCatsFields().size()).isLessThanOrEqualTo(fuzzingData.getRequestPropertyTypes().size());
     }
 
     @Test

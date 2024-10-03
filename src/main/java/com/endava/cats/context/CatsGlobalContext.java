@@ -49,7 +49,6 @@ public class CatsGlobalContext {
     public static final String ORIGINAL = "Original";
     private final Map<String, Schema> schemaMap = new HashMap<>();
     private final Map<String, Example> exampleMap = new HashMap<>();
-    private final Map<String, Schema> requestDataTypes = new HashMap<>();
     private final Map<String, Map<String, Object>> additionalProperties = new HashMap<>();
     private final List<Discriminator> discriminators = new ArrayList<>();
     private final Map<String, Deque<String>> postSuccessfulResponses = new HashMap<>();
@@ -303,11 +302,5 @@ public class CatsGlobalContext {
     public void recordPathAndMethod(String path, HttpMethod method) {
         MDC.put(CONTRACT_PATH, path);
         MDC.put(HTTP_METHOD, method.toString());
-    }
-
-    public void recordRequestSchema(String propertyName, Schema<?> schema) {
-        requestDataTypes.put(propertyName, schema);
-        //this is a bit of a hack that might be abused in the future to include a full object as extension. currently it only holds the field name
-        schema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, propertyName);
     }
 }
