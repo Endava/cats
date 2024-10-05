@@ -722,6 +722,8 @@ public class FuzzingDataFactory {
             for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
                 if (isNotNullAndNonPrimitiveArray(elementEntry) && isAnyOrOneOfInChildren(elementEntry.getValue())) {
                     anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
+                } else if (isNotNullAndNonPrimitiveArray(elementEntry) && isXxxOfInString(elementEntry.getKey()) && "$".equals(jsonElementKey)) {
+                    anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), Map.of(elementEntry.getKey(), elementEntry.getValue().getAsJsonArray()), this::mergeMaps);
                 } else if (isNotNullAndNonPrimitiveArray(elementEntry) && isXxxOfInString(elementEntry.getKey())) {
                     anyOrOneOfs.merge(this.createArrayKey(jsonElementKey, elementEntry.getKey()), Map.of(elementEntry.getKey(), elementEntry.getValue().getAsJsonArray().get(0)), this::mergeMaps);
                 } else if (isXxxOfInString(elementEntry.getKey())) {
