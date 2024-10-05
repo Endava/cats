@@ -3,17 +3,18 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
-import com.endava.cats.model.NoMediaType;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.model.NoMediaType;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -105,7 +107,7 @@ public class JsonObjectsCaseLinterFuzzer extends BaseLinterFuzzer {
             if (ref == null && apiResponse.getContent() != null) {
                 MediaType mediaType = OpenApiUtils.getMediaTypeFromContent(apiResponse.getContent(), processingArguments.getDefaultContentType());
                 if (mediaType != null) {
-                    ref = mediaType.getSchema().get$ref();
+                    ref = Optional.ofNullable(mediaType.getSchema()).orElse(new Schema<>()).get$ref();
                 }
             }
 
