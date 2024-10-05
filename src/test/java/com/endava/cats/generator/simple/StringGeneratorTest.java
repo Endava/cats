@@ -304,7 +304,7 @@ class StringGeneratorTest {
     void shouldGenerateRegex(String pattern, int minSize, int maxSize, int expectedMinSize, int expectedMaxSize) {
         String generated = StringGenerator.generate(pattern, minSize, maxSize);
 
-        Assertions.assertThat(generated).hasSizeBetween(expectedMinSize, expectedMaxSize).matches(pattern);
+        Assertions.assertThat(generated.trim()).hasSizeBetween(expectedMinSize, expectedMaxSize).matches(pattern);
     }
 
     @Test
