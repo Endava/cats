@@ -233,10 +233,6 @@ public abstract class JsonUtils {
     }
 
     private static boolean testForPredicateOrThrow(String payload, String property, Predicate<JsonNode> testFunction) {
-        if (!isValidJson(payload)) {
-            return false;
-        }
-
         if (isJsonArray(payload)) {
             property = FIRST_ELEMENT_FROM_ROOT_ARRAY + property;
         }
@@ -253,6 +249,9 @@ public abstract class JsonUtils {
      * @return {@code true} if the specified property is a primitive type, {@code false} otherwise.
      */
     public static boolean isPrimitive(String payload, String property) {
+        if (!isValidJson(payload)) {
+            return false;
+        }
         try {
             return testForPrimitiveOrThrow(payload, property);
         } catch (InvalidPathException e) {
@@ -269,6 +268,9 @@ public abstract class JsonUtils {
      * @return {@code true} if the specified property is an object type, {@code false} otherwise.
      */
     public static boolean isObject(String payload, String property) {
+        if (!isValidJson(payload)) {
+            return false;
+        }
         try {
             return !testForPrimitiveOrThrow(payload, property);
         } catch (InvalidPathException e) {
@@ -284,6 +286,9 @@ public abstract class JsonUtils {
      * @return {@code true} if the specified property is an array, {@code false} otherwise.
      */
     public static boolean isArray(String payload, String property) {
+        if (!isValidJson(payload)) {
+            return false;
+        }
         try {
             return testForPredicateOrThrow(payload, property, JsonNode::isArray);
         } catch (InvalidPathException e) {
@@ -447,7 +452,7 @@ public abstract class JsonUtils {
         interim = emptyBracketMatcher.replaceAll(match -> jsonPathEscape(match.group(0)));
 
         return Arrays.stream(interim.split("\\.", -1))
-                .map(item -> item.matches("^(([$@][a-zA-Z_-]+)|\\*)") ? jsonPathEscape(item) : item)
+                .map(item -> item.matches("^(([$@][a-zA-Z_-]+)|\\*|\\[\\w+\\])") ? jsonPathEscape(item) : item)
                 .collect(Collectors.joining("."));
     }
 
