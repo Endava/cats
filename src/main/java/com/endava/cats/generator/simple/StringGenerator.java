@@ -158,12 +158,10 @@ public class StringGenerator {
             return EMPTY;
         }
 
-        if (initialValue.length() != length) {
-            int startingAt = initialValue.length() - 1;
-            String toRepeat = initialValue.substring(startingAt);
-            do {
-                initialValue.append(toRepeat);
-            } while (initialValue.length() < length);
+        if (initialValue.length() < length) {
+            char lastChar = initialValue.charAt(initialValue.length() - 1);
+            int charsToAdd = length - initialValue.length();
+            initialValue.append(String.valueOf(lastChar).repeat(charsToAdd));
         }
 
         return initialValue.substring(0, length);
@@ -442,21 +440,35 @@ public class StringGenerator {
         return groupMatcher.find();
     }
 
-    private static String composeString(String initial, int min, int max) {
+    public static String composeString(String initial, int min, int max) {
         if (min <= 0 && max <= 0) {
             return initial;
         }
-        String trimmed = initial.trim() + (initial.isEmpty() ? "a" : initial.charAt(0));
-        if (trimmed.length() < min) {
-            return composeString(trimmed + trimmed, min, max);
-        } else if (trimmed.length() > max) {
-            int random = max == min ? 0 : CatsUtil.random().nextInt(max - min);
-            return trimmed.substring(0, max - random);
+
+        if (max < min) {
+            max = min;
         }
 
-        return initial;
-    }
+        StringBuilder trimmed = new StringBuilder(StringUtils.isBlank(initial) ? "a" : initial.trim());
 
+        while (trimmed.length() < min) {
+            int substringPosition = Math.clamp(trimmed.length() - 1, 0, Math.min(trimmed.length() - 1, 4));
+            if (substringPosition > 0 && substringPosition < trimmed.length()) {
+                trimmed.append(trimmed.substring(substringPosition));
+            } else {
+                trimmed.append(trimmed);
+            }
+        }
+
+        if (trimmed.length() > max) {
+            int randomReduction = max == min ? 0 : CatsUtil.random().nextInt(max - min + 1);
+            int newLength = max - randomReduction;
+            trimmed = new StringBuilder(trimmed.substring(0, newLength));
+        }
+
+        return trimmed.toString();
+    }
+    
     /**
      * Generates a random right boundary String value. If the maxLength of the associated schema is between {@code Integer.MAX_VALUE - 10}
      * and {@code Integer.MAX_VALUE} (including), the generated String length will be {@code Integer.MAX_VALUE - 2}, which is the maximum length

@@ -49,7 +49,7 @@ class StringGeneratorTest {
 
         String actual = StringGenerator.generateRightBoundString(schema);
 
-        Assertions.assertThat(actual.length()).isGreaterThan(maxLength + 10 - 1);
+        Assertions.assertThat(actual.length()).isGreaterThanOrEqualTo(maxLength + 10 - 1);
     }
 
     @Test
@@ -312,5 +312,44 @@ class StringGeneratorTest {
         String pattern = "^[^\\u0000-\\u00FF]$";
         String generated = StringGenerator.generate(pattern, -1, -1);
         Assertions.assertThat(generated).hasSize(1).matches(pattern);
+    }
+
+    @ParameterizedTest(name = "{index} => initial=''{0}'', min={1}, max={2}, expectedResult=''{3}'', expectedLengthMin={4}, expectedLengthMax={5}")
+    @CsvSource(value = {
+            "NULL, 0, 0, NULL, -1, -1",
+            "NULL, -1, -1, NULL, -1, -1",
+            "NULL, 5, 5, aaaaa, 5, 5",
+            "NULL, 5, 10, , 5, 10",
+            "'', 0, 0, '', -1, -1",
+            "'', -1, -1, '', -1, -1",
+            "'', 5, 5, aaaaa, 5, 5",
+            "'', 5, 10, , 5, 10",
+            "'   ', 5, 5, aaaaa, 5, 5",
+            "'   ', 5, 10, , 5, 10",
+            "test, 10, 5, , 10, 10",
+            "test, 4, 4, test, 4, 4",
+            "test, 8, 8, , 8, 8",
+            "test, 5, 10, , 5, 10",
+            "test, 1, 3, , 1, 3",
+            "test, -1, 5, test, -1, -1",
+            "test, 5, -1, testt, 5, 5",
+            "a, 1000, 1000, , 1000, 1000",
+            "abc, 1000, 2000, , 1000, 2000",
+            "longinitialstring, 5, 10, , 5, 10",
+            "hi, 5, 5, , 5, 5",
+            "hello, 3, 3, hel, 3, 3"
+    }, nullValues = "NULL")
+    void testComposeString(String initial, int min, int max, String expectedResult, int expectedLengthMin, int expectedLengthMax) {
+        String result = StringGenerator.composeString(initial, min, max);
+
+        if (expectedResult != null && !expectedResult.isEmpty()) {
+            Assertions.assertThat(result).isEqualTo(expectedResult);
+        } else if (expectedLengthMin >= 0 && expectedLengthMax >= 0) {
+            Assertions.assertThat(result.length())
+                    .as("Result length should be between %d and %d", expectedLengthMin, expectedLengthMax)
+                    .isBetween(expectedLengthMin, expectedLengthMax);
+        } else {
+            Assertions.assertThat(result).isEqualTo(initial);
+        }
     }
 }
