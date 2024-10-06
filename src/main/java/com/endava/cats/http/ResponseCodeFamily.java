@@ -3,6 +3,8 @@ package com.endava.cats.http;
 import java.util.List;
 import java.util.Locale;
 
+import static com.endava.cats.http.ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved;
+
 /**
  * Defines response code sets that can be used for matching.
  */
@@ -97,18 +99,6 @@ public interface ResponseCodeFamily {
                 getResultCodeBasedOnRequiredFieldsRemoved(anyMandatory).asString(),
                 anyMandatory ? "were" : "were not"
         };
-    }
-
-    /**
-     * Determines the response code family based on the presence or absence of required fields.
-     *
-     * @param required Flag indicating the presence of required fields.
-     * @return The response code family:
-     * - If required is true, returns the 4XX family.
-     * - If required is false, returns the 2XX family.
-     */
-    static ResponseCodeFamily getResultCodeBasedOnRequiredFieldsRemoved(boolean required) {
-        return required ? ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.TWOXX;
     }
 
     /**

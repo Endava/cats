@@ -218,4 +218,16 @@ public enum ResponseCodeFamilyPredefined implements ResponseCodeFamily {
 
         return ZEROXX;
     }
+
+    /**
+     * Determines the response code family based on the presence or absence of required fields.
+     *
+     * @param required Flag indicating the presence of required fields.
+     * @return The response code family:
+     * - If required is true, returns the 4XX family.
+     * - If required is false, returns the 2XX family.
+     */
+    public static ResponseCodeFamily getResultCodeBasedOnRequiredFieldsRemoved(boolean required) {
+        return required ? ResponseCodeFamilyPredefined.FOURXX : ResponseCodeFamilyPredefined.TWOXX;
+    }
 }
