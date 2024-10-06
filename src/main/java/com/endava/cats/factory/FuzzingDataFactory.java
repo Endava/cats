@@ -78,7 +78,6 @@ public class FuzzingDataFactory {
     private final CatsGlobalContext globalContext;
     private final ValidDataFormat validDataFormat;
     private final FilterArguments filterArguments;
-    private final CatsGlobalContext catsGlobalContext;
 
     /**
      * Constructs a new {@code FuzzingDataFactory} with the specified arguments.
@@ -96,7 +95,6 @@ public class FuzzingDataFactory {
         this.globalContext = catsGlobalContext;
         this.validDataFormat = validDataFormat;
         this.filterArguments = filterArguments;
-        this.catsGlobalContext = catsGlobalContext;
     }
 
     /**
