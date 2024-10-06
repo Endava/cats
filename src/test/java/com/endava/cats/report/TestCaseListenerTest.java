@@ -765,9 +765,9 @@ class TestCaseListenerTest {
     @ParameterizedTest
     @CsvSource({"application/json,application/v1+json,true", "application/v2+json,application/v3+json,false", "application/v3+json,application/json,true",
             "application/vnd+json,application/json,true", "application/json,application/xml,false", "application/json; charset=utf,application/json; charset=iso,true",
-            "*/*,application/json,true"})
+            "*/*,application/json,true","application/application,application/application/json,false"})
     void shouldCheckContentTypesEquivalence(String firstContentType, String secondContentType, boolean expected) {
-        boolean result = TestCaseListener.areContentTypesEquivalent(firstContentType, secondContentType);
+        boolean result = testCaseListener.areContentTypesEquivalent(firstContentType, secondContentType);
         Assertions.assertThat(result).isEqualTo(expected);
     }
 

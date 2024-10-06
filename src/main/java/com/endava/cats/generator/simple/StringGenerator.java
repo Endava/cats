@@ -468,7 +468,7 @@ public class StringGenerator {
 
         return trimmed.toString();
     }
-    
+
     /**
      * Generates a random right boundary String value. If the maxLength of the associated schema is between {@code Integer.MAX_VALUE - 10}
      * and {@code Integer.MAX_VALUE} (including), the generated String length will be {@code Integer.MAX_VALUE - 2}, which is the maximum length
