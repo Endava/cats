@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
-import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
@@ -53,7 +53,7 @@ public class RemoveHeadersFuzzer implements Fuzzer {
                             .fuzzingData(data)
                             .headers(headersSubset)
                             .scenario("Send only the following headers: %s plus any authentication headers.".formatted(headersSubset))
-                            .expectedResponseCode(ResponseCodeFamily.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved))
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved(anyMandatoryHeaderRemoved))
                             .expectedResult(" as mandatory headers [%s] removed".formatted(anyMandatoryHeaderRemoved ? "were" : "were not"))
                             .addUserHeaders(false)
                             .build()

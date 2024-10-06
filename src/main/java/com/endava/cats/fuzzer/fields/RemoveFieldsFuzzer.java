@@ -6,6 +6,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
@@ -94,7 +95,7 @@ public class RemoveFieldsFuzzer implements Fuzzer {
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
                     .payload(finalJsonPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod()).contractPath(data.getContractPath())
                     .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload()).build());
-            testCaseListener.reportResult(logger, data, response, ResponseCodeFamily.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
+            testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved(hasRequiredFieldsRemove));
         } else {
             testCaseListener.skipTest(logger, "Field is from a different ANY_OF or ONE_OF payload");
         }
