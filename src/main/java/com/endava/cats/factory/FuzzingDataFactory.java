@@ -603,6 +603,7 @@ public class FuzzingDataFactory {
                 continue; // Skip if already visited to avoid cycles
             }
 
+
             result.add(currentJson);
             visited.add(currentJson);
 
@@ -689,6 +690,9 @@ public class FuzzingDataFactory {
             }
         }
 
+        if (groupedKeymap.isEmpty()) {
+            return startingOneAnyOfs;
+        }
         return groupedKeymap;
     }
 

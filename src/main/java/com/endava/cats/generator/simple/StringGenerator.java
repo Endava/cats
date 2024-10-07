@@ -452,7 +452,7 @@ public class StringGenerator {
         StringBuilder trimmed = new StringBuilder(StringUtils.isBlank(initial) ? "a" : initial.trim());
 
         while (trimmed.length() < min) {
-            int substringPosition = Math.clamp(trimmed.length() - 1, 0, Math.min(trimmed.length() - 1, 4));
+            int substringPosition = Math.clamp(trimmed.length() - 1L, 0, Math.min(trimmed.length() - 1, 4));
             if (substringPosition > 0 && substringPosition < trimmed.length()) {
                 trimmed.append(trimmed.substring(substringPosition));
             } else {
