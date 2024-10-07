@@ -190,7 +190,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(type).asString().isEqualTo("Address");
         Assertions.assertThat(innerPayload).asString().isEqualTo("NOT_SET");
     }
-
+    
     @Test
     void shouldReturnRequiredFieldsWhenAllOfSchemaAndRequiredInRoot() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/allof-with-required-in-root.yml");

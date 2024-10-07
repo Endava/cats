@@ -171,7 +171,7 @@ public class FuzzingDataFactory {
             boolean isPathParam = "path".equalsIgnoreCase(parameter.getIn());
             boolean isQueryParam = "query".equalsIgnoreCase(parameter.getIn());
 
-            if ((isPathParam || isQueryParam) && filesArguments.isNotUrlParam(parameter.getName())) {
+            if ((isPathParam || isQueryParam) && filesArguments.isNotUrlParam(parameter.getName()) && StringUtils.isNotBlank(parameter.getName())) {
                 String newParameterName = parameter.getName() + "|" + parameter.getIn();
                 parameter.setSchema(Optional.ofNullable(parameter.getSchema()).orElse(new Schema<>()));
                 parameter.getSchema().setName(newParameterName);

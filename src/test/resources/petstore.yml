@@ -34,6 +34,11 @@ paths:
           schema:
             type: string
             example: test
+        - name: ""
+          in: query
+          schema:
+            type: string
+            example: ""
       responses:
         '200':
           description: pet response

@@ -185,7 +185,7 @@ public class OpenAPIModelGenerator {
     }
 
     private <T> Object resolvePropertyToExample(String propertyName, Schema<T> propertySchema) {
-        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
+        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth) || StringUtils.isBlank(propertyName)) {
             return null;
         }
 
@@ -596,6 +596,9 @@ public class OpenAPIModelGenerator {
     }
 
     private void parseFromInnerSchema(String name, Schema schema, Map<String, Object> values, Object propertyName) {
+        if (StringUtils.isBlank(propertyName.toString())) {
+            return;
+        }
         Schema innerSchema = (Schema) schema.getProperties().get(propertyName.toString());
         if (CatsModelUtils.isObjectSchema(innerSchema)) {
             values.put(propertyName.toString(), resolveModelToExample(propertyName.toString(), innerSchema));
