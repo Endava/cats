@@ -176,7 +176,7 @@
                     <parameters>${maven.compiler.parameters}</parameters>
                     <compilerArgs>
                         <arg>-XDcompilePolicy=simple</arg>
-<!--                        <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode</arg>-->
+                        <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode</arg>
                     </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
@@ -184,11 +184,11 @@
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
-<!--                        <path>-->
-<!--                            <groupId>com.google.errorprone</groupId>-->
-<!--                            <artifactId>error_prone_core</artifactId>-->
-<!--                            <version>${error-prone.version}</version>-->
-<!--                        </path>-->
+                        <path>
+                            <groupId>com.google.errorprone</groupId>
+                            <artifactId>error_prone_core</artifactId>
+                            <version>${error-prone.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
