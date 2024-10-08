@@ -378,6 +378,9 @@ public abstract class JsonUtils {
         DocumentContext finalPayload = JsonPath.parse(interimPayload);
         toEliminate.forEach(toEliminateKey -> {
             try {
+                if (toEliminateKey.contains(".")) {
+                    toEliminateKey = "['" + toEliminateKey + "']";
+                }
                 String nodeToDelete = pathTowardsReplacement + "." + escapeSpaces(toEliminateKey);
                 LOGGER.debug("to delete {}", nodeToDelete);
                 finalPayload.delete(escapeFullPath(nodeToDelete));
