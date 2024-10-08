@@ -7,7 +7,6 @@ import java.util.List;
 public abstract class RegexCleaner {
     private static final String EMPTY_PATTERN = "(\\(\\^\\$\\)\\|)|(\\^\\$\\)\\|)|(\\(\\^\\$\\|\\))|(\\(\\|\\^\\$\\))|(\\(\\^\\$\\))";
     private static final String ALPHANUMERIC_PLUS = "[a-zA-Z0-9]+";
-    private static final String EMPTY = "";
     private static final List<String> WILD_CARDS = List.of(".^");
     private static final String CASE_INSENSITIVE = "(?i)";
 
@@ -39,8 +38,8 @@ public abstract class RegexCleaner {
             pattern = StringUtils.removeStart(pattern, "/");
         }
 
-        pattern = pattern.replaceAll(EMPTY_PATTERN, EMPTY);
-        pattern = pattern.replace(CASE_INSENSITIVE, EMPTY);
+        pattern = pattern.replaceAll(EMPTY_PATTERN, "");
+        pattern = pattern.replace(CASE_INSENSITIVE, "");
         pattern = removeMisplacedDollarSigns(pattern);
 
         if (pattern.startsWith("|")) {

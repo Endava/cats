@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -30,8 +31,8 @@ public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataForma
         String[] propertyParts = propertyName.split("#", -1);
         String partToTest = propertyParts[propertyParts.length - 1];
 
-        return (partToTest.toLowerCase().endsWith("ip") && !partToTest.toLowerCase().startsWith("zip")
-                && !partToTest.toLowerCase().endsWith("citizenship")) ||
+        return (partToTest.toLowerCase(Locale.ROOT).endsWith("ip") && !partToTest.toLowerCase(Locale.ROOT).startsWith("zip")
+                && !partToTest.toLowerCase(Locale.ROOT).endsWith("citizenship")) ||
                 PropertySanitizer.sanitize(partToTest).endsWith("ipaddress") ||
                 "ip".equalsIgnoreCase(format) ||
                 "ipv4".equalsIgnoreCase(format);

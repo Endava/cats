@@ -10,12 +10,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 class FunctionalFuzzerExecutionTest {
 
     @Test
-    void shouldEqualWhenSameObject() {
-        CustomFuzzerExecution cfe1 = buildCfe("path1", "test1");
-        Assertions.assertThat(cfe1).isEqualTo(cfe1);
-    }
-
-    @Test
     void shouldNotEqualWhenDiffObject() {
         CustomFuzzerExecution cfe1 = buildCfe("path1", "test1");
         Assertions.assertThat(cfe1).isNotEqualTo("");

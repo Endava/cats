@@ -134,7 +134,7 @@ public class JsonSet {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (!(o instanceof JsonKeyWrapper)) return false;
             JsonKeyWrapper that = (JsonKeyWrapper) o;
             return Objects.equals(keyTypeSet, that.keyTypeSet);
         }
