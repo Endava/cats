@@ -603,34 +603,46 @@ public class FuzzingDataFactory {
                 continue; // Skip if already visited to avoid cycles
             }
 
-
             result.add(currentJson);
             visited.add(currentJson);
 
             Map<String, Map<String, JsonElement>> anyOfOrOneOfElements = getAnyOrOneOffElements("$", current);
             anyOfOrOneOfElements = joinCommonOneAndAnyOfs(anyOfOrOneOfElements);
 
-            anyOfOrOneOfElements.forEach((pathKey, anyOfOrOneOf) -> {
+            for (Map.Entry<String, Map<String, JsonElement>> entry : anyOfOrOneOfElements.entrySet()) {
+                String pathKey = entry.getKey();
+                Map<String, JsonElement> anyOfOrOneOf = entry.getValue();
                 List<String> interimCombinationList = new ArrayList<>(result).stream()
                         .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), result.size()))
                         .collect(Collectors.toCollection(ArrayList::new));
 
                 result.clear();
-                anyOfOrOneOf.forEach((key, value) ->
-                        interimCombinationList.forEach(payload -> {
-                            if (payload.contains(ANY_OF) || payload.contains(ONE_OF)) {
-                                result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()));
-                            } else {
-                                result.add(payload);
-                            }
-                        }));
+                for (Map.Entry<String, JsonElement> xxxOfElement : anyOfOrOneOf.entrySet()) {
+                    String key = xxxOfElement.getKey();
+                    JsonElement value = xxxOfElement.getValue();
+                    for (String payload : interimCombinationList) {
+                        if (payload.contains(ANY_OF) || payload.contains(ONE_OF)) {
+                            result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()));
+                        } else {
+                            result.add(payload);
+                        }
+                    }
+                }
+
+                List<String> interimList = result.stream()
+                        .filter(json -> !json.contains(ANY_OF) && !json.contains(ONE_OF))
+                        .toList();
+
+                if (interimList.size() >= processingArguments.getLimitXxxOfCombinations()) {
+                    return interimList;
+                }
 
                 // Add elements to the stack for further processing
                 result.stream()
                         .filter(json -> json.contains(ANY_OF) || json.contains(ONE_OF))
                         .map(JsonParser::parseString)
                         .forEach(stack::push);
-            });
+            }
         }
 
         return new ArrayList<>(result);
