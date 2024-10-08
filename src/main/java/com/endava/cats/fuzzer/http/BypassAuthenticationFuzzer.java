@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 @Singleton
 @HttpFuzzer
 public class BypassAuthenticationFuzzer implements Fuzzer {
-    private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
+    private static final List<String> AUTH_HEADERS = Arrays.asList("cookie", "authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(BypassAuthenticationFuzzer.class);
     private final FilesArguments filesArguments;
     private final SimpleExecutor simpleExecutor;
@@ -55,7 +55,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
                         .logger(logger)
                         .fuzzingData(data)
                         .payload(data.getPayload())
-                        .scenario("Send a happy flow bypassing authentication")
+                        .scenario("Send a happy flow bypassing authentication. Removed headers " + authenticationHeaders)
                         .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX_AA)
                         .skippedHeaders(authenticationHeaders)
                         .build());
