@@ -41,7 +41,7 @@ class DummyTransferEncodingHeadersFuzzerTest {
         List<Set<CatsHeader>> headers = dummyTransferEncodingHeadersFuzzer.getHeaders(data);
 
         Assertions.assertThat(headers).hasSize(1);
-        Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Transfer-Encoding").build());
+        Assertions.assertThat(headers.getFirst()).contains(CatsHeader.builder().name("Transfer-Encoding").build());
     }
 
     @Test

@@ -17,8 +17,8 @@ class TrailingWhitespacesInHeadersFuzzerTest {
 
     @Test
     void shouldReturnTrailFuzzingStrategy() {
-        Assertions.assertThat(trailingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
-        Assertions.assertThat(trailingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo("\u1680");
+        Assertions.assertThat(trailingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.trail().name());
+        Assertions.assertThat(trailingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData()).isEqualTo("\u1680");
     }
 
     @Test

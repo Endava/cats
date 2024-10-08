@@ -34,7 +34,7 @@ class VeryLargeUnicodeStringsInHeadersFuzzerTest {
     void givenANewLargeValuesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLargeValuesInHeadersFuzzer() {
         Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 
     @Test
@@ -45,7 +45,7 @@ class VeryLargeUnicodeStringsInHeadersFuzzerTest {
     @Test
     void shouldGetPayloadSize() {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20);
-        Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData().toString()).hasSize(20 + "cats".length());
+        Assertions.assertThat(veryLargeUnicodeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData().toString()).hasSize(20 + "cats".length());
     }
 
     @Test

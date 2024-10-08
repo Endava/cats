@@ -34,7 +34,7 @@ class VeryLargeStringsInHeadersFuzzerTest {
     void givenANewLargeValuesInHeadersFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLargeValuesInHeadersFuzzer() {
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 
     @Test
@@ -42,7 +42,7 @@ class VeryLargeStringsInHeadersFuzzerTest {
         Mockito.when(processingArguments.getLargeStringsSize()).thenReturn(20000);
 
         Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(1);
-        Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData().toString()).hasSize(20000);
+        Assertions.assertThat(veryLargeStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData().toString()).hasSize(20000);
     }
 
     @Test

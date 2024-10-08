@@ -17,7 +17,7 @@ class TrailingSingleCodePointEmojisHeadersFuzzerTest {
 
     @Test
     void shouldReturnTrailFuzzingStrategy() {
-        Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
+        Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.trail().name());
         Assertions.assertThat(trailingSingleCodePointEmojisHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC80");
     }
 

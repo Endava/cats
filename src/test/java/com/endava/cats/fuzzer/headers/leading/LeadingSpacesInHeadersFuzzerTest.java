@@ -29,8 +29,8 @@ class LeadingSpacesInHeadersFuzzerTest {
 
     @Test
     void shouldReturnPrefixFuzzingStrategy() {
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
-        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo(" ");
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.prefix().name());
+        Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData()).isEqualTo(" ");
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\u0009");
         Assertions.assertThat(leadingSpacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(2);
 

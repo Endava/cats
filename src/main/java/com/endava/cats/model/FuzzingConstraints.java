@@ -3,6 +3,8 @@ package com.endava.cats.model;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Locale;
+
 /**
  * Represents constraints related to fuzzing, including information about the presence of a minimum length
  * and whether required fields have been fuzzed.
@@ -28,6 +30,6 @@ public class FuzzingConstraints {
      * @return A string indicating whether required fields have been fuzzed and, if not, whether there is a minimum length.
      */
     public String getRequiredString() {
-        return String.valueOf(hasRequiredFieldsFuzzed).toUpperCase() + (hasMinlength && !hasRequiredFieldsFuzzed ? " but has minLength" : "");
+        return String.valueOf(hasRequiredFieldsFuzzed).toUpperCase(Locale.ROOT) + (hasMinlength && !hasRequiredFieldsFuzzed ? " but has minLength" : "");
     }
 }

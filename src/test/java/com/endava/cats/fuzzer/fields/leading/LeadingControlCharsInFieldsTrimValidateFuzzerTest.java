@@ -30,7 +30,7 @@ class LeadingControlCharsInFieldsTrimValidateFuzzerTest {
 
     @Test
     void givenANewLeadingTabsInFieldsTrimValidateFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLeadingTabsInFieldsTrimValidateFuzzer() {
-        FuzzingStrategy fuzzingStrategy = leadingControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(null, null).get(0);
+        FuzzingStrategy fuzzingStrategy = leadingControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(null, null).getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\r\n");

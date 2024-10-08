@@ -19,7 +19,7 @@ class TrailingControlCharsInHeadersFuzzerTest {
 
     @Test
     void shouldReturnTrailFuzzingStrategy() {
-        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.trail().name());
+        Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.trail().name());
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\u0000");
         Assertions.assertThat(trailingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().stream().map(fuzzingStrategy ->
                 String.valueOf(fuzzingStrategy.getData())).collect(Collectors.toSet())).doesNotContain("\r");

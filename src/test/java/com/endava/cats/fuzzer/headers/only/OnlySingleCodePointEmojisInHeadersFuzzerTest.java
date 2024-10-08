@@ -17,7 +17,7 @@ class OnlySingleCodePointEmojisInHeadersFuzzerTest {
 
     @Test
     void shouldHaveReplaceFuzzingStrategy() {
-        Assertions.assertThat(onlySingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(onlySingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(onlySingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC80");
     }
 

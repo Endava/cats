@@ -61,7 +61,7 @@ class UnsupportedContentTypesHeadersFuzzerTest {
         List<Set<CatsHeader>> headers = unsupportedContentTypeHeadersFuzzer.getHeaders(data);
 
         Assertions.assertThat(headers).hasSize(29);
-        Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Content-Type").build());
+        Assertions.assertThat(headers.getFirst()).contains(CatsHeader.builder().name("Content-Type").build());
     }
 
     @Test

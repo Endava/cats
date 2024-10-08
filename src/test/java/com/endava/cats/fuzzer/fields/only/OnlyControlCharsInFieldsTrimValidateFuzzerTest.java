@@ -74,7 +74,7 @@ class OnlyControlCharsInFieldsTrimValidateFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "another_schema").get(0);
+        FuzzingStrategy fuzzingStrategy = onlyControlCharsInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "another_schema").getFirst();
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\r\n");
     }

@@ -16,6 +16,7 @@ import jakarta.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,7 +73,7 @@ public class BypassAuthenticationFuzzer implements Fuzzer {
     }
 
     private boolean isAuthenticationHeader(String header) {
-        return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase().replaceAll("[-_]", "").contains(authHeader));
+        return AUTH_HEADERS.stream().anyMatch(authHeader -> header.toLowerCase(Locale.ROOT).replaceAll("[-_]", "").contains(authHeader));
     }
 
     @Override

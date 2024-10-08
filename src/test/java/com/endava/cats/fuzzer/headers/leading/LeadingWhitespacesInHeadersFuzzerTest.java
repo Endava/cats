@@ -17,8 +17,8 @@ class LeadingWhitespacesInHeadersFuzzerTest {
 
     @Test
     void shouldHavePrefixFuzzingStrategy() {
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
-        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo("\u1680");
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.prefix().name());
+        Assertions.assertThat(leadingWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData()).isEqualTo("\u1680");
     }
 
     @Test

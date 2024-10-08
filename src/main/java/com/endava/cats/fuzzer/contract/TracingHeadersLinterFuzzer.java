@@ -10,6 +10,7 @@ import jakarta.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Checks if OpenAPI contract defines tracing information.
@@ -35,7 +36,7 @@ public class TracingHeadersLinterFuzzer extends BaseLinterFuzzer {
         testCaseListener.addExpectedResult(log, "Recommended headers [TraceId/CorrelationId] must be present");
 
         List<CatsHeader> recommendedHeaders = data.getHeaders().stream()
-                .filter(catsHeader -> HEADERS.parallelStream().anyMatch(this.replaceSpecialChars(catsHeader.getName()).toLowerCase()::contains)).toList();
+                .filter(catsHeader -> HEADERS.parallelStream().anyMatch(this.replaceSpecialChars(catsHeader.getName()).toLowerCase(Locale.ROOT)::contains)).toList();
 
         if (recommendedHeaders.isEmpty()) {
             testCaseListener.reportResultError(log, data, "No traceId/correlationId headers", "Path does not contain the recommended [TracedId/CorrelationId] headers for HTTP method {}", data.getMethod());

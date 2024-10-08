@@ -30,7 +30,7 @@ class LeadingSingleCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
     @Test
     void givenANewLeadingTabsInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLeadingTabsInFieldsValidateTrimFuzzer() {
-        FuzzingStrategy fuzzingStrategy = leadingSingleCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(null, null).get(0);
+        FuzzingStrategy fuzzingStrategy = leadingSingleCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(null, null).getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\uD83E\uDD76");

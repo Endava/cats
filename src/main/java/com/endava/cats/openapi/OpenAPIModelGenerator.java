@@ -624,7 +624,7 @@ public class OpenAPIModelGenerator {
                     .filter(discriminator -> discriminator.getPropertyName().equalsIgnoreCase(propertyName) && discriminator.getMapping() != null)
                     .findFirst()
                     .orElse(new Discriminator().mapping(Collections.emptyMap()))
-                    .getMapping().keySet().stream().filter(key -> name.toLowerCase().contains(key.toLowerCase()))
+                    .getMapping().keySet().stream().filter(key -> name.toLowerCase(Locale.ROOT).contains(key.toLowerCase(Locale.ROOT)))
                     .findFirst()
                     .orElse("");
         }

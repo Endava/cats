@@ -30,7 +30,7 @@ class LeadingWhitespacesInFieldsValidateTrimFuzzerTest {
 
     @Test
     void givenANewLeadingSpacesInFieldsValidateTrimFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheLeadingSpacesInFieldsValidateTrimFuzzer() {
-        FuzzingStrategy fuzzingStrategy = leadingWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(null, null).get(0);
+        FuzzingStrategy fuzzingStrategy = leadingWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(null, null).getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");

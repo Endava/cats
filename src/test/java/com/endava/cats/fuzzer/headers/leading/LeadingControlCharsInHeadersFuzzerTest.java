@@ -22,7 +22,7 @@ class LeadingControlCharsInHeadersFuzzerTest {
 
     @Test
     void shouldReturnPrefixFuzzingStrategy() {
-        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
+        Assertions.assertThat(leadingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.prefix().name());
         Assertions.assertThat(leadingControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\u0000");
     }
 

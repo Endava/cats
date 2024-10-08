@@ -42,7 +42,7 @@ class InvalidContentLengthHeadersFuzzerTest {
         List<Set<CatsHeader>> headers = invalidContentLengthHeadersFuzzer.getHeaders(data);
 
         Assertions.assertThat(headers).hasSize(1);
-        Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Content-Length").build());
+        Assertions.assertThat(headers.getFirst()).contains(CatsHeader.builder().name("Content-Length").build());
     }
 
     @Test

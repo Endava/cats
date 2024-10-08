@@ -30,7 +30,7 @@ class LeadingMultiCodePointEmojisInFieldsValidateTrimFuzzerTest {
 
     @Test
     void shouldProperlyOverrideMethods() {
-        FuzzingStrategy fuzzingStrategy = leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(null, null).get(0);
+        FuzzingStrategy fuzzingStrategy = leadingMultiCodePointEmojisInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(null, null).getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\uD83D\uDC69\uD83C\uDFFE");

@@ -69,7 +69,7 @@ class EmptyStringsInFieldsFuzzerTest {
 
     @Test
     void shouldReturnSkipStrategy() {
-        FuzzingStrategy fuzzingStrategy = emptyStringsInFieldsFuzzer.getFieldFuzzingStrategy(null, null).get(0);
+        FuzzingStrategy fuzzingStrategy = emptyStringsInFieldsFuzzer.getFieldFuzzingStrategy(null, null).getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("");
     }

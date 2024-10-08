@@ -48,13 +48,13 @@ class OnlyWhitespacesInFieldsValidateTrimFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = onlyWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
+        FuzzingStrategy fuzzingStrategy = onlyWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains(" ");
 
         stringSchema.setMinLength(5);
 
-        fuzzingStrategy = onlyWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").get(0);
+        fuzzingStrategy = onlyWhitespacesInFieldsValidateTrimFuzzer.getFieldFuzzingStrategy(data, "schema").getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(StringUtils.repeat(" ", stringSchema.getMinLength() + 1));
         Assertions.assertThat(onlyWhitespacesInFieldsValidateTrimFuzzer.description()).isNotNull();

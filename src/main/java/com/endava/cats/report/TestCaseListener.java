@@ -472,7 +472,7 @@ public class TestCaseListener {
             this.logger.debug("Received response is not marked as ignored... reporting warn!");
             executionStatisticsListener.increaseWarns(testCase.getContractPath());
             logger.warning(message, params);
-            this.recordResult(message, params, Level.WARN.toString().toLowerCase(), logger);
+            this.recordResult(message, params, Level.WARN.toString().toLowerCase(Locale.ROOT), logger);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Some response elements were marked as ignored and --skipReportingForIgnoredCodes is enabled."));
@@ -531,7 +531,7 @@ public class TestCaseListener {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors(testCase.getContractPath());
             logger.error(message, params);
-            this.recordResult(message, params, Level.ERROR.toString().toLowerCase(), logger);
+            this.recordResult(message, params, Level.ERROR.toString().toLowerCase(Locale.ROOT), logger);
             this.renderProgress(catsResponse);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);

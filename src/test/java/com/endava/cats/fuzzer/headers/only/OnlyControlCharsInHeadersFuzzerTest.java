@@ -17,7 +17,7 @@ class OnlyControlCharsInHeadersFuzzerTest {
 
     @Test
     void shouldHaveReplaceFuzzingStrategy() {
-        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(onlyControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(onlyControlCharsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\u0000");
     }
 

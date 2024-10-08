@@ -17,7 +17,7 @@ class OnlyMultiCodePointEmojisInHeadersFuzzerTest {
 
     @Test
     void shouldHaveReplaceFuzzingStrategy() {
-        Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(onlyMultiCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC68\u200D\uD83C\uDFED️");
     }
 

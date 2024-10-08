@@ -22,7 +22,7 @@ class LeadingSingleCodePointEmojisInHeadersFuzzerTest {
 
     @Test
     void shouldReturnPrefixFuzzingStrategy() {
-        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.prefix().name());
+        Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.prefix().name());
         Assertions.assertThat(leadingSingleCodePointEmojisInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(1).getData()).isEqualTo("\uD83D\uDC80");
     }
 

@@ -37,7 +37,7 @@ class ZalgoTextInFieldsSanitizeValidateFuzzerTest {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("field", new StringSchema());
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
-        FuzzingStrategy fuzzingStrategy = zalgoTextInFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
+        FuzzingStrategy fuzzingStrategy = zalgoTextInFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.prefix().name());
 
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains(" ̵̡̡̢̡̨̨̢͚̬̱̤̰̗͉͚̖͙͎͔͔̺̳͕̫̬͚̹͖̬̭̖̪̗͕̜̣̥̣̼͍͉̖͍̪͈̖͚̙͛͒͂̎̊̿̀̅̈͌͋̃̾̈̾̇͛͌͘͜͜͠͝ͅͅͅ ̷͕̗̇͛̅̀̑̇̈͗͌͛̐̀͆̐̊̅̋̈́̂̈́̈́͑̓͂͂̌̈́̽͌͐̐͂͐̈́̍̂͗̂͘͠͝͝͝ͅ ".replace(" ", ""));

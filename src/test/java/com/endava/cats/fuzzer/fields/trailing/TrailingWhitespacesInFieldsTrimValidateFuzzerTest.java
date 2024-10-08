@@ -30,7 +30,7 @@ class TrailingWhitespacesInFieldsTrimValidateFuzzerTest {
 
     @Test
     void givenANewTrailingSpacesInFieldsTrimValidateFuzzer_whenCreatingANewInstance_thenTheMethodsBeingOverriddenAreMatchingTheTrailingSpacesInFieldsTrimValidateFuzzer() {
-        FuzzingStrategy fuzzingStrategy = trailingWhitespacesInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(null, null).get(0);
+        FuzzingStrategy fuzzingStrategy = trailingWhitespacesInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(null, null).getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.trail().name());
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo(" ");

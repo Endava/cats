@@ -43,7 +43,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingData data = getMockFuzzingData();
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, field).get(0);
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, field).getFirst();
         Assertions.assertThat(strategy.name()).isEqualTo(expectedStrategy.name());
     }
 
@@ -53,7 +53,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingData data = getMockFuzzingData();
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").getFirst();
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData().toString()).startsWith("No LEFT or RIGHT boundary");
     }
@@ -64,7 +64,7 @@ class BaseBoundaryFieldFuzzerTest {
 
         FuzzingData data = getMockFuzzingData();
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").getFirst();
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData().toString()).startsWith("Data type not matching [integer]");
     }
@@ -75,7 +75,7 @@ class BaseBoundaryFieldFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(new HashMap<>());
 
-        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
+        FuzzingStrategy strategy = myBaseBoundaryFuzzer.getFieldFuzzingStrategy(data, "field").getFirst();
         Assertions.assertThat(strategy.name()).isEqualTo(FuzzingStrategy.skip().name());
         Assertions.assertThat(strategy.getData().toString()).startsWith("Data type not matching");
         Assertions.assertThat(myBaseBoundaryFuzzer.typeOfDataSentToTheService()).startsWith("outside the boundary values");

@@ -41,7 +41,7 @@ class DummyContentLengthHeadersFuzzerTest {
         List<Set<CatsHeader>> headers = dummyContentLengthHeadersFuzzer.getHeaders(data);
 
         Assertions.assertThat(headers).hasSize(1);
-        Assertions.assertThat(headers.get(0)).contains(CatsHeader.builder().name("Content-Length").build());
+        Assertions.assertThat(headers.getFirst()).contains(CatsHeader.builder().name("Content-Length").build());
     }
 
     @Test

@@ -26,7 +26,7 @@ class ValidateCommandTest {
         CommandLine commandLine = new CommandLine(validateCommandSpy);
         commandLine.execute("--contract", "src/test/resources/openapi.yml");
         Mockito.verify(validateCommandSpy, Mockito.times(1)).displayText(ArgumentMatchers.argThat(validContractEntry ->
-                validContractEntry.valid() && validContractEntry.reasons().get(0).equalsIgnoreCase("valid")));
+                validContractEntry.valid() && validContractEntry.reasons().getFirst().equalsIgnoreCase("valid")));
         commandLine.execute("--contract", "src/test/resources/openapi.yml", "-j");
         Mockito.verify(validateCommandSpy, Mockito.times(1)).displayJson(Mockito.any());
     }
@@ -37,7 +37,7 @@ class ValidateCommandTest {
         CommandLine commandLine = new CommandLine(validateCommandSpy);
         commandLine.execute("--contract", "src/test/resources/notExistent.yml");
         Mockito.verify(validateCommandSpy, Mockito.times(1)).displayText(ArgumentMatchers.argThat(validContractEntry ->
-                !validContractEntry.valid() && validContractEntry.reasons().get(0).contains("NoSuchFileException")));
+                !validContractEntry.valid() && validContractEntry.reasons().getFirst().contains("NoSuchFileException")));
     }
 
     @Test
@@ -46,7 +46,7 @@ class ValidateCommandTest {
         CommandLine commandLine = new CommandLine(validateCommandSpy);
         commandLine.execute("--contract", "src/test/resources/issue77.json", "--detailed");
         Mockito.verify(validateCommandSpy, Mockito.times(1)).displayText(ArgumentMatchers.argThat(validContractEntry ->
-                !validContractEntry.valid() && validContractEntry.reasons().get(0).contains("attribute paths.'/authentication/token'(post).[grant_type].schema is unexpected")
+                !validContractEntry.valid() && validContractEntry.reasons().getFirst().contains("attribute paths.'/authentication/token'(post).[grant_type].schema is unexpected")
                         && validContractEntry.reasons().size() == 11));
         Mockito.verify(validateCommandSpy, Mockito.times(1)).displayReasonLine(Mockito.any(ValidContractEntry.class));
     }
@@ -58,7 +58,7 @@ class ValidateCommandTest {
         CommandLine commandLine = new CommandLine(validateCommandSpy);
         commandLine.execute("--contract", "src/test/resources/petstore.yml", "--detailed=" + detailed);
         Mockito.verify(validateCommandSpy, Mockito.times(1)).displayText(ArgumentMatchers.argThat(validContractEntry ->
-                !validContractEntry.valid() && validContractEntry.reasons().get(0).contains("attribute paths.'/pets-batch'(post).operationId is repeated")));
+                !validContractEntry.valid() && validContractEntry.reasons().getFirst().contains("attribute paths.'/pets-batch'(post).operationId is repeated")));
         Mockito.verify(validateCommandSpy, Mockito.times(times)).displayReasonLine(Mockito.any(ValidContractEntry.class));
     }
 }

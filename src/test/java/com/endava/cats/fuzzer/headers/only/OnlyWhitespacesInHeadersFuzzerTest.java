@@ -17,8 +17,8 @@ class OnlyWhitespacesInHeadersFuzzerTest {
 
     @Test
     void shouldReturnReplaceFuzzingStrategy() {
-        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
-        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo("\u1680");
+        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(onlyWhitespacesInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData()).isEqualTo("\u1680");
     }
 
     @Test

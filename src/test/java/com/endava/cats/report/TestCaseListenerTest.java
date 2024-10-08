@@ -2,7 +2,6 @@ package com.endava.cats.report;
 
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.api.Fuzzer;
@@ -11,6 +10,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyDynamic;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
+import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsRequest;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -96,7 +97,7 @@ class TestCaseListenerTest {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
         }, FuzzingData.builder().build());
 
-        Assertions.assertThat(testCaseListener.testCaseSummaryDetails.get(0)).isNotNull();
+        Assertions.assertThat(testCaseListener.testCaseSummaryDetails.getFirst()).isNotNull();
         Mockito.verify(testCaseExporter).writeTestCase(Mockito.any());
     }
 
@@ -114,7 +115,7 @@ class TestCaseListenerTest {
             testCaseListener.reportWarn(logger, "Warn {} happened", "1");
         }, FuzzingData.builder().build());
 
-        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
         Assertions.assertThat(testCase).isNotNull();
         Assertions.assertThat(testCase.getPath()).isEqualTo("path");
         Assertions.assertThat(testCase.getScenario()).isEqualTo("Given a string field");
@@ -143,8 +144,8 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
 
-        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
-        Assertions.assertThat(testCase.getResult()).isEqualTo(Level.WARN.toString().toLowerCase());
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
+        Assertions.assertThat(testCase.getResult()).isEqualTo(Level.WARN.toString().toLowerCase(Locale.ROOT));
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Warn 1 happened");
     }
 
@@ -343,8 +344,8 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
 
-        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
-        Assertions.assertThat(testCase.getResult()).isEqualTo(Level.ERROR.toString().toLowerCase());
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
+        Assertions.assertThat(testCase.getResult()).isEqualTo(Level.ERROR.toString().toLowerCase(Locale.ROOT));
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Error 1 happened");
     }
 
@@ -360,7 +361,7 @@ class TestCaseListenerTest {
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSkipped();
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseErrors(Mockito.any());
 
-        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
         Assertions.assertThat(testCase.getResult()).isEqualTo("success");
         Assertions.assertThat(testCase.getResultDetails()).isEqualTo("Success 1 happened");
     }
@@ -410,7 +411,7 @@ class TestCaseListenerTest {
         }, FuzzingData.builder().build());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
-        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code");
     }
 
@@ -430,7 +431,7 @@ class TestCaseListenerTest {
         }, FuzzingData.builder().build());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
-        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER");
     }
 
@@ -463,7 +464,7 @@ class TestCaseListenerTest {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.TWOXX), FuzzingData.builder().build());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
         Mockito.verify(executionStatisticsListener, Mockito.never()).increaseSuccess(Mockito.any());
-        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.get(0);
+        CatsTestCaseSummary testCase = testCaseListener.testCaseSummaryDetails.getFirst();
         Assertions.assertThat(testCase.getResultDetails()).startsWith("Unexpected behaviour");
     }
 

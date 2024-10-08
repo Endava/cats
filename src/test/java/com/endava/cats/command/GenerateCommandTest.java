@@ -63,7 +63,7 @@ class GenerateCommandTest {
         Assertions.assertThat(actual).hasSize(1);
 
         JsonObject jsonObject1 = new Gson().fromJson(expected, JsonObject.class);
-        JsonObject jsonObject2 = new Gson().fromJson(actual.get(0), JsonObject.class);
+        JsonObject jsonObject2 = new Gson().fromJson(actual.getFirst(), JsonObject.class);
 
         // Compare keys
         Set<String> keys1 = jsonObject1.keySet();

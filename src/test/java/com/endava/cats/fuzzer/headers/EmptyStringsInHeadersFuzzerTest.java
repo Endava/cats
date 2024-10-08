@@ -17,7 +17,7 @@ class EmptyStringsInHeadersFuzzerTest {
 
     @Test
     void shouldReturnReplaceFuzzingStrategy() {
-        Assertions.assertThat(emptyStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(emptyStringsInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
     }
 
     @Test

@@ -39,7 +39,7 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
     @Test
     void shouldGetReplaceFuzzingStrategy() {
         FuzzingData data = mockFuzzingData();
-        FuzzingStrategy fuzzingStrategy = abugidasCharsInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").get(0);
+        FuzzingStrategy fuzzingStrategy = abugidasCharsInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(data, "field").getFirst();
         Assertions.assertThat(fuzzingStrategy.name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(fuzzingStrategy.getData().toString()).contains("జ్ఞ\u200Cా");
     }
@@ -101,7 +101,7 @@ class AbugidasInStringFieldsSanitizeValidateFuzzerTest {
 
     @Test
     void shouldNotFuzzWhenNotStringSchema() {
-        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(mockFuzzingData(), "pet#size").get(0).isSkip()).isTrue();
+        Assertions.assertThat(abugidasCharsInStringFieldsSanitizeValidateFuzzer.getFieldFuzzingStrategy(mockFuzzingData(), "pet#size").getFirst().isSkip()).isTrue();
 
     }
 }

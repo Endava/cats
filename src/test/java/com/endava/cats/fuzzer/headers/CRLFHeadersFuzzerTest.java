@@ -29,13 +29,13 @@ class CRLFHeadersFuzzerTest {
 
     @Test
     void shouldHaveReplaceFuzzingStrategy() {
-        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo("REPLACE");
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo("REPLACE");
     }
 
     @Test
     void shouldReturnCrLfInvisibleChars() {
         Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(1);
-        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).hasToString("\r\n");
+        Assertions.assertThat(crlfHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData()).hasToString("\r\n");
     }
 
     @Test

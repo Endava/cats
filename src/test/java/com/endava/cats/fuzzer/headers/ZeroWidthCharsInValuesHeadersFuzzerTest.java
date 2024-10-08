@@ -28,13 +28,13 @@ class ZeroWidthCharsInValuesHeadersFuzzerTest {
 
     @Test
     void shouldHaveInsertFuzzingStrategy() {
-        Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo("INSERT");
+        Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo("INSERT");
     }
 
     @Test
     void shouldReturnZeroWidthChars() {
         Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(11);
-        Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).hasToString("\u200b");
+        Assertions.assertThat(zeroWidthCharsInValuesHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData()).hasToString("\u200b");
     }
 
     @Test

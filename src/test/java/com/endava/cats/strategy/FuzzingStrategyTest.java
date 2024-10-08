@@ -213,7 +213,7 @@ class FuzzingStrategyTest {
         List<FuzzingStrategy> fuzzingStrategyList = FuzzingStrategy.getFuzzingStrategies(data, "field", List.of("YY"), true);
 
         Assertions.assertThat(fuzzingStrategyList).hasSize(1);
-        Assertions.assertThat(fuzzingStrategyList.get(0).name()).isEqualTo(FuzzingStrategy.skip().name());
+        Assertions.assertThat(fuzzingStrategyList.getFirst().name()).isEqualTo(FuzzingStrategy.skip().name());
     }
 
     @Test

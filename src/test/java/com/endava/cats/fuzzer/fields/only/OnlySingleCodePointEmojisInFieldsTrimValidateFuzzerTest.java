@@ -70,7 +70,7 @@ class OnlySingleCodePointEmojisInFieldsTrimValidateFuzzerTest {
         schemaMap.put("schema", stringSchema);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(schemaMap);
 
-        FuzzingStrategy fuzzingStrategy = onlySingleCodePointEmojisInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "another_schema").get(0);
+        FuzzingStrategy fuzzingStrategy = onlySingleCodePointEmojisInFieldsTrimValidateFuzzer.getFieldFuzzingStrategy(data, "another_schema").getFirst();
 
         Assertions.assertThat(fuzzingStrategy.getData()).isEqualTo("\uD83E\uDD76");
     }

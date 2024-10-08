@@ -40,7 +40,7 @@ class VeryLargeDecimalsInNumericFieldsFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", new NumberSchema()));
 
-        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.getFieldFuzzingStrategy(data, "myField").get(0).getData().toString()).hasSize(20041);
+        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.getFieldFuzzingStrategy(data, "myField").getFirst().getData().toString()).hasSize(20041);
     }
 
     @Test
@@ -49,7 +49,7 @@ class VeryLargeDecimalsInNumericFieldsFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", new IntegerSchema()));
 
-        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.getFieldFuzzingStrategy(data, "myField").get(0).getData().toString()).hasSize(30041);
+        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.getFieldFuzzingStrategy(data, "myField").getFirst().getData().toString()).hasSize(30041);
     }
 
     @Test
@@ -58,7 +58,7 @@ class VeryLargeDecimalsInNumericFieldsFuzzerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", new StringSchema()));
 
-        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.getFieldFuzzingStrategy(data, "myField").get(0).isSkip()).isTrue();
+        Assertions.assertThat(veryLargeDecimalsInNumericFieldsFuzzer.getFieldFuzzingStrategy(data, "myField").getFirst().isSkip()).isTrue();
     }
 
     @ParameterizedTest

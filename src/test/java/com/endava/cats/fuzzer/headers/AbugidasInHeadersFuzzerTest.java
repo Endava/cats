@@ -28,13 +28,13 @@ class AbugidasInHeadersFuzzerTest {
     void shouldHaveAllMethodsOverridden() {
         Assertions.assertThat(abugidasInHeadersFuzzer.description()).isNotNull();
         Assertions.assertThat(abugidasInHeadersFuzzer.getFuzzerContext().getTypeOfDataSentToTheService()).isNotNull();
-        Assertions.assertThat(abugidasInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).name()).isEqualTo(FuzzingStrategy.replace().name());
+        Assertions.assertThat(abugidasInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().name()).isEqualTo(FuzzingStrategy.replace().name());
         Assertions.assertThat(abugidasInHeadersFuzzer.getFuzzerContext().isMatchResponseSchema()).isFalse();
     }
 
     @Test
     void shouldGetZalgoTextAsPayload() {
         Assertions.assertThat(abugidasInHeadersFuzzer.getFuzzerContext().getFuzzStrategy()).hasSize(2);
-        Assertions.assertThat(abugidasInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().get(0).getData()).isEqualTo("జ్ఞ\u200Cా");
+        Assertions.assertThat(abugidasInHeadersFuzzer.getFuzzerContext().getFuzzStrategy().getFirst().getData()).isEqualTo("జ్ఞ\u200Cా");
     }
 }
