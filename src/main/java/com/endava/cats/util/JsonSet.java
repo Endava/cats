@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -14,13 +15,24 @@ import java.util.Set;
  */
 public class JsonSet {
 
-    private final Set<JsonKeyWrapper> set;
+    private final Set<JsonKeyWrapper> keys;
 
     /**
      * Creates a new JsonSet instance.
      */
     public JsonSet() {
-        this.set = new HashSet<>();
+        this.keys = new HashSet<>();
+    }
+
+    /**
+     * Clears the set.
+     */
+    public void clear() {
+        this.keys.clear();
+    }
+
+    public void addAll(Collection<String> jsonStrings) {
+        jsonStrings.forEach(this::add);
     }
 
     /**
@@ -30,7 +42,7 @@ public class JsonSet {
      * @return true if the Json was added, false otherwise
      */
     public boolean add(String jsonString) {
-        return set.add(new JsonKeyWrapper(jsonString));
+        return keys.add(new JsonKeyWrapper(jsonString));
     }
 
     /**
@@ -40,7 +52,7 @@ public class JsonSet {
      * @return true if the Json is in the set, false otherwise
      */
     public boolean contains(String jsonString) {
-        return set.contains(new JsonKeyWrapper(jsonString));
+        return keys.contains(new JsonKeyWrapper(jsonString));
     }
 
     /**
@@ -49,7 +61,7 @@ public class JsonSet {
      * @return the size of the set
      */
     public int size() {
-        return set.size();
+        return keys.size();
     }
 
     private static class JsonKeyWrapper {
@@ -84,11 +96,11 @@ public class JsonSet {
                     keyTypes.addAll(extractArrayKeyTypes(value.getAsJsonArray()));
                 } else if (value.isJsonPrimitive()) {
                     if (value.getAsJsonPrimitive().isBoolean()) {
-                        keyTypes.add(key + ":boolean");
+                        keyTypes.add(key + ":boolean:" + value);
                     } else if (value.getAsJsonPrimitive().isNumber()) {
-                        keyTypes.add(key + ":number");
+                        keyTypes.add(key + ":number:" + value);
                     } else if (value.getAsJsonPrimitive().isString()) {
-                        keyTypes.add(key + ":string");
+                        keyTypes.add(key + ":string:" + value);
                     }
                 } else {
                     keyTypes.add(key + ":null");
@@ -106,11 +118,11 @@ public class JsonSet {
                     keyTypes.addAll(extractArrayKeyTypes(element.getAsJsonArray()));
                 } else if (element.isJsonPrimitive()) {
                     if (element.getAsJsonPrimitive().isBoolean()) {
-                        keyTypes.add("array_item:boolean");
+                        keyTypes.add("array_item:boolean" + element.getAsJsonPrimitive());
                     } else if (element.getAsJsonPrimitive().isNumber()) {
-                        keyTypes.add("array_item:number");
+                        keyTypes.add("array_item:number" + element.getAsJsonPrimitive());
                     } else if (element.getAsJsonPrimitive().isString()) {
-                        keyTypes.add("array_item:string");
+                        keyTypes.add("array_item:string" + element.getAsJsonPrimitive());
                     }
                 } else {
                     keyTypes.add("array_item:null");

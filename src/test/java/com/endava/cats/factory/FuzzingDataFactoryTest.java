@@ -190,7 +190,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(type).asString().isEqualTo("Address");
         Assertions.assertThat(innerPayload).asString().isEqualTo("NOT_SET");
     }
-    
+
     @Test
     void shouldReturnRequiredFieldsWhenAllOfSchemaAndRequiredInRoot() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/allof-with-required-in-root.yml");
@@ -319,7 +319,6 @@ class FuzzingDataFactoryTest {
     void shouldProperlyCreateAllXxxCombinations() throws Exception {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(100);
         List<FuzzingData> dataList = setupFuzzingData("/shipments", "src/test/resources/shippo.yaml");
-
         Assertions.assertThat(dataList).hasSize(77);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
@@ -331,7 +330,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(50);
         List<FuzzingData> dataList = setupFuzzingData("/api/v1/studies", "src/test/resources/prolific.yaml");
 
-        Assertions.assertThat(dataList).hasSize(29);
+        Assertions.assertThat(dataList).hasSize(31);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
                 .hasSize(1);
@@ -369,7 +368,7 @@ class FuzzingDataFactoryTest {
         Object createPermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.create[0]");
         Object updatePermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.update[0]");
 
-        Assertions.assertThat(createPermission).asString().isEqualTo("database");
+        Assertions.assertThat(createPermission).asString().isEqualTo("1");
         Assertions.assertThat(updatePermission).asString().isEqualTo("database");
     }
 
@@ -396,7 +395,7 @@ class FuzzingDataFactoryTest {
     void shouldProperlyParseRootAllOfAndOneOfElements() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/payouts", "src/test/resources/token.yml");
 
-        Assertions.assertThat(dataList).hasSize(10);
+        Assertions.assertThat(dataList).hasSize(11);
         Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
                 .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.getFirst();

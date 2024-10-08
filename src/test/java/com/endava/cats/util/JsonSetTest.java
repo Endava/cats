@@ -35,7 +35,7 @@ class JsonSetTest {
                 new Object[]{new String[]{}, 0},
                 new Object[]{new String[]{"test"}, 1},
                 new Object[]{new String[]{"{\"field\":\"value\"}", "{\"field\":\"value\"}"}, 1},
-                new Object[]{new String[]{"{\"field\":\"value\"}", "{\"field\":\"otherValue\"}"}, 1},
+                new Object[]{new String[]{"{\"field\":\"value\"}", "{\"field\":\"otherValue\"}"}, 2},
                 new Object[]{new String[]{"{\"field\":\"value\"}", "{\"field1\":\"otherValue\"}"}, 2}
         );
     }
