@@ -43,10 +43,12 @@ import static com.endava.cats.util.JsonUtils.GSON_CONFIGURATION;
 public abstract class CatsUtil {
     private static final String COMMA = ", ";
     private static final String N_A = "N/A";
+
     /**
-     * Default string to return when generation fails.
+     * Custom Faker instance for generating fake data. Uses romanian locale as a tweak to load CATS specific file
+     * with limited number of fake values.
      */
-    private static final Faker FAKER = new Faker(random());
+    private static final Faker FAKER = new Faker(Locale.of("ro"), random());
 
     private CatsUtil() {
         //ntd
