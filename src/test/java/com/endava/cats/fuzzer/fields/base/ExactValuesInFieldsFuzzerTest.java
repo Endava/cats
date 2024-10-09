@@ -119,6 +119,19 @@ class ExactValuesInFieldsFuzzerTest {
         Assertions.assertThat(generated).asString().isEmpty();
     }
 
+    @Test
+    void shouldNotGenerateWhenInvalidRegex() {
+        Schema<String> schema = new StringSchema();
+        TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
+        myBaseBoundaryFuzzer = new MyExactMinValueFuzzer(null, testCaseListener, filesArguments);
+        schema.setPattern("[0-9][sss-000]+");
+        schema.setMaxLength(4);
+        schema.setMinLength(2);
+        Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
+        Mockito.verify(testCaseListener).recordError("Fuzzer %s could not generate a value for patten %s, min %s, max %s"
+                .formatted(myBaseBoundaryFuzzer.getClass().getSimpleName(), schema.getPattern(), schema.getMinLength(), schema.getMaxLength()));
+    }
+
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {
 
         public MyExactValueFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp) {

@@ -23,4 +23,14 @@ class TimestampGeneratorTest {
         TimestampGenerator timestampGenerator = new TimestampGenerator();
         Assertions.assertThat(timestampGenerator.appliesTo(format, "")).isEqualTo(expected);
     }
+
+    @Test
+    void shouldReturnAlmostValidValue() {
+        Assertions.assertThat(new TimestampGenerator().getAlmostValidValue()).isEqualTo("2021-07-21-T10:22:1Z");
+    }
+
+    @Test
+    void shouldReturnWrongValue() {
+        Assertions.assertThat(new TimestampGenerator().getTotallyWrongValue()).isEqualTo("1111-07-21T88:32:28Z");
+    }
 }
