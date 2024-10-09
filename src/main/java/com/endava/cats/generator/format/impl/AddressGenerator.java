@@ -18,8 +18,9 @@ public class AddressGenerator implements ValidDataFormatGenerator, OpenAPIFormat
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
-        return "address".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
-                PropertySanitizer.sanitize(propertyName).endsWith("address");
+        return ("address".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
+                PropertySanitizer.sanitize(propertyName).endsWith("address"))
+                && (!propertyName.toLowerCase().contains("email"));
     }
 
     @Override

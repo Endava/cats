@@ -17,7 +17,7 @@ class AddressGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"address,true", "other,false"})
+    @CsvSource({"address,true", "other,false", "emailAddress,false"})
     void shouldApplyToFormat(String format, boolean expected) {
         AddressGenerator addressGenerator = new AddressGenerator();
         Assertions.assertThat(addressGenerator.appliesTo(format, "")).isEqualTo(expected);
