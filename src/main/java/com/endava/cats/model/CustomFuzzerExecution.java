@@ -26,9 +26,6 @@ public class CustomFuzzerExecution implements Comparable<CustomFuzzerExecution> 
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
         if (!(o instanceof CustomFuzzerExecution that)) {
             return false;
         }
