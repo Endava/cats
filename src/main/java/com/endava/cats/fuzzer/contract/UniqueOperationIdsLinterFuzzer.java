@@ -6,6 +6,7 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +35,8 @@ public class UniqueOperationIdsLinterFuzzer extends BaseLinterFuzzer {
 
         data.getOpenApi().getPaths().values()
                 .forEach(pathItem -> pathItem.readOperations()
+                        .stream()
+                        .filter(operation -> StringUtils.isNotBlank(operation.getOperationId()))
                         .forEach(operation -> operationIdCount.merge(operation.getOperationId(), 1, Integer::sum)));
         List<String> duplicateOperations = operationIdCount.entrySet().stream()
                 .filter(entry -> entry.getValue() > 1)
