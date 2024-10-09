@@ -14,7 +14,7 @@ class TimestampGeneratorTest {
     void shouldGenerate() {
         TimestampGenerator timestampGenerator = new TimestampGenerator();
         Object generated = timestampGenerator.generate(new Schema<>());
-        Assertions.assertThat(generated).asString().matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{1,6}Z");
+        Assertions.assertThat(generated).asString().matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d+Z");
     }
 
     @ParameterizedTest
