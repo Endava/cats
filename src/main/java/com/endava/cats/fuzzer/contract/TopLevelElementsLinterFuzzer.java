@@ -61,13 +61,13 @@ public class TopLevelElementsLinterFuzzer extends BaseLinterFuzzer {
             errorString.append(String.format("The following elements are missing: %s. ", missingFieldsSet));
         }
 
+        super.addDefaultsForPathAgnosticFuzzers();
+
         if (errorString.toString().isEmpty()) {
             testCaseListener.reportResultInfo(log, data, "OpenAPI contract contains all top level relevant information!");
         } else {
             testCaseListener.reportResultError(log, data, "Missing top level elements", errorString.toString());
         }
-        testCaseListener.addPath("NA");
-        testCaseListener.addContractPath("NA");
     }
 
     private String checkElement(String element, String errors) {

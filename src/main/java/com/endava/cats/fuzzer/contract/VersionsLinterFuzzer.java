@@ -2,8 +2,8 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.LinterFuzzer;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -32,14 +32,13 @@ public class VersionsLinterFuzzer extends BaseLinterFuzzer {
 
         boolean hasVersioning = !OpenApiUtils.getApiVersions(data.getOpenApi()).isEmpty();
 
+        super.addDefaultsForPathAgnosticFuzzers();
+
         if (hasVersioning) {
             testCaseListener.reportResultInfo(log, data, "OpenAPI contract contains versioning information");
         } else {
             testCaseListener.reportResultError(log, data, "Versioning information not found", "OpenAPI contract does not contain versioning information");
         }
-
-        testCaseListener.addPath("NA");
-        testCaseListener.addContractPath("NA");
     }
 
     @Override

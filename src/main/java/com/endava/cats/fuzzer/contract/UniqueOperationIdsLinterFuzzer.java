@@ -43,6 +43,8 @@ public class UniqueOperationIdsLinterFuzzer extends BaseLinterFuzzer {
                 .map(Map.Entry::getKey)
                 .toList();
 
+        super.addDefaultsForPathAgnosticFuzzers();
+
         if (duplicateOperations.isEmpty()) {
             testCaseListener.reportResultInfo(log, data, "All operationIds are unique");
         } else {

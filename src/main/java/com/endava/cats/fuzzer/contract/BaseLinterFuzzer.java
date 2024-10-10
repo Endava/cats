@@ -64,6 +64,16 @@ public abstract class BaseLinterFuzzer implements Fuzzer {
         this.process(data);
     }
 
+    void addDefaultsForPathAgnosticFuzzers() {
+        testCaseListener.addServer(N_A);
+        testCaseListener.addPath(N_A);
+        testCaseListener.addContractPath(N_A);
+        testCaseListener.addFullRequestPath(N_A);
+        CatsRequest request = CatsRequest.empty();
+        request.setHttpMethod(N_A);
+        testCaseListener.addRequest(request);
+    }
+
     /**
      * Checks if the given string represents an error condition.
      * The method returns true if the string is not equal to the constant {@code N_A}, indicating the presence of errors.
