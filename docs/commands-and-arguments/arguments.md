@@ -31,7 +31,11 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--printExecutionStatistics` If supplied (no value needed), prints a summary of execution times for each endpoint and HTTP method. By default this will print a summary for each endpoint: max, min and average. If you want detailed reports you must supply `--printExecutionStatistics=detailed`
 - `--timestampReports` If supplied (no value needed), it will output the report still inside the `cats-report` folder, but in a sub-folder with the current timestamp
 - `--reportFormat=FORMAT` Specifies the format of the CATS report. Supported formats: `HTML_ONLY`, `HTML_JS` or `JUNIT`. You can use `HTML_ONLY` if you want the report to not contain any Javascript. This is useful in CI environments due to Javascript content security policies. Default is `HTML_JS` which includes some sorting and filtering capabilities.
-- `--[no-]useExamples` If `true` (default value when not supplied) then CATS will use examples supplied in the OpenAPI contact. If `false` CATS will rely only on generated values
+- `--[no-]useExamples` If `true` then CATS will use ALL examples supplied in the OpenAPI contract. This is equivalent to setting `--usePropertyExamples --useRequestBodyExamples --useResponseBodyExamples --useSchemaExamples`. If `false` CATS will rely only on generated values
+- `--[no-]usePropertyExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for properties. If `false` CATS will rely only on generated values
+- `--[no-]useRequestBodyExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for request bodies, at media-type level. If `false` CATS will rely only on generated values
+- `--[no-]useResponseBodyExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for response bodies, at media-type level. If `false` CATS will rely only on generated values
+- `--[no-]useSchemaExamples` If `true` then CATS will use examples supplied in the OpenAPI contract for schemas. If `false` CATS will rely only on generated values
 - `--checkFields` If supplied (no value needed), it will only run the `Field` Fuzzers
 - `--checkHeaders` If supplied (no value needed), it will only run the `Header` Fuzzers
 - `--checkHttp` If supplied (no value needed), it will only run the `HTTP` Fuzzers
