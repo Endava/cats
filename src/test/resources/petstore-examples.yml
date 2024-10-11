@@ -1,0 +1,528 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: http://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://petstore.swagger.io/api
+paths:
+  /pets:
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+            examples:
+              default:
+                $ref: "#/components/examples/pet-ex"
+              another:
+                value:
+                  breed: dog-no-ref
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /pets-batch:
+    post:
+      description: Creates a batch of pets in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pets'
+            example: ["pet1", "pet2", "pet3"]
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+              examples:
+                oneExample:
+                  value:
+                    oneExampleField: exampleValue
+                    secondExampleField: anotherValue
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /pets-small:
+    post:
+      description: Creates a batch of pets in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetsSmall'
+            example: ["pet1", "pet2", "pet3"]
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /pet-types:
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MegaPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /containers:
+    post:
+      description: Create containers
+      operationId: createPetContainer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResourceUtilizationReport'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+  /arns:
+    post:
+      description: Create containers
+      operationId: createPetContainer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - Name
+              properties:
+                Name:
+                  description: 'A descriptive name for the analysis that you''re creating. This name displays for the analysis in the Amazon QuickSight console. '
+                  type: string
+                  minLength: 1
+                  maxLength: 2048
+                Parameters:
+                  description: A list of Amazon QuickSight parameters and the list's override values.
+                  type: object
+                  properties:
+                    StringParameters:
+                      allOf:
+                        - $ref: '#/components/schemas/StringParameterList'
+                        - description: The parameters that have a data type of string.
+                SourceEntity:
+                  description: The source entity of an analysis.
+                  type: object
+                  properties:
+                    SourceTemplate:
+                      allOf:
+                        - $ref: '#/components/schemas/AnalysisSourceTemplate'
+                        - description: The source template for the source entity of the analysis.
+
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+  /pet-types-rec:
+    post:
+      description: Creates a new pet in the store.  Duplicates are allowed
+      operationId: addPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MegaPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  responses:
+    BadRequest:
+      description: Request rejected due to a structural or business validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  examples:
+    pet-ex:
+      value:
+        id: 1
+        breed: dog-example
+  parameters:
+    metadata:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Color"
+      description: Metadata to attach to the file
+      in: header
+      name: x-metadata
+      required: true
+  schemas:
+    ResourceUtilizationReport:
+      description: Worker metrics exported from workers. This contains resource utilization metrics accumulated from a variety of sources. For more information, see go/df-resource-signals.
+      properties:
+        containers:
+          additionalProperties:
+            $ref: "#/components/schemas/ResourceUtilizationReport"
+          description: "Per container information. Key: container name."
+          type: object
+      type: object
+    StringParameterList:
+      type: array
+      items:
+        $ref: '#/components/schemas/StringParameter'
+      maxItems: 100
+    StringParameter:
+      type: object
+      required:
+        - Name
+        - Values
+      properties:
+        Name:
+          allOf:
+            - $ref: '#/components/schemas/NonEmptyString'
+            - description: A display name for a string parameter.
+    NonEmptyString:
+      type: string
+      pattern: .*\S.*
+    Arn:
+      type: string
+    PetsSmall:
+      properties:
+        breed:
+          type: string
+        id:
+          type: string
+      example:
+        id: myId
+        breed: dog-example-1
+    Pets:
+      type: array
+      items:
+        $ref: "#/components/schemas/Pet"
+      example:
+        - id: 1
+          breed: dog-example-1
+        - id: 2
+          breed: cat-example-2
+    AnalysisSourceTemplate:
+      type: object
+      required:
+        - DataSetReferences
+        - Arn
+      properties:
+        Arn:
+          allOf:
+            - $ref: '#/components/schemas/Arn'
+            - description: The Amazon Resource Name (ARN) of the source template of an analysis.
+      description: The source template of an analysis.
+    Pet:
+      allOf:
+        - $ref: '#/components/schemas/NewPet'
+        - required:
+            - id
+            - breedType
+          properties:
+            birthDate:
+              type: string
+              format: date-time
+            id:
+              type: string
+              format: time
+            colors:
+              type: array
+              items: { }
+            breed:
+              description: Sensitive data that will be kept encrypted in the vault, associated with the Token
+              oneOf:
+                - $ref: '#/components/schemas/Husky'
+                - $ref: '#/components/schemas/Labrador'
+              discriminator:
+                propertyName: breedType
+    MegaPet:
+      properties:
+        id:
+          type: string
+          example:
+            $ref: "#/components/schemas/AdditionalPet/example/2/id"
+        code:
+          type: string
+          format: byte
+          example: MjIyMjIyMg==
+        additionalCode:
+          type: string
+          format: binary
+          example: MjIyMjIyMg==
+        petType:
+          $ref: '#/components/schemas/PetType'
+        dateOfBirth:
+          type: string
+          format: date
+          example: "2000-12-12"
+        timeOfVaccination:
+          type: string
+          format: date-time
+          example: 2012-01-24T15:54:14.876Z
+        age:
+          type: string
+          pattern: "[0-9]+"
+        owner:
+          type: object
+        previousOwner:
+          type: object
+          example: "prev owner"
+        metadata:
+          type: object
+          maxProperties: 10
+          additionalProperties:
+            type: string
+            maxLength: 256
+        creator:
+          title: ''
+          description: ''
+          type: object
+          properties:
+            id:
+              description: ''
+              type: string
+              example: 63d415e0dd0d828c3a878548
+              readOnly: true
+            email:
+              description: ''
+              type: string
+              example: fett@intergalactic.com
+              readOnly: true
+            displayName:
+              description: ''
+              type: string
+              example: Boba Fett
+              readOnly: true
+
+    AdditionalPet:
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+          format: byte
+        metadata:
+          additionalProperties:
+            $ref: '#/components/schemas/Color'
+      example:
+        - id: 1
+          code: "MjIyMjIyMg=="
+          metadata:
+            red: "255"
+            green: "255"
+            blue: "255"
+        - id: 2
+          code: "MjIyMjIyMg=="
+          metadata:
+            red: "255"
+            green: "255"
+            blue: "255"
+        - id: 9999CATS
+          code: "MjIyMjIyMg=="
+          metadata:
+            red: "255"
+            green: "255"
+            blue: "255"
+    ObjectPet:
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          format: byte
+        metadata:
+          additionalProperties:
+            type: object
+            properties:
+              cast:
+                type: string
+              rast:
+                type: integer
+    CyclicPet:
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+          format: byte
+        parent:
+          $ref: '#/components/schemas/CyclicPet'
+    MiniPet:
+      properties:
+        id:
+          type: integer
+        color:
+          type: object
+          allOf:
+            - "$ref": "#/components/schemas/Color"
+    Color:
+      properties:
+        red:
+          type: string
+        green:
+          type: string
+        blue:
+          type: string
+    PetType:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/Husky'
+        - $ref: '#/components/schemas/Labrador'
+      discriminator:
+        propertyName: breedType
+        mapping:
+          "Husky": '#/components/schemas/Husky'
+          "Labrador": '#/components/schemas/Labrador'
+    Husky:
+      required:
+        - breedType
+      properties:
+        breedType:
+          type: string
+          enum:
+            - Husky
+            - Labrador
+    Labrador:
+      required:
+        - breedType
+      properties:
+        breedType:
+          type: string
+          enum:
+            - Husky
+            - Labrador
+    NewPet:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 0
+          maxLength: 10
+        tag:
+          type: string
+        ip:
+          type: string
+        ipv6:
+          type: string
+          format: ipv6
+        email:
+          type: string
+        emailAddress:
+          type: string
+          format: email
+        petUrl:
+          type: string
+          format: url
+        petUri:
+          type: string
+          format: uri
+        url:
+          type: string
+        uri:
+          type: string
+        isAlive:
+          type: boolean
+        size:
+          type: number
+        length:
+          type: number
+          format: float
+        age:
+          type: integer
+          minimum: 0
+          maximum: 100
+        birth:
+          type: string
+          format: date-time
+        identifier:
+          type: string
+          format: uuid
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+

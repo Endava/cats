@@ -121,6 +121,13 @@ class StringGeneratorTest {
     }
 
     @Test
+    void shouldGenerateExactLengthWhenLengthLargerThanPattern() {
+        String generated = StringGenerator.generateExactLength(new Schema<String>(), "^[A-Z]{3}$", 10);
+
+        Assertions.assertThat(generated).hasSize(10).matches("^[A-Z]{10}$");
+    }
+
+    @Test
     void shouldGenerateWhenNegativeLength() {
         String generated = StringGenerator.generate("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", -1, -1);
         Assertions.assertThat(generated).hasSize(17).matches("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$");

@@ -263,7 +263,7 @@ public class FuzzingDataFactory {
         //we need this in order to be able to generate path params if not supplied by the user
         String pathParamsExample = this.getRequestPayloadsSamples(null, paramsSchema.getKey()).examplePayloads().getFirst();
 
-        Set<String> examples = this.extractExamples(mediaType);
+        Set<Object> examples = this.extractExamples(mediaType);
         Map<String, List<String>> responses = this.getResponsePayloads(operation);
         Map<String, List<String>> responsesContentTypes = this.getResponseContentTypes(operation);
         List<String> requestContentTypes = this.getRequestContentTypes(operation, openAPI);
@@ -389,15 +389,17 @@ public class FuzzingDataFactory {
         return new KeyValuePair<>(SYNTH_SCHEMA_NAME + operation.getOperationId(), syntheticSchema);
     }
 
-    Set<String> extractExamples(MediaType mediaType) {
-        Set<String> examples = new HashSet<>();
-        examples.add(Optional.ofNullable(mediaType.getExample()).orElse("").toString());
+    Set<Object> extractExamples(MediaType mediaType) {
+        Set<Object> examples = new HashSet<>();
+        if (mediaType == null) {
+            return examples;
+        }
+        examples.add(Optional.ofNullable(mediaType.getExample()).orElse(""));
         if (mediaType.getExamples() != null) {
             examples.addAll(mediaType.getExamples().values()
                     .stream()
                     .map(Example::getValue)
                     .filter(Objects::nonNull)
-                    .map(Object::toString)
                     .collect(Collectors.toSet()));
 
             examples.addAll(mediaType.getExamples().values()
@@ -405,6 +407,9 @@ public class FuzzingDataFactory {
                     .filter(example -> example.get$ref() != null)
                     .map(example -> {
                         Example exampleFromSchemaMap = globalContext.getExampleMap().get(CatsModelUtils.getSimpleRef(example.get$ref()));
+                        if (exampleFromSchemaMap == null) {
+                            exampleFromSchemaMap = (Example) globalContext.getObjectFromPathsReference(example.get$ref());
+                        }
                         if (exampleFromSchemaMap == null && example.get$ref().contains("/value/")) {
                             //this might be a multi-level example something like: #/components/examples/JSON_WORKER_EXAMPLES/value/WORKER_COMPENSATION_PAYRATE_POST_PATCH
 
@@ -416,7 +421,6 @@ public class FuzzingDataFactory {
                         return exampleFromSchemaMap != null ? exampleFromSchemaMap.getValue() : null;
                     })
                     .filter(Objects::nonNull)
-                    .map(Object::toString)
                     .collect(Collectors.toSet()));
         }
         examples.remove("");
@@ -488,11 +492,11 @@ public class FuzzingDataFactory {
     }
 
     private GenerationResult getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
-        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
+        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.examplesFlags(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE);
 
+        /* Event though the media type might have an example set, we still generate samples in order to properly map each field with its corresponding data type*/
         List<String> result = this.generateSample(reqSchemaName, generator, true);
-
         if (mediaType != null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
             /*when dealing with ArraySchemas we make sure we have 2 elements in the array*/
             result = result.stream()
@@ -503,6 +507,17 @@ public class FuzzingDataFactory {
                         return "[" + payload + "," + payload + "]";
                     }).toList();
         }
+
+        if (mediaType != null && processingArguments.isUseRequestBodyExamples()) {
+            List<String> examples = extractExamples(mediaType).stream()
+                    .map(generator::serialize)
+                    .filter(Objects::nonNull)
+                    .toList();
+            if (!examples.isEmpty()) {
+                result = new ArrayList<>(examples);
+            }
+        }
+
         return new GenerationResult(result, generator.getRequestDataTypes());
     }
 
@@ -932,10 +947,15 @@ public class FuzzingDataFactory {
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation) {
         Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
+        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.examplesFlags(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), RESPONSES_ARRAY_SIZE);
 
         for (String responseCode : operation.getResponses().keySet()) {
+            List<String> openapiExamples = this.getExamplesFromApiResponseForResponseCode(generator, operation, responseCode);
+            if (!openapiExamples.isEmpty() && processingArguments.isUseResponseBodyExamples()) {
+                responses.put(responseCode, openapiExamples);
+                continue;
+            }
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
                 List<String> samples = this.generateSample(responseSchemaRef, generator, processingArguments.isGenerateAllXxxCombinationsForResponses());
@@ -945,6 +965,23 @@ public class FuzzingDataFactory {
             }
         }
         return responses;
+    }
+
+    private List<String> getExamplesFromApiResponseForResponseCode(OpenAPIModelGenerator generator, Operation operation, String responseCode) {
+        ApiResponse apiResponse = operation.getResponses().get(responseCode);
+        if (apiResponse.get$ref() != null) {
+            Object potentialApiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
+            if (potentialApiResponse instanceof ApiResponse apiResponseCasted) {
+                apiResponse = apiResponseCasted;
+            }
+        }
+        if (apiResponse.getContent() != null) {
+            Set<Object> examples = extractExamples(apiResponse.getContent().get(processingArguments.getDefaultContentType()));
+            return examples.stream()
+                    .map(generator::serialize)
+                    .toList();
+        }
+        return Collections.emptyList();
     }
 
     private String extractResponseSchemaRef(Operation operation, String responseCode) {
@@ -1027,7 +1064,7 @@ public class FuzzingDataFactory {
 
         parameter.setSchema(schema);
 
-        List<String> examples = this.generateSample(schema.get$ref(), new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.isUseExamples(),
+        List<String> examples = this.generateSample(schema.get$ref(), new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.examplesFlags(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE), false);
 
         schema.setExample(examples.getFirst());

@@ -52,7 +52,11 @@ public class ExamplesFieldsFuzzer implements Fuzzer {
                         .filter(removeCatsComposition)
                         .map(JsonUtils.GSON::toJson)
                         .toList());
-        payloads.addAll(data.getExamples().stream().filter(removeCatsComposition).toList());
+        payloads.addAll(data.getExamples()
+                .stream()
+                .filter(removeCatsComposition)
+                .map(JsonUtils.GSON::toJson)
+                .toList());
         payloads.remove("");
 
         for (String payload : payloads) {

@@ -32,9 +32,27 @@ public class ProcessingArguments {
             description = "This can be either @|bold,underline SANITIZE_AND_VALIDATE|@ or @|bold,underline VALIDATE_AND_SANITIZE|@. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private SanitizationStrategy sanitizationStrategy = SanitizationStrategy.SANITIZE_AND_VALIDATE;
 
-    @CommandLine.Option(names = {"--useExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "When set to @|bold true|@, it will use examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean useExamples = true;
+    @CommandLine.Option(names = {"--useExamples"}, negatable = true, defaultValue = "false", fallbackValue = "false",
+            description = "When set to @|bold true|@, it will use request body examples, schema examples and primitive properties examples from the OpenAPI contract when available. " +
+                    "This is equivalent of using @|bold,underline--useRequestBodyExamples|@ @|bold,underline--useSchemaExamples|@ @|bold,underline--usePropertyExamples|@ @|bold,underline--useResponseBodyExamples|@." +
+                    "Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean useExamples = false;
+
+    @CommandLine.Option(names = {"--useRequestBodyExamples"}, negatable = true, defaultValue = "false", fallbackValue = "false",
+            description = "When set to @|bold true|@, it will use media type-level request body examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean useRequestBodyExamples = false;
+
+    @CommandLine.Option(names = {"--useResponseBodyExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+            description = "When set to @|bold true|@, it will use media type-level response examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean useResponseBodyExamples = true;
+
+    @CommandLine.Option(names = {"--useSchemaExamples"}, negatable = true, defaultValue = "false", fallbackValue = "false",
+            description = "When set to @|bold true|@, it will use examples set at schema level from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean useSchemaExamples = false;
+
+    @CommandLine.Option(names = {"--usePropertyExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+            description = "When set to @|bold true|@, it will use primitive property examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean usePropertyExamples = true;
 
     @CommandLine.Option(names = {"--cachePayloads"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, it will cache payload examples for same schema name instead of generating new ones for each occurrence. Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -132,6 +150,46 @@ public class ProcessingArguments {
     }
 
     /**
+     * Returns if usage of request body examples is enabled. This applies for examples set at media-type level in the requestBody: element.
+     *
+     * @return true if usage of request body examples is enabled, false otherwise
+     */
+    public boolean isUseRequestBodyExamples() {
+        return useRequestBodyExamples || useExamples;
+    }
+
+    /**
+     * Returns if usage of response body examples is enabled. This applies for examples set at media-type level in the responses: element.
+     *
+     * @return true if usage of response body examples is enabled, false otherwise
+     */
+    public boolean isUseResponseBodyExamples() {
+        return useResponseBodyExamples || useExamples;
+    }
+
+    /**
+     * Returns if usage of schema examples is enabled. This applies for examples set at schema level in the components: element or inline schemas.
+     *
+     * @return true if usage of schema examples is enabled, false otherwise
+     */
+    public boolean isUseSchemaExamples() {
+        return useSchemaExamples || useExamples;
+    }
+
+    /**
+     * Returns if usage of property examples is enabled. This applies only for primitive types for examples set at property level in each schema definition.
+     *
+     * @return true if usage of property examples is enabled, false otherwise
+     */
+    public boolean isUsePropertyExamples() {
+        return usePropertyExamples || useExamples;
+    }
+
+    public ExamplesFlags examplesFlags() {
+        return new ExamplesFlags(this.isUseResponseBodyExamples(), this.isUseRequestBodyExamples(), this.isUseSchemaExamples(), this.isUsePropertyExamples());
+    }
+
+    /**
      * The possible strategies used by services to handle trimming.
      */
     public enum TrimmingStrategy {
@@ -177,5 +235,9 @@ public class ProcessingArguments {
          * Remove one by one.
          */
         ONEBYONE
+    }
+
+    public record ExamplesFlags(boolean useResponseBodyExamples, boolean useRequestBodyExamples,
+                                boolean useSchemaExamples, boolean usePropertyExamples) {
     }
 }

@@ -39,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -63,6 +64,7 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.isGenerateAllXxxCombinationsForResponses()).thenReturn(true);
         Mockito.when(processingArguments.isFilterXxxFromRequestPayloads()).thenReturn(false);
         Mockito.when(processingArguments.getContentType()).thenReturn(List.of(JsonUtils.JSON_WILDCARD, "application/x-www-form-urlencoded"));
+        Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(true, true, true, true));
         fuzzingDataFactory = new FuzzingDataFactory(filesArguments, processingArguments, catsGlobalContext, validDataFormat, filterArguments);
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(4);
         catsGlobalContext.getRecordedErrors().clear();
@@ -72,6 +74,7 @@ class FuzzingDataFactoryTest {
     void shouldFilterOutXxxExamples() throws Exception {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(2);
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(false, false, false, false));
 
         List<FuzzingData> dataList = setupFuzzingData("/api/v2/meta/tables/{tableId}/columns", "src/test/resources/nocodb.yaml");
 
@@ -146,13 +149,106 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldResolveCrossPathExamples() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/v2/apps/{app_id}/deployments/{deployment_id}", "src/test/resources/digitalocean.yaml");
+
+        Object example = catsGlobalContext.getObjectFromPathsReference("#/paths/~1v2~1apps~1%7Bapp_id%7D~1deployments/post/responses/200/content/application~1json/examples/deployment");
+        Assertions.assertThat(example).isInstanceOf(Example.class);
+        Assertions.assertThat(data).hasSize(1);
+        Assertions.assertThat(example).asString().contains("deployment");
+    }
+
+    @Test
     void shouldLoadExamples() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pets", "src/test/resources/petstore.yml");
         Assertions.assertThat(data.getFirst().getExamples()).hasSize(2);
         Assertions.assertThat(data.getFirst().getExamples())
-                .anyMatch(example -> example.contains("dog-example"))
-                .anyMatch(example -> example.contains("dog-no-ref"));
+                .anyMatch(example -> Objects.toString(example).contains("dog-example"))
+                .anyMatch(example -> Objects.toString(example).contains("dog-no-ref"));
     }
+
+    @Test
+    void shouldResolveExampleCrossSchemas() throws Exception {
+        List<FuzzingData> data = setupFuzzingData("/pet-types-rec", "src/test/resources/petstore-examples.yml");
+        Assertions.assertThat(data).hasSize(2);
+
+        FuzzingData firstData = data.getFirst();
+        Assertions.assertThat(firstData.getPayload()).contains("9999CATS");
+    }
+
+    @Test
+    void shouldUseExamplesWhenResponseBodyFlagEnabled() throws Exception {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
+        Mockito.when(processingArguments.isUseResponseBodyExamples()).thenReturn(true);
+        Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(true, false, false, false));
+        Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
+
+        List<FuzzingData> data = setupFuzzingData("/pets-batch", "src/test/resources/petstore-examples.yml");
+        Assertions.assertThat(data).hasSize(2);
+
+        FuzzingData firstData = data.getFirst();
+        Assertions.assertThat(firstData.getResponses().get("200")).hasSize(1);
+        String firstResponse = firstData.getResponses().get("200").getFirst();
+        Assertions.assertThat(firstResponse).contains("oneExampleField", "secondExampleField", "exampleValue", "anotherValue");
+    }
+
+    @Test
+    void shouldUseExamplesWhenSchemaFlagEnabled() throws Exception {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
+        Mockito.when(processingArguments.isUseSchemaExamples()).thenReturn(true);
+        Mockito.when(processingArguments.isUseRequestBodyExamples()).thenReturn(false);
+        Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(false, false, true, true));
+
+        List<FuzzingData> data = setupFuzzingData("/pets-small", "src/test/resources/petstore-examples.yml");
+        Assertions.assertThat(data).hasSize(1);
+
+        FuzzingData firstData = data.getFirst();
+        //just first example is taken into consideration
+        Assertions.assertThat(firstData.getPayload()).contains("dog-example-1", "myId");
+    }
+
+    @Test
+    void shouldNotUseExamplesWhenSchemaFlagDisabled() throws Exception {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
+        Mockito.when(processingArguments.isUseSchemaExamples()).thenReturn(false);
+        Mockito.when(processingArguments.isUseRequestBodyExamples()).thenReturn(false);
+        Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(false, false, false, true));
+
+        List<FuzzingData> data = setupFuzzingData("/pets-small", "src/test/resources/petstore-examples.yml");
+        Assertions.assertThat(data).hasSize(1);
+
+        FuzzingData firstData = data.getFirst();
+        Assertions.assertThat(firstData.getPayload()).doesNotContain("dog-example-1", "myId");
+    }
+
+    @Test
+    void shouldUseExamplesWhenRequestBodiesFlagEnabled() throws Exception {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
+        Mockito.when(processingArguments.isUseRequestBodyExamples()).thenReturn(true);
+        Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(false, true, false, true));
+        List<FuzzingData> data = setupFuzzingData("/pets-batch", "src/test/resources/petstore-examples.yml");
+        Assertions.assertThat(data).hasSize(1);
+
+        FuzzingData firstData = data.getFirst();
+        Assertions.assertThat(firstData.getPayload()).contains("pet1", "pet2", "pet3");
+    }
+
+    @Test
+    void shouldNotUseExamplesWhenRequestBodyFlagDisabled() throws Exception {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
+        Mockito.when(processingArguments.isUseRequestBodyExamples()).thenReturn(false);
+        Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(false, false, false, false));
+
+        List<FuzzingData> data = setupFuzzingData("/pets-batch", "src/test/resources/petstore-examples.yml");
+        Assertions.assertThat(data).hasSize(2);
+
+        FuzzingData firstData = data.getFirst();
+        Assertions.assertThat(firstData.getPayload()).doesNotContain("pet1", "pet2", "pet3");
+
+        FuzzingData secondData = data.get(1);
+        Assertions.assertThat(secondData.getPayload()).doesNotContain("pet1", "pet2", "pet3");
+    }
+
 
     @Test
     void shouldGenerateValidAnyOfCombinationWhenForLevel3Nesting() throws Exception {
@@ -214,7 +310,7 @@ class FuzzingDataFactoryTest {
     void shouldLoadExample() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/pet-types-rec", "src/test/resources/petstore.yml");
         Assertions.assertThat(data.getFirst().getExamples()).hasSize(1);
-        Assertions.assertThat(data.getFirst().getExamples()).anyMatch(example -> example.contains("dog-simple-example"));
+        Assertions.assertThat(data.getFirst().getExamples()).anyMatch(example -> Objects.toString(example).contains("dog-simple-example"));
     }
 
     @Test
@@ -327,6 +423,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldProperlyGenerateFromArrayWithAnyOfElements() throws Exception {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(50);
         List<FuzzingData> dataList = setupFuzzingData("/api/v1/studies", "src/test/resources/prolific.yaml");
 
@@ -374,6 +471,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldGenerateCombinationsWhenXxxAsInlineSchemas() throws IOException {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
         List<FuzzingData> dataList = setupFuzzingData("/v1/employee_benefits/{employee_benefit_id}", "src/test/resources/gusto.yaml");
 
         Assertions.assertThat(dataList).hasSize(4);
@@ -424,6 +522,31 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(1);
         FuzzingData firstData = dataList.getFirst();
         Assertions.assertThat(firstData.getPayload()).contains("code", "message");
+    }
+
+    @Test
+    void shouldReturnMediaTypeExample() throws Exception {
+        Mockito.when(processingArguments.isUseRequestBodyExamples()).thenReturn(true);
+        List<FuzzingData> dataList = setupFuzzingData("/sum", "src/test/resources/issue144.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData firstData = dataList.getFirst();
+        Assertions.assertThat(JsonUtils.isValidJson(firstData.getPayload())).isTrue();
+        Assertions.assertThat(firstData.getPayload()).contains("[23,27,2]");
+    }
+
+    @Test
+    void shouldGenerateInlineArrayWithOpenApi31() throws Exception {
+        Mockito.when(processingArguments.isUseExamples()).thenReturn(false);
+        List<FuzzingData> dataList = setupFuzzingData("/sum", "src/test/resources/issue144.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+
+        boolean isArray = JsonUtils.isJsonArray(dataList.getFirst().getPayload());
+        Assertions.assertThat(isArray).isTrue();
+
+        Object firstElement = JsonUtils.getVariableFromJson(dataList.getFirst().getPayload(), "$[0]");
+        Assertions.assertThat(firstElement).isInstanceOf(Double.class);
     }
 
     @Test
@@ -843,7 +966,7 @@ class FuzzingDataFactoryTest {
         MediaType mediaType = new MediaType();
         mediaType.setExamples(Map.of("example1", new Example().$ref("#/components/examples/JSON_WORKER_EXAMPLES/value/WORKER_COMPENSATION_PAYRATE_POST_PATCH"), "example2", new Example().value("example2")));
 
-        Set<String> examples = fuzzingDataFactory.extractExamples(mediaType);
+        Set<Object> examples = fuzzingDataFactory.extractExamples(mediaType);
 
         Assertions.assertThat(examples).hasSize(2).containsExactly("example2", "\"catsIsCool\"");
     }

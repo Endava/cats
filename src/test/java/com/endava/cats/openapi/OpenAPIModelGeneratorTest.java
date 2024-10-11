@@ -1,5 +1,6 @@
 package com.endava.cats.openapi;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.util.JsonUtils;
@@ -123,7 +124,7 @@ class OpenAPIModelGeneratorTest {
         schema.setType("string");
         schema.setFormat("date");
 
-        Object formatted = generator.formatExampleIfNeeded(schema);
+        Object formatted = generator.extractExampleFromSchema(schema, true);
 
         Assertions.assertThat(formatted).hasToString("2020-01-02");
     }
@@ -135,7 +136,7 @@ class OpenAPIModelGeneratorTest {
         schema.setType("string");
         schema.setExample("This is a string\nwith a new line");
 
-        Object formatted = generator.formatExampleIfNeeded(schema);
+        Object formatted = generator.extractExampleFromSchema(schema, true);
 
         Assertions.assertThat(formatted).hasToString("This is a stringwith a new line");
     }
@@ -148,9 +149,9 @@ class OpenAPIModelGeneratorTest {
         schema.setType("string");
         schema.setFormat("date-time");
 
-        Object formatted = generator.formatExampleIfNeeded(schema);
+        Object generatedExample = generator.extractExampleFromSchema(schema, true);
 
-        Assertions.assertThat(formatted).hasToString("2020-01-02T00:00:00Z");
+        Assertions.assertThat(generatedExample).hasToString("2020-01-02T00:00:00Z");
     }
 
     @ParameterizedTest
@@ -162,7 +163,7 @@ class OpenAPIModelGeneratorTest {
         schema.setType("string");
         schema.setExample(value.getBytes(StandardCharsets.UTF_8));
 
-        Object formatted = generator.formatExampleIfNeeded(schema);
+        Object formatted = generator.extractExampleFromSchema(schema, true);
 
         Assertions.assertThat(formatted).isInstanceOf(byte[].class);
         String decoded = new String((byte[]) formatted, StandardCharsets.UTF_8);
@@ -192,6 +193,6 @@ class OpenAPIModelGeneratorTest {
         OpenAPI openAPI = openAPIV3Parser.readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, options).getOpenAPI();
         Map<String, Schema> schemas = OpenApiUtils.getSchemas(openAPI, List.of("application/json"));
         globalContext.getSchemaMap().putAll(schemas);
-        return new OpenAPIModelGenerator(globalContext, validDataFormat, true, 3, true, 2);
+        return new OpenAPIModelGenerator(globalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, true, true, true), 3, true, 2);
     }
 }

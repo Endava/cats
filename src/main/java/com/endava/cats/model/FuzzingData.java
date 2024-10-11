@@ -81,7 +81,7 @@ public class FuzzingData {
 
 
     @Builder.Default
-    private Set<String> examples = new HashSet<>();
+    private Set<Object> examples = new HashSet<>();
 
     @Builder.Default
     private Map<String, Set<String>> responseHeaders = Collections.emptyMap();

@@ -1,0 +1,50 @@
+openapi: "3.1.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: http://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://petstore.swagger.io/api
+paths:
+  /sum:
+    post:
+      operationId: sum
+      summary: Sum multiple numbers
+      requestBody:
+        description: The list of numbers to sum
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: number
+            examples:
+              list-of-three:
+                value:
+                  nums: [ 23, 27, 2 ]
+      responses:
+        '200':
+          description: The sum of the numbers
+          content:
+            application/json:
+              schema:
+                type: number
+              examples:
+                sum-of-three:
+                  value: 52
+components:
+  schemas:
+    NumberList:
+      type: array
+      items:
+        type: number
+    Sum:
+      type: number

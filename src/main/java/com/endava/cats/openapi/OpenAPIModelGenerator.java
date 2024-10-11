@@ -1,5 +1,6 @@
 package com.endava.cats.openapi;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
@@ -68,7 +69,7 @@ public class OpenAPIModelGenerator {
     public static final int SELF_REF_DEPTH_MULTIPLIER = 6;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGenerator.class);
     private final Random random;
-    private final boolean useExamples;
+    private final ProcessingArguments.ExamplesFlags examplesFlags;
     private final CatsGlobalContext globalContext;
     private final ValidDataFormat validDataFormat;
     private final int selfReferenceDepth;
@@ -92,10 +93,10 @@ public class OpenAPIModelGenerator {
      * @param useExamplesArgument Flag indicating whether to use examples from the OpenAPI specification.
      * @param selfReferenceDepth  The maximum depth for generating self-referencing models.
      */
-    public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, boolean useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int arraySize) {
+    public OpenAPIModelGenerator(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int arraySize) {
         this.globalContext = catsGlobalContext;
         this.random = CatsUtil.random();
-        this.useExamples = useExamplesArgument;
+        this.examplesFlags = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
         this.schemaRefMap = new LinkedHashMap<>();
@@ -128,6 +129,15 @@ public class OpenAPIModelGenerator {
         mapper.enable(WRITE_BIGDECIMAL_AS_PLAIN);
         mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
         mapper.disable(INDENT_OUTPUT);
+    }
+
+    public String serialize(Object obj) {
+        try {
+            return customDepthMapper.writeValueAsString(obj);
+        } catch (IOException e) {
+            logger.debug("Error serializing object: {}", e.getMessage());
+            return null;
+        }
     }
 
 
@@ -189,6 +199,13 @@ public class OpenAPIModelGenerator {
             return null;
         }
 
+        //examples will take first priority
+        Object example = this.extractExampleFromSchema(propertySchema, examplesFlags.usePropertyExamples());
+        if (example != null) {
+            logger.trace("Example set in swagger spec, returning example: '{}'", example);
+            return example;
+        }
+
         Object enumOrDefault = this.getEnumOrDefault(propertySchema);
         if (enumOrDefault != null) {
             return enumOrDefault;
@@ -197,11 +214,6 @@ public class OpenAPIModelGenerator {
         Object generatedValueFromFormat = this.generateStringValue(propertyName, propertySchema);
         if (generatedValueFromFormat != null) {
             return generatedValueFromFormat;
-        }
-
-        if (extractExampleFromSchema(propertySchema) != null && useExamples) {
-            logger.trace("Example set in swagger spec, returning example: '{}'", propertySchema.getExample());
-            return this.formatExampleIfNeeded(propertySchema);
         }
 
         return generateExampleBySchemaType(propertyName, propertySchema);
@@ -227,12 +239,23 @@ public class OpenAPIModelGenerator {
         return resolveProperties(propertySchema);
     }
 
-    private Object extractExampleFromSchema(Schema<?> schema) {
-        if (schema.getExample() != null) {
-            return schema.getExample();
-        }
-        if (schema.getExamples() != null && !schema.getExamples().isEmpty()) {
-            return schema.getExamples().getFirst();
+    public Object extractExampleFromSchema(Schema<?> schema, boolean flagEnabled) {
+        if (flagEnabled) {
+            Object result = schema.getExample();
+
+            if (result == null && schema.getExamples() != null && !schema.getExamples().isEmpty()) {
+                result = schema.getExamples().getFirst();
+            }
+
+            //check if this is a ref to the #/components/example section or a ref to another schema
+            if (Objects.toString(result).contains("\"$ref\"")) {
+                String refValue = String.valueOf(JsonUtils.getVariableFromJson(Objects.toString(result), "$ref"));
+                if (refValue != null) {
+                    result = globalContext.getObjectFromPathsReference(refValue);
+                }
+            }
+
+            return formatExampleIfNeeded(schema, result);
         }
         return null;
     }
@@ -263,8 +286,7 @@ public class OpenAPIModelGenerator {
         return currentProperty.startsWith(SYNTH_SCHEMA_NAME);
     }
 
-    <T> Object formatExampleIfNeeded(Schema<T> property) {
-        Object example = extractExampleFromSchema(property);
+    <T> Object formatExampleIfNeeded(Schema<T> property, Object example) {
         if (example == null) {
             return null;
         }
@@ -300,11 +322,12 @@ public class OpenAPIModelGenerator {
             currentProperty = previousPropertyValue;
             return result;
         }
-        return extractExampleFromSchema(schema);
+        //this is always true as we weren't able to generated anything for this object
+        return extractExampleFromSchema(schema, true);
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
-        Object example = extractExampleFromSchema(property);
+        Object example = extractExampleFromSchema(property, examplesFlags.usePropertyExamples());
         if (example != null) {
             return example;
         }
@@ -449,7 +472,8 @@ public class OpenAPIModelGenerator {
     }
 
     private static boolean isNullSchema(Schema innerType) {
-        return innerType.getType() == null && innerType.get$ref() == null && !CatsModelUtils.isComposedSchema(innerType) && innerType.getProperties() == null;
+        return innerType.getType() == null && innerType.get$ref() == null && !CatsModelUtils.isComposedSchema(innerType)
+                && innerType.getProperties() == null && CollectionUtils.isEmpty(innerType.getTypes());
     }
 
     int getArrayLength(Schema<?> property) {
@@ -482,6 +506,11 @@ public class OpenAPIModelGenerator {
          */
         if (JsonUtils.isCyclicReference(name, selfReferenceDepth) && globalContext.getSchemaFromReference(name) == null) {
             return null;
+        }
+
+        Object fromExample = extractExampleFromSchema(schema, examplesFlags.useSchemaExamples());
+        if (fromExample != null) {
+            return fromExample;
         }
 
         Map<String, Object> values = new HashMap<>();

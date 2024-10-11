@@ -6,6 +6,8 @@ import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.model.ProcessingError;
 import com.endava.cats.util.CatsModelUtils;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Components;
@@ -216,6 +218,9 @@ public class CatsGlobalContext {
                 case RequestBody requestBody when finalPart.equals("content") -> requestBody.getContent();
                 case ApiResponse apiResponse -> extractFromApiResponse(finalPart, apiResponse, resolvedDefinition);
                 case MediaType mediaType when "schema".equals(finalPart) -> mediaType.getSchema();
+                case MediaType mediaType when "examples".equals(finalPart) -> mediaType.getExamples();
+                case Schema<?> schema when "example".equals(finalPart) -> schema.getExample();
+                case Schema<?> schema when "examples".equals(finalPart) -> schema.getExamples();
                 case Schema<?> schema -> extractFromSchema(finalPart, schema, resolvedDefinition);
                 case List<?> asList -> asList.get(Integer.parseInt(finalPart));
                 case Object ignored when "components".equals(finalPart) -> openAPI.getComponents();
@@ -223,6 +228,10 @@ public class CatsGlobalContext {
                 case Components components when "parameters".equalsIgnoreCase(finalPart) -> components.getParameters();
                 case Components components when "headers".equalsIgnoreCase(finalPart) -> components.getHeaders();
                 case Components components when "requestBodies".equalsIgnoreCase(finalPart) -> components.getRequestBodies();
+                case Components components when "examples".equalsIgnoreCase(finalPart) -> components.getExamples();
+                case Example example -> example.getValue();
+                case ObjectNode node -> node.get(finalPart);
+                case ArrayNode arrayNode -> arrayNode.get(Integer.parseInt(finalPart));
                 default -> null;
             };
 

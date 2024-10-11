@@ -3,6 +3,7 @@ package com.endava.cats.command;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
@@ -41,6 +42,8 @@ class CatsCommandTest {
     ApiArguments apiArguments;
     @InjectSpy
     FuzzingDataFactory fuzzingDataFactory;
+    @Inject
+    ProcessingArguments processingArguments;
     @InjectSpy
     private TestCaseListener testCaseListener;
     private FilterArguments filterArguments;
@@ -123,8 +126,9 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
         ReflectionTestUtils.setField(reportingArguments, "logData", List.of("org.apache.wire:debug", "com.endava.cats:warn", "error"));
         ReflectionTestUtils.setField(reportingArguments, "skipLogs", List.of("complete", "notSkip"));
-
+        ReflectionTestUtils.setField(processingArguments, "useExamples", false);
         ReflectionTestUtils.setField(reportingArguments, "debug", true);
+
         Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinterFuzzer"));
         Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));
         Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
