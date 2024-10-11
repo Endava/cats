@@ -130,6 +130,7 @@ class ExactValuesInFieldsFuzzerTest {
         Object generated = myBaseBoundaryFuzzer.getBoundaryValue(schema);
         Mockito.verify(testCaseListener).recordError("Fuzzer %s could not generate a value for patten %s, min %s, max %s"
                 .formatted(myBaseBoundaryFuzzer.getClass().getSimpleName(), schema.getPattern(), schema.getMinLength(), schema.getMaxLength()));
+        Assertions.assertThat(generated).isNull();
     }
 
     static class MyExactValueFuzzer extends ExactValuesInFieldsFuzzer {
