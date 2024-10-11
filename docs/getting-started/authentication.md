@@ -9,6 +9,8 @@ description: Types of authentication supported by CATS
 CATS outputs authentication headers in plain text in both logs and report files. 
 Make sure you remove those when sharing/archiving/uploading the report files or logs.
 When sharing individual tests files you can leverage environment variables by using `$$env_variable` as values.
+You can also use the `--maskHeaders` argument to specify a comma-separated list of headers that should be masked in the logs and reports.
+Masked headers will be replaced with `$$HeaderName` so that test cases can be replayed using environment variables
 :::
 
 ## HTTP header(s) based authentication

@@ -26,3 +26,13 @@ You can make CATS ignore the undocumented response code checks (i.e. checking ex
 ## Ignoring Response Body Checks
 Additionally, you can also choose to ignore the response body checks. By default, on top of checking the expected response code, each Fuzzer will check if the response body matches the response schema defined in the contract and will report an `warn` if not matching.
 You can make CATS ignore the response body checks using the `--ingoreResponseBodyCheck` argument. CATS with now report these cases as `success` instead of `warn`.
+
+## Ignore Response Content-Type Checks
+By default, CATS will check if the response `Content-Type` header matches the expected one from the contract. If the response `Content-Type` header does not match the expected one, CATS will report an `warn`.
+You can make CATS ignore the response `Content-Type` checks using the `--ignoreResponseContentTypeCheck` argument. CATS will now report these cases as `success` instead of `warn`.
+
+## Ignore Response Codes
+You can ignore specific response codes using the `--ignoreResponseCodes` argument. This will make CATS report these cases as `success` instead of `warn`.
+
+## Ignore Response Lines, Words, Size, Regex
+You can ignore specific response lines, words, size or regex using the `--ignoreResponseLines`, `--ignoreResponseWords`, `--ignoreResponseSize`, `--ignoreResponseRegex` arguments. This will make CATS report these cases as `success` instead of `warn`.
