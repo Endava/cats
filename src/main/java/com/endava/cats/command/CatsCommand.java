@@ -351,6 +351,22 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 ansi().fg(Ansi.Color.BLUE).a(filterArguments.getPathsToRun(openAPI).size()).bold().reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(openAPI.getPaths().size()).reset().bold());
         logger.config(ansi().bold().a("HTTP methods in scope: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(filterArguments.getHttpMethods()).reset());
+        logger.config(ansi().bold().bold().a("Example flags: useRequestBodyExamples {}, useSchemaExamples {}, usePropertyExamples {}, useResponseBodyExamples {}, useDefaults {}").reset().toString(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseRequestBodyExamples()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseSchemaExamples()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUsePropertyExamples()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseResponseBodyExamples()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseExamples()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseDefaults()).reset().bold());
+        logger.config(ansi().bold().a("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, cachePayloads {}, limitXxxOfCombinations {}").reset().toString(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getSelfReferenceDepth()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLargeStringsSize()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getRandomHeadersNumber()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isCachePayloads()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLimitXxxOfCombinations()).reset().bold());
+        logger.config(ansi().bold().a("How the service handles whitespaces and random unicodes: edgeSpacesStrategy {}, sanitizationStrategy {}").reset().toString(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getEdgeSpacesStrategy()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getSanitizationStrategy()).reset().bold());
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
         logger.config(ansi().bold().a("Total number of OpenAPI operations: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(nofOfOperations));
