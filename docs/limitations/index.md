@@ -25,4 +25,4 @@ The Fuzzers have the following support for media types and HTTP methods:
 If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `warn` log message as it won't be able to validate that the response matches the schema.
 
 ## Regexes within 'pattern'
-CATS uses [RgxGen](https://github.com/curious-odd-man/RgxGen) in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
+CATS uses a mix of regex and data/format driven generators in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.

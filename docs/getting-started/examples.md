@@ -85,7 +85,7 @@ components:
           example: Jessica Smith
 ```
 
--- `--useExamples` - equivalent to setting all above arguments to `true`. Default value is `false`. When provide it will use all examples from the OpenAPI spec.
+-- `--useExamples` - equivalent to setting all above arguments to `true`. Default value is `false`. When provided it will use all examples from the OpenAPI spec.
 
 # CATS Generated values
 If examples are not provided CATS will generate values based on the schema definition. For example, if the schema defines a property as `type: integer` and `format: int32` CATS will generate a random integer value between -2147483648 and 2147483647.
