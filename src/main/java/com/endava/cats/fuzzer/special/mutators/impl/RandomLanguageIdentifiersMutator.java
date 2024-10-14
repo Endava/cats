@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  * Sends random programming language identifiers in the target field.
  */
 @Singleton
-public class RandomLanguageIdentifiersMutator implements Mutator {
+public class RandomLanguageIdentifiersMutator implements BodyMutator {
     private static final List<String> JAVA_KEYWORDS = List.of("abstract", "boolean", "byte", "case", "catch", "continue", "default", "do", "double", "enum", "extends", "final", "finally", "float", "goto", "implements", "instanceof", "interface", "long", "native", "new", "package", "private", "protected", "public", "short", "static", "strictfp", "super", "synchronized", "this", "throw", "throws", "transient", "try", "volatile");
     private static final List<String> PYTHON_KEYWORDS = List.of("assert", "break", "continue", "del", "elif", "except", "exec", "finally", "from", "global", "import", "in", "is", "lambda", "nonlocal", "not", "pass", "raise", "try", "with", "yield");
     private static final List<String> RUST_KEYWORDS = List.of("as", "async", "await", "const", "dyn", "else", "extern", "for", "if", "impl", "in", "let", "loop", "match", "mod", "move", "mut", "pub", "ref", "return", "self", "static", "struct", "super", "trait", "type", "unsafe", "use", "where", "while");

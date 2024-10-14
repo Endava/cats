@@ -18,9 +18,7 @@ public interface Mutator {
      * @param selectedField The field within the JSON which is the primary target of mutation
      * @return The mutated output string
      */
-    default String mutate(String inputJson, String selectedField) {
-        return inputJson;
-    }
+    String mutate(String inputJson, String selectedField);
 
 
     /**
@@ -29,9 +27,7 @@ public interface Mutator {
      * @param headers the request headers
      * @return a list of headers with at least one mutated
      */
-    default Collection<CatsHeader> mutate(Collection<CatsHeader> headers) {
-        return headers;
-    }
+    Collection<CatsHeader> mutate(Collection<CatsHeader> headers);
 
     /**
      * The name of the mutator.

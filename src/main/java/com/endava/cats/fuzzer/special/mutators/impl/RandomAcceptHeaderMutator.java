@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.HeadersMutator;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.CatsHeader;
@@ -15,7 +15,7 @@ import java.util.Set;
  * Send random values in the accept header.
  */
 @Singleton
-public class RandomAcceptHeaderMutator implements Mutator {
+public class RandomAcceptHeaderMutator implements HeadersMutator {
 
     @Override
     public Collection<CatsHeader> mutate(Collection<CatsHeader> headers) {

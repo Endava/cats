@@ -6,12 +6,13 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
-import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -26,6 +27,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.inject.Inject;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
@@ -101,6 +103,10 @@ public class TemplateFuzzCommand implements Runnable {
     IgnoreArguments ignoreArguments;
 
     @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Stop Options:|@%n", exclusive = false)
+    StopArguments stopArguments;
+
+    @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Dictionary Options:|@%n", exclusive = false)
     UserArguments userArguments;
 
@@ -136,6 +142,13 @@ public class TemplateFuzzCommand implements Runnable {
     @CommandLine.Option(names = {"--targetFields", "-t"},
             description = "A comma separated list of fully qualified request fields, HTTP headers, path and/or query parameters that the Fuzzers will apply to", split = ",")
     Set<String> targetFields;
+
+    @Setter
+    @CommandLine.Option(names = {"--random"},
+            description = "When set to @|bold true|@, it will run continuous fuzzing. You must also supply a `--stopXXX` argument in order for the execution to stop. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean random;
+
+
     @Inject
     ProcessingArguments processingArguments;
 
@@ -153,7 +166,7 @@ public class TemplateFuzzCommand implements Runnable {
                     .headers(this.getHeaders())
                     .targetFields(fieldsToFuzz)
                     .build();
-
+            templateFuzzer.setRandom(random);
             beforeFuzz(fuzzingData.getContractPath(), fuzzingData.getMethod().name());
             templateFuzzer.fuzz(fuzzingData);
             afterFuzz(fuzzingData.getContractPath());
@@ -228,6 +241,9 @@ public class TemplateFuzzCommand implements Runnable {
         }
         if (!matchArguments.isAnyMatchArgumentSupplied()) {
             throw new CommandLine.ParameterException(spec.commandLine(), "At least one --matchXXX argument is required");
+        }
+        if (random && !stopArguments.isAnyStopConditionProvided()) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "When running in continuous fuzzing mode, at least one --stopXXX argument must be provided");
         }
     }
 

@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -11,7 +11,7 @@ import java.math.BigInteger;
  * Sends a random large integers in the target field.
  */
 @Singleton
-public class RandomLargeIntegersMutator implements Mutator {
+public class RandomLargeIntegersMutator implements BodyMutator {
     private static final int ITERATIONS = 5;
     private static final int LENGTH = 20;
 

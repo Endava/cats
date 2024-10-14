@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.HeadersMutator;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.model.CatsHeader;
 import com.google.common.net.HttpHeaders;
@@ -14,7 +14,7 @@ import java.util.Set;
  * Sends dummy values in the transfer encoding header
  */
 @Singleton
-public class RandomTransferEncodingHeaderMutator implements Mutator {
+public class RandomTransferEncodingHeaderMutator implements HeadersMutator {
     @Override
     public Collection<CatsHeader> mutate(Collection<CatsHeader> headers) {
         Set<CatsHeader> clone = Cloner.cloneMe(headers);

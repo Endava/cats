@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -8,7 +8,7 @@ import jakarta.inject.Singleton;
  * Sends random multi codepoint emojis in the target field.
  */
 @Singleton
-public class RandomMultiCodepointEmojisMutator implements Mutator {
+public class RandomMultiCodepointEmojisMutator implements BodyMutator {
     private static final int BOUND = 15;
 
     @Override

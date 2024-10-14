@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
@@ -9,7 +9,7 @@ import jakarta.inject.Singleton;
  * Sends random whitespaces in the target field.
  */
 @Singleton
-public class RandomWhitespaceCharsMutator implements Mutator {
+public class RandomWhitespaceCharsMutator implements BodyMutator {
     private static final int BOUND = 15;
 
     @Override

@@ -1,7 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.api;
 
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 
 /**
  * Executes mutator logic from a custom mutator file.
@@ -11,7 +11,7 @@ import com.endava.cats.util.CatsUtil;
  * then transformed into {@code CustomMutator} instances.
  * </p>
  */
-public class CustomMutator implements Mutator {
+public class CustomMutator implements BodyMutator {
     private final CustomMutatorConfig customMutatorConfig;
 
     public CustomMutator(CustomMutatorConfig customMutatorConfig) {

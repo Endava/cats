@@ -1,15 +1,15 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
-import com.endava.cats.util.JsonUtils;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 
 /**
  * Sends a random abugidas chars in the target field.
  */
 @Singleton
-public class RandomAbugidasMutator implements Mutator {
+public class RandomAbugidasMutator implements BodyMutator {
     // Telugu script characters for consonants, vowels, and modifiers
     private static final String[] TELUGU_CONSONANTS = {"క", "ఖ", "గ", "ఘ", "ఙ", "చ", "ఛ", "జ", "ఝ", "ఞ", "ట", "ఠ", "డ", "ఢ", "ణ", "త", "థ", "ద", "ధ", "న", "ప", "ఫ", "బ", "భ", "మ", "య", "ర", "ల", "వ", "శ", "ష", "స", "హ", "ళ", "ఱ"};
     private static final String[] TELUGU_VOWELS = {"అ", "ఆ", "ఇ", "ఈ", "ఉ", "ఊ", "ఋ", "ౠ", "ఌ", "ౡ", "ఎ", "ఏ", "ఐ", "ఒ", "ఓ", "ఔ"};

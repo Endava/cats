@@ -1,17 +1,22 @@
 package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,8 +35,13 @@ class TemplateFuzzerTest {
     private UserArguments userArguments;
     private MatchArguments matchArguments;
     private ServiceCaller serviceCaller;
+    private StopArguments stopArguments;
     @InjectSpy
     private TestCaseListener testCaseListener;
+    @Inject
+    private Instance<BodyMutator> mutators;
+    @Inject
+    private ExecutionStatisticsListener executionStatisticsListener;
 
     private TemplateFuzzer templateFuzzer;
 
@@ -41,8 +51,10 @@ class TemplateFuzzerTest {
         userArguments = Mockito.mock(UserArguments.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, userArguments, matchArguments);
+        stopArguments = Mockito.mock(StopArguments.class);
+        templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, userArguments, matchArguments, stopArguments, mutators, executionStatisticsListener);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        Mockito.doNothing().when(testCaseListener).notifySummaryObservers(Mockito.any());
         CatsUtil.setCatsLogLevel("SEVERE");//we do this in order to avoid surefire breaking due to \uFFFe
     }
 
@@ -80,7 +92,7 @@ class TemplateFuzzerTest {
                 .method(HttpMethod.POST)
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(45)).skipTest(Mockito.any(), Mockito.eq("Skipping test as response does not match given matchers!"));
+        Mockito.verify(testCaseListener, Mockito.times(44)).skipTest(Mockito.any(), Mockito.eq("Skipping test as response does not match given matchers!"));
     }
 
     @ParameterizedTest
@@ -107,7 +119,7 @@ class TemplateFuzzerTest {
                 .method(HttpMethod.POST)
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(45)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(44)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
     }
 
     @ParameterizedTest
@@ -123,7 +135,7 @@ class TemplateFuzzerTest {
                 .method(HttpMethod.POST)
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(38)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(37)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
     }
 
 
@@ -139,7 +151,7 @@ class TemplateFuzzerTest {
                 .path("http://url")
                 .build();
         templateFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(45)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(44)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.anyString(), Mockito.any());
 
     }
 
@@ -259,5 +271,26 @@ class TemplateFuzzerTest {
         String replaced = templateFuzzer.replacePath(data, "valueReplaced", "ID");
 
         Assertions.assertThat(replaced).isEqualTo("http://localhost:8000/lookup?url=http%3A%2F%2Flocalhost%3A6001/users/valueReplaced");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true", "false"})
+    void shouldRunInContinuousMode(boolean nameReplace) throws Exception {
+        userArguments.setNameReplace(nameReplace);
+        Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
+        templateFuzzer.setRandom(true);
+        Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
+        templateFuzzer.fuzz(FuzzingData.builder()
+                .processedPayload("""
+                        {
+                            "field1": "value1",
+                            "field2": "value2"
+                        }
+                        """)
+                .targetFields(Set.of("field1"))
+                .headers(Set.of())
+                .method(HttpMethod.POST)
+                .build());
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Response matches arguments"), Mockito.any(), Mockito.any());
     }
 }

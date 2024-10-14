@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
@@ -9,7 +9,7 @@ import jakarta.inject.Singleton;
  * Inserts random values in the target field key.
  */
 @Singleton
-public class RandomWhitespacesInFieldKeysMutator implements Mutator {
+public class RandomWhitespacesInFieldKeysMutator implements BodyMutator {
     private static final int BOUND = 2;
 
     @Override

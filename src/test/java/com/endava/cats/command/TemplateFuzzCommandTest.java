@@ -1,6 +1,7 @@
 package com.endava.cats.command;
 
 import com.endava.cats.args.MatchArguments;
+import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
 import com.endava.cats.http.HttpMethod;
@@ -22,6 +23,7 @@ class TemplateFuzzCommandTest {
     @Inject
     UserArguments userArguments;
     TemplateFuzzer templateFuzzer;
+    StopArguments stopArguments;
 
     @BeforeEach
     void setup() {
@@ -29,6 +31,8 @@ class TemplateFuzzCommandTest {
         ReflectionTestUtils.setField(templateFuzzCommand, "templateFuzzer", templateFuzzer);
         matchArguments = Mockito.mock(MatchArguments.class);
         ReflectionTestUtils.setField(templateFuzzCommand, "matchArguments", matchArguments);
+        stopArguments = Mockito.mock(StopArguments.class);
+        ReflectionTestUtils.setField(templateFuzzCommand, "stopArguments", stopArguments);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
     }
 
@@ -123,5 +127,17 @@ class TemplateFuzzCommandTest {
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(false);
 
         Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("At least one --matchXXX argument is required");
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRandomAndNoStopArgumentSupplied() {
+        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ReflectionTestUtils.setField(templateFuzzCommand, "spec", spec);
+        templateFuzzCommand.data = "@src/test/resources/data.json";
+        Mockito.when(stopArguments.isAnyStopConditionProvided()).thenReturn(false);
+        templateFuzzCommand.setRandom(true);
+
+        Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("When running in continuous fuzzing mode, at least one --stopXXX argument must be provided");
     }
 }

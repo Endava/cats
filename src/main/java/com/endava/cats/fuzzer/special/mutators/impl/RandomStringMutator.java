@@ -1,6 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -9,7 +9,7 @@ import org.apache.commons.lang3.RandomStringUtils;
  * Sends a random unicode value in the target field.
  */
 @Singleton
-public class RandomStringMutator implements Mutator {
+public class RandomStringMutator implements BodyMutator {
     private static final int BOUND = 100;
 
     @Override

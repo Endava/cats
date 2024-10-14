@@ -1,15 +1,15 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
-import com.endava.cats.fuzzer.special.mutators.api.Mutator;
-import com.endava.cats.util.JsonUtils;
+import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 
 /**
  * Sends a random zalgo text in the target field.
  */
 @Singleton
-public class RandomZalgoTextMutator implements Mutator {
+public class RandomZalgoTextMutator implements BodyMutator {
     private static final String[] ZALGO_CHARACTERS = {
             "\u030d", "\u030e", "\u0304", "\u0305", "\u033f", "\u0311", "\u0306", "\u0310",
             "\u0352", "\u0357", "\u0351", "\u0307", "\u0308", "\u030a", "\u0342", "\u0343",
