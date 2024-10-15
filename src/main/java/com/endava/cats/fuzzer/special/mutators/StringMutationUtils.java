@@ -10,6 +10,10 @@ import java.util.regex.Pattern;
  */
 public class StringMutationUtils {
 
+    private StringMutationUtils() {
+        //ntd
+    }
+
     public static String applySameMutation(String initial, String mutated, String target) {
         List<Insertion> insertions = computeInsertions(initial, mutated);
 
@@ -18,10 +22,9 @@ public class StringMutationUtils {
 
     public static String extractMutatedString(String initial, String text) {
         String regex = buildRegexFromInitialString(initial);
-
         Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.UNICODE_CASE);
-
         Matcher matcher = pattern.matcher(text);
+
         if (matcher.find()) {
             return matcher.group();
         } else {
@@ -47,7 +50,8 @@ public class StringMutationUtils {
 
     private static List<Insertion> computeInsertions(String initial, String mutated) {
         List<Insertion> insertions = new ArrayList<>();
-        int i = 0, j = 0;
+        int i = 0;
+        int j = 0;
         while (i < initial.length() && j < mutated.length()) {
             if (initial.charAt(i) == mutated.charAt(j)) {
                 i++;
@@ -58,7 +62,7 @@ public class StringMutationUtils {
                     insertedChars.append(mutated.charAt(j));
                     j++;
                 }
-                insertions.add(new Insertion(i, insertedChars.toString(), initial.length()));
+                insertions.add(new Insertion(i, insertedChars.toString()));
             }
         }
 
@@ -68,7 +72,7 @@ public class StringMutationUtils {
                 insertedChars.append(mutated.charAt(j));
                 j++;
             }
-            insertions.add(new Insertion(i, insertedChars.toString(), initial.length()));
+            insertions.add(new Insertion(i, insertedChars.toString()));
         }
         return insertions;
     }
@@ -88,7 +92,7 @@ public class StringMutationUtils {
         String characters;
         int offset = 0;
 
-        Insertion(int position, String characters, int initialLength) {
+        Insertion(int position, String characters) {
             this.position = position;
             this.characters = characters;
         }
