@@ -113,7 +113,7 @@ public abstract class JsonUtils {
 
     public static final Configuration SUPPRESS_EXCEPTIONS_CONFIGURATION = new Configuration.ConfigurationBuilder().options(Option.SUPPRESS_EXCEPTIONS).build();
 
-    public static final Configuration GSON_CONFIGURATION = Configuration.builder().jsonProvider(new GsonJsonProvider(GSON)).mappingProvider(new GsonMappingProvider(GSON)).build();
+    public static final Configuration GSON_CONFIGURATION = Configuration.builder().jsonProvider(new GsonJsonProvider(GSON_NO_PRETTY_PRINTING)).mappingProvider(new GsonMappingProvider(GSON_NO_PRETTY_PRINTING)).build();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
     private static final Configuration JACKSON_JSON_NODE_CONFIGURATION = Configuration.builder()

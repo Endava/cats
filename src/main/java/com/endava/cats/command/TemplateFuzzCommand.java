@@ -49,7 +49,8 @@ import java.util.stream.Collectors;
  * The Fuzzers will only apply for fields supplied in the {@code --targetFields} argument.
  */
 @CommandLine.Command(
-        name = "fuzz",
+        name = "template",
+        aliases = "fuzz",
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
         description = "Run Fuzzers based on a supplied request template or query & path params",
@@ -64,9 +65,11 @@ import java.util.stream.Collectors;
                 "@|bold ERR|@:Where ERR is the number of errors reported by cats"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Run fuzz tests for a given POST request:",
-                "    cats fuzz -H header=value -X POST -d '{\"field1\":\"value1\",\"field2\":\"value2\",\"field3\":\"value3\"}' -t \"field1,field2,header\" -i \"2XX,4XX\" http://service-url ",
+                "    cats template -H header=value -X POST -d '{\"field1\":\"value1\",\"field2\":\"value2\",\"field3\":\"value3\"}' -t \"field1,field2,header\" -i \"2XX,4XX\" http://service-url ",
                 "", "  Run fuzz tests for a given GET request:",
-                "    cats fuzz -X GET -t \"path1,query1\" -i \"2XX,4XX\" http://service-url/paths1?query1=test&query2"},
+                "    cats template -X GET -t \"path1,query1\" -i \"2XX,4XX\" http://service-url/path1?query1=test&query2",
+                "", "  Run fuzz tests for a given GET request in continuous fuzz mode for 5 seconds:",
+                "    cats template -X GET -t \"path1,query1\" -i \"2XX,4XX\" http://service-url/path1?query1=test&query2 --random --stopAfterTimeInSec 5"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class TemplateFuzzCommand implements Runnable {
@@ -239,8 +242,8 @@ public class TemplateFuzzCommand implements Runnable {
         if (HttpMethod.requiresBody(httpMethod) && data == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --data=<data>");
         }
-        if (!matchArguments.isAnyMatchArgumentSupplied()) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "At least one --matchXXX argument is required");
+        if (!matchArguments.isAnyMatchArgumentSupplied() && !ignoreArguments.isAnyIgnoreArgumentSupplied()) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "At least one --matchXXX, --ignoreXXX or --filterXXX argument is required");
         }
         if (random && !stopArguments.isAnyStopConditionProvided()) {
             throw new CommandLine.ParameterException(spec.commandLine(), "When running in continuous fuzzing mode, at least one --stopXXX argument must be provided");

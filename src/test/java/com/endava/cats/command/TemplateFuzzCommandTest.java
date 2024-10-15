@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
@@ -10,6 +11,8 @@ import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
@@ -24,6 +27,7 @@ class TemplateFuzzCommandTest {
     UserArguments userArguments;
     TemplateFuzzer templateFuzzer;
     StopArguments stopArguments;
+    IgnoreArguments ignoreArguments;
 
     @BeforeEach
     void setup() {
@@ -33,6 +37,8 @@ class TemplateFuzzCommandTest {
         ReflectionTestUtils.setField(templateFuzzCommand, "matchArguments", matchArguments);
         stopArguments = Mockito.mock(StopArguments.class);
         ReflectionTestUtils.setField(templateFuzzCommand, "stopArguments", stopArguments);
+        ignoreArguments = Mockito.mock(IgnoreArguments.class);
+        ReflectionTestUtils.setField(templateFuzzCommand, "ignoreArguments", ignoreArguments);
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(true);
     }
 
@@ -119,14 +125,30 @@ class TemplateFuzzCommandTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenNoMatchArgumentSupplied() {
+    void shouldThrowExceptionWhenNoMatchOrIgnoreArgumentSupplied() {
         CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
         ReflectionTestUtils.setField(templateFuzzCommand, "spec", spec);
         templateFuzzCommand.data = "@src/test/resources/data.json";
         Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(false);
+        Mockito.when(ignoreArguments.isAnyIgnoreArgumentSupplied()).thenReturn(false);
 
-        Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("At least one --matchXXX argument is required");
+        Assertions.assertThatThrownBy(() -> templateFuzzCommand.run()).isInstanceOf(CommandLine.ParameterException.class).hasMessage("At least one --matchXXX, --ignoreXXX or --filterXXX argument is required");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, false", "false, true", "true, true"})
+    void shouldNotThrowExceptionWhenArgumentsSupplied(boolean match, boolean ignore) {
+        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ReflectionTestUtils.setField(templateFuzzCommand, "spec", spec);
+        templateFuzzCommand.data = "@src/test/resources/data.json";
+        Mockito.when(matchArguments.isAnyMatchArgumentSupplied()).thenReturn(match);
+        Mockito.when(ignoreArguments.isAnyIgnoreArgumentSupplied()).thenReturn(ignore);
+        templateFuzzCommand.url = "http://localhost";
+
+        templateFuzzCommand.run();
+        Mockito.verify(templateFuzzer, Mockito.times(1)).fuzz(Mockito.any());
     }
 
     @Test

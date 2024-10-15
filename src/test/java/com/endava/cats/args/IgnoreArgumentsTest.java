@@ -7,9 +7,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class IgnoreArgumentsTest {
@@ -160,5 +162,86 @@ class IgnoreArgumentsTest {
         ReflectionTestUtils.setField(ignoreArguments, "ignoreResponseCodes", List.of("200"));
 
         Assertions.assertThat(ignoreArguments.isNotIgnoredResponse(catsResponse)).isFalse();
+    }
+
+    @Test
+    void shouldIgnoreResponseLinesWhenFiltering() {
+        ignoreArguments.setFilterResponseLines(List.of(100L));
+        Assertions.assertThat(ignoreArguments.getIgnoreResponseLines()).containsOnly(100L);
+        Assertions.assertThat(ignoreArguments.isSkipReportingForIgnoredCodes()).isTrue();
+    }
+
+    @Test
+    void shouldIgnoreResponseCodesCWhenFiltering() {
+        ignoreArguments.setFilterResponseCodes(List.of("200", "400"));
+        Assertions.assertThat(ignoreArguments.getIgnoreResponseCodes()).containsOnly("200", "400");
+        Assertions.assertThat(ignoreArguments.isSkipReportingForIgnoredCodes()).isTrue();
+    }
+
+    @Test
+    void shouldIgnoreResponseWordsWhenFiltering() {
+        ignoreArguments.setFilterResponseWords(List.of(200L));
+        Assertions.assertThat(ignoreArguments.getIgnoreResponseWords()).containsOnly(200L);
+        Assertions.assertThat(ignoreArguments.isSkipReportingForIgnoredCodes()).isTrue();
+    }
+
+    @Test
+    void shouldIgnoreResponseSizesWhenFiltering() {
+        ignoreArguments.setFilterResponseSize(List.of(500L));
+        Assertions.assertThat(ignoreArguments.getIgnoreResponseSizes()).containsOnly(500L);
+        Assertions.assertThat(ignoreArguments.isSkipReportingForIgnoredCodes()).isTrue();
+    }
+
+
+    @Test
+    void shouldIgnoreResponseRegexWhenFiltering() {
+        ignoreArguments.setFilterResponseRegex("regex");
+        Assertions.assertThat(ignoreArguments.getIgnoreResponseRegex()).isEqualTo("regex");
+        Assertions.assertThat(ignoreArguments.isSkipReportingForIgnoredCodes()).isTrue();
+    }
+
+
+    static Stream<IgnoreArguments> provideIgnoreArguments() {
+        IgnoreArguments case1 = new IgnoreArguments();
+        case1.setFilterResponseCodes(List.of("200"));
+
+        IgnoreArguments case2 = new IgnoreArguments();
+        case2.setFilterResponseSize(List.of(100L));
+
+        IgnoreArguments case3 = new IgnoreArguments();
+        case3.setFilterResponseWords(List.of(50L));
+
+        IgnoreArguments case4 = new IgnoreArguments();
+        case4.setFilterResponseLines(List.of(10L));
+
+        IgnoreArguments case5 = new IgnoreArguments();
+        case5.setFilterResponseRegex(".*error.*");
+
+        IgnoreArguments case6 = new IgnoreArguments();
+        case6.setFilterResponseCodes(List.of("200"));
+        case6.setFilterResponseSize(List.of(100L));
+        case6.setFilterResponseWords(List.of(50L));
+        case6.setFilterResponseLines(List.of(10L));
+        case6.setFilterResponseRegex(".*error.*");
+
+        IgnoreArguments case7 = new IgnoreArguments();
+        ReflectionTestUtils.setField(case7, "blackbox", true);
+
+        IgnoreArguments case8 = new IgnoreArguments();
+
+        return Stream.of(case1, case2, case3, case4, case5, case6, case7, case8);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideIgnoreArguments")
+    void testIsAnyIgnoreArgumentSupplied(IgnoreArguments ignoreArguments) {
+        boolean expected = !ignoreArguments.getIgnoreResponseCodes().isEmpty() ||
+                ignoreArguments.getIgnoreResponseSizes() != null ||
+                ignoreArguments.getIgnoreResponseWords() != null ||
+                ignoreArguments.getIgnoreResponseLines() != null ||
+                ignoreArguments.getIgnoreResponseRegex() != null ||
+                ignoreArguments.isBlackbox();
+
+        Assertions.assertThat(ignoreArguments.isAnyIgnoreArgumentSupplied()).isEqualTo(expected);
     }
 }

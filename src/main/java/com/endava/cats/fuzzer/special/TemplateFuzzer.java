@@ -5,6 +5,7 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.special.mutators.StringMutationUtils;
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.simple.StringGenerator;
@@ -104,6 +105,7 @@ public class TemplateFuzzer implements Fuzzer {
                 """; // this is a fake payload that will be mutated
 
         while (!shouldStop) {
+            boolean oldNameReplace = userArguments.isNameReplace();
             String targetField = CatsUtil.selectRandom(allCatsFields);
             logger.debug("Selected field to be mutated: [{}]", targetField);
 
@@ -112,8 +114,17 @@ public class TemplateFuzzer implements Fuzzer {
 
             String fakeMutatedPayload = selectedRandomMutator.mutate(fakePayloadToMutate, FAKE_FUZZ);
             Object mutatedValue = JsonUtils.getVariableFromJson(fakeMutatedPayload, FAKE_FUZZ);
+
             if (JsonUtils.isNotSet(String.valueOf(mutatedValue))) {
-                mutatedValue = fakeMutatedPayload.substring(1, fakeMutatedPayload.length() - 1);
+                String extractMutatedString = StringMutationUtils.extractMutatedString(FAKE_FUZZ, fakeMutatedPayload);
+                if (extractMutatedString != null) {
+                    //this means that mutation was at key level
+                    mutatedValue = StringMutationUtils.applySameMutation(FAKE_FUZZ, extractMutatedString, targetField);
+
+                    userArguments.setNameReplace(true);
+                } else {
+                    mutatedValue = fakeMutatedPayload.substring(1, fakeMutatedPayload.length() - 1);
+                }
             }
 
             String mutatedPayload = data.getPayload();
@@ -127,6 +138,7 @@ public class TemplateFuzzer implements Fuzzer {
 
             createRequestAndExecuteTest(data, targetField, String.valueOf(mutatedValue), mutatedPayload, selectedRandomMutator.description());
 
+            userArguments.setNameReplace(oldNameReplace);
             shouldStop = stopArguments.shouldStop(executionStatisticsListener.getErrors(), testCaseListener.getCurrentTestCaseNumber(), startTime);
         }
     }
@@ -172,7 +184,6 @@ public class TemplateFuzzer implements Fuzzer {
 
         String finalPath = data.getPath();
         try {
-            //handle http://localhost:8080/
             URL url = URI.create(data.getPath()).toURL();
             String replacedPath = Arrays.stream(url.getPath().split("/"))
                     .map(pathElement -> pathElement.equalsIgnoreCase(targetField) ? withData : pathElement)

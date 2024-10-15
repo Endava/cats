@@ -52,6 +52,43 @@ public class IgnoreArguments {
             description = "A regex that will match against the response that will be considered as @|bold,underline success|@, even if the Fuzzer will typically report it as @|bold,underline warn|@ or @|bold,underline error|@")
     private String ignoreResponseRegex;
 
+    /*Creating equivalent filtering options for all ignored arguments*/
+    @CommandLine.Option(names = {"--filterResponseCodes", "--fc"},
+            description = "A comma separated list of HTTP response codes that will be filtered. Equivalent to --i <response_codes> -k", split = ",")
+    public void setFilterResponseCodes(List<String> filterResponseCodes) {
+        this.ignoreResponseCodes = filterResponseCodes;
+        skipReportingForIgnoredCodes = true;
+    }
+
+    @CommandLine.Option(names = {"--filterResponseSize", "--fs"},
+            description = "A comma separated list of response sizes that will be filtered. Equivalent to --is <size> -k", split = ",")
+    public void setFilterResponseSize(List<Long> filterResponseSizes) {
+        this.ignoreResponseSizes = filterResponseSizes;
+        skipReportingForIgnoredCodes = true;
+    }
+
+    @CommandLine.Option(names = {"--filterResponseWords", "--fw"},
+            description = "A comma separated list of word counts in the response that filtered. Equivalent to --iw <words> -k", split = ",")
+    public void setFilterResponseWords(List<Long> filterResponseWords) {
+        this.ignoreResponseWords = filterResponseWords;
+        skipReportingForIgnoredCodes = true;
+    }
+
+    @CommandLine.Option(names = {"--filterResponseLines", "--fl"},
+            description = "A comma separated list of number of line counts in the response that will be filtered. Equivalent to --il <no_of_lines> -k", split = ",")
+    public void setFilterResponseLines(List<Long> filterResponseLines) {
+        this.ignoreResponseLines = filterResponseLines;
+        skipReportingForIgnoredCodes = true;
+    }
+
+    @CommandLine.Option(names = {"--filterResponseRegex", "--fr"},
+            description = "A regex that will match against the response that will be filtered. Equivalent to --ir <regex> -k")
+    public void setFilterResponseRegex(String filterResponseRegex) {
+        this.ignoreResponseRegex = filterResponseRegex;
+        skipReportingForIgnoredCodes = true;
+    }
+    /*End of filtering options*/
+
     @CommandLine.Option(names = {"-k", "--skipReportingForIgnoredCodes", "--skipReportingForIgnored", "--sri"},
             description = "Skip reporting entirely for the ignored response codes, sizes, words and lines provided in the @|bold,underline --ignoreResponseXXX|@ arguments. Default: @|bold false|@ ")
     private boolean skipReportingForIgnoredCodes;
@@ -144,6 +181,11 @@ public class IgnoreArguments {
                 this.isNotIgnoredResponseLines(catsResponse.getNumberOfLinesInResponse()) &&
                 this.isNotIgnoredResponseWords(catsResponse.getNumberOfWordsInResponse()) &&
                 this.isNotIgnoredRegex(catsResponse.getBody());
+    }
+
+    public boolean isAnyIgnoreArgumentSupplied() {
+        return ignoreResponseCodes != null || ignoreResponseSizes != null || ignoreResponseWords != null ||
+                ignoreResponseLines != null || ignoreResponseRegex != null || blackbox;
     }
 
     /**

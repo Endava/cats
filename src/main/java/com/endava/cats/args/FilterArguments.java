@@ -44,7 +44,6 @@ import java.util.stream.Stream;
  * is that Filter arguments are focused on input filtering while Ignore are focused on response filtering.
  */
 @Singleton
-//@Getter
 public class FilterArguments {
     /* local caches to avoid recompute */
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();

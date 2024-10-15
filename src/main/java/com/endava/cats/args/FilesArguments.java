@@ -49,7 +49,7 @@ public class FilesArguments {
     @Getter
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
 
-    @CommandLine.Option(names = {"--fuzzersConfig", "--fc"},
+    @CommandLine.Option(names = {"--fuzzersConfig"},
             description = "A properties file with Fuzzer configuration that changes default Fuzzer's expected HTTP response codes. Configuration keys are prefixed with the Fuzzer name")
     @Setter
     private File fuzzersConfig;
