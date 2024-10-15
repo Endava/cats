@@ -625,24 +625,7 @@ public class FuzzingDataFactory {
             anyOfOrOneOfElements = joinCommonOneAndAnyOfs(anyOfOrOneOfElements);
 
             for (Map.Entry<String, Map<String, JsonElement>> entry : anyOfOrOneOfElements.entrySet()) {
-                String pathKey = entry.getKey();
-                Map<String, JsonElement> anyOfOrOneOf = entry.getValue();
-                List<String> interimCombinationList = new ArrayList<>(result).stream()
-                        .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), result.size()))
-                        .collect(Collectors.toCollection(ArrayList::new));
-
-                result.clear();
-                for (Map.Entry<String, JsonElement> xxxOfElement : anyOfOrOneOf.entrySet()) {
-                    String key = xxxOfElement.getKey();
-                    JsonElement value = xxxOfElement.getValue();
-                    for (String payload : interimCombinationList) {
-                        if (payload.contains(ANY_OF) || payload.contains(ONE_OF)) {
-                            result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()));
-                        } else {
-                            result.add(payload);
-                        }
-                    }
-                }
+                createXxxOfCombinations(entry, result);
 
                 List<String> interimList = result.stream()
                         .filter(json -> !json.contains(ANY_OF) && !json.contains(ONE_OF))
@@ -661,6 +644,27 @@ public class FuzzingDataFactory {
         }
 
         return new ArrayList<>(result);
+    }
+
+    private void createXxxOfCombinations(Map.Entry<String, Map<String, JsonElement>> entry, Set<String> result) {
+        String pathKey = entry.getKey();
+        Map<String, JsonElement> anyOfOrOneOf = entry.getValue();
+        List<String> interimCombinationList = new ArrayList<>(result).stream()
+                .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), result.size()))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        result.clear();
+        for (Map.Entry<String, JsonElement> xxxOfElement : anyOfOrOneOf.entrySet()) {
+            String key = xxxOfElement.getKey();
+            JsonElement value = xxxOfElement.getValue();
+            for (String payload : interimCombinationList) {
+                if (payload.contains(ANY_OF) || payload.contains(ONE_OF)) {
+                    result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()));
+                } else {
+                    result.add(payload);
+                }
+            }
+        }
     }
 
     private Map<String, Map<String, JsonElement>> joinCommonOneAndAnyOfs(Map<String, Map<String, JsonElement>> startingOneAnyOfs) {
