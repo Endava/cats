@@ -10,7 +10,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--server=URL` supplies the URL of the service implementing the contract.
 - `--basicauth=USR:PWD` supplies a `username:password` pair, in case the service uses basic auth.
 - `--authRefreshInterval=value_in_seconds` Amount of time in seconds after which to get new auth credentials
-- `--authRefreshScript=script` Script to get executed after `--authRefreshInterval` in order to get new auth credentials. The script will replace any headers that have aut_script as value. If you don't supply a --authRefreshInterval, but you supply a script, the script will be used to get the initial auth credentials.
+- `--authRefreshScript=script` Script to get executed after `--authRefreshInterval` in order to get new auth credentials. The script will replace any headers that have `auth_script` as value. If you don't supply a `--authRefreshInterval`, but you supply a script, the script will be used to get the initial auth credentials.
 - `--fuzzers=LIST_OF_FUZZERS` supplies a comma separated list of fuzzers. The supplied list of Fuzzers can be partial names, not full Fuzzer names. CATS which check for all Fuzzers containing the supplied strings. If the argument is not supplied, all fuzzers will be run.
 - `--log=PACKAGE:LEVEL` can configure custom log level for a given package. You can provide a comma separated list of packages and levels or a level to apply to everything. This is helpful when you want to see full HTTP traffic: `--log=org.apache.http.wire:debug` or suppress CATS logging: `--log=com.endava.cats:warn`
 - `--skipLog=LEVELS`  A list of log levels to skip. For example, you can skip only note and info levels, but leave the rest
@@ -76,7 +76,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--[no-]-color` If true enables ANSI codes and coloured console output. Default: true
 - `--onlyLog=star,note` A list of log levels to include; allows more granular control of the log levels
 - `--userAgent=USER_AGENT` The user agent to be set in the User-Agent HTTP header. Default: cats/version
-- `--verbosity=DEETAILED|SUMMARY`  Sets the verbosity of the console logging. If set to summary CATS will only output a simple progress screen per path. Default: `SUMMARY`
+- `--verbosity=DETAILED|SUMMARY`  Sets the verbosity of the console logging. If set to summary CATS will only output a simple progress screen per path. Default: `SUMMARY`
 - `--oneOfSelection "field1=value1"`, `--anyOfSelection` A `name=value` list of discriminator names and values that can be use to filter request payloads when objects use oneOf or anyOf definitions which result in multiple payloads for a single endpoint and http method
 - `--randomHeadersNumber=NUMBER` The number of random headers that will be sent by the `LargeNumberOfRandomAlphanumericHeadersFuzzer` and `LargeNumberOfRandomHeadersFuzzer`. Default: `10000`
 - `--skipFieldTypes=string,integer,etc.` A comma separated list of OpenAPI data types to skip. It only supports standard types: https://swagger.io/docs/specification/data-models/data-types
@@ -96,7 +96,10 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--selfReferenceDepth=<selfReferenceDepth>` Max depth for objects having cyclic dependencies
 - `--limitXxxOfCombinations=<limitXxxOfCombinations>` Max number of anyOf/oneOf combinations
 - `--[no-]useDefaults` If set to true, it will use the default values when generating examples
-- `--simpleReplace` If set to true, it will simply do a replacement between the targetFields names provided and the fuzz values
+- `--nameReplace` If set to true, it will simply do a replacement between the targetFields names provided and the fuzz values 
+- `--stopAfterErrors=<stopAfterErrors>` Number of errors after which the continuous fuzzing will stop running. Errors are defined as conditions matching the given match arguments. Only available in `cats random` sub-command. 
+- `--stopAfterMutations=<stopAfterMutations>` Number of mutations (test cases) after which the continuous fuzzing will stop running. Only available in `cats random` sub-command.
+- `--stopAfterTimeInSec=<stopAfterTimeInSec>` Amount of time in seconds for how long the continuous fuzzing will run before stopping. Only available in `cats random` sub-command.
 
 :::tip
 When you want to skip fuzzing entirely for a specific JSON object or specific fields you must prefix the field name from the `--skipFields` argument with `!`.

@@ -9,7 +9,7 @@ If the target API does not have an OpenAPI spec available, you can use a request
 The syntax for running the `TemplateFuzzer` is very similar to `curl`:
 
 ```shell
-cats fuzz -H header=value -X POST -d '{"field1":"value1","field2":"value2","field3":"value3"}' -t "field1,field2,header" -i "2XX,4XX" http://service-url 
+cats template -H header=value -X POST -d '{"field1":"value1","field2":"value2","field3":"value3"}' -t "field1,field2,header" -i "2XX,4XX" http://service-url 
 ```
 
 :::tip
@@ -53,5 +53,14 @@ HTTP methods without bodies will be fuzzed at path and query parameters and head
 This is an example for a `GET` request:
 
 ```shell
-cats fuzz -X GET -t "path1,query1" -i "2XX,4XX" http://service-url/paths1?query1=test&query2
+cats template -X GET -t "path1,query1" -i "2XX,4XX" http://service-url/paths1?query1=test&query2
+```
+
+# TemplateFuzzer with continuous fuzzing
+You can also run the `TemplateFuzzer` in continuous mode using the `--random` argument. 
+It will run similarly to the [Continuous Fuzzing Mode](/docs/getting-started/running-cats#continuous-fuzzing-mode) based on the registered mutators.
+You must either provide a match condition using the `--matchXXX` arguments, a ignore condition using the `--ignoreXXX` arguments or a filtering condition using the `--filterXXX` arguments.
+
+```shell
+cats template -X GET -t "path1,query1" -i "2XX,4XX" http://service-url/paths1?query1=test&query2 --random
 ```

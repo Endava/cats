@@ -54,6 +54,11 @@ This will run continuous fuzzing for method `POST` on path `/users/auth`, flag a
 As continuous fuzzing do not rely on pre-defined fuzzers, the `matchXXX` condition offers control on how each test case is flagged as error or not.
 Continuous fuzzing is also more targeted, this is why supplying the `--path` and http method `-X` is required.
 
+:::caution
+It's recommended to supply a `--stopXXX` argument in order for CATS to stop the execution when the supplied condition is met. 
+Otherwise, it will run indefinitely and won't produce a summary report. It will still produce individual .json and .html test reports.
+:::
+
 Continuous fuzzing is based on [mutators](./mutators.md).
 
 ## Notes on Skipped Tests
