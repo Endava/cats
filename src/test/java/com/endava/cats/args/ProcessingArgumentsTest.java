@@ -53,4 +53,44 @@ class ProcessingArgumentsTest {
         ProcessingArguments processingArguments = new ProcessingArguments();
         Assertions.assertThat(processingArguments.getDefaultContentType()).isEqualTo("application/json");
     }
+
+    @ParameterizedTest
+    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    void shouldTestUsePropertyExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        ReflectionTestUtils.setField(processingArguments, "usePropertyExamples", usePropertyExamples);
+        ReflectionTestUtils.setField(processingArguments, "useExamples", useExamples);
+
+        Assertions.assertThat(processingArguments.isUsePropertyExamples()).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    void shouldTestUseSchemaExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        ReflectionTestUtils.setField(processingArguments, "useSchemaExamples", usePropertyExamples);
+        ReflectionTestUtils.setField(processingArguments, "useExamples", useExamples);
+
+        Assertions.assertThat(processingArguments.isUseSchemaExamples()).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    void shouldTestUseResponseBodyExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        ReflectionTestUtils.setField(processingArguments, "useResponseBodyExamples", usePropertyExamples);
+        ReflectionTestUtils.setField(processingArguments, "useExamples", useExamples);
+
+        Assertions.assertThat(processingArguments.isUseResponseBodyExamples()).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    void shouldTestUseRequestBodyExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
+        ProcessingArguments processingArguments = new ProcessingArguments();
+        ReflectionTestUtils.setField(processingArguments, "useRequestBodyExamples", usePropertyExamples);
+        ReflectionTestUtils.setField(processingArguments, "useExamples", useExamples);
+
+        Assertions.assertThat(processingArguments.isUseRequestBodyExamples()).isEqualTo(expected);
+    }
 }
