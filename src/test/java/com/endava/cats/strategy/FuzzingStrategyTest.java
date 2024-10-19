@@ -18,7 +18,7 @@ import java.util.Map;
 
 @QuarkusTest
 class FuzzingStrategyTest {
-    public static final String YY = "YY";
+    public static final String YY = "KY";
 
     @Test
     void givenTheFuzzingStrategyClass_whenCallingTheStaticCreateMethods_thenProperInstancesAreReturned() {

@@ -359,4 +359,11 @@ class StringGeneratorTest {
             Assertions.assertThat(result).isEqualTo(initial);
         }
     }
+
+    @Test
+    void shouldGenerateUsingRegexpGen() {
+        String generated = StringGenerator.generateUsingRegexpGen(new StringGenerator.GeneratorParams("^[a-zA-Z0-9]{5,10}$", 5, 10, "^[a-zA-Z0-9]{5,10}$"));
+
+        Assertions.assertThat(generated).matches("^[a-zA-Z0-9]{5,10}$").hasSizeBetween(5, 10);
+    }
 }

@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
 class StringMutationUtilsTest {
-    
+
     @Test
     void testExtractMutatedString() {
         String initial = "FAKE_FUZZ";
