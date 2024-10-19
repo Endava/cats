@@ -509,6 +509,9 @@ public abstract class JsonUtils {
      * @return true if the given property is cyclic with the given depth, false otherwise
      */
     public static boolean isCyclicReference(String currentProperty, int depth) {
+        if (currentProperty == null) {
+            return false;
+        }
         String[] properties = Arrays.stream(currentProperty.split("[#_]", -1)).filter(StringUtils::isNotBlank).toArray(String[]::new);
 
         if (properties.length < depth) {
@@ -536,6 +539,7 @@ public abstract class JsonUtils {
      * @return a new payload starting with the initial JSON as base and with the new key and value
      */
     public static String replaceNewElement(String initialPayload, String pathToKey, String newKey, Object newValue) {
+        LOGGER.debug("Adding new element {} with value {} to path {}", newKey, newValue, pathToKey);
         DocumentContext documentContext = JsonPath.parse(initialPayload);
         documentContext.put(pathToKey, sanitizeToJsonPath(newKey), newValue);
 
@@ -635,6 +639,9 @@ public abstract class JsonUtils {
      * @return a boolean as true or false
      */
     public static boolean isCyclicSchemaReference(String currentProperty, Map<String, String> schemaRefMap, int depth) {
+        if (currentProperty == null) {
+            return false;
+        }
         String[] properties = Arrays.stream(currentProperty.split("#", -1)).filter(StringUtils::isNotBlank).toArray(String[]::new);
 
         for (int i = 0; i < properties.length - 1; i++) {
