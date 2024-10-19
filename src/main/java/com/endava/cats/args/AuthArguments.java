@@ -42,7 +42,7 @@ public class AuthArguments {
 
     @CommandLine.Option(names = {"--authRefreshScript", "--ars"},
             description = "Script to get executed after --authRefreshInterval in order to get new auth credentials. " +
-                    "The script will replace any headers that have @|bold,underline aut_script|@ as value. " +
+                    "The script will replace any headers that have @|bold,underline auth_script|@ as value. " +
                     "If a --authRefreshInterval is not supplied, but a script is, the script " +
                     "will be used to get the initial auth credentials.")
     private String authRefreshScript = "";
