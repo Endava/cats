@@ -297,7 +297,7 @@ public class StringGenerator {
     }
 
 
-    private static String generateUsingRegexpGen(GeneratorParams generatorParams) {
+    static String generateUsingRegexpGen(GeneratorParams generatorParams) {
         String pattern = generatorParams.cleanedPattern();
         String originalPattern = generatorParams.originalPattern();
         int min = generatorParams.min;
