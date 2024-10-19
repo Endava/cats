@@ -124,6 +124,9 @@ public class CatsGlobalContext {
      * @return the schema if found, null otherwise
      */
     public Schema<?> getSchemaFromReference(String reference) {
+        if (reference == null) {
+            return null;
+        }
         Schema<?> result = getSchemaFromSimpleReferenceName(reference);
 
         if (reference.startsWith("#/components") || reference.startsWith("#/definitions")) {
@@ -143,7 +146,7 @@ public class CatsGlobalContext {
             result = getSchemaFromReference(result.get$ref());
         }
 
-        this.schemaMap.putIfAbsent(CatsModelUtils.getSimpleRef(reference), result);
+        this.schemaMap.putIfAbsent(reference, result);
         return result;
     }
 
