@@ -42,7 +42,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_ENUMS_USING_TO_STRING;
 
 /**
- * A modified version of {@code io.swagger.codegen.examples.ExampleGenerator} that takes into consideration several other request
+ * A modified version of {@code io.swagger.codegen.examples.OpenAPIModelGeneratorV2} that takes into consideration several other request
  * setups including complex objects and array of objects.
  * <p>
  * This is a <b>stateful</b> object. Don't use it through dependency injection.

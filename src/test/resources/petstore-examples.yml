@@ -339,6 +339,7 @@ components:
           pattern: "[0-9]+"
         owner:
           type: object
+          additionalProperties: true
         previousOwner:
           type: object
           example: "prev owner"

@@ -10,6 +10,7 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.openapi.OpenAPIModelGenerator;
+import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonSet;
 import com.endava.cats.util.JsonUtils;
@@ -492,7 +493,7 @@ public class FuzzingDataFactory {
     }
 
     private GenerationResult getRequestPayloadsSamples(MediaType mediaType, String reqSchemaName) {
-        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.examplesFlags(),
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, processingArguments.examplesFlags(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE);
 
         /* Event though the media type might have an example set, we still generate samples in order to properly map each field with its corresponding data type*/
@@ -521,7 +522,7 @@ public class FuzzingDataFactory {
         return new GenerationResult(result, generator.getRequestDataTypes());
     }
 
-    private List<String> generateSample(String reqSchemaName, OpenAPIModelGenerator generator, boolean createXxxOfCombinations) {
+    private List<String> generateSample(String reqSchemaName, OpenAPIModelGeneratorV2 generator, boolean createXxxOfCombinations) {
         String onlySchemaName = CatsModelUtils.getSimpleRef(reqSchemaName);
         if (globalContext.isExampleAlreadyGenerated(onlySchemaName) && processingArguments.isCachePayloads()) {
             logger.debug("Example for schema name {} already generated, using cached value", onlySchemaName);
@@ -530,37 +531,34 @@ public class FuzzingDataFactory {
 
         long t0 = System.currentTimeMillis();
         logger.debug("Starting to generate example for schema name {}", reqSchemaName);
-        Map<String, String> examples = generator.generate(reqSchemaName);
+        List<String> examples = generator.generate(reqSchemaName);
         logger.debug("Finish generating example for schema name {}, took {}ms", reqSchemaName, (System.currentTimeMillis() - t0));
 
-        if (examples.isEmpty()) {
-            throw new IllegalArgumentException("Scheme is not declared: " + reqSchemaName);
-        }
-        String payloadSample = examples.get("example");
-
-        payloadSample = this.squashAllOfElements(payloadSample);
-        List<String> payloadCombinationsBasedOnOneOfAndAnyOf = List.of(payloadSample);
-
-        if (createXxxOfCombinations) {
-            payloadCombinationsBasedOnOneOfAndAnyOf = this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
-        }
-
-        if (processingArguments.isFilterXxxFromRequestPayloads()) {
-            payloadCombinationsBasedOnOneOfAndAnyOf = payloadCombinationsBasedOnOneOfAndAnyOf
-                    .stream()
-                    .filter(payload -> !(payload.contains("ANY_OF") || payload.contains("ONE_OF")))
-                    .toList();
-        }
+//        String payloadSample = examples.get("example");
+//
+//        payloadSample = this.squashAllOfElements(payloadSample);
+//        List<String> payloadCombinationsBasedOnOneOfAndAnyOf = List.of(payloadSample);
+//
+//        if (createXxxOfCombinations) {
+//            payloadCombinationsBasedOnOneOfAndAnyOf = this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
+//        }
+//
+//        if (processingArguments.isFilterXxxFromRequestPayloads()) {
+//            payloadCombinationsBasedOnOneOfAndAnyOf = payloadCombinationsBasedOnOneOfAndAnyOf
+//                    .stream()
+//                    .filter(payload -> !(payload.contains("ANY_OF") || payload.contains("ONE_OF")))
+//                    .toList();
+//        }
 
         if (processingArguments.getLimitXxxOfCombinations() > 0) {
-            int maxCombinations = Math.min(processingArguments.getLimitXxxOfCombinations(), payloadCombinationsBasedOnOneOfAndAnyOf.size());
-            return payloadCombinationsBasedOnOneOfAndAnyOf.stream()
+            int maxCombinations = Math.min(processingArguments.getLimitXxxOfCombinations(), examples.size());
+            return examples.stream()
                     .limit(maxCombinations)
                     .toList();
         }
         logger.debug("Cached example for schema name {}", reqSchemaName);
-        globalContext.addGeneratedExample(reqSchemaName, payloadCombinationsBasedOnOneOfAndAnyOf);
-        return payloadCombinationsBasedOnOneOfAndAnyOf;
+        globalContext.addGeneratedExample(reqSchemaName, examples);
+        return examples;
     }
 
     /**
@@ -951,7 +949,7 @@ public class FuzzingDataFactory {
      */
     private Map<String, List<String>> getResponsePayloads(Operation operation) {
         Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        OpenAPIModelGenerator generator = new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.examplesFlags(),
+        OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, processingArguments.examplesFlags(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), RESPONSES_ARRAY_SIZE);
 
         for (String responseCode : operation.getResponses().keySet()) {
@@ -971,7 +969,7 @@ public class FuzzingDataFactory {
         return responses;
     }
 
-    private List<String> getExamplesFromApiResponseForResponseCode(OpenAPIModelGenerator generator, Operation operation, String responseCode) {
+    private List<String> getExamplesFromApiResponseForResponseCode(OpenAPIModelGeneratorV2 generator, Operation operation, String responseCode) {
         ApiResponse apiResponse = operation.getResponses().get(responseCode);
         if (apiResponse.get$ref() != null) {
             Object potentialApiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
@@ -1068,7 +1066,7 @@ public class FuzzingDataFactory {
 
         parameter.setSchema(schema);
 
-        List<String> examples = this.generateSample(schema.get$ref(), new OpenAPIModelGenerator(globalContext, validDataFormat, processingArguments.examplesFlags(),
+        List<String> examples = this.generateSample(schema.get$ref(), new OpenAPIModelGeneratorV2(globalContext, validDataFormat, processingArguments.examplesFlags(),
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE), false);
 
         schema.setExample(examples.getFirst());

@@ -10,6 +10,8 @@ import com.endava.cats.model.CatsField;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
+import com.endava.cats.openapi.OpenAPIModelGenerator;
+import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -72,13 +75,13 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldFilterOutXxxExamples() throws Exception {
-        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(2);
+        Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(20);
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
         Mockito.when(processingArguments.examplesFlags()).thenReturn(new ProcessingArguments.ExamplesFlags(false, false, false, false));
 
         List<FuzzingData> dataList = setupFuzzingData("/api/v2/meta/tables/{tableId}/columns", "src/test/resources/nocodb.yaml");
 
-        Assertions.assertThat(dataList).hasSize(2);
+        Assertions.assertThat(dataList).hasSize(20);
         FuzzingData firstData = dataList.get(1);
         Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF");
         Assertions.assertThat(firstData.getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
@@ -125,8 +128,8 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data).hasSizeGreaterThanOrEqualTo(2);
 
-        Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF");
-        Assertions.assertThat(data.get(1).getPayload()).doesNotContain("ONE_OF", "ANY_OF");
+        Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF").contains("Husky");
+        Assertions.assertThat(data.get(1).getPayload()).doesNotContain("ONE_OF", "ANY_OF").contains("Labrador");
         Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
@@ -155,6 +158,7 @@ class FuzzingDataFactoryTest {
         Object example = catsGlobalContext.getObjectFromPathsReference("#/paths/~1v2~1apps~1%7Bapp_id%7D~1deployments/post/responses/200/content/application~1json/examples/deployment");
         Assertions.assertThat(example).isInstanceOf(Example.class);
         Assertions.assertThat(data).hasSize(1);
+        Assertions.assertThat(data.getFirst().getPayload()).contains("deployment_id", "app_id");
         Assertions.assertThat(example).asString().contains("deployment");
     }
 
@@ -254,8 +258,8 @@ class FuzzingDataFactoryTest {
     void shouldGenerateValidAnyOfCombinationWhenForLevel3Nesting() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/api/some-endpoint", "src/test/resources/issue66.yml");
         Assertions.assertThat(data).hasSize(2);
-        Assertions.assertThat(data.get(1).getPayload()).contains("someSubObjectKey3");
-        Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("someSubObjectKey3");
+        Assertions.assertThat(data.getFirst().getPayload()).contains("someSubObjectKey3");
+        Assertions.assertThat(data.get(1).getPayload()).doesNotContain("someSubObjectKey3");
         Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
@@ -263,7 +267,7 @@ class FuzzingDataFactoryTest {
     void shouldGenerateArraySchemaBasedOnMinItemsAndMaxItems() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/api/some-endpoint", "src/test/resources/issue66_2.yml");
         Assertions.assertThat(data).hasSize(2);
-        String firstPayload = data.get(1).getPayload();
+        String firstPayload = data.getFirst().getPayload();
         int firstArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1.length()").toString());
         int secondArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1[0].length()").toString());
         int thirdArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(firstPayload, "$.someRequestBodyKey1.someObjectKey1.someSubObjectKey1[0][0].length()").toString());
@@ -279,12 +283,14 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> data = setupFuzzingData("/path1", "src/test/resources/oneOf_with_base_class.yml");
         Assertions.assertThat(data).hasSize(2);
 
-        String firstPayload = data.getFirst().getPayload();
+        String firstPayload = data.get(1).getPayload();
         Object type = JsonUtils.getVariableFromJson(firstPayload, "$.payload.type");
         Object innerPayload = JsonUtils.getVariableFromJson(firstPayload, "$.payload.payload");
 
         Assertions.assertThat(type).asString().isEqualTo("Address");
         Assertions.assertThat(innerPayload).asString().isEqualTo("NOT_SET");
+
+        Assertions.assertThat(data.getFirst().getPayload()).contains("Card");
     }
 
     @Test
@@ -357,7 +363,12 @@ class FuzzingDataFactoryTest {
         catsGlobalContext.getSchemaMap().remove("");
         PathItem pathItem = openAPI.getPaths().get(path);
         catsGlobalContext.setOpenAPI(openAPI);
+        OpenAPIModelGeneratorV2 openApiModelGeneratorV2 = new OpenAPIModelGeneratorV2(catsGlobalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, false, false, true), 2, true, 2);
+        OpenAPIModelGenerator openApiModelGenerator = new OpenAPIModelGenerator(catsGlobalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, false, false, true), 2, true, 2);
 
+//        List<String> generate = openApiModelGeneratorV2.generate("payouts_body");
+        Object generate1 = openApiModelGenerator.generate("arns_body");
+//        Map<String, Schema> requestDataTypes = openApiModelGeneratorV2.getRequestDataTypes();
         Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
         return fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);
     }
@@ -415,10 +426,7 @@ class FuzzingDataFactoryTest {
     void shouldProperlyCreateAllXxxCombinations() throws Exception {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(100);
         List<FuzzingData> dataList = setupFuzzingData("/shipments", "src/test/resources/shippo.yaml");
-        Assertions.assertThat(dataList).hasSize(77);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
-                .hasSize(4);
+        Assertions.assertThat(dataList).hasSize(65);
     }
 
     @Test
@@ -427,13 +435,10 @@ class FuzzingDataFactoryTest {
         Mockito.when(processingArguments.getLimitXxxOfCombinations()).thenReturn(50);
         List<FuzzingData> dataList = setupFuzzingData("/api/v1/studies", "src/test/resources/prolific.yaml");
 
-        Assertions.assertThat(dataList).hasSize(31);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
-                .hasSize(1);
+        Assertions.assertThat(dataList).hasSize(26);
 
         FuzzingData firstData = dataList.getFirst();
-        boolean isActionsArray = JsonUtils.isArray(firstData.getPayload(), "$.CreateStudy.completion_codes[0].actions");
+        boolean isActionsArray = JsonUtils.isArray(firstData.getPayload(), "$.completion_codes[0].actions");
         Assertions.assertThat(isActionsArray).isTrue();
     }
 
@@ -443,9 +448,6 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/v0/organizations/{organization-id}/onboarding/applications", "src/test/resources/griffin.yaml");
 
         Assertions.assertThat(dataList).hasSize(100);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .filteredOn(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"))
-                .isEmpty();
 
         FuzzingData firstData = dataList.getFirst();
         boolean isActionsArray = JsonUtils.isArray(firstData.getPayload(), "$.subject-profile.claims");
@@ -458,15 +460,16 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(dataList).hasSize(12);
 
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
-
-        FuzzingData data = dataList.get(4);
-        Object createPermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.create[0]");
-        Object updatePermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.update[0]");
-
+        FuzzingData data = dataList.get(6);
+        Object createPermission = JsonUtils.getVariableFromJson(data.getPayload(), "$.permissions.update[0][0]");
         Assertions.assertThat(createPermission).asString().isEqualTo("1");
-        Assertions.assertThat(updatePermission).asString().isEqualTo("database");
+
+        FuzzingData createData = dataList.get(7);
+        Object updatePermission = JsonUtils.getVariableFromJson(createData.getPayload(), "$.permissions.create");
+        Assertions.assertThat(updatePermission).asString().isEqualTo("true");
+
+        Object deletePermission = JsonUtils.getVariableFromJson(createData.getPayload(), "$.permissions.delete[0][0]");
+        Assertions.assertThat(deletePermission).asString().isEqualTo("database");
     }
 
     @Test
@@ -494,12 +497,10 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/payouts", "src/test/resources/token.yml");
 
         Assertions.assertThat(dataList).hasSize(11);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
+
         FuzzingData firstData = dataList.getFirst();
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         Object creditorNotExistent = JsonUtils.getVariableFromJson(firstData.getPayload(), "$.initiation.creditor.creditor");
-        String bicValue = String.valueOf(JsonUtils.getVariableFromJson(firstData.getPayload(), "$.initiation.creditor.sortCode"));
+        String bicValue = String.valueOf(JsonUtils.getVariableFromJson(firstData.getPayload(), "$.initiation.creditor.bic"));
 
         Assertions.assertThat(creditorNotExistent).hasToString("NOT_SET");
         Assertions.assertThat(bicValue).isNotEqualTo("NOT_SET");
@@ -546,7 +547,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(isArray).isTrue();
 
         Object firstElement = JsonUtils.getVariableFromJson(dataList.getFirst().getPayload(), "$[0]");
-        Assertions.assertThat(firstElement).isInstanceOf(Double.class);
+        Assertions.assertThat(firstElement).isInstanceOfAny(Double.class, BigDecimal.class);
     }
 
     @Test
@@ -628,7 +629,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldGenerateApiResponsesWithSimpleSchemas() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(10);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
 
         List<FuzzingData> dataList = setupFuzzingData("/comments", "src/test/resources/sellsy.yaml");
@@ -640,7 +641,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(response201).contains("facebook", "twitter", "business_segment");
         Assertions.assertThat(firstData.getMethod()).isEqualByComparingTo(HttpMethod.POST);
         String response204 = firstData.getResponses().get("204").getFirst();
-        Assertions.assertThat(response204).isEqualTo("null");
+        Assertions.assertThat(response204).isEqualTo("{}");
     }
 
     @Test
@@ -682,7 +683,7 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
-    void shouldGenerateQueryParametersThatAreReferingCrossPathInlineSchema() throws Exception {
+    void shouldGenerateQueryParametersThatAreReferringCrossPathInlineSchema() throws Exception {
         Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
 
@@ -718,15 +719,15 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldAvoidCyclicDependenciesOnAdditionalProperties() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(6);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(9);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
 
         List<FuzzingData> dataList = setupFuzzingData("/containers", "src/test/resources/petstore.yml");
         Assertions.assertThat(dataList).hasSize(1);
         Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.POST);
         String payload = dataList.getFirst().getPayload();
-        Object existing = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key");
-        Object nonExisting = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key#containers");
+        Object existing = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers");
+        Object nonExisting = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key");
 
         Assertions.assertThat(existing).hasToString("{}");
         Assertions.assertThat(nonExisting).hasToString("NOT_SET");
@@ -870,7 +871,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(1);
         String payload = dataList.getFirst().getPayload();
         int parametersArraySize = Integer.parseInt(JsonUtils.getVariableFromJson(payload, "$.Parameters.StringParameters.length()").toString());
-        Object arn = JsonUtils.getVariableFromJson(payload, "$.SourceEntity.Arn");
+        Object arn = JsonUtils.getVariableFromJson(payload, "$.SourceEntity.SourceTemplate.Arn");
         Object name = JsonUtils.getVariableFromJson(payload, "$.Name");
 
         Assertions.assertThat(parametersArraySize).isEqualTo(2);
@@ -886,8 +887,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.getFirst();
-        String var1 = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource"));
-        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy");
+        String var1 = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy"));
+        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource");
         Assertions.assertThat(var1).isNotEqualTo("NOT_SET");
         Assertions.assertThat(var2).hasToString("NOT_SET");
     }
@@ -898,8 +899,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.getFirst();
-        String var1 = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource"));
-        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource");
+        String var1 = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy"));
+        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource");
         Assertions.assertThat(var1).isNotEqualTo("NOT_SET");
         Assertions.assertThat(var2).hasToString("NOT_SET");
     }

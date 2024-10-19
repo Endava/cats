@@ -1,11 +1,11 @@
 package com.endava.cats.context;
 
-import com.endava.cats.model.NoMediaType;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsConfiguration;
-import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.ProcessingError;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -127,19 +127,26 @@ public class CatsGlobalContext {
         if (reference == null) {
             return null;
         }
-        Schema<?> result = getSchemaFromSimpleReferenceName(reference);
+        Object resolvedObject = getSchemaFromSimpleReferenceName(reference);
 
         if (reference.startsWith("#/components") || reference.startsWith("#/definitions")) {
-            result = getSchemaFromComponentsDefinitions(reference);
+            resolvedObject = getSchemaFromComponentsDefinitions(reference);
         }
 
-        if (reference.startsWith("#/components") && result == null) {
-            result = (Schema<?>) getObjectFromPathsReference(reference);
+        if (reference.startsWith("#/components") && resolvedObject == null) {
+            resolvedObject = getObjectFromPathsReference(reference);
         }
 
         if (reference.contains("#/paths")) {
             String shortRef = reference.substring(reference.lastIndexOf("#/paths"));
-            result = (Schema<?>) getObjectFromPathsReference(shortRef);
+            resolvedObject = getObjectFromPathsReference(shortRef);
+        }
+
+        Schema<?> result = null;
+        if (resolvedObject instanceof Parameter parameter) {
+            result = parameter.getSchema();
+        } else {
+            result = (Schema<?>) resolvedObject;
         }
 
         if (result != null && result.get$ref() != null && !result.get$ref().endsWith(NoMediaType.EMPTY_BODY) && !result.get$ref().equals(reference)) {
@@ -230,7 +237,8 @@ public class CatsGlobalContext {
                 case Components components when "schemas".equals(finalPart) -> components.getSchemas();
                 case Components components when "parameters".equalsIgnoreCase(finalPart) -> components.getParameters();
                 case Components components when "headers".equalsIgnoreCase(finalPart) -> components.getHeaders();
-                case Components components when "requestBodies".equalsIgnoreCase(finalPart) -> components.getRequestBodies();
+                case Components components when "requestBodies".equalsIgnoreCase(finalPart) ->
+                        components.getRequestBodies();
                 case Components components when "examples".equalsIgnoreCase(finalPart) -> components.getExamples();
                 case Example example -> example.getValue();
                 case ObjectNode node -> node.get(finalPart);
