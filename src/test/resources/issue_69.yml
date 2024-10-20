@@ -50,6 +50,24 @@ components:
           type: string
 paths:
   /variant:
+    post:
+      summary: Create variant
+      description: Create variant
+      tags:
+          - Variant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Variant'
+      responses:
+        '200':
+          description: Create variant
+          content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Variant'
     get:
       summary: Get variant
       description: Get variant

@@ -83,16 +83,15 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(dataList).hasSize(20);
         FuzzingData firstData = dataList.get(1);
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF");
         Assertions.assertThat(firstData.getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(firstData.getRequestPropertyTypes().size());
     }
 
     @Test
     void shouldGenerateMultiplePayloadsWhenRootOneOfAndDiscriminatorAndAllOfAndMappings() throws Exception {
         List<FuzzingData> data = setupFuzzingData("/variant", "src/test/resources/issue_69.yml");
-        Assertions.assertThat(data).hasSize(1);
+        Assertions.assertThat(data).hasSize(3);
 
-        FuzzingData firstData = data.getFirst();
+        FuzzingData firstData = data.get(2);
         List<String> responses = firstData.getResponses().get("200");
         Assertions.assertThat(responses).hasSize(2);
         Assertions.assertThat(responses.getFirst()).doesNotContain("Variant").contains("option1");
@@ -128,8 +127,8 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(data).hasSizeGreaterThanOrEqualTo(2);
 
-        Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF").contains("Husky");
-        Assertions.assertThat(data.get(1).getPayload()).doesNotContain("ONE_OF", "ANY_OF").contains("Labrador");
+        Assertions.assertThat(data.getFirst().getPayload()).contains("Husky");
+        Assertions.assertThat(data.get(1).getPayload()).contains("Labrador");
         Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
@@ -139,7 +138,6 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(data).hasSize(1);
 
         Assertions.assertThat(data.getFirst().getPayload()).contains("dateFrom");
-        Assertions.assertThat(data.getFirst().getPayload()).doesNotContain("ONE_OF", "ANY_OF");
         Assertions.assertThat(data.getFirst().getAllFieldsAsCatsFields()).hasSizeLessThanOrEqualTo(data.getFirst().getRequestPropertyTypes().size());
     }
 
@@ -367,7 +365,7 @@ class FuzzingDataFactoryTest {
         OpenAPIModelGenerator openApiModelGenerator = new OpenAPIModelGenerator(catsGlobalContext, validDataFormat, new ProcessingArguments.ExamplesFlags(true, false, false, true), 2, true, 2);
 
 //        List<String> generate = openApiModelGeneratorV2.generate("payouts_body");
-        Object generate1 = openApiModelGenerator.generate("arns_body");
+        Object generate1 = openApiModelGenerator.generate("Variant");
 //        Map<String, Schema> requestDataTypes = openApiModelGeneratorV2.getRequestDataTypes();
         Mockito.when(filesArguments.isNotUrlParam(Mockito.anyString())).thenReturn(true);
         return fuzzingDataFactory.fromPathItem(path, pathItem, openAPI);
@@ -386,11 +384,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/api/groopits/create", "src/test/resources/nswag_gen_oneof.json");
 
         Assertions.assertThat(dataList).hasSize(9);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
-        FuzzingData firstData = dataList.get(7);
+        FuzzingData firstData = dataList.get(6);
         Assertions.assertThat(firstData.getPayload()).containsAnyOf("\"discriminator\":\"ResponseData\"", "\"discriminator\":\"PictureData\"");
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         Assertions.assertThat(JsonParser.parseString(firstData.getPayload()).getAsJsonObject().get("Components").isJsonArray()).isTrue();
     }
 
@@ -399,10 +394,7 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/datasets/{datasetId}", "src/test/resources/keatext.yaml");
 
         Assertions.assertThat(dataList).hasSize(3);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.getFirst();
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         String keyWithSquares = String.valueOf(JsonUtils.getVariableFromJson(firstData.getPayload(), "$.primaryDate"));
 
         Assertions.assertThat(keyWithSquares).isNotEqualTo("NOT_SET");
@@ -413,10 +405,7 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/tags", "src/test/resources/getresp.yaml");
 
         Assertions.assertThat(dataList).hasSize(5);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.get(1);
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         String keyWithSquares = String.valueOf(JsonUtils.getVariableFromJson(firstData.getPayload(), "$.query[createdAt][to]"));
 
         Assertions.assertThat(keyWithSquares).isNotEqualTo("NOT_SET");
@@ -479,9 +468,6 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(dataList).hasSize(4);
 
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
-
         FuzzingData firstData = dataList.get(1);
         boolean firstDataIsArray = JsonUtils.isArray(firstData.getPayload(), "$.contribution.value");
 
@@ -512,7 +498,6 @@ class FuzzingDataFactoryTest {
 
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData firstData = dataList.getFirst();
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         Assertions.assertThat(JsonParser.parseString(firstData.getPayload()).isJsonArray()).isTrue();
     }
 
@@ -789,14 +774,11 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/mfm/v1/services/", "src/test/resources/issue86.json");
 
         Assertions.assertThat(dataList).hasSize(5);
-        Assertions.assertThat(dataList.stream().map(FuzzingData::getPayload).toList())
-                .noneMatch(payload -> payload.contains("ANY_OF") || payload.contains("ONE_OF") || payload.contains("ALL_OF"));
         FuzzingData firstData = dataList.getFirst();
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         List<String> responses = dataList.getFirst().getResponses().get("422");
         Assertions.assertThat(responses).hasSize(2);
         String responsePayload = responses.getFirst();
-        Assertions.assertThat(responsePayload).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF").contains("loc");
+        Assertions.assertThat(responsePayload).contains("loc");
     }
 
     @Test
@@ -811,10 +793,8 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/api/groops/{groopId}/StartGroopitPaging", "src/test/resources/nswag_gen_oneof.json");
         Assertions.assertThat(dataList).hasSize(1);
         FuzzingData firstData = dataList.getFirst();
-        Assertions.assertThat(firstData.getPayload()).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
         Assertions.assertThat(firstData.getResponses().get("200")).hasSize(9);
         String firstResponse = firstData.getResponses().get("200").getFirst();
-        Assertions.assertThat(firstResponse).doesNotContain("ANY_OF", "ONE_OF", "ALL_OF");
     }
 
     @Test

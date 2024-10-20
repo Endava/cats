@@ -211,4 +211,36 @@ public abstract class CatsModelUtils {
                         schema.getItems() != null ||
                         !CollectionUtils.isEmpty(schema.getRequired()));
     }
+
+    public static boolean isAnyOf(Schema schema) {
+        return ModelUtils.isAnyOf(schema);
+    }
+
+    public static boolean isOneOf(Schema schema) {
+        return ModelUtils.isOneOf(schema);
+    }
+
+    public static boolean isAllOf(Schema schema) {
+        return ModelUtils.isAllOf(schema);
+    }
+
+    public static boolean isAllOfWithProperties(Schema schema) {
+        return ModelUtils.isAllOfWithProperties(schema);
+    }
+
+    public static List<Schema> getInterfaces(Schema schema) {
+        return ModelUtils.getInterfaces(schema);
+    }
+
+    public static Schema<?> getSchemaItems(Schema<?> schema) {
+        return ModelUtils.getSchemaItems(schema);
+    }
+
+    public static boolean isMapSchema(Schema<?> schema) {
+        return ModelUtils.isMapSchema(schema);
+    }
+
+    public static Schema getAdditionalProperties(Schema schema) {
+        return ModelUtils.getAdditionalProperties(schema);
+    }
 }
