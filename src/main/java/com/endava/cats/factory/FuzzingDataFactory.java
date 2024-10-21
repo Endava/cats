@@ -397,9 +397,7 @@ public class FuzzingDataFactory {
                     .filter(example -> example.get$ref() != null)
                     .map(example -> {
                         Example exampleFromSchemaMap = globalContext.getExampleMap().get(CatsModelUtils.getSimpleRef(example.get$ref()));
-                        if (exampleFromSchemaMap == null) {
-                            exampleFromSchemaMap = (Example) globalContext.getObjectFromPathsReference(example.get$ref());
-                        }
+
                         if (exampleFromSchemaMap == null && example.get$ref().contains("/value/")) {
                             //this might be a multi-level example something like: #/components/examples/JSON_WORKER_EXAMPLES/value/WORKER_COMPENSATION_PAYRATE_POST_PATCH
 
@@ -408,6 +406,11 @@ public class FuzzingDataFactory {
                                     .split("/", -1);
                             return ((ObjectNode) globalContext.getExampleMap().get(exampleKeys[0]).getValue()).get(exampleKeys[1]).get("value").toString();
                         }
+
+                        if (exampleFromSchemaMap == null) {
+                            exampleFromSchemaMap = (Example) globalContext.getObjectFromPathsReference(example.get$ref());
+                        }
+
                         return exampleFromSchemaMap != null ? exampleFromSchemaMap.getValue() : null;
                     })
                     .filter(Objects::nonNull)
