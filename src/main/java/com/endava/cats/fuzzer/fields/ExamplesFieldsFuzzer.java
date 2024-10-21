@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 
 /**
  * Fuzzer that sends examples from components.examples; from schema.example(s), MediaType.example(s) Example can be a ref.
@@ -41,23 +40,23 @@ public class ExamplesFieldsFuzzer implements Fuzzer {
     @Override
     public void fuzz(FuzzingData data) {
         Set<String> payloads = new HashSet<>();
-        Predicate<Object> removeCatsComposition = example -> !example.toString().contains("_OF");
         payloads.add(Optional.ofNullable(data.getReqSchema().getExample())
-                .filter(removeCatsComposition)
-                .map(JsonUtils.GSON_NO_PRETTY_PRINTING::toJson).orElse(""));
-        payloads.addAll(
-                Optional.ofNullable(data.getReqSchema().getExamples())
-                        .orElse(Collections.emptyList())
-                        .stream()
-                        .filter(removeCatsComposition)
-                        .map(JsonUtils.GSON::toJson)
-                        .toList());
+                .map(JsonUtils::serialize)
+                .orElse(""));
+
+        payloads.addAll(Optional.ofNullable(data.getReqSchema().getExamples())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(JsonUtils::serialize)
+                .toList());
+
         payloads.addAll(data.getExamples()
                 .stream()
-                .filter(removeCatsComposition)
-                .map(JsonUtils.GSON::toJson)
+                .map(JsonUtils::serialize)
                 .toList());
         payloads.remove("");
+
+        logger.debug("Fuzzing the following examples: {}", payloads);
 
         for (String payload : payloads) {
             simpleExecutor.execute(SimpleExecutorContext
