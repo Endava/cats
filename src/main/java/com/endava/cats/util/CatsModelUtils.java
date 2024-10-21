@@ -35,7 +35,7 @@ public abstract class CatsModelUtils {
     }
 
     public static boolean isArraySchema(Schema<?> schema) {
-        return ModelUtils.isArraySchema(schema) || "array".equalsIgnoreCase(schema.getType());
+        return ModelUtils.isArraySchema(schema);
     }
 
     public static boolean isNumberSchema(Schema<?> schema) {
@@ -110,6 +110,14 @@ public abstract class CatsModelUtils {
             return ref;
         }
         return ref.substring(ref.lastIndexOf('/') + 1);
+    }
+
+    public static String getSimpleRefUsingOAT(String ref) {
+        return ModelUtils.getSimpleRef(ref);
+    }
+
+    public static boolean isObjectSchemaUsingOAT(Schema<?> schema) {
+        return ModelUtils.isObjectSchema(schema);
     }
 
     /**

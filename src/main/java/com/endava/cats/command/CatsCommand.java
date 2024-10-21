@@ -356,7 +356,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseSchemaExamples()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUsePropertyExamples()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseResponseBodyExamples()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseExamples()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseDefaults()).reset().bold());
         logger.config(ansi().bold().a("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, cachePayloads {}, limitXxxOfCombinations {}").reset().toString(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getSelfReferenceDepth()).reset().bold(),

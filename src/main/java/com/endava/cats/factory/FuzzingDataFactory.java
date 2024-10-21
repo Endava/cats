@@ -9,18 +9,12 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
-import com.endava.cats.openapi.OpenAPIModelGenerator;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.CatsModelUtils;
-import com.endava.cats.util.JsonSet;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -37,12 +31,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -52,11 +43,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.endava.cats.openapi.OpenAPIModelGenerator.SYNTH_SCHEMA_NAME;
+import static com.endava.cats.openapi.OpenAPIModelGeneratorV2.SYNTH_SCHEMA_NAME;
 
 /**
  * This class is responsible for creating {@link com.endava.cats.model.FuzzingData} objects based on the supplied OpenApi paths
@@ -497,7 +486,7 @@ public class FuzzingDataFactory {
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE);
 
         /* Event though the media type might have an example set, we still generate samples in order to properly map each field with its corresponding data type*/
-        List<String> result = this.generateSample(reqSchemaName, generator, true);
+        List<String> result = this.generateSample(reqSchemaName, generator);
         if (mediaType != null && CatsModelUtils.isArraySchema(mediaType.getSchema())) {
             /*when dealing with ArraySchemas we make sure we have 2 elements in the array*/
             result = result.stream()
@@ -511,7 +500,7 @@ public class FuzzingDataFactory {
 
         if (mediaType != null && processingArguments.isUseRequestBodyExamples()) {
             List<String> examples = extractExamples(mediaType).stream()
-                    .map(generator::serialize)
+                    .map(JsonUtils::serialize)
                     .filter(Objects::nonNull)
                     .toList();
             if (!examples.isEmpty()) {
@@ -522,7 +511,7 @@ public class FuzzingDataFactory {
         return new GenerationResult(result, generator.getRequestDataTypes());
     }
 
-    private List<String> generateSample(String reqSchemaName, OpenAPIModelGeneratorV2 generator, boolean createXxxOfCombinations) {
+    private List<String> generateSample(String reqSchemaName, OpenAPIModelGeneratorV2 generator) {
         String onlySchemaName = CatsModelUtils.getSimpleRef(reqSchemaName);
         if (globalContext.isExampleAlreadyGenerated(onlySchemaName) && processingArguments.isCachePayloads()) {
             logger.debug("Example for schema name {} already generated, using cached value", onlySchemaName);
@@ -534,22 +523,6 @@ public class FuzzingDataFactory {
         List<String> examples = generator.generate(reqSchemaName);
         logger.debug("Finish generating example for schema name {}, took {}ms", reqSchemaName, (System.currentTimeMillis() - t0));
 
-//        String payloadSample = examples.get("example");
-//
-//        payloadSample = this.squashAllOfElements(payloadSample);
-//        List<String> payloadCombinationsBasedOnOneOfAndAnyOf = List.of(payloadSample);
-//
-//        if (createXxxOfCombinations) {
-//            payloadCombinationsBasedOnOneOfAndAnyOf = this.getPayloadCombinationsBasedOnOneOfAndAnyOf(payloadSample);
-//        }
-//
-//        if (processingArguments.isFilterXxxFromRequestPayloads()) {
-//            payloadCombinationsBasedOnOneOfAndAnyOf = payloadCombinationsBasedOnOneOfAndAnyOf
-//                    .stream()
-//                    .filter(payload -> !(payload.contains("ANY_OF") || payload.contains("ONE_OF")))
-//                    .toList();
-//        }
-
         if (processingArguments.getLimitXxxOfCombinations() > 0) {
             int maxCombinations = Math.min(processingArguments.getLimitXxxOfCombinations(), examples.size());
             return examples.stream()
@@ -559,322 +532,6 @@ public class FuzzingDataFactory {
         logger.debug("Cached example for schema name {}", reqSchemaName);
         globalContext.addGeneratedExample(reqSchemaName, examples);
         return examples;
-    }
-
-    /**
-     * When we deal with AnyOf or OneOf data types, we need to create multiple payloads based on the number of subtypes defined within the contract. This method will return all these combinations
-     * based on the keywords 'ANY_OF' and 'ONE_OF' generated by the OpenAPIModelGenerator.
-     *
-     * @param initialPayload initial Payload including ONE_OF and ANY_OF information
-     * @return a list of Payload associated with each ANY_OF, ONE_OF combination
-     */
-    private List<String> getPayloadCombinationsBasedOnOneOfAndAnyOf(String initialPayload) {
-        List<String> result = new ArrayList<>();
-        JsonElement jsonElement = JsonParser.parseString(initialPayload);
-
-        if (jsonElement.isJsonArray()) {
-            result = this.buildArray(this.addNewCombination(jsonElement.getAsJsonArray().get(0)));
-        }
-        if (jsonElement.isJsonObject()) {
-            result = this.addNewCombination(jsonElement);
-        }
-        if (result.isEmpty()) {
-            result.add(initialPayload);
-        }
-
-        return result;
-    }
-
-    private List<String> buildArray(List<String> singleElements) {
-        return singleElements
-                .stream()
-                .map(element -> {
-                    JsonElement jsonElement = JsonUtils.parseAsJsonElement(element);
-                    return JsonUtils.GSON.toJson(List.of(jsonElement, jsonElement));
-                })
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    /**
-     * This gets all possible ONE_OF and ANY_OF combinations, including combinations between multiple ONE_OF/ANY_OF.
-     *
-     * @param jsonElement the initial JSON payload
-     * @return a list with all possible ONE_OF and ANY_OF combinations based on the initial JSON payload
-     */
-    private List<String> addNewCombination(JsonElement jsonElement) {
-        Set<String> result = new TreeSet<>();
-        Deque<JsonElement> stack = new ArrayDeque<>();
-        JsonSet visited = new JsonSet();
-
-        stack.push(jsonElement);
-
-        while (!stack.isEmpty()) {
-            JsonElement current = stack.pop();
-            String currentJson = current.toString();
-
-            if (visited.contains(currentJson)) {
-                continue; // Skip if already visited to avoid cycles
-            }
-
-            result.add(currentJson);
-            visited.add(currentJson);
-
-            Map<String, Map<String, JsonElement>> anyOfOrOneOfElements = getAnyOrOneOffElements("$", current);
-            anyOfOrOneOfElements = joinCommonOneAndAnyOfs(anyOfOrOneOfElements);
-
-            for (Map.Entry<String, Map<String, JsonElement>> entry : anyOfOrOneOfElements.entrySet()) {
-                createXxxOfCombinations(entry, result);
-
-                List<String> interimList = result.stream()
-                        .filter(json -> !json.contains(ANY_OF) && !json.contains(ONE_OF))
-                        .toList();
-
-                if (interimList.size() >= processingArguments.getLimitXxxOfCombinations()) {
-                    return interimList;
-                }
-
-                // Add elements to the stack for further processing
-                result.stream()
-                        .filter(json -> json.contains(ANY_OF) || json.contains(ONE_OF))
-                        .map(JsonParser::parseString)
-                        .forEach(stack::push);
-            }
-        }
-
-        return new ArrayList<>(result);
-    }
-
-    private void createXxxOfCombinations(Map.Entry<String, Map<String, JsonElement>> entry, Set<String> result) {
-        String pathKey = entry.getKey();
-        Map<String, JsonElement> anyOfOrOneOf = entry.getValue();
-        List<String> interimCombinationList = new ArrayList<>(result).stream()
-                .limit(Math.min(processingArguments.getLimitXxxOfCombinations(), result.size()))
-                .collect(Collectors.toCollection(ArrayList::new));
-
-        result.clear();
-        for (Map.Entry<String, JsonElement> xxxOfElement : anyOfOrOneOf.entrySet()) {
-            String key = xxxOfElement.getKey();
-            JsonElement value = xxxOfElement.getValue();
-            for (String payload : interimCombinationList) {
-                if (payload.contains(ANY_OF) || payload.contains(ONE_OF)) {
-                    result.add(JsonUtils.createValidOneOfAnyOfNode(payload, pathKey, key, String.valueOf(value), anyOfOrOneOf.keySet()));
-                } else {
-                    result.add(payload);
-                }
-            }
-        }
-    }
-
-    private Map<String, Map<String, JsonElement>> joinCommonOneAndAnyOfs(Map<String, Map<String, JsonElement>> startingOneAnyOfs) {
-        Set<String> keySet = startingOneAnyOfs.entrySet()
-                .stream()
-                .collect(Collectors.groupingBy(entry -> {
-                    if (entry.getKey().contains("_OF#array[*]")) {
-                        return entry.getKey().substring(0, entry.getKey().indexOf(OF) - 3) + ARRAY_WILDCARD;
-                    }
-                    if (entry.getKey().contains(OF)) {
-                        return entry.getKey().substring(0, entry.getKey().indexOf(OF) - 3);
-                    }
-                    return entry.getKey();
-                })).keySet()
-                .stream()
-                .map(entry -> entry.replaceAll("\\.+$", ""))
-                .collect(Collectors.toSet());
-
-        List<Map<String, Map<String, JsonElement>>> listOfMap = keySet.stream()
-                .map(key -> startingOneAnyOfs
-                        .entrySet()
-                        .stream()
-                        .filter(
-                                entry -> (entry.getKey().startsWith(key) && isNotXxxOfArray(entry.getKey(), key))
-                                        || (key.endsWith(ARRAY_WILDCARD) && !isNotXxxOfArray(entry.getKey(), key.substring(0, key.length() - 3)))
-                        )
-                        .collect(Collectors.toMap(stringMapEntry -> key, Map.Entry::getValue, (map1, map2) -> {
-                            Map<String, JsonElement> newMap = new HashMap<>();
-                            newMap.putAll(map1);
-                            newMap.putAll(map2);
-                            return newMap;
-                        }))).toList();
-
-
-        Map<String, Map<String, JsonElement>> groupedKeymap = listOfMap.stream().flatMap(m -> m.entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        Map.Entry::getValue));
-
-        Set<String> nonArrayKeys = groupedKeymap.keySet().stream()
-                .filter(key -> !key.endsWith(ARRAY_WILDCARD))
-                .collect(Collectors.toSet());
-
-        for (String nonArrayKey : nonArrayKeys) {
-            if (groupedKeymap.containsKey(nonArrayKey + ARRAY_WILDCARD)) {
-                Map<String, JsonElement> newArrayMap = new HashMap<>(groupedKeymap.get(nonArrayKey));
-                KeyValuePair<String, JsonElement> existingValue = this.getExistingValue(startingOneAnyOfs, nonArrayKey);
-
-                newArrayMap.put(existingValue.getKey(), existingValue.getValue());
-                groupedKeymap.put(nonArrayKey, newArrayMap);
-
-                Map<String, JsonElement> keyMap = new HashMap<>(groupedKeymap.getOrDefault(nonArrayKey + ARRAY_WILDCARD, Map.of()));
-                keyMap.putAll(newArrayMap);
-                groupedKeymap.put(nonArrayKey + ARRAY_WILDCARD, keyMap);
-            }
-        }
-
-        if (groupedKeymap.isEmpty()) {
-            return startingOneAnyOfs;
-        }
-        return groupedKeymap;
-    }
-
-    private KeyValuePair<String, JsonElement> getExistingValue(Map<String, Map<String, JsonElement>> startingOneAnyOfs, String nonArrayKey) {
-        String keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + ANY_OF_ARRAY)).findFirst().orElse(null);
-        String keyOfPair;
-        JsonElement value;
-        if (keyToGet != null) {
-            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + ANY_OF_ARRAY;
-        } else {
-            keyToGet = startingOneAnyOfs.keySet().stream().filter(key -> key.startsWith(nonArrayKey + ONE_OF_ARRAY)).findFirst().orElse("");
-            keyOfPair = nonArrayKey.substring(nonArrayKey.lastIndexOf(".") + 1) + ONE_OF_ARRAY;
-        }
-        value = Optional.ofNullable(startingOneAnyOfs.get(keyToGet)).orElse(Map.of()).get(JsonUtils.getReplacementKey(keyToGet));
-
-        return new KeyValuePair<>(keyOfPair, value);
-    }
-
-    private boolean isNotXxxOfArray(String iteratingKey, String mainKey) {
-        return !iteratingKey.startsWith(mainKey + ANY_OF_ARRAY) && !iteratingKey.startsWith(mainKey + ONE_OF_ARRAY);
-    }
-
-
-    private Map<String, Map<String, JsonElement>> getAnyOrOneOffElements(String jsonElementKey, JsonElement jsonElement) {
-        Map<String, Map<String, JsonElement>> anyOrOneOfs = new HashMap<>();
-        JsonObject jsonObject;
-        if (jsonElement.isJsonObject()) {
-            jsonObject = jsonElement.getAsJsonObject();
-            for (Map.Entry<String, JsonElement> elementEntry : jsonObject.entrySet()) {
-                if (isNotNullAndNonPrimitiveArray(elementEntry) && isAnyOrOneOfInChildren(elementEntry.getValue())) {
-                    anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createArrayKey(jsonElementKey, elementEntry.getKey()), elementEntry.getValue().getAsJsonArray().get(0)));
-                } else if (isNotNullAndNonPrimitiveArray(elementEntry) && isXxxOfInString(elementEntry.getKey()) && "$".equals(jsonElementKey)) {
-                    anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), Map.of(elementEntry.getKey(), elementEntry.getValue().getAsJsonArray()), this::mergeMaps);
-                } else if (isNotNullAndNonPrimitiveArray(elementEntry) && isXxxOfInString(elementEntry.getKey())) {
-                    anyOrOneOfs.merge(this.createArrayKey(jsonElementKey, elementEntry.getKey()), Map.of(elementEntry.getKey(), elementEntry.getValue().getAsJsonArray().get(0)), this::mergeMaps);
-                } else if (isXxxOfInString(elementEntry.getKey())) {
-                    anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
-                            Map.of(elementEntry.getKey(), elementEntry.getValue()), this::mergeMaps);
-                } else if (isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ONE_OF) || isJsonValueOf(elementEntry.getValue(), elementEntry.getKey() + ANY_OF)) {
-                    anyOrOneOfs.merge(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()),
-                            elementEntry.getValue().getAsJsonObject().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)), this::mergeMaps);
-                } else if (isAnyOrOneOfInChildren(elementEntry.getValue())) {
-                    anyOrOneOfs.putAll(this.getAnyOrOneOffElements(this.createSimpleElementPath(jsonElementKey, elementEntry.getKey()), elementEntry.getValue()));
-                }
-            }
-        } else if (jsonElement.isJsonArray()) {
-            JsonArray ja = jsonElement.getAsJsonArray();
-            if (!ja.isEmpty() && !ja.get(0).isJsonNull() && !ja.get(0).isJsonPrimitive()) {
-                anyOrOneOfs.putAll(getAnyOrOneOffElements(jsonElementKey, ja.get(0)));
-            }
-        }
-
-        return anyOrOneOfs;
-    }
-
-    private boolean isXxxOfInString(String toCheck) {
-        return toCheck.contains(ONE_OF) || toCheck.contains(ANY_OF);
-    }
-
-    private static boolean isNotNullAndNonPrimitiveArray(Map.Entry<String, JsonElement> elementEntry) {
-        return elementEntry.getValue().isJsonArray() && !elementEntry.getValue().getAsJsonArray().isEmpty() &&
-                !elementEntry.getValue().getAsJsonArray().get(0).isJsonNull();
-    }
-
-    private boolean isJsonValueOf(JsonElement element, String startKey) {
-        if (element.isJsonObject()) {
-            Set<String> jsonKeySet = element.getAsJsonObject().keySet();
-            return !jsonKeySet.isEmpty() && jsonKeySet.stream().allMatch(key -> key.startsWith(startKey));
-        }
-        return false;
-    }
-
-    private Map<String, JsonElement> mergeMaps(Map<String, JsonElement> firstMap, Map<String, JsonElement> secondMap) {
-        Map<String, JsonElement> newMap = new HashMap<>();
-        newMap.putAll(firstMap);
-        newMap.putAll(secondMap);
-
-        return newMap;
-    }
-
-    /**
-     * Creates a fully qualified Json path.
-     *
-     * @param jsonElementKey the initial path
-     * @param elementEntry   the next element path
-     * @return a fully qualified JsonPath
-     */
-    private String createSimpleElementPath(String jsonElementKey, String elementEntry) {
-        return jsonElementKey + "." + elementEntry;
-    }
-
-    private String createArrayKey(String jsonElementKey, String nextKey) {
-        return jsonElementKey + "." + nextKey + ARRAY_WILDCARD;
-    }
-
-    private boolean isAnyOrOneOfInChildren(JsonElement element) {
-        String elementAsString = element.toString();
-
-        return Stream.of(ANY_OF, ONE_OF).anyMatch(elementAsString::contains);
-    }
-
-    private String squashAllOfElements(String payloadSample) {
-        JsonElement jsonElement = JsonParser.parseString(payloadSample);
-        JsonElement newElement = this.squashAllOf(jsonElement);
-
-        return newElement.toString();
-    }
-
-    /**
-     * When a sample payload is created by the OpenAPIModelGenerator, the ALL_OF elements are marked with the ALL_OF json key.
-     * We now make sure that we combine all these elements under one root element.
-     *
-     * @param element the current Json element
-     */
-    private JsonElement squashAllOf(JsonElement element) {
-        if (element.isJsonObject()) {
-            JsonObject originalObject = element.getAsJsonObject();
-            return buildNewObject(originalObject);
-        } else if (element.isJsonArray()) {
-            JsonArray originalArray = element.getAsJsonArray();
-            JsonArray newArray = new JsonArray();
-            for (JsonElement child : originalArray) {
-                newArray.add(squashAllOf(child));
-            }
-            return newArray;
-        } else {
-            return element;
-        }
-    }
-
-    @NotNull
-    private JsonObject buildNewObject(JsonObject originalObject) {
-        JsonObject newObject = new JsonObject();
-        for (String key : originalObject.keySet()) {
-            if (key.equalsIgnoreCase(ALL_OF) || key.endsWith("ALL_OF#null")) {
-                JsonElement jsonElement = originalObject.get(key);
-                if (jsonElement.isJsonObject()) {
-                    JsonObject allOfObject = originalObject.getAsJsonObject(key);
-                    mergeJsonObject(newObject, squashAllOf(allOfObject));
-                } else {
-                    newObject.add(key.substring(0, key.indexOf(ALL_OF)), squashAllOf(jsonElement));
-                }
-            } else if (!key.contains(ALL_OF)) {
-                newObject.add(key, squashAllOf(originalObject.get(key)));
-            }
-        }
-        return newObject;
-    }
-
-    private void mergeJsonObject(JsonObject original, JsonElement toMerge) {
-        for (Map.Entry<String, JsonElement> entry : toMerge.getAsJsonObject().entrySet()) {
-            original.add(entry.getKey(), entry.getValue());
-        }
     }
 
     private List<String> getRequestContentTypes(Operation operation, OpenAPI openAPI) {
@@ -953,14 +610,14 @@ public class FuzzingDataFactory {
                 processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), RESPONSES_ARRAY_SIZE);
 
         for (String responseCode : operation.getResponses().keySet()) {
-            List<String> openapiExamples = this.getExamplesFromApiResponseForResponseCode(generator, operation, responseCode);
+            List<String> openapiExamples = this.getExamplesFromApiResponseForResponseCode(operation, responseCode);
             if (!openapiExamples.isEmpty() && processingArguments.isUseResponseBodyExamples()) {
                 responses.put(responseCode, openapiExamples);
                 continue;
             }
             String responseSchemaRef = this.extractResponseSchemaRef(operation, responseCode);
             if (responseSchemaRef != null) {
-                List<String> samples = this.generateSample(responseSchemaRef, generator, processingArguments.isGenerateAllXxxCombinationsForResponses());
+                List<String> samples = this.generateSample(responseSchemaRef, generator);
                 responses.put(responseCode, samples);
             } else {
                 responses.put(responseCode, Collections.emptyList());
@@ -969,7 +626,7 @@ public class FuzzingDataFactory {
         return responses;
     }
 
-    private List<String> getExamplesFromApiResponseForResponseCode(OpenAPIModelGeneratorV2 generator, Operation operation, String responseCode) {
+    private List<String> getExamplesFromApiResponseForResponseCode(Operation operation, String responseCode) {
         ApiResponse apiResponse = operation.getResponses().get(responseCode);
         if (apiResponse.get$ref() != null) {
             Object potentialApiResponse = globalContext.getApiResponseFromReference(apiResponse.get$ref());
@@ -980,7 +637,7 @@ public class FuzzingDataFactory {
         if (apiResponse.getContent() != null) {
             Set<Object> examples = extractExamples(apiResponse.getContent().get(processingArguments.getDefaultContentType()));
             return examples.stream()
-                    .map(generator::serialize)
+                    .map(JsonUtils::serialize)
                     .toList();
         }
         return Collections.emptyList();
@@ -1043,7 +700,7 @@ public class FuzzingDataFactory {
                         headers.add(CatsHeader.fromHeaderParameter(param));
                     } catch (IllegalArgumentException e) {
                         globalContext.recordError("A valid string could not be generated for the header '" + param.getName() + "' using the pattern '" + param.getSchema().getPattern() + "'. Please consider either changing the pattern or simplifying it.");
-                        headers.add(CatsHeader.from(param.getName(), OpenAPIModelGenerator.DEFAULT_STRING_WHEN_GENERATION_FAILS, param.getRequired()));
+                        headers.add(CatsHeader.from(param.getName(), OpenAPIModelGeneratorV2.DEFAULT_STRING_WHEN_GENERATION_FAILS, param.getRequired()));
                     }
                 }
             }
@@ -1067,7 +724,7 @@ public class FuzzingDataFactory {
         parameter.setSchema(schema);
 
         List<String> examples = this.generateSample(schema.get$ref(), new OpenAPIModelGeneratorV2(globalContext, validDataFormat, processingArguments.examplesFlags(),
-                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE), false);
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), REQUEST_ARRAY_SIZE));
 
         schema.setExample(examples.getFirst());
     }

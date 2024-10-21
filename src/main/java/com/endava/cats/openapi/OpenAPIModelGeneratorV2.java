@@ -6,13 +6,8 @@ import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
-import com.endava.cats.util.DepthLimitingSerializer;
 import com.endava.cats.util.JsonUtils;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -20,7 +15,6 @@ import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.openapitools.codegen.utils.ModelUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
@@ -34,15 +28,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Supplier;
 
-import static com.fasterxml.jackson.core.JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN;
-import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
-import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
-import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
-import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_ENUMS_USING_TO_STRING;
-
 /**
  * A modified version of {@code  org.openapitools.codegen.examples.ExampleGenerator} that takes into consideration several other request
- * setups including complex objects and array of objects.
+ * setups including complex objects, array of objects, self-referencing objects, multi-level oneOf/anyOf, etc.
  * <p>
  * This is a <b>stateful</b> object. Don't use it through dependency injection.
  * <p>
@@ -62,12 +50,10 @@ import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_ENUMS_US
  */
 public class OpenAPIModelGeneratorV2 {
     public static final String SYNTH_SCHEMA_NAME = "CatsGetSchema";
-    public static final int SELF_REF_DEPTH_MULTIPLIER = 6;
-    public static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "changeOrSimplifyThePattern";
-    private static final String EXAMPLE = "example";
+    public static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "addOrChangeOrSimplifyThePattern";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGenerator.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGeneratorV2.class);
     private final Random random;
     private final ProcessingArguments.ExamplesFlags examplesFlags;
     private final CatsGlobalContext globalContext;
@@ -77,8 +63,6 @@ public class OpenAPIModelGeneratorV2 {
     private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
     private final int arraySize;
-    private final ObjectMapper customDepthMapper = new ObjectMapper();
-    private final ObjectMapper simpleObjectMapper = new ObjectMapper();
 
     @Getter
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
@@ -87,7 +71,7 @@ public class OpenAPIModelGeneratorV2 {
     private String currentProperty = "";
 
     /**
-     * Constructs an OpenAPIModelGenerator with the specified configuration.
+     * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
      *
      * @param catsGlobalContext   The global context for CATS.
      * @param validDataFormat     The format to use for generating valid data.
@@ -104,20 +88,21 @@ public class OpenAPIModelGeneratorV2 {
         this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
         this.arraySize = arraySize;
-
-        configureDepthAwareJacksonMapper(selfReferenceDepth);
-        configureDefaultJacksonMapper();
     }
 
-    private static void addExampleAndKeepDepth(String propertyName, Object propertyExample, Map<String, Object> newExample, List<Map<String, Object>> combinedExamples) {
+    private void addExampleAndKeepDepth(String propertyName, Object propertyExample, Map<String, Object> newExample, List<Map<String, Object>> combinedExamples) {
         if (propertyExample instanceof Map map && map.get(null) != null) {
             newExample.put(propertyName, map.values().iterator().next());
-        } else if (propertyExample instanceof Map map && map.get(propertyName) != null) {
+        } else if (propertyExample instanceof Map map && map.get(propertyName) != null && isNotCyclingReference(propertyName)) {
             newExample.put(propertyName, map.get(propertyName));
         } else {
             newExample.put(propertyName, propertyExample);
         }
         combinedExamples.add(newExample);
+    }
+
+    private boolean isNotCyclingReference(String propertyName) {
+        return Arrays.stream(currentProperty.split("#", -1)).noneMatch(entry -> entry.equalsIgnoreCase(propertyName));
     }
 
     private static boolean isNullSchema(Schema innerType) {
@@ -126,56 +111,14 @@ public class OpenAPIModelGeneratorV2 {
                 && innerType.getProperties() == null && CollectionUtils.isEmpty(innerType.getTypes());
     }
 
-    private void configureDefaultJacksonMapper() {
-        configureObjectMapper(simpleObjectMapper);
-    }
-
-    private void configureDepthAwareJacksonMapper(int selfReferenceDepth) {
-        int finalDepth = selfReferenceDepth * SELF_REF_DEPTH_MULTIPLIER;
-        SimpleModule module = new SimpleModule();
-        module.addSerializer(Object.class, new DepthLimitingSerializer(finalDepth));
-        customDepthMapper.registerModule(module);
-
-        configureObjectMapper(customDepthMapper);
-    }
-
-    private void configureObjectMapper(ObjectMapper mapper) {
-        mapper.registerModule(new JavaTimeModule());
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.disable(FAIL_ON_EMPTY_BEANS);
-        mapper.enable(WRITE_ENUMS_USING_TO_STRING);
-        mapper.enable(WRITE_BIGDECIMAL_AS_PLAIN);
-        mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
-        mapper.disable(INDENT_OUTPUT);
-    }
-
-    public String serialize(Object obj) {
-        try {
-            return customDepthMapper.writeValueAsString(obj);
-        } catch (IOException e) {
-            logger.debug("Error serializing object: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private String writeObjectAsString(Object exampleObject) {
+    private String serializeWithDepthAwareSerializer(Object exampleObject) {
         try {
             StringWriter stringWriter = new StringWriter();
-            JsonGenerator jsonGenerator = customDepthMapper.getFactory().createGenerator(stringWriter);
-            customDepthMapper.writeValue(jsonGenerator, exampleObject);
+            JsonGenerator jsonGenerator = JsonUtils.getCustomDepthMapper().getFactory().createGenerator(stringWriter);
+            JsonUtils.getCustomDepthMapper().writeValue(jsonGenerator, exampleObject);
             return stringWriter.toString();
         } catch (IOException e) {
             logger.debug("Error writing large object as string: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    public String tryToSerializeExample(Object obj) {
-        try {
-            return simpleObjectMapper.writeValueAsString(obj);
-        } catch (Exception e) {
-
-            logger.debug("Generated object is too large. Switching to custom depth aware serializer...");
             return null;
         }
     }
@@ -195,10 +138,10 @@ public class OpenAPIModelGeneratorV2 {
                         generatedExample = map.get(modelName);
                     }
 
-                    String example = tryToSerializeExample(generatedExample);
+                    String example = JsonUtils.serialize(generatedExample);
 
                     if (example == null) {
-                        example = writeObjectAsString(generatedExample);
+                        example = serializeWithDepthAwareSerializer(generatedExample);
                         globalContext.recordError("Generate sample it's too large to be processed in memory. CATS used a limiting depth serializer which might not include all expected fields. Re-run CATS with a smaller --selfReferenceDepth value, like --selfReferenceDepth 2");
                     }
 
@@ -231,7 +174,7 @@ public class OpenAPIModelGeneratorV2 {
                     () -> StringGenerator.generate(property.getPattern(), -1, -1));
         }
         logger.trace("No constraints, generating alphanumeric string based on property length {}", propertyName);
-        return DEFAULT_STRING_WHEN_GENERATION_FAILS;
+        return StringGenerator.generate(StringGenerator.ALPHANUMERIC_PLUS, 2, DEFAULT_STRING_WHEN_GENERATION_FAILS.length());
     }
 
     private BigDecimal generateBigDecimal(Schema<?> schema) {
@@ -354,7 +297,7 @@ public class OpenAPIModelGeneratorV2 {
             example.put(null, fromExample);
             return example;
         }
-        return simpleObjectMapper.convertValue(fromExample, Map.class);
+        return JsonUtils.getSimpleObjectMapper().convertValue(fromExample, Map.class);
     }
 
     private List<Map<String, Object>> traverseSchemaProperties(Schema schema, String currentSchemaName) {
@@ -422,7 +365,7 @@ public class OpenAPIModelGeneratorV2 {
             if (hasValidRef(subSchema)) {
                 Schema resolved = globalContext.getSchemaFromReference(subSchema.get$ref());
                 if (resolved != null) {
-                    propertyName = ModelUtils.getSimpleRef(subSchema.get$ref());
+                    propertyName = CatsModelUtils.getSimpleRefUsingOAT(subSchema.get$ref());
                     examples.addAll(generateExamplesForSchema(propertyName, resolved));
                 }
             } else {
@@ -493,7 +436,7 @@ public class OpenAPIModelGeneratorV2 {
                 mapExample.put("key", valueExample);
             }
             examples.add(mapExample);
-        } else if (ModelUtils.isObjectSchema(property) || !StringUtils.isEmpty(property.get$ref())) {
+        } else if (CatsModelUtils.isObjectSchemaUsingOAT(property) || !StringUtils.isEmpty(property.get$ref())) {
             examples.addAll(generateExamplesForSchema(propertyName, property));
         } else if (CatsModelUtils.isAllOf(property) || CatsModelUtils.isAllOfWithProperties(property)) {
             examples.addAll(resolveAllOfSchemaProperties(property, propertyName));
@@ -602,8 +545,10 @@ public class OpenAPIModelGeneratorV2 {
                 }
             }
         }
-
-        return combinedExamples;
+//        Collections.shuffle(combinedExamples);
+        return combinedExamples.stream()
+                .limit(Math.min(combinedExamples.size(), 1000))
+                .toList();
     }
 
     public Object extractExampleFromSchema(Schema<?> schema, boolean flagEnabled) {
@@ -696,10 +641,6 @@ public class OpenAPIModelGeneratorV2 {
     }
 
     private Object resolvePropertyToExample(String propertyName, Schema propertySchema, String currentSchemaName) {
-        if (JsonUtils.isCyclicSchemaReference(currentProperty, schemaRefMap, selfReferenceDepth)) {
-            return null;
-        }
-
         //examples will take first priority
         Object example = this.extractExampleFromSchema(propertySchema, examplesFlags.usePropertyExamples());
         if (example != null) {
@@ -735,21 +676,11 @@ public class OpenAPIModelGeneratorV2 {
             return this.getExampleFromAdditionalPropertiesSchema(propertyName, propertySchema);
         }
 
-        return null; //TODO: handle this case
-        //return resolveProperties(propertySchema);
+        return null;
     }
 
     private <T> Object getExampleForObjectSchema(Schema<T> property) {
         return extractExampleFromSchema(property, examplesFlags.usePropertyExamples());
-//        if (example != null) {
-//            return example;
-//        }
-
-//        if (property.getProperties() == null || property.getProperties().isEmpty()) {
-//            return null;
-//        }
-//        return null; //TODO: handle object schema
-        // return resolveProperties(property);
     }
 
     private Object getExampleFromBooleanSchema() {

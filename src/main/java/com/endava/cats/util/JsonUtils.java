@@ -1,7 +1,11 @@
 package com.endava.cats.util;
 
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Splitter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,7 +20,6 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.JsonPathException;
-import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.ParseContextImpl;
@@ -29,26 +32,34 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONValue;
 import net.minidev.json.parser.JSONParser;
-import net.minidev.json.parser.ParseException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.fasterxml.jackson.core.JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN;
+import static com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS;
+import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_ENUMS_USING_TO_STRING;
+
 /**
  * Utility class for JSON objects interaction.
  */
 public abstract class JsonUtils {
+
+    public static final int SELF_REF_DEPTH_MULTIPLIER = 6;
+
     /**
      * Used as a placeholder when a path is not found inside a given JSON
      */
@@ -111,8 +122,6 @@ public abstract class JsonUtils {
             .serializeNulls()
             .create();
 
-    public static final Configuration SUPPRESS_EXCEPTIONS_CONFIGURATION = new Configuration.ConfigurationBuilder().options(Option.SUPPRESS_EXCEPTIONS).build();
-
     public static final Configuration GSON_CONFIGURATION = Configuration.builder().jsonProvider(new GsonJsonProvider(GSON_NO_PRETTY_PRINTING)).mappingProvider(new GsonMappingProvider(GSON_NO_PRETTY_PRINTING)).build();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(JsonUtils.class);
@@ -121,10 +130,59 @@ public abstract class JsonUtils {
             .jsonProvider(new JacksonJsonNodeJsonProvider())
             .build();
 
+    private static final ObjectMapper CUSTOM_DEPTH_MAPPER = new ObjectMapper();
+    private static final ObjectMapper SIMPLE_OBJECT_MAPPER = new ObjectMapper();
+
+
     private static final ParseContext PARSE_CONTEXT = new ParseContextImpl(JACKSON_JSON_NODE_CONFIGURATION);
 
     private JsonUtils() {
         //ntd
+    }
+
+    static {
+        configureDepthAwareJacksonMapper(4);
+        configureDefaultJacksonMapper();
+    }
+
+    private static void configureDefaultJacksonMapper() {
+        configureObjectMapper(SIMPLE_OBJECT_MAPPER);
+    }
+
+    private static void configureDepthAwareJacksonMapper(int selfReferenceDepth) {
+        int finalDepth = selfReferenceDepth * SELF_REF_DEPTH_MULTIPLIER;
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(Object.class, new DepthLimitingSerializer(finalDepth));
+        CUSTOM_DEPTH_MAPPER.registerModule(module);
+
+        configureObjectMapper(CUSTOM_DEPTH_MAPPER);
+    }
+
+    private static void configureObjectMapper(ObjectMapper mapper) {
+        mapper.registerModule(new JavaTimeModule());
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.disable(FAIL_ON_EMPTY_BEANS);
+        mapper.enable(WRITE_ENUMS_USING_TO_STRING);
+        mapper.enable(WRITE_BIGDECIMAL_AS_PLAIN);
+        mapper.disable(WRITE_DATES_AS_TIMESTAMPS);
+        mapper.disable(INDENT_OUTPUT);
+    }
+
+    public static ObjectMapper getCustomDepthMapper() {
+        return CUSTOM_DEPTH_MAPPER;
+    }
+
+    public static ObjectMapper getSimpleObjectMapper() {
+        return SIMPLE_OBJECT_MAPPER;
+    }
+
+    public static String serialize(Object obj) {
+        try {
+            return SIMPLE_OBJECT_MAPPER.writeValueAsString(obj);
+        } catch (IOException e) {
+            LOGGER.debug("Error serializing object: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -327,104 +385,6 @@ public abstract class JsonUtils {
         return payload;
     }
 
-    /**
-     * This will either replace the {@code nodeKey} with the {@code nodeValue} or, if the given key is not found,
-     * it will replace the {@code alternativeKey} with the {@code nodeValue} and eliminate all other keys
-     * supplied in the {@code toEliminate} list.
-     *
-     * @param payload        the initial JSON payload
-     * @param nodeKey        the key used to replace the {@code nodeValue}
-     * @param alternativeKey alternative key to search for payloads inline-ing ONE_OF and ANY_OF elements, rather than grouping them under a single element
-     * @param nodeValue      the value to be placed inside the {@code nodeKey}
-     * @param toEliminate    additional keys to eliminate after replacing the {@code nodeKey} with the {{@code nodeValue}
-     * @return a JSON payload with ONE_OF and ANY_OF elements eliminated and replaced with a single combination
-     */
-    public static String createValidOneOfAnyOfNode(String payload, String nodeKey, String alternativeKey, String nodeValue, Set<String> toEliminate) {
-        try {
-            if ("$".equals(nodeKey)) {
-                return nodeValue;
-            }
-            if (!payload.contains("_OF")) {
-                return payload;
-            }
-            String interimPayload = JsonPath.parse(payload).set(escapeFullPath(nodeKey), JSON_PERMISSIVE_PARSER.parse(nodeValue)).jsonString();
-            DocumentContext finalPayload = removeElements(toEliminate, interimPayload, nodeKey.substring(0, nodeKey.lastIndexOf(".")));
-            return finalPayload.jsonString();
-        } catch (PathNotFoundException e) {
-            String pathTowardsReplacement = nodeKey.substring(0, nodeKey.lastIndexOf("."));
-            String replacementKey = getReplacementKey(nodeKey);
-            if (payload.contains("_OF")) {
-                String cleanPath = CatsModelUtils.eliminateDuplicatePart(nodeKey);
-                String interimPayload = JsonPath.parse(payload, SUPPRESS_EXCEPTIONS_CONFIGURATION).renameKey(pathTowardsReplacement, alternativeKey, replacementKey).jsonString();
-
-                if (!cleanPath.equalsIgnoreCase(nodeKey)) {
-                    interimPayload = addElement(payload, pathTowardsReplacement, nodeValue);
-                }
-
-                interimPayload = checkIfArrayHasNestedKeysWithSameName(nodeKey, pathTowardsReplacement, replacementKey, interimPayload);
-
-                DocumentContext finalPayload = removeElements(toEliminate, interimPayload, pathTowardsReplacement);
-
-                return finalPayload.jsonString();
-            }
-            return payload;
-        } catch (ParseException | InvalidPathException e) {
-            LOGGER.debug("Could not add node {}", nodeKey);
-            return payload;
-        }
-    }
-
-    private static DocumentContext removeElements(Set<String> toEliminate, String interimPayload, String pathTowardsReplacement) {
-        DocumentContext finalPayload = JsonPath.parse(interimPayload);
-        toEliminate.forEach(toEliminateKey -> {
-            try {
-                if (toEliminateKey.contains(".")) {
-                    toEliminateKey = "['" + toEliminateKey + "']";
-                }
-                String nodeToDelete = pathTowardsReplacement + "." + escapeSpaces(toEliminateKey);
-                LOGGER.debug("to delete {}", nodeToDelete);
-                finalPayload.delete(escapeFullPath(nodeToDelete));
-            } catch (PathNotFoundException ex) {
-                LOGGER.debug("Path not found when removing any_of/one_of: {}", ex.getMessage());
-            }
-        });
-        return finalPayload;
-    }
-
-    public static String getReplacementKey(String nodeKey) {
-        String initial = nodeKey.substring(nodeKey.lastIndexOf(".") + 1);
-        if (initial.endsWith("[*]")) {
-            return initial.substring(0, initial.length() - 3);
-        }
-        return initial;
-    }
-
-    /**
-     * When having an array of composed objects CATS will generate something like:
-     * <pre>{@code
-     * {...
-     *   "services":[
-     *    {
-     *      "services": {...}
-     *    },
-     *    {
-     *      "services": {...}
-     *    }
-     * ]
-     * ...}
-     *
-     * }</pre>
-     * <p>
-     * In this specific cases, this will make sure we eliminate the inner keys which match the array key
-     */
-    private static String checkIfArrayHasNestedKeysWithSameName(String nodeKey, String pathTowardsReplacement, String replacementKey, String interimPayload) {
-        if (pathTowardsReplacement.endsWith(replacementKey + "[*]")) {
-            String arrayKey = pathTowardsReplacement.substring(0, pathTowardsReplacement.lastIndexOf("["));
-            List<Object> innerArrayObject = JsonPath.parse(interimPayload, SUPPRESS_EXCEPTIONS_CONFIGURATION).read(nodeKey);
-            interimPayload = JsonPath.parse(interimPayload, SUPPRESS_EXCEPTIONS_CONFIGURATION).set(arrayKey, innerArrayObject).jsonString();
-        }
-        return interimPayload;
-    }
 
     /**
      * Creates a node key based on the supplied strings in the form of {@code toEliminate.pathTowardsReplacement}.
@@ -434,7 +394,7 @@ public abstract class JsonUtils {
      * @return a node key combining the given input
      */
     private static String escapeSpaces(String toEliminateKey) {
-        if (toEliminateKey.contains(" ")) {
+        if (toEliminateKey.chars().anyMatch(Character::isWhitespace)) {
             return "['" + toEliminateKey + "']";
         }
         return toEliminateKey;
@@ -541,22 +501,7 @@ public abstract class JsonUtils {
     public static String replaceNewElement(String initialPayload, String pathToKey, String newKey, Object newValue) {
         LOGGER.debug("Adding new element {} with value {} to path {}", newKey, newValue, pathToKey);
         DocumentContext documentContext = JsonPath.parse(initialPayload);
-        documentContext.put(pathToKey, sanitizeToJsonPath(newKey), newValue);
-
-        return documentContext.jsonString();
-    }
-
-    public static String addElement(String initialPayload, String pathToKey, String newValue) {
-        DocumentContext documentContext = JsonPath.parse(initialPayload, SUPPRESS_EXCEPTIONS_CONFIGURATION);
-        DocumentContext newValueContext = JsonPath.parse(newValue, SUPPRESS_EXCEPTIONS_CONFIGURATION);
-        Object keysToMerge = newValueContext.read("$");
-
-        Object existingValue = documentContext.read(pathToKey);
-        if (existingValue instanceof Map m && keysToMerge instanceof Map m2) {
-            m.putAll(m2);
-        }
-
-        documentContext.set(pathToKey, existingValue);
+        documentContext.put(sanitizeToJsonPath(pathToKey), sanitizeToJsonPath(newKey), newValue);
 
         return documentContext.jsonString();
     }
@@ -628,35 +573,5 @@ public abstract class JsonUtils {
                 traverseJson(jsonArray.get(i), prefix + "[" + i + "]", fields);
             }
         }
-    }
-
-    /**
-     * This will do the Cyclic Schema Reference to avoid infinite loop
-     *
-     * @param currentProperty currentProperty name string along with all the parent object name separated by '#'
-     * @param schemaRefMap    the propertyName and respective component schema reference path
-     * @param depth           Fixed depth number for child objects
-     * @return a boolean as true or false
-     */
-    public static boolean isCyclicSchemaReference(String currentProperty, Map<String, String> schemaRefMap, int depth) {
-        if (currentProperty == null) {
-            return false;
-        }
-        String[] properties = Arrays.stream(currentProperty.split("#", -1)).filter(StringUtils::isNotBlank).toArray(String[]::new);
-
-        for (int i = 0; i < properties.length - 1; i++) {
-            for (int j = i + 1; j <= properties.length - 1; j++) {
-                String iKeyToSearch = Arrays.stream(properties).limit(i).collect(Collectors.joining("#"));
-                String jKeyToSearch = Arrays.stream(properties).limit(j).collect(Collectors.joining("#"));
-                String iRef = schemaRefMap.get(iKeyToSearch);
-                String jRef = schemaRefMap.get(jKeyToSearch);
-                if (((iRef != null && iRef.equalsIgnoreCase(jRef)) || properties[j].equalsIgnoreCase(properties[j - 1])) && j - i >= depth) {
-                    LOGGER.trace("Found cyclic dependencies for {}", currentProperty);
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 }
