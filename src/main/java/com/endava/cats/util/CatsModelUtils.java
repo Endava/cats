@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * Wrapper on top of {@link org.openapitools.codegen.utils.ModelUtils} in order to accommodate
@@ -138,25 +137,7 @@ public abstract class CatsModelUtils {
     public static ObjectSchema newObjectSchema() {
         return new ObjectSchema();
     }
-
-    /**
-     * Eliminates the last part of the string if it matches the previous one.
-     *
-     * @param input The input string separated by ".".
-     * @return The modified string with the last duplicate part removed.
-     */
-    public static String eliminateDuplicatePart(String input) {
-        return Stream.of(input.split("\\."))
-                .reduce((prev, curr) -> {
-                    if (prev.endsWith(curr)) {
-                        return prev;
-                    } else {
-                        return prev + "." + curr;
-                    }
-                })
-                .orElse("");
-    }
-
+    
     /**
      * Checks if the field name contains a complex regex. For now, this is used to determine if the field is an email or a URI.
      * This is of course not 100% accurate, but it's a good start.
@@ -240,7 +221,7 @@ public abstract class CatsModelUtils {
         return ModelUtils.getInterfaces(schema);
     }
 
-    public static Schema<?> getSchemaItems(Schema<?> schema) {
+    public static Schema getSchemaItems(Schema schema) {
         return ModelUtils.getSchemaItems(schema);
     }
 

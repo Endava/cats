@@ -40,4 +40,6 @@ class CatsModeLUtilsTest {
 
         Assertions.assertThat(result).isEqualTo(expected);
     }
+
+
 }

@@ -20,7 +20,7 @@ import java.util.Set;
 @FieldFuzzer
 @Singleton
 public class InsertWhitespacesInFieldNamesFieldFuzzer implements Fuzzer {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(NewFieldsFuzzer.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(InsertWhitespacesInFieldNamesFieldFuzzer.class);
     private final ServiceCaller serviceCaller;
     private final TestCaseListener testCaseListener;
 

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
@@ -63,12 +64,11 @@ public class OpenAPIModelGeneratorV2 {
     private final Map<String, String> schemaRefMap;
     private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
-    private final int arraySize;
+    private final int maxArraySize;
 
     @Getter
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
 
-    protected Map<String, Schema> examples;
     private String currentProperty = "";
 
     /**
@@ -79,7 +79,7 @@ public class OpenAPIModelGeneratorV2 {
      * @param useExamplesArgument Flag indicating whether to use examples from the OpenAPI specification.
      * @param selfReferenceDepth  The maximum depth for generating self-referencing models.
      */
-    public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int arraySize) {
+    public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize) {
         this.globalContext = catsGlobalContext;
         this.random = CatsUtil.random();
         this.examplesFlags = useExamplesArgument;
@@ -88,16 +88,15 @@ public class OpenAPIModelGeneratorV2 {
         this.schemaRefMap = new LinkedHashMap<>();
         this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
-        this.arraySize = arraySize;
+        this.maxArraySize = maxArraySize;
     }
 
     private void addExampleAndKeepDepth(String propertyName, Object propertyExample, Map<String, Object> newExample, List<Map<String, Object>> combinedExamples) {
-        if (propertyExample instanceof Map map && map.get(null) != null) {
-            newExample.put(propertyName, map.values().iterator().next());
-        } else if (propertyExample instanceof Map map && map.get(propertyName) != null && isNotCyclingReference(propertyName)) {
-            newExample.put(propertyName, map.get(propertyName));
-        } else {
-            newExample.put(propertyName, propertyExample);
+        switch (propertyExample) {
+            case Map map when map.get(null) != null -> newExample.put(propertyName, map.values().iterator().next());
+            case Map map when map.get(propertyName) != null && isNotCyclingReference(propertyName) ->
+                    newExample.put(propertyName, map.get(propertyName));
+            case null, default -> newExample.put(propertyName, propertyExample);
         }
         combinedExamples.add(newExample);
     }
@@ -131,20 +130,7 @@ public class OpenAPIModelGeneratorV2 {
             if (schema != null) {
                 List<Map<String, Object>> generatedExamples = generateExamplesForSchema(modelName, schema);
                 for (Object generatedExample : generatedExamples) {
-                    if (generatedExample instanceof Map map && map.get(null) != null) {
-                        generatedExample = map.get(null);
-                    }
-
-                    if (generatedExample instanceof Map map && map.get(modelName) != null) {
-                        generatedExample = map.get(modelName);
-                    }
-
-                    String example = JsonUtils.serialize(generatedExample);
-
-                    if (example == null) {
-                        example = serializeWithDepthAwareSerializer(generatedExample);
-                        globalContext.recordError("Generate sample it's too large to be processed in memory. CATS used a limiting depth serializer which might not include all expected fields. Re-run CATS with a smaller --selfReferenceDepth value, like --selfReferenceDepth 2");
-                    }
+                    String example = this.transformInJson(modelName, generatedExample);
 
                     if (example != null) {
                         examples.add(example);
@@ -158,6 +144,24 @@ public class OpenAPIModelGeneratorV2 {
         schemaRefMap.clear();
         currentProperty = "";
         return Collections.emptyList();
+    }
+
+    private @Nullable String transformInJson(String modelName, Object generatedExample) {
+        if (generatedExample instanceof Map map && map.get(null) != null) {
+            generatedExample = map.get(null);
+        }
+
+        if (generatedExample instanceof Map map && map.get(modelName) != null) {
+            generatedExample = map.get(modelName);
+        }
+
+        String example = JsonUtils.serialize(generatedExample);
+
+        if (example == null) {
+            example = serializeWithDepthAwareSerializer(generatedExample);
+            globalContext.recordError("Generate sample it's too large to be processed in memory. CATS used a limiting depth serializer which might not include all expected fields. Re-run CATS with a smaller --selfReferenceDepth value, like --selfReferenceDepth 2");
+        }
+        return example;
     }
 
     private <T> Object getExampleFromStringSchema(String propertyName, Schema<T> property) {
@@ -282,7 +286,7 @@ public class OpenAPIModelGeneratorV2 {
         // If no examples were generated, create a default one
         if (examples.isEmpty()) {
             Map<String, Object> defaultExample = new HashMap<>();
-            Object resolvedExample = resolvePropertyToExample(name, schema, name);
+            Object resolvedExample = resolvePropertyToExample(name, schema);
             if (resolvedExample != null) {
                 defaultExample.put(name, resolvedExample);
                 examples.add(defaultExample);
@@ -314,7 +318,7 @@ public class OpenAPIModelGeneratorV2 {
                 propertyExamples = List.of(matchToEnumOrEmpty(currentSchemaName, property, propertyName));
                 recordRequestSchema(propertyName, property);
             } else {
-                propertyExamples = resolvePropertyToExamples(propertyName, property, currentSchemaName);
+                propertyExamples = resolvePropertyToExamples(propertyName, property);
             }
 
             if (!propertyExamples.isEmpty()) {
@@ -383,7 +387,7 @@ public class OpenAPIModelGeneratorV2 {
         List<Map<String, Object>> examples = new ArrayList<>();
         Schema itemSchema = CatsModelUtils.getSchemaItems(schema);
 
-        List<Object> itemExamples = resolvePropertyToExamples(propertyName, itemSchema, propertyName);
+        List<Object> itemExamples = resolvePropertyToExamples(propertyName, itemSchema);
         for (Object itemExample : itemExamples) {
             Map<String, Object> newExample = new HashMap<>();
             int arraySize = getArrayLength(schema);
@@ -413,11 +417,11 @@ public class OpenAPIModelGeneratorV2 {
                 .filter(maxVal -> maxVal != 0)
                 .orElse(min + 1);
 
-        logger.debug("Clamping array size between {} and {}, array size {}", min, max, this.arraySize);
-        return Math.clamp(this.arraySize, min, max);
+        logger.debug("Clamping array size between {} and {}, array size {}", min, max, this.maxArraySize);
+        return Math.clamp(this.maxArraySize, min, max);
     }
 
-    private List<Object> resolvePropertyToExamples(String propertyName, Schema property, String currentSchemaName) {
+    private List<Object> resolvePropertyToExamples(String propertyName, Schema property) {
         List<Object> examples = new ArrayList<>();
         String previousProperty = currentProperty;
 
@@ -428,13 +432,13 @@ public class OpenAPIModelGeneratorV2 {
 
         if (CatsModelUtils.isArraySchema(property)) {
             Schema itemSchema = CatsModelUtils.getSchemaItems(property);
-            List<Object> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema, propertyName);
+            List<Object> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema);
             int arraySize = getArrayLength(property);
             examples.addAll(itemExamples.stream().map(innerExample -> Collections.nCopies(arraySize, innerExample)).toList());
         } else if (CatsModelUtils.isMapSchema(property)) {
             Map<String, Object> mapExample = new HashMap<>();
             Schema additionalProperties = CatsModelUtils.getAdditionalProperties(property);
-            List<Object> valueExamples = resolvePropertyToExamples("value", additionalProperties, "value");
+            List<Object> valueExamples = resolvePropertyToExamples("value", additionalProperties);
             for (Object valueExample : valueExamples) {
                 mapExample.put("key", valueExample);
             }
@@ -446,7 +450,7 @@ public class OpenAPIModelGeneratorV2 {
         } else if (CatsModelUtils.isOneOf(property) || CatsModelUtils.isAnyOf(property)) {
             examples.addAll(resolveAnyOfOneOfSchemaProperties(propertyName, property));
         } else {
-            Object example = resolvePropertyToExample(propertyName, property, propertyName);
+            Object example = resolvePropertyToExample(propertyName, property);
             if (example != null) {
                 examples.add(example);
             }
@@ -643,7 +647,7 @@ public class OpenAPIModelGeneratorV2 {
         return combined;
     }
 
-    private Object resolvePropertyToExample(String propertyName, Schema propertySchema, String currentSchemaName) {
+    private Object resolvePropertyToExample(String propertyName, Schema propertySchema) {
         //examples will take first priority
         Object example = this.extractExampleFromSchema(propertySchema, examplesFlags.usePropertyExamples());
         if (example != null) {
@@ -718,16 +722,16 @@ public class OpenAPIModelGeneratorV2 {
         Map<String, Object> mp = new HashMap<>();
 
         if (property.getName() != null) {
-            mp.put(property.getName(), resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties(), propertyName));
+            mp.put(property.getName(), resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties()));
         } else if (((Schema) property.getAdditionalProperties()).get$ref() != null) {
             Schema innerSchema = (Schema) property.getAdditionalProperties();
             Schema addPropSchema = this.globalContext.getSchemaFromReference(innerSchema.get$ref());
             if (isCyclicAdditionalPropertiesCall()) {
                 return Map.of();
             }
-            mp.put("key", resolvePropertyToExample(propertyName, addPropSchema, propertyName));
+            mp.put("key", resolvePropertyToExample(propertyName, addPropSchema));
         } else {
-            mp.put("key", resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties(), propertyName));
+            mp.put("key", resolvePropertyToExample(propertyName, (Schema) property.getAdditionalProperties()));
         }
 
         globalContext.getAdditionalProperties().put(propertyName, mp);
@@ -760,10 +764,6 @@ public class OpenAPIModelGeneratorV2 {
         } else {
             return random.nextDouble() * 10;
         }
-    }
-
-    private Double getPropertyValue(BigDecimal propertyValue) {
-        return propertyValue == null ? null : propertyValue.doubleValue();
     }
 
     private boolean hasValidRef(Schema schema) {

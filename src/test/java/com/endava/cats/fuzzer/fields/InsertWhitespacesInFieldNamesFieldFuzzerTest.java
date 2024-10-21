@@ -24,7 +24,6 @@ class InsertWhitespacesInFieldNamesFieldFuzzerTest {
 
     private InsertWhitespacesInFieldNamesFieldFuzzer insertWhitespacesInFieldNamesFieldFuzzer;
 
-    private FuzzingData data;
     private CatsResponse catsResponse;
 
     @BeforeEach
@@ -53,6 +52,8 @@ class InsertWhitespacesInFieldNamesFieldFuzzerTest {
 
     @Test
     void shouldRunWhenFieldInPayload() {
+        catsResponse = CatsResponse.builder().body("{}").responseCode(200).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(data.getPayload()).thenReturn("{\"field1\": \"value1\"}");
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("field1"));
