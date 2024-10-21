@@ -32,23 +32,23 @@ public class ProcessingArguments {
             description = "This can be either @|bold,underline SANITIZE_AND_VALIDATE|@ or @|bold,underline VALIDATE_AND_SANITIZE|@. It can be used to specify what CATS should expect when sending Unicode Control Chars and Other Symbols within the fields. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private SanitizationStrategy sanitizationStrategy = SanitizationStrategy.SANITIZE_AND_VALIDATE;
 
-    @CommandLine.Option(names = {"--useExamples"}, negatable = true, defaultValue = "false", fallbackValue = "false",
+    @CommandLine.Option(names = {"--useExamples"}, negatable = true,
             description = "When set to @|bold true|@, it will use request body examples, schema examples and primitive properties examples from the OpenAPI contract when available. " +
                     "This is equivalent of using @|bold,underline--useRequestBodyExamples|@ @|bold,underline--useSchemaExamples|@ @|bold,underline--usePropertyExamples|@ @|bold,underline--useResponseBodyExamples|@." +
                     "Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean useExamples = false;
+    private Boolean useExamples;
 
-    @CommandLine.Option(names = {"--useRequestBodyExamples"}, negatable = true, defaultValue = "false", fallbackValue = "false",
+    @CommandLine.Option(names = {"--useRequestBodyExamples"},
             description = "When set to @|bold true|@, it will use media type-level request body examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean useRequestBodyExamples = false;
+    private boolean useRequestBodyExamples;
 
     @CommandLine.Option(names = {"--useResponseBodyExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, it will use media type-level response examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useResponseBodyExamples = true;
 
-    @CommandLine.Option(names = {"--useSchemaExamples"}, negatable = true, defaultValue = "false", fallbackValue = "false",
+    @CommandLine.Option(names = {"--useSchemaExamples"},
             description = "When set to @|bold true|@, it will use examples set at schema level from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean useSchemaExamples = false;
+    private boolean useSchemaExamples;
 
     @CommandLine.Option(names = {"--usePropertyExamples"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, it will use primitive property examples from the OpenAPI contract when available. Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -155,7 +155,10 @@ public class ProcessingArguments {
      * @return true if usage of request body examples is enabled, false otherwise
      */
     public boolean isUseRequestBodyExamples() {
-        return useRequestBodyExamples || useExamples;
+        if (useExamples != null) {
+            return useExamples;
+        }
+        return useRequestBodyExamples;
     }
 
     /**
@@ -164,7 +167,10 @@ public class ProcessingArguments {
      * @return true if usage of response body examples is enabled, false otherwise
      */
     public boolean isUseResponseBodyExamples() {
-        return useResponseBodyExamples || useExamples;
+        if (useExamples != null) {
+            return useExamples;
+        }
+        return useResponseBodyExamples;
     }
 
     /**
@@ -173,7 +179,10 @@ public class ProcessingArguments {
      * @return true if usage of schema examples is enabled, false otherwise
      */
     public boolean isUseSchemaExamples() {
-        return useSchemaExamples || useExamples;
+        if (useExamples != null) {
+            return useExamples;
+        }
+        return useSchemaExamples;
     }
 
     /**
@@ -182,7 +191,10 @@ public class ProcessingArguments {
      * @return true if usage of property examples is enabled, false otherwise
      */
     public boolean isUsePropertyExamples() {
-        return usePropertyExamples || useExamples;
+        if (useExamples != null) {
+            return useExamples;
+        }
+        return usePropertyExamples;
     }
 
     public ExamplesFlags examplesFlags() {

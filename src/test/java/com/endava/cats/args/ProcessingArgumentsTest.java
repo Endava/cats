@@ -55,7 +55,7 @@ class ProcessingArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    @CsvSource({"true,true,true", "true,false,false", "false,true,true", "false,false,false"})
     void shouldTestUsePropertyExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
         ProcessingArguments processingArguments = new ProcessingArguments();
         ReflectionTestUtils.setField(processingArguments, "usePropertyExamples", usePropertyExamples);
@@ -65,7 +65,7 @@ class ProcessingArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    @CsvSource({"true,true,true", "true,false,false", "false,true,true", "false,false,false"})
     void shouldTestUseSchemaExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
         ProcessingArguments processingArguments = new ProcessingArguments();
         ReflectionTestUtils.setField(processingArguments, "useSchemaExamples", usePropertyExamples);
@@ -75,7 +75,7 @@ class ProcessingArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    @CsvSource({"true,true,true", "true,false,false", "false,true,true", "false,false,false"})
     void shouldTestUseResponseBodyExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
         ProcessingArguments processingArguments = new ProcessingArguments();
         ReflectionTestUtils.setField(processingArguments, "useResponseBodyExamples", usePropertyExamples);
@@ -85,7 +85,7 @@ class ProcessingArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"true,true,true", "true,false,true", "false,true,true", "false,false,false"})
+    @CsvSource({"true,true,true", "true,false,false", "false,true,true", "false,false,false"})
     void shouldTestUseRequestBodyExamples(boolean usePropertyExamples, boolean useExamples, boolean expected) {
         ProcessingArguments processingArguments = new ProcessingArguments();
         ReflectionTestUtils.setField(processingArguments, "useRequestBodyExamples", usePropertyExamples);
