@@ -53,6 +53,7 @@ public class OpenAPIModelGeneratorV2 {
     public static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "addOrChangeOrSimplifyThePattern";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
+    public static final int LIMIT_OF_EXAMPLES = 1000;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGeneratorV2.class);
     private final Random random;
     private final ProcessingArguments.ExamplesFlags examplesFlags;
@@ -348,7 +349,9 @@ public class OpenAPIModelGeneratorV2 {
             if (!interimExamples.isEmpty()) {
                 examples.clear();
             }
-            examples.addAll(interimExamples);
+            examples.addAll(interimExamples.stream()
+                    .limit(Math.min(interimExamples.size(), LIMIT_OF_EXAMPLES))
+                    .toList());
         }
 
         return examples;
@@ -547,7 +550,7 @@ public class OpenAPIModelGeneratorV2 {
         }
 //        Collections.shuffle(combinedExamples);
         return combinedExamples.stream()
-                .limit(Math.min(combinedExamples.size(), 1000))
+                .limit(Math.min(combinedExamples.size(), LIMIT_OF_EXAMPLES))
                 .toList();
     }
 
