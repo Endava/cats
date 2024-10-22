@@ -2,6 +2,7 @@ package com.endava.cats.util;
 
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -37,6 +38,7 @@ import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -181,6 +183,18 @@ public abstract class JsonUtils {
             return SIMPLE_OBJECT_MAPPER.writeValueAsString(obj);
         } catch (IOException e) {
             LOGGER.debug("Error serializing object: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public static String serializeWithDepthAwareSerializer(Object exampleObject) {
+        try {
+            StringWriter stringWriter = new StringWriter();
+            JsonGenerator jsonGenerator = JsonUtils.getCustomDepthMapper().getFactory().createGenerator(stringWriter);
+            JsonUtils.getCustomDepthMapper().writeValue(jsonGenerator, exampleObject);
+            return stringWriter.toString();
+        } catch (IOException e) {
+            LOGGER.debug("Error writing large object as string: {}", e.getMessage());
             return null;
         }
     }

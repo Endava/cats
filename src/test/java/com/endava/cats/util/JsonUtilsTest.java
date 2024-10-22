@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @QuarkusTest
 class JsonUtilsTest {
@@ -277,5 +279,16 @@ class JsonUtilsTest {
                         "{\\"target\\":[\\"ENSG00000094755\\", \\"ENSG00000167207\\"], \\"disease\\":[\\"EFO_0003767\\"]}"\
                         """;
         Assertions.assertThat(JsonUtils.equalAsJson(myString, myString)).isTrue();
+    }
+
+    @Test
+    void shouldSerializeWithCustomDepth() {
+        Map<String, Object> jsonAsMap = new HashMap<>();
+        jsonAsMap.put("key1", "value");
+        jsonAsMap.put("key2", "value2");
+        jsonAsMap.put("key3", Map.of("subKey1", "subValue1"));
+        String serialized = JsonUtils.serializeWithDepthAwareSerializer(jsonAsMap);
+
+        Assertions.assertThat(serialized).isEqualTo("{\"key1\":\"value\",\"key2\":\"value2\",\"key3\":{\"subKey1\":\"subValue1\"}}");
     }
 }

@@ -7,7 +7,6 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
-import com.fasterxml.jackson.core.JsonGenerator;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.core.util.Json;
@@ -19,8 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.util.CollectionUtils;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -114,17 +111,6 @@ public class OpenAPIModelGeneratorV2 {
                 && innerType.getProperties() == null && CollectionUtils.isEmpty(innerType.getTypes());
     }
 
-    private String serializeWithDepthAwareSerializer(Object exampleObject) {
-        try {
-            StringWriter stringWriter = new StringWriter();
-            JsonGenerator jsonGenerator = JsonUtils.getCustomDepthMapper().getFactory().createGenerator(stringWriter);
-            JsonUtils.getCustomDepthMapper().writeValue(jsonGenerator, exampleObject);
-            return stringWriter.toString();
-        } catch (IOException e) {
-            logger.debug("Error writing large object as string: {}", e.getMessage());
-            return null;
-        }
-    }
 
     public List<String> generate(String modelName) {
         List<String> examples = new ArrayList<>();
@@ -161,7 +147,7 @@ public class OpenAPIModelGeneratorV2 {
         String example = JsonUtils.serialize(generatedExample);
 
         if (example == null) {
-            example = serializeWithDepthAwareSerializer(generatedExample);
+            example = JsonUtils.serializeWithDepthAwareSerializer(generatedExample);
             globalContext.recordError("Generate sample it's too large to be processed in memory. CATS used a limiting depth serializer which might not include all expected fields. Re-run CATS with a smaller --selfReferenceDepth value, like --selfReferenceDepth 2");
         }
         return example;
@@ -532,6 +518,8 @@ public class OpenAPIModelGeneratorV2 {
         Collection<Schema> allOfSchemasSanitized = allOfSchema
                 .stream()
                 .filter(CatsModelUtils::isNotEmptySchema)
+                .map(schema -> schema.get$ref() != null ? globalContext.getSchemaFromReference(schema.get$ref()) : schema)
+                .filter(Objects::nonNull)
                 .toList();
         if (allOfSchemasSanitized.size() == 1) {
             return;
@@ -540,7 +528,6 @@ public class OpenAPIModelGeneratorV2 {
         logger.trace("allOfSchemasSanitized size: {}", allOfSchemasSanitized.size());
 
         List<String> allRequired = allOfSchemasSanitized.stream()
-                .map(schema -> schema.get$ref() != null ? globalContext.getSchemaFromReference(schema.get$ref()) : schema)
                 .map(schema -> Optional.ofNullable(schema.getRequired()).orElse(Collections.emptyList()))
                 .flatMap(Collection::stream)
                 .toList();
@@ -638,10 +625,12 @@ public class OpenAPIModelGeneratorV2 {
             return null;
         }
         if (CatsModelUtils.isDateSchema(property)) {
-            return DATE_FORMATTER.format(LocalDate.ofInstant(((Date) example).toInstant(), ZoneId.systemDefault()));
+            Date date = JsonUtils.getSimpleObjectMapper().convertValue(example, Date.class);
+            return DATE_FORMATTER.format(LocalDate.ofInstant(date.toInstant(), ZoneId.systemDefault()));
         }
         if (CatsModelUtils.isDateTimeSchema(property)) {
-            return ((OffsetDateTime) example).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            OffsetDateTime dateTime = JsonUtils.getSimpleObjectMapper().convertValue(example, OffsetDateTime.class);
+            return dateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         }
         if (CatsModelUtils.isBinarySchema(property) || CatsModelUtils.isByteArraySchema(property)) {
             try {

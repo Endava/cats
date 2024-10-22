@@ -166,6 +166,13 @@ class OpenAPIModelGeneratorV2Test {
         Assertions.assertThat(decoded).isEqualTo(expected);
     }
 
+    @Test
+    void shouldReturnEmptyListWhenNullModel() throws Exception {
+        OpenAPIModelGeneratorV2 generator = setupPayloadGenerator();
+        List<String> example = generator.generate(null);
+        Assertions.assertThat(example).isEmpty();
+    }
+
     private OpenAPIModelGeneratorV2 setupPayloadGenerator() throws IOException {
         OpenAPIParser openAPIV3Parser = new OpenAPIParser();
         ParseOptions options = new ParseOptions();

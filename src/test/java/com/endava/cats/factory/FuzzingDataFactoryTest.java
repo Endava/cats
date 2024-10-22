@@ -936,6 +936,14 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldProperlyFormatDateAndDatetimeExamples() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/dates", "src/test/resources/issue146.yml");
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData data = dataList.getFirst();
+        Assertions.assertThat(data.getPayload()).isEqualTo("{\"startDate\":\"2018-10-09\",\"startDateTime\":\"2018-10-09T08:16:29.234Z\"}");
+    }
+
+    @Test
     void shouldResolveWhenOpenApiHasMalformedAllOfSchemas() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/arns", "src/test/resources/petstore.yml");
         Assertions.assertThat(dataList).hasSize(1);
