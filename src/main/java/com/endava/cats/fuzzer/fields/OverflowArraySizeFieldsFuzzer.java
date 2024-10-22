@@ -12,6 +12,7 @@ import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 /**
@@ -39,8 +40,9 @@ public class OverflowArraySizeFieldsFuzzer extends BaseReplaceFieldsFuzzer {
             int size = schema.getMaxItems() != null ? schema.getMaxItems() : processingArguments.getLargeStringsSize();
             logger.info("Fuzzing field [{}] with an array of size [{}]", string, size);
 
-            String fieldValue = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), string + "[0]"));
-            int repetitions = CatsUtil.getMaxArraySizeBasedOnFieldsLength(fieldValue, size);
+            String fieldValue = JsonUtils.serialize(JsonUtils.getVariableFromJson(data.getPayload(), string + "[0]"));
+            int repetitions = CatsUtil.getMaxArraySizeBasedOnFieldsLength(Optional.ofNullable(fieldValue).orElse("ARRAY"), size);
+
             return List.of("[" + StringUtils.repeat(fieldValue, ",", repetitions) + "]");
         };
 
