@@ -48,6 +48,7 @@ public class CatsGlobalContext {
     public static final String HTTP_METHOD = "httpMethod";
     public static final String CONTRACT_PATH = "contractPath";
     public static final String ORIGINAL = "Original";
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsGlobalContext.class);
     private final Map<String, Schema> schemaMap = new HashMap<>();
     private final Map<String, Example> exampleMap = new HashMap<>();
     private final Map<String, Map<String, Object>> additionalProperties = new HashMap<>();
@@ -57,6 +58,7 @@ public class CatsGlobalContext {
     private final Properties fuzzersConfiguration = new Properties();
     private final Map<String, List<String>> generatedExamplesCache = new HashMap<>();
     private final Set<ProcessingError> recordedErrors = new HashSet<>();
+
 
     private CatsConfiguration catsConfiguration;
     @Setter
@@ -123,6 +125,7 @@ public class CatsGlobalContext {
      * @return the schema if found, null otherwise
      */
     public Schema<?> getSchemaFromReference(String reference) {
+        logger.trace("Getting schema from reference {}", reference);
         if (reference == null) {
             return null;
         }
@@ -209,6 +212,7 @@ public class CatsGlobalContext {
      * @return the object if found, null otherwise
      */
     public Object getObjectFromPathsReference(String reference) {
+        logger.trace("Getting object from reference {}", reference);
         String jsonPointer = reference.substring(2);
         String[] parts = jsonPointer.split("/", -1);
 

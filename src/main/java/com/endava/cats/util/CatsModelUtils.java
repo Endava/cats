@@ -137,7 +137,7 @@ public abstract class CatsModelUtils {
     public static ObjectSchema newObjectSchema() {
         return new ObjectSchema();
     }
-    
+
     /**
      * Checks if the field name contains a complex regex. For now, this is used to determine if the field is an email or a URI.
      * This is of course not 100% accurate, but it's a good start.

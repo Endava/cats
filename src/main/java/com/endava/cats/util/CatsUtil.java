@@ -345,7 +345,7 @@ public abstract class CatsUtil {
      * @return The maximum number of array elements that can be generated.
      */
     public static int getMaxArraySizeBasedOnFieldsLength(String fieldValue, int maxSizeFromSchema) {
-        int maxArrayLength = Integer.MAX_VALUE;
+        int maxArrayLength = Integer.MAX_VALUE / 1000;
         int fieldLength = fieldValue.length();
         int maxRepetitions = (maxArrayLength + 1) / (fieldLength + 1);
 
