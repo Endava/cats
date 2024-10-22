@@ -52,16 +52,9 @@ import static com.endava.cats.openapi.OpenAPIModelGeneratorV2.SYNTH_SCHEMA_NAME;
  */
 @ApplicationScoped
 public class FuzzingDataFactory {
-    private static final String ANY_OF = "ANY_OF";
-    private static final String ONE_OF = "ONE_OF";
-    private static final String ANY_OF_ARRAY = "ANY_OF#array";
-    private static final String ONE_OF_ARRAY = "ONE_OF#array";
-    private static final String ARRAY_WILDCARD = "[*]";
     private static final int RESPONSES_ARRAY_SIZE = 1;
     private static final int REQUEST_ARRAY_SIZE = 2;
 
-    public static final String OF = "_OF";
-    public static final String ALL_OF = "ALL_OF";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FuzzingDataFactory.class);
     private final FilesArguments filesArguments;
     private final ProcessingArguments processingArguments;
