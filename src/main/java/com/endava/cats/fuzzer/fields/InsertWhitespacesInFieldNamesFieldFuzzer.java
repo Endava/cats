@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.fields;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.generator.simple.UnicodeGenerator;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
@@ -15,6 +16,7 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 
+import java.util.List;
 import java.util.Set;
 
 @FieldFuzzer
@@ -66,6 +68,10 @@ public class InsertWhitespacesInFieldNamesFieldFuzzer implements Fuzzer {
         testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
     }
 
+    @Override
+    public List<HttpMethod> skipForHttpMethods() {
+        return List.of(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD);
+    }
 
     @Override
     public String toString() {
