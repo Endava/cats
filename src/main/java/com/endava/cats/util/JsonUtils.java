@@ -501,7 +501,7 @@ public abstract class JsonUtils {
     public static String replaceNewElement(String initialPayload, String pathToKey, String newKey, Object newValue) {
         LOGGER.debug("Adding new element {} with value {} to path {}", newKey, newValue, pathToKey);
         DocumentContext documentContext = JsonPath.parse(initialPayload);
-        documentContext.put(sanitizeToJsonPath(pathToKey), sanitizeToJsonPath(newKey), newValue);
+        documentContext.put(sanitizeToJsonPath(pathToKey), newKey, newValue);
 
         return documentContext.jsonString();
     }
