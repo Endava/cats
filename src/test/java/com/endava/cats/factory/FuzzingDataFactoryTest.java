@@ -787,7 +787,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(1);
         Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.POST);
         String payload = dataList.getFirst().getPayload();
-        Object existing = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers");
+        Object existing = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers");
         Object nonExisting = JsonUtils.getVariableFromJson(payload, "$.containers#key#containers#key#containers#key#containers#key#containers#key#containers#key");
 
         Assertions.assertThat(existing).hasToString("{}");
