@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.google.gson.Gson;
@@ -28,9 +29,12 @@ class GenerateCommandTest {
     @Inject
     CatsGlobalContext catsGlobalContext;
 
+    @Inject
+    ProcessingArguments processingArguments;
+
     @BeforeEach
     public void init() {
-        generateCommand = new GenerateCommand(fuzzingDataFactory, catsGlobalContext);
+        generateCommand = new GenerateCommand(fuzzingDataFactory, catsGlobalContext, processingArguments);
     }
 
     @ParameterizedTest

@@ -1,11 +1,12 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -74,14 +75,19 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
             description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private String contentType = "application/json";
 
+    @CommandLine.Option(names = {"--selfReferenceDepth", "-L"},
+            description = "Max depth for request objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private int selfReferenceDepth = 4;
+
 
     FuzzingDataFactory fuzzingDataFactory;
     CatsGlobalContext globalContext;
 
     @Inject
-    public GenerateCommand(FuzzingDataFactory fuzzingDataFactory, CatsGlobalContext globalContext) {
+    public GenerateCommand(FuzzingDataFactory fuzzingDataFactory, CatsGlobalContext globalContext, ProcessingArguments processingArguments) {
         this.fuzzingDataFactory = fuzzingDataFactory;
         this.globalContext = globalContext;
+        processingArguments.setSelfReferenceDepth(this.selfReferenceDepth);
     }
 
     private int exitCodeDueToErrors = 0;
