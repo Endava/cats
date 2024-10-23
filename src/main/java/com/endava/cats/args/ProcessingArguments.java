@@ -66,6 +66,7 @@ public class ProcessingArguments {
             description = "The number of random headers that will be sent by the @|bold LargeNumberOfRandomAlphanumericHeadersFuzzer and LargeNumberOfRandomHeadersFuzzer|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int randomHeadersNumber = 10000;
 
+    @Setter
     @CommandLine.Option(names = {"--selfReferenceDepth", "-L"},
             description = "Max depth for request objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int selfReferenceDepth = 4;
@@ -95,16 +96,6 @@ public class ProcessingArguments {
             description = "Max number of anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     @Setter
     private int limitXxxOfCombinations = 20;
-
-    @CommandLine.Option(names = {"--generateXxxCombinationsForResponses"},
-            description = "Generate anyOf/oneOf combinations also for response schemas. By default it creates one response payload with all possibilities. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean generateAllXxxCombinationsForResponses;
-
-    @Setter
-    @CommandLine.Option(names = {"--filterXxxFromRequestPayloads"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default. " +
-                    "Setting this to false will send them as requests which will probably fail. It's mostly for debug purposes. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    private boolean filterXxxFromRequestPayloads = true;
 
     @CommandLine.Option(names = {"--useDefaults"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "If set to @|bold true|@, it will use default values (if set) when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
