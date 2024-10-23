@@ -143,7 +143,7 @@ public abstract class JsonUtils {
     }
 
     static {
-        configureDepthAwareJacksonMapper(4);
+        configureDepthAwareJacksonMapper(3);
         configureDefaultJacksonMapper();
     }
 
