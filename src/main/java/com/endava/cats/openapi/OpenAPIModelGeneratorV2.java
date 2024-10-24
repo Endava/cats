@@ -423,7 +423,7 @@ public class OpenAPIModelGeneratorV2 {
 
         // Update currentProperty
         currentProperty = StringUtils.isBlank(previousProperty) ? propertyName : previousProperty + "#" + propertyName;
-        if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth)) {
+        if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth) || property == null) {
             return examples;
         }
         // Record the schema
