@@ -79,7 +79,6 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
             description = "Max depth for request objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int selfReferenceDepth = 4;
 
-
     FuzzingDataFactory fuzzingDataFactory;
     CatsGlobalContext globalContext;
 

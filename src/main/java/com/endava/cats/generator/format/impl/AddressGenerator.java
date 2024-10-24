@@ -20,7 +20,7 @@ public class AddressGenerator implements ValidDataFormatGenerator, OpenAPIFormat
     public boolean appliesTo(String format, String propertyName) {
         return ("address".equalsIgnoreCase(PropertySanitizer.sanitize(format)) ||
                 PropertySanitizer.sanitize(propertyName).endsWith("address"))
-                && (!propertyName.toLowerCase().contains("email"));
+                && !PropertySanitizer.sanitize(propertyName).contains("email");
     }
 
     @Override

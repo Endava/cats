@@ -15,6 +15,7 @@ import lombok.ToString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,6 +60,7 @@ public class FuzzingData {
     private String processedPayload;
     private Set<String> targetFields;
     private int selfReferenceDepth;
+    private int limitNumberOfFields;
     private String pathParamsPayload;
 
     @Builder.Default
@@ -261,6 +263,18 @@ public class FuzzingData {
         if (allFields == null) {
             allFields = this.getAllFieldsAsCatsFields().stream().map(CatsField::getName).collect(Collectors.toSet());
         }
+        int limit = Math.min(allFields.size(), limitNumberOfFields <= 0 ? allFields.size() : limitNumberOfFields);
+
+        allFields = allFields.stream()
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        list -> {
+                            Collections.shuffle(list);
+                            return list.stream()
+                                    .limit(limit)
+                                    .collect(Collectors.toCollection(LinkedHashSet::new));
+                        }
+                ));
 
         return allFields;
     }

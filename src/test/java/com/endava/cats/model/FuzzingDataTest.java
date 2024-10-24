@@ -30,7 +30,7 @@ class FuzzingDataTest {
         Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties)
                 .isNotEmpty()
-                .containsExactly("firstName", "lastName");
+                .containsExactlyInAnyOrder("firstName", "lastName");
     }
 
     @Test
@@ -43,6 +43,21 @@ class FuzzingDataTest {
         Assertions.assertThat(allProperties)
                 .isNotEmpty()
                 .containsExactlyInAnyOrder("firstName", "address", "address#zipCode", "address#street");
+    }
+
+    @Test
+    void shouldLimitTheNumberOfFields() {
+        ObjectSchema baseSchema = new ObjectSchema();
+        baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
+        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).
+                requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema)
+                .limitNumberOfFields(2)
+                .build();
+
+        Set<String> allProperties = data.getAllFieldsByHttpMethod();
+        Assertions.assertThat(allProperties)
+                .isNotEmpty()
+                .hasSize(2);
     }
 
     @Test

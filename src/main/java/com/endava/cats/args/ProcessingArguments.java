@@ -92,10 +92,16 @@ public class ProcessingArguments {
             description = "When set to @|bold true|@, the InvalidValuesInEnumsFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean allowInvalidEnumValues;
 
+    @Setter
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
             description = "Max number of anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
-    @Setter
     private int limitXxxOfCombinations = 20;
+
+    @Setter
+    @CommandLine.Option(names = {"--limitNumberOfFields"},
+            description = "Max number of request fields to be fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@ which means all fields will be fuzzed")
+    private int limitNumberOfFields;
+
 
     @CommandLine.Option(names = {"--useDefaults"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "If set to @|bold true|@, it will use default values (if set) when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
