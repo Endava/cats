@@ -98,10 +98,9 @@ public class ProcessingArguments {
     private int limitXxxOfCombinations = 20;
 
     @Setter
-    @CommandLine.Option(names = {"--limitNumberOfFields"},
+    @CommandLine.Option(names = {"--limitFuzzedFields"},
             description = "Max number of request fields to be fuzzed. Default: @|bold,underline ${DEFAULT-VALUE}|@ which means all fields will be fuzzed")
     private int limitNumberOfFields;
-
 
     @CommandLine.Option(names = {"--useDefaults"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "If set to @|bold true|@, it will use default values (if set) when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
