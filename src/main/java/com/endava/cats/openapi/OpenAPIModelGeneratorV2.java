@@ -53,14 +53,13 @@ public class OpenAPIModelGeneratorV2 {
     public static final String DEFAULT_STRING_WHEN_GENERATION_FAILS = "addOrChangeOrSimplifyThePattern";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
-    public static final int LIMIT_OF_EXAMPLES = 1000;
+    public static final int LIMIT_OF_EXAMPLES = 500;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGeneratorV2.class);
     private final Random random;
     private final ProcessingArguments.ExamplesFlags examplesFlags;
     private final CatsGlobalContext globalContext;
     private final ValidDataFormat validDataFormat;
     private final int selfReferenceDepth;
-    private final Map<String, String> schemaRefMap;
     private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
     private final int maxArraySize;
@@ -84,7 +83,6 @@ public class OpenAPIModelGeneratorV2 {
         this.examplesFlags = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
-        this.schemaRefMap = new LinkedHashMap<>();
         this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
         this.maxArraySize = maxArraySize;
@@ -130,7 +128,6 @@ public class OpenAPIModelGeneratorV2 {
                 throw new IllegalArgumentException("Scheme is not declared: " + modelName);
             }
         }
-        schemaRefMap.clear();
         currentProperty = "";
         return Collections.emptyList();
     }
