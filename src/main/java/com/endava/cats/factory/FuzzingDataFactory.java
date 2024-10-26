@@ -605,7 +605,7 @@ public class FuzzingDataFactory {
     private Map<String, List<String>> getResponsePayloads(Operation operation) {
         Map<String, List<String>> responses = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         OpenAPIModelGeneratorV2 generator = new OpenAPIModelGeneratorV2(globalContext, validDataFormat, processingArguments.examplesFlags(),
-                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), RESPONSES_ARRAY_SIZE);
+                processingArguments.getSelfReferenceDepth(), processingArguments.isUseDefaults(), RESPONSES_ARRAY_SIZE, processingArguments.isResolveXxxOfCombinationForResponses());
 
         for (String responseCode : operation.getResponses().keySet()) {
             List<String> openapiExamples = this.getExamplesFromApiResponseForResponseCode(operation, responseCode);

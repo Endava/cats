@@ -24,8 +24,22 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * A modified version of {@code  org.openapitools.codegen.examples.ExampleGenerator} that takes into consideration several other request
@@ -63,11 +77,13 @@ public class OpenAPIModelGeneratorV2 {
     private final Map<String, Integer> callStackCounter;
     private final boolean useDefaults;
     private final int maxArraySize;
+    private final Map<String, List<Map<String, Object>>> examplesCache = new HashMap<>();
 
     @Getter
     private final Map<String, Schema> requestDataTypes = new HashMap<>();
 
     private String currentProperty = "";
+    private final boolean resolveAnyOfAsMultipleSchema;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
@@ -86,6 +102,28 @@ public class OpenAPIModelGeneratorV2 {
         this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
         this.maxArraySize = maxArraySize;
+        this.resolveAnyOfAsMultipleSchema = true;
+    }
+
+    /**
+     * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
+     *
+     * @param catsGlobalContext            The global context for CATS.
+     * @param validDataFormat              The format to use for generating valid data.
+     * @param useExamplesArgument          Flag indicating whether to use examples from the OpenAPI specification.
+     * @param selfReferenceDepth           The maximum depth for generating self-referencing models.
+     * @param resolveAnyOfAsMultipleSchema If true it will resolve all combinations of oneOf/anyOf schemas
+     */
+    public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize, boolean resolveAnyOfAsMultipleSchema) {
+        this.globalContext = catsGlobalContext;
+        this.random = CatsUtil.random();
+        this.examplesFlags = useExamplesArgument;
+        this.selfReferenceDepth = selfReferenceDepth;
+        this.validDataFormat = validDataFormat;
+        this.callStackCounter = new HashMap<>();
+        this.useDefaults = useDefaults;
+        this.maxArraySize = maxArraySize;
+        this.resolveAnyOfAsMultipleSchema = resolveAnyOfAsMultipleSchema;
     }
 
     private void addExampleAndKeepDepth(String propertyName, Object propertyExample, Map<String, Object> newExample, List<Map<String, Object>> combinedExamples) {
@@ -230,6 +268,11 @@ public class OpenAPIModelGeneratorV2 {
             return List.of();
         }
 
+        String cacheKey = name + "_" + schema.hashCode();
+        if (examplesCache.containsKey(cacheKey)) {
+            return new ArrayList<>(examplesCache.get(cacheKey));
+        }
+
         Object fromExample = extractExampleFromSchema(schema, examplesFlags.useSchemaExamples());
         if (fromExample != null) {
             return List.of(formatExampleAsMap(fromExample));
@@ -280,6 +323,8 @@ public class OpenAPIModelGeneratorV2 {
                 examples.add(defaultExample);
             }
         }
+
+        examplesCache.put(cacheKey, new ArrayList<>(examples));
 
         return examples;
     }
@@ -351,7 +396,36 @@ public class OpenAPIModelGeneratorV2 {
         return examples;
     }
 
+
     private List<Map<String, Object>> resolveAnyOfOneOfSchemaProperties(String propertyName, Schema schema) {
+        if (resolveAnyOfAsMultipleSchema) {
+            return resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(propertyName, schema);
+        }
+        return List.of(flatMap(resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(propertyName, schema)));
+    }
+
+    private static Map<String, Object> flatMap(List<Map<String, Object>> generatedExamples) {
+        return generatedExamples.stream()
+                .flatMap(map -> map.entrySet().stream())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (existing, replacement) -> {
+                            if (existing instanceof List existingList) {
+                                List<Object> newList = new ArrayList<>(existingList);
+                                newList.add(replacement);
+                                return newList;
+                            } else {
+                                List<Object> list = new ArrayList<>();
+                                list.add(existing);
+                                list.add(replacement);
+                                return list;
+                            }
+                        }
+                ));
+    }
+
+    private List<Map<String, Object>> resolveAnyOfOneOfSchemaPropertiesWithMultipleSchemas(String propertyName, Schema schema) {
         logger.trace("resolveAnyOfOneOfSchemaProperties for schema {}", propertyName);
         mapDiscriminator(schema, Optional.ofNullable(schema.getAnyOf()).orElse(schema.getOneOf()));
         List<Map<String, Object>> examples = new ArrayList<>();

@@ -93,6 +93,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldGenerateMultiplePayloadsWhenRootOneOfAndDiscriminatorAndAllOfAndMappings() throws Exception {
+        Mockito.when(processingArguments.isResolveXxxOfCombinationForResponses()).thenReturn(true);
         List<FuzzingData> data = setupFuzzingData("/variant", "src/test/resources/issue_69.yml");
         Assertions.assertThat(data).hasSize(3);
 
@@ -848,6 +849,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void testAnyOfPrimitiveTypes() throws Exception {
+        Mockito.when(processingArguments.isResolveXxxOfCombinationForResponses()).thenReturn(true);
         List<FuzzingData> dataList = setupFuzzingData("/mfm/v1/services/", "src/test/resources/issue86.json");
 
         Assertions.assertThat(dataList).hasSize(5);
@@ -869,6 +871,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldGenerateValidResponseForOneOfNestedCombinations() throws Exception {
+        Mockito.when(processingArguments.isResolveXxxOfCombinationForResponses()).thenReturn(true);
         List<FuzzingData> dataList = setupFuzzingData("/api/groops/{groopId}/StartGroopitPaging", "src/test/resources/nswag_gen_oneof.json");
         Assertions.assertThat(dataList).hasSize(1);
         FuzzingData firstData = dataList.getFirst();

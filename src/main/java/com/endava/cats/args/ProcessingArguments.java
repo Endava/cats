@@ -106,6 +106,10 @@ public class ProcessingArguments {
             description = "If set to @|bold true|@, it will use default values (if set) when generating examples. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean useDefaults = true;
 
+    @CommandLine.Option(names = {"--resolveXxxOfCombinationForResponses"},
+            description = "If set to @|bold true|@, it will resolve oneOf/anyOf combinations also for responses. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean resolveXxxOfCombinationForResponses;
+
 
     /**
      * Checks if the payload matches any of the supplied --oneOfSelection or --anyOfSelection argument
