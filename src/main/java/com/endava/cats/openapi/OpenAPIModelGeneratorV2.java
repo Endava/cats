@@ -411,7 +411,7 @@ public class OpenAPIModelGeneratorV2 {
                         Map.Entry::getKey,
                         Map.Entry::getValue,
                         (existing, replacement) -> {
-                            if (existing instanceof List existingList) {
+                            if (existing instanceof List<?> existingList) {
                                 List<Object> newList = new ArrayList<>(existingList);
                                 newList.add(replacement);
                                 return newList;
