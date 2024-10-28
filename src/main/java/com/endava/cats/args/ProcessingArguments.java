@@ -70,7 +70,7 @@ public class ProcessingArguments {
     @CommandLine.Option(names = {"--selfReferenceDepth", "-L"},
             description = "Max depth for request objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int selfReferenceDepth = 4;
-
+    
     @Setter
     @CommandLine.Option(names = {"--contentType"},
             description = "A custom mime type if the OpenAPI contract/spec uses content type negotiation versioning")

@@ -84,14 +84,19 @@ public class OpenAPIModelGeneratorV2 {
 
     private String currentProperty = "";
     private final boolean resolveAnyOfAsMultipleSchema;
+    private int currentPropertiesDepth;
+    private int totalDepth = 50;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
+     * The default value for {@code resolveAnyOfAsMultipleSchema=true}. The default value for {@code totalDepth=0} which means no restriction.
      *
      * @param catsGlobalContext   The global context for CATS.
      * @param validDataFormat     The format to use for generating valid data.
      * @param useExamplesArgument Flag indicating whether to use examples from the OpenAPI specification.
      * @param selfReferenceDepth  The maximum depth for generating self-referencing models.
+     * @param useDefaults         Whether to use default values if available
+     * @param maxArraySize        The maximum size for arrays
      */
     public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize) {
         this.globalContext = catsGlobalContext;
@@ -102,17 +107,21 @@ public class OpenAPIModelGeneratorV2 {
         this.callStackCounter = new HashMap<>();
         this.useDefaults = useDefaults;
         this.maxArraySize = maxArraySize;
+
         this.resolveAnyOfAsMultipleSchema = true;
+        this.totalDepth = 0;
     }
 
     /**
-     * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
+     * Constructs an OpenAPIModelGeneratorV2 with the specified configuration. The default value for {@code totalDepth=50}
      *
      * @param catsGlobalContext            The global context for CATS.
      * @param validDataFormat              The format to use for generating valid data.
      * @param useExamplesArgument          Flag indicating whether to use examples from the OpenAPI specification.
      * @param selfReferenceDepth           The maximum depth for generating self-referencing models.
      * @param resolveAnyOfAsMultipleSchema If true it will resolve all combinations of oneOf/anyOf schemas
+     * @param useDefaults                  Whether to use default values if available
+     * @param maxArraySize                 The maximum size for arrays
      */
     public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize, boolean resolveAnyOfAsMultipleSchema) {
         this.globalContext = catsGlobalContext;
@@ -347,6 +356,12 @@ public class OpenAPIModelGeneratorV2 {
             String propertyName = entry.getKey();
             Schema property = entry.getValue();
 
+            currentPropertiesDepth++;
+            // this is a hack to avoid infinite recursion when the schema references itself and JsonUtils.isCyclicReference does not catch it.
+            // json responses tend to have a lot of self-references and they return more complex objects than request payloads
+            if (totalDepth > 0 && currentPropertiesDepth > totalDepth) {
+                continue;
+            }
             List<Object> propertyExamples;
             if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName)) {
                 propertyExamples = List.of(matchToEnumOrEmpty(currentSchemaName, property, propertyName));
@@ -358,6 +373,7 @@ public class OpenAPIModelGeneratorV2 {
             if (!propertyExamples.isEmpty()) {
                 examples = combineExamples(examples, propertyName, propertyExamples);
             }
+            currentPropertiesDepth--;
         }
 
         return examples;
@@ -492,12 +508,12 @@ public class OpenAPIModelGeneratorV2 {
         List<Object> examples = new ArrayList<>();
         String previousProperty = currentProperty;
 
-        // Update currentProperty
         currentProperty = StringUtils.isBlank(previousProperty) ? propertyName : previousProperty + "#" + propertyName;
         if (JsonUtils.isCyclicReference(currentProperty, selfReferenceDepth) || property == null) {
+            currentProperty = previousProperty;
             return examples;
         }
-        // Record the schema
+
         recordRequestSchema(currentProperty, property);
 
         if (CatsModelUtils.isArraySchema(property)) {

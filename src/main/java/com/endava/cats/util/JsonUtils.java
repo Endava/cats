@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -100,7 +101,6 @@ public abstract class JsonUtils {
      * Represents the JSON Patch content type.
      */
     public static final String JSON_PATCH = "application/merge-patch+json";
-
 
     /**
      * To not be used to serialize data ending in console or files. Use the TestCaseExporter serializer for that.
@@ -486,22 +486,13 @@ public abstract class JsonUtils {
         if (currentProperty == null) {
             return false;
         }
-        String[] properties = Arrays.stream(currentProperty.split("[#_]", -1)).filter(StringUtils::isNotBlank).toArray(String[]::new);
+        String[] tokens = currentProperty.split("[#_]", -1);
+        Map<String, Long> tokenCounts = Arrays.stream(tokens)
+                .map(String::toLowerCase)
+                .map(item -> item.replace(".items", ""))
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
-        if (properties.length < depth) {
-            return false;
-        }
-
-        for (int i = 0; i < properties.length - 1; i++) {
-            for (int j = i + 1; j <= properties.length - 1; j++) {
-                if (properties[i].equalsIgnoreCase(properties[j]) && j - i >= depth) {
-                    LOGGER.trace("Found cyclic reference for {}", currentProperty);
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return tokenCounts.values().stream().anyMatch(count -> count > depth);
     }
 
     /**

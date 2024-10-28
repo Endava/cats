@@ -779,7 +779,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldAvoidCyclicDependenciesOnAdditionalProperties() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(9);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
 
         List<FuzzingData> dataList = setupFuzzingData("/containers", "src/test/resources/petstore.yml");
@@ -810,7 +810,7 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldAvoidCyclicDependenciesOnAdditionalPropertiesSecondCase() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(5);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(3);
         Mockito.when(processingArguments.getDefaultContentType()).thenReturn("application/json");
 
         List<FuzzingData> dataList = setupFuzzingData("/apis/{api}/{version}/rest", "src/test/resources/discovery.yaml");
@@ -937,6 +937,19 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldStopWhenComplexSelfReferencesOnResponseSchemas() throws Exception {
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(2);
+        List<FuzzingData> dataList = setupFuzzingData("/Charts/Details/{id}", "src/test/resources/presalytics.yml");
+        Assertions.assertThat(dataList).hasSize(1);
+        assertPropertiesExistInRequestPropertyTypes(dataList.getFirst());
+        FuzzingData data = dataList.getFirst();
+        List<String> responses = data.getResponses().get("200");
+        Assertions.assertThat(responses).hasSize(1);
+        String firstResponse = responses.getFirst();
+        Assertions.assertThat(firstResponse).contains("axes", "chartData", "columnCollection", "axis", "axisDataTypeId");
+    }
+
+    @Test
     void shouldProperlyFormatDateAndDatetimeExamples() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/dates", "src/test/resources/issue146.yml");
         Assertions.assertThat(dataList).hasSize(1);
@@ -978,14 +991,19 @@ class FuzzingDataFactoryTest {
 
     @Test
     void shouldConsiderSelfReferenceDepthWhenDetectingCyclicDependencies() throws Exception {
-        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(6);
+        Mockito.when(processingArguments.getSelfReferenceDepth()).thenReturn(3);
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/issue117.json");
         Assertions.assertThat(dataList).hasSize(2);
         FuzzingData data = dataList.getFirst();
-        String var1 = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy"));
-        Object var2 = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource");
-        Assertions.assertThat(var1).isNotEqualTo("NOT_SET");
-        Assertions.assertThat(var2).hasToString("NOT_SET");
+        String updatedByExisting = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy"));
+        Object updatedByNonExisting = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource.updatedBy.credentialSource");
+        Assertions.assertThat(updatedByExisting).isNotEqualTo("NOT_SET");
+        Assertions.assertThat(updatedByNonExisting).hasToString("NOT_SET");
+
+        String addedByExisting = String.valueOf(JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.addedBy.credentialSource.addedBy.credentialSource.addedBy"));
+        Object addedByNonExisting = JsonUtils.getVariableFromJson(data.getPayload(), "$.credentialSource.addedBy.credentialSource.addedBy.credentialSource.addedBy.credentialSource");
+        Assertions.assertThat(addedByExisting).isNotEqualTo("NOT_SET");
+        Assertions.assertThat(addedByNonExisting).hasToString("NOT_SET");
 
         assertPropertiesExistInRequestPropertyTypes(data);
     }
