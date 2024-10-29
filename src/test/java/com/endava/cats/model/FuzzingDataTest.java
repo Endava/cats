@@ -25,7 +25,7 @@ class FuzzingDataTest {
     void givenASchema_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMap());
-        FuzzingData data = FuzzingData.builder().reqSchema(baseSchema).requestPropertyTypes(this.getBasePropertiesMap()).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).reqSchema(baseSchema).requestPropertyTypes(this.getBasePropertiesMap()).build();
 
         Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties)
@@ -37,7 +37,7 @@ class FuzzingDataTest {
     void givenASchemaWithSubfields_whenGettingAllFieldsAsASingleSet_thenAllFieldsAreReturned() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
 
         Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties)
@@ -49,7 +49,7 @@ class FuzzingDataTest {
     void shouldLimitTheNumberOfFields() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields()).
                 requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema)
                 .limitNumberOfFields(2)
                 .build();
@@ -67,7 +67,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesMap());
         composedSchema.allOf(Collections.singletonList(baseSchema));
 
-        FuzzingData data = FuzzingData.builder().reqSchema(composedSchema).requestPropertyTypes(this.getBasePropertiesMap()).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).reqSchema(composedSchema).requestPropertyTypes(this.getBasePropertiesMap()).build();
 
         Set<String> allProperties = data.getAllFieldsByHttpMethod();
         Assertions.assertThat(allProperties).contains("firstName", "lastName");
@@ -80,7 +80,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesRequired());
         composedSchema.allOf(Collections.singletonList(baseSchema));
         baseSchema.setRequired(Collections.singletonList("phone"));
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesRequired()).requestPropertyTypes(this.getBasePropertiesRequired()).reqSchema(composedSchema).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesRequired()).requestPropertyTypes(this.getBasePropertiesRequired()).reqSchema(composedSchema).build();
 
         List<String> allProperties = data.getAllRequiredFields();
         Assertions.assertThat(allProperties)
@@ -95,7 +95,7 @@ class FuzzingDataTest {
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
         composedSchema.allOf(Collections.singletonList(baseSchema));
         baseSchema.setRequired(Collections.singletonList("firstName"));
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(composedSchema).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(composedSchema).build();
 
         List<String> allProperties = data.getAllRequiredFields();
         Assertions.assertThat(allProperties)
@@ -108,7 +108,7 @@ class FuzzingDataTest {
     void shouldIncludeBasedOnFieldType(String type, int expected) {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields())
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields())
                 .requestPropertyTypes(this.buildRequestPropertyTypes())
                 .reqSchema(baseSchema)
                 .includeFieldTypes(List.of(type))
@@ -123,7 +123,7 @@ class FuzzingDataTest {
     void shouldExcludeBasedOnFieldType(String type, int expected) {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields())
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields())
                 .requestPropertyTypes(this.buildRequestPropertyTypes())
                 .reqSchema(baseSchema)
                 .skipFieldTypes(List.of(type))
@@ -138,7 +138,7 @@ class FuzzingDataTest {
     void shouldIncludeBasedOnFieldFormat(String format, int expected) {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields())
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields())
                 .requestPropertyTypes(this.buildRequestPropertyTypes())
                 .reqSchema(baseSchema)
                 .includeFieldFormats(List.of(format))
@@ -153,7 +153,7 @@ class FuzzingDataTest {
     void shouldExcludeBasedOnFieldFormat(String format, int expected) {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields())
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields())
                 .requestPropertyTypes(this.buildRequestPropertyTypes())
                 .reqSchema(baseSchema)
                 .skipFieldFormats(List.of(format))
@@ -168,7 +168,7 @@ class FuzzingDataTest {
     void shouldExcludeBasedOnFieldName(String name, int expected) {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields())
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields())
                 .requestPropertyTypes(this.buildRequestPropertyTypes())
                 .reqSchema(baseSchema)
                 .skippedFieldsForAllFuzzers(List.of(name))
@@ -182,7 +182,7 @@ class FuzzingDataTest {
     void shouldGetPowerSet() {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
 
         Set<Set<String>> setOfFields = data.getAllFields(FuzzingData.SetFuzzingStrategy.POWERSET, 3);
         Assertions.assertThat(setOfFields).hasSize(15);
@@ -193,7 +193,7 @@ class FuzzingDataTest {
     void shouldGetBasedOnSize(int maxSizeToRemove, int expected) {
         ObjectSchema baseSchema = new ObjectSchema();
         baseSchema.setProperties(this.getBasePropertiesMapWithSubfields());
-        FuzzingData data = FuzzingData.builder().schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).schemaMap(getBasePropertiesMapWithSubfields()).requestPropertyTypes(this.buildRequestPropertyTypes()).reqSchema(baseSchema).build();
 
         Set<Set<String>> setOfFields = data.getAllFields(FuzzingData.SetFuzzingStrategy.SIZE, maxSizeToRemove);
         Assertions.assertThat(setOfFields).hasSize(expected);
@@ -201,7 +201,7 @@ class FuzzingDataTest {
 
     @Test
     void shouldReturnContentTypeWhenPresent() {
-        FuzzingData data = FuzzingData.builder().responseContentTypes(Map.of("200", List.of("application/json", "application/v2+json"))).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).responseContentTypes(Map.of("200", List.of("application/json", "application/v2+json"))).build();
         List<String> contentTypes = data.getContentTypesByResponseCode("200");
 
         Assertions.assertThat(contentTypes).containsOnly("application/json", "application/v2+json");
@@ -209,7 +209,7 @@ class FuzzingDataTest {
 
     @Test
     void shouldReturnDefaultContentType() {
-        FuzzingData data = FuzzingData.builder().responseContentTypes(Map.of("200", List.of("application/json", "application/v2+json"))).build();
+        FuzzingData data = FuzzingData.builder().selfReferenceDepth(4).responseContentTypes(Map.of("200", List.of("application/json", "application/v2+json"))).build();
         List<String> contentTypes = data.getContentTypesByResponseCode("300");
 
         Assertions.assertThat(contentTypes).containsOnly("application/json");

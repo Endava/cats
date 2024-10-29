@@ -486,7 +486,14 @@ public abstract class JsonUtils {
         if (currentProperty == null) {
             return false;
         }
-        String[] tokens = currentProperty.split("[#_]", -1);
+
+        String[] tokens = Arrays.stream(currentProperty.split("[#_]", -1))
+                .filter(StringUtils::isNotBlank)
+                .toArray(String[]::new);
+        if (tokens.length < depth) {
+            return false;
+        }
+
         Map<String, Long> tokenCounts = Arrays.stream(tokens)
                 .map(String::toLowerCase)
                 .map(item -> item.replace(".items", ""))
