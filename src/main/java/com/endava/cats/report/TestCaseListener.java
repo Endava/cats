@@ -17,6 +17,7 @@ import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.common.collect.Iterators;
 import com.google.common.net.MediaType;
 import com.google.gson.JsonArray;
@@ -463,8 +464,12 @@ public class TestCaseListener {
         this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
+        List<String> detectedKeyWords = WordUtils.getKeywordsMatching(catsResponse.getBody());
 
-        if (ignoreArguments.isSkipReportingForWarnings()) {
+        if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
+            logger.debug("Detected keywords in response body: {}", detectedKeyWords);
+            reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(detectedKeyWords));
+        } else if (ignoreArguments.isSkipReportingForWarnings()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForWarnings is enabled"));
             this.recordResult(message, params, SKIP_REPORTING, logger);
@@ -598,7 +603,12 @@ public class TestCaseListener {
     void reportInfo(PrettyLogger logger, String message, Object... params) {
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
-        if (ignoreArguments.isSkipReportingForSuccess()) {
+        List<String> detectedKeyWords = WordUtils.getKeywordsMatching(catsResponse.getBody());
+
+        if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
+            logger.debug("Detected keywords in response body: {}", detectedKeyWords);
+            reportError(logger, CatsResultFactory.createErrorLeaksDetectedInResponse(detectedKeyWords));
+        } else if (ignoreArguments.isSkipReportingForSuccess()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, replaceBrackets("Skip reporting as --skipReportingForSuccess is enabled"));
             this.recordResult(message, params, SKIP_REPORTING, logger);

@@ -14,6 +14,75 @@ import java.util.stream.Collectors;
  * Helper class for words operations.
  */
 public abstract class WordUtils {
+    private static final Set<String> ERROR_KEYWORDS = Set.of(
+            "StackTrace", "BadRequest", "InternalServerError", "Unauthorized",
+            "Forbidden", "ServiceUnavailable", "Timeout", "PermissionDenied", "InvalidToken",
+            "MethodNotAllowed", "ResourceNotFound", "RateLimitExceeded", "ClientError", "ServerError",
+            "AuthenticationFailed", "AuthenticationError", "AuthorizationError", "ConnectionTimeout",
+            "SSLHandshakeError", "ConnectionRefused", "MalformedRequest", "MissingParameter",
+            "InvalidResponse", "TransactionFailed", "InvalidHeader", "InvalidGrant",
+            "APIKeyError", "DatabaseError", "QueryTimeout", "DataLossError", "RequestEntityTooLarge",
+            "TooManyRequests", "UnsupportedMediaType", "UnprocessableEntity", "DataIntegrityViolation",
+
+            // JavaScript/Node.js
+            "ReferenceError", "SyntaxError", "TypeError", "RangeError", "EvalError", "UncaughtException",
+            "UnhandledRejection", "ProcessError", "HeapOverflow", "TimeoutError", "ENOTFOUND",
+            "ECONNREFUSED", "EADDRINUSE", "EPIPE", "ETIMEDOUT", "EPERM", "ENETUNREACH", "ECONNRESET",
+            "EEXIST", "EISDIR",
+
+            // C#
+            "ArgumentNullException", "InvalidOperationException", "TaskCanceledException",
+            "FileLoadException", "UnauthorizedAccessException", "KeyNotFoundException", "SecurityException",
+            "ArgumentOutOfRangeException", "DirectoryNotFoundException", "OperationCanceledException",
+            "StackOverflowException", "FormatException", "NotImplementedException",
+            "InvalidCastException", "TimeoutException", "OverflowException", "DivideByZeroException",
+            "ObjectDisposedException", "IndexOutOfRangeException",
+
+            // Python
+            "ValueError", "KeyError", "AttributeError", "IndexError", "ModuleNotFoundError",
+            "ZeroDivisionError", "ImportError", "IOError", "RuntimeError",
+            "FileNotFoundError", "StopIteration", "MemoryError", "FloatingPointError",
+            "ConnectionError", "AssertionError", "BrokenPipeError", "PermissionError",
+
+            // Go (Golang)
+            "panic", "runtime error", "json: cannot unmarshal", "unexpected end of JSON",
+            "InvalidArgumentError", "NilPointerDereference", "ChannelClosedError", "DivideByZeroError",
+            "fatal error: stack overflow", "index out of range",
+            "invalid memory address or nil pointer dereference", "deadlock",
+
+            // Ruby
+            "NoMethodError", "ArgumentError", "LoadError",
+            "NameError", "EOFError", "StandardError", "ThreadError",
+            "Timeout::Error", "EncodingError", "SystemExit",
+
+            // PHP
+            "FatalError", "ParseError", "Warning", "Notice", "DivisionByZeroError",
+            "MemoryLimitExceeded", "PDOException", "ErrorException",
+            "InvalidArgument", "OutOfMemoryError", "UnexpectedValueException",
+
+            // C++
+            "SegmentationFault", "std::exception", "std::runtime_error", "std::invalid_argument",
+            "std::out_of_range", "std::bad_alloc", "MemoryLeak", "StackOverflow", "SIGSEGV", "SIGABRT",
+            "std::length_error", "std::overflow_error", "std::underflow_error", "std::domain_error",
+            "std::range_error", "std::logic_error",
+
+            // Java
+            "NullPointerException", "ArrayIndexOutOfBoundsException", "StringIndexOutOfBoundsException",
+            "IllegalArgumentException", "NumberFormatException", "IllegalStateException",
+            "ConcurrentModificationException", "FileNotFoundException", "IOException",
+            "ClassCastException", "UnsupportedOperationException", "InterruptedException",
+            "SQLException", "ClassNotFoundException", "NoSuchMethodException",
+            "InvocationTargetException", "InstantiationException",
+
+            // Kotlin
+            "NoSuchElementException", "IndexOutOfBoundsException", "TypeCastException",
+            "KotlinNullPointerException", "KotlinIllegalArgumentException",
+
+            // Swift
+            "IndexOutOfRange", "UnexpectedNil", "TypeMismatch", "OutOfBounds",
+            "UnwrapError", "Segfault", "DivideByZero", "DecodingError", "KeyDecodingError"
+    );
+
     private static final List<String> DELIMITERS = List.of("", "-", "_");
 
     private WordUtils() {
@@ -77,5 +146,14 @@ public abstract class WordUtils {
      */
     public static boolean matchesAsLowerCase(String string1, String string2) {
         return string2.toLowerCase(Locale.ROOT).matches(string1.toLowerCase(Locale.ROOT));
+    }
+
+    public static List<String> getKeywordsMatching(String response) {
+        if (response == null) {
+            return List.of();
+        }
+        return ERROR_KEYWORDS.stream()
+                .filter(keyword -> response.toLowerCase(Locale.ROOT).contains(keyword.toLowerCase(Locale.ROOT)))
+                .toList();
     }
 }

@@ -93,6 +93,19 @@ public interface CatsResultFactory {
     }
 
     /**
+     * Creates an error leaks detected message and reason. This happens when the response contains error messages that are not expected.
+     *
+     * @param keywords the keywords detected in the response
+     * @return a CatsResult to use in reporting
+     */
+    static CatsResult createErrorLeaksDetectedInResponse(List<String> keywords) {
+        String message = "The following keywords were detected in the response which might suggest an error details leak: %s".formatted(keywords);
+        String reason = "Error details leak";
+
+        return new CatsResult(message, reason);
+    }
+
+    /**
      * Creates an unexpected behaviour message and reason. This is not caused by an abnormal functioning of the application,
      * but rather a response code that was not expected, nor documented, nor known not to typically be documented.
      *

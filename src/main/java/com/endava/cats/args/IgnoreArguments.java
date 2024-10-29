@@ -28,6 +28,10 @@ public class IgnoreArguments {
             description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseBodyCheck;
 
+    @CommandLine.Option(names = {"--ignoreErrorLeaksCheck", "--ie"},
+            description = "Don't check if the response body received from the service matches the schema supplied inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
+    private boolean ignoreErrorLeaksCheck;
+
     @CommandLine.Option(names = {"--ignoreResponseContentTypeCheck", "--it"},
             description = "Don't check if the response content type received from the service matches the one supplied inside the contract. This will mark the test result as @|bold,underline success|@ instead of @|bold,underline warn|@")
     private boolean ignoreResponseContentTypeCheck;
