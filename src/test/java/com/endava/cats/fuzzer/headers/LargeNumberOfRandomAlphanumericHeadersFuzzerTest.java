@@ -75,7 +75,7 @@ class LargeNumberOfRandomAlphanumericHeadersFuzzerTest {
         largeNumberOfRandomAlphanumericHeadersFuzzer.fuzz(data);
         Mockito.doNothing().when(testCaseListener).reportResultError(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.any(), Mockito.any());
 
-        Mockito.verify(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Unexpected Response Code: " + code),
+        Mockito.verify(testCaseListener).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("Unexpected response code: " + code),
                 Mockito.eq("Request failed unexpectedly for http method [{}]: expected {}, actual [{}]"), Mockito.any());
 
     }

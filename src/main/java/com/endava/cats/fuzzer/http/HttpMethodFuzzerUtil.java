@@ -66,10 +66,10 @@ public class HttpMethodFuzzerUtil {
             testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else if (ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
-            testCaseListener.reportResultError(logger, data, "Unexpected Response Code: %s".formatted(response.getResponseCode()), "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
+            testCaseListener.reportResultError(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()), "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
         } else {
-            testCaseListener.reportResultWarn(logger, data, "Unexpected Response Code: %s".formatted(response.getResponseCode()), "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
+            testCaseListener.reportResultWarn(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()), "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
         }
     }

@@ -73,7 +73,7 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
             testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else {
-            testCaseListener.reportResultError(logger, data, "Unexpected Response Code: %s".formatted(response.getResponseCode()), "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
+            testCaseListener.reportResultError(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()), "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
                     data.getMethod(), "404, 410", response.responseCodeAsString());
         }
     }

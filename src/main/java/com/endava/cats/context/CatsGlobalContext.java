@@ -144,7 +144,7 @@ public class CatsGlobalContext {
             resolvedObject = getObjectFromPathsReference(shortRef);
         }
 
-        Schema<?> result = null;
+        Schema<?> result;
         if (resolvedObject instanceof Parameter parameter) {
             result = parameter.getSchema();
         } else {
