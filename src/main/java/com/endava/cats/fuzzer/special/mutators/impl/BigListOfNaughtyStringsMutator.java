@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
+import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
@@ -13,7 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * Sends random naughty strings in json fields.
@@ -29,10 +29,10 @@ public class BigListOfNaughtyStringsMutator implements BodyMutator {
             NAUGHTY_STRINGS = reader.lines()
                     .filter(StringUtils::isNotBlank)
                     .filter(Predicate.not(line -> line.startsWith("#")))
-                    .collect(Collectors.toList());
+                    .toList();
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to read BLNS resource file", e);
+            throw new CatsException("Failed to read BLNS resource file", e);
         }
     }
 
