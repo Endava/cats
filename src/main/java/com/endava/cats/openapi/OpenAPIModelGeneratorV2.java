@@ -85,11 +85,11 @@ public class OpenAPIModelGeneratorV2 {
     private String currentProperty = "";
     private final boolean resolveAnyOfAsMultipleSchema;
     private int currentPropertiesDepth;
-    private int totalDepth = 50;
+    private final int totalDepth;
 
     /**
      * Constructs an OpenAPIModelGeneratorV2 with the specified configuration.
-     * The default value for {@code resolveAnyOfAsMultipleSchema=true}. The default value for {@code totalDepth=0} which means no restriction.
+     * The default value for {@code resolveAnyOfAsMultipleSchema=true}. The default value for {@code totalDepth=200}.
      *
      * @param catsGlobalContext   The global context for CATS.
      * @param validDataFormat     The format to use for generating valid data.
@@ -109,7 +109,7 @@ public class OpenAPIModelGeneratorV2 {
         this.maxArraySize = maxArraySize;
 
         this.resolveAnyOfAsMultipleSchema = true;
-        this.totalDepth = 0;
+        this.totalDepth = 200;
     }
 
     /**
@@ -133,6 +133,7 @@ public class OpenAPIModelGeneratorV2 {
         this.useDefaults = useDefaults;
         this.maxArraySize = maxArraySize;
         this.resolveAnyOfAsMultipleSchema = resolveAnyOfAsMultipleSchema;
+        this.totalDepth = 50;
     }
 
     private void addExampleAndKeepDepth(String propertyName, Object propertyExample, Map<String, Object> newExample, List<Map<String, Object>> combinedExamples) {
@@ -175,6 +176,7 @@ public class OpenAPIModelGeneratorV2 {
                 throw new IllegalArgumentException("Scheme is not declared: " + modelName);
             }
         }
+
         currentProperty = "";
         return Collections.emptyList();
     }
@@ -313,34 +315,29 @@ public class OpenAPIModelGeneratorV2 {
 
         recordRequestSchema(currentProperty, schema);
 
-        // Handle properties
         if (schema.getProperties() != null && !schema.getProperties().isEmpty()) {
             examples.addAll(traverseSchemaProperties(schema, name));
         }
 
-        // Handle allOf
         if (CatsModelUtils.isAllOf(schema) || CatsModelUtils.isAllOfWithProperties(schema)) {
             List<Map<String, Object>> allOfExamples = resolveAllOfSchemaProperties(schema, name);
             examples = combineExampleLists(examples, allOfExamples);
         }
 
-        // Handle oneOf and anyOf
         if (CatsModelUtils.isAnyOf(schema) || CatsModelUtils.isOneOf(schema)) {
             List<Map<String, Object>> oneOfAnyOfExamples = resolveAnyOfOneOfSchemaProperties(name, schema);
             examples = combineExampleLists(examples, oneOfAnyOfExamples);
         }
 
-        // Handle array
         if (CatsModelUtils.isArraySchema(schema)) {
             List<Map<String, Object>> arrayExamples = resolveArraySchemaProperties(name, schema);
             examples = combineExampleLists(examples, arrayExamples);
         }
 
-        // If no examples were generated, create a default one
         if (examples.isEmpty()) {
-            Map<String, Object> defaultExample = new HashMap<>();
             Object resolvedExample = resolvePropertyToExample(name, schema);
             if (resolvedExample != null) {
+                Map<String, Object> defaultExample = new HashMap<>();
                 defaultExample.put(name, resolvedExample);
                 examples.add(defaultExample);
             }
@@ -372,7 +369,7 @@ public class OpenAPIModelGeneratorV2 {
             currentPropertiesDepth++;
             // this is a hack to avoid infinite recursion when the schema references itself and JsonUtils.isCyclicReference does not catch it.
             // json responses tend to have a lot of self-references, and they return more complex objects than request payloads
-            if (totalDepth > 0 && currentPropertiesDepth > totalDepth) {
+            if (currentPropertiesDepth > totalDepth) {
                 continue;
             }
             List<Object> propertyExamples;
@@ -555,10 +552,8 @@ public class OpenAPIModelGeneratorV2 {
             }
         }
 
-        // Reset currentProperty
         currentProperty = previousProperty;
 
-        // if examples are map and the key is null, just take out the values
         return examples;
     }
 
