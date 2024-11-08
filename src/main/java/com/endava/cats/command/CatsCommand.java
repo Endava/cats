@@ -357,11 +357,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUsePropertyExamples()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseResponseBodyExamples()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseDefaults()).reset().bold());
-        logger.config(ansi().bold().a("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, cachePayloads {}, limitXxxOfCombinations {}").reset().toString(),
+        logger.config(ansi().bold().a("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, limitFuzzedFields {}, limitXxxOfCombinations {}").reset().toString(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getSelfReferenceDepth()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLargeStringsSize()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getRandomHeadersNumber()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isCachePayloads()).reset().bold(),
+                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLimitNumberOfFields()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLimitXxxOfCombinations()).reset().bold());
         logger.config(ansi().bold().a("How the service handles whitespaces and random unicodes: edgeSpacesStrategy {}, sanitizationStrategy {}").reset().toString(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getEdgeSpacesStrategy()).reset().bold(),
