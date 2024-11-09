@@ -7,6 +7,7 @@ description: How to ignore specific HTTP response
 CATS reports can be huge. Opening a report with 20k tests it's not the best user experience. 
 Outside the typical [Slicing Strategies](slicing-strategies), you can also choose to ignore reporting for specific HTTP responses.
 
+
 ## Ignoring Specific HTTP Responses
 By default, CATS will report `warns` and `errors` according to the specific behaviour of each Fuzzer. There are cases though when you might want to focus only on critical bugs.
 You can use the `--ignoreResponseXXX` arguments to supply a list of response codes, response sizes, word counts, 
@@ -36,3 +37,7 @@ You can ignore specific response codes using the `--ignoreResponseCodes` argumen
 
 ## Ignore Response Lines, Words, Size, Regex
 You can ignore specific response lines, words, size or regex using the `--ignoreResponseLines`, `--ignoreResponseWords`, `--ignoreResponseSize`, `--ignoreResponseRegex` arguments. This will make CATS report these cases as `success` instead of `warn`.
+
+:::info All --ignoreXXX arguments have a corresponding --filterXXX argument
+All `--ignoreXXX` arguments above have a corresponding `--filterXXX` argument which is equivalent to the `--ignoreXXX` argument AND will also consider `--skipReportingForIgnore` as being true.
+:::

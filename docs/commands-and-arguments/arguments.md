@@ -58,6 +58,11 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--ignoreResponseWords` COUNT_LIST a comma separated list of words count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
 - `--ignoreResponseLines` LINES_COUNT a comma separated list of lines count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
 - `--ignoreResponseRegex` a REGEX that will match against the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
+- `--filterResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be filtered and not included in the final report. You can use response code families as `2xx`, `4xx`, etc.
+- `--filterResponseSize` SIZE_LIST a comma separated list of response sizes that will be filtered and not included in the final report
+- `--filterResponseWords` COUNT_LIST a comma separated list of words count in the response that will be filtered and not included in the final report
+- `--filterResponseLines` LINES_COUNT a comma separated list of lines count in the response that will be filtered and not included in the final report
+- `--filterResponseRegex` a REGEX that will match against the response that will be filtered and not included in the final report
 - `--tests` TESTS_LIST a comma separated list of executed tests in JSON format from the cats-report folder. If you supply the list without the .json extension CATS will search the test in the cats-report folder
 - `--ignoreResponseCodeUndocumentedCheck` If supplied (not value needed) it won't check if the response code received from the service matches the value expected by the fuzzer and will return the test result as SUCCESS instead of WARN
 - `--ignoreResponseBodyCheck` If supplied (no value needed) it won't check if the response body received from the service matches the schema supplied inside the contract and will return the test result as SUCCESS instead of WARN
@@ -91,10 +96,9 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--fuzzersConfig=FILE` A properties file with Fuzzer configuration that changes default behaviour. Configuration keys are prefixed with the fully qualified Fuzzer name  
 - `--mutators=FOLDER` A folder containing custom mutators. Only applicable when using the `cats random` sub-command
 - `--allowInvalidEnumValues` When set to true the `InvalidValuesInEnumsFieldsFuzzer` will expect a 2XX response code instead of 4XX
-- `--[no-]filterXxxFromRequestPayloads` In extremely rare cases when CATS fails to generate anyOf/oneOf combinations some requests may still contain ONE_OF/ANY_OF markers. They are filtered out by default. Setting this to false will send them as requests which will probably fail. It's mostly for debug purposes
-- `--generateXxxCombinationsForResponses` Generate anyOf/oneOf combinations also for response schemas. By default it creates one response payload with all possibilities
 - `--selfReferenceDepth=<selfReferenceDepth>` Max depth for objects having cyclic dependencies
 - `--limitXxxOfCombinations=<limitXxxOfCombinations>` Max number of anyOf/oneOf combinations
+- `--limitFuzzedFields=<numberOfFields>` Max number of fields that will be fuzzed
 - `--[no-]useDefaults` If set to true, it will use the default values when generating examples
 - `--nameReplace` If set to true, it will simply do a replacement between the targetFields names provided and the fuzz values 
 - `--stopAfterErrors=<stopAfterErrors>` Number of errors after which the continuous fuzzing will stop running. Errors are defined as conditions matching the given match arguments. Only available in `cats random` sub-command. 
