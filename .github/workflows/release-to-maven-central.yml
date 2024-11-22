@@ -30,6 +30,7 @@ jobs:
 
       - name: Build with Maven
         run: |
+          mvn -B clean --file pom.xml
           mvn -B package --file pom.xml -DskipTests=true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
