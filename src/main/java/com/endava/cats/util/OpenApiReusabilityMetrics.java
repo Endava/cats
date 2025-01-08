@@ -101,7 +101,7 @@ public class OpenApiReusabilityMetrics {
         }
 
         long invoked = cache.operations.stream()
-                .parallel() // Use parallel processing for large APIs
+                .parallel()
                 .filter(op -> countRefsInObject(convertToMap(op)) > 0)
                 .count();
 
@@ -352,10 +352,6 @@ public class OpenApiReusabilityMetrics {
             );
         }
     }
-
-
-    // ─── Helper Methods ───────────────────────────────────────────────────────────────
-
 
     private static Map<String, Object> convertToMap(Object obj) {
         if (obj == null) {

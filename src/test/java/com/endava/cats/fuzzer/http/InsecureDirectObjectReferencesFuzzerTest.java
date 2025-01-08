@@ -45,7 +45,7 @@ class InsecureDirectObjectReferencesFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        idorFuzzer = new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener);
+        idorFuzzer = new InsecureDirectObjectReferencesFuzzer(simpleExecutor, testCaseListener, null);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 

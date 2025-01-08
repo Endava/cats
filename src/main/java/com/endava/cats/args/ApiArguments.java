@@ -119,7 +119,7 @@ public class ApiArguments {
 
             if (serverFromInput == null) {
                 // No CLI server provided, use OpenAPI server
-                return servers.stream().findFirst().orElse(serverFromInput);
+                return servers.stream().findFirst().orElse(null);
             } else {
                 // CLI server provided, check if OpenAPI server has placeholders or relative paths
                 return servers.stream().findFirst()

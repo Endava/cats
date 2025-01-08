@@ -85,7 +85,6 @@ public class OpenApiServerExtractor {
             String varName = entry.getKey();
             List<String> possibleValues = getPossibleValues(entry);
 
-            // If no values found, skip this variable
             if (possibleValues.isEmpty()) {
                 continue;
             }
@@ -110,12 +109,10 @@ public class OpenApiServerExtractor {
 
         List<String> possibleValues = new ArrayList<>();
 
-        // Add default value first
         if (variable.getDefault() != null) {
             possibleValues.add(variable.getDefault());
         }
 
-        // Add enum values if they exist
         if (variable.getEnum() != null && !variable.getEnum().isEmpty()) {
             for (String enumValue : variable.getEnum()) {
                 if (!possibleValues.contains(enumValue)) {

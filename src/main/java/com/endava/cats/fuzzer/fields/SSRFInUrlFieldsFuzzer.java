@@ -180,7 +180,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
                                     .formatted(field, truncatePayload(payload)))
                             .fuzzer(this)
                             .payload(fuzzedPayload)
-                            .responseProcessor(this::processResponse)
+                            .responseProcessor((response, fuzzingData) -> processResponse(response, fuzzingData, payload))
                             .build()
             );
         }
@@ -190,25 +190,14 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
         return SSRF_PAYLOADS;
     }
 
-    private void processResponse(CatsResponse response, FuzzingData data) {
-        String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
+    private void processResponse(CatsResponse response, FuzzingData data, String payload) {
         int responseCode = response.getResponseCode();
 
-        for (String errorPattern : SSRF_ERROR_PATTERNS) {
-            if (responseBody.contains(errorPattern.toLowerCase(Locale.ROOT))) {
-                testCaseListener.reportResultError(
-                        logger, data, "Potential SSRF vulnerability",
-                        "Response contains pattern [%s] indicating potential SSRF vulnerability. Response code: %d"
-                                .formatted(errorPattern, responseCode));
-                return;
-            }
-        }
-
-        if (ResponseCodeFamily.is4xxCode(responseCode)) {
-            testCaseListener.reportResultInfo(
-                    logger, data, "SSRF payload rejected",
-                    "Server rejected the SSRF payload with response code %d"
-                            .formatted(responseCode));
+        SSRFDetectionResult detectionResult = detectSSRFEvidence(response, data, payload);
+        if (detectionResult.vulnerable()) {
+            testCaseListener.reportResultError(
+                    logger, data, detectionResult.title(),
+                    detectionResult.message());
             return;
         }
 
@@ -216,6 +205,14 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
             testCaseListener.reportResultError(
                     logger, data, "Server error with SSRF payload",
                     "Server returned %d error when processing SSRF payload. This may indicate the server attempted to connect to the target."
+                            .formatted(responseCode));
+            return;
+        }
+
+        if (ResponseCodeFamily.is4xxCode(responseCode)) {
+            testCaseListener.reportResultInfo(
+                    logger, data, "SSRF payload rejected",
+                    "Server properly rejected the SSRF payload with response code %d"
                             .formatted(responseCode));
             return;
         }
@@ -261,6 +258,84 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
                 .anyMatch(lowerFieldName::contains);
     }
 
+    /**
+     * Detects evidence of SSRF vulnerability based on response analysis.
+     * This method implements sophisticated detection logic beyond simple pattern matching.
+     *
+     * @param response the HTTP response to analyze
+     * @param data     the fuzzing data context
+     * @param payload  the SSRF payload that was sent
+     * @return detection result indicating if vulnerability was found
+     */
+    private SSRFDetectionResult detectSSRFEvidence(CatsResponse response, FuzzingData data, String payload) {
+        String responseBody = response.getBody() != null ? response.getBody() : "";
+        String responseLower = responseBody.toLowerCase(Locale.ROOT);
+        int responseCode = response.getResponseCode();
+
+        if (responseBody.contains(payload)) {
+            return SSRFDetectionResult.vulnerable(
+                    "SSRF payload reflected in response",
+                    "The SSRF payload [%s] was reflected in the response body. This indicates the server processed the URL and may have attempted to connect to it. Response code: %d"
+                            .formatted(truncatePayload(payload), responseCode));
+        }
+
+        for (String pattern : List.of("ami-id", "instance-id", "security-credentials", "computemetadata", "subscriptionid")) {
+            if (responseLower.contains(pattern)) {
+                return SSRFDetectionResult.vulnerable(
+                        "Cloud metadata service accessed",
+                        "Response contains cloud metadata indicator [%s]. This strongly suggests successful SSRF to cloud metadata service. Response code: %d"
+                                .formatted(pattern, responseCode));
+            }
+        }
+
+        for (String pattern : List.of("root:", "/bin/bash", "/bin/sh")) {
+            if (responseLower.contains(pattern)) {
+                return SSRFDetectionResult.vulnerable(
+                        "File content exposed via SSRF",
+                        "Response contains file system content indicator [%s]. This indicates successful file:// protocol SSRF. Response code: %d"
+                                .formatted(pattern, responseCode));
+            }
+        }
+
+        for (String pattern : List.of("connection refused", "connection timed out", "no route to host", "network unreachable")) {
+            if (responseLower.contains(pattern)) {
+                return SSRFDetectionResult.vulnerable(
+                        "Network error reveals SSRF attempt",
+                        "Response contains network error [%s] indicating the server attempted to connect to the SSRF target. Response code: %d"
+                                .formatted(pattern, responseCode));
+            }
+        }
+
+        for (String pattern : List.of("could not resolve host", "getaddrinfo", "name or service not known")) {
+            if (responseLower.contains(pattern)) {
+                return SSRFDetectionResult.vulnerable(
+                        "DNS resolution error reveals SSRF attempt",
+                        "Response contains DNS error [%s] indicating the server attempted to resolve the SSRF target hostname. Response code: %d"
+                                .formatted(pattern, responseCode));
+            }
+        }
+
+        for (String pattern : List.of("curl error", "urlopen error", "socket error", "failed to connect")) {
+            if (responseLower.contains(pattern)) {
+                return SSRFDetectionResult.vulnerable(
+                        "HTTP client error reveals SSRF attempt",
+                        "Response contains HTTP client error [%s] indicating the server attempted to make an outbound request. Response code: %d"
+                                .formatted(pattern, responseCode));
+            }
+        }
+
+        for (String pattern : List.of("localhost", "127.0.0.1", "169.254.169.254", "metadata.google.internal")) {
+            if (responseLower.contains(pattern) && payload.toLowerCase(Locale.ROOT).contains(pattern)) {
+                return SSRFDetectionResult.vulnerable(
+                        "Internal target reflected in response",
+                        "Response contains internal target [%s] from the SSRF payload. This may indicate the server processed the internal URL. Response code: %d"
+                                .formatted(pattern, responseCode));
+            }
+        }
+
+        return SSRFDetectionResult.notVulnerable();
+    }
+
     private String truncatePayload(String payload) {
         return payload.length() > 50 ? payload.substring(0, 50) + "..." : payload;
     }
@@ -278,5 +353,20 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     @Override
     public String toString() {
         return ConsoleUtils.sanitizeFuzzerName(this.getClass().getSimpleName());
+    }
+
+    /**
+     * Result of SSRF detection analysis.
+     */
+    private record SSRFDetectionResult(boolean vulnerable, String title, String message) {
+
+        public static SSRFDetectionResult notVulnerable() {
+            return new SSRFDetectionResult(false, null, null);
+        }
+
+        public static SSRFDetectionResult vulnerable(String title, String message) {
+            return new SSRFDetectionResult(true, title, message);
+        }
+
     }
 }

@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.HttpFuzzer;
+import com.endava.cats.args.FilesArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
@@ -55,6 +56,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
 
     private final SimpleExecutor simpleExecutor;
     private final TestCaseListener testCaseListener;
+    private final FilesArguments filesArguments;
 
     /**
      * Creates a new InsecureDirectObjectReferencesFuzzer instance.
@@ -62,9 +64,10 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
      * @param simpleExecutor   the executor used to run the fuzz logic
      * @param testCaseListener the test case listener for reporting results
      */
-    public InsecureDirectObjectReferencesFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener) {
+    public InsecureDirectObjectReferencesFuzzer(SimpleExecutor simpleExecutor, TestCaseListener testCaseListener, FilesArguments filesArguments) {
         this.simpleExecutor = simpleExecutor;
         this.testCaseListener = testCaseListener;
+        this.filesArguments = filesArguments;
     }
 
     @Override
@@ -80,7 +83,12 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         LOGGER.info("Found {} ID-like field(s) to test for IDOR: {}", idFields.size(), idFields);
 
         for (String idField : idFields) {
-            fuzzIdField(data, idField);
+            boolean isRefDataField = filesArguments != null && filesArguments.getRefData(data.getPath()).get(idField) != null;
+            if (!isRefDataField) {
+                fuzzIdField(data, idField);
+            } else {
+                LOGGER.skip("Field {} is reference data, skipping", idField);
+            }
         }
     }
 

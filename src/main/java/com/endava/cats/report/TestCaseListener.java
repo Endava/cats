@@ -525,7 +525,7 @@ public class TestCaseListener {
 
     private void extractErrorLeaks() {
         CatsTestCase testCase = currentTestCase();
-        if (testCase.getResponse() == null) {
+        if (testCase.getResponse() == null || testCase.getResponse().getBody() == null) {
             return;
         }
         String bodyToLowerCase = testCase.getResponse().getBody().toLowerCase(Locale.ROOT);
