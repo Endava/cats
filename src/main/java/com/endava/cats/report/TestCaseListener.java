@@ -746,7 +746,7 @@ public class TestCaseListener {
      * @param shouldMatchContentType      a flag indicating whether the response content type should match the one from the OpenAPI spec
      */
     public void reportResult(PrettyLogger logger, FuzzingData data, CatsResponse response, ResponseCodeFamily expectedResultCode, boolean shouldMatchToResponseSchema, boolean shouldMatchContentType) {
-        expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), expectedResultCode);
+        expectedResultCode = this.getExpectedResponseCodeConfiguredFor(MDC.get(FUZZER_KEY), data.getPath(), String.valueOf(data.getMethod()).toLowerCase(Locale.ROOT), expectedResultCode);
         boolean matchesResponseSchema = !shouldMatchToResponseSchema || this.matchesResponseSchema(response, data);
         boolean responseCodeExpected = this.isResponseCodeExpected(response, expectedResultCode);
         boolean responseCodeDocumented = this.isResponseCodeDocumented(data, response);
@@ -873,21 +873,32 @@ public class TestCaseListener {
      *
      * @param fuzzer       the name of the fuzzer
      * @param defaultValue default value when property is not found
+     * @param path         the current path being fuzzed
+     * @param method       the current http method being fuzzed
      * @return the value of the property if found or null otherwise
      */
-    public ResponseCodeFamily getExpectedResponseCodeConfiguredFor(String fuzzer, ResponseCodeFamily defaultValue) {
-        String keyToLookup = fuzzer + "." + "expectedResponseCode";
-        String valueFound = globalContext.getExpectedResponseCodeConfigured(keyToLookup);
-        logger.debug("Configuration key {}, value {}", keyToLookup, valueFound);
+    public ResponseCodeFamily getExpectedResponseCodeConfiguredFor(String fuzzer, String path, String method, ResponseCodeFamily defaultValue) {
+        List<String> keysToTry = new ArrayList<>();
+        keysToTry.add(fuzzer + "." + path + "." + method + ".expectedResponseCode");  // most specific
+        keysToTry.add(fuzzer + "." + path + ".expectedResponseCode");
+        keysToTry.add(fuzzer + "." + method + ".expectedResponseCode");
+        keysToTry.add(fuzzer + ".expectedResponseCode");  // least specific
 
-        if (valueFound == null) {
-            return defaultValue;
+        for (String key : keysToTry) {
+            String value = globalContext.getExpectedResponseCodeConfigured(key);
+            logger.debug("Checking configuration key {}, value {}", key, value);
+
+            if (value != null) {
+                List<String> responseCodes = Arrays.stream(value.split(",", -1))
+                        .map(String::trim)
+                        .filter(item -> item.length() == 3)
+                        .toList();
+                return new ResponseCodeFamilyDynamic(responseCodes);
+            }
         }
-        List<String> responseCodes = Arrays.stream(valueFound.split(",", -1))
-                .map(String::trim)
-                .filter(item -> item.length() == 3)
-                .toList();
-        return new ResponseCodeFamilyDynamic(responseCodes);
+
+        logger.debug("No configuration found, using default value");
+        return defaultValue;
     }
 
     private void recordResult(String message, Object[] params, String result, PrettyLogger logger) {

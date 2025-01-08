@@ -765,7 +765,7 @@ class TestCaseListenerTest {
     @Test
     void shouldReturnDefaultResponseCodeFamilyWhenConfigNotFound() {
         catsGlobalContext.getFuzzersConfiguration().put("AnotherDummy.expectedResponseCode", "999");
-        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfiguredFor("Dummy", ResponseCodeFamilyPredefined.TWOXX);
+        ResponseCodeFamily resultCodeFromFile = testCaseListener.getExpectedResponseCodeConfiguredFor("Dummy", "test", "post", ResponseCodeFamilyPredefined.TWOXX);
 
         Assertions.assertThat(resultCodeFromFile).isEqualTo(ResponseCodeFamilyPredefined.TWOXX);
     }
@@ -784,7 +784,7 @@ class TestCaseListenerTest {
         catsGlobalContext = new CatsGlobalContext();
         catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
         ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
-        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", ResponseCodeFamilyPredefined.TWOXX);
+        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", "test", "post", ResponseCodeFamilyPredefined.TWOXX);
 
         Assertions.assertThat(family).isInstanceOf(ResponseCodeFamilyDynamic.class);
 
@@ -793,9 +793,40 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldLoadPathSpecificResponseCode() {
+        catsGlobalContext = new CatsGlobalContext();
+        catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
+        catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.test.expectedResponseCode", "400");
+
+        ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
+        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", "test", "post", ResponseCodeFamilyPredefined.TWOXX);
+
+        Assertions.assertThat(family).isInstanceOf(ResponseCodeFamilyDynamic.class);
+
+        ResponseCodeFamilyDynamic familyDynamic = (ResponseCodeFamilyDynamic) family;
+        Assertions.assertThat(familyDynamic.allowedResponseCodes()).containsOnly("400");
+    }
+
+    @Test
+    void shouldLoadMethodSpecificResponseCode() {
+        catsGlobalContext = new CatsGlobalContext();
+        catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.expectedResponseCode", "201,202");
+        catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.test.expectedResponseCode", "400");
+        catsGlobalContext.getFuzzersConfiguration().setProperty("fuzzer.test.post.expectedResponseCode", "500");
+
+        ReflectionTestUtils.setField(testCaseListener, "globalContext", catsGlobalContext);
+        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", "test", "post", ResponseCodeFamilyPredefined.TWOXX);
+
+        Assertions.assertThat(family).isInstanceOf(ResponseCodeFamilyDynamic.class);
+
+        ResponseCodeFamilyDynamic familyDynamic = (ResponseCodeFamilyDynamic) family;
+        Assertions.assertThat(familyDynamic.allowedResponseCodes()).containsOnly("500");
+    }
+
+    @Test
     void shouldReturnDefaultResponseCodeWhenNoConfiguration() {
         ReflectionTestUtils.setField(testCaseListener, "globalContext", new CatsGlobalContext());
-        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", ResponseCodeFamilyPredefined.TWOXX);
+        ResponseCodeFamily family = testCaseListener.getExpectedResponseCodeConfiguredFor("fuzzer", "test", "post", ResponseCodeFamilyPredefined.TWOXX);
 
         Assertions.assertThat(family).isInstanceOf(ResponseCodeFamilyPredefined.class);
 
