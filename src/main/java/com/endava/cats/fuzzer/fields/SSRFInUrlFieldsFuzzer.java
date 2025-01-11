@@ -98,41 +98,6 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
             "http://017700000001"
     );
 
-    private static final List<String> SSRF_ERROR_PATTERNS = List.of(
-            // AWS metadata indicators
-            "ami-id",
-            "instance-id",
-            "security-credentials",
-            "iam/",
-            "meta-data",
-            // GCP metadata indicators
-            "computemetadata",
-            "service-accounts",
-            "project-id",
-            // Azure metadata indicators
-            "subscriptionid",
-            "resourcegroupname",
-            // File content indicators
-            "root:",
-            "/bin/bash",
-            "/bin/sh",
-            "localhost",
-            "127.0.0.1",
-            // Internal service indicators
-            "internal server",
-            "connection refused",
-            "connection timed out",
-            "no route to host",
-            "network unreachable",
-            // Error messages revealing SSRF
-            "could not resolve host",
-            "getaddrinfo",
-            "name or service not known",
-            "failed to connect",
-            "curl error",
-            "urlopen error",
-            "socket error"
-    );
 
     /**
      * Creates a new SSRFInUrlFieldsFuzzer instance.
@@ -193,7 +158,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     private void processResponse(CatsResponse response, FuzzingData data, String payload) {
         int responseCode = response.getResponseCode();
 
-        SSRFDetectionResult detectionResult = detectSSRFEvidence(response, data, payload);
+        SSRFDetectionResult detectionResult = detectSSRFEvidence(response, payload);
         if (detectionResult.vulnerable()) {
             testCaseListener.reportResultError(
                     logger, data, detectionResult.title(),
@@ -263,11 +228,10 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
      * This method implements sophisticated detection logic beyond simple pattern matching.
      *
      * @param response the HTTP response to analyze
-     * @param data     the fuzzing data context
      * @param payload  the SSRF payload that was sent
      * @return detection result indicating if vulnerability was found
      */
-    private SSRFDetectionResult detectSSRFEvidence(CatsResponse response, FuzzingData data, String payload) {
+    private SSRFDetectionResult detectSSRFEvidence(CatsResponse response, String payload) {
         String responseBody = response.getBody() != null ? response.getBody() : "";
         String responseLower = responseBody.toLowerCase(Locale.ROOT);
         int responseCode = response.getResponseCode();
@@ -279,7 +243,8 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
                             .formatted(truncatePayload(payload), responseCode));
         }
 
-        for (String pattern : List.of("ami-id", "instance-id", "security-credentials", "computemetadata", "subscriptionid")) {
+        for (String pattern : List.of("ami-id", "instance-id", "security-credentials", "iam/security-credentials",
+                "computemetadata", "service-accounts/default", "subscriptionid", "resourcegroupname")) {
             if (responseLower.contains(pattern)) {
                 return SSRFDetectionResult.vulnerable(
                         "Cloud metadata service accessed",
@@ -288,7 +253,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
             }
         }
 
-        for (String pattern : List.of("root:", "/bin/bash", "/bin/sh")) {
+        for (String pattern : List.of("root:x:0:0", "root:*:0:0", "/bin/bash", "/bin/sh", "/etc/passwd", "/etc/shadow")) {
             if (responseLower.contains(pattern)) {
                 return SSRFDetectionResult.vulnerable(
                         "File content exposed via SSRF",
@@ -324,8 +289,10 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
             }
         }
 
-        for (String pattern : List.of("localhost", "127.0.0.1", "169.254.169.254", "metadata.google.internal")) {
-            if (responseLower.contains(pattern) && payload.toLowerCase(Locale.ROOT).contains(pattern)) {
+        // Check for localhost/internal IP reflection (only if pattern is in payload to reduce false positives)
+        for (String pattern : List.of("localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "metadata.google.internal", "metadata.azure.com")) {
+            String payloadLower = payload.toLowerCase(Locale.ROOT);
+            if (responseLower.contains(pattern) && payloadLower.contains(pattern)) {
                 return SSRFDetectionResult.vulnerable(
                         "Internal target reflected in response",
                         "Response contains internal target [%s] from the SSRF payload. This may indicate the server processed the internal URL. Response code: %d"
@@ -360,11 +327,11 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
      */
     private record SSRFDetectionResult(boolean vulnerable, String title, String message) {
 
-        public static SSRFDetectionResult notVulnerable() {
+        private static SSRFDetectionResult notVulnerable() {
             return new SSRFDetectionResult(false, null, null);
         }
 
-        public static SSRFDetectionResult vulnerable(String title, String message) {
+        private static SSRFDetectionResult vulnerable(String title, String message) {
             return new SSRFDetectionResult(true, title, message);
         }
 
