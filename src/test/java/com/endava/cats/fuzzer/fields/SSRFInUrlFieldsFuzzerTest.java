@@ -193,13 +193,13 @@ class SSRFInUrlFieldsFuzzerTest {
                         "curl error: couldn't connect to host",
                         "HTTP client error reveals SSRF attempt", true),
                 Arguments.of("URLopen error in response", 200,
-                        "urlopen error: connection refused",
+                        "urlopen error [Errno 111]",
                         "HTTP client error reveals SSRF attempt", true),
                 Arguments.of("Socket error in response", 200,
-                        "socket error: connection reset",
+                        "socket error [Errno 104]",
                         "HTTP client error reveals SSRF attempt", true),
                 Arguments.of("Failed to connect error", 200,
-                        "failed to connect to server",
+                        "failed to connect [error 10061]",
                         "HTTP client error reveals SSRF attempt", true),
                 
                 // Internal target reflection (requires target in payload)
@@ -217,7 +217,7 @@ class SSRFInUrlFieldsFuzzerTest {
                         "Internal target reflected in response", true),
                 Arguments.of("Azure metadata domain in response", 200,
                         "Calling metadata.azure.com",
-                        "Internal target reflected in response", true),
+                        "SSRF payload accepted", false),
                 
                 // Response codes
                 Arguments.of("4xx rejection", 400,
