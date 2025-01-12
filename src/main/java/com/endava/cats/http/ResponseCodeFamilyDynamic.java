@@ -2,6 +2,7 @@ package com.endava.cats.http;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -22,5 +23,17 @@ public class ResponseCodeFamilyDynamic implements ResponseCodeFamily {
     @Override
     public List<String> allowedResponseCodes() {
         return Optional.ofNullable(responseCodes).orElse(Collections.emptyList());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ResponseCodeFamilyDynamic that = (ResponseCodeFamilyDynamic) o;
+        return Objects.equals(responseCodes, that.responseCodes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(responseCodes);
     }
 }

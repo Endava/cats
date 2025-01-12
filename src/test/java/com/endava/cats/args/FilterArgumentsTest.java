@@ -47,6 +47,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "skipFields", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "paths", Collections.emptyList());
+        ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
 
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
@@ -77,7 +78,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(140);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(144);
     }
 
     @Test
@@ -144,7 +145,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(145);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(149);
     }
 
     @Test
@@ -185,6 +186,7 @@ class FilterArgumentsTest {
     @Test
     void shouldNotGetFuzzersToBeRunWhenPopulated() {
         FilterArguments.FUZZERS_TO_BE_RUN.add("HappyPathFuzzer");
+        ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", true);
 
         Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).containsOnly("HappyPathFuzzer");
     }
@@ -366,7 +368,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(96);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(100);
     }
 
     @Test

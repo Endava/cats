@@ -51,7 +51,7 @@ public class FilterArguments {
     static final List<Fuzzer> ALL_CATS_FUZZERS = new ArrayList<>();
     static final List<String> PATHS_TO_INCLUDE = new ArrayList<>();
     private static final String EXCLUDE_FROM_ALL_FUZZERS_MARK = "!";
-
+    private boolean fuzzersToBeRunComputed = false;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(FilterArguments.class);
 
     @Inject
@@ -299,7 +299,7 @@ public class FilterArguments {
      * @return a list of fuzzers to be run in phase 1
      */
     public List<String> getFirstPhaseFuzzersForPath() {
-        if (FUZZERS_TO_BE_RUN.isEmpty()) {
+        if (!fuzzersToBeRunComputed) {
             List<String> allowedFuzzers = processSuppliedFuzzers();
             allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
             allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
@@ -307,6 +307,7 @@ public class FilterArguments {
             allowedFuzzers = this.removeBasedOnSanitizationStrategy(allowedFuzzers);
 
             FUZZERS_TO_BE_RUN.addAll(allowedFuzzers);
+            fuzzersToBeRunComputed = true;
         }
 
         if (userArguments.isUserDictionarySupplied()) {

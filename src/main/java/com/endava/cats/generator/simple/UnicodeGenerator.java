@@ -15,6 +15,11 @@ import java.util.stream.Stream;
  * Holds fuzzing payloads focused on unicode characters fuzzing.
  */
 public abstract class UnicodeGenerator {
+    private static final List<String> LOWERCASE_EXPANDING_BYTES = List.of("Ⱥ", "Ⱦ");
+    private static final List<String> LOWERCASE_EXPANDING_LENGTH = List.of("İ");
+
+    private static final List<String> UPPERCASE_EXPANDING_BYTES = List.of("ȿ", "ɜ", "ʞ", "ʇ", "ʝ");
+    private static final List<String> UPPERCASE_EXPANDING_LENGTH = List.of("ß", "ﬃ", "ﬀ", "ΐ", "ΰ", "ὔ", "ᾼ", "ﬗ");
 
     private static final List<String> INVALID_REFERENCES = List.of("?", "??", "/?/", "\u0000", "\u200B", "%", "&", "/.. ;/",
             "../", ".. /", ".. ;/", "%5c..%5c.%5c", ".././", "%09", "..%00/", "..%0d/", "..%5c/", "..%ff/", ";.json", ".json");
@@ -239,5 +244,41 @@ public abstract class UnicodeGenerator {
             stringBuilder.append(randomChar);
         }
         return stringBuilder.toString();
+    }
+
+    /**
+     * Gets a list of characters that will expand the bytes representation of a string when converted to lowercase.
+     *
+     * @return A list of characters that will expand the bytes representation of a string when converted to lowercase.
+     */
+    public static List<String> getLowercaseExpandingBytes() {
+        return LOWERCASE_EXPANDING_BYTES;
+    }
+
+    /**
+     * Gets a list of characters that will expand the length of a string when converted to lowercase.
+     *
+     * @return A list of characters that will expand the length of a string when converted to lowercase.
+     */
+    public static List<String> getLowercaseExpandingLength() {
+        return LOWERCASE_EXPANDING_LENGTH;
+    }
+
+    /**
+     * Gets a list of characters that will expand the bytes representation of a string when converted to uppercase.
+     *
+     * @return A list of characters that will expand the bytes representation of a string when converted to uppercase.
+     */
+    public static List<String> getUppercaseExpandingBytes() {
+        return UPPERCASE_EXPANDING_BYTES;
+    }
+
+    /**
+     * Gets a list of characters that will expand the length of a string when converted to uppercase.
+     *
+     * @return A list of characters that will expand the length of a string when converted to uppercase.
+     */
+    public static List<String> getUppercaseExpandingLength() {
+        return UPPERCASE_EXPANDING_LENGTH;
     }
 }

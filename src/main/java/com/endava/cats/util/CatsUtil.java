@@ -273,6 +273,20 @@ public abstract class CatsUtil {
     }
 
     /**
+     * Selects random elements from the {@code chars} list and concatenates them into a single string.
+     *
+     * @param chars  the list of characters to select from
+     * @param length the length of the resulting string
+     * @return a string of random characters from the given list
+     */
+    public static String selectRandom(List<String> chars, int length) {
+        return random()
+                .ints(length, 0, chars.size())
+                .mapToObj(chars::get)
+                .collect(Collectors.joining());
+    }
+
+    /**
      * Returns a Random for random generation.
      *
      * @return a Random
