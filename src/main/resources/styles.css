@@ -969,7 +969,7 @@ body.dark-mode .menu button {
 
 .grid {
 	display: grid;
-	grid-template-columns: 1fr 2fr;
+	grid-template-columns: 0.7fr 2fr;
 	gap: 20px;
 }
 
@@ -1128,4 +1128,5 @@ body.dark-mode .menu button {
 
 .link_text {
 	font-weight: 600;
+	overflow-wrap: anywhere;
 }
