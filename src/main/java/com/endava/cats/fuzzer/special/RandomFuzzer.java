@@ -13,6 +13,7 @@ import com.endava.cats.fuzzer.special.mutators.api.CustomMutatorKeywords;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
@@ -131,7 +132,7 @@ public class RandomFuzzer implements Fuzzer {
 
     void processResponse(CatsResponse catsResponse, FuzzingData fuzzingData) {
         if (matchArguments.isMatchResponse(catsResponse)) {
-            testCaseListener.reportResultError(logger, fuzzingData, "Response matches arguments", "Response matches" + matchArguments.getMatchString());
+            testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
         } else {
             testCaseListener.skipTest(logger, "Skipping test as response does not match given matchers!");
         }

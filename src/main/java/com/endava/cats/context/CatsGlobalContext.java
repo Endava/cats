@@ -5,6 +5,7 @@ import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.model.ProcessingError;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.OpenApiUtils;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -24,7 +25,6 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 
@@ -126,7 +126,7 @@ public class CatsGlobalContext {
         String discriminatorKey = (StringUtils.isBlank(currentProperty) ? "" : currentProperty + "#") + discriminator.getPropertyName();
         Set<Object> discriminatorValuesSet = this.discriminatorValues.computeIfAbsent(discriminatorKey, k -> new HashSet<>());
         discriminators.add(discriminator);
-        if (CollectionUtils.isNotEmpty(examples)) {
+        if (CatsUtil.isNotEmpty(examples)) {
             discriminatorValuesSet.addAll(examples);
         } else {
             logger.warn("No examples found for discriminator property {}", discriminator.getPropertyName());

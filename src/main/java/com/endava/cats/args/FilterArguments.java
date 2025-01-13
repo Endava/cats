@@ -15,6 +15,7 @@ import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -24,7 +25,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
 import java.lang.annotation.Annotation;

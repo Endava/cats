@@ -12,7 +12,6 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 /**
  * Fuzzer that sends NoSQL injection payloads in string fields.
@@ -126,7 +125,7 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
         }
 
         if (indicators.size() >= 2) {
-            String evidenceSummary = indicators.stream().collect(Collectors.joining(", "));
+            String evidenceSummary = String.join(", ", indicators);
             return InjectionDetectionResult.vulnerable(
                     "NoSQL injection vulnerability detected",
                     "Response shows multiple NoSQL indicators (%s). Response code: %d"

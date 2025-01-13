@@ -6,10 +6,11 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -77,7 +78,7 @@ public class CheckSecurityHeadersFuzzer implements Fuzzer {
     private void checkResponse(CatsResponse response, FuzzingData data) {
         List<KeyValuePair<String, String>> missingSecurityHeaders = this.getMissingSecurityHeaders(response);
         if (!missingSecurityHeaders.isEmpty()) {
-            testCaseListener.reportResultError(log, data, "Missing recommended security headers",
+            testCaseListener.reportResultError(log, data, CatsResultFactory.Reason.MISSING_SECURITY_HEADERS.value(),
                     "Missing recommended Security Headers: {}", missingSecurityHeaders.stream().map(pair -> pair.getKey() + "=" + pair.getValue()).collect(Collectors.toSet()));
         } else {
             testCaseListener.reportResult(log, data, response, ResponseCodeFamilyPredefined.TWOXX);

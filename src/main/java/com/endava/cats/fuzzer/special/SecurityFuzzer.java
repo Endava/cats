@@ -6,13 +6,13 @@ import com.endava.cats.fuzzer.fields.base.CustomFuzzerBase;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.CatsDSLWords;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -75,7 +75,7 @@ public class SecurityFuzzer implements CustomFuzzerBase {
 
     private Map<String, Object> getCurrentPathValues(FuzzingData data) {
         Map<String, Object> currentPathValues = filesArguments.getSecurityFuzzerDetails().get(data.getContractPath());
-        if (CollectionUtils.isEmpty(currentPathValues)) {
+        if (CatsUtil.isEmpty(currentPathValues)) {
             currentPathValues = filesArguments.getSecurityFuzzerDetails().get(CatsDSLWords.ALL);
         }
 

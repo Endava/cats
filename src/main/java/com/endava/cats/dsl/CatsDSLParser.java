@@ -3,8 +3,8 @@ package com.endava.cats.dsl;
 import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.dsl.impl.AuthScriptProviderParser;
 import com.endava.cats.dsl.impl.EnvVariableParser;
+import com.endava.cats.dsl.impl.MiniDslParser;
 import com.endava.cats.dsl.impl.NoOpParser;
-import com.endava.cats.dsl.impl.SpringELParser;
 
 import java.util.Map;
 import java.util.Objects;
@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public class CatsDSLParser {
     private static final Parser DEFAULT_PARSER = new NoOpParser();
-    private static final Parser SPRING_EL_PARSER = new SpringELParser();
+    private static final Parser SPRING_EL_PARSER = new MiniDslParser();
     private static final Map<String, Parser> PARSERS = Map.of(
             "$$", new EnvVariableParser(),
             "$request", SPRING_EL_PARSER,

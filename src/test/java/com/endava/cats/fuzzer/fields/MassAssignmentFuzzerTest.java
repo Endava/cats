@@ -75,8 +75,8 @@ class MassAssignmentFuzzerTest {
         schemaMap.put("isAdmin", new StringSchema());
 
         FuzzingData fuzzData = Mockito.mock(FuzzingData.class);
-        Set<String> fieldsSet = Set.of("role", "isAdmin", "admin", "roles", 
-                "is_admin", "permissions", "privilege", "privileges", "accessLevel", "access_level", 
+        Set<String> fieldsSet = Set.of("role", "isAdmin", "admin", "roles",
+                "is_admin", "permissions", "privilege", "privileges", "accessLevel", "access_level",
                 "userType", "user_type", "accountType", "verified", "emailVerified", "email_verified",
                 "approved", "active", "enabled", "status", "accountStatus", "banned", "suspended",
                 "balance", "credits", "points", "price", "discount", "discountPercent", "amount", "fee",
@@ -123,7 +123,7 @@ class MassAssignmentFuzzerTest {
                         "Mass Assignment payload rejected", false),
                 Arguments.of("Server error 5xx", 500,
                         "Internal Server Error",
-                        "Server error with Mass Assignment payload", true),
+                        "Server error", true),
                 Arguments.of("Redirect response 3xx", 301,
                         "Moved Permanently",
                         "Unexpected response code", true),
@@ -142,7 +142,7 @@ class MassAssignmentFuzzerTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("provideTestScenarios")
     void shouldHandleMassAssignmentResponses(String scenarioName, int code, String body,
-                                              String expectedMsg, boolean shouldError) {
+                                             String expectedMsg, boolean shouldError) {
         Map<String, Schema> schemaMap = new HashMap<>();
         schemaMap.put("username", new StringSchema());
 

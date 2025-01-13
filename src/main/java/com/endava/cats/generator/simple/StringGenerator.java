@@ -2,6 +2,7 @@ package com.endava.cats.generator.simple;
 
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
+import com.endava.cats.util.CatsUtil;
 import com.github.curiousoddman.rgxgen.RgxGen;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -10,7 +11,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.cornutum.regexpgen.RegExpGen;
 import org.cornutum.regexpgen.RegExpGenBuilder;
 import org.cornutum.regexpgen.js.Provider;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -553,7 +553,7 @@ public class StringGenerator {
      * @return a random string with size between minLength and maxLength
      */
     public static String generateValueBasedOnMinMax(Schema<?> property) {
-        if (!CollectionUtils.isEmpty(property.getEnum())) {
+        if (CatsUtil.isNotEmpty(property.getEnum())) {
             return String.valueOf(property.getEnum().getFirst());
         }
         int minLength = property.getMinLength() != null ? property.getMinLength() : DEFAULT_MIN_WHEN_NOT_PRESENT;

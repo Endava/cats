@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -71,7 +72,7 @@ public class ResponseHeadersMatchContractHeadersFuzzer implements Fuzzer {
         if (notReturnedHeaders.isEmpty()) {
             testCaseListener.reportResult(logger, fuzzingData, catsResponse, ResponseCodeFamilyPredefined.TWOXX);
         } else {
-            testCaseListener.reportResultError(logger, fuzzingData, "Missing response headers",
+            testCaseListener.reportResultError(logger, fuzzingData, CatsResultFactory.Reason.MISSING_RESPONSE_HEADERS.value(),
                     "The following response headers defined in the contract are missing: {}", notReturnedHeaders.toArray());
         }
     }

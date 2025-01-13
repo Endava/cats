@@ -8,6 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -177,27 +178,27 @@ public class MassAssignmentFuzzer implements Fuzzer {
 
         if (fieldReflected && ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultError(
-                    logger, data, "Mass Assignment vulnerability detected",
+                    logger, data, CatsResultFactory.Reason.MASS_ASSIGNMENT_DETECTED.value(),
                     "The undeclared field [%s] was accepted AND reflected in the response (code %d). The API is vulnerable to mass assignment attacks.".formatted(fieldName, responseCode));
             return;
         }
 
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultError(
-                    logger, data, "Undeclared field accepted",
+                    logger, data, CatsResultFactory.Reason.UNDECLARED_FIELD_ACCEPTED.value(),
                     "The API accepted the request with undeclared field [%s] (response code %d). APIs should reject requests with undeclared fields.".formatted(fieldName, responseCode));
             return;
         }
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
             testCaseListener.reportResultError(
-                    logger, data, "Server error with Mass Assignment payload",
+                    logger, data, CatsResultFactory.Reason.SERVER_ERROR.value(),
                     "Server returned %d error when processing undeclared field [%s]. This may indicate improper error handling.".formatted(responseCode, fieldName));
             return;
         }
 
         testCaseListener.reportResultError(
-                logger, data, "Unexpected response code",
+                logger, data, CatsResultFactory.Reason.UNEXPECTED_RESPONSE_CODE.value(),
                 "Received unexpected response code %d for Mass Assignment payload".formatted(responseCode));
     }
 

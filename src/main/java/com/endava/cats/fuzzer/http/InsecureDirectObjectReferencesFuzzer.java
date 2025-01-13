@@ -10,6 +10,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -180,7 +181,7 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
 
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultError(LOGGER, data,
-                    "Potential IDOR vulnerability detected",
+                    CatsResultFactory.Reason.POTENTIAL_IDOR.value(),
                     ("Request with modified ID returned success [%s]. The API may be exposing data belonging to other users/resources. " +
                             "Expected [4XX] response indicating unauthorized access.").formatted(response.responseCodeAsString()));
             return;
@@ -196,14 +197,14 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
             testCaseListener.reportResultError(LOGGER, data,
-                    "Server error with IDOR payload",
+                    CatsResultFactory.Reason.SERVER_ERROR.value(),
                     "Server returned %d error when processing modified ID. This may indicate improper error handling."
                             .formatted(responseCode));
             return;
         }
 
         testCaseListener.reportResultError(LOGGER, data,
-                "Unexpected response code",
+                CatsResultFactory.Reason.UNEXPECTED_RESPONSE_CODE.value(),
                 "Received unexpected response code %d for IDOR payload. Expected [4XX] for proper access control."
                         .formatted(responseCode));
     }

@@ -7,6 +7,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsRandom;
@@ -74,7 +75,8 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
             testCaseListener.reportResultInfo(logger, data, "Request returned as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());
         } else {
-            testCaseListener.reportResultError(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()),
+            testCaseListener.reportResultError(logger, data,
+                    CatsResultFactory.createUnexpectedResponseCode(String.valueOf(response.getResponseCode()), ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes().toString()).reason(),
                     "Request failed unexpectedly for http method [{}]: expected {}, actual [{}]", response.getHttpMethod(),
                     ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes(), response.getResponseCode());
         }

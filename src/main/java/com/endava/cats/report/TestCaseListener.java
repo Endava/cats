@@ -16,6 +16,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.WordUtils;
 import com.google.common.collect.Iterators;
@@ -31,7 +32,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
-import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -963,7 +963,7 @@ public class TestCaseListener {
         Map<String, List<String>> responsesMap = Optional.ofNullable(data.getResponses()).orElse(Collections.emptyMap());
         List<String> responses = responsesMap.get(response.responseCodeAsString());
 
-        if (CollectionUtils.isEmpty(responses)) {
+        if (CatsUtil.isEmpty(responses)) {
             return responsesMap.getOrDefault(response.responseCodeAsResponseRange(),
                     responsesMap.get(response.responseCodeAsResponseRange().toLowerCase(Locale.ROOT)));
         }

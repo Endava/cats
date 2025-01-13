@@ -4,11 +4,11 @@ import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.tags.Tag;
 import jakarta.inject.Singleton;
-import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,7 +43,7 @@ public class PathTagsLinter extends BaseLinter {
         List<String> matching = Optional.ofNullable(data.getTags()).orElse(Collections.emptyList())
                 .stream().filter(topLevelTagNames::contains).toList();
 
-        if (CollectionUtils.isEmpty(data.getTags())) {
+        if (CatsUtil.isEmpty(data.getTags())) {
             testCaseListener.reportResultError(log, data, "No tag element", "The current path does not contain any [tags] element");
         } else if (matching.size() == data.getTags().size()) {
             testCaseListener.reportResultInfo(log, data, "The current path's [tags] are correctly defined at the top level [tags] element");

@@ -8,6 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
@@ -168,7 +169,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
             testCaseListener.reportResultError(
-                    logger, data, "Server error with SSRF payload",
+                    logger, data, CatsResultFactory.Reason.SERVER_ERROR.value(),
                     "Server returned %d error when processing SSRF payload. This may indicate the server attempted to connect to the target."
                             .formatted(responseCode));
             return;
@@ -191,7 +192,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
         }
 
         testCaseListener.reportResultError(
-                logger, data, "Unexpected response code",
+                logger, data, CatsResultFactory.Reason.UNEXPECTED_RESPONSE_CODE.value(),
                 "Received unexpected response code %d for SSRF payload"
                         .formatted(responseCode));
     }
@@ -238,7 +239,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
 
         if (responseBody.contains(payload)) {
             return SSRFDetectionResult.vulnerable(
-                    "SSRF payload reflected in response",
+                    CatsResultFactory.Reason.SSRF_REFLECTED.value(),
                     "The SSRF payload [%s] was reflected in the response body. This indicates the server processed the URL and may have attempted to connect to it. Response code: %d"
                             .formatted(truncatePayload(payload), responseCode));
         }
@@ -280,7 +281,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
         return checkPatternMatch(responseLower,
                 List.of("ami-id", "instance-id", "security-credentials", "iam/security-credentials",
                         "computemetadata", "service-accounts/default", "subscriptionid", "resourcegroupname"),
-                "Cloud metadata service accessed",
+                CatsResultFactory.Reason.CLOUD_METADATA_REFLECTED_SSRF.value(),
                 "Response contains cloud metadata indicator [%s]. This strongly suggests successful SSRF to cloud metadata service. Response code: %d",
                 responseCode);
     }
@@ -288,7 +289,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     private SSRFDetectionResult checkFileContentPatterns(String responseLower, int responseCode) {
         return checkPatternMatch(responseLower,
                 List.of("root:x:0:0", "root:*:0:0", "/bin/bash", "/bin/sh", "/etc/passwd", "/etc/shadow"),
-                "File content exposed via SSRF",
+                CatsResultFactory.Reason.FILE_CONTENT_EXPOSED_SSRF.value(),
                 "Response contains file system content indicator [%s]. This indicates successful file:// protocol SSRF. Response code: %d",
                 responseCode);
     }
@@ -296,7 +297,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     private SSRFDetectionResult checkNetworkErrorPatterns(String responseLower, int responseCode) {
         return checkPatternMatch(responseLower,
                 List.of("connection refused", "connection timed out", "no route to host", "network unreachable"),
-                "Network error reveals SSRF attempt",
+                CatsResultFactory.Reason.NETWORK_ERROR_SSRF.value(),
                 "Response contains network error [%s] indicating the server attempted to connect to the SSRF target. Response code: %d",
                 responseCode);
     }
@@ -304,7 +305,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     private SSRFDetectionResult checkDnsErrorPatterns(String responseLower, int responseCode) {
         return checkPatternMatch(responseLower,
                 List.of("could not resolve host", "getaddrinfo", "name or service not known"),
-                "DNS resolution error reveals SSRF attempt",
+                CatsResultFactory.Reason.DNS_RESOLUTION_SSRF.value(),
                 "Response contains DNS error [%s] indicating the server attempted to resolve the SSRF target hostname. Response code: %d",
                 responseCode);
     }
@@ -312,7 +313,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     private SSRFDetectionResult checkHttpClientErrorPatterns(String responseLower, int responseCode) {
         return checkPatternMatch(responseLower,
                 List.of("curl error", "urlopen error", "socket error", "failed to connect"),
-                "HTTP client error reveals SSRF attempt",
+                CatsResultFactory.Reason.HTTP_CLIENT_SSRF.value(),
                 "Response contains HTTP client error [%s] indicating the server attempted to make an outbound request. Response code: %d",
                 responseCode);
     }
@@ -322,7 +323,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
         for (String pattern : List.of("localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "metadata.google.internal", "metadata.azure.com")) {
             if (responseLower.contains(pattern) && payloadLower.contains(pattern)) {
                 return SSRFDetectionResult.vulnerable(
-                        "Internal target reflected in response",
+                        CatsResultFactory.Reason.INTERNAL_TARGET_REFLECTED_SSRF.value(),
                         "Response contains internal target [%s] from the SSRF payload. This may indicate the server processed the internal URL. Response code: %d"
                                 .formatted(pattern, responseCode));
             }

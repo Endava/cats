@@ -8,6 +8,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.simple.UnicodeGenerator;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
@@ -74,7 +75,7 @@ public class InvalidReferencesFieldsFuzzer implements Fuzzer {
             testCaseListener.reportResultInfo(logger, fuzzingData, "Response code expected: [{}]", catsResponse.getResponseCode());
         } else {
             testCaseListener.reportResultError(logger, fuzzingData,
-                    "Unexpected response code: %s".formatted(catsResponse.responseCodeAsString()),
+                    CatsResultFactory.createUnexpectedResponseCode(catsResponse.responseCodeAsString(), "4XX, 2XX").reason(),
                     "Request failed unexpectedly for http method [{}]: expected [{}], actual [{}]",
                     catsResponse.getHttpMethod(), "4XX, 2XX", catsResponse.responseCodeAsString());
         }

@@ -225,7 +225,7 @@ class SSRFInUrlFieldsFuzzerTest {
                         "SSRF payload rejected", false),
                 Arguments.of("5xx error", 500,
                         "Service Unavailable",
-                        "Server error with SSRF payload", true),
+                        "Server error", true),
                 Arguments.of("2xx without indicators", 200,
                         "{\"status\": \"ok\"}",
                         "SSRF payload accepted", false),

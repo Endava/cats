@@ -8,6 +8,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
@@ -16,6 +17,7 @@ import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import lombok.Getter;
 
 import java.util.List;
 import java.util.Set;
@@ -131,7 +133,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
             testCaseListener.reportResultError(
-                    logger, data, "Server error with injection payload",
+                    logger, data, CatsResultFactory.Reason.SERVER_ERROR.value(),
                     "Server returned %d error when processing %s injection payload. This may indicate a vulnerability or improper error handling."
                             .formatted(responseCode, getInjectionType()));
             return;
@@ -161,7 +163,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         }
 
         testCaseListener.reportResultError(
-                logger, data, "Unexpected response code",
+                logger, data, CatsResultFactory.Reason.UNEXPECTED_RESPONSE_CODE.value(),
                 "Received unexpected response code %d for %s injection payload"
                         .formatted(responseCode, getInjectionType()));
     }
@@ -219,6 +221,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
     /**
      * Result of injection detection analysis.
      */
+    @Getter
     protected static class InjectionDetectionResult {
         private final boolean vulnerable;
         private final String title;
@@ -238,16 +241,5 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
             return new InjectionDetectionResult(true, title, message);
         }
 
-        public boolean isVulnerable() {
-            return vulnerable;
-        }
-
-        public String getTitle() {
-            return title;
-        }
-
-        public String getMessage() {
-            return message;
-        }
     }
 }

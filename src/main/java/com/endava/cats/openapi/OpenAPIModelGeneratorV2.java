@@ -6,6 +6,7 @@ import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsRandom;
+import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -16,7 +17,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -143,7 +143,7 @@ public class OpenAPIModelGeneratorV2 {
     private static boolean isNullSchema(Schema innerType) {
         return (innerType.getType() == null || "null".equalsIgnoreCase(innerType.getType()))
                 && innerType.get$ref() == null && !CatsModelUtils.isComposedSchema(innerType)
-                && innerType.getProperties() == null && CollectionUtils.isEmpty(innerType.getTypes());
+                && innerType.getProperties() == null && CatsUtil.isEmpty(innerType.getTypes());
     }
 
 
@@ -234,7 +234,7 @@ public class OpenAPIModelGeneratorV2 {
 
     private Schema normalizeDiscriminatorMappingsToOneOf(String name, Schema<?> schema) {
         logger.trace("normalizeDiscriminatorMappingsToOneOf for schema {}", name);
-        if (schema != null && schema.getDiscriminator() != null && !CollectionUtils.isEmpty(schema.getDiscriminator().getMapping())
+        if (schema != null && schema.getDiscriminator() != null && !CatsUtil.isEmpty(schema.getDiscriminator().getMapping())
                 && !CatsModelUtils.isComposedSchema(schema) && !isAnyComposedSchemaInChain(name)) {
             Schema<?> composedSchema = new Schema<>();
             composedSchema.setOneOf(schema.getDiscriminator().getMapping().values()
@@ -751,7 +751,7 @@ public class OpenAPIModelGeneratorV2 {
     private <T> Object getEnumOrDefault(Schema<T> propertySchema) {
         List<T> enumValues = propertySchema.getEnum();
 
-        if (!CollectionUtils.isEmpty(enumValues)) {
+        if (!CatsUtil.isEmpty(enumValues)) {
             List<T> nonNullEnumValues = enumValues.stream()
                     .filter(Objects::nonNull)
                     .toList();

@@ -5,6 +5,7 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.CatsResultFactory;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsUtil;
@@ -125,7 +126,7 @@ public class FieldsIteratorExecutor {
         if (context.getExpectedResponseCode() != null) {
             testCaseListener.reportResult(context.getLogger(), context.getFuzzingData(), response, context.getExpectedResponseCode());
         } else if (!matchArguments.isAnyMatchArgumentSupplied() || matchArguments.isMatchResponse(response) || matchArguments.isInputReflected(response, currentValue)) {
-            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), "Response matches arguments", "Response matches" + matchArguments.getMatchString());
+            testCaseListener.reportResultError(context.getLogger(), context.getFuzzingData(), CatsResultFactory.Reason.RESPONSE_MATCHES_ARGUMENTS.value(), "Response matches" + matchArguments.getMatchString());
         } else {
             testCaseListener.skipTest(context.getLogger(), "Skipping test as response does not match given matchers!");
         }

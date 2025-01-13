@@ -12,7 +12,6 @@ import jakarta.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 /**
  * Fuzzer that sends SQL injection payloads in string fields.
@@ -137,7 +136,7 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
         }
 
         if (indicators.size() >= 2) {
-            String evidenceSummary = indicators.stream().collect(Collectors.joining(", "));
+            String evidenceSummary = String.join(", ", indicators);
             return InjectionDetectionResult.vulnerable(
                     "SQL injection vulnerability detected",
                     "Response shows multiple independent SQL indicators (%s). Response code: %d"

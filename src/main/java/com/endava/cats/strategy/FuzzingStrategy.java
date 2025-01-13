@@ -12,7 +12,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
 import net.minidev.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -303,7 +302,7 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         }
 
         /* independent of the supplied strategy, we still maintain sizes for enums */
-        final boolean insertWithoutReplace = !maintainSize || !CollectionUtils.isEmpty(fuzzedFieldSchema.getEnum());
+        final boolean insertWithoutReplace = !maintainSize || !CatsUtil.isEmpty(fuzzedFieldSchema.getEnum());
 
         return invisibleChars.stream()
                 .map(value -> FuzzingStrategy.replace()

@@ -432,4 +432,44 @@ public abstract class CatsUtil {
 
         return randomized;
     }
+
+    /**
+     * Checks if a collection is empty or not.
+     *
+     * @param collection the given collection
+     * @return true if empty, false otherwise
+     */
+    public static boolean isEmpty(Collection<?> collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    /**
+     * Checks if a collection is not empty.
+     *
+     * @param collection the given collection
+     * @return true if not empty, false otherwise
+     */
+    public static boolean isNotEmpty(Collection<?> collection) {
+        return !isEmpty(collection);
+    }
+
+    /**
+     * Checks if a map is empty or not.
+     *
+     * @param map the given map
+     * @return true if empty, false otherwise
+     */
+    public static boolean isEmpty(Map<?, ?> map) {
+        return map == null || map.isEmpty();
+    }
+
+    /**
+     * Checks if a map is not empty.
+     *
+     * @param map the given map
+     * @return true if not empty, false otherwise
+     */
+    public static boolean isNotEmpty(Map<?, ?> map) {
+        return !isEmpty(map);
+    }
 }

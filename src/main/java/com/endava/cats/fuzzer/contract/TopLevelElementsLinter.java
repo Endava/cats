@@ -4,6 +4,7 @@ import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsUtil;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.info.Contact;
@@ -12,7 +13,6 @@ import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
 
 import java.util.HashSet;
 import java.util.List;
@@ -52,7 +52,7 @@ public class TopLevelElementsLinter extends BaseLinter {
 
         errorString.append(this.checkElement("servers", this.inspectServers(data.getOpenApi().getServers())));
 
-        if (CollectionUtils.isEmpty(data.getOpenApi().getTags())) {
+        if (CatsUtil.isEmpty(data.getOpenApi().getTags())) {
             missingFieldsSet.add("tags");
         } else {
             errorString.append(this.checkElement("tags", this.inspectTags(data.getOpenApi().getTags())));

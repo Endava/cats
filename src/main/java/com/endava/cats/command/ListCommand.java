@@ -16,6 +16,7 @@ import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
@@ -29,7 +30,6 @@ import io.swagger.v3.oas.models.PathItem;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
 import org.fusesource.jansi.Ansi;
-import org.springframework.core.annotation.AnnotationUtils;
 import picocli.CommandLine;
 
 import java.io.IOException;
