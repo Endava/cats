@@ -1,17 +1,19 @@
 <?xml version="1.0" ?>
-<testsuites disabled="{{SKIPPED}}" skipped="{{WARNINGS}}" errors="{{ERRORS}}" failures="" tests="{{TOTAL}}" time="{{TIMESTAMP}}">
-    <testsuite skipped="{{WARNINGS}}" errors="{{ERRORS}}" failures="" name="CATS {{VERSION}}" disabled="{{SKIPPED}}" tests="{{TOTAL}}" time="{{EXECUTION}}" timestamp="{{TIMESTAMP}}">
-        {{#TEST_CASES}}
-                <testcase name="{{key}} <-> {{path}}" classname="{{fuzzer}}" time="{{timeToExecuteInSec}}">
-                    {{#warning}}
-                        <skipped type="{{result}}" message="{{resultReason}} - {{resultDetails}}"/>
-                    {{/warning}}
-                </testcase>
-                <testcase name="{{key}} <-> {{path}}" classname="{{fuzzer}}" time="{{timeToExecuteInSec}}">
-                    {{#error}}
-                        <error type="{{result}}" message="{{resultReason}} - {{resultDetails}}"/>
-                    {{/error}}
-                </testcase>
-        {{/TEST_CASES}}
+<testsuites skipped="{{WARNINGS}}" errors="{{ERRORS_JUNIT}}" failures="{{FAILURES_JUNIT}}" tests="{{TOTAL}}" time="{{TIME}}"
+            name="CATS {{VERSION}}">
+    {{#TEST_SUITES}}
+    <testsuite name="{{fuzzer}}" skipped="{{warnings}}" errors="{{errors}}" failures="{{failures}}"
+               tests="{{totalTests}}" time="{{time}}" timestamp="{{TIMESTAMP_ISO}}">
+        {{#testCases}}
+        <testcase name="{{key}} - {{path}}" classname="{{fuzzer}}" time="{{timeToExecuteInSec}}">
+            {{#warning}}
+            <skipped>WARN - {{resultReason}} - {{resultDetails}}</skipped>
+            {{/warning}}
+            {{#error}}
+            <error type="{{result}}" message="{{resultReason}}">{{resultReason}} - {{resultDetails}}</error>
+            {{/error}}
+        </testcase>
+        {{/testCases}}
     </testsuite>
+    {{/TEST_SUITES}}
 </testsuites>

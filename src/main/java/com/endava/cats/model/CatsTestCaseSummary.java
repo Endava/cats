@@ -23,6 +23,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private long timeToExecuteInMs;
     private String httpMethod;
     private boolean switchedResult;
+    private int httpResponseCode;
 
     /**
      * Creates a CatsTestCaseSummary object from a CatsTestCase.
@@ -43,6 +44,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.timeToExecuteInMs = testCase.getResponse().getResponseTimeInMs();
         summary.httpMethod = testCase.getRequest().getHttpMethod().toLowerCase(Locale.ROOT);
         summary.switchedResult = testCase.getResultIgnoreDetails() != null;
+        summary.httpResponseCode = testCase.getResponse().getResponseCode();
 
         return summary;
     }
@@ -88,5 +90,15 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
      */
     public boolean getWarning() {
         return this.result.equalsIgnoreCase("warning");
+    }
+
+    /**
+     * Checks of the current response is a 9xx response.
+     * 9xx responses are used to signal that the test case was not executed due to technical issues.
+     *
+     * @return True if the response code is between 900 and 999, false otherwise.
+     */
+    public boolean is9xxResponse() {
+        return this.httpResponseCode >= 900 && this.httpResponseCode < 1000;
     }
 }

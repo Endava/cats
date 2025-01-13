@@ -157,9 +157,9 @@ public class ExecutionStatisticsListener {
      * @return A formatted string representation of the execution results.
      */
     public String resultAsStringPerPath(String path) {
-        String errorsString = Ansi.ansi().fg(Ansi.Color.RED).a("E " + errors.getOrDefault(path, 0)).reset().toString();
-        String warnsString = Ansi.ansi().fg(Ansi.Color.YELLOW).a("W " + warns.getOrDefault(path, 0)).reset().toString();
-        String successString = Ansi.ansi().fg(Ansi.Color.GREEN).a("S " + success.getOrDefault(path, 0)).reset().toString();
+        String errorsString = Ansi.ansi().bold().fg(Ansi.Color.RED).a("E " + errors.getOrDefault(path, 0)).reset().toString();
+        String warnsString = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("W " + warns.getOrDefault(path, 0)).reset().toString();
+        String successString = Ansi.ansi().bold().fg(Ansi.Color.GREEN).a("S " + success.getOrDefault(path, 0)).reset().toString();
         return "%s, %s, %s".formatted(errorsString, warnsString, successString);
     }
 }

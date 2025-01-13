@@ -2,8 +2,8 @@ package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
 import com.endava.cats.args.ReportingArguments;
-import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
@@ -171,10 +171,11 @@ public abstract class TestCaseExporter {
         if (resultReasonCounts.isEmpty()) {
             return;
         }
+        String redCross = ansi().fgRed().a("✖").reset().toString();
         ConsoleUtils.emptyLine();
         logger.info("Errors by reason:");
         resultReasonCounts.forEach((reason, count) ->
-                logger.noFormat(" ❌ {}: {} errors", reason, count));
+                logger.noFormat(" {} {}: {} errors", redCross, reason, count));
     }
 
     /**
@@ -262,7 +263,7 @@ public abstract class TestCaseExporter {
         String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
         String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
         String errors = ansi().fgRed().bold().a("‼ errors: {}").toString();
-        String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + REPORT_HTML)).reset().toString();
+        String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + getSummaryReportTitle())).reset().toString();
         String finalMessage = catsFinished + passed + warnings + errors;
         String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
 
@@ -288,10 +289,15 @@ public abstract class TestCaseExporter {
         context.put("WARNINGS", LARGE_NUMBER_FORMAT.format(report.getWarnings()));
         context.put("SUCCESS", LARGE_NUMBER_FORMAT.format(report.getSuccess()));
         context.put("ERRORS", LARGE_NUMBER_FORMAT.format(report.getErrors()));
+        context.put("ERRORS_JUNIT", LARGE_NUMBER_FORMAT.format(report.getErrorsJunit()));
+        context.put("FAILURES_JUNIT", LARGE_NUMBER_FORMAT.format(report.getFailuresJunit()));
         context.put("TOTAL", LARGE_NUMBER_FORMAT.format(report.getTotalTests()));
         context.put("TIMESTAMP", report.getTimestamp());
+        context.put("TIMESTAMP_ISO", OffsetDateTime.now(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE_TIME));
         context.put("TEST_CASES", report.getTestCases());
+        context.put("TEST_SUITES", report.getTestSuites());
         context.put("EXECUTION", Duration.ofSeconds(report.getExecutionTime()).toString().toLowerCase(Locale.ROOT).substring(2));
+        context.put("TIME", report.getExecutionTime());
         context.put("VERSION", report.getCatsVersion());
         context.put("JS", this.isJavascript());
         context.put("OS", this.osDetails);

@@ -657,6 +657,22 @@ class TestCaseListenerTest {
     }
 
     @Test
+    void shouldReportErrorWhenKeywordsDetectedInResponse() {
+        TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(ignoreArguments.isSkipReportingForSuccess()).thenReturn(false);
+        Mockito.when(ignoreArguments.isSkipReportingForIgnoredCodes()).thenReturn(false);
+        Mockito.when(ignoreArguments.isIgnoreErrorLeaksCheck()).thenReturn(false);
+
+
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> {
+            testCaseListener.addResponse(CatsResponse.builder().body("warning").responseTimeInMs(100).build());
+            spyListener.reportInfo(logger, "Response code expected", "200");
+        }, FuzzingData.builder().build());
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
+        Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "The following keywords were detected in the response which might suggest an error details leak: [Warning]");
+    }
+
+    @Test
     void shouldReportWarnWhenResponseCode400IsUndocumentedAndResponseBodyMatches() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);

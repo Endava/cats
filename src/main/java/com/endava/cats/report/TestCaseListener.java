@@ -17,7 +17,6 @@ import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
-import com.endava.cats.util.WordUtils;
 import com.google.common.collect.Iterators;
 import com.google.common.net.MediaType;
 import com.google.gson.JsonArray;
@@ -118,7 +117,6 @@ public class TestCaseListener {
         for (Object obj : params) {
             message = message.replaceFirst(Pattern.quote("{}"), Matcher.quoteReplacement(String.valueOf(obj)));
         }
-
         return message;
     }
 
@@ -464,7 +462,7 @@ public class TestCaseListener {
         this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
-        List<String> detectedKeyWords = WordUtils.getKeywordsMatching(catsResponse.getBody());
+        List<String> detectedKeyWords = catsResponse.getKeywordsLeaks();
 
         if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
             logger.debug("Detected keywords in response body: {}", detectedKeyWords);
@@ -532,7 +530,9 @@ public class TestCaseListener {
         this.logger.debug("Reporting error with message: {}", replaceBrackets(message, params));
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
-        if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime()) || isException(catsResponse)) {
+
+        if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
+                || isException(catsResponse) || hasKeywordLeaks(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors(testCase.getContractPath());
             logger.error(message, params);
@@ -548,6 +548,17 @@ public class TestCaseListener {
             this.reportInfo(logger, message, params);
         }
         recordAuthErrors(catsResponse);
+    }
+
+    /**
+     * Checks if the response body contains keywords that might suggest security issues or error details leaks.
+     * It also checks if the {@code --ignoreErrorLeaksCheck} argument is enabled.
+     *
+     * @param catsResponse the CatsResponse object
+     * @return {@code true} if the response body contains keywords that might suggest security issues or error details leaks; otherwise, {@code false}
+     */
+    boolean hasKeywordLeaks(CatsResponse catsResponse) {
+        return !ignoreArguments.isIgnoreErrorLeaksCheck() && !catsResponse.getKeywordsLeaks().isEmpty();
     }
 
 
@@ -603,7 +614,7 @@ public class TestCaseListener {
     void reportInfo(PrettyLogger logger, String message, Object... params) {
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
-        List<String> detectedKeyWords = WordUtils.getKeywordsMatching(catsResponse.getBody());
+        List<String> detectedKeyWords = catsResponse.getKeywordsLeaks();
 
         if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
             logger.debug("Detected keywords in response body: {}", detectedKeyWords);
