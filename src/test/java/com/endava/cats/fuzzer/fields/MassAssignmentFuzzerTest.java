@@ -171,4 +171,31 @@ class MassAssignmentFuzzerTest {
                     Mockito.any(), Mockito.any(), Mockito.contains(expectedMsg), Mockito.any());
         }
     }
+
+    @Test
+    void shouldHandleArrayPayload() {
+        Map<String, Schema> schemaMap = new HashMap<>();
+        schemaMap.put("username", new StringSchema());
+
+        FuzzingData fuzzData = Mockito.mock(FuzzingData.class);
+        Mockito.when(fuzzData.getAllFieldsByHttpMethod()).thenReturn(Set.of("username"));
+        Mockito.when(fuzzData.getPayload()).thenReturn("[{\"username\": \"test1\"}, {\"username\": \"test2\"}]");
+        Mockito.when(fuzzData.getRequestPropertyTypes()).thenReturn(schemaMap);
+        Mockito.when(fuzzData.getMethod()).thenReturn(HttpMethod.POST);
+        Mockito.when(fuzzData.getHeaders()).thenReturn(Set.of());
+        Mockito.when(fuzzData.getFirstRequestContentType()).thenReturn("application/json");
+
+        Mockito.when(caller.call(Mockito.any())).thenReturn(
+                CatsResponse.builder()
+                        .responseCode(400)
+                        .body("Bad Request")
+                        .build());
+
+        fuzzer.fuzz(fuzzData);
+
+        Mockito.verify(caller, Mockito.atLeast(1)).call(Mockito.any());
+        Mockito.verify(listener, Mockito.atLeastOnce()).reportResultInfo(
+                Mockito.any(), Mockito.any(), Mockito.contains("Mass Assignment payload rejected"),
+                Mockito.any());
+    }
 }

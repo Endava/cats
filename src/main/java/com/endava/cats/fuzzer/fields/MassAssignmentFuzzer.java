@@ -13,6 +13,10 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -160,7 +164,40 @@ public class MassAssignmentFuzzer implements Fuzzer {
     }
 
     private String addFieldToPayload(String payload, String fieldName, Object fieldValue) {
-        return JsonUtils.replaceNewElement(payload, "$", fieldName, fieldValue);
+        JsonElement jsonElement = JsonParser.parseString(payload);
+
+        if (jsonElement instanceof JsonObject jsonObject) {
+            addFieldToJsonObject(jsonObject, fieldName, fieldValue);
+        } else if (jsonElement instanceof JsonArray jsonArray) {
+            for (JsonElement element : jsonArray) {
+                if (element instanceof JsonObject jsonObject) {
+                    addFieldToJsonObject(jsonObject, fieldName, fieldValue);
+                }
+            }
+        }
+
+        return jsonElement.toString();
+    }
+
+    private void addFieldToJsonObject(JsonObject jsonObject, String fieldName, Object fieldValue) {
+        switch (fieldValue) {
+            case String s -> jsonObject.addProperty(fieldName, s);
+            case Number number -> jsonObject.addProperty(fieldName, number);
+            case Boolean b -> jsonObject.addProperty(fieldName, b);
+            case List<?> list -> {
+                JsonArray array = new JsonArray();
+                for (Object item : list) {
+                    switch (item) {
+                        case String s -> array.add(s);
+                        case Number number -> array.add(number);
+                        case Boolean b -> array.add(b);
+                        default -> array.add(item.toString());
+                    }
+                }
+                jsonObject.add(fieldName, array);
+            }
+            default -> jsonObject.addProperty(fieldName, fieldValue.toString());
+        }
     }
 
     private void processResponse(CatsResponse response, FuzzingData data, String fieldName, Object fieldValue) {
