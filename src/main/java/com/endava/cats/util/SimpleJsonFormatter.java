@@ -49,7 +49,7 @@ public abstract class SimpleJsonFormatter {
                         formatted.append(currentChar);
                         indentLevel++;
                         if (nextChar != '}' && nextChar != ']') {
-                            formatted.append('\n').append(indent.repeat(indentLevel));
+                            formatted.append('\n').append(indent.repeat(Math.max(0, indentLevel)));
                         }
                     }
                     case '}', ']' -> {
@@ -62,7 +62,7 @@ public abstract class SimpleJsonFormatter {
                     case ',' -> {
                         formatted.append(currentChar);
                         if (nextChar != '\n') {
-                            formatted.append('\n').append(indent.repeat(indentLevel));
+                            formatted.append('\n').append(indent.repeat(Math.max(0, indentLevel)));
                         }
                     }
                     case ':' -> formatted.append(currentChar).append(' ');
