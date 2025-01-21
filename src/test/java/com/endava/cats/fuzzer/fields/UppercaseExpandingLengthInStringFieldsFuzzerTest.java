@@ -16,6 +16,8 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -79,11 +81,12 @@ class UppercaseExpandingLengthInStringFieldsFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
     }
 
-    @Test
-    void shouldReplaceIfStringSchemaAndFieldInPayload() {
+    @ParameterizedTest
+    @CsvSource(value = {"5", "null"}, nullValues = "null")
+    void shouldReplaceIfStringSchemaAndFieldInPayload(Integer length) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(CatsResponse.builder().body("{}").responseCode(200).build());
-        Schema<String> myStringSchema = new Schema<>().type("string");
+        Schema<String> myStringSchema = new Schema<>().type("string").maxLength(length);
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("objectField#myField", myStringSchema));
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("objectField#myField"));
         Mockito.when(data.getPayload()).thenReturn("""

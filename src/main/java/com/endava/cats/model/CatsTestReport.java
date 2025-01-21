@@ -27,7 +27,7 @@ public class CatsTestReport {
     private final String catsVersion;
 
     public List<JunitTestSuite> getTestSuites() {
-        DecimalFormat THREE_DECIMAL_FORMAT = new DecimalFormat("#.###");
+        DecimalFormat decimalFormat = new DecimalFormat("#.###");
 
         Map<String, List<CatsTestCaseSummary>> groupedByFuzzer = testCases.stream()
                 .collect(Collectors.groupingBy(CatsTestCaseSummary::getFuzzer));
@@ -36,30 +36,30 @@ public class CatsTestReport {
 
         for (Map.Entry<String, List<CatsTestCaseSummary>> entry : groupedByFuzzer.entrySet()) {
             String fuzzer = entry.getKey();
-            List<CatsTestCaseSummary> testCases = entry.getValue();
+            List<CatsTestCaseSummary> testCasesPerFuzzer = entry.getValue();
 
             // Compute testsuite-level details
-            int totalTests = testCases.size();
-            int failures = (int) testCases.parallelStream()
+            int totalTestsPerFuzzer = testCasesPerFuzzer.size();
+            int failuresPerFuzzer = (int) testCasesPerFuzzer.parallelStream()
                     .filter(CatsTestCaseSummary::getError)
                     .filter(Predicate.not(CatsTestCaseSummary::is9xxResponse))
                     .count();
-            int errors = (int) testCases.parallelStream()
+            int errorsPerFuzzer = (int) testCasesPerFuzzer.parallelStream()
                     .filter(CatsTestCaseSummary::getError)
                     .filter(CatsTestCaseSummary::is9xxResponse)
                     .count();
-            int warning = (int) testCases.parallelStream().filter(CatsTestCaseSummary::getWarning).count();
-            double totalTime = testCases.parallelStream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInSec).sum();
+            int warningsPerFuzzer = (int) testCasesPerFuzzer.parallelStream().filter(CatsTestCaseSummary::getWarning).count();
+            double totalTime = testCasesPerFuzzer.parallelStream().mapToDouble(CatsTestCaseSummary::getTimeToExecuteInSec).sum();
 
             // Create the testsuite object
             JunitTestSuite junitTestSuite = new JunitTestSuite();
             junitTestSuite.fuzzer = fuzzer;
-            junitTestSuite.totalTests = totalTests;
-            junitTestSuite.failures = failures;
-            junitTestSuite.warnings = warning;
-            junitTestSuite.errors = errors;
-            junitTestSuite.time = THREE_DECIMAL_FORMAT.format(totalTime);
-            junitTestSuite.testCases = testCases;
+            junitTestSuite.totalTests = totalTestsPerFuzzer;
+            junitTestSuite.failures = failuresPerFuzzer;
+            junitTestSuite.warnings = warningsPerFuzzer;
+            junitTestSuite.errors = errorsPerFuzzer;
+            junitTestSuite.time = decimalFormat.format(totalTime);
+            junitTestSuite.testCases = testCasesPerFuzzer;
 
             junitTestSuites.add(junitTestSuite);
         }

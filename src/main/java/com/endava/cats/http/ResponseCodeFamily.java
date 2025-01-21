@@ -3,8 +3,6 @@ package com.endava.cats.http;
 import java.util.List;
 import java.util.Locale;
 
-import static com.endava.cats.http.ResponseCodeFamilyPredefined.getResultCodeBasedOnRequiredFieldsRemoved;
-
 /**
  * Defines response code sets that can be used for matching.
  */
@@ -86,20 +84,6 @@ public interface ResponseCodeFamily {
         return code == 501;
     }
 
-    /**
-     * Generates an array of objects representing expected wording based on the presence of required fields.
-     *
-     * @param anyMandatory Flag indicating the presence of any mandatory fields.
-     * @return An array of objects containing the expected wording based on the required fields.
-     * - The first element is the result code based on whether required fields were removed.
-     * - The second element is a string indicating whether required fields were present or not.
-     */
-    static Object[] getExpectedWordingBasedOnRequiredFields(boolean anyMandatory) {
-        return new Object[]{
-                getResultCodeBasedOnRequiredFieldsRemoved(anyMandatory).asString(),
-                anyMandatory ? "were" : "were not"
-        };
-    }
 
     /**
      * Checks if two response codes match as an exact match, a generic range match, or a reversed generic range match.

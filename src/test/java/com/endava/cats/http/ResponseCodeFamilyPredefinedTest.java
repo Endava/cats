@@ -176,7 +176,7 @@ class ResponseCodeFamilyPredefinedTest {
     @ParameterizedTest
     @CsvSource({"true,were", "false,were not"})
     void shouldReturnProperWordingBasedOnRequired(boolean required, String expected) {
-        Object[] result = ResponseCodeFamily.getExpectedWordingBasedOnRequiredFields(required);
+        Object[] result = ResponseCodeFamilyPredefined.getExpectedWordingBasedOnRequiredFields(required);
 
         Assertions.assertThat(result[1]).isEqualTo(expected);
     }

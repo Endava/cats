@@ -661,7 +661,7 @@ public class OpenAPIModelGeneratorV2 {
                 }
             }
         }
-//        Collections.shuffle(combinedExamples);
+
         return combinedExamples.stream()
                 .limit(Math.min(combinedExamples.size(), LIMIT_OF_EXAMPLES))
                 .toList();

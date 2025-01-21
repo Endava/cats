@@ -35,7 +35,7 @@ public abstract class TwoXXorFourXXReplaceStringsFuzzer implements Fuzzer {
      * @param fieldsIteratorExecutor the executor
      */
     @Inject
-    public TwoXXorFourXXReplaceStringsFuzzer(TestCaseListener testCaseListener, FieldsIteratorExecutor fieldsIteratorExecutor) {
+    protected TwoXXorFourXXReplaceStringsFuzzer(TestCaseListener testCaseListener, FieldsIteratorExecutor fieldsIteratorExecutor) {
         this.testCaseListener = testCaseListener;
         this.fieldsIteratorExecutor = fieldsIteratorExecutor;
     }
