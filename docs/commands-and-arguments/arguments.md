@@ -58,6 +58,7 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--ignoreResponseWords` COUNT_LIST a comma separated list of words count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
 - `--ignoreResponseLines` LINES_COUNT a comma separated list of lines count in the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
 - `--ignoreResponseRegex` a REGEX that will match against the response that will be considered as SUCCESS, even if the Fuzzer will typically report it as WARN or ERROR
+- `--ignoreErrorLeaksCheck`If supplied (no value needed) it won't check if the response body contains sensitive information and will return the test result as SUCCESS instead of ERROR
 - `--filterResponseCodes` HTTP_CODES_LIST a comma separated list of HTTP response codes that will be filtered and not included in the final report. You can use response code families as `2xx`, `4xx`, etc.
 - `--filterResponseSize` SIZE_LIST a comma separated list of response sizes that will be filtered and not included in the final report
 - `--filterResponseWords` COUNT_LIST a comma separated list of words count in the response that will be filtered and not included in the final report

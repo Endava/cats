@@ -14,7 +14,7 @@ The execution report is placed in a folder called `cats-report` which is created
 Opening the `cats-report/index.html` file, you will be able to:
 
 - filter tests based on the result: `All`, `Success`, `Warn` and `Error`
-- omni-search box to be able to seach by any string without the summary table
+- omni-search box to be able to search by any string without the summary table
 - see summary with all the tests with their corresponding path against they were run, and the result
 - have ability to click on any tests and get details about the Scenario being executed, Expected Result, Actual result as well as request/response details
 
@@ -43,6 +43,7 @@ Understanding the `Result Reason` values:
 - `Not Found` - reported as an `error` in order to force providing more context; this indicates that CATS needs additional business context in order to run successfully - you can do this using the `--refData` and/or `--urlParams` arguments
 - `Response time exceeds max` - reported as an `error` if the `--maxResponseTimeInMs` is supplied and the response time exceeds this number
 - `Response content type not matching the contract` - reported as `warn` if the content type received in response does not match the one defined in the contract for the received http response code
+- `Error details leak` - reported as `error` if the response body contains sensitive information
 - `Not Implemented` - reported as `warn` if response code is `501`
 
 This is what you get when you click on a specific test:
@@ -54,13 +55,12 @@ This is what you get when you click on a specific test:
 This format is similar with `HTML_JS`, but you cannot do any filtering or sorting. This is more suitable when embedding the CATS report into a CI pipeline.
 
 ## JUNIT
-CATS also supports [JUNIT](https://llg.cubic.org/docs/junit/) output. The output will be a single `testsuite` that will incorporate all tests grouped by Fuzzer name.
+CATS also supports [JUNIT](https://llg.cubic.org/docs/junit/) output. The output will contain one `testsuite` per fuzzer. Each test run by that fuzzer will be recorded as a `testcase`.
 As the JUNIT format does not have the concept of `warning` the following mapping is used:
 
-- CATS `error` is reported as JUNIT `error`
-- JUNIT `failure` is not used at all
-- CATS `warn` is reported as JUNIT `skipped`
-- CATS `skipped` is reported as JUNIT `disabled`
+- CATS `error` with valid HTTP codes are mapped as JUNIT `failure`
+- CATS `error` with code 9XX are mapped as JUNIT `error`
+- CATS `warn` is reported as JUNIT `skipped` and message starting with `WARN - `
 
 The JUNIT report is written as `junit.xml` in the `cats-report` folder. Individual tests, both as `.html` and `.json` will also be created.
 
