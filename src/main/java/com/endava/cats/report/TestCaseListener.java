@@ -489,9 +489,9 @@ public class TestCaseListener {
 
     private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, FuzzingData data, CatsResultFactory.CatsResult catsResult, boolean ignoreCheck, Object... params) {
         if (ignoreCheck) {
+            setResultReason(catsResult);
             currentTestCase().setResultIgnoreDetails(Level.WARN.toString());
             this.reportInfo(logger, catsResult, params);
-            setResultReason(catsResult);
         } else {
             this.reportResultWarn(logger, data, catsResult.reason(), catsResult.message(), params);
         }
@@ -508,13 +508,13 @@ public class TestCaseListener {
      * @param params  additional parameters to be formatted into the message
      */
     public void reportResultWarn(PrettyLogger logger, FuzzingData data, String reason, String message, Object... params) {
-        this.reportWarn(logger, message, params);
         setResultReason(reason);
+        this.reportWarn(logger, message, params);
     }
 
     private void reportError(PrettyLogger logger, CatsResultFactory.CatsResult catsResult, Object... params) {
-        this.reportError(logger, catsResult.message(), params);
         setResultReason(catsResult);
+        this.reportError(logger, catsResult.message(), params);
     }
 
     /**
@@ -713,7 +713,7 @@ public class TestCaseListener {
             this.logger.debug("Response code expected and documented and matches response schema");
             this.reportInfo(logger, CatsResultFactory.createExpectedResponse(response.responseCodeAsString()));
         } else if (assertions.isResponseCodeExpectedAndDocumentedButDoesntMatchResponseSchema()) {
-            this.logger.debug("Response code expected and documented and but doesn't match response schema");
+            this.logger.debug("Response code expected and documented but doesn't match response schema");
             this.reportWarnOrInfoBasedOnCheck(logger, data, CatsResultFactory.createNotMatchingResponseSchema(response.responseCodeAsString()), ignoreArguments.isIgnoreResponseBodyCheck());
         } else if (assertions.isResponseCodeExpectedButNotDocumented()) {
             this.logger.debug("Response code expected but not documented");
