@@ -55,6 +55,15 @@ components:
           required:
             - id
             - breed
+        - $ref: '#/components/schemas/AdditionalProps'
+    AdditionalProps:
+      additionalProperties:
+        description: |
+          Custom fields
+      description: |
+        Container for custom fields
+      title: fieldsCustom
+      type: object
     Pet:
       properties:
         birthDate:

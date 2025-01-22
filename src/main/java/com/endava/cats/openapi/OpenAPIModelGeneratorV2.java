@@ -187,7 +187,16 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         if (generatedExample instanceof Map map && map.get(modelName) != null) {
-            generatedExample = map.get(modelName);
+            // If the generated example is a map of size 1, and it contains the model name as a key, we return the value of that key
+            // If it has a bigger size, we merge the properties of the model with the additional properties. This happens when model uses allOf with one of the schemes
+            // having additionalProperties i.e. MapSchema
+            if (map.size() == 1) {
+                generatedExample = map.get(modelName);
+            } else {
+                Map additionalProperties = (Map) map.get(modelName);
+                map.remove(modelName);
+                map.putAll(additionalProperties);
+            }
         }
 
         String example = JsonUtils.serialize(generatedExample);
@@ -338,7 +347,8 @@ public class OpenAPIModelGeneratorV2 {
             Object resolvedExample = resolvePropertyToExample(name, schema);
             if (resolvedExample != null) {
                 Map<String, Object> defaultExample = new HashMap<>();
-                defaultExample.put(name, resolvedExample);
+                String key = name != null && name.endsWith(".items") ? name.substring(0, name.lastIndexOf('.')) : name;
+                defaultExample.put(key, resolvedExample);
                 examples.add(defaultExample);
             }
         }
@@ -874,13 +884,19 @@ public class OpenAPIModelGeneratorV2 {
     double randomNumber(Double min, Double max) {
         if (min != null && max != null) {
             double range = max - min;
+            if (range == 0.0) {
+                return min;
+            }
             return random.nextDouble() * range + min;
         } else if (min != null) {
-            return random.nextDouble() + min;
+            return random.nextDouble() * 100000.0 + min;
         } else if (max != null) {
+            if (max == 0.0) {
+                return 0.0;
+            }
             return random.nextDouble() * max;
         } else {
-            return random.nextDouble() * 10;
+            return random.nextDouble() * 100000.0;
         }
     }
 
