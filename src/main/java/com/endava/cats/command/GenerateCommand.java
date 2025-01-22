@@ -46,7 +46,6 @@ import java.util.Properties;
 @Unremovable
 public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger = PrettyLoggerFactory.getConsoleLogger();
-
     @CommandLine.Option(names = {"-c", "--contract"},
             description = "The OpenAPI contract/spec", required = true)
     private String contract;
@@ -79,14 +78,21 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
             description = "Max depth for request objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int selfReferenceDepth = 4;
 
+    @CommandLine.Option(names = {"--useExampless"}, negatable = true,
+            description = "When set to @|bold true|@, it will use request body examples, schema examples and primitive properties examples from the OpenAPI contract when available. " +
+                    "This is equivalent of using @|bold,underline --useRequestBodyExamples|@ @|bold,underline --useSchemaExamples|@ @|bold,underline --usePropertyExamples|@ @|bold,underline --useResponseBodyExamples|@." +
+                    "Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private Boolean useExamples;
+
     FuzzingDataFactory fuzzingDataFactory;
     CatsGlobalContext globalContext;
+    ProcessingArguments processingArguments;
 
     @Inject
     public GenerateCommand(FuzzingDataFactory fuzzingDataFactory, CatsGlobalContext globalContext, ProcessingArguments processingArguments) {
         this.fuzzingDataFactory = fuzzingDataFactory;
         this.globalContext = globalContext;
-        processingArguments.setSelfReferenceDepth(this.selfReferenceDepth);
+        this.processingArguments = processingArguments;
     }
 
     private int exitCodeDueToErrors = 0;
@@ -94,8 +100,13 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
     @Override
     public void run() {
         try {
+            processingArguments.setSelfReferenceDepth(this.selfReferenceDepth);
+            processingArguments.setUseExamples(this.useExamples);
+
             if (!debug) {
                 PrettyLogger.enableLevels(PrettyLevel.CONFIG, PrettyLevel.FATAL);
+            } else {
+                PrettyLogger.enableLevels(PrettyLevel.values());
             }
 
             OpenAPI openAPI = OpenApiUtils.readOpenApi(contract);
