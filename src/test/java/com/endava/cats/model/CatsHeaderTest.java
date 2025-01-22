@@ -9,6 +9,8 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -99,14 +101,15 @@ class CatsHeaderTest {
         Assertions.assertThat(header.getValue()).isEqualTo("header");
     }
 
-    @Test
-    void shouldMakeCatsHeaderRequired() {
+    @ParameterizedTest
+    @CsvSource(value = {"true, true", "false, false", "null,false"}, nullValues = "null")
+    void shouldMakeCatsHeaderRequired(Boolean required, boolean expected) {
         Parameter parameter = new Parameter();
-        parameter.setRequired(true);
+        parameter.setRequired(required);
         parameter.setSchema(new NumberSchema());
         CatsHeader header = CatsHeader.fromHeaderParameter(parameter);
 
-        Assertions.assertThat(header.isRequired()).isTrue();
+        Assertions.assertThat(header.isRequired()).isEqualTo(expected);
     }
 
     @Test

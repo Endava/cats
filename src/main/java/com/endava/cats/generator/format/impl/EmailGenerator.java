@@ -4,9 +4,9 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
+import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.List;
 import java.util.Locale;
@@ -22,7 +22,10 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public Object generate(Schema<?> schema) {
-        return RandomStringUtils.secure().nextAlphabetic(5).toLowerCase(Locale.ROOT) + "cool.cats@cats.io";
+        String hero = CatsUtil.faker().ancient().hero().toLowerCase(Locale.ROOT);
+        String color = CatsUtil.faker().color().name().toLowerCase(Locale.ROOT);
+
+        return "%s.%s@cats.io".formatted(hero, color).replace(" ", "-");
     }
 
     @Override

@@ -20,7 +20,7 @@ class CurrencyCodeGeneratorTest {
 
     @ParameterizedTest
     @CsvSource({"iso-4217,not,true", "currency-code,not,true", "currencyCode,not,true", "not,currencycode,true", "not,currency-code,true"
-            , "not,currencyCode,true", "not,currency-Code,true", "not,not,false"})
+            , "not,currencyCode,true", "not,currency-Code,true", "not,currency,true", "not,not,false"})
     void shouldApply(String format, String property, boolean expected) {
         Assertions.assertThat(currencyCodeGenerator.appliesTo(format, property)).isEqualTo(expected);
     }

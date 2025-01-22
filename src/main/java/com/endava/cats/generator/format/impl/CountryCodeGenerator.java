@@ -12,6 +12,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import static com.endava.cats.util.CatsModelUtils.hasLengthThree;
+import static com.endava.cats.util.CatsModelUtils.hasLengthTwo;
+
 /**
  * A generator class implementing various interfaces for generating valid and invalid country code data formats.
  * It also implements the OpenAPIFormat interface.
@@ -46,15 +49,6 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
         return schema.getPattern() != null && "ROU".matches(schema.getPattern());
     }
 
-    private static boolean hasLengthTwo(Schema<?> schema) {
-        return (schema.getMinLength() != null && schema.getMinLength() == 2) ||
-                (schema.getMaxLength() != null && schema.getMaxLength() == 2);
-    }
-
-    private static boolean hasLengthThree(Schema<?> schema) {
-        return (schema.getMinLength() != null && schema.getMinLength() == 3) ||
-                (schema.getMaxLength() != null && schema.getMaxLength() == 3);
-    }
 
     @Override
     public boolean appliesTo(String format, String propertyName) {

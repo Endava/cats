@@ -13,7 +13,7 @@ class IRIGeneratorTest {
     @Test
     void shouldGenerate() {
         IRIGenerator iriGenerator = new IRIGenerator();
-        Assertions.assertThat(iriGenerator.generate(new Schema<>()).toString()).startsWith("http://ë").endsWith(".com/cats");
+        Assertions.assertThat(iriGenerator.generate(new Schema<>()).toString()).startsWith("https://ë").endsWith(".com/cats");
     }
 
     @ParameterizedTest

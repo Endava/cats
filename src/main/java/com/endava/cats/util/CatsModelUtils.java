@@ -188,6 +188,13 @@ public abstract class CatsModelUtils {
         return lowerField.endsWith("password") && "catsISc00l?!useIt#".matches(pattern);
     }
 
+    /**
+     * Checks if a schema is empty. An empty schema is a schema that has no properties,
+     * no required fields, no type, no ref, no items, no additionalProperties.
+     *
+     * @param schema the schema to be checked
+     * @return true if the schema is empty, false otherwise
+     */
     public static boolean isNotEmptySchema(Schema schema) {
         return schema != null &&
                 (StringUtils.isNotBlank(schema.get$ref()) ||
@@ -199,6 +206,28 @@ public abstract class CatsModelUtils {
                         !CollectionUtils.isEmpty(schema.getOneOf()) ||
                         schema.getItems() != null ||
                         !CollectionUtils.isEmpty(schema.getRequired()));
+    }
+
+    /**
+     * Checks if the schema has a length of 2.
+     *
+     * @param schema the schema to be checked
+     * @return true if the schema has a length of 2, false otherwise
+     */
+    public static boolean hasLengthTwo(Schema<?> schema) {
+        return (schema.getMinLength() != null && schema.getMinLength() == 2) ||
+                (schema.getMaxLength() != null && schema.getMaxLength() == 2);
+    }
+
+    /**
+     * Checks if the schema has a length of 3.
+     *
+     * @param schema the schema to be checked
+     * @return true if the schema has a length of 3, false otherwise
+     */
+    public static boolean hasLengthThree(Schema<?> schema) {
+        return (schema.getMinLength() != null && schema.getMinLength() == 3) ||
+                (schema.getMaxLength() != null && schema.getMaxLength() == 3);
     }
 
     public static boolean isAnyOf(Schema schema) {
