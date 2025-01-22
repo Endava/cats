@@ -91,8 +91,8 @@ public class ListCommand implements Runnable {
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndSanitize.class) == null)
                 .toList();
-        this.formats = formats.stream().flatMap(format -> format.matchingFormats().stream()).toList();
-        this.mutators = mutators.stream().map(m -> new MutatorEntry(m.getClass().getSimpleName(), m.description())).toList();
+        this.formats = formats.stream().flatMap(format -> format.matchingFormats().stream()).sorted().toList();
+        this.mutators = mutators.stream().map(m -> new MutatorEntry(m.getClass().getSimpleName(), m.description())).sorted().toList();
     }
 
     @Override
