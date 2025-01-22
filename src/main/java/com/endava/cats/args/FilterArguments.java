@@ -300,6 +300,7 @@ public class FilterArguments {
      */
     public List<String> getFirstPhaseFuzzersForPath() {
         if (!fuzzersToBeRunComputed) {
+            FUZZERS_TO_BE_RUN.clear();
             List<String> allowedFuzzers = processSuppliedFuzzers();
             allowedFuzzers = this.removeSkippedFuzzersGlobally(allowedFuzzers);
             allowedFuzzers = this.removeSpecialFuzzers(allowedFuzzers);
