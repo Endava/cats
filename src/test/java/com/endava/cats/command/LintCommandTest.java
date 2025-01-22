@@ -1,10 +1,12 @@
 package com.endava.cats.command;
 
-import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.report.TestCaseExporter;
+import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,24 +24,29 @@ class LintCommandTest {
     LintCommand lintCommand;
     @Inject
     CatsCommand catsCommand;
+    @InjectSpy
+    TestCaseListener testCaseListener;
+    @Inject
     FilterArguments filterArguments;
 
 
     @BeforeEach
     void init() {
-        filterArguments = Mockito.mock(FilterArguments.class);
-        Mockito.when(filterArguments.getCheckArguments()).thenReturn(Mockito.mock(CheckArguments.class));
         ReflectionTestUtils.setField(lintCommand, "contract", "contract");
-        ReflectionTestUtils.setField(catsCommand, "filterArguments", filterArguments);
+        ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
         ReflectionTestUtils.setField(lintCommand, "catsCommand", catsCommand);
         ReflectionTestUtils.setField(lintCommand, "skipFuzzers", Collections.emptyList());
+        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+
     }
 
     @Test
     void shouldRunContractFuzzers() {
+        ReflectionTestUtils.setField(lintCommand, "contract", "src/test/resources/petstore-empty.yml");
+
         lintCommand.run();
-        Mockito.verify(filterArguments, Mockito.times(1)).customFilter("Linter");
-        //TODO check that it actually runs
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).hasSize(17);
+        Mockito.verify(testCaseListener, Mockito.times(17)).afterFuzz("/pets/{id}");
     }
 
     @Test
