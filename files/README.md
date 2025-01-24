@@ -61,14 +61,23 @@ More documentation here: [--fuzzConfig](https://endava.github.io/cats/docs/advan
 
 ## Custom Mutators
 
-When doing [continuous fuzzing](https://endava.github.io/cats/docs/getting-started/running-cats/#continuous-fuzzing-mode)
-you can supply custom mutators using the `cats random ... --mutators <FOLDER>`. 
+When
+doing [continuous fuzzing](https://endava.github.io/cats/docs/getting-started/running-cats/#continuous-fuzzing-mode)
+you can supply custom mutators using the `cats random ... --mutators <FOLDER>`.
 
 The [mutators](./mutators) folder contains some sample mutators that can be used for continuous fuzzing.
 
 [first.yml](./mutators/first.yml) and [second.yml](./mutators/second.yml) provides the mutation values
 through an array of values within the yaml file, while the [third.yml](./mutators/third.yml) will load
 the values from the [nosql.txt](./nosql.txt) file.
+
+## Error Leaks Keywords
+
+CATS automatically checks for error leaks in the responses. It has an internal list of keywords for the most popular programming languages.
+You can supply custom error leak keywords using the `--errorLeakKeywords <FILE>` argument.
+
+The provided keywords are search as substrings in the response body and if found, the response is marked as an error
+leak.
 
 
 
