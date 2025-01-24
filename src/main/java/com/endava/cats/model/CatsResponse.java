@@ -118,15 +118,6 @@ public class CatsResponse {
     }
 
     /**
-     * Returns specific keywords that are found in the response body. Keywords presence might suggest security issues or error details leaks.
-     *
-     * @return a list of keywords found in the response body
-     */
-    public List<String> getKeywordsLeaks() {
-        return WordUtils.getKeywordsMatching(this.getBody());
-    }
-
-    /**
      * Checks if the response time exceeds the expected maximum response time.
      *
      * @param maxResponseTime The maximum allowed response time in milliseconds.

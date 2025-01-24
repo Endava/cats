@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class FilesArgumentsTest {
@@ -25,6 +26,17 @@ class FilesArgumentsTest {
 
         org.assertj.core.api.Assertions.assertThat(existingProperty).isEqualTo("403");
         org.assertj.core.api.Assertions.assertThat(nonExistingProperty).isNull();
+    }
+
+    @Test
+    void shouldLoadErrorLeaksFile() throws IOException {
+        FilesArguments filesArguments = new FilesArguments();
+        ReflectionTestUtils.setField(filesArguments, "errorLeaksKeywords", new File("src/test/resources/error_leaks.txt"));
+        filesArguments.loadErrorLeaksKeywords();
+
+        Set<String> errorLeaksKeywords = filesArguments.getErrorLeaksKeywordsList();
+        org.assertj.core.api.Assertions.assertThat(errorLeaksKeywords).hasSize(2)
+                .containsOnly("this is an error leak", "which is very bad");
     }
 
     @Test

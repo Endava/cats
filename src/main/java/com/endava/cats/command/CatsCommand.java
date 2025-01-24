@@ -284,7 +284,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size(),
                 filterArguments.getPathsToRun(openAPI).size(), openAPI.getPaths().size());
 
-        globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration);
+        globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration, filesArguments.getErrorLeaksKeywordsList());
 
         logger.debug("Fuzzers custom configuration: {}", globalContext.getFuzzersConfiguration());
         logger.debug("Schemas: {}", globalContext.getSchemaMap().keySet());

@@ -23,11 +23,13 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Holds all arguments related to different files used by CATS like: headers, reference data, etc.
@@ -43,11 +45,19 @@ public class FilesArguments {
     private List<String> pathsOrder;
 
     @Getter
+    private Set<String> errorLeaksKeywordsList;
+    @Getter
     private Properties fuzzConfigProperties;
     @Getter
     private Map<String, Map<String, Object>> customFuzzerDetails = new HashMap<>();
     @Getter
     private Map<String, Map<String, Object>> securityFuzzerDetails = new HashMap<>();
+
+
+    @CommandLine.Option(names = {"--errorLeaksKeywords", "-K"},
+            description = "A properties file with error leaks keywords that will be used when processing responses to detect potential error leaks. If one of these keyword is found, the test case will be marked as error")
+    @Setter
+    private File errorLeaksKeywords;
 
     @CommandLine.Option(names = {"--fuzzersConfig"},
             description = "A properties file with Fuzzer configuration that changes default Fuzzer's expected HTTP response codes. Configuration keys are prefixed with the Fuzzer name")
@@ -141,6 +151,7 @@ public class FilesArguments {
         loadHeaders();
         loadQueryParams();
         loadFuzzConfigProperties();
+        loadErrorLeaksKeywords();
         loadMutators();
         loadPathsOrder();
     }
@@ -361,6 +372,24 @@ public class FilesArguments {
         try (InputStream stream = new FileInputStream(fuzzersConfig)) {
             fuzzConfigProperties.load(stream);
         }
+    }
+
+    /**
+     * Loads the content of the file provided as argument in the {@code --errorLeaksKeywords} argument.
+     *
+     * @throws IOException if something goes wrong
+     */
+    public void loadErrorLeaksKeywords() throws IOException {
+        errorLeaksKeywordsList = new HashSet<>();
+        if (errorLeaksKeywords == null) {
+            log.debug("No error leaks keywords file provided!");
+            return;
+        }
+
+        errorLeaksKeywordsList = new HashSet<>(Files.readAllLines(errorLeaksKeywords.toPath()));
+
+        log.config(Ansi.ansi().bold().a("Error leaks keywords file: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(errorLeaksKeywords.getCanonicalPath()));
     }
 
 

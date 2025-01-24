@@ -138,7 +138,7 @@ public class ExecutionStatisticsListener {
      * @return {@code true} if there are many authentication errors, {@code false} otherwise.
      */
     public boolean areManyAuthErrors() {
-        return authErrors > this.getAll() / 2;
+        return authErrors < getAll() && authErrors > this.getAll() / 2;
     }
 
     /**

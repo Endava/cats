@@ -17,6 +17,7 @@ import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.WordUtils;
 import com.google.common.collect.Iterators;
 import com.google.common.net.MediaType;
 import com.google.gson.JsonArray;
@@ -277,6 +278,7 @@ public class TestCaseListener {
      */
     public void addResponse(CatsResponse response) {
         currentTestCase().setResponse(response);
+        extractErrorLeaks();
     }
 
     /**
@@ -462,7 +464,7 @@ public class TestCaseListener {
         this.logger.debug("Reporting warn with message: {}", replaceBrackets(message, params));
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
-        List<String> detectedKeyWords = catsResponse.getKeywordsLeaks();
+        List<String> detectedKeyWords = testCase.getErrorLeaks();
 
         if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
             logger.debug("Detected keywords in response body: {}", detectedKeyWords);
@@ -485,6 +487,15 @@ public class TestCaseListener {
             this.logger.debug("Received response is marked as ignored... reporting info!");
             this.reportInfo(logger, message, params);
         }
+    }
+
+    private void extractErrorLeaks() {
+        CatsTestCase testCase = currentTestCase();
+        if (testCase.getResponse() == null) {
+            return;
+        }
+        List<String> keywords = WordUtils.getKeywordsMatching(testCase.getResponse().getBody(), globalContext.getErrorLeaksKeywords());
+        testCase.setErrorLeaks(keywords);
     }
 
     private void reportWarnOrInfoBasedOnCheck(PrettyLogger logger, FuzzingData data, CatsResultFactory.CatsResult catsResult, boolean ignoreCheck, Object... params) {
@@ -532,7 +543,7 @@ public class TestCaseListener {
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
 
         if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
-                || isException(catsResponse) || hasKeywordLeaks(catsResponse)) {
+                || isException(catsResponse) || hasKeywordLeaks(testCase)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
             executionStatisticsListener.increaseErrors(testCase.getContractPath());
             logger.error(message, params);
@@ -554,11 +565,11 @@ public class TestCaseListener {
      * Checks if the response body contains keywords that might suggest security issues or error details leaks.
      * It also checks if the {@code --ignoreErrorLeaksCheck} argument is enabled.
      *
-     * @param catsResponse the CatsResponse object
+     * @param catsTestCase the current test case
      * @return {@code true} if the response body contains keywords that might suggest security issues or error details leaks; otherwise, {@code false}
      */
-    boolean hasKeywordLeaks(CatsResponse catsResponse) {
-        return !ignoreArguments.isIgnoreErrorLeaksCheck() && !catsResponse.getKeywordsLeaks().isEmpty();
+    boolean hasKeywordLeaks(CatsTestCase catsTestCase) {
+        return !ignoreArguments.isIgnoreErrorLeaksCheck() && !catsTestCase.getErrorLeaks().isEmpty();
     }
 
 
@@ -614,7 +625,7 @@ public class TestCaseListener {
     void reportInfo(PrettyLogger logger, String message, Object... params) {
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
-        List<String> detectedKeyWords = catsResponse.getKeywordsLeaks();
+        List<String> detectedKeyWords = testCase.getErrorLeaks();
 
         if (!ignoreArguments.isIgnoreErrorLeaksCheck() && !detectedKeyWords.isEmpty()) {
             logger.debug("Detected keywords in response body: {}", detectedKeyWords);

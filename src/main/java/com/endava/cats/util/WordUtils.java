@@ -56,7 +56,7 @@ public abstract class WordUtils {
             "Timeout::Error", "EncodingError", "SystemExit",
 
             // PHP
-            "FatalError", "ParseError", "Warning", "Notice", "DivisionByZeroError",
+            "FatalError", "ParseError", "Notice", "DivisionByZeroError",
             "MemoryLimitExceeded", "PDOException", "ErrorException",
             "InvalidArgument", "OutOfMemoryError", "UnexpectedValueException",
 
@@ -148,11 +148,12 @@ public abstract class WordUtils {
         return string2.toLowerCase(Locale.ROOT).matches(string1.toLowerCase(Locale.ROOT));
     }
 
-    public static List<String> getKeywordsMatching(String response) {
+    public static List<String> getKeywordsMatching(String response, Set<String> providedKeywords) {
         if (response == null) {
             return List.of();
         }
-        return ERROR_KEYWORDS.stream()
+        Set<String> toCheck = providedKeywords.isEmpty() ? ERROR_KEYWORDS : providedKeywords;
+        return toCheck.stream()
                 .filter(keyword -> response.toLowerCase(Locale.ROOT).contains(keyword.toLowerCase(Locale.ROOT)))
                 .toList();
     }

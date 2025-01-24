@@ -1,8 +1,8 @@
 package com.endava.cats.model;
 
 import com.endava.cats.http.HttpMethod;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.ann.Exclude;
+import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
@@ -14,6 +14,7 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.StringReader;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -60,6 +61,9 @@ public class CatsTestCase {
 
     @Exclude
     private Gson maskingSerializer;
+
+    @Exclude
+    private List<String> errorLeaks = List.of();
 
     /**
      * Checks if the test result is not marked as skipped.

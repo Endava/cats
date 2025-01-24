@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Generates payloads based on the OpenAPI contract and supplied arguments.
@@ -111,7 +112,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
 
             OpenAPI openAPI = OpenApiUtils.readOpenApi(contract);
             this.checkOpenAPI(openAPI);
-            this.globalContext.init(openAPI, List.of(contentType), new Properties(), null);
+            this.globalContext.init(openAPI, List.of(contentType), new Properties(), null, Set.of());
 
             PathItem pathItem = openAPI.getPaths().entrySet()
                     .stream().filter(openApiPath -> openApiPath.getKey().equalsIgnoreCase(path))
