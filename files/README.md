@@ -73,11 +73,17 @@ the values from the [nosql.txt](./nosql.txt) file.
 
 ## Error Leaks Keywords
 
-CATS automatically checks for error leaks in the responses. It has an internal list of keywords for the most popular programming languages.
+CATS automatically checks for error leaks in the responses. It has an internal list of keywords for the most popular
+programming languages.
 You can supply custom error leak keywords using the `--errorLeakKeywords <FILE>` argument.
 
 The provided keywords are search as substrings in the response body and if found, the response is marked as an error
-leak.
+leak. Example [errorLeaks.txt](./errorLeaks.txt) file contains some custom keywords that can be used.
+
+## Paths ordering
+
+By default, CATS runs paths in alphabetical order. You can override this behavior by providing a file with the desired
+order using the `--pathsRunOrder <FILE>` argument. An example file [pathsOrder.txt](./pathsOrder.txt).
 
 
 

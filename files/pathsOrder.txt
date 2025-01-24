@@ -1,0 +1,2 @@
+/v1/{resource}:setIamPolicy
+/v1/{resource}:getIamPolicy
