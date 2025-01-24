@@ -28,4 +28,10 @@ class TimeOfDayGeneratorTest {
         TimeOfDayGenerator timeOfDayGenerator = new TimeOfDayGenerator();
         Assertions.assertThat(timeOfDayGenerator.appliesTo("", property)).isEqualTo(expected);
     }
+
+    @Test
+    void shouldNotApplyToTimeFormat() {
+        TimeOfDayGenerator timeOfDayGenerator = new TimeOfDayGenerator();
+        Assertions.assertThat(timeOfDayGenerator.appliesTo("time", "arrivalTime")).isFalse();
+    }
 }

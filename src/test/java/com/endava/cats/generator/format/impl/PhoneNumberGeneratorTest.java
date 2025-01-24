@@ -25,6 +25,14 @@ class PhoneNumberGeneratorTest {
         Assertions.assertThat(phoneNumberGenerator.generate(schema).toString()).startsWith("+4");
     }
 
+    @Test
+    void shouldNotStartWithPlus() {
+        PhoneNumberGenerator phoneNumberGenerator = new PhoneNumberGenerator();
+        StringSchema schema = new StringSchema();
+        schema.setPattern("\\d{6,14}$");
+        Assertions.assertThat(phoneNumberGenerator.generate(schema).toString()).doesNotStartWith("+");
+    }
+
     @ParameterizedTest
     @CsvSource({"phone,true", "other,false"})
     void shouldApplyToFormat(String format, boolean expected) {

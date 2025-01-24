@@ -23,7 +23,7 @@ class AirportCodeGeneratorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"airportCode,true", "AIRPORTCODE,true", "airportCode,true", "airport_code,true", "other#airportCode,true", "other, false"})
+    @CsvSource({"airportCode,true", "airport,true", "AIRPORTCODE,true", "airportCode,true", "airport_code,true", "other#airportCode,true", "other, false"})
     void shouldApplyToPropertyName(String property, boolean expected) {
         AirportCodeGenerator airportCodeGenerator = new AirportCodeGenerator();
         Assertions.assertThat(airportCodeGenerator.appliesTo("", property)).isEqualTo(expected);
