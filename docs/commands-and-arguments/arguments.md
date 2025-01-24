@@ -105,6 +105,8 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--stopAfterErrors=<stopAfterErrors>` Number of errors after which the continuous fuzzing will stop running. Errors are defined as conditions matching the given match arguments. Only available in `cats random` sub-command. 
 - `--stopAfterMutations=<stopAfterMutations>` Number of mutations (test cases) after which the continuous fuzzing will stop running. Only available in `cats random` sub-command.
 - `--stopAfterTimeInSec=<stopAfterTimeInSec>` Amount of time in seconds for how long the continuous fuzzing will run before stopping. Only available in `cats random` sub-command.
+- `--pathsRunOrder=<pathsOrderFile>` A file with the order in which the paths will be executed. The paths are on each line. The order from file will drive the execution order
+- `--errorLeaksKeywords=<errorLeaksKeywords>` A properties file with error leaks keywords that will be used when processing responses to detect potential error leaks. If one of these keyword is found, the test case will be marked as error
 
 :::tip
 When you want to skip fuzzing entirely for a specific JSON object or specific fields you must prefix the field name from the `--skipFields` argument with `!`.
