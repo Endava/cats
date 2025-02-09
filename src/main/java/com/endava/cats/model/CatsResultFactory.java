@@ -15,7 +15,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createExpectedResponse(String receivedResponseCode) {
         String message = "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(receivedResponseCode);
-        String reason = "All Good!";
+        String reason = Reason.ALL_GOOD.description();
 
         return new CatsResult(message, reason);
     }
@@ -28,7 +28,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createNotMatchingResponseSchema(String receivedResponseCode) {
         String message = "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT match the corresponding schema.".formatted(receivedResponseCode);
-        String reason = "Not matching response schema";
+        String reason = Reason.NOT_MATCHING_RESPONSE_SCHEMA.description();
 
         return new CatsResult(message, reason);
     }
@@ -42,7 +42,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createNotMatchingContentType(List<String> expected, String actual) {
         String message = "Response content type not matching the contract: expected %s, actual [%s]".formatted(expected, actual);
-        String reason = "Response content type not matching the contract";
+        String reason = Reason.RESPONSE_CONTENT_TYPE_NOT_MATCHING.description();
         return new CatsResult(message, reason);
     }
 
@@ -52,7 +52,7 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotImplemented() {
-        return new CatsResult("Response HTTP code 501: you forgot to implement this functionality!", "Not implemented");
+        return new CatsResult("Response HTTP code 501: you forgot to implement this functionality!", Reason.NOT_IMPLEMENTED.description());
     }
 
     /**
@@ -61,7 +61,7 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotFound() {
-        return new CatsResult("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", "Not found");
+        return new CatsResult("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", Reason.NOT_FOUND.description());
     }
 
     /**
@@ -73,7 +73,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createResponseTimeExceedsMax(long receivedResponseTime, long maxResponseTime) {
         String message = "Test case executed successfully, but response time exceeds --maxResponseTimeInMs: actual %d, max %d".formatted(receivedResponseTime, maxResponseTime);
-        String reason = "Response time exceeds max";
+        String reason = Reason.RESPONSE_TIME_EXCEEDS_MAX.description();
 
         return new CatsResult(message, reason);
     }
@@ -87,7 +87,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedException(String fuzzer, String errorMessage) {
         String message = "Fuzzer [%s] failed due to [%s]".formatted(fuzzer, errorMessage);
-        String reason = "Unexpected exception";
+        String reason = Reason.UNEXPECTED_EXCEPTION.description();
 
         return new CatsResult(message, reason);
     }
@@ -100,7 +100,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createErrorLeaksDetectedInResponse(List<String> keywords) {
         String message = "The following keywords were detected in the response which might suggest an error details leak: %s".formatted(keywords);
-        String reason = "Error details leak";
+        String reason = Reason.ERROR_LEAKS_DETECTED.description();
 
         return new CatsResult(message, reason);
     }
@@ -115,7 +115,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedBehaviour(String receivedResponseCode, String expectedResponseCode) {
         String message = "Unexpected behaviour: expected %s, actual [%s]".formatted(expectedResponseCode, receivedResponseCode);
-        String reason = "Unexpected behaviour: %s".formatted(receivedResponseCode);
+        String reason = Reason.UNEXPECTED_BEHAVIOUR.description() + " %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
@@ -129,7 +129,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedResponseCode(String receivedResponseCode, String expectedResponseCode) {
         String message = "Response does NOT match expected result. Response code is NOT from a list of expected codes for this FUZZER: expected %s, actual [%s]".formatted(expectedResponseCode, receivedResponseCode);
-        String reason = "Unexpected response code: %s".formatted(receivedResponseCode);
+        String reason = Reason.UNEXPECTED_RESPONSE_CODE.description() + ": %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
@@ -144,7 +144,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUndocumentedResponseCode(String receivedResponseCode, String expectedResponseCode, String documentedResponseCodes) {
         String message = "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [%s], documented response codes: %s".formatted(expectedResponseCode, receivedResponseCode, documentedResponseCodes);
-        String reason = "Undocumented response code: %s".formatted(receivedResponseCode);
+        String reason = Reason.UNDOCUMENTED_RESPONSE_CODE.description() + ": %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
@@ -157,5 +157,35 @@ public interface CatsResultFactory {
      * @param reason  a short description of the message that will be displayed in summary page
      */
     record CatsResult(String message, String reason) {
+    }
+
+    enum Reason {
+        ALL_GOOD("All Good!", "The response matches the expected result"),
+        NOT_MATCHING_RESPONSE_SCHEMA("Not matching response schema", "The response body does NOT match the corresponding schema defined in the OpenAPI contract"),
+        NOT_IMPLEMENTED("Not implemented", "You forgot to implement this functionality!"),
+        NOT_FOUND("Not found", "You might need to provide business context using --refData or --urlParams"),
+        RESPONSE_TIME_EXCEEDS_MAX("Response time exceeds max", "The response time exceeds the maximum configured response time supplied using --maxResponseTimeInMs, default is 0 i.e no limit"),
+        UNEXPECTED_EXCEPTION("Unexpected exception", "An unexpected exception occurred. This might suggest an issue with CATS itself"),
+        ERROR_LEAKS_DETECTED("Error details leak", "The response contains error messages that might expose sensitive information"),
+        UNEXPECTED_RESPONSE_CODE("Unexpected response code", "The response code is documented inside the contract, but not expected for the current fuzzer"),
+        UNDOCUMENTED_RESPONSE_CODE("Undocumented response code", "The response code is expected for the current fuzzer, but not documented inside the contract"),
+        RESPONSE_CONTENT_TYPE_NOT_MATCHING("Response content type not matching the contract", "The response content type does not match the one defined in the OpenAPI contract"),
+        UNEXPECTED_BEHAVIOUR("Unexpected behaviour", "CATS run the test case successfully, but the response code was not expected, nor documented, nor known to typically be documented");
+
+        private final String reason;
+        private final String description;
+
+        Reason(String reason, String description) {
+            this.reason = reason;
+            this.description = description;
+        }
+
+        public String description() {
+            return description;
+        }
+
+        public String reason() {
+            return reason;
+        }
     }
 }

@@ -105,7 +105,8 @@ import static org.fusesource.jansi.Ansi.ansi;
                 StatsCommand.class,
                 ValidateCommand.class,
                 RandomCommand.class,
-                GenerateCommand.class
+                GenerateCommand.class,
+                ExplainCommand.class
         })
 public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
@@ -447,5 +448,4 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public int getExitCode() {
         return exitCodeDueToErrors + executionStatisticsListener.getErrors();
     }
-
 }

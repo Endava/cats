@@ -9,7 +9,7 @@ import java.util.Collection;
  * Implementations of this interface provide methods to apply various types of mutations
  * to input strings, producing modified output strings.
  */
-public interface Mutator {
+public interface Mutator extends Comparable<Mutator> {
 
     /**
      * Applies a mutation to the input string.
@@ -35,4 +35,8 @@ public interface Mutator {
      * @return the description of the mutator
      */
     String description();
+
+    default int compareTo(Mutator o) {
+        return this.getClass().getSimpleName().compareTo(o.getClass().getSimpleName());
+    }
 }

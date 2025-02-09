@@ -216,6 +216,10 @@ public class CatsResponse {
         public String responseBody() {
             return responseBody;
         }
+
+        public String asString() {
+            return responseCode + " - " + this.name().toLowerCase(Locale.ROOT) + " - " + responseBody;
+        }
     }
 
     public static class CatsResponseBuilder {
