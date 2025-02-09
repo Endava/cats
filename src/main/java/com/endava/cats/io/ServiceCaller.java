@@ -661,7 +661,8 @@ public class ServiceCaller {
         logger.debug("Path reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), currentPathRefData);
 
         for (Map.Entry<String, Object> entry : currentPathRefData.entrySet()) {
-            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
+            String valueToReplace = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), Map.of());
+            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", valueToReplace);
             data.getPathParams().add(entry.getKey());
         }
 
