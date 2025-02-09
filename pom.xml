@@ -47,7 +47,7 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.18.0</quarkus.platform.version>
+        <quarkus.platform.version>3.18.1</quarkus.platform.version>
         <surefire-plugin.version>3.5.2</surefire-plugin.version>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -71,7 +71,7 @@
         <okhttp.version>4.11.0-CATS</okhttp.version>
         <swagger.parser.version>2.1.25-CATS</swagger.parser.version>
         <okio.version>3.10.2</okio.version>
-        <wiremock.version>3.10.0</wiremock.version>
+        <wiremock.version>3.11.0</wiremock.version>
         <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
