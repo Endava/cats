@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Locale;
 
 @CommandLine.Command(
@@ -72,7 +73,7 @@ public class ExplainCommand implements Runnable {
     private void displayFuzzerInfo() {
         fuzzers.stream().filter(fuzzer -> fuzzer.getClass().getSimpleName()
                         .toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
-                .sorted()
+                .sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName()))
                 .forEach(fuzzer -> logger.noFormat("* Fuzzer {} - {}", fuzzer.getClass().getSimpleName(), fuzzer.description()));
     }
 
