@@ -36,6 +36,7 @@ public interface Mutator extends Comparable<Mutator> {
      */
     String description();
 
+    @Override
     default int compareTo(Mutator o) {
         return this.getClass().getSimpleName().compareTo(o.getClass().getSimpleName());
     }

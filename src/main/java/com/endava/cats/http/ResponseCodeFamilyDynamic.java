@@ -27,9 +27,10 @@ public class ResponseCodeFamilyDynamic implements ResponseCodeFamily {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        ResponseCodeFamilyDynamic that = (ResponseCodeFamilyDynamic) o;
-        return Objects.equals(responseCodes, that.responseCodes);
+        if (o instanceof ResponseCodeFamilyDynamic that) {
+            return Objects.equals(responseCodes, that.responseCodes);
+        }
+        return false;
     }
 
     @Override

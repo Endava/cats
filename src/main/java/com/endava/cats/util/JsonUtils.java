@@ -293,7 +293,7 @@ public abstract class JsonUtils {
             return false;
         }
         try {
-            JSON_STRICT_PARSER.fromJson(text, Object.class);
+            var unused = JSON_STRICT_PARSER.fromJson(text, Object.class);
         } catch (Exception e) {
             return false;
         }

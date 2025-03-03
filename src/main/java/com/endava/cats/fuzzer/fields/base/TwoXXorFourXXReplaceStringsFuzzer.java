@@ -40,6 +40,7 @@ public abstract class TwoXXorFourXXReplaceStringsFuzzer implements Fuzzer {
         this.fieldsIteratorExecutor = fieldsIteratorExecutor;
     }
 
+    @Override
     public void fuzz(FuzzingData data) {
         ResponseCodeFamily expectedResponseCodes = new ResponseCodeFamilyDynamic(List.of("2XX", "4XX"));
         fieldsIteratorExecutor.execute(
