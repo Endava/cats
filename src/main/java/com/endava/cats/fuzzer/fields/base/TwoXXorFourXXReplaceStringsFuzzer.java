@@ -45,7 +45,7 @@ public abstract class TwoXXorFourXXReplaceStringsFuzzer implements Fuzzer {
         ResponseCodeFamily expectedResponseCodes = new ResponseCodeFamilyDynamic(List.of("2XX", "4XX"));
         fieldsIteratorExecutor.execute(
                 FieldsIteratorExecutorContext.builder()
-                        .scenario("Replace fields with characters %s".formatted(this.typesOfDataSentToTheService()))
+                        .scenario("Replace fields with %s.".formatted(this.typesOfDataSentToTheService()))
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
                         .expectedResponseCode(expectedResponseCodes)
                         .fuzzValueProducer(this.fuzzValueProducer())

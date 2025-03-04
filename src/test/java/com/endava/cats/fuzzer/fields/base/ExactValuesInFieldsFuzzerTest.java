@@ -26,7 +26,7 @@ class ExactValuesInFieldsFuzzerTest {
     private FilesArguments filesArguments;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         filesArguments = Mockito.mock(FilesArguments.class);
         myBaseBoundaryFuzzer = new MyExactValueFuzzer(null, null, filesArguments);
     }

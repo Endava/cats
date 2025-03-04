@@ -15,7 +15,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createExpectedResponse(String receivedResponseCode) {
         String message = "Response matches expected result. Response code [%s] is documented and response body matches the corresponding schema.".formatted(receivedResponseCode);
-        String reason = Reason.ALL_GOOD.description();
+        String reason = Reason.ALL_GOOD.value();
 
         return new CatsResult(message, reason);
     }
@@ -28,7 +28,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createNotMatchingResponseSchema(String receivedResponseCode) {
         String message = "Response does NOT match expected result. Response code [%s] is documented, but response body does NOT match the corresponding schema.".formatted(receivedResponseCode);
-        String reason = Reason.NOT_MATCHING_RESPONSE_SCHEMA.description();
+        String reason = Reason.NOT_MATCHING_RESPONSE_SCHEMA.value();
 
         return new CatsResult(message, reason);
     }
@@ -42,7 +42,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createNotMatchingContentType(List<String> expected, String actual) {
         String message = "Response content type not matching the contract: expected %s, actual [%s]".formatted(expected, actual);
-        String reason = Reason.RESPONSE_CONTENT_TYPE_NOT_MATCHING.description();
+        String reason = Reason.RESPONSE_CONTENT_TYPE_NOT_MATCHING.value();
         return new CatsResult(message, reason);
     }
 
@@ -61,7 +61,7 @@ public interface CatsResultFactory {
      * @return a CatsResult to use in reports
      */
     static CatsResult createNotFound() {
-        return new CatsResult("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", Reason.NOT_FOUND.description());
+        return new CatsResult("Response HTTP code 404: you might need to provide business context using --refData or --urlParams", Reason.NOT_FOUND.value());
     }
 
     /**
@@ -73,7 +73,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createResponseTimeExceedsMax(long receivedResponseTime, long maxResponseTime) {
         String message = "Test case executed successfully, but response time exceeds --maxResponseTimeInMs: actual %d, max %d".formatted(receivedResponseTime, maxResponseTime);
-        String reason = Reason.RESPONSE_TIME_EXCEEDS_MAX.description();
+        String reason = Reason.RESPONSE_TIME_EXCEEDS_MAX.value();
 
         return new CatsResult(message, reason);
     }
@@ -87,7 +87,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedException(String fuzzer, String errorMessage) {
         String message = "Fuzzer [%s] failed due to [%s]".formatted(fuzzer, errorMessage);
-        String reason = Reason.UNEXPECTED_EXCEPTION.description();
+        String reason = Reason.UNEXPECTED_EXCEPTION.value();
 
         return new CatsResult(message, reason);
     }
@@ -100,7 +100,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createErrorLeaksDetectedInResponse(List<String> keywords) {
         String message = "The following keywords were detected in the response which might suggest an error details leak: %s".formatted(keywords);
-        String reason = Reason.ERROR_LEAKS_DETECTED.description();
+        String reason = Reason.ERROR_LEAKS_DETECTED.value();
 
         return new CatsResult(message, reason);
     }
@@ -115,7 +115,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedBehaviour(String receivedResponseCode, String expectedResponseCode) {
         String message = "Unexpected behaviour: expected %s, actual [%s]".formatted(expectedResponseCode, receivedResponseCode);
-        String reason = Reason.UNEXPECTED_BEHAVIOUR.description() + " %s".formatted(receivedResponseCode);
+        String reason = Reason.UNEXPECTED_BEHAVIOUR.value() + " %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
@@ -129,7 +129,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUnexpectedResponseCode(String receivedResponseCode, String expectedResponseCode) {
         String message = "Response does NOT match expected result. Response code is NOT from a list of expected codes for this FUZZER: expected %s, actual [%s]".formatted(expectedResponseCode, receivedResponseCode);
-        String reason = Reason.UNEXPECTED_RESPONSE_CODE.description() + ": %s".formatted(receivedResponseCode);
+        String reason = Reason.UNEXPECTED_RESPONSE_CODE.value() + ": %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
@@ -144,7 +144,7 @@ public interface CatsResultFactory {
      */
     static CatsResult createUndocumentedResponseCode(String receivedResponseCode, String expectedResponseCode, String documentedResponseCodes) {
         String message = "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [%s], documented response codes: %s".formatted(expectedResponseCode, receivedResponseCode, documentedResponseCodes);
-        String reason = Reason.UNDOCUMENTED_RESPONSE_CODE.description() + ": %s".formatted(receivedResponseCode);
+        String reason = Reason.UNDOCUMENTED_RESPONSE_CODE.value() + ": %s".formatted(receivedResponseCode);
 
         return new CatsResult(message, reason);
     }
@@ -172,11 +172,11 @@ public interface CatsResultFactory {
         RESPONSE_CONTENT_TYPE_NOT_MATCHING("Response content type not matching the contract", "The response content type does not match the one defined in the OpenAPI contract"),
         UNEXPECTED_BEHAVIOUR("Unexpected behaviour", "CATS run the test case successfully, but the response code was not expected, nor documented, nor known to typically be documented");
 
-        private final String reason;
+        private final String value;
         private final String description;
 
-        Reason(String reason, String description) {
-            this.reason = reason;
+        Reason(String value, String description) {
+            this.value = value;
             this.description = description;
         }
 
@@ -184,8 +184,8 @@ public interface CatsResultFactory {
             return description;
         }
 
-        public String reason() {
-            return reason;
+        public String value() {
+            return value;
         }
     }
 }

@@ -17,19 +17,19 @@ class VersionCheckerTest {
     private static VersionChecker versionChecker;
 
     @BeforeAll
-    public static void setup() {
+    static void setup() {
         wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort());
         wireMockServer.start();
         VersionChecker.baseUrl = "http://localhost:" + wireMockServer.port() + "/latest";
     }
 
     @BeforeEach
-    public void setupEach() {
+    void setupEach() {
         versionChecker = new VersionChecker();
     }
 
     @AfterAll
-    public static void clean() {
+    static void clean() {
         wireMockServer.stop();
     }
 

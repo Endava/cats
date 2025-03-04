@@ -29,7 +29,7 @@ class ReplayCommandTest {
     private TestCaseListener testCaseListener;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         replayCommand = new ReplayCommand(serviceCaller, testCaseListener);
         replayCommand.authArgs = Mockito.mock(AuthArguments.class);
         ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));

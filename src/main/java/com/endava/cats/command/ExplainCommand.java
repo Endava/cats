@@ -67,7 +67,7 @@ public class ExplainCommand implements Runnable {
         Arrays.stream(CatsResultFactory.Reason.values()).filter(reason -> reason.name()
                         .toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
                 .sorted()
-                .forEach(reason -> logger.noFormat("* Reason {} - {}", reason.reason(), reason.description()));
+                .forEach(reason -> logger.noFormat("* Reason {} - {}", reason.value(), reason.description()));
     }
 
     private void displayFuzzerInfo() {

@@ -33,7 +33,7 @@ class GenerateCommandTest {
     ProcessingArguments processingArguments;
 
     @BeforeEach
-    public void init() {
+    void init() {
         generateCommand = new GenerateCommand(fuzzingDataFactory, catsGlobalContext, processingArguments);
     }
 

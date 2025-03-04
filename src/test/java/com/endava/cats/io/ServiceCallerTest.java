@@ -53,7 +53,7 @@ class ServiceCallerTest {
     private ServiceCaller serviceCaller;
 
     @BeforeAll
-    public static void setup() {
+    static void setup() {
         wireMockServer = new WireMockServer(new WireMockConfiguration().dynamicPort());
         wireMockServer.start();
         wireMockServer.stubFor(WireMock.get("/not-json").willReturn(WireMock.ok("<html>test</html>")));
@@ -74,12 +74,12 @@ class ServiceCallerTest {
     }
 
     @AfterAll
-    public static void clean() {
+    static void clean() {
         wireMockServer.stop();
     }
 
     @BeforeEach
-    public void setupEach() throws Exception {
+    void setupEach() throws Exception {
         filesArguments = new FilesArguments();
         TestCaseListener testCaseListener = Mockito.mock(TestCaseListener.class);
         serviceCaller = new ServiceCaller(catsGlobalContext, testCaseListener, filesArguments, authArguments, apiArguments, processingArguments);
