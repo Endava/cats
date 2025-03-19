@@ -1,0 +1,172 @@
+p {
+    overflow-wrap: anywhere;
+}
+
+.error-cluster-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.error-cluster-header::after {
+    content: '▼';
+    font-size: 0.9em;
+    transition: transform 0.3s ease;
+}
+
+.error-cluster-header.collapsed::after {
+    transform: rotate(-90deg);
+}
+
+/* Styles for the collapsible container */
+.error-cluster-content {
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    max-height: 10000px; /* Larger value to accommodate all content */
+}
+
+.error-cluster-content.collapsed {
+    max-height: 0;
+}
+
+/* Dark mode styles for the header */
+.dark-mode .error-cluster-header {
+    color: #f8f9fa;
+}
+
+.dark-mode .error-cluster-header::after {
+    color: #f8f9fa;
+}
+
+.error-cluster-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.error-card {
+    background: rgba(230, 57, 70, 0.03);
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.error-title {
+    margin-bottom: 0;
+    margin-top: 0;
+    color: #d9534f;
+    font-size: 1.3em;
+}
+
+.cluster-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cluster-title::after {
+    content: '▼';
+    font-size: 0.8em;
+    transition: transform 0.3s ease;
+}
+
+.cluster-title.collapsed::after {
+    transform: rotate(-90deg);
+}
+
+.cluster-content {
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    max-height: 1000px; /* Adjust as needed */
+}
+
+.cluster-content.collapsed {
+    max-height: 0;
+}
+
+.card-wrapper.some-margin {
+    margin-bottom: 20px;
+}
+
+.card-component {
+    border-radius: 16px;
+    background-color: white;
+    padding: 10px 30px 20px 30px;
+    margin-bottom: 30px;
+}
+
+/* Add these CSS rules to your existing styles */
+
+/* Dark mode styles for the error card */
+.dark-mode .error-card {
+    background: rgba(230, 57, 70, 0.1);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Dark mode styles for the cluster title */
+.dark-mode .cluster-title {
+    color: #f8f9fa;
+}
+
+/* Dark mode styles for the error title */
+.dark-mode .error-title {
+    color: #ff6b6b;
+}
+
+/* Improve visibility of the dropdown arrow in dark mode */
+.dark-mode .cluster-title::after {
+    color: #f8f9fa;
+}
+
+/* Improve paragraph text visibility in dark mode */
+.dark-mode .error-card p {
+    color: #e9ecef;
+}
+
+/* Make strong text more prominent in dark mode */
+.dark-mode .error-card strong {
+    color: #f8f9fa;
+}
+
+/* Ensure the border is visible in dark mode */
+.dark-mode .error-card {
+    border-left-width: 5px !important;
+}
+
+/* Dark mode link styles */
+.dark-mode .error-card a {
+    color: #61dafb;
+    text-decoration: none;
+}
+
+.dark-mode .error-card a:hover {
+    color: #8ae8ff;
+    text-decoration: underline;
+}
+
+.dark-mode .error-card a:visited {
+    color: #bb86fc;
+}
+
+/* Make sure inline code in links remains readable */
+.dark-mode .error-card a code {
+    color: #61dafb;
+    background-color: rgba(97, 218, 251, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* Ensure link_text class is readable */
+.dark-mode .link_text {
+    color: #61dafb;
+}
+
+/* Additional style for the base path and spec file name links */
+.dark-mode p.small-margin.link_text {
+    color: #61dafb;
+}

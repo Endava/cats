@@ -322,6 +322,9 @@ public abstract class TestCaseExporter {
             context.put("TOTAL_PATHS", catsConfiguration.totalPaths());
         }
 
+        var groupedTestCases = ClusterCompute.createClusters(summaries);
+        context.put("GROUPED_TEST_CASES", groupedTestCases);
+
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
 
         try {
@@ -333,6 +336,7 @@ public abstract class TestCaseExporter {
                     e.getMessage(), reportingPath.toFile().getAbsolutePath());
             logger.debug(STACKTRACE, e);
         }
+
     }
 
     private CatsTestReport createTestReport(List<CatsTestCaseSummary> summaries, ExecutionStatisticsListener executionStatisticsListener) {
@@ -430,6 +434,7 @@ public abstract class TestCaseExporter {
             logger.debug(STACKTRACE, e);
         }
     }
+
 
     /**
      * Indicates whether the report format involves JavaScript functionality.

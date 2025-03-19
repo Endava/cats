@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Represents a summary of a CATS test case.
@@ -19,6 +20,7 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
     private String fuzzer;
     private String path;
     private String resultDetails;
+    private String responseBody;
     private double timeToExecuteInSec;
     private long timeToExecuteInMs;
     private String httpMethod;
@@ -45,6 +47,8 @@ public class CatsTestCaseSummary implements Comparable<CatsTestCaseSummary> {
         summary.httpMethod = testCase.getRequest().getHttpMethod().toLowerCase(Locale.ROOT);
         summary.switchedResult = testCase.getResultIgnoreDetails() != null;
         summary.httpResponseCode = testCase.getResponse().getResponseCode();
+        String response = Optional.ofNullable(testCase.getResponse().getBody()).orElse("[Empty response body]");
+        summary.responseBody = response.substring(0, Math.min(response.length(), 1000));
 
         return summary;
     }

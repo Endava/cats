@@ -82,7 +82,7 @@ import static org.fusesource.jansi.Ansi.ansi;
         abbreviateSynopsis = true,
         synopsisHeading = "@|bold,underline Usage:|@%n",
         customSynopsis = {"@|bold cats|@ @|fg(yellow) -c|@ <CONTRACT> @|fg(yellow) -s|@ <SERVER> [ADDITIONAL OPTIONS]",
-                "@|bold cats (list | replay | run | template | lint | info | stats | validate | random)|@ [OPTIONS]", "%n"},
+                "@|bold cats (list | replay | run | template | lint | info | stats | validate | random | generate | explain)|@ [OPTIONS]", "%n"},
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:Successful program execution",
                 "@|bold 191|@:Usage error: user input for the command was incorrect",

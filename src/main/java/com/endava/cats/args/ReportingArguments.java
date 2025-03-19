@@ -192,6 +192,10 @@ public class ReportingArguments {
          */
         HTML_JS,
         /**
+         * Generates a report in HTML format with Javascript support and groups issues in clusters.
+         */
+        HTML_JS_CLUSTERS,
+        /**
          * Generates a report in JUnit format.
          */
         JUNIT

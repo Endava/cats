@@ -542,13 +542,15 @@ public class TestCaseListener {
         CatsTestCase testCase = currentTestCase();
         CatsResponse catsResponse = Optional.ofNullable(testCase.getResponse()).orElse(CatsResponse.empty());
 
+
         if (ignoreArguments.isNotIgnoredResponse(catsResponse) || catsResponse.exceedsExpectedResponseTime(reportingArguments.getMaxResponseTime())
-                || isException(catsResponse) || hasKeywordLeaks(testCase)) {
+                || isException(catsResponse)) {
             this.logger.debug("Received response is not marked as ignored... reporting error!");
-            executionStatisticsListener.increaseErrors(testCase.getContractPath());
-            logger.error(message, params);
-            this.recordResult(message, params, Level.ERROR.toString().toLowerCase(Locale.ROOT), logger);
-            this.renderProgress(catsResponse);
+            logAndRecordError(logger, message, params, testCase, catsResponse);
+        } else if (hasKeywordLeaks(testCase)) {
+            CatsResultFactory.CatsResult result = CatsResultFactory.createErrorLeaksDetectedInResponse(testCase.getErrorLeaks());
+            setResultReason(result.reason());
+            logAndRecordError(logger, result.message(), testCase.getErrorLeaks().toArray(), testCase, catsResponse);
         } else if (ignoreArguments.isSkipReportingForIgnoredCodes()) {
             this.logger.debug(RECEIVED_RESPONSE_IS_MARKED_AS_IGNORED_SKIPPING);
             this.skipTest(logger, "Some response elements were was marked as ignored and --skipReportingForIgnoredCodes is enabled.");
@@ -559,6 +561,13 @@ public class TestCaseListener {
             this.reportInfo(logger, message, params);
         }
         recordAuthErrors(catsResponse);
+    }
+
+    private void logAndRecordError(PrettyLogger logger, String message, Object[] params, CatsTestCase testCase, CatsResponse catsResponse) {
+        executionStatisticsListener.increaseErrors(testCase.getContractPath());
+        logger.error(message, params);
+        this.recordResult(message, params, Level.ERROR.toString().toLowerCase(Locale.ROOT), logger);
+        this.renderProgress(catsResponse);
     }
 
     /**
