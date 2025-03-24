@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -330,8 +331,11 @@ public class FilterArguments {
     public List<Fuzzer> getSecondPhaseFuzzers() {
         if (SECOND_PHASE_FUZZERS_TO_BE_RUN.isEmpty()) {
             List<String> secondPhaseFuzzersAsString = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, SecondPhaseFuzzer.class);
+            List<String> fuzzersExcludingSkipped = secondPhaseFuzzersAsString.stream().filter(Predicate.not(this.getSkipFuzzers()::contains))
+                    .filter(fuzzer -> this.getSuppliedFuzzers().isEmpty() || this.getSuppliedFuzzers().contains(fuzzer))
+                    .toList();
             SECOND_PHASE_FUZZERS_TO_BE_RUN.addAll(this.getAllRegisteredFuzzers().stream()
-                    .filter(fuzzer -> secondPhaseFuzzersAsString.contains(fuzzer.toString()))
+                    .filter(fuzzer -> fuzzersExcludingSkipped.contains(fuzzer.toString()))
                     .toList());
         }
         if (containsOnlySpecialFuzzers(this.getSuppliedFuzzers())) {
