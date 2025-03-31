@@ -1,88 +1,51 @@
 package com.endava.cats.report;
 
-import org.junit.jupiter.api.Test;
+import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@QuarkusTest
 class ErrorSimilarityDetectorTest {
 
-    @Test
-    void testAreErrorsSimilar_withSimilarErrors() {
-        String error1 = "Error: File not found at /path/to/file";
-        String error2 = "Error: File not found at /another/path/to/file";
-
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar(error1, error2)).isTrue();
+    @ParameterizedTest
+    @CsvSource({
+            "'Error: File not found at /path/to/file', 'Error: File not found at /another/path/to/file', true",
+            "'Error: File not found at /path/to/file', 'Error: Unable to connect to database', false"
+    })
+    void testAreErrorsSimilar(String error1, String error2, boolean expectedSimilarity) {
+        assertThat(ErrorSimilarityDetector.areErrorsSimilar(error1, error2)).isEqualTo(expectedSimilarity);
     }
 
-    @Test
-    void testAreErrorsSimilar_withDifferentErrors() {
-        String error1 = "Error: File not found at /path/to/file";
-        String error2 = "Error: Unable to connect to database";
-
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar(error1, error2)).isFalse();
-    }
-
-    @Test
-    void testAreErrorsSimilar_withBlankErrors() {
-        String error1 = "";
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "   "})
+    void testAreErrorsSimilar_withBlankOrNullErrors(String error1) {
         String error2 = "Error: File not found at /path/to/file";
-
         assertThat(ErrorSimilarityDetector.areErrorsSimilar(error1, error2)).isFalse();
     }
 
-    @Test
-    void testAreErrorsSimilar_withNullErrors() {
-        String error1 = null;
-        String error2 = "Error: File not found at /path/to/file";
-
-        assertThat(ErrorSimilarityDetector.areErrorsSimilar(error1, error2)).isFalse();
+    @ParameterizedTest
+    @MethodSource("provideNormalizeErrorMessageTestCases")
+    void testNormalizeErrorMessage(String input, String expected) {
+        assertThat(ErrorSimilarityDetector.normalizeErrorMessage(input)).isEqualTo(expected);
     }
 
-    @Test
-    void testNormalizeErrorMessage_withNumbers() {
-        String message = "Error 404: File not found at /path/to/file";
-        String expected = "Error NUM: File not found at PATH";
-
-        assertThat(ErrorSimilarityDetector.normalizeErrorMessage(message)).isEqualTo(expected);
-    }
-
-    @Test
-    void testNormalizeErrorMessage_withUUID() {
-        String message = "Error: UUID 123e4567-e89b-12d3-a456-426614174000 not found";
-        String expected = "Error: UUID UUID not found";
-
-        assertThat(ErrorSimilarityDetector.normalizeErrorMessage(message)).isEqualTo(expected);
-    }
-
-    @Test
-    void testNormalizeErrorMessage_withHash() {
-        String message = "Error: Hash 1234567890abcdef1234567890abcdef12345678 not found";
-        String expected = "Error: Hash HASH not found";
-
-        assertThat(ErrorSimilarityDetector.normalizeErrorMessage(message)).isEqualTo(expected);
-    }
-
-    @Test
-    void testNormalizeErrorMessage_withURL() {
-        String message = "Error: Unable to access https://example.com/resource";
-        String expected = "Error: Unable to access URL";
-
-        assertThat(ErrorSimilarityDetector.normalizeErrorMessage(message)).isEqualTo(expected);
-    }
-
-    @Test
-    void testNormalizeErrorMessage_withPath() {
-        String message = "Error: File not found at /path/to/file";
-        String expected = "Error: File not found at PATH";
-
-        assertThat(ErrorSimilarityDetector.normalizeErrorMessage(message)).isEqualTo(expected);
-    }
-
-    @Test
-    void testNormalizeErrorMessage_withTimestamp() {
-        String message = "Error: Event occurred at 2023-10-01T12:34:56";
-        String expected = "Error: Event occurred at TIMESTAMP";
-
-        assertThat(ErrorSimilarityDetector.normalizeErrorMessage(message)).isEqualTo(expected);
+    private static Stream<Arguments> provideNormalizeErrorMessageTestCases() {
+        return Stream.of(
+                Arguments.of("Error 404: File not found at /path/to/file", "Error NUM: File not found at PATH"),
+                Arguments.of("Error: UUID 123e4567-e89b-12d3-a456-426614174000 not found", "Error: UUID UUID not found"),
+                Arguments.of("Error: Hash 1234567890abcdef1234567890abcdef12345678 not found", "Error: Hash HASH not found"),
+                Arguments.of("Error: Unable to access https://example.com/resource", "Error: Unable to access URL"),
+                Arguments.of("Error: File not found at /path/to/file", "Error: File not found at PATH"),
+                Arguments.of("Error: Event occurred at 2023-10-01T12:34:56", "Error: Event occurred at TIMESTAMP")
+        );
     }
 }
