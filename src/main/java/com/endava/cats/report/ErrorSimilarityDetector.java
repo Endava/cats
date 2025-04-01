@@ -12,6 +12,10 @@ public class ErrorSimilarityDetector {
     private static final double JACCARD_THRESHOLD = 0.7;
     private static final double PATTERN_MATCH_BONUS = 0.2;
 
+    private ErrorSimilarityDetector() {
+        // Prevent instantiation
+    }
+
     /**
      * Compares two error messages and returns true if they are similar enough.
      *

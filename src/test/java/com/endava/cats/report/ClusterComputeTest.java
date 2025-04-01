@@ -44,7 +44,7 @@ class ClusterComputeTest {
         List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
 
         assertThat(clusters).hasSize(1);
-        assertThat(clusters.getFirst().get("resultReason")).isEqualTo("Bad Request");
+        assertThat(clusters.getFirst()).containsEntry("resultReason", "Bad Request");
     }
 
     @Test

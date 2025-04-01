@@ -53,7 +53,7 @@ public class ClusterCompute {
                                 StringUtils.isNotBlank(tc.getResultReason()) &&
                                 (tc.getError() || tc.getWarning())
                 )
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -78,7 +78,7 @@ public class ClusterCompute {
 
         return groupedByReason.entrySet().stream()
                 .map(entry -> createResultMapForReason(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -198,7 +198,7 @@ public class ClusterCompute {
                     pathMap.put("testCases", entry.getValue().toString());
                     return pathMap;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
