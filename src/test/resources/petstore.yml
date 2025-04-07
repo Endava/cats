@@ -52,6 +52,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /pets/pet-enum:
+    post:
+      description: Create pet based on enum
+      operationId: enumPet
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColoredPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
   /reference-pets:
     $ref: '#/paths/~1pets~1{id}'
   /pet/url-encoded/{hook_id}:
@@ -385,6 +403,14 @@ components:
             - $ref: '#/components/schemas/Arn'
             - description: The Amazon Resource Name (ARN) of the source template of an analysis.
       description: The source template of an analysis.
+    ColoredPet:
+      properties:
+        name:
+          type: string
+        colors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Colors'
     Pet:
       allOf:
         - $ref: '#/components/schemas/NewPet'
@@ -512,6 +538,10 @@ components:
           type: object
           allOf:
             - "$ref": "#/components/schemas/Color"
+    Colors:
+      type: string
+      description: possible colors
+      enum: ['RED', 'GREEN', 'BLUE', 'YELLOW', 'BLACK', 'WHITE']
     Color:
       properties:
         red:

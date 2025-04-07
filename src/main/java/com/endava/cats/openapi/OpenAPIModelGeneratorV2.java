@@ -494,7 +494,15 @@ public class OpenAPIModelGeneratorV2 {
             Map<String, Object> newExample = new HashMap<>();
             int arraySize = getArrayLength(schema);
 
-            Object toAdd = itemExample instanceof Map map && map.get(propertyName) != null ? map.get(propertyName) : itemExample;
+            Object toAdd = itemExample;
+            if (itemExample instanceof Map map) {
+                // Attempt to unwrap primitive value
+                Object value = map.get(propertyName);
+                if (value == null && map.size() == 1) {
+                    value = map.values().iterator().next(); // fallback for primitive map
+                }
+                toAdd = value != null ? value : itemExample;
+            }
 
             if (itemExample instanceof List<?> list) {
                 toAdd = list.stream().map(innerObj -> {
@@ -549,7 +557,17 @@ public class OpenAPIModelGeneratorV2 {
                 mapExample.put("key", valueExample);
             }
             examples.add(mapExample);
-        } else if (CatsModelUtils.isObjectSchemaUsingOAT(property) || !StringUtils.isEmpty(property.get$ref())) {
+        } else if (!StringUtils.isEmpty(property.get$ref())) {
+            Schema<?> resolved = globalContext.getSchemaFromReference(property.get$ref());
+            if (resolved != null && CatsModelUtils.isPrimitiveSchema(resolved)) {
+                Object value = resolvePropertyToExample(propertyName, resolved);
+                if (value != null) {
+                    examples.add(value);
+                }
+            } else {
+                examples.addAll(generateExamplesForSchema(propertyName, property));
+            }
+        } else if (CatsModelUtils.isObjectSchemaUsingOAT(property)) {
             examples.addAll(generateExamplesForSchema(propertyName, property));
         } else if (CatsModelUtils.isAllOf(property) || CatsModelUtils.isAllOfWithProperties(property)) {
             examples.addAll(resolveAllOfSchemaProperties(property, propertyName));

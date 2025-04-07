@@ -424,6 +424,17 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldCreateArraysOfPrimitivesWhenItemsUsingRef() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/pets/pet-enum", "src/test/resources/petstore.yml");
+        Assertions.assertThat(dataList).hasSize(1);
+        boolean isEnumsArray = JsonUtils.isArray(dataList.getFirst().getPayload(), "$.colors");
+        Object notSetColors = JsonUtils.getVariableFromJson(dataList.getFirst().getPayload(), "$.colors[0].colors");
+        Assertions.assertThat(isEnumsArray).isTrue();
+        Assertions.assertThat(notSetColors).asString().isEqualTo("NOT_SET");
+        assertPropertiesExistInRequestPropertyTypes(dataList.getFirst());
+    }
+
+    @Test
     void shouldGenerateMultiplePayloadsWhenContractGeneratedFromNSwagAndMultipleOneOf() throws Exception {
         List<FuzzingData> dataList = setupFuzzingData("/api/groopits/create", "src/test/resources/nswag_gen_oneof.json");
 

@@ -25,6 +25,9 @@ public abstract class CatsModelUtils {
         //ntd
     }
 
+    public static boolean isPrimitiveSchema(Schema<?> schema) {
+        return isStringSchema(schema) || isNumberSchema(schema) || isBooleanSchema(schema) || isIntegerSchema(schema);
+    }
     public static boolean isStringSchema(Schema<?> schema) {
         return ModelUtils.isStringSchema(schema);
     }
