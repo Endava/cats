@@ -393,16 +393,18 @@ public class FilesArguments {
     }
 
 
-    static Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path) {
-        Map<String, Object> mergedMap = new HashMap<>(collection.getOrDefault(path, Collections.emptyMap()));
+    Map<String, Object> mergePathAndAll(Map<String, Map<String, Object>> collection, String path) {
+        Map<String, Object> allMerged = new HashMap<>();
+        collection.forEach((k, v) -> {
+            if (ALL.equalsIgnoreCase(k)) {
+                v.forEach(allMerged::putIfAbsent);
+            }
+        });
 
-        collection.entrySet().stream()
-                .filter(entry -> entry.getKey().equalsIgnoreCase(ALL))
-                .map(Map.Entry::getValue)
-                .findFirst().orElse(Map.of())
-                .forEach(mergedMap::putIfAbsent);
+        Map<String, Object> result = new HashMap<>(collection.getOrDefault(path, Map.of()));
+        allMerged.forEach(result::putIfAbsent);
 
-        return mergedMap;
+        return result;
     }
 
     private Map<String, Map<String, Object>> loadFileAsMapOfMapsOfStrings(File file, String fileType) throws IOException {
