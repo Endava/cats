@@ -5,7 +5,6 @@ import com.endava.cats.util.CatsUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -217,7 +216,7 @@ public class ClusterCompute {
         }
 
         if (testCases.size() == 1) {
-            return Collections.singletonList(testCases);
+            return new ArrayList<>(List.of(testCases));
         }
 
         List<List<CatsTestCaseSummary>> clusters = new ArrayList<>();
