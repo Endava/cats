@@ -25,11 +25,11 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <commons-lang3.version>3.17.0</commons-lang3.version>
-        <jansi.version>2.4.1</jansi.version>
+        <jansi.version>2.4.2</jansi.version>
         <lombok.version>1.18.38</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <openapi-generator.version>7.12.0</openapi-generator.version>
+        <openapi-generator.version>7.13.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -46,7 +46,7 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.21.1</quarkus.platform.version>
+        <quarkus.platform.version>3.22.1</quarkus.platform.version>
         <surefire-plugin.version>3.5.3</surefire-plugin.version>
         <compiler-plugin.version>3.14.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -54,7 +54,7 @@
         <assertj-core.version>3.27.3</assertj-core.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
-        <spring-integration-core.version>6.4.3</spring-integration-core.version>
+        <spring-integration-core.version>6.4.4</spring-integration-core.version>
         <json.version>20250107</json.version>
         <error-prone.version>2.37.0</error-prone.version>
         <archunit-junit5.version>1.4.0</archunit-junit5.version>
@@ -69,14 +69,14 @@
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
         <okhttp.version>4.11.0-CATS</okhttp.version>
         <swagger.parser.version>2.1.27-CATS</swagger.parser.version>
-        <okio.version>3.10.2</okio.version>
+        <okio.version>3.11.0</okio.version>
         <wiremock.version>3.12.1</wiremock.version>
         <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
         <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
-        <jackson.version>2.18.3</jackson.version>
+        <jackson.version>2.19.0</jackson.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -302,7 +302,7 @@
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
-                <version>1.19.0</version>
+                <version>1.19.1</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.pitest</groupId>
