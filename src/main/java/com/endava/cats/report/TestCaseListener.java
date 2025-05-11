@@ -193,6 +193,16 @@ public class TestCaseListener {
         return TEST.get();
     }
 
+    /**
+     * Returns the current test case identifier being executed. The test case identifier is a UUID
+     * that can be used to trace the test case in service logs.
+     *
+     * @return the test case identifier being executed
+     */
+    public String getTestIdentifier() {
+        return currentTestCase().getTraceId();
+    }
+
     private void startTestCase(FuzzingData data) {
         String testId = String.valueOf(TEST.incrementAndGet());
         MDC.put(ID, testId);

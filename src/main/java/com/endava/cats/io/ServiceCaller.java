@@ -87,6 +87,7 @@ public class ServiceCaller {
      * Marker for fields to be removed before calling the service.
      */
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
+    private static final String CATS_HEADER_UUID = "X-Cats-Trace-Id";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
             "secret", "secret-key", "secret_key", "api-secret", "api_secret", "apisecret", "api-token", "api_token", "apitoken");
@@ -528,6 +529,7 @@ public class ServiceCaller {
         addIfNotPresent(HttpHeaders.ACCEPT, processingArguments.getDefaultContentType(), data, headers);
         addIfNotPresent(HttpHeaders.CONTENT_TYPE, this.getContentType(data.getHttpMethod(), data.getContentType()), data, headers);
         addIfNotPresent(HttpHeaders.USER_AGENT, apiArguments.getUserAgent(testCaseListener.getCurrentTestCaseNumber(), testCaseListener.getCurrentFuzzer()), data, headers);
+        addIfNotPresent(CATS_HEADER_UUID, testCaseListener.getTestIdentifier(), data, headers);
     }
 
     private String getContentType(HttpMethod method, String defaultContentType) {
@@ -535,8 +537,8 @@ public class ServiceCaller {
     }
 
     private void addIfNotPresent(String headerName, String headerValue, ServiceData data, List<KeyValuePair<String, Object>> headers) {
-        boolean exists = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(headerName));
-        if (exists) {
+        boolean notExists = data.getHeaders().stream().noneMatch(catsHeader -> catsHeader.getName().equalsIgnoreCase(headerName));
+        if (notExists) {
             headers.add(new KeyValuePair<>(headerName, headerValue));
         }
     }

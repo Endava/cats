@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Entity holding a CATS test case.
@@ -42,6 +43,7 @@ public class CatsTestCase {
     public static final String SKIP_REPORTING = "skip_reporting";
 
     private String testId;
+    private String traceId = UUID.randomUUID().toString();
     private String scenario;
     private String expectedResult;
     private String result;
