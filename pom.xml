@@ -46,7 +46,7 @@
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.22.1</quarkus.platform.version>
+        <quarkus.platform.version>3.22.2</quarkus.platform.version>
         <surefire-plugin.version>3.5.3</surefire-plugin.version>
         <compiler-plugin.version>3.14.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -57,7 +57,7 @@
         <spring-integration-core.version>6.4.4</spring-integration-core.version>
         <json.version>20250107</json.version>
         <error-prone.version>2.37.0</error-prone.version>
-        <archunit-junit5.version>1.4.0</archunit-junit5.version>
+        <archunit-junit5.version>1.4.1</archunit-junit5.version>
         <json-smart.version>2.5.2</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
