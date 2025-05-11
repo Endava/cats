@@ -139,4 +139,12 @@ class CatsUtilTest {
         String result = CatsUtil.unescapeCurlyBrackets(url);
         Assertions.assertThat(result).isEqualTo(expected);
     }
+
+    @ParameterizedTest
+    @CsvSource(value = {"inputCase", "InputCase", "INPUTCASE", "inputcase"})
+    void shouldRandomizeCase(String input) {
+        String result = CatsUtil.randomizeCase(input);
+        Assertions.assertThat(result).isNotEqualTo(input);
+        Assertions.assertThat(result).isEqualToIgnoringCase(input);
+    }
 }

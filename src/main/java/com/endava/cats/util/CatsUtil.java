@@ -403,4 +403,33 @@ public abstract class CatsUtil {
 
         return encodedURL.replace("%7B", "{").replace("%7D", "}");
     }
+
+    /**
+     * Returns a new string with randomized casing, different from the original.
+     * Non-alphabetic characters remain unchanged.
+     *
+     * @param input the original string
+     * @return a randomly cased string not equal to the input
+     */
+    public static String randomizeCase(String input) {
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+
+        String randomized;
+        do {
+            StringBuilder result = new StringBuilder(input.length());
+            for (int i = 0; i < input.length(); i++) {
+                char ch = input.charAt(i);
+                if (Character.isLetter(ch)) {
+                    result.append(random().nextBoolean() ? Character.toLowerCase(ch) : Character.toUpperCase(ch));
+                } else {
+                    result.append(ch);
+                }
+            }
+            randomized = result.toString();
+        } while (randomized.equals(input));
+
+        return randomized;
+    }
 }
