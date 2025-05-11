@@ -13,6 +13,40 @@
     }
   ],
   "paths": {
+    "/pets-array": {
+      "post": {
+        "summary": "Create pets",
+        "operationId": "createMorePets",
+        "tags": [
+          "pets"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PetsArray"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Null response"
+          },
+          "default": {
+            "description": "unexpected error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PetsArray"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/pets": {
       "get": {
         "summary": "List all pets",
@@ -67,12 +101,12 @@
         "tags": [
           "pets"
         ],
-				"requestBody": {
-					"content": {
-						"application/json": {}
-					},
-					"required": true
-				},
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          },
+          "required": true
+        },
         "responses": {
           "201": {
             "description": "Null response"
@@ -172,6 +206,11 @@
   },
   "components": {
     "schemas": {
+      "PetsArray": {
+        "example": [],
+        "maxItems": 0,
+        "type": "array"
+      },
       "Pet": {
         "type": "object",
         "required": [

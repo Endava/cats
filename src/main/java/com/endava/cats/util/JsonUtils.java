@@ -3,6 +3,8 @@ package com.endava.cats.util;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -569,6 +571,39 @@ public abstract class JsonUtils {
         String pathToKey = StringUtils.isBlank(firstPartOfField) ? "$" : firstPartOfField;
 
         return replaceNewElement(inputJsonWithRemovedKey, pathToKey, newFieldKey, currentFieldValue);
+    }
+
+    /**
+     * Parses a JSON string into a Map using the custom depth mapper.
+     *
+     * @param json the JSON string to parse
+     * @return a Map representation of the JSON
+     */
+    public static Map<String, Object> parseJsonToMap(String json) {
+        if (json == null || json.isBlank()) {
+            return Map.of();
+        }
+
+        try {
+            return getCustomDepthMapper().readValue(json, new TypeReference<>() {
+            });
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Invalid JSON input: " + json, e);
+        }
+    }
+
+    /**
+     * Converts a Map to a JSON string using the custom depth mapper.
+     *
+     * @param map the Map to convert
+     * @return the JSON string representation of the Map
+     */
+    public static String toJsonString(Map<String, Object> map) {
+        try {
+            return getCustomDepthMapper().writeValueAsString(map);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to convert map to JSON string", e);
+        }
     }
 
     private static void traverseJson(JsonElement element, String prefix, List<String> fields) {

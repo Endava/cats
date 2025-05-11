@@ -1,4 +1,4 @@
-all:
+All:
   header: value
   catsFuzzedHeader: cats
 auth-header:
