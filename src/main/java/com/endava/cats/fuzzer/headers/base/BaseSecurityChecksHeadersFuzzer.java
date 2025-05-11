@@ -82,8 +82,8 @@ public abstract class BaseSecurityChecksHeadersFuzzer implements Fuzzer {
     }
 
     /**
-     * When sending large or malformed values the payload might not reach the application layer, but rather be rejected by the HTTP server.
-     * In those cases response content-type is typically html which will most likely won't match the OpenAPI spec.
+     * When sending large or malformed values, the payload might not reach the application layer, but rather be rejected by the HTTP server.
+     * In those cases, response content-type is typically html which will most likely won't match the OpenAPI spec.
      * <p>
      * Override this to return false to avoid content type checking.
      *
