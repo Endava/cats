@@ -66,7 +66,27 @@ class MinGreaterThanMaxFieldsFuzzerTest {
     }
 
     @Test
-    void shouldRunWhenMinMaxFields() {
+    void shouldNotRunWhenNamingMatchesButNotNumbers() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Schema<String> schema = new Schema<>();
+        schema.setExample("Example");
+        Mockito.when(data.getReqSchema()).thenReturn(schema);
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {
+                        "minPrice": "50",
+                        "maxPrice": 100,
+                        "maxValue": "200",
+                        "minValue": "100
+                    }
+                """);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("minPrice", "maxPrice", "minValue", "maxValue"));
+        minGreaterThanMaxFieldsFuzzer.fuzz(data);
+
+        Mockito.verifyNoInteractions(executor);
+    }
+
+    @Test
+    void shouldRunWhenMinMaxFieldsAtStart() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Schema<String> schema = new Schema<>();
         schema.setExample("Example");
@@ -78,6 +98,24 @@ class MinGreaterThanMaxFieldsFuzzerTest {
                     }
                 """);
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("minPrice", "maxPrice"));
+        minGreaterThanMaxFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(executor, Mockito.times(1)).execute(Mockito.any());
+    }
+
+    @Test
+    void shouldRunWhenMinMaxFieldsAtEnd() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Schema<String> schema = new Schema<>();
+        schema.setExample("Example");
+        Mockito.when(data.getReqSchema()).thenReturn(schema);
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {
+                        "priceMin": 50,
+                        "priceMax": 100
+                    }
+                """);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("priceMin", "priceMax"));
         minGreaterThanMaxFieldsFuzzer.fuzz(data);
 
         Mockito.verify(executor, Mockito.times(1)).execute(Mockito.any());

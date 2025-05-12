@@ -677,14 +677,19 @@ class TestCaseListenerTest {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         CatsResponse response = Mockito.mock(CatsResponse.class);
         TestCaseListener spyListener = Mockito.spy(testCaseListener);
+        Mockito.when(reportingArguments.isPrintExecutionStatistics()).thenReturn(true);
         Mockito.when(ignoreArguments.isNotIgnoredResponse(Mockito.any())).thenReturn(true);
         Mockito.when(response.getBody()).thenReturn("{'test':1}");
         Mockito.when(data.getResponseCodes()).thenReturn(new TreeSet<>(Set.of("200", "401")));
         Mockito.when(data.getResponses()).thenReturn(Map.of("401", Collections.singletonList("{'test':'4'}"), "200", Collections.singletonList("{'other':'2'}")));
         Mockito.when(response.responseCodeAsString()).thenReturn("400");
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
+        Mockito.when(response.isValidErrorCode()).thenReturn(true);
 
-        spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX), FuzzingData.builder().build());
+        spyListener.createAndExecuteTest(logger, fuzzer, () -> {
+            spyListener.addResponse(response);
+            spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
+        }, FuzzingData.builder().build());
         Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
         Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected %s, actual [400], documented response codes: [200, 401]".formatted(ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes().toString()));
     }
@@ -782,7 +787,7 @@ class TestCaseListenerTest {
     @ParameterizedTest
     @CsvSource({"application/json,application/v1+json,true", "application/v2+json,application/v3+json,false", "application/v3+json,application/json,true",
             "application/vnd+json,application/json,true", "application/json,application/xml,false", "application/json; charset=utf,application/json; charset=iso,true",
-            "*/*,application/json,true","application/application,application/application/json,false"})
+            "*/*,application/json,true", "application/application,application/application/json,false"})
     void shouldCheckContentTypesEquivalence(String firstContentType, String secondContentType, boolean expected) {
         boolean result = testCaseListener.areContentTypesEquivalent(firstContentType, secondContentType);
         Assertions.assertThat(result).isEqualTo(expected);
@@ -817,6 +822,13 @@ class TestCaseListenerTest {
         prepareTestCaseListenerSimpleSetup(CatsResponse.builder().build(), () -> {
         });
         Assertions.assertThat(testCaseListener.getCurrentTestCaseNumber()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldGenerateTraceId() {
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().build(), () -> {
+            Assertions.assertThat(testCaseListener.getTestIdentifier()).isNotNull();
+        });
     }
 
     @Test

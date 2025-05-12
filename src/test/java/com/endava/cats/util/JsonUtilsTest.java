@@ -156,6 +156,20 @@ class JsonUtilsTest {
         Assertions.assertThat(result).isFalse();
     }
 
+    @Test
+    void shouldNotBeObjectWhenInvalidJson() {
+        boolean result = JsonUtils.isObject("{not_json", "something");
+
+        Assertions.assertThat(result).isFalse();
+    }
+
+    @Test
+    void shouldNotBePrimitiveWhenInvalidJson() {
+        boolean result = JsonUtils.isPrimitive("{not_json", "something");
+
+        Assertions.assertThat(result).isFalse();
+    }
+
     @ParameterizedTest
     @CsvSource(value = {"null", "{}", "\"{}\""}, nullValues = "null")
     void shouldReturnEmptyPayload(String payload) {
@@ -168,7 +182,7 @@ class JsonUtilsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"prop1#prop2", "prop1#prop2#prop3", "prop1#prop2#prop3#prop4", "CatsGetSchemaget_user_users__user_id__get"})
+    @CsvSource(value = {"prop1#prop2", "prop1#prop2#prop3", "prop1#prop2#prop3#prop4", "CatsGetSchemaget_user_users__user_id__get", "null"}, nullValues = "null")
     void shouldNotReturnCyclic(String properties) {
         Assertions.assertThat(JsonUtils.isCyclicReference(properties, 3)).isFalse();
     }

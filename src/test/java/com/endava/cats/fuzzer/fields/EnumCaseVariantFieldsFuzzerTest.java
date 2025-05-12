@@ -78,6 +78,24 @@ class EnumCaseVariantFieldsFuzzerTest {
                 """);
         enumCaseVariantFieldsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+        Mockito.verify(testCaseListener, Mockito.times(2)).isFieldNotADiscriminator("myField");
+        Mockito.verifyNoMoreInteractions(testCaseListener);
+    }
+
+    @Test
+    void shouldSkipWhenGeneratedCaseIsAlreadyInEnum() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("myField"));
+        Schema<String> myEnumSchema = new Schema<>();
+        myEnumSchema.setEnum(List.of("aa", "aA", "AA", "Aa"));
+        Mockito.when(data.getRequestPropertyTypes()).thenReturn(Map.of("myField", myEnumSchema));
+        Mockito.when(testCaseListener.isFieldNotADiscriminator("myField")).thenReturn(true);
+        Mockito.when(data.getPayload()).thenReturn("""
+                    {"myField": 3}
+                """);
+        enumCaseVariantFieldsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(2)).isFieldNotADiscriminator("myField");
+        Mockito.verifyNoMoreInteractions(testCaseListener);
     }
 
     @Test

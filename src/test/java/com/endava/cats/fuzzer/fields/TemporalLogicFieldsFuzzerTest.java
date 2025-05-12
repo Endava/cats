@@ -7,6 +7,8 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import java.util.Set;
@@ -42,13 +44,18 @@ class TemporalLogicFieldsFuzzerTest {
         Mockito.verifyNoInteractions(executor);
     }
 
-    @Test
-    void shouldRunWhenTemporalFields() {
+    @ParameterizedTest
+    @CsvSource({"startDate",
+            "endDate",
+            "expiryDate",
+            "dueDate",
+            "issueDate"})
+    void shouldRunWhenTemporalFields(String fieldName) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Schema<String> schema = new Schema<>();
         schema.setExample("Example");
         Mockito.when(data.getReqSchema()).thenReturn(schema);
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("startDate"));
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of(fieldName));
         temporalLogicFieldsFuzzer.fuzz(data);
         Mockito.verify(executor, Mockito.times(1)).execute(Mockito.any());
     }

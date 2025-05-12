@@ -141,10 +141,16 @@ class CatsUtilTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"inputCase", "InputCase", "INPUTCASE", "inputcase"})
+    @CsvSource(value = {"inputCase", "InputCase", "INPUTCASE", "inputcase", "test9"})
     void shouldRandomizeCase(String input) {
         String result = CatsUtil.randomizeCase(input);
-        Assertions.assertThat(result).isNotEqualTo(input);
-        Assertions.assertThat(result).isEqualToIgnoringCase(input);
+        Assertions.assertThat(result).isNotEqualTo(input).isEqualToIgnoringCase(input);
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {"null", "''"}, nullValues = "null")
+    void shouldCheckNullAndEmpty(String value) {
+        String result = CatsUtil.randomizeCase(value);
+        Assertions.assertThat(result).isNullOrEmpty();
     }
 }
