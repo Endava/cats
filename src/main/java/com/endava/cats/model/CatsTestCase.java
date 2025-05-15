@@ -215,4 +215,9 @@ public class CatsTestCase {
         this.fullRequestPath = this.fullRequestPath.replace(this.server, server);
         request.setUrl(request.getUrl().replace(this.server, server));
     }
+
+    public String getResultDetailsForHtml() {
+        return this.resultDetails.replace("\n", "<br>")
+                .replace("\r", "<br>");
+    }
 }
