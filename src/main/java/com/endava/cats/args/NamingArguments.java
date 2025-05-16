@@ -1,9 +1,23 @@
 package com.endava.cats.args;
 
+import com.endava.cats.exception.CatsException;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
+import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
@@ -12,6 +26,7 @@ import java.util.regex.Pattern;
 @Singleton
 @Getter
 public class NamingArguments {
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
 
     @CommandLine.Option(names = {"--pathNaming"},
             description = "Naming strategy for paths (excluding path variables). Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
@@ -36,6 +51,61 @@ public class NamingArguments {
     @CommandLine.Option(names = {"--headersNaming"},
             description = "Naming strategy for HTTP headers. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming headersNaming = Naming.HTTP_HEADER;
+
+    @CommandLine.Option(names = {"--operationPrefixMapFile"},
+            description = "Path to the file containing operationId prefix mappings.")
+    private File operationPrefixMapFile;
+
+    private Map<String, List<String>> verbMappings;
+
+    public void loadVerbMapFile() {
+        verbMappings = new HashMap<>(defaultVerbMappings());
+
+        if (operationPrefixMapFile == null) {
+            log.debug("No operationId prefix mapping config file provided! Using default mappings.");
+            return;
+        }
+
+        log.config(Ansi.ansi().bold().a("Loading operationId prefix mapping custom configuration: {}").reset().toString(),
+                Ansi.ansi().fg(Ansi.Color.BLUE).a(operationPrefixMapFile));
+
+        try (InputStream stream = new FileInputStream(operationPrefixMapFile)) {
+            Properties verbMappingAsProperties = new Properties();
+            verbMappingAsProperties.load(stream);
+
+            verbMappingAsProperties.forEach((key, value) -> {
+                String keyStr = (String) key;
+                String valueStr = (String) value;
+
+                if (StringUtils.isNotBlank(valueStr)) {
+                    List<String> mappedVerbs = Arrays.stream(valueStr.split(","))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .toList();
+
+                    if (!mappedVerbs.isEmpty()) {
+                        verbMappings.put(keyStr.toLowerCase(Locale.ROOT), mappedVerbs);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            throw new CatsException(e);
+        }
+    }
+
+    private static Map<String, List<String>> defaultVerbMappings() {
+        return Map.of(
+                "get", List.of("get", "fetch", "list", "retrieve", "find"),
+                "post", List.of("create", "add", "post", "insert", "push"),
+                "put", List.of("update", "replace", "put", "modify", "set"),
+                "delete", List.of("delete", "remove", "destroy"),
+                "patch", List.of("patch", "modify", "update", "alter", "change")
+        );
+    }
+
+    public Map<String, List<String>> getOperationPrefixMappings() {
+        return verbMappings;
+    }
 
 
     /**
