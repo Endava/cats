@@ -1,0 +1,84 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Swagger Petstore
+  description: A sample API that uses a petstore as an example to demonstrate features in the OpenAPI 3.0 specification
+  termsOfService: http://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: http://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+servers:
+  - url: http://petstore.swagger.io/api
+paths:
+  /pets/{id}:
+    get:
+      description: Returns a user based on a single ID, if the user does not have access to the pet
+      operationId: find pet by id
+      parameters:
+        - name: id
+          in: path
+          description: ID of pet to fetch
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 78
+        - name: page
+          in: query
+          description: Page number
+          required: true
+          schema:
+            type: string
+            example: test
+        - name: ""
+          in: query
+          schema:
+            type: string
+            example: ""
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Pet:
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+        code:
+          type: string
+          format: byte
+          example: MjIyMjIyMg==
+        additionalCode:
+          type: string
+          format: binary
+          example: MjIyMjIyMg==
+    Error:
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 0
+        code:
+          type: string
+          format: byte
+          example: MjIyMjIyMg==
+        additionalCode:
+          type: string
+          format: binary
+          example: MjIyMjIyMg==

@@ -70,6 +70,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
         catsCommand.filterArguments.getSkipPaths().addAll(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
         catsCommand.processingArguments.setLimitXxxOfCombinations(6);
+        namingArguments.loadVerbMapFile();
         catsCommand.run();
     }
 

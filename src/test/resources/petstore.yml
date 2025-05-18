@@ -52,6 +52,165 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /pets/operations/{id}:
+    patch:
+      description: Patch pet
+      operationId: patchPets
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+              type: string
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColoredPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+    get:
+      description: Create pet based on enum
+      operationId: getOpPet
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+    delete:
+      description: Create pet based on enum
+      operationId: deleteOpPet
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+  /pets/operations-bad/{id}:
+    put:
+      description: Put pet
+      operationId: putPet
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+    post:
+      description: Post pet
+      operationId: postPet
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+    patch:
+      description: Patch pet
+      operationId: patchPet
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+    get:
+      description: Create pet based on enum
+      operationId: getOpPetBad
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColoredPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+    delete:
+      description: Create pet based on enum
+      operationId: deleteOpPetBad
+      parameters:
+        - description: ID
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: Pet to add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColoredPet'
+      responses:
+        '200':
+          description: pet response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
   /pets/pet-enum:
     post:
       description: Create pet based on enum
@@ -131,7 +290,6 @@ paths:
       summary: Set multiple variables in the Value Space.
       tags:
         - Valuespace
-
   /pets:
     get:
       summary: List all pets

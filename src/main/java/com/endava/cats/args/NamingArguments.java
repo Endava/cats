@@ -56,6 +56,10 @@ public class NamingArguments {
             description = "Path to the file containing operationId prefix mappings.")
     private File operationPrefixMapFile;
 
+    @CommandLine.Option(names = {"--strict"},
+            description = "Use strict checks. When using strict checks all warnings will be reported as errors. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean strict;
+
     private Map<String, List<String>> verbMappings;
 
     public void loadVerbMapFile() {
