@@ -42,6 +42,16 @@ public class HttpMethodConsistencyAnalyzer {
 
     public String extractResourceGroupKey(String path) {
         String[] segments = path.split("/", -1);
+        List<String> normalized = buildNormalizedSegments(segments);
+
+        if (shouldRemoveLastIdSegment(normalized)) {
+            normalized.removeLast();
+        }
+
+        return "/" + String.join("/", normalized);
+    }
+
+    private List<String> buildNormalizedSegments(String[] segments) {
         List<String> normalized = new ArrayList<>();
         int depth = 0;
 
@@ -49,17 +59,24 @@ public class HttpMethodConsistencyAnalyzer {
             if (StringUtils.isBlank(segment)) {
                 continue;
             }
-            normalized.add(segment.startsWith("{") && segment.endsWith("}") ? "{}" : segment.toLowerCase(Locale.ROOT));
-            if (++depth >= MAX_PATH_DEPTH) {
-                break;
+
+            normalized.add(normalizeSegment(segment));
+            depth++;
+
+            if (depth >= MAX_PATH_DEPTH) {
+                return normalized;
             }
         }
 
-        if (!normalized.isEmpty() && "{}".equals(normalized.getLast()) && normalized.size() > 1) {
-            normalized.removeLast();
-        }
+        return normalized;
+    }
 
-        return "/" + String.join("/", normalized);
+    private String normalizeSegment(String segment) {
+        return segment.startsWith("{") && segment.endsWith("}") ? "{}" : segment.toLowerCase(Locale.ROOT);
+    }
+
+    private boolean shouldRemoveLastIdSegment(List<String> normalized) {
+        return !normalized.isEmpty() && "{}".equals(normalized.getLast()) && normalized.size() > 1;
     }
 
     public String deriveItemPathFromGroup(String group) {
@@ -70,7 +87,6 @@ public class HttpMethodConsistencyAnalyzer {
         return group;
     }
 
-
     public ResourcePathData collectResourceData(OpenAPI openAPI) {
         Map<String, Set<String>> collectionMethods = new HashMap<>();
         Map<String, Set<String>> itemMethods = new HashMap<>();
@@ -78,24 +94,30 @@ public class HttpMethodConsistencyAnalyzer {
         Map<String, Set<String>> pathToMethods = new HashMap<>();
 
         openAPI.getPaths().forEach((path, pathItem) -> {
-            if (isActionPath(path)) {
-                return;
-            }
-
-            String groupKey = extractResourceGroupKey(path);
-            Set<String> methods = extractHttpMethods(pathItem);
-
-            groupToPaths.computeIfAbsent(groupKey, k -> new HashSet<>()).add(path);
-            pathToMethods.put(path, methods);
-
-            if (isItemPath(path)) {
-                itemMethods.computeIfAbsent(groupKey, k -> new HashSet<>()).addAll(methods);
-            } else {
-                collectionMethods.computeIfAbsent(groupKey, k -> new HashSet<>()).addAll(methods);
+            if (!isActionPath(path)) {
+                processResourcePath(path, pathItem, collectionMethods, itemMethods, groupToPaths, pathToMethods);
             }
         });
 
         return new ResourcePathData(collectionMethods, itemMethods, groupToPaths, pathToMethods);
+    }
+
+    private void processResourcePath(String path, PathItem pathItem,
+                                     Map<String, Set<String>> collectionMethods,
+                                     Map<String, Set<String>> itemMethods,
+                                     Map<String, Set<String>> groupToPaths,
+                                     Map<String, Set<String>> pathToMethods) {
+        String groupKey = extractResourceGroupKey(path);
+        Set<String> methods = extractHttpMethods(pathItem);
+
+        groupToPaths.computeIfAbsent(groupKey, k -> new HashSet<>()).add(path);
+        pathToMethods.put(path, methods);
+
+        if (isItemPath(path)) {
+            itemMethods.computeIfAbsent(groupKey, k -> new HashSet<>()).addAll(methods);
+        } else {
+            collectionMethods.computeIfAbsent(groupKey, k -> new HashSet<>()).addAll(methods);
+        }
     }
 
     private Set<String> extractHttpMethods(PathItem pathItem) {

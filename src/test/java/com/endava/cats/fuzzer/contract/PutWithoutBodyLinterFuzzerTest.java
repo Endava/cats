@@ -8,6 +8,7 @@ import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseExporterHtmlJs;
 import com.endava.cats.report.TestCaseListener;
+import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
@@ -21,7 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
-public class PutWithoutBodyLinterFuzzerTest {
+@QuarkusTest
+class PutWithoutBodyLinterFuzzerTest {
     private TestCaseListener testCaseListener;
     private PutWithoutBodyLinterFuzzer putWithoutBodyLinterFuzzer;
 

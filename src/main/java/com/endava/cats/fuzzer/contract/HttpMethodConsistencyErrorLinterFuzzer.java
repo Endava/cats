@@ -45,7 +45,7 @@ public class HttpMethodConsistencyErrorLinterFuzzer extends BaseLinterFuzzer {
                     errorBuilder.append("- Group [").append(group).append("] ")
                             .append(String.join("; ", findings)).append("\n"));
             testCaseListener.reportResultError(LOG, data, "Critical HTTP method consistency issues",
-                    "The following critical issues were found:\n%s".formatted(errorBuilder));
+                    "The following critical issues were found:%n%s".formatted(errorBuilder));
         }
     }
 

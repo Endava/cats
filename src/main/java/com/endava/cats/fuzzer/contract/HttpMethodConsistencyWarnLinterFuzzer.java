@@ -45,7 +45,7 @@ public class HttpMethodConsistencyWarnLinterFuzzer extends BaseLinterFuzzer {
                     warnBuilder.append("- Group [").append(group).append("] ")
                             .append(String.join("; ", findings)).append("\n"));
             testCaseListener.reportResultWarn(LOG, data, "Non-critical HTTP method consistency issues",
-                    "The following non-critical issues were found:\n%s".formatted(warnBuilder));
+                    "The following non-critical issues were found:%n%s".formatted(warnBuilder));
         }
     }
 

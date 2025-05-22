@@ -67,11 +67,6 @@ public abstract class AbstractRequestBodyLinterFuzzer extends BaseLinterFuzzer {
         };
     }
 
-    private String violationDescription(String path) {
-        return "- %s [%s] is missing a requestBody schema".formatted(targetHttpMethod(), path);
-    }
-
-
     @Override
     protected String runKey(FuzzingData data) {
         return data.getPath();

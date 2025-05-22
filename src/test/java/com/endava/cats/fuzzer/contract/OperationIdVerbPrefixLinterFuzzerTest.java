@@ -45,7 +45,7 @@ class OperationIdVerbPrefixLinterFuzzerTest {
 
     @ParameterizedTest
     @CsvSource(value = {"null", "createPeople", "deletePeople"}, nullValues = "null")
-    void shouldReportError(String operationId) throws Exception {
+    void shouldReportError(String operationId) {
         PathItem pathItem = Mockito.mock(PathItem.class);
         Operation operation = new Operation();
         operation.setOperationId(operationId);
@@ -59,7 +59,7 @@ class OperationIdVerbPrefixLinterFuzzerTest {
     }
 
     @Test
-    void shouldReportInfo() throws Exception {
+    void shouldReportInfo() {
         PathItem pathItem = Mockito.mock(PathItem.class);
         Operation operation = new Operation();
         operation.setOperationId("getPeople");
