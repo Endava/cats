@@ -20,9 +20,8 @@ import static com.tngtech.archunit.library.DependencyRules.NO_CLASSES_SHOULD_DEP
 import static com.tngtech.archunit.library.GeneralCodingRules.DEPRECATED_API_SHOULD_NOT_BE_USED;
 import static com.tngtech.archunit.library.GeneralCodingRules.testClassesShouldResideInTheSamePackageAsImplementation;
 
-@QuarkusTest
 @AnalyzeClasses(packages = "com.endava.cats")
-public class DependencyRulesTest {
+class DependencyRulesTest {
 
     @ArchTest
     static final ArchRule noInterfaceNamingForInterfaces =
@@ -138,5 +137,12 @@ public class DependencyRulesTest {
                     .haveSimpleNameNotEndingWith("Test")
                     .should(have(DescribedPredicate.describe("only have static methods",
                             javaClass -> javaClass.getMethods().stream().filter(method -> method.getModifiers().contains(JavaModifier.STATIC)).count() == javaClass.getMethods().size())));
+
+    @ArchTest
+    static final ArchRule testClassesAnnotatedWithQuarkusTest = classes()
+            .that().haveSimpleNameEndingWith("Test")
+            .and().haveSimpleNameNotContaining("DependencyRulesTest")
+            .and().haveSimpleNameNotContaining("ContractFuzzerDataUtilForTest")
+            .should().beAnnotatedWith(QuarkusTest.class);
 
 }
