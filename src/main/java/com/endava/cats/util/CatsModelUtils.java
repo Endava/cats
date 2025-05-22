@@ -28,6 +28,7 @@ public abstract class CatsModelUtils {
     public static boolean isPrimitiveSchema(Schema<?> schema) {
         return isStringSchema(schema) || isNumberSchema(schema) || isBooleanSchema(schema) || isIntegerSchema(schema);
     }
+
     public static boolean isStringSchema(Schema<?> schema) {
         return ModelUtils.isStringSchema(schema);
     }
@@ -209,6 +210,24 @@ public abstract class CatsModelUtils {
                         !CollectionUtils.isEmpty(schema.getOneOf()) ||
                         schema.getItems() != null ||
                         !CollectionUtils.isEmpty(schema.getRequired()));
+    }
+
+    /**
+     * Checks if the schema is empty. An empty schema is an Object schema that has no properties,
+     * no required fields, no type, no ref, no items, no additionalProperties.
+     *
+     * @param schema the schema to be checked
+     * @return true if the schema is empty, false otherwise
+     */
+    public static boolean isEmptyObjectSchema(Schema schema) {
+        boolean isObject = "object".equalsIgnoreCase(schema.getType()) || (schema.getType() == null && schema.getProperties() != null);
+        boolean hasProps = schema.getProperties() != null && !schema.getProperties().isEmpty();
+        boolean hasRef = schema.get$ref() != null;
+        boolean hasComposition = schema.getAllOf() != null && !schema.getAllOf().isEmpty()
+                || schema.getAnyOf() != null && !schema.getAnyOf().isEmpty()
+                || schema.getOneOf() != null && !schema.getOneOf().isEmpty();
+
+        return isObject && !hasProps && !hasRef && !hasComposition;
     }
 
     /**

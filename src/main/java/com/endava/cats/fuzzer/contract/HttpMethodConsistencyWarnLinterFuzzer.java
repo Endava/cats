@@ -32,6 +32,7 @@ public class HttpMethodConsistencyWarnLinterFuzzer extends BaseLinterFuzzer {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(LOG, "Check optional REST methods (DELETE, PUT/PATCH) on item paths");
         testCaseListener.addExpectedResult(LOG, "Item paths should ideally support DELETE and at least one update method");
+        super.addDefaultsForPathAgnosticFuzzers();
 
         HttpMethodConsistencyAnalyzer.ResourcePathData resourceData = analyzer.collectResourceData(data.getOpenApi());
         Map<String, List<String>> warnings = analyzeNonCriticalConsistency(resourceData);

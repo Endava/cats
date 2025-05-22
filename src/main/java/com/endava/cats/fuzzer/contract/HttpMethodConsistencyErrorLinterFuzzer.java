@@ -32,6 +32,7 @@ public class HttpMethodConsistencyErrorLinterFuzzer extends BaseLinterFuzzer {
     public void process(FuzzingData data) {
         testCaseListener.addScenario(LOG, "Check required HTTP methods: GET on item paths and POST on collection paths");
         testCaseListener.addExpectedResult(LOG, "Each resource group must have GET on item paths and POST on collection paths where applicable");
+        super.addDefaultsForPathAgnosticFuzzers();
 
         HttpMethodConsistencyAnalyzer.ResourcePathData resourceData = analyzer.collectResourceData(data.getOpenApi());
         Map<String, List<String>> errors = analyzeCriticalConsistency(resourceData);
