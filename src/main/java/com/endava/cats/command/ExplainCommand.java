@@ -39,7 +39,7 @@ public class ExplainCommand implements Runnable {
 
     @CommandLine.Option(names = {"-t", "--type"},
             description = "Output to console in JSON format.", required = true)
-    private Type type;
+    Type type;
 
     @CommandLine.Parameters(index = "0",
             paramLabel = "<info>",
@@ -63,28 +63,28 @@ public class ExplainCommand implements Runnable {
         }
     }
 
-    private void displayErrorReason() {
+    void displayErrorReason() {
         Arrays.stream(CatsResultFactory.Reason.values()).filter(reason -> reason.name()
                         .toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
                 .sorted()
                 .forEach(reason -> logger.noFormat("* Reason {} - {}", reason.value(), reason.description()));
     }
 
-    private void displayFuzzerInfo() {
+    void displayFuzzerInfo() {
         fuzzers.stream().filter(fuzzer -> fuzzer.getClass().getSimpleName()
                         .toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
                 .sorted(Comparator.comparing(fuzzer -> fuzzer.getClass().getSimpleName()))
                 .forEach(fuzzer -> logger.noFormat("* Fuzzer {} - {}", fuzzer.getClass().getSimpleName(), fuzzer.description()));
     }
 
-    private void displayMutatorInfo() {
+    void displayMutatorInfo() {
         mutators.stream().filter(mutator -> mutator.getClass().getSimpleName()
                         .toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
                 .sorted()
                 .forEach(mutator -> logger.noFormat("* Mutator {} - {}", mutator.getClass().getSimpleName(), mutator.description()));
     }
 
-    private void displayResponseCodeInfo() {
+    void displayResponseCodeInfo() {
         Arrays.stream(CatsResponse.ExceptionalResponse.values())
                 .map(CatsResponse.ExceptionalResponse::asString)
                 .filter(response -> response.toLowerCase(Locale.ROOT).contains(info.toLowerCase(Locale.ROOT)))
