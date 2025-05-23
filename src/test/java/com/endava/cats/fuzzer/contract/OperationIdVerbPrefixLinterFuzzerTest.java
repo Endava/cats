@@ -21,7 +21,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.io.File;
+import java.util.List;
 import java.util.stream.Stream;
 
 @QuarkusTest
@@ -70,6 +73,22 @@ class OperationIdVerbPrefixLinterFuzzerTest {
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(),
                 Mockito.eq("OperationId [{}] uses an allowed prefix"), Mockito.eq("getPeople"));
+    }
+
+    @Test
+    void shouldReportErrorOnCustomVerbFile() {
+        ReflectionTestUtils.setField(namingArguments, "operationPrefixMapFile", new File("src/test/resources/verbs.properties"));
+        namingArguments.loadVerbMapFile();
+        PathItem pathItem = Mockito.mock(PathItem.class);
+        Operation operation = new Operation();
+        operation.setOperationId("getPeople");
+        Mockito.when(pathItem.getGet()).thenReturn(operation);
+
+        FuzzingData data = FuzzingData.builder().pathItem(pathItem).method(HttpMethod.GET).build();
+        operationIdVerbPrefixLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("OperationId prefix mismatch"),
+                Mockito.eq("OperationId [{}] does not start with any allowed prefix {}"), Mockito.eq("getPeople"), Mockito.eq(List.of("fail")));
     }
 
     @Test

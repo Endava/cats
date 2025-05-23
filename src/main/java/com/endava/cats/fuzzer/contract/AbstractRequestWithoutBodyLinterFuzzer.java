@@ -6,7 +6,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +30,7 @@ public abstract class AbstractRequestWithoutBodyLinterFuzzer extends BaseLinterF
         testCaseListener.addScenario(log, "Check if %s methods have a body".formatted(targetHttpMethod()));
         testCaseListener.addExpectedResult(log, "%s methods must not have a body".formatted(targetHttpMethod()));
 
-        Operation operation = getOperation(data.getPathItem());
+        Operation operation = HttpMethod.getOperation(targetHttpMethod(), data.getPathItem());
         if (operation == null) {
             testCaseListener.skipTest(log, "%s method not present".formatted(targetHttpMethod()));
             return;
@@ -48,15 +47,6 @@ public abstract class AbstractRequestWithoutBodyLinterFuzzer extends BaseLinterF
         } else {
             testCaseListener.reportResultInfo(log, data, "%s method does not have a body".formatted(targetHttpMethod()));
         }
-    }
-
-    private Operation getOperation(PathItem item) {
-        return switch (targetHttpMethod()) {
-            case DELETE -> item.getDelete();
-            case GET -> item.getGet();
-            case HEAD -> item.getHead();
-            default -> null;
-        };
     }
 
     @Override

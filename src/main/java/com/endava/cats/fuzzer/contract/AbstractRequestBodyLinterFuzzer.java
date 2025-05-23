@@ -6,7 +6,6 @@ import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 
@@ -26,7 +25,7 @@ public abstract class AbstractRequestBodyLinterFuzzer extends BaseLinterFuzzer {
         testCaseListener.addScenario(log, "Check if %s methods does not have a body".formatted(targetHttpMethod()));
         testCaseListener.addExpectedResult(log, "%s methods must define a requestBody with a valid schema".formatted(targetHttpMethod()));
 
-        Operation op = getOperation(data.getPathItem());
+        Operation op = HttpMethod.getOperation(targetHttpMethod(), data.getPathItem());
         if (op == null) {
             testCaseListener.skipTest(log, "%s method not present".formatted(targetHttpMethod()));
             return;
@@ -56,15 +55,6 @@ public abstract class AbstractRequestBodyLinterFuzzer extends BaseLinterFuzzer {
         } else {
             testCaseListener.reportResultInfo(log, data, "%s method does have a body".formatted(targetHttpMethod()));
         }
-    }
-
-    private Operation getOperation(PathItem item) {
-        return switch (targetHttpMethod()) {
-            case PUT -> item.getPut();
-            case POST -> item.getPost();
-            case PATCH -> item.getPatch();
-            default -> null;
-        };
     }
 
     @Override
