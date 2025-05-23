@@ -37,7 +37,7 @@ class RandomResourcesFuzzerTest {
     private RandomResourcesFuzzer randomResourcesFuzzer;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
