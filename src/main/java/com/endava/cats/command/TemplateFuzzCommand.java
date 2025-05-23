@@ -8,6 +8,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.fuzzer.special.TemplateFuzzer;
@@ -84,6 +85,9 @@ public class TemplateFuzzCommand implements Runnable {
             paramLabel = "<url>",
             description = "Full URL path of the service endpoint. This should include query params for non-body HTTP requests.")
     String url;
+
+    @CommandLine.Mixin
+    ConfigOptions configOptions;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)

@@ -1,6 +1,7 @@
 package com.endava.cats;
 
 import com.endava.cats.command.CatsCommand;
+import com.endava.cats.exception.CatsException;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.runtime.QuarkusApplication;
@@ -8,8 +9,12 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 import jakarta.inject.Inject;
 import picocli.CommandLine;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Properties;
 
 /**
  * Main application entry point.
@@ -33,12 +38,28 @@ public class CatsMain implements QuarkusApplication {
         });
         checkForConsoleColorsDisabled(args);
 
-        return new CommandLine(catsCommand, factory)
+        CommandLine commandLine = new CommandLine(catsCommand, factory)
                 .setCaseInsensitiveEnumValuesAllowed(true)
                 .setColorScheme(colorScheme())
                 .setAbbreviatedOptionsAllowed(true)
-                .setAbbreviatedSubcommandsAllowed(true)
-                .execute(args);
+                .setAbbreviatedSubcommandsAllowed(true);
+
+        loadConfigIfSupplied(commandLine, args);
+        return commandLine.execute(args);
+    }
+
+    private void loadConfigIfSupplied(CommandLine commandLine, String... args) {
+        File configFile = findConfigFile(args);
+        if (configFile != null && configFile.exists()) {
+            logger.config("Loading config from {}", configFile.getAbsolutePath());
+            Properties props = new Properties();
+            try (InputStream in = new FileInputStream(configFile)) {
+                props.load(in);
+                commandLine.setDefaultValueProvider(new CommandLine.PropertiesDefaultProvider(props));
+            } catch (Exception e) {
+                throw new CatsException(e);
+            }
+        }
     }
 
     private void checkForConsoleColorsDisabled(String... args) {
@@ -58,5 +79,16 @@ public class CatsMain implements QuarkusApplication {
                 .errors(CommandLine.Help.Ansi.Style.fg_red, CommandLine.Help.Ansi.Style.bold)
                 .stackTraces(CommandLine.Help.Ansi.Style.italic)
                 .build();
+    }
+
+    private File findConfigFile(String[] args) {
+        for (int i = 0; i < args.length - 1; i++) {
+            if ("--configFile".equals(args[i])) {
+                return new File(args[i + 1]);
+            } else if (args[i].startsWith("--configFile=")) {
+                return new File(args[i].split("=", 2)[1]);
+            }
+        }
+        return null;
     }
 }

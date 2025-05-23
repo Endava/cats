@@ -4,6 +4,7 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
@@ -50,6 +51,9 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
             paramLabel = "<file>",
             description = "A yaml file following the CATS YAML syntax")
     File file;
+
+    @CommandLine.Mixin
+    ConfigOptions configOptions;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)

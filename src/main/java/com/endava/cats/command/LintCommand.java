@@ -2,6 +2,7 @@ package com.endava.cats.command;
 
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.util.VersionProvider;
 import io.quarkus.arc.Unremovable;
 import jakarta.inject.Inject;
@@ -36,6 +37,9 @@ import java.util.Optional;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
+
+    @CommandLine.Mixin
+    ConfigOptions configOptions;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)

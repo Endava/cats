@@ -10,6 +10,7 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.factory.FuzzingDataFactory;
@@ -120,6 +121,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     FunctionalFuzzer functionalFuzzer;
     @Inject
     TestCaseListener testCaseListener;
+
+    @CommandLine.Mixin
+    ConfigOptions configOptions;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)

@@ -6,6 +6,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
+import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.VersionProvider;
 import io.quarkus.arc.Unremovable;
@@ -40,6 +41,10 @@ import java.util.Map;
         versionProvider = VersionProvider.class)
 @Unremovable
 public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
+
+    @CommandLine.Mixin
+    ConfigOptions configOptions;
+
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline API Options:|@%n", exclusive = false)
     ApiArguments apiArguments;
