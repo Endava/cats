@@ -43,6 +43,7 @@ class OperationIdVerbPrefixLinterFuzzerTest {
         testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         operationIdVerbPrefixLinterFuzzer = new OperationIdVerbPrefixLinterFuzzer(testCaseListener, namingArguments);
+        ReflectionTestUtils.setField(namingArguments, "operationPrefixMapFile", null);
         namingArguments.loadVerbMapFile();
     }
 
