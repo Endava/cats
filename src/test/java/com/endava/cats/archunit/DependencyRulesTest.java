@@ -3,7 +3,7 @@ package com.endava.cats.archunit;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.annotations.LinterFuzzer;
+import com.endava.cats.annotations.Linter;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaModifier;
@@ -75,9 +75,9 @@ class DependencyRulesTest {
                     .that()
                     .resideInAPackage("..contract..")
                     .and()
-                    .areAnnotatedWith(LinterFuzzer.class)
+                    .areAnnotatedWith(Linter.class)
                     .should()
-                    .haveSimpleNameEndingWith("LinterFuzzer");
+                    .haveSimpleNameEndingWith("Linter");
 
     @ArchTest
     static ArchRule dontRelyOnUpperPackages = NO_CLASSES_SHOULD_DEPEND_UPPER_PACKAGES;

@@ -5,7 +5,7 @@ import com.endava.cats.annotations.EmojiFuzzer;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.annotations.LinterFuzzer;
+import com.endava.cats.annotations.Linter;
 import com.endava.cats.annotations.SanitizeAndValidate;
 import com.endava.cats.annotations.SecondPhaseFuzzer;
 import com.endava.cats.annotations.SpecialFuzzer;
@@ -421,7 +421,7 @@ public class FilterArguments {
         finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeControlChars(), ControlCharFuzzer.class, finalList);
         finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeEmojis(), EmojiFuzzer.class, finalList);
         finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeWhitespaces(), WhitespaceFuzzer.class, finalList);
-        finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeContract(), LinterFuzzer.class, finalList);
+        finalList = this.filterByAnnotationAndIncludeArgument(checkArguments.isIncludeContract(), Linter.class, finalList);
 
         return finalList;
     }

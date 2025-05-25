@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * This is responsible to run all @ContractFuzzers.
+ * This is responsible to run all @Linters.
  */
 @CommandLine.Command(
         name = "lint",
@@ -53,8 +53,8 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
             description = "The OpenAPI contract/spec")
     private String contract;
 
-    @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
-            description = "A comma separated list of fuzzers to be ignored. They can be full or partial Fuzzer names", split = ",")
+    @CommandLine.Option(names = {"--skipLinters", "--skipLinter"},
+            description = "A comma separated list of linters to be ignored. They can be full or partial Linter names", split = ",")
     private List<String> skipFuzzers;
 
     @CommandLine.Option(names = {"--skipPaths", "--skipPath"},

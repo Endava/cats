@@ -61,7 +61,7 @@ class FilterArgumentsTest {
             "checkHttp,HappyPathFuzzer,CheckSecurityHeadersFuzzer", "includeControlChars,LeadingControlCharsInHeadersFuzzer,LeadingWhitespacesInHeadersFuzzer",
             "includeEmojis,LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
             "includeWhitespaces,LeadingWhitespacesInFieldsTrimValidateFuzzer,LeadingControlCharsInHeadersFuzzer",
-            "includeContract,TopLevelElementsLinterFuzzer,LeadingWhitespacesInHeadersFuzzer"})
+            "includeContract,TopLevelElementsLinter,LeadingWhitespacesInHeadersFuzzer"})
     void shouldReturnCheckHeadersFuzzers(String argument, String matching, String notMatching) {
         ReflectionTestUtils.setField(checkArguments, argument, true);
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
@@ -95,7 +95,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer")
-                .doesNotContain("TopLevelElementsLinterFuzzer");
+                .doesNotContain("TopLevelElementsLinter");
     }
 
     @Test
@@ -105,7 +105,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("CheckSecurityHeadersFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer")
-                .doesNotContain("TopLevelElementsLinterFuzzer");
+                .doesNotContain("TopLevelElementsLinter");
     }
 
     @Test
@@ -123,7 +123,7 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
-        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsLinterFuzzer", "HappyPathFuzzer", "RemoveFieldsFuzzer", "Jumbo")
+        Assertions.assertThat(fuzzers).doesNotContain("TopLevelElementsLinter", "HappyPathFuzzer", "RemoveFieldsFuzzer", "Jumbo")
                 .containsOnly("CheckSecurityHeadersFuzzer", "VeryLargeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInFieldsFuzzer", "VeryLargeUnicodeStringsInHeadersFuzzer", "VeryLargeStringsInHeadersFuzzer",
                         "VeryLargeDecimalsInNumericFieldsFuzzer", "VeryLargeIntegersInNumericFieldsFuzzer");
     }

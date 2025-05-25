@@ -3,7 +3,7 @@ package com.endava.cats.command;
 import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.annotations.HttpFuzzer;
-import com.endava.cats.annotations.LinterFuzzer;
+import com.endava.cats.annotations.Linter;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.command.model.FuzzerListEntry;
@@ -16,9 +16,9 @@ import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -100,6 +100,9 @@ public class ListCommand implements Runnable {
         if (listCommandGroups.listFuzzersGroup != null && listCommandGroups.listFuzzersGroup.fuzzers) {
             listFuzzers();
         }
+        if (listCommandGroups.listFuzzersGroup != null && listCommandGroups.listFuzzersGroup.linters) {
+            listLinters();
+        }
         if (listCommandGroups.listStrategiesGroup != null && listCommandGroups.listStrategiesGroup.strategies) {
             listFuzzerStrategies();
         }
@@ -116,6 +119,18 @@ public class ListCommand implements Runnable {
 
         if (listCommandGroups.listMutatorsGroup != null && listCommandGroups.listMutatorsGroup.customMutatorTypes) {
             listMutatorsTypes();
+        }
+    }
+
+    void listLinters() {
+        List<Fuzzer> linters = filterFuzzers(Linter.class);
+        if (json) {
+            List<FuzzerListEntry> fuzzerEntries = List.of(new FuzzerListEntry().category("Linters").fuzzers(linters));
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(fuzzerEntries));
+        } else {
+            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered linters:").reset().toString();
+            logger.noFormat(message, fuzzersList.size());
+            displayFuzzers(linters, Linter.class);
         }
     }
 
@@ -265,7 +280,7 @@ public class ListCommand implements Runnable {
         List<Fuzzer> fieldFuzzers = filterFuzzers(FieldFuzzer.class);
         List<Fuzzer> headerFuzzers = filterFuzzers(HeaderFuzzer.class);
         List<Fuzzer> httpFuzzers = filterFuzzers(HttpFuzzer.class);
-        List<Fuzzer> contractInfo = filterFuzzers(LinterFuzzer.class);
+        List<Fuzzer> contractInfo = filterFuzzers(Linter.class);
 
         if (json) {
             List<FuzzerListEntry> fuzzerEntries = List.of(
@@ -280,7 +295,7 @@ public class ListCommand implements Runnable {
             displayFuzzers(fieldFuzzers, FieldFuzzer.class);
             displayFuzzers(headerFuzzers, HeaderFuzzer.class);
             displayFuzzers(httpFuzzers, HttpFuzzer.class);
-            displayFuzzers(contractInfo, LinterFuzzer.class);
+            displayFuzzers(contractInfo, Linter.class);
         }
     }
 
@@ -292,7 +307,7 @@ public class ListCommand implements Runnable {
     }
 
     void displayFuzzers(List<Fuzzer> fuzzers, Class<? extends Annotation> annotation) {
-        String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {} Fuzzers:").reset().toString();
+        String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {}:").reset().toString();
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
         logger.noFormat(" ");
         logger.noFormat(message, fuzzers.size(), typeOfFuzzers);
@@ -303,7 +318,7 @@ public class ListCommand implements Runnable {
         @CommandLine.ArgGroup(exclusive = false, heading = "List OpenAPI Contract Paths%n")
         ListContractOptions listContractOptions;
 
-        @CommandLine.ArgGroup(exclusive = false, heading = "List Fuzzers%n")
+        @CommandLine.ArgGroup(multiplicity = "1", heading = "List Fuzzers%n")
         ListFuzzersGroup listFuzzersGroup;
 
         @CommandLine.ArgGroup(exclusive = false, heading = "List Mutators%n")
@@ -335,9 +350,13 @@ public class ListCommand implements Runnable {
     static class ListFuzzersGroup {
         @CommandLine.Option(
                 names = {"-f", "--fuzzers", "fuzzers"},
-                description = "Display all current registered Fuzzers",
-                required = true)
+                description = "Display all current registered Fuzzers")
         boolean fuzzers;
+
+        @CommandLine.Option(
+                names = {"-l", "--linters", "linters"},
+                description = "Display all current registered Linters")
+        boolean linters;
     }
 
     static class ListMutatorsGroup {

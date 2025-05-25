@@ -7,7 +7,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
-import com.endava.cats.fuzzer.contract.PathTagsLinterFuzzer;
+import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.report.ExecutionStatisticsListener;
@@ -129,10 +129,10 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(processingArguments, "useExamples", false);
         ReflectionTestUtils.setField(reportingArguments, "debug", true);
 
-        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinterFuzzer"));
+        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinter"));
         Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));
         Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
-        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethods(Mockito.any())).thenReturn(List.of(new PathTagsLinterFuzzer(testCaseListener)));
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethods(Mockito.any())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
         Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(Mockito.mock(CheckDeletedResourcesNotAvailableFuzzer.class)));
         Mockito.when(executionStatisticsListener.areManyIoErrors()).thenReturn(true);
         Mockito.when(executionStatisticsListener.getIoErrors()).thenReturn(10);
@@ -145,7 +145,7 @@ class CatsCommandTest {
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
         Mockito.verify(testCaseListener, Mockito.times(20)).afterFuzz(Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(10)).beforeFuzz(Mockito.eq(PathTagsLinterFuzzer.class), Mockito.any(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(10)).beforeFuzz(Mockito.eq(PathTagsLinter.class), Mockito.any(), Mockito.any());
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
         ReflectionTestUtils.setField(apiArguments, "server", "empty");
@@ -161,9 +161,9 @@ class CatsCommandTest {
         ReflectionTestUtils.setField(reportingArguments, "verbosity", ReportingArguments.Verbosity.SUMMARY);
 
         CatsCommand spyMain = Mockito.spy(catsMain);
-        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinterFuzzer"));
+        Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinter"));
         Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
-        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethods(Mockito.any())).thenReturn(List.of(new PathTagsLinterFuzzer(testCaseListener)));
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethods(Mockito.any())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
         Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(new CheckDeletedResourcesNotAvailableFuzzer(null, Mockito.mock(CatsGlobalContext.class), null)));
         Mockito.when(filterArguments.getPathsToRun(Mockito.any())).thenReturn(
                 List.of("/pet", "/pets", "/pet/findByStatus", "/pet/findByTags", "/pet/{petId}", "/pet/{petId}/uploadImage", "/store/inventory"));
@@ -176,7 +176,7 @@ class CatsCommandTest {
         Mockito.verify(fuzzingDataFactory).fromPathItem(Mockito.eq("/pet"), Mockito.any(), Mockito.any());
         Mockito.verify(fuzzingDataFactory, Mockito.times(0)).fromPathItem(Mockito.eq("/petss"), Mockito.any(), Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(13)).afterFuzz(Mockito.any());
-        Mockito.verify(testCaseListener, Mockito.times(9)).beforeFuzz(Mockito.eq(PathTagsLinterFuzzer.class), Mockito.anyString(), Mockito.any());
+        Mockito.verify(testCaseListener, Mockito.times(9)).beforeFuzz(Mockito.eq(PathTagsLinter.class), Mockito.anyString(), Mockito.any());
         Mockito.verify(testCaseListener, Mockito.times(4)).beforeFuzz(Mockito.eq(CheckDeletedResourcesNotAvailableFuzzer.class), Mockito.any(), Mockito.any());
 
         ReflectionTestUtils.setField(apiArguments, "contract", "empty");
