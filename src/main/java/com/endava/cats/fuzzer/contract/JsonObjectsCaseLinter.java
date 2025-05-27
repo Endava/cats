@@ -3,11 +3,13 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.fuzzer.contract.base.BaseLinter;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsField;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -24,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * Checks if JSON objects are consistently following the same naming convention.
@@ -32,11 +33,6 @@ import java.util.regex.Pattern;
 @Linter
 @Singleton
 public class JsonObjectsCaseLinter extends BaseLinter {
-    private static final Pattern GENERATED_BODY_OBJECTS_1 = Pattern.compile("body_\\d*");
-    private static final Pattern GENERATED_BODY_OBJECTS_2 = Pattern.compile("^\\w{1,30}_body");
-    private static final Pattern INLINE_BODY_OBJECTS = Pattern.compile("^inline_response(?:_\\d{0,30}){1,50}$");
-    private static final Pattern CROSS_PATHS_REFERENCES_PATTERN = Pattern.compile("^#/paths/.*");
-    private static final List<Pattern> PATTERNS_TO_IGNORE = List.of(GENERATED_BODY_OBJECTS_1, GENERATED_BODY_OBJECTS_2, INLINE_BODY_OBJECTS, CROSS_PATHS_REFERENCES_PATTERN);
     private static final Set<String> PROPERTIES_CHECKED = new HashSet<>();
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final ProcessingArguments processingArguments;
@@ -118,7 +114,7 @@ public class JsonObjectsCaseLinter extends BaseLinter {
         }
         return CatsUtil.check(stringToCheck.toArray(new String[0]), jsonObject ->
                 !namingArguments.getJsonObjectsNaming().getPattern().matcher(jsonObject).matches()
-                        && PATTERNS_TO_IGNORE.stream().noneMatch(pattern -> pattern.matcher(jsonObject).matches())
+                        && CatsModelUtils.isNotGeneratedPattern(jsonObject)
                         && !NoMediaType.EMPTY_BODY.matches(jsonObject));
     }
 

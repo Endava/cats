@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.contract;
+package com.endava.cats.fuzzer.contract.base;
 
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.model.CatsRequest;

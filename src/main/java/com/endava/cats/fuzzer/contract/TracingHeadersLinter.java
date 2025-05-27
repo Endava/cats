@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.Linter;
+import com.endava.cats.fuzzer.contract.base.BaseLinter;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;

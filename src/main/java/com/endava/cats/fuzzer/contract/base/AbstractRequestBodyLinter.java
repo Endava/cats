@@ -1,4 +1,4 @@
-package com.endava.cats.fuzzer.contract;
+package com.endava.cats.fuzzer.contract.base;
 
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
