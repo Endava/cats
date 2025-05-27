@@ -55,7 +55,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @CommandLine.Option(names = {"--skipLinters", "--skipLinter"},
             description = "A comma separated list of linters to be ignored. They can be full or partial Linter names", split = ",")
-    private List<String> skipFuzzers;
+    private List<String> skipLinters;
 
     @CommandLine.Option(names = {"--skipPaths", "--skipPath"},
             description = "A comma separated list of paths to ignore. If no path is supplied, no path will be ignored. All available paths can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
@@ -70,7 +70,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
         catsCommand.apiArguments.setContract(contract);
         catsCommand.apiArguments.setServer("http://empty");
         catsCommand.filterArguments.customFilter("Linter");
-        catsCommand.filterArguments.getSkipFuzzers().addAll(Optional.ofNullable(skipFuzzers).orElse(Collections.emptyList()));
+        catsCommand.filterArguments.getSkipFuzzers().addAll(Optional.ofNullable(skipLinters).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getSkipPaths().addAll(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
         catsCommand.processingArguments.setLimitXxxOfCombinations(6);
