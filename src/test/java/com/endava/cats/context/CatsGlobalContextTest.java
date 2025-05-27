@@ -34,7 +34,7 @@ class CatsGlobalContextTest {
         Mockito.when(openAPI.getComponents()).thenReturn(components);
         Map<String, Parameter> parameterMap = Map.of("Example", new Parameter());
         Mockito.when(components.getParameters()).thenReturn(parameterMap);
-        context.init(openAPI, List.of(), new Properties(), new CatsConfiguration("1", "2", "3", List.of(), 4, 5, 6), Set.of());
+        context.init(openAPI, List.of(), new Properties(), new CatsConfiguration("1", "2", "3", List.of(), 4, 5, 6), Set.of(), Set.of());
 
         String reference = "#/components/parameters/Example";
         Object resolvedObject = context.getObjectFromPathsReference(reference);
@@ -54,7 +54,7 @@ class CatsGlobalContextTest {
         Mockito.when(openAPI.getComponents()).thenReturn(components);
         Map<String, io.swagger.v3.oas.models.headers.Header> headerMap = Map.of("Example", new Header());
         Mockito.when(components.getHeaders()).thenReturn(headerMap);
-        context.init(openAPI, List.of(), new Properties(), new CatsConfiguration("1", "2", "3", List.of(), 4, 5, 6), Set.of());
+        context.init(openAPI, List.of(), new Properties(), new CatsConfiguration("1", "2", "3", List.of(), 4, 5, 6), Set.of(), Set.of());
 
         String reference = "#/components/headers/Example";
         Object resolvedObject = context.getObjectFromPathsReference(reference);

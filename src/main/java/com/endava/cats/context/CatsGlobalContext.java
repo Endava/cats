@@ -59,7 +59,7 @@ public class CatsGlobalContext {
     private final Map<String, List<String>> generatedExamplesCache = new HashMap<>();
     private final Set<ProcessingError> recordedErrors = new HashSet<>();
     private final Set<String> errorLeaksKeywords = new HashSet<>();
-
+    private final Set<String> refs = new HashSet<>();
 
     private CatsConfiguration catsConfiguration;
     @Setter
@@ -83,7 +83,8 @@ public class CatsGlobalContext {
      * @param fuzzersConfiguration the fuzzers configuration
      * @param catsConfiguration    the Cats configuration
      */
-    public void init(OpenAPI openAPI, List<String> contentType, Properties fuzzersConfiguration, CatsConfiguration catsConfiguration, Set<String> errorLeaksKeywords) {
+    public void init(OpenAPI openAPI, List<String> contentType, Properties fuzzersConfiguration, CatsConfiguration catsConfiguration,
+                     Set<String> errorLeaksKeywords, Set<String> refs) {
         Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, contentType);
         this.getSchemaMap().putAll(allSchemasFromOpenApi);
         this.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
@@ -95,6 +96,7 @@ public class CatsGlobalContext {
         this.catsConfiguration = catsConfiguration;
         this.openAPI = openAPI;
         this.errorLeaksKeywords.addAll(errorLeaksKeywords);
+        this.refs.addAll(refs);
     }
 
     /**

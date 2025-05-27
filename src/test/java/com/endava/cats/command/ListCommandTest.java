@@ -82,6 +82,15 @@ class ListCommandTest {
     }
 
     @Test
+    void shouldListLintersJson() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("-l", "-j");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listLinters();
+        Mockito.verify(spyListCommand, Mockito.times(0)).displayFuzzers(Mockito.anyList(), Mockito.any());
+    }
+
+    @Test
     void shouldListPathsJson() {
         ListCommand spyListCommand = Mockito.spy(listCommand);
         CommandLine commandLine = new CommandLine(spyListCommand);
@@ -112,6 +121,14 @@ class ListCommandTest {
         CommandLine commandLine = new CommandLine(spyListCommand);
         commandLine.execute("-f");
         Mockito.verify(spyListCommand, Mockito.times(1)).listFuzzers();
+    }
+
+    @Test
+    void shouldListLinters() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("-l");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listLinters();
     }
 
     @Test

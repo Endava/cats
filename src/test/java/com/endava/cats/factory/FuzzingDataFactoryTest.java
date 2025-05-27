@@ -649,7 +649,7 @@ class FuzzingDataFactoryTest {
         List<FuzzingData> dataList = setupFuzzingData("/pet-types", "src/test/resources/petstore.yml");
 
         Assertions.assertThat(dataList).hasSize(2);
-        Schema<?> creatorSchema = catsGlobalContext.getOpenAPI().getComponents().getSchemas().get("MegaPet_creator");
+        Schema<?> creatorSchema = catsGlobalContext.getOpenAPI().getComponents().getSchemas().get("generated_MegaPet_creator");
         Assertions.assertThat(creatorSchema).isNotNull();
         Assertions.assertThat(creatorSchema.getProperties()).hasSize(3);
         assertPropertiesExistInRequestPropertyTypes(dataList.getFirst());
