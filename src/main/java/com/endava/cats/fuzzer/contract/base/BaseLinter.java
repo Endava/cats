@@ -64,7 +64,7 @@ public abstract class BaseLinter implements Fuzzer {
         this.process(data);
     }
 
-    void addDefaultsForPathAgnosticFuzzers() {
+    protected void addDefaultsForPathAgnosticFuzzers() {
         testCaseListener.addServer(N_A);
         testCaseListener.addPath(N_A);
         testCaseListener.addContractPath(N_A);
