@@ -68,7 +68,7 @@
         <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.7</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
-        <okhttp.version>4.11.0-CATS</okhttp.version>
+        <okhttp.version>4.12.0-CATS</okhttp.version>
         <swagger.parser.version>2.1.27-CATS</swagger.parser.version>
         <okio.version>3.11.0</okio.version>
         <wiremock.version>3.12.1</wiremock.version>
@@ -112,13 +112,13 @@
                             <goal>install-file</goal>
                         </goals>
                         <configuration>
-                            <file>lib/okhttp-4.11.0-CATS.jar</file>
+                            <file>lib/okhttp-4.12.0-CATS.jar</file>
                             <groupId>com.squareup.okhttp3</groupId>
                             <artifactId>okhttp</artifactId>
-                            <version>4.11.0-CATS</version>
-                            <sources>lib/okhttp-4.11.0-CATS-sources.jar</sources>
-                            <javadoc>lib/okhttp-4.11.0-CATS-javadoc.jar</javadoc>
-                            <pomFile>lib/okhttp-4.11.0-CATS.pom</pomFile>
+                            <version>4.12.0-CATS</version>
+                            <sources>lib/okhttp-4.12.0-CATS-sources.jar</sources>
+                            <javadoc>lib/okhttp-4.12.0-CATS-javadoc.jar</javadoc>
+                            <pomFile>lib/okhttp-4.12.0-CATS.pom</pomFile>
                             <packaging>jar</packaging>
                         </configuration>
                     </execution>
