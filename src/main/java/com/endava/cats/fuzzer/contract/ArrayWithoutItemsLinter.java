@@ -33,8 +33,6 @@ public class ArrayWithoutItemsLinter extends BaseLinter {
         testCaseListener.addExpectedResult(log, "All array schemas should define an 'items' schema indicating the type of elements");
 
         List<String> violations = new ArrayList<>();
-        String path = data.getPath();
-
         Operation operation = HttpMethod.getOperation(data.getMethod(), data.getPathItem());
 
         checkSchemas(operation.getRequestBody() != null ? operation.getRequestBody().getContent() : null,
@@ -64,11 +62,9 @@ public class ArrayWithoutItemsLinter extends BaseLinter {
         }
         for (Map.Entry<String, MediaType> media : content.entrySet()) {
             Schema<?> schema = media.getValue().getSchema();
-            if (CatsModelUtils.isArraySchema(schema)) {
-                if (schema.getItems() == null) {
-                    violations.add("%s content-type '%s' has array schema without 'items' definition"
-                            .formatted(context, media.getKey()));
-                }
+            if (CatsModelUtils.isArraySchema(schema) && schema.getItems() == null) {
+                violations.add("%s content-type '%s' has array schema without 'items' definition"
+                        .formatted(context, media.getKey()));
             }
         }
     }

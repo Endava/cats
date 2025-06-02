@@ -20,7 +20,7 @@ public abstract class AbstractUnusedElementsLinter extends BaseLinter {
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final CatsGlobalContext catsGlobalContext;
 
-    public AbstractUnusedElementsLinter(TestCaseListener tcl, CatsGlobalContext catsGlobalContext) {
+    protected AbstractUnusedElementsLinter(TestCaseListener tcl, CatsGlobalContext catsGlobalContext) {
         super(tcl);
         this.catsGlobalContext = catsGlobalContext;
     }
