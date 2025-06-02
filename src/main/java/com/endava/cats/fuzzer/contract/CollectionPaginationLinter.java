@@ -2,11 +2,11 @@ package com.endava.cats.fuzzer.contract;
 
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.fuzzer.contract.base.BaseLinter;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.parameters.Parameter;
@@ -33,29 +33,27 @@ public class CollectionPaginationLinter extends BaseLinter {
 
     @Override
     public void process(FuzzingData data) {
+        if (data.getMethod() != HttpMethod.GET || isItemPath(data.getPath())) {
+            testCaseListener.skipTest(log, "Skipping pagination check for non-GET operations");
+            return;
+        }
+
         testCaseListener.addScenario(log, "Check if GET operations on collection endpoints support pagination parameters");
         testCaseListener.addExpectedResult(log, "Collection GETs should define pagination query parameters like limit, offset, page, size, or cursor");
 
-        OpenAPI openAPI = data.getOpenApi();
         List<String> violations = new ArrayList<>();
 
-        openAPI.getPaths().forEach((path, pathItem) -> {
-            Operation getOp = pathItem.getGet();
-            if (getOp == null) return;
-            if (isItemPath(path)) return;
+        Operation getOp = data.getPathItem().getGet();
 
-            Set<String> queryParams = collectQueryParams(pathItem, getOp);
+        Set<String> queryParams = collectQueryParams(data.getPathItem(), getOp);
 
-            boolean hasPagination = queryParams.stream()
-                    .map(String::toLowerCase)
-                    .anyMatch(paginationParams::contains);
+        boolean hasPagination = queryParams.stream()
+                .map(String::toLowerCase)
+                .anyMatch(paginationParams::contains);
 
-            if (!hasPagination) {
-                violations.add("- GET on [%s] is missing pagination query parameters".formatted(path));
-            }
-        });
-
-        super.addDefaultsForPathAgnosticFuzzers();
+        if (!hasPagination) {
+            violations.add("Operation is missing pagination query parameters");
+        }
 
         if (!violations.isEmpty()) {
             testCaseListener.reportResultWarn(
@@ -91,7 +89,7 @@ public class CollectionPaginationLinter extends BaseLinter {
 
     @Override
     protected String runKey(FuzzingData data) {
-        return "collection-pagination-linter";
+        return data.getPath() + data.getMethod();
     }
 
     @Override

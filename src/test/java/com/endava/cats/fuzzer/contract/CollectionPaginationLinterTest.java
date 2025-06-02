@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
@@ -40,20 +41,31 @@ class CollectionPaginationLinterTest {
     @Test
     void shouldReportWarn() throws Exception {
         OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/petstore31.yaml")), null, null).getOpenAPI();
-        FuzzingData data = FuzzingData.builder().openApi(openAPI).pathItem(openAPI.getPaths().get("/pets/operations-bad/{id}")).build();
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).pathItem(openAPI.getPaths().get("/pet/findByTags")).method(HttpMethod.GET).path("/pet/findByTags").build();
         collectionPaginationLinterFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.eq("Missing pagination support on GET collection endpoints"),
-                Mockito.contains("GET on [/pet/findByTags] is missing pagination query parameters"));
+                Mockito.contains("Operation is missing pagination query parameters"));
     }
 
     @Test
-    void shouldReportInfo() throws Exception {
+    void shouldSkipOnItemPath() throws Exception {
         OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, null).getOpenAPI();
-        FuzzingData data = FuzzingData.builder().openApi(openAPI).pathItem(openAPI.getPaths().get("/pets/operations/{id}")).reqSchema(new Schema()).build();
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).pathItem(openAPI.getPaths().get("/pets/operations/{id}")).path("/pets/operations/{id}")
+                .method(HttpMethod.GET).reqSchema(new Schema()).build();
         collectionPaginationLinterFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All collection GET endpoints declare pagination support"));
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("Skipping pagination check for non-GET operations"));
+    }
+
+    @Test
+    void shouldSkipOnNonGetMethod() throws Exception {
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/petstore.yml")), null, null).getOpenAPI();
+        FuzzingData data = FuzzingData.builder().openApi(openAPI).pathItem(openAPI.getPaths().get("/pet/findByTags")).path("/pet/findByTags")
+                .method(HttpMethod.POST).reqSchema(new Schema()).build();
+        collectionPaginationLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).skipTest(Mockito.any(), Mockito.eq("Skipping pagination check for non-GET operations"));
     }
 
     @Test
