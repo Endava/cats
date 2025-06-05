@@ -24,20 +24,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -545,10 +532,7 @@ public class OpenAPIModelGeneratorV2 {
         recordRequestSchema(currentProperty, property);
 
         if (CatsModelUtils.isArraySchema(property)) {
-            Schema itemSchema = CatsModelUtils.getSchemaItems(property);
-            List<Object> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema);
-            int arraySize = getArrayLength(property);
-            examples.addAll(itemExamples.stream().map(innerExample -> Collections.nCopies(arraySize, innerExample)).toList());
+            createExamplesArray(propertyName, property, examples);
         } else if (CatsModelUtils.isMapSchema(property)) {
             Map<String, Object> mapExample = new HashMap<>();
             Schema additionalProperties = CatsModelUtils.getAdditionalProperties(property);
@@ -583,6 +567,25 @@ public class OpenAPIModelGeneratorV2 {
         currentProperty = previousProperty;
 
         return examples;
+    }
+
+    private void createExamplesArray(String propertyName, Schema property, List<Object> examples) {
+        if (Boolean.TRUE.equals(property.getUniqueItems())) {
+            logger.trace("Creating unique items array for property {}", propertyName);
+            int arraySize = getArrayLength(property);
+            Schema itemSchema = CatsModelUtils.getSchemaItems(property);
+            Set<Object> itemExamples = new HashSet<>();
+           while (itemExamples.size() < arraySize) {
+                Object itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
+                itemExamples.add(itemExample);
+            }
+            examples.add(itemExamples);
+        } else {
+            Schema itemSchema = CatsModelUtils.getSchemaItems(property);
+            List<Object> itemExamples = resolvePropertyToExamples(propertyName + ".items", itemSchema);
+            int arraySize = getArrayLength(property);
+            examples.addAll(itemExamples.stream().map(innerExample -> Collections.nCopies(arraySize, innerExample)).toList());
+        }
     }
 
     private void mapDiscriminator(Schema<?> composedSchema, List<Schema> anyOf) {
@@ -731,8 +734,17 @@ public class OpenAPIModelGeneratorV2 {
 
     private <T> Object getEnumOrDefault(Schema<T> propertySchema) {
         List<T> enumValues = propertySchema.getEnum();
+
         if (!CollectionUtils.isEmpty(enumValues)) {
-            return enumValues.stream().filter(Objects::nonNull).findAny().orElse(enumValues.getFirst());
+            List<T> nonNullEnumValues = enumValues.stream()
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            if (!nonNullEnumValues.isEmpty()) {
+                return nonNullEnumValues.get(CatsUtil.random().nextInt(nonNullEnumValues.size()));
+            }
+
+            return enumValues.getFirst(); // fallback if all were null
         }
 
         if (propertySchema.getDefault() != null && useDefaults) {
@@ -791,10 +803,10 @@ public class OpenAPIModelGeneratorV2 {
         return combined;
     }
 
-    private Object resolvePropertyToExample(String propertyName, Schema propertySchema) {
+    private Object resolvePropertyToExample(String propertyName, Schema propertySchema, boolean useExamples) {
         logger.trace("resolvePropertyToExample for property {}", propertyName);
         //examples will take first priority
-        Object example = this.extractExampleFromSchema(propertySchema, examplesFlags.usePropertyExamples());
+        Object example = this.extractExampleFromSchema(propertySchema, useExamples);
         if (example != null) {
             logger.trace("Example set in swagger spec, returning example: '{}'", example);
             return example;
@@ -811,6 +823,10 @@ public class OpenAPIModelGeneratorV2 {
         }
 
         return generateExampleBySchemaType(propertyName, propertySchema);
+    }
+
+    private Object resolvePropertyToExample(String propertyName, Schema propertySchema) {
+        return resolvePropertyToExample(propertyName, propertySchema, examplesFlags.usePropertyExamples());
     }
 
     private <T> Object generateExampleBySchemaType(String propertyName, Schema<T> propertySchema) {

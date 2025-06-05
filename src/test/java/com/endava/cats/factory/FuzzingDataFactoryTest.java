@@ -13,6 +13,7 @@ import com.endava.cats.model.NoMediaType;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.gson.JsonParser;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1037,6 +1039,33 @@ class FuzzingDataFactoryTest {
                 "age",
                 "category#id",
                 "residency");
+    }
+
+    @Test
+    void shouldGenerateUniqueValuesWhenUniqueItemsTrue() throws Exception {
+        System.getProperties().setProperty("bind-type", "true");
+        List<FuzzingData> dataList = setupFuzzingData("/pet/findByStatus", "src/test/resources/petstore31.yaml");
+        Assertions.assertThat(dataList).hasSize(1);
+        FuzzingData data = dataList.getFirst();
+        String payload = data.getPayload();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(payload);
+
+        JsonNode statusNode = root.get("status");
+        Assertions.assertThat(statusNode).isNotNull();
+        Assertions.assertThat(statusNode.isArray()).isTrue();
+
+        Set<String> uniqueValues = new HashSet<>();
+        for (JsonNode element : statusNode) {
+            boolean added = uniqueValues.add(element.asText());
+            Assertions.assertThat(added)
+                    .as("Duplicate found: " + element.asText())
+                    .isTrue();
+        }
+
+        Assertions.assertThat(uniqueValues.size())
+                .as("Status array contains duplicate elements.")
+                .isEqualTo(statusNode.size());
     }
 
     @Test
