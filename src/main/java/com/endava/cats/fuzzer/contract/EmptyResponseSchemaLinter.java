@@ -58,7 +58,7 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
     }
 
     private void processResponseEntry(List<String> violations, String status, ApiResponse response) {
-        if (ignoreStatusCodes.contains(status)) {
+        if (ignoreStatusCodes.contains(status) || response.get$ref() != null) {
             return;
         }
 
@@ -71,6 +71,7 @@ public class EmptyResponseSchemaLinter extends BaseLinter {
     }
 
     private void processMediaTypes(List<String> violations, String status, Map<String, MediaType> content) {
+
         for (Map.Entry<String, MediaType> mediaEntry : content.entrySet()) {
             String contentType = mediaEntry.getKey();
             MediaType media = mediaEntry.getValue();
