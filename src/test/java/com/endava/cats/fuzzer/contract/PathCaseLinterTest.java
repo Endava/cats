@@ -9,6 +9,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -38,9 +39,7 @@ class PathCaseLinterTest {
 
     @BeforeEach
     void setup() {
-        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
-        Mockito.when(exporters.stream()).thenReturn(Stream.of(Mockito.mock(TestCaseExporter.class)));
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         pathCaseLinterFuzzer = new PathCaseLinter(testCaseListener, namingArguments);
         ReflectionTestUtils.setField(namingArguments, "pathNaming", NamingArguments.Naming.CAMEL);

@@ -26,7 +26,6 @@ import com.google.gson.JsonParser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Instance;
 import lombok.Builder;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.fusesource.jansi.Ansi;
@@ -77,7 +76,7 @@ public class TestCaseListener {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(TestCaseListener.class);
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private final ExecutionStatisticsListener executionStatisticsListener;
-    private final TestCaseExporter testCaseExporter;
+    private final TestReportsGenerator testReportsGenerator;
     private final CatsGlobalContext globalContext;
     private final IgnoreArguments ignoreArguments;
     private final ReportingArguments reportingArguments;
@@ -96,19 +95,16 @@ public class TestCaseListener {
     /**
      * Constructs a TestCaseListener with the provided dependencies and configuration.
      *
-     * @param catsGlobalContext  the global context for Cats
-     * @param er                 the listener for execution statistics
-     * @param exporters          the available TestCaseExporter instances
-     * @param filterArguments    the arguments for filtering test cases
-     * @param reportingArguments the arguments for reporting test cases
+     * @param catsGlobalContext    the global context for Cats
+     * @param er                   the listener for execution statistics
+     * @param testReportsGenerator the generator for test reports
+     * @param filterArguments      the arguments for filtering test cases
+     * @param reportingArguments   the arguments for reporting test cases
      * @throws NoSuchElementException if no matching exporter is found for the specified report format
      */
-    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, Instance<TestCaseExporter> exporters, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
+    public TestCaseListener(CatsGlobalContext catsGlobalContext, ExecutionStatisticsListener er, TestReportsGenerator testReportsGenerator, IgnoreArguments filterArguments, ReportingArguments reportingArguments) {
         this.executionStatisticsListener = er;
-        this.testCaseExporter = exporters.stream()
-                .filter(exporter -> exporter.reportFormat() == reportingArguments.getReportFormat())
-                .findFirst()
-                .orElseThrow();
+        this.testReportsGenerator = testReportsGenerator;
         this.ignoreArguments = filterArguments;
         this.globalContext = catsGlobalContext;
         this.reportingArguments = reportingArguments;
@@ -305,7 +301,7 @@ public class TestCaseListener {
         CatsTestCase currentTestCase = currentTestCase();
         currentTestCase.setFuzzer(MDC.get(FUZZER_KEY));
         if (currentTestCase.isNotSkipped()) {
-            testCaseExporter.writeTestCase(currentTestCase);
+            testReportsGenerator.writeTestCase(currentTestCase);
             keepSummary(currentTestCase);
         }
         keepExecutionDetails(currentTestCase);
@@ -393,7 +389,7 @@ public class TestCaseListener {
      * @throws IOException if an I/O error occurs during the initialization process
      */
     public void initReportingPath() throws IOException {
-        testCaseExporter.initPath(null);
+        testReportsGenerator.initPath(null);
     }
 
     /**
@@ -403,7 +399,7 @@ public class TestCaseListener {
      * @throws IOException if an I/O error occurs during the initialization process
      */
     public void initReportingPath(String folder) throws IOException {
-        testCaseExporter.initPath(folder);
+        testReportsGenerator.initPath(folder);
     }
 
     /**
@@ -412,7 +408,7 @@ public class TestCaseListener {
      * @param catsTestCase the CatsTestCase to be written
      */
     public void writeIndividualTestCase(CatsTestCase catsTestCase) {
-        testCaseExporter.writeTestCase(catsTestCase);
+        testReportsGenerator.writeTestCase(catsTestCase);
     }
 
     /**
@@ -420,7 +416,7 @@ public class TestCaseListener {
      * This method delegates the task of writing helper files to the underlying test case exporter.
      */
     public void writeHelperFiles() {
-        testCaseExporter.writeHelperFiles();
+        testReportsGenerator.writeHelperFiles();
     }
 
     /**
@@ -430,11 +426,11 @@ public class TestCaseListener {
     public void endSession() {
         markPreviousPathAsDone();
         reportingArguments.enableAdditionalLoggingIfSummary();
-        testCaseExporter.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
-        testCaseExporter.writeHelperFiles();
-        testCaseExporter.writeErrorsByReason(testCaseSummaryDetails);
-        testCaseExporter.writePerformanceReport(testCaseExecutionDetails);
-        testCaseExporter.printExecutionDetails(executionStatisticsListener);
+        testReportsGenerator.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
+        testReportsGenerator.writeHelperFiles();
+        testReportsGenerator.writeErrorsByReason(testCaseSummaryDetails);
+        testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
+        testReportsGenerator.printExecutionDetails(executionStatisticsListener);
         writeRecordedErrorsIfPresent();
     }
 

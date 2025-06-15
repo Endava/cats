@@ -10,8 +10,8 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.CatsUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -53,7 +53,7 @@ class TemplateFuzzerTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         stopArguments = Mockito.mock(StopArguments.class);
         templateFuzzer = new TemplateFuzzer(serviceCaller, testCaseListener, userArguments, matchArguments, stopArguments, mutators, executionStatisticsListener);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         Mockito.doNothing().when(testCaseListener).notifySummaryObservers(Mockito.any());
         CatsUtil.setCatsLogLevel("SEVERE");//we do this in order to avoid surefire breaking due to \uFFFe
     }

@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.JsonUtils;
 import com.google.gson.JsonElement;
 import io.quarkus.test.junit.QuarkusTest;
@@ -40,7 +41,7 @@ class NewFieldsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         newFieldsFuzzer = new NewFieldsFuzzer(serviceCaller, testCaseListener);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
     @Test

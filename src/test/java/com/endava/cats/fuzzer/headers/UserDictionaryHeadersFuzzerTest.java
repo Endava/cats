@@ -7,8 +7,8 @@ import com.endava.cats.fuzzer.executor.HeadersIteratorExecutor;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -38,7 +38,7 @@ class UserDictionaryHeadersFuzzerTest {
         userArguments = Mockito.mock(UserArguments.class);
         matchArguments = Mockito.mock(MatchArguments.class);
         prettyLogger = Mockito.mock(PrettyLogger.class);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         HeadersIteratorExecutor headersIteratorExecutor = new HeadersIteratorExecutor(serviceCaller, testCaseListener, matchArguments, Mockito.mock(FilterArguments.class));
         userDictionaryHeadersFuzzer = new UserDictionaryHeadersFuzzer(headersIteratorExecutor, matchArguments, userArguments);
         ReflectionTestUtils.setField(userDictionaryHeadersFuzzer, "logger", prettyLogger);

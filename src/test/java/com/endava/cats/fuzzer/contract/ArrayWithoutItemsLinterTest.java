@@ -4,9 +4,8 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
-import com.endava.cats.report.TestCaseExporter;
-import com.endava.cats.report.TestCaseExporterHtmlJs;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -16,13 +15,10 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
-import jakarta.enterprise.inject.Instance;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import java.util.stream.Stream;
 
 @QuarkusTest
 class ArrayWithoutItemsLinterTest {
@@ -31,10 +27,7 @@ class ArrayWithoutItemsLinterTest {
 
     @BeforeEach
     void setup() {
-        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
-        TestCaseExporter exporter = Mockito.mock(TestCaseExporterHtmlJs.class);
-        Mockito.when(exporters.stream()).thenReturn(Stream.of(exporter));
-        testCaseListener = Mockito.spy(new TestCaseListener(null, Mockito.mock(ExecutionStatisticsListener.class), exporters,
+        testCaseListener = Mockito.spy(new TestCaseListener(null, Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         linter = new ArrayWithoutItemsLinter(testCaseListener);
     }

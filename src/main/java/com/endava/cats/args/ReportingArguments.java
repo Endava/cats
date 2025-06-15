@@ -51,8 +51,8 @@ public class ReportingArguments {
     private boolean timestampReports;
 
     @CommandLine.Option(names = {"--reportFormat"},
-            description = "The format of the CATS report. Default: @|bold,underline ${DEFAULT-VALUE}|@. For example, the @|bold,underline HTML_ONLY|@ report format does not contain any Javascript. This is useful for large number of tests, as the page will render faster and also in CI environments due to Javascript content security policies")
-    private ReportFormat reportFormat = ReportFormat.HTML_JS;
+            description = "A list of formats of the CATS report. Default: @|bold,underline ${DEFAULT-VALUE}|@. For example, the @|bold,underline HTML_ONLY|@ report format does not contain any Javascript. This is useful for large number of tests, as the page will render faster and also in CI environments due to Javascript content security policies", split = ",")
+    private List<ReportFormat> reportFormat = List.of(ReportFormat.HTML_JS);
 
     @CommandLine.Option(names = {"-o", "--output"},
             description = "The output folder of the CATS report. Default: @|bold,underline cats-report|@ in the current directory")

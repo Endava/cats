@@ -7,6 +7,7 @@ import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -32,7 +33,7 @@ class NullValuesInFieldsFuzzerTest {
         filterArguments = Mockito.mock(FilterArguments.class);
         filesArguments = Mockito.mock(FilesArguments.class);
         nullValuesInFieldsFuzzer = new NullValuesInFieldsFuzzer(null, testCaseListener, filesArguments, filterArguments);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
     @Test

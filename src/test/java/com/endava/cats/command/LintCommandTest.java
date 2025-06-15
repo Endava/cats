@@ -3,8 +3,8 @@ package com.endava.cats.command;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.report.ExecutionStatisticsListener;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import jakarta.inject.Inject;
@@ -36,7 +36,7 @@ class LintCommandTest {
         ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
         ReflectionTestUtils.setField(lintCommand, "catsCommand", catsCommand);
         ReflectionTestUtils.setField(lintCommand, "skipLinters", Collections.emptyList());
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
 
     }
 

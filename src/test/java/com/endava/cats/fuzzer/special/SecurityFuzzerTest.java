@@ -7,8 +7,8 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.CatsDSLWords;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -48,7 +48,7 @@ class SecurityFuzzerTest {
         filesArguments = new FilesArguments();
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, testCaseListener);
         securityFuzzer = new SecurityFuzzer(filesArguments, customFuzzerUtil);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
     @Test

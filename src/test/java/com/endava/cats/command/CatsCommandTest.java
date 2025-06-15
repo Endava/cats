@@ -13,6 +13,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.VersionChecker;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
@@ -55,7 +56,7 @@ class CatsCommandTest {
         Mockito.when(filterArguments.getHttpMethods()).thenReturn(HttpMethod.restMethods());
         ReflectionTestUtils.setField(reportingArguments, "verbosity", ReportingArguments.Verbosity.DETAILED);
         ReflectionTestUtils.setField(catsMain, "spec", Mockito.mock(CommandLine.Model.CommandSpec.class));
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
     @Test

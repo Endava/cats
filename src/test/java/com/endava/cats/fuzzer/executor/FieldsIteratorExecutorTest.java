@@ -9,6 +9,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.strategy.FuzzingStrategy;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -44,7 +45,7 @@ class FieldsIteratorExecutorTest {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         matchArguments = Mockito.mock(MatchArguments.class);
         filesArguments = Mockito.mock(FilesArguments.class);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
 
         fieldsIteratorExecutor = new FieldsIteratorExecutor(serviceCaller, testCaseListener, matchArguments, filesArguments);
     }

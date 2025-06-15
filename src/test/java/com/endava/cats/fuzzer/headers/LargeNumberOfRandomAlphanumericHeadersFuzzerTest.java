@@ -7,8 +7,8 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.media.StringSchema;
@@ -37,7 +37,7 @@ class LargeNumberOfRandomAlphanumericHeadersFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.getRandomHeadersNumber()).thenReturn(10000);
         largeNumberOfRandomAlphanumericHeadersFuzzer = new LargeNumberOfRandomAlphanumericHeadersFuzzer(simpleExecutor, testCaseListener, processingArguments);

@@ -4,8 +4,8 @@ package com.endava.cats.fuzzer.headers;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -26,7 +26,7 @@ class LargeNumberOfRandomHeadersFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         ProcessingArguments processingArguments = Mockito.mock(ProcessingArguments.class);
         Mockito.when(processingArguments.getRandomHeadersNumber()).thenReturn(10000);
         largeNumberOfRandomHeadersFuzzer = new LargeNumberOfRandomHeadersFuzzer(simpleExecutor, testCaseListener, processingArguments);

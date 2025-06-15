@@ -5,8 +5,8 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.CatsDSLWords;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
@@ -46,7 +46,7 @@ class FunctionalFuzzerTest {
         filesArguments = new FilesArguments();
         customFuzzerUtil = new CustomFuzzerUtil(serviceCaller, testCaseListener);
         functionalFuzzer = new FunctionalFuzzer(filesArguments, customFuzzerUtil, Mockito.mock(TestCaseListener.class));
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
     }
 
     @Test

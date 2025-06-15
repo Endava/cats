@@ -6,14 +6,13 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponses;
-import jakarta.enterprise.inject.Instance;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,6 @@ import org.mockito.Mockito;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 @QuarkusTest
 class PathNounsLinterTest {
@@ -33,9 +31,7 @@ class PathNounsLinterTest {
 
     @BeforeEach
     void setup() {
-        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
-        Mockito.when(exporters.stream()).thenReturn(Stream.of(Mockito.mock(TestCaseExporter.class)));
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         pathNounsLinterFuzzer = new PathNounsLinter(testCaseListener);
     }

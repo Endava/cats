@@ -7,10 +7,9 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.ExecutionStatisticsListener;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,8 +18,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.stream.Stream;
 
 @QuarkusTest
 class HeadersCaseLinterTest {
@@ -33,9 +30,7 @@ class HeadersCaseLinterTest {
 
     @BeforeEach
     void setup() {
-        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
-        Mockito.when(exporters.stream()).thenReturn(Stream.of(Mockito.mock(TestCaseExporter.class)));
-        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), exporters,
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
                 Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         headersCaseLinterFuzzer = new HeadersCaseLinter(testCaseListener, namingArguments);
         ReflectionTestUtils.setField(namingArguments, "headersNaming", NamingArguments.Naming.HTTP_HEADER);

@@ -21,7 +21,6 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.StringSchema;
-import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
@@ -43,7 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Stream;
 
 @QuarkusTest
 class TestCaseListenerTest {
@@ -58,7 +56,7 @@ class TestCaseListenerTest {
 
     private PrettyLogger logger;
     private Fuzzer fuzzer;
-    private TestCaseExporter testCaseExporter;
+    private TestReportsGenerator testReportsGenerator;
 
 
     @BeforeEach
@@ -66,14 +64,11 @@ class TestCaseListenerTest {
         logger = Mockito.mock(PrettyLogger.class);
         fuzzer = Mockito.mock(Fuzzer.class);
         reportingArguments = Mockito.mock(ReportingArguments.class);
-        testCaseExporter = Mockito.mock(TestCaseExporterHtmlJs.class);
-        Mockito.when(reportingArguments.getReportFormat()).thenReturn(ReportingArguments.ReportFormat.HTML_JS);
-        Mockito.when(testCaseExporter.reportFormat()).thenReturn(ReportingArguments.ReportFormat.HTML_JS);
+        testReportsGenerator = Mockito.mock(TestReportsGenerator.class);
+        Mockito.when(reportingArguments.getReportFormat()).thenReturn(List.of(ReportingArguments.ReportFormat.HTML_JS));
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         ignoreArguments = Mockito.mock(IgnoreArguments.class);
-        Instance<TestCaseExporter> exporters = Mockito.mock(Instance.class);
-        Mockito.when(exporters.stream()).thenReturn(Stream.of(testCaseExporter));
-        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, exporters, ignoreArguments, reportingArguments);
+        testCaseListener = new TestCaseListener(catsGlobalContext, executionStatisticsListener, testReportsGenerator, ignoreArguments, reportingArguments);
         catsGlobalContext.getDiscriminators().clear();
         catsGlobalContext.getFuzzersConfiguration().clear();
     }
@@ -84,21 +79,12 @@ class TestCaseListenerTest {
     }
 
     @Test
-    void shouldNotCallInitPathWhenReplayTests() {
-        ReflectionTestUtils.setField(testCaseListener, "appName", "CATS");
-        testCaseListener.startSession();
-
-        Mockito.verify(testCaseExporter, Mockito.times(1)).reportFormat();
-        Mockito.verifyNoMoreInteractions(testCaseExporter);
-    }
-
-    @Test
     void givenAFunction_whenExecutingATestCase_thenTheCorrectContextIsCreatedAndTheTestCaseIsWrittenToFile() {
         testCaseListener.createAndExecuteTest(logger, fuzzer, () -> {
         }, FuzzingData.builder().build());
 
         Assertions.assertThat(testCaseListener.testCaseSummaryDetails.getFirst()).isNotNull();
-        Mockito.verify(testCaseExporter).writeTestCase(Mockito.any());
+        Mockito.verify(testReportsGenerator).writeTestCase(Mockito.any());
     }
 
     @Test
@@ -127,8 +113,8 @@ class TestCaseListenerTest {
         testCaseListener.startSession();
         testCaseListener.endSession();
 
-        Mockito.verify(testCaseExporter, Mockito.times(1)).writeHelperFiles();
-        Mockito.verify(testCaseExporter, Mockito.times(1)).writeSummary(Mockito.anyList(), Mockito.any());
+        Mockito.verify(testReportsGenerator, Mockito.times(1)).writeHelperFiles();
+        Mockito.verify(testReportsGenerator, Mockito.times(1)).writeSummary(Mockito.anyList(), Mockito.any());
     }
 
     @Test

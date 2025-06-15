@@ -7,6 +7,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import org.assertj.core.api.Assertions;
@@ -29,7 +30,7 @@ class ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzerTest {
     @BeforeEach
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer = new ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer(serviceCaller, testCaseListener, Mockito.mock(FilesArguments.class));
     }
 

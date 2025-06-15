@@ -6,6 +6,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.Operation;
@@ -34,7 +35,7 @@ class HttpMethodsFuzzerTest {
     void setup() {
         serviceCaller = Mockito.mock(ServiceCaller.class);
         httpMethodsFuzzer = new HttpMethodsFuzzer(httpMethodFuzzerUtil);
-        ReflectionTestUtils.setField(testCaseListener, "testCaseExporter", Mockito.mock(TestCaseExporter.class));
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         SimpleExecutor simpleExecutor = new SimpleExecutor(testCaseListener, serviceCaller);
         ReflectionTestUtils.setField(httpMethodFuzzerUtil, "simpleExecutor", simpleExecutor);
     }
