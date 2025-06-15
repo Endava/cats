@@ -99,11 +99,11 @@ public class NamingArguments {
 
     private static Map<String, List<String>> defaultVerbMappings() {
         return Map.of(
-                "get", List.of("get", "fetch", "list", "retrieve", "find"),
-                "post", List.of("create", "add", "post", "insert", "push"),
-                "put", List.of("update", "replace", "put", "modify", "set"),
-                "delete", List.of("delete", "remove", "destroy"),
-                "patch", List.of("patch", "modify", "update", "alter", "change")
+                "get", List.of("get", "fetch", "list", "retrieve", "find", "read", "query", "search", "load", "use", "obtain", "acquire"),
+                "post", List.of("create", "add", "post", "insert", "push", "submit", "send", "upsert", "do", "execute", "trigger", "perform", "process", "invoke", "call", "start", "initiate"),
+                "put", List.of("update", "replace", "put", "modify", "set", "change", "alter", "upsert", "adjust", "reconfigure", "rebuild", "recreate", "refresh", "reinitialize"),
+                "delete", List.of("delete", "remove", "destroy", "purge", "drop", "erase", "clear", "discard", "deactivate", "uninstall", "withdraw", "revoke"),
+                "patch", List.of("patch", "modify", "update", "alter", "change", "set", "upsert", "adjust", "edit", "revise", "tweak", "refine", "improve")
         );
     }
 

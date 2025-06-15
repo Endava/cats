@@ -55,25 +55,26 @@ class OperationIdVerbPrefixLinterTest {
         operation.setOperationId(operationId);
         Mockito.when(pathItem.getGet()).thenReturn(operation);
 
-        FuzzingData data = FuzzingData.builder().pathItem(pathItem).method(HttpMethod.GET).build();
+        FuzzingData data = FuzzingData.builder().pathItem(pathItem).path("/test").method(HttpMethod.GET).build();
         operationIdVerbPrefixLinterFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("OperationId prefix mismatch"),
                 Mockito.eq("OperationId [{}] does not start with any allowed prefix {}"), Mockito.eq(operationId), Mockito.any());
     }
 
-    @Test
-    void shouldReportInfo() {
+    @ParameterizedTest
+    @CsvSource(value = {"getPeople,/test", "compressPeople,/compress", "cancel,/cancel-tokens"})
+    void shouldReportInfo(String operationId, String path) {
         PathItem pathItem = Mockito.mock(PathItem.class);
         Operation operation = new Operation();
-        operation.setOperationId("getPeople");
+        operation.setOperationId(operationId);
         Mockito.when(pathItem.getGet()).thenReturn(operation);
 
-        FuzzingData data = FuzzingData.builder().pathItem(pathItem).method(HttpMethod.GET).build();
+        FuzzingData data = FuzzingData.builder().pathItem(pathItem).path(path).method(HttpMethod.GET).build();
         operationIdVerbPrefixLinterFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(),
-                Mockito.eq("OperationId [{}] uses an allowed prefix"), Mockito.eq("getPeople"));
+                Mockito.eq("OperationId [{}] uses an allowed prefix"), Mockito.eq(operationId));
     }
 
     @Test
@@ -85,7 +86,7 @@ class OperationIdVerbPrefixLinterTest {
         operation.setOperationId("getPeople");
         Mockito.when(pathItem.getGet()).thenReturn(operation);
 
-        FuzzingData data = FuzzingData.builder().pathItem(pathItem).method(HttpMethod.GET).build();
+        FuzzingData data = FuzzingData.builder().pathItem(pathItem).path("/test").method(HttpMethod.GET).build();
         operationIdVerbPrefixLinterFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).reportResultError(Mockito.any(), Mockito.any(), Mockito.eq("OperationId prefix mismatch"),

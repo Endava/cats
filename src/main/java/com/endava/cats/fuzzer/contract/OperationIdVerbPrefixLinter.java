@@ -39,7 +39,9 @@ public class OperationIdVerbPrefixLinter extends BaseLinter {
 
         String operationId = operation.getOperationId();
 
-        if (StringUtils.isBlank(operationId) || doesNotMatchAllowedPrefixes(allowedPrefixes, operationId)) {
+        String lastPartOfPath = data.getPath().substring(data.getPath().lastIndexOf('/') + 1);
+
+        if (StringUtils.isBlank(operationId) || doesNotMatchAllowedPrefixes(allowedPrefixes, operationId, lastPartOfPath)) {
             testCaseListener.reportResultError(log, data, "OperationId prefix mismatch",
                     "OperationId [{}] does not start with any allowed prefix {}", operationId, allowedPrefixes);
         } else {
@@ -47,9 +49,13 @@ public class OperationIdVerbPrefixLinter extends BaseLinter {
         }
     }
 
-    private static boolean doesNotMatchAllowedPrefixes(List<String> allowedPrefixes, String operationId) {
-        return allowedPrefixes.stream()
+    private static boolean doesNotMatchAllowedPrefixes(List<String> allowedPrefixes, String operationId, String lastPartOfPath) {
+        boolean doesNotMatchPrefixes = allowedPrefixes.stream()
                 .noneMatch(p -> operationId.toLowerCase(Locale.ROOT).startsWith(p.toLowerCase(Locale.ROOT)));
+        boolean pathDoesntStartsWithOperationId = !lastPartOfPath.toLowerCase(Locale.ROOT).startsWith(operationId.toLowerCase(Locale.ROOT));
+        boolean operationIsDoesntStartsWithPath = !operationId.toLowerCase(Locale.ROOT).startsWith(lastPartOfPath.toLowerCase(Locale.ROOT));
+
+        return doesNotMatchPrefixes && pathDoesntStartsWithOperationId && operationIsDoesntStartsWithPath;
     }
 
     @Override
