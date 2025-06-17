@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  * It avoids cyclic dependencies by tracking visited files and logs any errors or warnings
  * encountered during the process.
  */
-public class OpenApiRefExtractor {
+public abstract class OpenApiRefExtractor {
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(OpenApiRefExtractor.class);
     private static final Pattern REF_PATTERN = Pattern.compile("\\$ref:\\s*['\"]?\\s*([^'\"\\s]+)['\"]?");
     private static final Pattern FILE_EXTENSION_PATTERN = Pattern.compile("\\.(ya?ml|json)$", Pattern.CASE_INSENSITIVE);

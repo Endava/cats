@@ -58,8 +58,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(2);
-        assertThat(result).contains("schema", "NestedSchema");
+        assertThat(result).hasSize(2).contains("schema", "NestedSchema");
     }
 
     @Test
@@ -76,8 +75,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(5);
-        assertThat(result).contains("User", "Pet", "SimpleSchema", "ReauthorisationBody", "InvalidRequestGenericResponse");
+        assertThat(result).hasSize(5).contains("User", "Pet", "SimpleSchema", "ReauthorisationBody", "InvalidRequestGenericResponse");
     }
 
     @Test
@@ -108,8 +106,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(4);
-        assertThat(result).contains("external", "LocalSchema", "UserModel", "InternalRef");
+        assertThat(result).hasSize(4).contains("external", "LocalSchema", "UserModel", "InternalRef");
     }
 
     @Test
@@ -128,8 +125,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(2);
-        assertThat(result).contains("cyclic1", "cyclic2");
+        assertThat(result).hasSize(2).contains("cyclic1", "cyclic2");
     }
 
     @Test
@@ -149,8 +145,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(4);
-        assertThat(result).contains("single-quote", "double-quote", "no-quote", "spaced");
+        assertThat(result).hasSize(4).contains("single-quote", "double-quote", "no-quote", "spaced");
     }
 
     @Test
@@ -170,9 +165,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(3);
-        assertThat(result).contains("schema", "config", "data");
-        assertThat(result).doesNotContain("ignored");
+        assertThat(result).hasSize(3).contains("schema", "config", "data").doesNotContain("ignored");
     }
 
     @Test
@@ -194,8 +187,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(2);
-        assertThat(result).contains("non-existent", "LocalSchema");
+        assertThat(result).hasSize(2).contains("non-existent", "LocalSchema");
     }
 
     @Test
@@ -236,8 +228,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(5);
-        assertThat(result).contains("address", "200", "0", "single", "segment");
+        assertThat(result).hasSize(5).contains("address", "200", "0", "single", "segment");
     }
 
     @Test
@@ -257,8 +248,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(2);
-        assertThat(result).contains("ErrorResponse", "BaseError");
+        assertThat(result).hasSize(2).contains("ErrorResponse", "BaseError");
     }
 
     @Test
@@ -278,8 +268,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(schemaInSubDir.toString());
 
-        assertThat(result).hasSize(2);
-        assertThat(result).contains("shared", "local");
+        assertThat(result).hasSize(2).contains("shared", "local");
     }
 
     @Test
@@ -295,8 +284,7 @@ class OpenApiRefExtractorTest {
         try {
             Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-            assertThat(result).hasSize(1);
-            assertThat(result).contains("test");
+            assertThat(result).hasSize(1).contains("test");
         } finally {
             // Reset permissions so the file can be deleted
             file.setReadable(true, false);
@@ -337,8 +325,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(3);
-        assertThat(result).contains("schema", "config", "data");
+        assertThat(result).hasSize(3).contains("schema", "config", "data");
     }
 
     @Test
@@ -361,8 +348,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(2);
-        assertThat(result).contains("spaced-file", "pointer");
+        assertThat(result).hasSize(2).contains("spaced-file", "pointer");
     }
 
     @Test
@@ -377,8 +363,7 @@ class OpenApiRefExtractorTest {
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
-        assertThat(result).hasSize(4);
-        assertThat(result).contains("User_Name", "User-Name", "User.Name", "User123");
+        assertThat(result).hasSize(4).contains("User_Name", "User-Name", "User.Name", "User123");
     }
 
     @Test
