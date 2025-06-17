@@ -23,6 +23,7 @@ import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.OpenApiRefExtractor;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionChecker;
 import com.endava.cats.util.VersionProvider;
@@ -37,11 +38,8 @@ import org.fusesource.jansi.Ansi;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +49,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
@@ -119,7 +115,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     private final PrettyLogger logger;
     private static final String SEPARATOR = "-".repeat(ConsoleUtils.getConsoleColumns(22));
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static final Pattern REF_PATTERN = Pattern.compile("#/components/(schemas|responses|examples|parameters|headers|requestBodies)/([a-zA-Z0-9_.-]+)(/.*)?");
 
     @Inject
     FuzzingDataFactory fuzzingDataFactory;
@@ -295,29 +290,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size(),
                 filterArguments.getPathsToRun(openAPI).size(), openAPI.getPaths().size());
 
-        Set<String> refs = this.extractRefsFromOpenAPI();
+        Set<String> refs = OpenApiRefExtractor.extractRefsFromOpenAPI(apiArguments.getContract());
         globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration,
                 filesArguments.getErrorLeaksKeywordsList(), refs);
 
         logger.debug("Fuzzers custom configuration: {}", globalContext.getFuzzersConfiguration());
         logger.debug("Schemas: {}", globalContext.getSchemaMap().keySet());
-    }
-
-    private Set<String> extractRefsFromOpenAPI() {
-        Set<String> referencedSchemas = new HashSet<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(apiArguments.getContract()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                Matcher matcher = REF_PATTERN.matcher(line);
-                while (matcher.find()) {
-                    referencedSchemas.add(matcher.group(2));
-                }
-            }
-        } catch (IOException e) {
-            logger.error("Error reading OpenAPI contract: {}", e.getMessage());
-            return Set.of();
-        }
-        return referencedSchemas;
     }
 
     void startFuzzing(OpenAPI openAPI) {
