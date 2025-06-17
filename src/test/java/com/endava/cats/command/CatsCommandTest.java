@@ -11,7 +11,6 @@ import com.endava.cats.fuzzer.contract.PathTagsLinter;
 import com.endava.cats.fuzzer.http.CheckDeletedResourcesNotAvailableFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.report.ExecutionStatisticsListener;
-import com.endava.cats.report.TestCaseExporter;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
 import com.endava.cats.util.VersionChecker;

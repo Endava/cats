@@ -1063,9 +1063,9 @@ class FuzzingDataFactoryTest {
                     .isTrue();
         }
 
-        Assertions.assertThat(uniqueValues.size())
+        Assertions.assertThat(uniqueValues)
                 .as("Status array contains duplicate elements.")
-                .isEqualTo(statusNode.size());
+                .hasSize(statusNode.size());
     }
 
     @Test

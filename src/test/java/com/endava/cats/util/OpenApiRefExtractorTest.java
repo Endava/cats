@@ -135,10 +135,12 @@ class OpenApiRefExtractorTest {
     @Test
     void shouldExtractRefsFromOpenAPIDifferentQuoteStyles() throws IOException {
         Files.write(mainFile,
-                ("$ref: 'single-quote.yaml'\n" +
-                        "$ref: \"double-quote.yaml\"\n" +
-                        "$ref: no-quote.yaml\n" +
-                        "$ref:    spaced.yaml   \n").getBytes());
+                ("""
+                        $ref: 'single-quote.yaml'
+                        $ref: "double-quote.yaml"
+                        $ref: no-quote.yaml
+                        $ref:    spaced.yaml  \s
+                        """).getBytes());
 
         Files.write(tempDir.resolve("single-quote.yaml"), "content".getBytes());
         Files.write(tempDir.resolve("double-quote.yaml"), "content".getBytes());
@@ -154,10 +156,12 @@ class OpenApiRefExtractorTest {
     @Test
     void shouldExtractRefsFromOpenAPIVariousFileExtensions() throws IOException {
         Files.write(mainFile,
-                ("$ref: 'schema.yaml'\n" +
-                        "$ref: 'config.yml'\n" +
-                        "$ref: 'data.json'\n" +
-                        "$ref: 'ignored.txt'\n").getBytes());
+                ("""
+                        $ref: 'schema.yaml'
+                        $ref: 'config.yml'
+                        $ref: 'data.json'
+                        $ref: 'ignored.txt'
+                        """).getBytes());
 
         Files.write(tempDir.resolve("schema.yaml"), "content".getBytes());
         Files.write(tempDir.resolve("config.yml"), "content".getBytes());
@@ -183,8 +187,10 @@ class OpenApiRefExtractorTest {
     @Test
     void shouldExtractRefsFromOpenAPINonExistentReferencedFile() throws IOException {
         Files.write(mainFile,
-                ("$ref: 'non-existent.yaml'\n" +
-                        "$ref: '#/LocalSchema'\n").getBytes());
+                ("""
+                        $ref: 'non-existent.yaml'
+                        $ref: '#/LocalSchema'
+                        """).getBytes());
 
         Set<String> result = OpenApiRefExtractor.extractRefsFromOpenAPI(mainFile.toString());
 
