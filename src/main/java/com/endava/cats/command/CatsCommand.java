@@ -19,6 +19,7 @@ import com.endava.cats.fuzzer.special.FunctionalFuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.openapi.handler.api.SchemaWalker;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -176,6 +177,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     CatsGlobalContext globalContext;
 
     @Inject
+    SchemaWalker schemaWalker;
+
+    @Inject
     VersionChecker versionChecker;
 
     @Getter
@@ -245,9 +249,14 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         testCaseListener.initReportingPath();
         this.printConfiguration(openAPI);
         this.initGlobalData(openAPI);
+        this.initSchemaWalker(openAPI);
         testCaseListener.renderFuzzingHeader();
         this.startFuzzing(openAPI);
         this.executeCustomFuzzer();
+    }
+
+    private void initSchemaWalker(OpenAPI openAPI) {
+        schemaWalker.initHandlers(openAPI);
     }
 
     private void checkOpenAPI(OpenAPI openAPI) {

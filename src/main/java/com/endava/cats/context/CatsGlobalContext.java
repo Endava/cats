@@ -65,6 +65,7 @@ public class CatsGlobalContext {
     @Setter
     private OpenAPI openAPI;
 
+
     /**
      * Returns the expected HTTP response code from the --fuzzConfig file
      *
@@ -86,6 +87,7 @@ public class CatsGlobalContext {
     public void init(OpenAPI openAPI, List<String> contentType, Properties fuzzersConfiguration, CatsConfiguration catsConfiguration,
                      Set<String> errorLeaksKeywords, Set<String> refs) {
         Map<String, Schema> allSchemasFromOpenApi = OpenApiUtils.getSchemas(openAPI, contentType);
+
         this.getSchemaMap().putAll(allSchemasFromOpenApi);
         this.getSchemaMap().put(NoMediaType.EMPTY_BODY, NoMediaType.EMPTY_BODY_SCHEMA);
         this.getExampleMap().putAll(OpenApiUtils.getExamples(openAPI));
