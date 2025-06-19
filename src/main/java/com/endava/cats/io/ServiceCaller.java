@@ -65,6 +65,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -686,10 +687,13 @@ public class ServiceCaller {
             Map<String, Object> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
 
-            Map<String, Object> refDataWithoutAdditionalProperties = refDataForCurrentPath.entrySet()
-                    .stream()
-                    .filter(stringStringEntry -> !stringStringEntry.getKey().matches(ADDITIONAL_PROPERTIES))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            final Object substituteForNull = "SET_TO_NULL";
+            Map<String, Object> refDataWithoutAdditionalProperties =
+                    refDataForCurrentPath.entrySet().stream()
+                            .filter(e -> !e.getKey().matches(ADDITIONAL_PROPERTIES))
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    e -> Objects.requireNonNullElse(e.getValue(), substituteForNull)));
             String payload = data.getPayload();
 
             /*this will override refData for DELETE requests in order to provide valid entities that will get deleted*/
@@ -699,6 +703,9 @@ public class ServiceCaller {
                 Object refDataValue = entry.getValue();
                 if (refDataValue instanceof String str) {
                     refDataValue = CatsDSLParser.parseAndGetResult(str, Map.of(Parser.REQUEST, data.getPayload()));
+                }
+                if (substituteForNull.equals(String.valueOf(refDataValue))) {
+                    refDataValue = null;
                 }
                 try {
                     if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
