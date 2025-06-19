@@ -43,8 +43,6 @@ public abstract class AbstractRequestBodyLinter extends BaseLinter {
             }
         }
 
-        super.addDefaultsForPathAgnosticFuzzers();
-
         if (missing) {
             testCaseListener.reportResultWarn(
                     log,
@@ -59,7 +57,7 @@ public abstract class AbstractRequestBodyLinter extends BaseLinter {
 
     @Override
     protected String runKey(FuzzingData data) {
-        return data.getPath();
+        return data.getPath() + data.getMethod();
     }
 
 
