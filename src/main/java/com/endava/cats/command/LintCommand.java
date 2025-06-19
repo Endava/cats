@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.ConfigOptions;
@@ -73,6 +74,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
         catsCommand.filterArguments.getSkipFuzzers().addAll(Optional.ofNullable(skipLinters).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getSkipPaths().addAll(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
+        catsCommand.filterArguments.setTotalCountType(FilterArguments.TotalCountType.LINTERS);
         catsCommand.processingArguments.setLimitXxxOfCombinations(6);
         namingArguments.loadVerbMapFile();
         catsCommand.run();

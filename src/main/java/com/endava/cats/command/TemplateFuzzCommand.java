@@ -193,7 +193,7 @@ public class TemplateFuzzCommand implements Runnable {
     }
 
     private void initCatsGlobalContext() {
-        CatsConfiguration catsConfiguration = new CatsConfiguration(appVersion, "template", url, List.of(httpMethod), 1, 1, 1);
+        CatsConfiguration catsConfiguration = new CatsConfiguration(appVersion, "template", url, List.of(httpMethod), 1, 1, 1, 1);
         catsGlobalContext.init(new OpenAPI().components(new Components()), List.of(), new Properties(), catsConfiguration, Set.of(), Set.of());
     }
 

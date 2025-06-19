@@ -395,4 +395,21 @@ class FilterArgumentsTest {
 
         Assertions.assertThat(filterArguments.getHttpMethods()).doesNotContain(HttpMethod.DELETE);
     }
+
+    @Test
+    void shouldCountTotalFuzzers() {
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(121);
+    }
+
+    @Test
+    void shouldCountTotalLinters() {
+        Assertions.assertThat(filterArguments.getTotalLinters()).isEqualTo(39);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"ALL,160", "FUZZERS,121", "LINTERS,39"})
+    void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
+        filterArguments.setTotalCountType(countType);
+        Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);
+    }
 }

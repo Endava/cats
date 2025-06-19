@@ -346,7 +346,7 @@ public class TestCaseListener {
     }
 
     private void renderGlobalFuzzersStatistics() {
-        String toRenderPreviousPath = "global-fuzzers" + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath("N/A");
+        String toRenderPreviousPath = "global" + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath("N/A");
         ConsoleUtils.renderNewRow(toRenderPreviousPath, '✔');
     }
 

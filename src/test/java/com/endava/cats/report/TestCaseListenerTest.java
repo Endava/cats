@@ -829,7 +829,7 @@ class TestCaseListenerTest {
         FuzzingData data = FuzzingData.builder().contractPath("/test").method(HttpMethod.POST).path("/test").build();
         Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
         ReflectionTestUtils.setField(catsGlobalContext, "catsConfiguration",
-                new CatsConfiguration("/test", "test", "test", List.of(), 1, 2, 3));
+                new CatsConfiguration("/test", "test", "test", List.of(), 1, 2, 2, 3));
         TestCaseListener testCaseListenerSpy = Mockito.spy(testCaseListener);
         testCaseListenerSpy.updateUnknownProgress(data);
         Mockito.verify(testCaseListenerSpy).notifySummaryObservers("/test");

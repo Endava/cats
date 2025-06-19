@@ -319,6 +319,7 @@ public abstract class TestCaseExporter {
             context.put("BASE_URL", catsConfiguration.basePath());
             context.put("HTTP_METHODS", catsConfiguration.httpMethods().stream().map(Enum::name).map(String::toLowerCase).toList());
             context.put("FUZZERS", catsConfiguration.fuzzers());
+            context.put("TOTAL_FUZZERS", catsConfiguration.totalFuzzers());
             context.put("PATHS", catsConfiguration.pathsToRun());
             context.put("TOTAL_PATHS", catsConfiguration.totalPaths());
         }

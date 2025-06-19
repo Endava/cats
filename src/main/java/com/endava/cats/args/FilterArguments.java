@@ -46,6 +46,13 @@ import java.util.stream.Stream;
  */
 @Singleton
 public class FilterArguments {
+
+    public enum TotalCountType {
+        FUZZERS,
+        LINTERS,
+        ALL
+    }
+
     /* local caches to avoid recompute */
     static final List<String> FUZZERS_TO_BE_RUN = new ArrayList<>();
     static final List<Fuzzer> SECOND_PHASE_FUZZERS_TO_BE_RUN = new ArrayList<>();
@@ -145,6 +152,9 @@ public class FilterArguments {
             description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> skipTags;
 
+
+    @Setter
+    private TotalCountType totalCountType = TotalCountType.FUZZERS;
 
     /**
      * Gets the list of fields to skip during processing. If the list is not set, an empty list is returned.
@@ -569,5 +579,44 @@ public class FilterArguments {
                 .stream()
                 .filter(httpMethod -> !skippedHttpMethods.contains(httpMethod))
                 .toList();
+    }
+
+    /**
+     * Returns the total number of fuzzers that will be run, excluding those that are annotated with
+     * {@link TrimAndValidate}, {@link SanitizeAndValidate}, {@link SpecialFuzzer} and {@link Linter}.
+     *
+     * @return the total number of fuzzers to be run
+     */
+    public long getTotalFuzzers() {
+        return fuzzers.stream()
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), TrimAndValidate.class) == null)
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), SanitizeAndValidate.class) == null)
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), SpecialFuzzer.class) == null)
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), Linter.class) == null)
+                .count();
+    }
+
+    /**
+     * Returns the total number of fuzzers that are annotated with {@link Linter}.
+     *
+     * @return the total number of linters to be run
+     */
+    public long getTotalLinters() {
+        return fuzzers.stream()
+                .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), Linter.class) != null)
+                .count();
+    }
+
+    /**
+     * Returns the total number of fuzzers or linters based on the {@link TotalCountType} set.
+     *
+     * @return the total number of fuzzers or linters
+     */
+    public long getTotalFuzzersOrLinters() {
+        return switch (totalCountType) {
+            case FUZZERS -> this.getTotalFuzzers();
+            case LINTERS -> this.getTotalLinters();
+            case ALL -> this.getTotalLinters() + this.getTotalFuzzers();
+        };
     }
 }
