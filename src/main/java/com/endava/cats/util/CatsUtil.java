@@ -120,12 +120,16 @@ public abstract class CatsUtil {
      */
     public static FuzzingResult justReplaceField(String payload, String jsonPropertyForReplacement, Object with) {
         if (JsonUtils.isJsonArray(payload)) {
-            jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
+            jsonPropertyForReplacement = isRootArray(jsonPropertyForReplacement) ? jsonPropertyForReplacement : JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
         }
         DocumentContext jsonDocument = JsonPath.parse(payload, GSON_CONFIGURATION);
         replaceOldValueWithNewOne(jsonPropertyForReplacement, jsonDocument, with);
 
         return new FuzzingResult(jsonDocument.jsonString(), with);
+    }
+
+    public static boolean isRootArray(String jsonPropertyForReplacement) {
+        return jsonPropertyForReplacement.equals("$") || jsonPropertyForReplacement.equals("$[*]");
     }
 
     public static void replaceOldValueWithNewOne(String jsonPropertyForReplacement, DocumentContext jsonDocument, Object valueToSet) {
