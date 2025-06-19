@@ -12,6 +12,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,5 +82,49 @@ class EmptyResponseSchemaLinterTest {
     @Test
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(emptyResponseSchemaLinterFuzzer.description()).isEqualTo("detects response schemas that define neither properties, $ref, nor structural composition (oneOf, anyOf, allOf)");
+    }
+
+    @Test
+    void shouldReportInfoWhenOperationHasNoResponses() throws Exception {
+        OpenAPI openAPI = new OpenAPIParser()
+                .readContents(Files.readString(Paths.get("src/test/resources/consistent-api.yml")), null, null)
+                .getOpenAPI();
+
+        openAPI.getPaths().get("/pets/states").getPost().setResponses(null);
+
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .method(HttpMethod.POST)
+                .pathItem(openAPI.getPaths().get("/pets/states"))
+                .build();
+
+        emptyResponseSchemaLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResultInfo(Mockito.any(), Mockito.any(),
+                        Mockito.eq("All response schemas define properties, $ref, or structural composition"));
+    }
+
+    @Test
+    void shouldReportInfoWhenOnlyIgnoredContentTypesPresent() throws Exception {
+        OpenAPI openAPI = new OpenAPIParser()
+                .readContents(Files.readString(Paths.get("src/test/resources/consistent-api.yml")), null, null)
+                .getOpenAPI();
+
+        ApiResponse api200 = openAPI.getPaths().get("/pets/states").getPost().getResponses().get("200");
+        api200.setContent(new io.swagger.v3.oas.models.media.Content()
+                .addMediaType("application/pdf", new io.swagger.v3.oas.models.media.MediaType())); // application/pdf is ignored
+
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .method(HttpMethod.POST)
+                .pathItem(openAPI.getPaths().get("/pets/states"))
+                .build();
+
+        emptyResponseSchemaLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1))
+                .reportResultInfo(Mockito.any(), Mockito.any(),
+                        Mockito.eq("All response schemas define properties, $ref, or structural composition"));
     }
 }

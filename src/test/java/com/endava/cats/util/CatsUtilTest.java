@@ -86,6 +86,22 @@ class CatsUtilTest {
     }
 
     @Test
+    void shouldReplaceArray() {
+        String json = """
+                ["test1", "test2", "test3"]
+                """;
+        String result = CatsUtil.justReplaceField(json, "$[*]", "replaced").json();
+        Assertions.assertThat(result).contains("replaced").doesNotContain("test1", "test2", "test3");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"$[*],true", "$,true", "$.field,false", "$.field[*],false", "$.field[0],false", "$.field[1].subField[*],false"})
+    void shouldTestIsRootArray(String input, boolean expected) {
+        boolean result = CatsUtil.isRootArray(input);
+        Assertions.assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
     void shouldReturnFileEmptyWhenFileNull() {
         Assertions.assertThat(CatsUtil.isFileEmpty(null)).isTrue();
     }
