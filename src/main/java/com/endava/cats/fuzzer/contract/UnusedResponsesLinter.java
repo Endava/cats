@@ -5,6 +5,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.fuzzer.contract.base.AbstractUnusedElementsLinter;
 import com.endava.cats.report.TestCaseListener;
 import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
 
 import java.util.Map;
@@ -12,7 +13,7 @@ import java.util.function.Function;
 
 @Linter
 @Singleton
-public class UnusedResponsesLinter extends AbstractUnusedElementsLinter {
+public class UnusedResponsesLinter extends AbstractUnusedElementsLinter<ApiResponse> {
 
     public UnusedResponsesLinter(TestCaseListener tcl, CatsGlobalContext catsGlobalContext) {
         super(tcl, catsGlobalContext);
@@ -24,7 +25,7 @@ public class UnusedResponsesLinter extends AbstractUnusedElementsLinter {
     }
 
     @Override
-    protected Function<Components, Map<String, ?>> getElementsFunction() {
+    protected Function<Components, Map<String, ApiResponse>> getElementsFunction() {
         return Components::getResponses;
     }
 }

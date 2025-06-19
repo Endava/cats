@@ -19,7 +19,7 @@ import java.util.function.Function;
  * Base class for linters that check for unused elements in the OpenAPI components section.
  * It detects schemas, parameters, headers, or examples that are defined but not referenced anywhere in the contract.
  */
-public abstract class AbstractUnusedElementsLinter extends BaseLinter {
+public abstract class AbstractUnusedElementsLinter<T> extends BaseLinter {
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
     private final CatsGlobalContext catsGlobalContext;
@@ -42,7 +42,7 @@ public abstract class AbstractUnusedElementsLinter extends BaseLinter {
      *
      * @return a function that takes Components and returns a map of elements.
      */
-    protected abstract Function<Components, Map<String, ?>> getElementsFunction();
+    protected abstract Function<Components, Map<String, T>> getElementsFunction();
 
     @Override
     public void process(FuzzingData data) {
