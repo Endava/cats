@@ -336,7 +336,6 @@ public class TestCaseListener {
         String prefix = ansi().fgBlue().a("(" + runPerPathListener.size() + "/" + globalContext.getCatsConfiguration().pathsToRun() + ") ").fgDefault().toString();
         String printPath = prefix + path + " " + fuzzer + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
 
-
         if (runPerPathListener.contains(path)) {
             ConsoleUtils.renderSameRow(printPath, cycle.next());
         } else {
@@ -344,6 +343,11 @@ public class TestCaseListener {
             runPerPathListener.push(path);
             ConsoleUtils.renderNewRow(printPath, cycle.next());
         }
+    }
+
+    private void renderGlobalFuzzersStatistics() {
+        String toRenderPreviousPath = "global-fuzzers" + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath("N/A");
+        ConsoleUtils.renderNewRow(toRenderPreviousPath, '✔');
     }
 
     private void markPreviousPathAsDone() {
@@ -425,6 +429,7 @@ public class TestCaseListener {
      */
     public void endSession() {
         markPreviousPathAsDone();
+        renderGlobalFuzzersStatistics();
         reportingArguments.enableAdditionalLoggingIfSummary();
         testReportsGenerator.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
         testReportsGenerator.writeHelperFiles();
