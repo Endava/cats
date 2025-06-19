@@ -52,6 +52,10 @@ public class NamingArguments {
             description = "Naming strategy for HTTP headers. Possible values @|bold,underline SNAKE|@, @|bold,underline KEBAB|@, @|bold,underline PASCAL|@, @|bold,underline CAMEL|@, @|bold,underline HTTP_HEADER|@. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Naming headersNaming = Naming.HTTP_HEADER;
 
+    @CommandLine.Option(names = {"--enumsNaming"},
+            description = "Naming strategy for enums. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private Naming enumsNaming = Naming.UPPER_UNDERSCORE;
+
     @CommandLine.Option(names = {"--operationPrefixMapFile"},
             description = "Path to the file containing operationId prefix mappings.")
     private File operationPrefixMapFile;
@@ -136,7 +140,19 @@ public class NamingArguments {
         /**
          * Represents the camelCase naming convention.
          */
-        CAMEL("^[a-z]+[A-Za-z0-9]+$", "camelCase");
+        CAMEL("^[a-z]+[A-Za-z0-9]+$", "camelCase"),
+
+        /**
+         * Represents the UPPER_UNDERSCORE naming convention.
+         * This is typically used for constants in programming languages.
+         */
+        UPPER_UNDERSCORE("^[A-Z]+(_[A-Z]+)*$", "UPPER_UNDERSCORE"),
+
+        /**
+         * Represents the lower_underscore naming convention.
+         * This is typically used for variable names in programming languages.
+         */
+        LOWER_UNDERSCORE("^[a-z]+(_[a-z]+)*$", "lower_underscore");
 
         private final Pattern pattern;
         private final String description;
