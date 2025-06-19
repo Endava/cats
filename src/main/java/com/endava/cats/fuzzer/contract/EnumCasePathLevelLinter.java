@@ -4,7 +4,7 @@ import com.endava.cats.annotations.Linter;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.fuzzer.contract.base.AbstractEnumCaseLinter;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.handler.api.SchemaWalker;
+import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
@@ -26,7 +26,7 @@ public class EnumCasePathLevelLinter extends AbstractEnumCaseLinter {
     }
 
     @Override
-    protected Map<SchemaWalker.SchemaLocation, List<String>> selectEnums(FuzzingData data) {
+    protected Map<SchemaLocation, List<String>> selectEnums(FuzzingData data) {
         return enumCollector.getEnums().entrySet().stream()
                 .filter(e -> e.getKey().method() != null
                         && e.getKey().method().equalsIgnoreCase(data.getMethod().name())

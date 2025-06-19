@@ -1,7 +1,7 @@
 package com.endava.cats.openapi.handler.collector;
 
 import com.endava.cats.openapi.handler.api.SchemaHandler;
-import com.endava.cats.openapi.handler.api.SchemaWalker;
+import com.endava.cats.openapi.handler.api.SchemaLocation;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 import lombok.Getter;
@@ -16,10 +16,10 @@ import java.util.Map;
 @Getter
 @Singleton
 public class EnumCollector implements SchemaHandler {
-    private final Map<SchemaWalker.SchemaLocation, List<String>> enums = new LinkedHashMap<>();
+    private final Map<SchemaLocation, List<String>> enums = new LinkedHashMap<>();
 
     @Override
-    public void handle(SchemaWalker.SchemaLocation schemaLocation, Schema<?> s) {
+    public void handle(SchemaLocation schemaLocation, Schema<?> s) {
         if (s.getEnum() != null && !s.getEnum().isEmpty()) {
             enums.put(schemaLocation, s.getEnum().stream().map(Object::toString).toList());
         }

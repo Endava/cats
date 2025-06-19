@@ -15,6 +15,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+/**
+ * Base class for linters that check for unused elements in the OpenAPI components section.
+ * It detects schemas, parameters, headers, or examples that are defined but not referenced anywhere in the contract.
+ */
 public abstract class AbstractUnusedElementsLinter extends BaseLinter {
 
     private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
@@ -25,8 +29,19 @@ public abstract class AbstractUnusedElementsLinter extends BaseLinter {
         this.catsGlobalContext = catsGlobalContext;
     }
 
+    /**
+     * Returns the type of element being checked (e.g., "schemas", "parameters", "headers", "examples").
+     *
+     * @return the element type as a string.
+     */
     protected abstract String getElementType();
 
+    /**
+     * Returns a function that retrieves the elements from the OpenAPI components.
+     * This function should be implemented to return the appropriate map of elements based on the type.
+     *
+     * @return a function that takes Components and returns a map of elements.
+     */
     protected abstract Function<Components, Map<String, ?>> getElementsFunction();
 
     @Override

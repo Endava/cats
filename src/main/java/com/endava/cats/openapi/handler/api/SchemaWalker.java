@@ -8,7 +8,6 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import jakarta.enterprise.inject.Instance;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 import java.util.ArrayDeque;
@@ -28,17 +27,20 @@ import java.util.stream.Stream;
 @Singleton
 public class SchemaWalker {
 
-
-    /**
-     * Triplet of schema location: path, method, and fully qualified name (FQN).
-     */
-    public record SchemaLocation(String path, String method, String fqn) {
-    }
-
-
-    @Inject
     Instance<SchemaHandler> handlers;
 
+    public SchemaWalker(Instance<SchemaHandler> handlers) {
+        this.handlers = handlers;
+    }
+
+    /**
+     * Initializes the schema handlers for the given OpenAPI document.
+     * <p>
+     * This method retrieves all available {@link SchemaHandler} instances and invokes them
+     * for each schema in the OpenAPI document, allowing custom processing of schemas.
+     *
+     * @param openAPI the OpenAPI document to walk
+     */
     public void initHandlers(OpenAPI openAPI) {
         walk(openAPI, handlers.stream().toArray(SchemaHandler[]::new));
     }
@@ -150,7 +152,7 @@ public class SchemaWalker {
             schema.getProperties().forEach((prop, sub) -> {
                 Deque<String> next = new ArrayDeque<>(path);
                 next.add(prop);
-                dfs((Schema<?>) sub, api, next, visited, handlers, url, method);
+                dfs(sub, api, next, visited, handlers, url, method);
             });
         }
 

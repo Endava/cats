@@ -12,5 +12,5 @@ public interface SchemaHandler {
      * @param schemaLocation the location of the schema in the OpenAPI document, including path, method, and fully qualified name (FQN)
      * @param schema         the actual Schema node
      */
-    void handle(SchemaWalker.SchemaLocation schemaLocation, Schema<?> schema);
+    void handle(SchemaLocation schemaLocation, Schema<?> schema);
 }

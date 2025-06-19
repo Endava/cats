@@ -88,6 +88,7 @@ public class ServiceCaller {
      * Marker for fields to be removed before calling the service.
      */
     public static final String CATS_REMOVE_FIELD = "cats_remove_field";
+    private static final Object SUBSTITUTE_FOR_NULL = "SET_TO_NULL";
     private static final String CATS_HEADER_UUID = "X-Cats-Trace-Id";
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ServiceCaller.class);
     private static final List<String> AUTH_HEADERS = Arrays.asList("authorization", "jwt", "api-key", "api_key", "apikey",
@@ -687,38 +688,19 @@ public class ServiceCaller {
             Map<String, Object> refDataForCurrentPath = filesArguments.getRefData(data.getRelativePath());
             logger.debug("Payload reference data replacement: path {} has the following reference data: {}", data.getRelativePath(), refDataForCurrentPath);
 
-            final Object substituteForNull = "SET_TO_NULL";
             Map<String, Object> refDataWithoutAdditionalProperties =
                     refDataForCurrentPath.entrySet().stream()
                             .filter(e -> !e.getKey().matches(ADDITIONAL_PROPERTIES))
                             .collect(Collectors.toMap(
                                     Map.Entry::getKey,
-                                    e -> Objects.requireNonNullElse(e.getValue(), substituteForNull)));
+                                    e -> Objects.requireNonNullElse(e.getValue(), SUBSTITUTE_FOR_NULL)));
             String payload = data.getPayload();
 
             /*this will override refData for DELETE requests in order to provide valid entities that will get deleted*/
             refDataWithoutAdditionalProperties.putAll(this.getPathParamFromCorrespondingPostIfDelete(data));
 
             for (Map.Entry<String, Object> entry : refDataWithoutAdditionalProperties.entrySet()) {
-                Object refDataValue = entry.getValue();
-                if (refDataValue instanceof String str) {
-                    refDataValue = CatsDSLParser.parseAndGetResult(str, Map.of(Parser.REQUEST, data.getPayload()));
-                }
-                if (substituteForNull.equals(String.valueOf(refDataValue))) {
-                    refDataValue = null;
-                }
-                try {
-                    if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
-                        payload = JsonUtils.deleteNode(payload, entry.getKey());
-                    } else {
-                        logger.debug("Replacing field {} with value {}", entry.getKey(), refDataValue);
-                        FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
-                        boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
-                        payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
-                    }
-                } catch (PathNotFoundException e) {
-                    logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
-                }
+                payload = replaceRefDataEntry(data, entry, payload);
             }
 
             payload = CatsUtil.setAdditionalPropertiesToPayload(refDataForCurrentPath, payload);
@@ -727,5 +709,28 @@ public class ServiceCaller {
 
             return payload;
         }
+    }
+
+    private String replaceRefDataEntry(ServiceData data, Map.Entry<String, Object> entry, String payload) {
+        Object refDataValue = entry.getValue();
+        if (refDataValue instanceof String str) {
+            refDataValue = CatsDSLParser.parseAndGetResult(str, Map.of(Parser.REQUEST, data.getPayload()));
+        }
+        if (SUBSTITUTE_FOR_NULL.equals(String.valueOf(refDataValue))) {
+            refDataValue = null;
+        }
+        try {
+            if (CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(refDataValue))) {
+                payload = JsonUtils.deleteNode(payload, entry.getKey());
+            } else {
+                logger.debug("Replacing field {} with value {}", entry.getKey(), refDataValue);
+                FuzzingStrategy fuzzingStrategy = FuzzingStrategy.replace().withData(refDataValue);
+                boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
+                payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
+            }
+        } catch (PathNotFoundException e) {
+            logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
+        }
+        return payload;
     }
 }

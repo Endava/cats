@@ -3,7 +3,7 @@ package com.endava.cats.fuzzer.contract;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.handler.api.SchemaWalker;
+import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
@@ -44,13 +44,13 @@ class EnumCasePathLevelLinterTest {
     @Test
     void shouldSelectEnumsForPathLevelComponents() {
         FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
-        SchemaWalker.SchemaLocation expectedLocation = new SchemaWalker.SchemaLocation("/testPath", "GET", null);
-        Map<SchemaWalker.SchemaLocation, List<String>> mockEnums = Map.of(
+        SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null);
+        Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 expectedLocation, List.of("ENUM_VALUE")
         );
         Mockito.when(enumCollector.getEnums()).thenReturn(mockEnums);
 
-        Map<SchemaWalker.SchemaLocation, List<String>> result = enumCasePathLevelLinter.selectEnums(data);
+        Map<SchemaLocation, List<String>> result = enumCasePathLevelLinter.selectEnums(data);
 
         Assertions.assertThat(result).containsKey(expectedLocation);
         Assertions.assertThat(result.get(expectedLocation)).contains("ENUM_VALUE");
@@ -61,7 +61,7 @@ class EnumCasePathLevelLinterTest {
         FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
         Mockito.when(enumCollector.getEnums()).thenReturn(Map.of());
 
-        Map<SchemaWalker.SchemaLocation, List<String>> result = enumCasePathLevelLinter.selectEnums(data);
+        Map<SchemaLocation, List<String>> result = enumCasePathLevelLinter.selectEnums(data);
 
         Assertions.assertThat(result).isEmpty();
     }
@@ -69,8 +69,8 @@ class EnumCasePathLevelLinterTest {
     @Test
     void shouldExecuteTestListener() {
         FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
-        SchemaWalker.SchemaLocation expectedLocation = new SchemaWalker.SchemaLocation("GET", "/testPath", null);
-        Map<SchemaWalker.SchemaLocation, List<String>> mockEnums = Map.of(
+        SchemaLocation expectedLocation = new SchemaLocation("GET", "/testPath", null);
+        Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 expectedLocation, List.of("ENUM_VALUE")
         );
         Mockito.when(enumCollector.getEnums()).thenReturn(mockEnums);

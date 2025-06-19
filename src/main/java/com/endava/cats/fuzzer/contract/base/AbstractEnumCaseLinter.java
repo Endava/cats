@@ -2,7 +2,7 @@ package com.endava.cats.fuzzer.contract.base;
 
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.openapi.handler.api.SchemaWalker;
+import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
 import com.endava.cats.report.TestCaseListener;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -43,7 +43,7 @@ public abstract class AbstractEnumCaseLinter extends BaseLinter {
                         .formatted(allowedPattern.pattern()));
         testCaseListener.addExpectedResult(log,
                 "All enum values should match the pattern %s".formatted(allowedPattern));
-        Map<SchemaWalker.SchemaLocation, List<String>> enums = selectEnums(data);
+        Map<SchemaLocation, List<String>> enums = selectEnums(data);
         if (enums.isEmpty()) {
             testCaseListener.skipTest(log, "No enums found to validate for %s".formatted(runKey(data)));
             return;
@@ -73,5 +73,5 @@ public abstract class AbstractEnumCaseLinter extends BaseLinter {
     /**
      * Subclasses provide the subset of enums they want to check.
      */
-    protected abstract Map<SchemaWalker.SchemaLocation, List<String>> selectEnums(FuzzingData data);
+    protected abstract Map<SchemaLocation, List<String>> selectEnums(FuzzingData data);
 }

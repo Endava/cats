@@ -1,7 +1,7 @@
 package com.endava.cats.openapi.handler.collector;
 
 import com.endava.cats.openapi.handler.api.SchemaHandler;
-import com.endava.cats.openapi.handler.api.SchemaWalker;
+import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.util.CatsModelUtils;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
@@ -14,10 +14,10 @@ import java.util.Map;
  */
 @Singleton
 public class StringSchemaCollector implements SchemaHandler {
-    private Map<SchemaWalker.SchemaLocation, Schema<?>> stringSchemas = new LinkedHashMap<>();
+    private Map<SchemaLocation, Schema<?>> stringSchemas = new LinkedHashMap<>();
 
     @Override
-    public void handle(SchemaWalker.SchemaLocation schemaLocation, Schema<?> schema) {
+    public void handle(SchemaLocation schemaLocation, Schema<?> schema) {
         if (CatsModelUtils.isStringSchema(schema)) {
             stringSchemas.put(schemaLocation, schema);
         }
