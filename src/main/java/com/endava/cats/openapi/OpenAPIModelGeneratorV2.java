@@ -575,8 +575,10 @@ public class OpenAPIModelGeneratorV2 {
             int arraySize = getArrayLength(property);
             Schema itemSchema = CatsModelUtils.getSchemaItems(property);
             Set<Object> itemExamples = new HashSet<>();
-           while (itemExamples.size() < arraySize) {
-                Object itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
+            Object itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
+
+            while (itemExamples.size() < arraySize && itemExample != null) {
+                itemExample = resolvePropertyToExample(propertyName + ".items", itemSchema, false);
                 itemExamples.add(itemExample);
             }
             examples.add(itemExamples);
