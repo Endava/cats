@@ -103,7 +103,7 @@ public abstract class OpenApiRefExtractor {
             return;
         }
 
-        String[] segments = pointer.substring(2).split("/");
+        String[] segments = pointer.substring(2).split("/", -1);
 
         if (segments.length == 0) {
             return;

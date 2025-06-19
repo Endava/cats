@@ -39,9 +39,9 @@ class TemplateFuzzerTest {
     @InjectSpy
     private TestCaseListener testCaseListener;
     @Inject
-    private Instance<BodyMutator> mutators;
+    Instance<BodyMutator> mutators;
     @Inject
-    private ExecutionStatisticsListener executionStatisticsListener;
+    ExecutionStatisticsListener executionStatisticsListener;
 
     private TemplateFuzzer templateFuzzer;
 
@@ -276,11 +276,12 @@ class TemplateFuzzerTest {
     @ParameterizedTest
     @CsvSource({"true", "false"})
     void shouldRunInContinuousMode(boolean nameReplace) throws Exception {
-        userArguments.setNameReplace(nameReplace);
+        Mockito.when(userArguments.isNameReplace()).thenReturn(nameReplace);
         Mockito.when(serviceCaller.callService(Mockito.any(), Mockito.any())).thenReturn(CatsResponse.empty());
         templateFuzzer.setRandom(true);
         Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
         templateFuzzer.fuzz(FuzzingData.builder()
+                .path("/test")
                 .processedPayload("""
                         {
                             "field1": "value1",

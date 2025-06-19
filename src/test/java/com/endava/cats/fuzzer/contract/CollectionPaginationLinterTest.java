@@ -71,4 +71,19 @@ class CollectionPaginationLinterTest {
     void shouldReturnMeaningfulDescription() {
         Assertions.assertThat(collectionPaginationLinterFuzzer.description()).isEqualTo("verifies that all GET operations on collection endpoints support pagination via query parameters like limit, offset, page, or cursor");
     }
+
+    @Test
+    void shouldReportInfoWhenPaginationIsSupported() throws Exception {
+        OpenAPI openAPI = new OpenAPIParser().readContents(Files.readString(Paths.get("src/test/resources/petstore_with_pagination.yaml")), null, null).getOpenAPI();
+        FuzzingData data = FuzzingData.builder()
+                .openApi(openAPI)
+                .pathItem(openAPI.getPaths().get("/pets"))
+                .path("/pets")
+                .method(HttpMethod.GET)
+                .build();
+
+        collectionPaginationLinterFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.eq("All collection GET endpoints declare pagination support"));
+    }
 }

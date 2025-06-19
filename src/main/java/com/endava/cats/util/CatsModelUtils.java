@@ -232,9 +232,9 @@ public abstract class CatsModelUtils {
         boolean isObject = "object".equalsIgnoreCase(schema.getType()) || (schema.getType() == null && schema.getProperties() != null);
         boolean hasProps = schema.getProperties() != null && !schema.getProperties().isEmpty();
         boolean hasRef = schema.get$ref() != null;
-        boolean hasComposition = schema.getAllOf() != null && !schema.getAllOf().isEmpty()
-                || schema.getAnyOf() != null && !schema.getAnyOf().isEmpty()
-                || schema.getOneOf() != null && !schema.getOneOf().isEmpty();
+        boolean hasComposition = (schema.getAllOf() != null && !schema.getAllOf().isEmpty())
+                || (schema.getAnyOf() != null && !schema.getAnyOf().isEmpty())
+                || (schema.getOneOf() != null && !schema.getOneOf().isEmpty());
 
         return isObject && !hasProps && !hasRef && !hasComposition;
     }

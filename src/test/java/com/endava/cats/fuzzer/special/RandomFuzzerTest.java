@@ -2,7 +2,6 @@ package com.endava.cats.fuzzer.special;
 
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
-import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
@@ -32,7 +31,6 @@ class RandomFuzzerTest {
     private ExecutionStatisticsListener executionStatisticsListener;
     private MatchArguments matchArguments;
     private StopArguments stopArguments;
-    private ReportingArguments reportingArguments;
     private RandomFuzzer randomFuzzer;
     private FilesArguments filesArguments;
     @Inject
@@ -42,7 +40,6 @@ class RandomFuzzerTest {
     void setup() {
         simpleExecutor = Mockito.mock(SimpleExecutor.class);
         stopArguments = Mockito.mock(StopArguments.class);
-        reportingArguments = Mockito.mock(ReportingArguments.class);
         executionStatisticsListener = Mockito.mock(ExecutionStatisticsListener.class);
         matchArguments = Mockito.mock(MatchArguments.class);
         testCaseListener = Mockito.mock(TestCaseListener.class);
@@ -139,7 +136,6 @@ class RandomFuzzerTest {
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("id"));
         Mockito.when(stopArguments.shouldStop(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(false).thenReturn(false).thenReturn(true);
-        Mockito.when(reportingArguments.isSummaryInConsole()).thenReturn(true);
         return data;
     }
 }

@@ -9,6 +9,8 @@ import io.swagger.v3.oas.models.media.Schema;
 @FunctionalInterface
 public interface SchemaHandler {
     /**
+     * Handles a schema node in the OpenAPI document.
+     *
      * @param schemaLocation the location of the schema in the OpenAPI document, including path, method, and fully qualified name (FQN)
      * @param schema         the actual Schema node
      */

@@ -5,6 +5,7 @@ import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.fuzzer.contract.PathTagsLinter;
@@ -44,6 +45,8 @@ class CatsCommandTest {
     FuzzingDataFactory fuzzingDataFactory;
     @Inject
     ProcessingArguments processingArguments;
+    @Inject
+    ConfigOptions configOptions;
     @InjectSpy
     private TestCaseListener testCaseListener;
     private FilterArguments filterArguments;

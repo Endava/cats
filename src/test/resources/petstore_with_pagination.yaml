@@ -1,0 +1,36 @@
+openapi: 3.0.1
+info:
+  title: Petstore API with Pagination
+  version: 1.0.0
+paths:
+  /pets:
+    get:
+      summary: List all pets
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of items to return
+          required: false
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          description: Offset for pagination
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A paged array of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+
