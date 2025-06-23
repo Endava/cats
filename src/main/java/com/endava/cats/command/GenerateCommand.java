@@ -79,7 +79,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
             description = "Max depth for request objects having cyclic dependencies. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int selfReferenceDepth = 4;
 
-    @CommandLine.Option(names = {"--useExampless"}, negatable = true,
+    @CommandLine.Option(names = {"--useExamples"}, negatable = true,
             description = "When set to @|bold true|@, it will use request body examples, schema examples and primitive properties examples from the OpenAPI contract when available. " +
                     "This is equivalent of using @|bold,underline --useRequestBodyExamples|@ @|bold,underline --useSchemaExamples|@ @|bold,underline --usePropertyExamples|@ @|bold,underline --useResponseBodyExamples|@." +
                     "Default: @|bold,underline ${DEFAULT-VALUE}|@")

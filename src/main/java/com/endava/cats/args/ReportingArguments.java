@@ -63,7 +63,7 @@ public class ReportingArguments {
     private boolean jsonOutput;
 
     @CommandLine.Option(names = {"--checkUpdate"}, negatable = true, defaultValue = "true", fallbackValue = "true",
-            description = "If true, it checks if there is a CATS update available and prints the release notes along with the the download link. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+            description = "If true, it checks if there is a CATS update available and prints the release notes along with the download link. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean checkUpdate = true;
 
     @CommandLine.Option(names = {"--color"}, negatable = true, defaultValue = "true", fallbackValue = "true",

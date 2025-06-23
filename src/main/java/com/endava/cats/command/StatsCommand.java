@@ -30,7 +30,7 @@ import java.util.Set;
         usageHelpAutoWidth = true,
         exitCodeOnInvalidInput = 191,
         exitCodeOnExecutionException = 192,
-        description = "Prints statistics about and OpenAPI spec file",
+        description = "Prints statistics about an OpenAPI spec file",
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:Successful program execution",
                 "@|bold 191|@:Usage error: user input for the command was incorrect",
