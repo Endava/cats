@@ -45,8 +45,8 @@ class LintCommandTest {
         ReflectionTestUtils.setField(lintCommand, "contract", "src/test/resources/petstore-empty.yml");
 
         lintCommand.run();
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).hasSize(39);
-        Mockito.verify(testCaseListener, Mockito.times(39)).afterFuzz("/pets/{id}");
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).hasSize(41);
+        Mockito.verify(testCaseListener, Mockito.times(41)).afterFuzz("/pets/{id}");
     }
 
     @Test

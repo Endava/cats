@@ -2,6 +2,7 @@ package com.endava.cats.openapi.handler.collector;
 
 import com.endava.cats.openapi.handler.api.SchemaHandler;
 import com.endava.cats.openapi.handler.api.SchemaLocation;
+import com.endava.cats.util.CatsModelUtils;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 import lombok.Getter;
@@ -20,7 +21,7 @@ public class EnumCollector implements SchemaHandler {
 
     @Override
     public void handle(SchemaLocation schemaLocation, Schema<?> s) {
-        if (s.getEnum() != null && !s.getEnum().isEmpty()) {
+        if (CatsModelUtils.isEnumSchema(s)) {
             enums.put(schemaLocation, s.getEnum().stream().map(Object::toString).toList());
         }
     }

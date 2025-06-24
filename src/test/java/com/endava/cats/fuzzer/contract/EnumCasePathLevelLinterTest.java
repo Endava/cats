@@ -7,6 +7,7 @@ import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,37 +21,39 @@ class EnumCasePathLevelLinterTest {
 
     private EnumCasePathLevelLinter enumCasePathLevelLinter;
     private EnumCollector enumCollector;
+    @Inject
+    NamingArguments namingArguments;
     private TestCaseListener testCaseListener;
 
     @BeforeEach
     void setup() {
         testCaseListener = Mockito.mock(TestCaseListener.class);
-        NamingArguments namingArguments = Mockito.mock(NamingArguments.class);
         enumCollector = Mockito.mock(EnumCollector.class);
         enumCasePathLevelLinter = new EnumCasePathLevelLinter(testCaseListener, namingArguments, enumCollector);
     }
 
     @Test
     void shouldReturnMeaningfulDescription() {
-        Assertions.assertThat(enumCasePathLevelLinter.description()).isEqualTo("Verifies enum-case consistency only for inline schemas of the current path/method.");
+        Assertions.assertThat(enumCasePathLevelLinter.description())
+                .isEqualTo("verifies enum-case consistency only for inline schemas of the current path/method");
     }
 
     @Test
     void shouldReturnRunKey() {
         FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
-        Assertions.assertThat(enumCasePathLevelLinter.runKey(data)).isEqualTo("/testPathGET");
+        enumCasePathLevelLinter.fuzz(data); // Indirectly tests runKey
+        Assertions.assertThat(enumCasePathLevelLinter.getContext().runKeyProvider().apply(data))
+                .isEqualTo("/testPathGET");
     }
 
     @Test
-    void shouldSelectEnumsForPathLevelComponents() {
-        FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
-        SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null);
+    void shouldCollectEnumsForPathLevelComponents() {SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null);
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 expectedLocation, List.of("ENUM_VALUE")
         );
         Mockito.when(enumCollector.getEnums()).thenReturn(mockEnums);
 
-        Map<SchemaLocation, List<String>> result = enumCasePathLevelLinter.selectEnums(data);
+        Map<SchemaLocation, List<String>> result = enumCasePathLevelLinter.getContext().collector().get();
 
         Assertions.assertThat(result).containsKey(expectedLocation);
         Assertions.assertThat(result.get(expectedLocation)).contains("ENUM_VALUE");
@@ -58,10 +61,9 @@ class EnumCasePathLevelLinterTest {
 
     @Test
     void shouldHandleEmptyEnums() {
-        FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
         Mockito.when(enumCollector.getEnums()).thenReturn(Map.of());
 
-        Map<SchemaLocation, List<String>> result = enumCasePathLevelLinter.selectEnums(data);
+        Map<SchemaLocation, List<String>> result = enumCasePathLevelLinter.getContext().collector().get();
 
         Assertions.assertThat(result).isEmpty();
     }
@@ -69,7 +71,7 @@ class EnumCasePathLevelLinterTest {
     @Test
     void shouldExecuteTestListener() {
         FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
-        SchemaLocation expectedLocation = new SchemaLocation("GET", "/testPath", null);
+        SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null);
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 expectedLocation, List.of("ENUM_VALUE")
         );

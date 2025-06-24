@@ -66,4 +66,96 @@ class StringSchemaCollectorTest {
                 .containsEntry(locA, s1)
                 .containsEntry(locB, s2);
     }
+
+    @Test
+    void shouldIgnoreNullSchema() {
+        collector.handle(locA, null);
+
+        assertThat(collector.getStringSchemas())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreUnsupportedSchemaType() {
+        Schema<?> unsupportedSchema = new Schema<>().type("unsupported");
+
+        collector.handle(locA, unsupportedSchema);
+
+        assertThat(collector.getStringSchemas())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldHandleDuplicateSchemaLocations() {
+        Schema<?> stringSchema1 = new StringSchema();
+        Schema<?> stringSchema2 = new StringSchema();
+
+        collector.handle(locA, stringSchema1);
+        collector.handle(locA, stringSchema2);
+
+        assertThat(collector.getStringSchemas())
+                .hasSize(1)
+                .containsEntry(locA, stringSchema2);
+    }
+
+    @Test
+    void shouldIgnoreDateSchema() {
+        Schema<?> dateSchema = new Schema<>().type("string").format("date");
+
+        collector.handle(locA, dateSchema);
+
+        assertThat(collector.getStringSchemas())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreDateTimeSchema() {
+        Schema<?> dateTimeSchema = new Schema<>().type("string").format("date-time");
+
+        collector.handle(locA, dateTimeSchema);
+
+        assertThat(collector.getStringSchemas())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreUriSchema() {
+        Schema<?> uriSchema = new Schema<>().type("string").format("uri");
+
+        collector.handle(locA, uriSchema);
+
+        assertThat(collector.getStringSchemas())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreUUIDSchema() {
+        Schema<?> uuidSchema = new Schema<>().type("string").format("uuid");
+
+        collector.handle(locA, uuidSchema);
+
+        assertThat(collector.getStringSchemas())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreDecimalSchema() {
+        Schema<?> decimalSchema = new Schema<>().type("number").format("decimal");
+
+        collector.handle(locA, decimalSchema);
+
+        assertThat(collector.getStringSchemas())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldCollectValidStringSchema() {
+        Schema<?> validStringSchema = new Schema<>().type("string");
+
+        collector.handle(locA, validStringSchema);
+
+        assertThat(collector.getStringSchemas())
+                .hasSize(1)
+                .containsEntry(locA, validStringSchema);
+    }
 }

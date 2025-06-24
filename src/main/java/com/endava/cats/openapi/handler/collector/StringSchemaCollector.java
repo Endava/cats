@@ -20,7 +20,9 @@ public class StringSchemaCollector implements SchemaHandler {
 
     @Override
     public void handle(SchemaLocation schemaLocation, Schema<?> schema) {
-        if (CatsModelUtils.isStringSchema(schema)) {
+        if (CatsModelUtils.isStringSchema(schema) && !CatsModelUtils.isDateSchema(schema)
+                && !CatsModelUtils.isDateTimeSchema(schema) && !CatsModelUtils.isUriSchema(schema)
+                && !CatsModelUtils.isUUIDSchema(schema) && !CatsModelUtils.isDecimalSchema(schema)) {
             stringSchemas.put(schemaLocation, schema);
         }
     }

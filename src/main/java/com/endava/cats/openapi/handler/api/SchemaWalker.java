@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Deep-schema walker with pluggable handlers + path/method context propagation.
+ * Deep-schema walker with pluggable handlers and path/method context propagation.
  */
 @Singleton
 public class SchemaWalker {

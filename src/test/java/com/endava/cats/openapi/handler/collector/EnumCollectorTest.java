@@ -30,8 +30,7 @@ class EnumCollectorTest {
         enumCollector.handle(location, schema);
 
         Map<SchemaLocation, List<String>> enums = enumCollector.getEnums();
-        assertThat(enums).hasSize(1);
-        assertThat(enums).containsKey(location);
+        assertThat(enums).hasSize(1).containsKey(location);
         assertThat(enums.get(location)).containsExactly("VALUE_ONE", "VALUE_TWO");
     }
 

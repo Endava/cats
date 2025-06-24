@@ -42,6 +42,10 @@ public abstract class CatsModelUtils {
         return ModelUtils.isStringSchema(schema);
     }
 
+    public static boolean isEnumSchema(Schema<?> schema) {
+        return ModelUtils.isEnumSchema(schema);
+    }
+
     public static boolean isBooleanSchema(Schema<?> schema) {
         return ModelUtils.isBooleanSchema(schema);
     }
@@ -72,6 +76,14 @@ public abstract class CatsModelUtils {
 
     public static boolean isDateSchema(Schema<?> schema) {
         return ModelUtils.isDateSchema(schema);
+    }
+
+    public static boolean isUriSchema(Schema<?> schema) {
+        return ModelUtils.isURISchema(schema);
+    }
+
+    public static boolean isUUIDSchema(Schema<?> schema) {
+        return ModelUtils.isUUIDSchema(schema);
     }
 
     public static boolean isDateTimeSchema(Schema<?> schema) {

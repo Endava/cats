@@ -6,6 +6,7 @@ import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
 import com.endava.cats.report.TestCaseListener;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,34 +21,38 @@ class EnumCaseGlobalLinterTest {
     private TestCaseListener testCaseListener;
     private EnumCaseGlobalLinter enumCaseGlobalLinter;
     private EnumCollector enumCollector;
+    @Inject
+    NamingArguments namingArguments;
 
     @BeforeEach
     void setup() {
         testCaseListener = Mockito.mock(TestCaseListener.class);
-        NamingArguments namingArguments = Mockito.mock(NamingArguments.class);
         enumCollector = Mockito.mock(EnumCollector.class);
         enumCaseGlobalLinter = new EnumCaseGlobalLinter(testCaseListener, namingArguments, enumCollector);
     }
 
     @Test
     void shouldReturnMeaningfulDescription() {
-        Assertions.assertThat(enumCaseGlobalLinter.description()).isEqualTo("Verifies that all string enum values follow a consistent case pattern across components/schemas.");
+        Assertions.assertThat(enumCaseGlobalLinter.description())
+                .isEqualTo("verifies that all string enum values follow a consistent case pattern across components/schemas");
     }
 
     @Test
     void shouldReturnRunKey() {
-        Assertions.assertThat(enumCaseGlobalLinter.runKey(null)).isEqualTo("global-enum-case-linter");
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        enumCaseGlobalLinter.fuzz(data); // Indirectly tests runKey
+        Assertions.assertThat(enumCaseGlobalLinter.getContext().runKeyProvider().apply(data))
+                .isEqualTo("global-enum-case-linter");
     }
 
     @Test
-    void shouldSelectEnumsForGlobalComponents() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
+    void shouldCollectEnumsForGlobalComponents() {
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 new SchemaLocation(null, null, null), List.of("ENUM_VALUE")
         );
         Mockito.when(enumCollector.getEnums()).thenReturn(mockEnums);
 
-        Map<SchemaLocation, List<String>> result = enumCaseGlobalLinter.selectEnums(data);
+        Map<SchemaLocation, List<String>> result = enumCaseGlobalLinter.getContext().collector().get();
 
         Assertions.assertThat(result).containsKey(new SchemaLocation(null, null, null));
         Assertions.assertThat(result.get(new SchemaLocation(null, null, null))).contains("ENUM_VALUE");
@@ -55,10 +60,9 @@ class EnumCaseGlobalLinterTest {
 
     @Test
     void shouldHandleEmptyEnums() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
         Mockito.when(enumCollector.getEnums()).thenReturn(Map.of());
 
-        Map<SchemaLocation, List<String>> result = enumCaseGlobalLinter.selectEnums(data);
+        Map<SchemaLocation, List<String>> result = enumCaseGlobalLinter.getContext().collector().get();
 
         Assertions.assertThat(result).isEmpty();
     }
