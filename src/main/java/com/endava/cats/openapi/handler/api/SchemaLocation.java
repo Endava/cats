@@ -5,7 +5,7 @@ import com.endava.cats.http.HttpMethod;
 /**
  * Triplet of schema location: path, method, and fully qualified name (FQN).
  */
-public record SchemaLocation(String path, String method, String fqn) {
+public record SchemaLocation(String path, String method, String fqn, String pointer) {
 
     /**
      * Checks if the given path and method match this schema location.

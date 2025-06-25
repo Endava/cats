@@ -48,14 +48,14 @@ class EnumCaseGlobalLinterTest {
     @Test
     void shouldCollectEnumsForGlobalComponents() {
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
-                new SchemaLocation(null, null, null), List.of("ENUM_VALUE")
+                new SchemaLocation(null, null, null, null), List.of("ENUM_VALUE")
         );
         Mockito.when(enumCollector.getEnums()).thenReturn(mockEnums);
 
         Map<SchemaLocation, List<String>> result = enumCaseGlobalLinter.getContext().collector().get();
 
-        Assertions.assertThat(result).containsKey(new SchemaLocation(null, null, null));
-        Assertions.assertThat(result.get(new SchemaLocation(null, null, null))).contains("ENUM_VALUE");
+        Assertions.assertThat(result).containsKey(new SchemaLocation(null, null, null, null));
+        Assertions.assertThat(result.get(new SchemaLocation(null, null, null, null))).contains("ENUM_VALUE");
     }
 
     @Test
@@ -71,7 +71,7 @@ class EnumCaseGlobalLinterTest {
     void shouldExecuteTestListener() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
-                new SchemaLocation(null, null, null), List.of("ENUM_VALUE")
+                new SchemaLocation(null, null, null, null), List.of("ENUM_VALUE")
         );
         Mockito.when(enumCollector.getEnums()).thenReturn(mockEnums);
 

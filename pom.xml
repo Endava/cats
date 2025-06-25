@@ -594,6 +594,11 @@
             <version>${snakeyaml.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <version>2.9</version>
+        </dependency>
+        <dependency>
             <groupId>javax.validation</groupId>
             <artifactId>validation-api</artifactId>
             <version>${javax.validation-api.version}</version>

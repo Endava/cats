@@ -44,14 +44,14 @@ class StringSchemaLimitGlobalLinterTest {
     @Test
     void shouldCollectStringSchemasForGlobalComponents() {
         Map<SchemaLocation, Schema<?>> mockSchemas = Map.of(
-                new SchemaLocation(null, null, null), new Schema()
+                new SchemaLocation(null, null, null, null), new Schema()
         );
         Mockito.when(stringSchemaCollector.getStringSchemas()).thenReturn(mockSchemas);
 
         Map<SchemaLocation, Schema<?>> result = stringSchemaLimitGlobalLinter.getContext().collector().get();
 
-        Assertions.assertThat(result).containsKey(new SchemaLocation(null, null, null));
-        Assertions.assertThat(result.get(new SchemaLocation(null, null, null))).isNotNull();
+        Assertions.assertThat(result).containsKey(new SchemaLocation(null, null, null, null));
+        Assertions.assertThat(result.get(new SchemaLocation(null, null, null, null))).isNotNull();
     }
 
     @Test
@@ -67,7 +67,7 @@ class StringSchemaLimitGlobalLinterTest {
     void shouldExecuteTestListener() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<SchemaLocation, Schema<?>> mockSchemas = Map.of(
-                new SchemaLocation(null, null, null), new Schema()
+                new SchemaLocation(null, null, null, null), new Schema()
         );
         Mockito.when(stringSchemaCollector.getStringSchemas()).thenReturn(mockSchemas);
 

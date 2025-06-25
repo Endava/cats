@@ -20,6 +20,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.handler.api.SchemaWalker;
+import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
@@ -40,6 +41,7 @@ import picocli.AutoComplete;
 import picocli.CommandLine;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -180,6 +182,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     SchemaWalker schemaWalker;
 
     @Inject
+    SpecPositionIndex specPositionIndex;
+
+    @Inject
     VersionChecker versionChecker;
 
     @Getter
@@ -255,8 +260,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.executeCustomFuzzer();
     }
 
-    private void initSchemaWalker(OpenAPI openAPI) {
-        schemaWalker.initHandlers(openAPI);
+    private void initSchemaWalker(OpenAPI openAPI) throws IOException {
+        if (filterArguments.isLinting()) {
+            specPositionIndex.parseSpecs(Path.of(apiArguments.getContract()));
+            schemaWalker.initHandlers(openAPI);
+        }
     }
 
     private void checkOpenAPI(OpenAPI openAPI) {

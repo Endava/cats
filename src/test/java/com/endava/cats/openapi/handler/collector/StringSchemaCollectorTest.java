@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class StringSchemaCollectorTest {
 
     private StringSchemaCollector collector;
-    private final SchemaLocation locA = new SchemaLocation("A", "post", "/path/A");
-    private final SchemaLocation locB = new SchemaLocation("B", "post", "/path/B");
+    private final SchemaLocation locA = new SchemaLocation("A", "post", "/path/A", "/path/A");
+    private final SchemaLocation locB = new SchemaLocation("B", "post", "/path/B", "/path/B");
 
     @BeforeEach
     void setUp() {

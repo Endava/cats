@@ -1,6 +1,7 @@
 package com.endava.cats.openapi.handler.collector;
 
 import com.endava.cats.openapi.handler.api.SchemaLocation;
+import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,14 +19,14 @@ class EnumCollectorTest {
 
     @BeforeEach
     void setup() {
-        enumCollector = new EnumCollector();
+        enumCollector = new EnumCollector(new SpecPositionIndex());
     }
 
     @Test
     void shouldAddEnumWhenPresent() {
         Schema<Object> schema = new Schema<>();
         schema.setEnum(List.of("VALUE_ONE", "VALUE_TWO"));
-        SchemaLocation location = new SchemaLocation("components", "schemas", "MyEnum");
+        SchemaLocation location = new SchemaLocation("components", "schemas", "MyEnum", "MyEnumPointer");
 
         enumCollector.handle(location, schema);
 
@@ -38,7 +39,7 @@ class EnumCollectorTest {
     void shouldNotAddWhenEnumIsNull() {
         Schema<Object> schema = new Schema<>();
         schema.setEnum(null);
-        SchemaLocation location = new SchemaLocation("components", "schemas", "NullEnum");
+        SchemaLocation location = new SchemaLocation("components", "schemas", "NullEnum", "MyNullEnumPointer");
 
         enumCollector.handle(location, schema);
 
@@ -49,7 +50,7 @@ class EnumCollectorTest {
     void shouldNotAddWhenEnumIsEmpty() {
         Schema<Object> schema = new Schema<>();
         schema.setEnum(List.of());
-        SchemaLocation location = new SchemaLocation("components", "schemas", "EmptyEnum");
+        SchemaLocation location = new SchemaLocation("components", "schemas", "EmptyEnum", "MyEmptyEnumPointer");
 
         enumCollector.handle(location, schema);
 

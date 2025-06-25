@@ -481,6 +481,19 @@ public class FilterArguments {
         this.dryRun = false;
     }
 
+
+    /**
+     * Determines whether the current run includes the {@code Linter} fuzzer.
+     * <p>
+     * This is useful to distinguish whether a linting-specific analysis will be performed.
+     *
+     * @return {@code true} if the supplied fuzzers include "Linter", {@code false} otherwise
+     */
+    public boolean isLinting() {
+        return this.getSuppliedFuzzers().stream()
+                .anyMatch(fuzzer -> fuzzer.equalsIgnoreCase("Linter"));
+    }
+
     /**
      * Convert list of enums to list of strings.
      *

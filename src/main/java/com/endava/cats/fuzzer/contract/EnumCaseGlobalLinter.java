@@ -21,10 +21,10 @@ public class EnumCaseGlobalLinter extends AbstractSchemaLinter<List<String>> {
 
     public EnumCaseGlobalLinter(TestCaseListener tcl, NamingArguments namingArguments, EnumCollector enumCollector) {
         super(tcl);
-        context = createContext(tcl, namingArguments, enumCollector);
+        context = createContext(namingArguments, enumCollector);
     }
 
-    private SchemaLinterContext<List<String>> createContext(TestCaseListener tcl, NamingArguments namingArguments, EnumCollector enumCollector) {
+    private SchemaLinterContext<List<String>> createContext(NamingArguments namingArguments, EnumCollector enumCollector) {
         return new SchemaLinterContext<>(
                 "Validate that every string enum value complies with the configured case format (%s)".formatted(namingArguments.getEnumsNaming().getPattern().pattern()),
                 "All enum values should match the pattern %s".formatted(namingArguments.getEnumsNaming().getPattern()),

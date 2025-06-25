@@ -42,6 +42,7 @@ import java.io.StringWriter;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -569,6 +570,33 @@ public abstract class JsonUtils {
         String pathToKey = StringUtils.isBlank(firstPartOfField) ? "$" : firstPartOfField;
 
         return replaceNewElement(inputJsonWithRemovedKey, pathToKey, newFieldKey, currentFieldValue);
+    }
+
+    /**
+     * Escapes special characters in schema pointers according to JSON Pointer specification.
+     * <p>
+     * This method replaces '~' with '~0' and '/' with '~1' to ensure valid JSON Pointer syntax.
+     *
+     * @param s the string to escape
+     * @return the escaped string
+     */
+    public static String escape(String s) {
+        return s.replace("~", "~0").replace("/", "~1");
+    }
+
+    /**
+     * Converts a path to a JSON Pointer format.
+     * <p>
+     * This method joins the elements of the path with '/' and escapes special characters.
+     *
+     * @param path the path to convert
+     * @return the JSON Pointer representation of the path
+     */
+    public static String toPointer(Deque<String> path) {
+        if (path.isEmpty()) {
+            return "";
+        }
+        return "/" + path.stream().map(JsonUtils::escape).collect(Collectors.joining("/"));
     }
 
     private static void traverseJson(JsonElement element, String prefix, List<String> fields) {

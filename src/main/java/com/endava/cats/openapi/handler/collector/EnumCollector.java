@@ -2,8 +2,10 @@ package com.endava.cats.openapi.handler.collector;
 
 import com.endava.cats.openapi.handler.api.SchemaHandler;
 import com.endava.cats.openapi.handler.api.SchemaLocation;
+import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import com.endava.cats.util.CatsModelUtils;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 
@@ -18,6 +20,12 @@ import java.util.Map;
 @Singleton
 public class EnumCollector implements SchemaHandler {
     private final Map<SchemaLocation, List<String>> enums = new LinkedHashMap<>();
+    private final SpecPositionIndex specPositionIndex;
+
+    @Inject
+    public EnumCollector(SpecPositionIndex specPositionIndex) {
+        this.specPositionIndex = specPositionIndex;
+    }
 
     @Override
     public void handle(SchemaLocation schemaLocation, Schema<?> s) {

@@ -13,14 +13,14 @@ class SchemaLocationTest {
 
     @Test
     void shouldReturnTrueForGlobalLocationWhenPathAndMethodAreNull() {
-        SchemaLocation schemaLocation = new SchemaLocation(null, null, "fqn");
+        SchemaLocation schemaLocation = new SchemaLocation(null, null, "fqn", "pointer");
         assertThat(schemaLocation.isGlobalLocation()).isTrue();
     }
 
     @Test
     void shouldReturnFalseForGlobalLocationWhenPathOrMethodIsNotNull() {
-        SchemaLocation schemaLocationWithPath = new SchemaLocation("/path", null, "fqn");
-        SchemaLocation schemaLocationWithMethod = new SchemaLocation(null, "GET", "fqn");
+        SchemaLocation schemaLocationWithPath = new SchemaLocation("/path", null, "fqn", "pointer");
+        SchemaLocation schemaLocationWithMethod = new SchemaLocation(null, "GET", "fqn", "pointer");
 
         assertThat(schemaLocationWithPath.isGlobalLocation()).isFalse();
         assertThat(schemaLocationWithMethod.isGlobalLocation()).isFalse();
@@ -38,7 +38,7 @@ class SchemaLocationTest {
             "null, null, null, null, false"
     }, nullValues = "null")
     void shouldMatchPathAndMethod(String schemaPath, String schemaMethod, String inputPath, String inputMethod, boolean expectedResult) {
-        SchemaLocation schemaLocation = new SchemaLocation(schemaPath, schemaMethod, "fqn");
+        SchemaLocation schemaLocation = new SchemaLocation(schemaPath, schemaMethod, "fqn", "pointer");
         HttpMethod httpMethod = inputMethod != null ? HttpMethod.valueOf(inputMethod) : null;
 
         boolean result = schemaLocation.matchesPathAndMethod(inputPath, httpMethod);

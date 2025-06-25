@@ -47,7 +47,7 @@ class EnumCasePathLevelLinterTest {
     }
 
     @Test
-    void shouldCollectEnumsForPathLevelComponents() {SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null);
+    void shouldCollectEnumsForPathLevelComponents() {SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null, null);
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 expectedLocation, List.of("ENUM_VALUE")
         );
@@ -71,7 +71,7 @@ class EnumCasePathLevelLinterTest {
     @Test
     void shouldExecuteTestListener() {
         FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
-        SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null);
+        SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null, null);
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 expectedLocation, List.of("ENUM_VALUE")
         );
