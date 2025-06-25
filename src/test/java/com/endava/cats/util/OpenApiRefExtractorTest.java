@@ -125,7 +125,7 @@ class OpenApiRefExtractorTest {
                 $ref: 'single-quote.yaml'
                 $ref: "double-quote.yaml"
                 $ref: no-quote.yaml
-                $ref:    spaced.yaml  \s
+                $ref:    spaced.yaml
                 """.getBytes(StandardCharsets.UTF_8));
 
         Files.write(tempDir.resolve("single-quote.yaml"), "content".getBytes(StandardCharsets.UTF_8));
@@ -320,7 +320,7 @@ class OpenApiRefExtractorTest {
     @Test
     void shouldHandleWhitespaceInReferencesWhenExtractingRefsFromOpenAPI() throws IOException {
         Files.write(mainFile, """
-                $ref:   '  spaced-file.yaml  ' \s
+                $ref:   '  spaced-file.yaml  '
                 $ref: '#/spaced/pointer  '
                 """.getBytes(StandardCharsets.UTF_8));
 

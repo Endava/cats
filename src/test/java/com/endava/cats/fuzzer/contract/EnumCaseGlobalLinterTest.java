@@ -1,10 +1,16 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.NamingArguments;
+import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.context.CatsGlobalContext;
+import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -26,7 +32,8 @@ class EnumCaseGlobalLinterTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.mock(TestCaseListener.class);
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
+                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         enumCollector = Mockito.mock(EnumCollector.class);
         enumCaseGlobalLinter = new EnumCaseGlobalLinter(testCaseListener, namingArguments, enumCollector);
     }
@@ -78,5 +85,34 @@ class EnumCaseGlobalLinterTest {
         enumCaseGlobalLinter.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldFilterValidateAndFormatViolations() {
+        // Use the injected NamingArguments
+        // Mock SchemaLocation to be global
+        SchemaLocation globalLoc = Mockito.mock(SchemaLocation.class);
+        Mockito.when(globalLoc.isGlobalLocation()).thenReturn(true);
+        Mockito.when(globalLoc.fqn()).thenReturn("components.schemas.Pet.status");
+
+        List<String> enumValues = List.of("VALID_ENUM", "invalidEnum");
+        Map<SchemaLocation, List<String>> enums = Map.of(globalLoc, enumValues);
+
+        EnumCollector mockEnumCollector = Mockito.mock(EnumCollector.class);
+        Mockito.when(mockEnumCollector.getEnums()).thenReturn(enums);
+
+        EnumCaseGlobalLinter linter = new EnumCaseGlobalLinter(testCaseListener, namingArguments, mockEnumCollector);
+
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getMethod()).thenReturn(HttpMethod.GET);
+
+        linter.fuzz(data);
+
+        Mockito.verify(testCaseListener).reportResultWarn(
+                Mockito.any(),
+                Mockito.eq(data),
+                Mockito.eq("Enum-case mismatches detected"),
+                Mockito.argThat((String msg) -> msg != null && msg.contains("Schema at location 'components.schemas.Pet.status' contains enum value(s) [VALID_ENUM, invalidEnum] that violate naming convention"))
+        );
     }
 }

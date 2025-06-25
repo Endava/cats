@@ -1,11 +1,16 @@
 package com.endava.cats.fuzzer.contract;
 
+import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.NamingArguments;
+import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.openapi.handler.api.SchemaLocation;
 import com.endava.cats.openapi.handler.collector.EnumCollector;
+import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -27,7 +32,8 @@ class EnumCasePathLevelLinterTest {
 
     @BeforeEach
     void setup() {
-        testCaseListener = Mockito.mock(TestCaseListener.class);
+        testCaseListener = Mockito.spy(new TestCaseListener(Mockito.mock(CatsGlobalContext.class), Mockito.mock(ExecutionStatisticsListener.class), Mockito.mock(TestReportsGenerator.class),
+                Mockito.mock(IgnoreArguments.class), Mockito.mock(ReportingArguments.class)));
         enumCollector = Mockito.mock(EnumCollector.class);
         enumCasePathLevelLinter = new EnumCasePathLevelLinter(testCaseListener, namingArguments, enumCollector);
     }
@@ -47,7 +53,8 @@ class EnumCasePathLevelLinterTest {
     }
 
     @Test
-    void shouldCollectEnumsForPathLevelComponents() {SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null, null);
+    void shouldCollectEnumsForPathLevelComponents() {
+        SchemaLocation expectedLocation = new SchemaLocation("/testPath", "GET", null, null);
         Map<SchemaLocation, List<String>> mockEnums = Map.of(
                 expectedLocation, List.of("ENUM_VALUE")
         );
@@ -80,5 +87,28 @@ class EnumCasePathLevelLinterTest {
         enumCasePathLevelLinter.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(1)).createAndExecuteTest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldFilterValidateAndFormatViolations() {
+        // Mock SchemaLocation to match the test path and method
+        SchemaLocation mockLoc = Mockito.mock(SchemaLocation.class);
+        Mockito.when(mockLoc.matchesPathAndMethod("/testPath", HttpMethod.GET)).thenReturn(true);
+        Mockito.when(mockLoc.toString()).thenReturn("/testPath:GET");
+
+        List<String> enumValues = List.of("VALID_ENUM", "invalidEnum");
+        Map<SchemaLocation, List<String>> enums = Map.of(mockLoc, enumValues);
+        Mockito.when(enumCollector.getEnums()).thenReturn(enums);
+
+        FuzzingData data = FuzzingData.builder().path("/testPath").method(HttpMethod.GET).build();
+
+        enumCasePathLevelLinter.fuzz(data);
+
+        Mockito.verify(testCaseListener).reportResultWarn(
+                Mockito.any(),
+                Mockito.eq(data),
+                Mockito.eq("Enum-case mismatches detected"),
+                Mockito.argThat((String msg) -> msg != null && msg.contains("/testPath:GET => [VALID_ENUM, invalidEnum]"))
+        );
     }
 }
