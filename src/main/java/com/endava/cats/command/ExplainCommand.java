@@ -27,9 +27,9 @@ import java.util.Locale;
                 "@|bold 191|@:Usage error: user input for the command was incorrect",
                 "@|bold 192|@:Internal execution error: an exception occurred when executing command"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
-        footer = {"  Explain a 9XX response code:",
+        footer = {" Explain a 9XX response code:",
                 "    cats explain --type response_code 953",
-                "", "  Get more information about an error reason:",
+                "", " Get more information about an error reason:",
                 "    cats explain --type error_reason \"Error details leak\"",},
         description = "Provides detailed information about a fuzzer, mutator, response code or error reason.",
         versionProvider = VersionProvider.class)
