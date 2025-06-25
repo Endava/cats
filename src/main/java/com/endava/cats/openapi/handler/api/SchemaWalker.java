@@ -68,7 +68,6 @@ public class SchemaWalker {
         Objects.requireNonNull(api);
         Set<Schema<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
 
-        /* components.schemas */
         Optional.ofNullable(api.getComponents())
                 .map(Components::getSchemas)
                 .ifPresent(schemas -> schemas.forEach((name, schema) -> {
@@ -78,7 +77,6 @@ public class SchemaWalker {
                     dfs(schema, api, fqn, ptr, visited, handlers, null, null);
                 }));
 
-        /* paths */
         Optional.ofNullable(api.getPaths())
                 .ifPresent(paths -> paths.forEach((url, item) ->
                         processPathItem(item, api, url, visited, handlers)));
@@ -107,14 +105,11 @@ public class SchemaWalker {
             String opName = Optional.ofNullable(op.getOperationId())
                     .orElse(m + " " + rawUrl);
 
-            /* shared FQN stem */
             Deque<String> fqnStem = new ArrayDeque<>(List.of(opName));
 
-            /* shared pointer stem: /paths/.../{method} */
             Deque<String> ptrStem = new ArrayDeque<>(
                     List.of("paths", urlEsc, method));
 
-            /* parameters (array!) */
             List<Parameter> params = Optional.ofNullable(op.getParameters())
                     .orElse(List.of());
             for (int i = 0; i < params.size(); i++) {
@@ -133,7 +128,6 @@ public class SchemaWalker {
                 dfs(p.getSchema(), api, fqn, ptr, visited, handlers, rawUrl, m.toString());
             }
 
-            /* requestBody */
             Optional.ofNullable(op.getRequestBody()).map(RequestBody::getContent)
                     .ifPresent(content -> content.forEach((mt, media) -> {
                         Deque<String> fqn = new ArrayDeque<>(fqnStem);
@@ -149,7 +143,6 @@ public class SchemaWalker {
                         consumeMedia(media, api, fqn, ptr, visited, handlers, rawUrl, m.toString());
                     }));
 
-            /* responses */
             op.getResponses().forEach((code, resp) ->
                     Optional.ofNullable(resp.getContent()).ifPresent(content ->
                             content.forEach((mt, media) -> {
@@ -218,7 +211,6 @@ public class SchemaWalker {
 
         if (schema == null || !visited.add(schema)) return;
 
-        /* follow $ref but preserve the current pointer */
         if (schema.get$ref() != null) {
             String refName = CatsModelUtils.getSimpleRefUsingOAT(schema.get$ref());
             Schema<?> target = Optional.ofNullable(api.getComponents())
@@ -228,12 +220,10 @@ public class SchemaWalker {
             return;
         }
 
-        /* notify handlers */
         SchemaLocation loc = new SchemaLocation(
                 url, method, toFqn(fqn), JsonUtils.toPointer(ptr));
         for (SchemaHandler h : handlers) h.handle(loc, schema);
 
-        /* allOf / anyOf / oneOf – keep index in pointer only */
         if (CatsModelUtils.isComposedSchema(schema)) {
             Map<String, List<Schema>> composed = Map.of(
                     "allOf", Optional.ofNullable(schema.getAllOf()).orElse(List.of()),
@@ -250,7 +240,6 @@ public class SchemaWalker {
             });
         }
 
-        /* object properties */
         if (schema.getProperties() != null) {
             schema.getProperties().forEach((prop, sub) -> {
                 Deque<String> fqnN = new ArrayDeque<>(fqn);
@@ -264,7 +253,6 @@ public class SchemaWalker {
             });
         }
 
-        /* array items */
         if (schema.getItems() != null) {
             Deque<String> fqnN = new ArrayDeque<>(fqn);
             fqnN.add("[]");
@@ -273,7 +261,6 @@ public class SchemaWalker {
             dfs(schema.getItems(), api, fqnN, ptrN, visited, handlers, url, method);
         }
 
-        /* additionalProperties */
         if (schema.getAdditionalProperties() instanceof Schema<?> ap) {
             Deque<String> fqnN = new ArrayDeque<>(fqn);
             fqnN.add("additionalProperties");
@@ -282,7 +269,6 @@ public class SchemaWalker {
             dfs(ap, api, fqnN, ptrN, visited, handlers, url, method);
         }
 
-        /* not */
         if (schema.getNot() != null) {
             Deque<String> ptrN = new ArrayDeque<>(ptr);
             ptrN.add("not");

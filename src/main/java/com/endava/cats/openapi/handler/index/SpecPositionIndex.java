@@ -114,15 +114,15 @@ public class SpecPositionIndex {
             while (p.nextToken() != null) {
                 JsonToken t = p.currentToken();
                 switch (t) {
-                    case START_OBJECT -> record(ptr, p);
+                    case START_OBJECT -> store(ptr, p);
                     case START_ARRAY -> {
-                        record(ptr, p);
+                        store(ptr, p);
                         arr.push(0);
                     }
                     case FIELD_NAME -> ptr.addLast(p.currentName());
                     case VALUE_STRING, VALUE_NUMBER_INT, VALUE_NUMBER_FLOAT,
                          VALUE_TRUE, VALUE_FALSE, VALUE_NULL -> {
-                        record(ptr, p);
+                        store(ptr, p);
                         safeRemoveLast(ptr);
                         bumpArrIndex(arr, ptr);
                     }
@@ -163,7 +163,7 @@ public class SpecPositionIndex {
         }
     }
 
-    private void record(Deque<String> ptr, JsonParser p) {
+    private void store(Deque<String> ptr, JsonParser p) {
         idx.put(JsonUtils.toPointer(ptr), toPos(p.currentLocation()));
     }
 
