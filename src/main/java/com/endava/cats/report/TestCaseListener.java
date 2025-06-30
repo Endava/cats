@@ -841,7 +841,7 @@ public class TestCaseListener {
      * @return true if the fuzzed field is not a discriminator, false otherwise
      */
     public boolean isFieldNotADiscriminator(String fuzzedField) {
-        return globalContext.getDiscriminators().stream().noneMatch(discriminator -> fuzzedField.endsWith(discriminator.getPropertyName()));
+        return !globalContext.isDiscriminator(fuzzedField);
     }
 
     /**

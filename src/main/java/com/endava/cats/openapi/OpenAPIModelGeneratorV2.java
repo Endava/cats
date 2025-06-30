@@ -242,7 +242,7 @@ public class OpenAPIModelGeneratorV2 {
                     .toList());
             composedSchema.setDiscriminator(schema.getDiscriminator());
             schema.getProperties().get(schema.getDiscriminator().getPropertyName()).setEnum(new ArrayList<>(schema.getDiscriminator().getMapping().keySet()));
-            globalContext.getDiscriminators().add(schema.getDiscriminator());
+            globalContext.recordDiscriminator(currentProperty, schema.getDiscriminator(), List.of());
             Schema<?> newSchema = Json.mapper().convertValue(schema, Schema.class);
             newSchema.setName("CatsChanged" + name);
             newSchema.getDiscriminator().setMapping(null);
@@ -372,7 +372,8 @@ public class OpenAPIModelGeneratorV2 {
             List<Object> propertyExamples;
             if (schema.getDiscriminator() != null && schema.getDiscriminator().getPropertyName().equalsIgnoreCase(propertyName)) {
                 propertyExamples = List.of(matchToEnumOrEmpty(currentSchemaName, property, propertyName));
-                recordRequestSchema(propertyName, property);
+                globalContext.recordDiscriminator(currentProperty, schema.getDiscriminator(), propertyExamples);
+                recordRequestSchema(currentProperty + "#" + propertyName, property);
             } else {
                 propertyExamples = resolvePropertyToExamples(propertyName, property);
             }
@@ -593,7 +594,7 @@ public class OpenAPIModelGeneratorV2 {
     private void mapDiscriminator(Schema<?> composedSchema, List<Schema> anyOf) {
         if (composedSchema.getDiscriminator() != null) {
             logger.trace("Mapping discriminator for schema {}", composedSchema.getName());
-            globalContext.getDiscriminators().add(composedSchema.getDiscriminator());
+            globalContext.recordDiscriminator(currentProperty, composedSchema.getDiscriminator(), List.of());
             for (Schema<?> anyOfSchema : anyOf) {
                 Discriminator discriminator = new Discriminator();
                 discriminator.setPropertyName(composedSchema.getDiscriminator().getPropertyName());
@@ -960,7 +961,7 @@ public class OpenAPIModelGeneratorV2 {
         //this is a bit of a hack that might be abused in the future to include a full object as extension. currently it only holds the field name
         schema.addExtension(CatsModelUtils.X_CATS_FIELD_NAME, propertyName);
         if (schema.getDiscriminator() != null) {
-            globalContext.getDiscriminators().add(schema.getDiscriminator());
+            globalContext.recordDiscriminator(currentProperty, schema.getDiscriminator(), List.of());
         }
     }
 

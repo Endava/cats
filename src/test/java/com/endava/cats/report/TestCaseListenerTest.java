@@ -694,8 +694,8 @@ class TestCaseListenerTest {
         Mockito.when(response.responseCodeAsResponseRange()).thenReturn("4XX");
 
         spyListener.createAndExecuteTest(logger, fuzzer, () -> spyListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX), FuzzingData.builder().build());
-        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseErrors(Mockito.any());
-        Mockito.verify(spyListener, Mockito.times(1)).reportError(logger, "Response HTTP code 404: you might need to provide business context using --refData or --urlParams");
+        Mockito.verify(executionStatisticsListener, Mockito.times(1)).increaseWarns(Mockito.any());
+        Mockito.verify(spyListener, Mockito.times(1)).reportWarn(logger, "Response does NOT match expected result. Response code is from a list of expected codes for this FUZZER, but it is undocumented: expected [400, 404, 413, 414, 422, 431], actual [404], documented response codes: [401]");
     }
 
     @Test
@@ -722,7 +722,7 @@ class TestCaseListenerTest {
         Discriminator discriminator = new Discriminator();
         discriminator.setPropertyName("field");
         catsGlobalContext.getDiscriminators().clear();
-        catsGlobalContext.getDiscriminators().add(discriminator);
+        catsGlobalContext.recordDiscriminator("", discriminator, List.of());
 
         Assertions.assertThat(testCaseListener.isFieldNotADiscriminator("field")).isFalse();
     }

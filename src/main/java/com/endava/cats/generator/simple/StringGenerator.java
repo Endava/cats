@@ -550,7 +550,7 @@ public class StringGenerator {
      * If the field is an enum, it will return the first element in the enum.
      *
      * @param property the OpenAPI schema
-     * @return a random string with size between minLength adn maxLength
+     * @return a random string with size between minLength and maxLength
      */
     public static String generateValueBasedOnMinMax(Schema<?> property) {
         if (!CollectionUtils.isEmpty(property.getEnum())) {

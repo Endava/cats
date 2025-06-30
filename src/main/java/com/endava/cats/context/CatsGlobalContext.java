@@ -24,6 +24,8 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 
 import java.net.URLDecoder;
@@ -53,6 +55,7 @@ public class CatsGlobalContext {
     private final Map<String, Example> exampleMap = new HashMap<>();
     private final Map<String, Map<String, Object>> additionalProperties = new HashMap<>();
     private final Set<Discriminator> discriminators = new HashSet<>();
+    private final Map<String, Set<Object>> discriminatorValues = new HashMap<>();
     private final Map<String, Deque<String>> postSuccessfulResponses = new HashMap<>();
     private final Set<String> successfulDeletes = new HashSet<>();
     private final Properties fuzzersConfiguration = new Properties();
@@ -99,6 +102,34 @@ public class CatsGlobalContext {
         this.openAPI = openAPI;
         this.errorLeaksKeywords.addAll(errorLeaksKeywords);
         this.refs.addAll(refs);
+    }
+
+    /**
+     * Checks if a property is a discriminator.
+     *
+     * @param propertyName the name of the property to check
+     * @return true if the property is a discriminator, false otherwise
+     */
+    public boolean isDiscriminator(String propertyName) {
+        return this.discriminatorValues.containsKey(propertyName);
+    }
+
+    /**
+     * Records a discriminator in the global context.
+     *
+     * @param currentProperty the current property being processed
+     * @param discriminator   the discriminator to record
+     * @param examples        the examples for the discriminator property
+     */
+    public void recordDiscriminator(String currentProperty, Discriminator discriminator, List<Object> examples) {
+        String discriminatorKey = (StringUtils.isBlank(currentProperty) ? "" : currentProperty + "#") + discriminator.getPropertyName();
+        Set<Object> discriminatorValuesSet = this.discriminatorValues.computeIfAbsent(discriminatorKey, k -> new HashSet<>());
+        discriminators.add(discriminator);
+        if (CollectionUtils.isNotEmpty(examples)) {
+            discriminatorValuesSet.addAll(examples);
+        } else {
+            logger.warn("No examples found for discriminator property {}", discriminator.getPropertyName());
+        }
     }
 
     /**
