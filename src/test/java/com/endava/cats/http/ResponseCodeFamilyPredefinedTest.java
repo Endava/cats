@@ -57,7 +57,7 @@ class ResponseCodeFamilyPredefinedTest {
     void shouldBeValid4xxGenericAllowedCodes() {
         Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX.asString()).isEqualTo("4XX");
         Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX.getStartingDigit()).isEqualTo("4");
-        Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes()).containsOnly("400", "413", "414", "422", "431");
+        Assertions.assertThat(ResponseCodeFamilyPredefined.FOURXX.allowedResponseCodes()).containsOnly("400", "404", "413", "414", "422", "431");
     }
 
     @Test
@@ -160,12 +160,12 @@ class ResponseCodeFamilyPredefinedTest {
 
     @Test
     void shouldContain400And501() {
-        Assertions.assertThat(ResponseCodeFamilyPredefined.FOUR00_FIVE01.allowedResponseCodes()).containsOnly("400", "501");
+        Assertions.assertThat(ResponseCodeFamilyPredefined.FOUR00_FIVE01.allowedResponseCodes()).containsOnly("400", "422", "501");
     }
 
     @Test
     void shouldHave400501AsString() {
-        Assertions.assertThat(ResponseCodeFamilyPredefined.FOUR00_FIVE01.asString()).isEqualTo("400|501");
+        Assertions.assertThat(ResponseCodeFamilyPredefined.FOUR00_FIVE01.asString()).isEqualTo("400|422|501");
     }
 
     @Test

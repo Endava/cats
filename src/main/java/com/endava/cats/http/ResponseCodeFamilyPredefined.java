@@ -47,7 +47,7 @@ public enum ResponseCodeFamilyPredefined implements ResponseCodeFamily {
 
         @Override
         public List<String> allowedResponseCodes() {
-            return Arrays.asList("400", "413", "414", "422", "431");
+            return Arrays.asList("400", "404", "413", "414", "422", "431");
         }
     },
     /**
@@ -183,12 +183,12 @@ public enum ResponseCodeFamilyPredefined implements ResponseCodeFamily {
     FOUR00_FIVE01 {
         @Override
         public String asString() {
-            return "400|501";
+            return "400|422|501";
         }
 
         @Override
         public List<String> allowedResponseCodes() {
-            return List.of("400", "501");
+            return List.of("400", "422", "501");
         }
     },
     FOURXX_TWOXX {
