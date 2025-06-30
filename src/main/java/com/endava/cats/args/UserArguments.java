@@ -44,7 +44,7 @@ public class UserArguments {
     /**
      * Checks if a user dictionary was supplied through the arguments.
      *
-     * @return true if a use dictionary is supplied, false otherwise
+     * @return true if a user dictionary is supplied, false otherwise
      */
     public boolean isUserDictionarySupplied() {
         return this.words != null;

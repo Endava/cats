@@ -111,7 +111,7 @@ You can use the following Maven command to build the project as an uberjar:
 `./mvnw package -Dquarkus.package.type=uber-jar`
 
 
-You will end up with a `cats-runner.jar` in the `target` folder. You can run it wih `java -jar cats-runner.jar ...`.
+You will end up with a `cats-runner.jar` in the `target` folder. You can run it with `java -jar cats-runner.jar ...`.
 
 You can also build native images using a [GraalVM Java version](https://www.graalvm.org/).
 
