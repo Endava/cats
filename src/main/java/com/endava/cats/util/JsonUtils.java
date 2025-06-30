@@ -75,6 +75,11 @@ public abstract class JsonUtils {
     public static final String FIRST_ELEMENT_FROM_ROOT_ARRAY = "$[0]#";
 
     /**
+     * Root array JsonPath.
+     */
+    public static final String ROOT_ARRAY = "$[*]";
+
+    /**
      * Used to prefix array elements.
      */
     public static final String ALL_ELEMENTS_ROOT_ARRAY = "$[*]#";

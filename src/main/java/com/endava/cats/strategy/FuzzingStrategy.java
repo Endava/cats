@@ -337,8 +337,10 @@ public abstract sealed class FuzzingStrategy permits InsertFuzzingStrategy, Noop
         if (StringUtils.isNotBlank(payload)) {
             String jsonPropToGetValue = jsonPropertyForReplacement;
             if (JsonUtils.isJsonArray(payload)) {
-                jsonPropToGetValue = JsonUtils.FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
-                jsonPropertyForReplacement = JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
+                jsonPropToGetValue = CatsUtil.isRootArray(jsonPropertyForReplacement) ?
+                        jsonPropertyForReplacement : JsonUtils.FIRST_ELEMENT_FROM_ROOT_ARRAY + jsonPropertyForReplacement;
+                jsonPropertyForReplacement = CatsUtil.isRootArray(jsonPropertyForReplacement) ?
+                        jsonPropertyForReplacement : JsonUtils.ALL_ELEMENTS_ROOT_ARRAY + jsonPropertyForReplacement;
             }
             DocumentContext jsonDocument = JsonPath.parse(payload);
             Object oldValue = jsonDocument.read(JsonUtils.sanitizeToJsonPath(jsonPropToGetValue));
