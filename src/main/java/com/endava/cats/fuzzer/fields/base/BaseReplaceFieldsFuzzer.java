@@ -4,6 +4,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutor;
 import com.endava.cats.fuzzer.executor.FieldsIteratorExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.strategy.FuzzingStrategy;
@@ -43,11 +44,11 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
                 FieldsIteratorExecutorContext.builder()
                         .scenario("Replace %s fields with %s values. ".formatted(context.replaceWhat, context.replaceWith))
                         .fuzzingData(data).fuzzingStrategy(FuzzingStrategy.replace())
-                        .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                        .expectedResponseCode(context.expectedResponseCode)
                         .skipMessage(context.skipMessage)
                         .fieldFilter(context.fieldFilter)
                         .fuzzValueProducer(context.fuzzValueProducer)
-                        .replaceRefData(false)
+                        .replaceRefData(context.replaceRefData)
                         .simpleReplaceField(true)
                         .logger(logger)
                         .fuzzer(this)
@@ -80,6 +81,9 @@ public abstract class BaseReplaceFieldsFuzzer implements Fuzzer {
         private final String skipMessage;
         private final Predicate<String> fieldFilter;
         private final BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer;
+        @Builder.Default
+        private final ResponseCodeFamily expectedResponseCode = ResponseCodeFamilyPredefined.FOURXX;
+        private final boolean replaceRefData;
     }
 
     /**

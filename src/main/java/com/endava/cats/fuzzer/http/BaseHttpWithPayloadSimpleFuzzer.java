@@ -41,6 +41,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
                         .replaceRefData(false)
                         .scenario(this.getScenario())
                         .fuzzer(this)
+                        .validJson(false)
                         .payload(this.getPayload(data))
                         .build()
         );

@@ -267,6 +267,16 @@ public class TestCaseListener {
     }
 
     /**
+     * Marks if the json payload is well-formed or not. This is useful for reporting display purposes,
+     * to know if the json payload was valid or not.
+     *
+     * @param validJson true if the json is well-formed, false otherwise
+     */
+    public void addValidJson(boolean validJson) {
+        currentTestCase().setValidJson(validJson);
+    }
+
+    /**
      * Adds the specified CatsRequest to the current test case in the test case map.
      * The CatsRequest is associated with the ongoing test case using the Mapped Diagnostic Context (MDC) identifier.
      *

@@ -438,10 +438,9 @@ public class ServiceCaller {
         if (HttpMethod.requiresBody(catsRequest.getHttpMethod())) {
             requestBody = RequestBody.create(catsRequest.getPayload().getBytes(StandardCharsets.UTF_8));
         } else {
-            //for GET and HEAD we remove Content-Type as some servers don't like it
+            //for GET and HEAD, we remove Content-Type as some servers don't like it
             headers.removeAll("Content-Type");
         }
-
         try (Response response = okHttpClient.newCall(new Request.Builder()
                 .url(catsRequest.getUrl())
                 .headers(headers.build())
@@ -586,6 +585,7 @@ public class ServiceCaller {
         testCaseListener.addPath(serviceData.getContractPath());
         testCaseListener.addContractPath(serviceData.getContractPath());
         testCaseListener.addServer(apiArguments.getServer());
+        testCaseListener.addValidJson(serviceData.isValidJson());
     }
 
     private void recordRequest(CatsRequest catsRequest) {

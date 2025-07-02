@@ -4,6 +4,7 @@ import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.ann.Exclude;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
+import com.endava.cats.util.SimpleJsonFormatter;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.google.gson.Strictness;
@@ -57,6 +58,9 @@ public class CatsTestCase {
     private String fullRequestPath;
     private String contractPath;
     private String server;
+
+    @Exclude
+    private boolean validJson = true;
 
     @Exclude
     private boolean js;
@@ -134,12 +138,13 @@ public class CatsTestCase {
      * @return the request payload
      */
     public String getRequestJson() {
-        if (JsonUtils.isValidJson(request.getPayload())) {
-            JsonReader reader = new JsonReader(new StringReader(request.getPayload()));
-            reader.setStrictness(Strictness.LENIENT);
-            return maskingSerializer.toJson(JsonParser.parseReader(reader));
+        if (!validJson || !JsonUtils.isValidJson(request.getPayload())) {
+            return SimpleJsonFormatter.formatJson(request.getPayload());
         }
-        return request.getPayload();
+
+        JsonReader reader = new JsonReader(new StringReader(request.getPayload()));
+        reader.setStrictness(Strictness.LENIENT);
+        return maskingSerializer.toJson(JsonParser.parseReader(reader));
     }
 
     /**

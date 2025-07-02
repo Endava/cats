@@ -51,6 +51,13 @@ public class SimpleExecutorContext {
     boolean replaceRefData = true;
 
     /**
+     * Marks if a valid JSON is sent as payload.
+     * This is useful for Fuzzers that send invalid JSON payloads.
+     */
+    @Builder.Default
+    boolean validJson = true;
+
+    /**
      * Any headers that will get removed before calling the service.
      */
     @Builder.Default
