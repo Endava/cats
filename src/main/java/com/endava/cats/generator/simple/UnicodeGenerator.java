@@ -6,6 +6,7 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -121,6 +122,19 @@ public abstract class UnicodeGenerator {
             """
                     {␀:␀} \
                     """);
+
+
+    private static final Map<Character, Character> HOMOGLYPHS = Map.ofEntries(
+            Map.entry('A', '\u0391'), Map.entry('B', '\u0392'), Map.entry('C', '\u03F9'),
+            Map.entry('E', '\u0395'), Map.entry('H', '\u0397'), Map.entry('I', '\u0399'),
+            Map.entry('J', '\u0408'), Map.entry('K', '\u039A'), Map.entry('M', '\u039C'),
+            Map.entry('N', '\u039D'), Map.entry('O', '\u039F'), Map.entry('P', '\u03A1'),
+            Map.entry('S', '\u0405'), Map.entry('T', '\u03A4'), Map.entry('X', '\u03A7'),
+            Map.entry('Y', '\u03A5'), Map.entry('a', '\u0430'), Map.entry('c', '\u0441'),
+            Map.entry('e', '\u0435'), Map.entry('i', '\u0456'), Map.entry('j', '\u0458'),
+            Map.entry('o', '\u043E'), Map.entry('p', '\u0440'), Map.entry('s', '\u0455'),
+            Map.entry('x', '\u0445')
+    );
 
     private UnicodeGenerator() {
         //ntd
@@ -280,5 +294,14 @@ public abstract class UnicodeGenerator {
      */
     public static List<String> getUppercaseExpandingLength() {
         return UPPERCASE_EXPANDING_LENGTH;
+    }
+
+    /**
+     * Gets a list of homoglyphs.
+     *
+     * @return A map of homoglyphs where the key is the original character and the value is the homoglyph character.
+     */
+    public static Map<Character, Character> getHomoglyphs() {
+        return HOMOGLYPHS;
     }
 }

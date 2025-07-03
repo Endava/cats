@@ -407,7 +407,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             return;
         }
 
-        /* If certain HTTP methods are skipped, we remove corresponding FuzzingData */
+        /* If certain HTTP methods are skipped, we remove the corresponding FuzzingData */
         /* If request uses oneOf/anyOf we only keep the one supplied through --oneOfSelection/--anyOfSelection */
         List<FuzzingData> filteredFuzzingData = fuzzingDataList.stream()
                 .filter(fuzzingData -> filterArguments.isHttpMethodSupplied(fuzzingData.getMethod()))
@@ -419,7 +419,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 .map(FuzzingData::getMethod)
                 .collect(Collectors.toSet());
 
-        List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethods(allHttpMethodsFromFuzzingData);
+        List<Fuzzer> fuzzersToRun = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(allHttpMethodsFromFuzzingData, pathItemEntry.getKey());
         this.runFuzzers(filteredFuzzingData, fuzzersToRun);
         this.runFuzzers(filteredFuzzingData, filterArguments.getSecondPhaseFuzzers());
     }

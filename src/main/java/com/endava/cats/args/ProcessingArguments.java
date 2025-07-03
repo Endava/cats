@@ -198,8 +198,22 @@ public class ProcessingArguments {
         return usePropertyExamples;
     }
 
+    /**
+     * Returns an instance of {@link ExamplesFlags} that contains the flags for examples usage.
+     *
+     * @return an instance of {@link ExamplesFlags} with the current settings
+     */
     public ExamplesFlags examplesFlags() {
         return new ExamplesFlags(this.isUseResponseBodyExamples(), this.isUseRequestBodyExamples(), this.isUseSchemaExamples(), this.isUsePropertyExamples());
+    }
+
+    /**
+     * Returns the strategy used by services to handle trimming.
+     *
+     * @return true if the strategy is TRIM_AND_VALIDATE, false if it is VALIDATE_AND_TRIM
+     */
+    public boolean isSanitizeFirst() {
+        return sanitizationStrategy == SanitizationStrategy.SANITIZE_AND_VALIDATE;
     }
 
     /**

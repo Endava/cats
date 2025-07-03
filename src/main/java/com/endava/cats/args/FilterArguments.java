@@ -31,13 +31,16 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -97,6 +100,7 @@ public class FilterArguments {
 
     @CommandLine.Option(names = {"--skipFuzzers", "--skipFuzzer"},
             description = "A comma separated list of fuzzers to ignore. They can be full or partial Fuzzer names. All available can be listed using: @|bold cats list -f|@", split = ",")
+    @Setter
     private List<String> skipFuzzers;
 
     @CommandLine.Option(names = {"--httpMethods", "--httpMethod", "-X"},
@@ -155,6 +159,8 @@ public class FilterArguments {
 
     @Setter
     private TotalCountType totalCountType = TotalCountType.FUZZERS;
+
+    private Map<String, List<String>> skipPathFuzzers = new HashMap<>();
 
     /**
      * Gets the list of fields to skip during processing. If the list is not set, an empty list is returned.
@@ -229,7 +235,18 @@ public class FilterArguments {
      * @return the list of fuzzers to skip if any supplied, an empty list otherwise
      */
     public List<String> getSkipFuzzers() {
-        return Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList());
+        List<String> skipFuzzerListWithPathFuzzers = Optional.ofNullable(this.skipFuzzers).orElse(Collections.emptyList());
+        skipPathFuzzers = skipFuzzerListWithPathFuzzers.stream()
+                .filter(string -> string.contains("="))
+                .map(String::trim)
+                .map(string -> string.split("=", 2))
+                .collect(Collectors.toMap(stringArray -> stringArray[0],
+                        stringArray -> Stream.of(stringArray[1].split(","))
+                                .map(String::trim)
+                                .toList()));
+        return skipFuzzerListWithPathFuzzers.stream()
+                .filter(string -> !string.contains("="))
+                .toList();
     }
 
     /**
@@ -298,14 +315,18 @@ public class FilterArguments {
      * @param httpMethods the list of http methods
      * @return a filtered list with fuzzers that can be run against at least one of the provided http method
      */
-    public List<Fuzzer> filterOutFuzzersNotMatchingHttpMethods(Set<HttpMethod> httpMethods) {
+    public List<Fuzzer> filterOutFuzzersNotMatchingHttpMethodsAndPath(Set<HttpMethod> httpMethods, String path) {
         return this.getFirstPhaseFuzzersAsFuzzers().stream()
                 .filter(fuzzer -> !new HashSet<>(fuzzer.skipForHttpMethods()).containsAll(httpMethods))
+                .filter(fuzzer -> Optional.ofNullable(skipPathFuzzers.get(path))
+                        .orElse(List.of())
+                        .stream()
+                        .noneMatch(string -> fuzzer.toString().contains(string)))
                 .toList();
     }
 
     /**
-     * Returns the fuzzers to be run initially as a group as list of fuzzer names.
+     * Returns the fuzzers to be run initially as a list of fuzzer names.
      *
      * @return a list of fuzzers to be run in phase 1
      */
@@ -390,8 +411,7 @@ public class FilterArguments {
     }
 
     List<String> removeBasedOnSanitizationStrategy(List<String> currentFuzzers) {
-        Class<? extends Annotation> filterAnnotation = processingArguments.getSanitizationStrategy() == ProcessingArguments.SanitizationStrategy.SANITIZE_AND_VALIDATE
-                ? ValidateAndSanitize.class : SanitizeAndValidate.class;
+        Class<? extends Annotation> filterAnnotation = processingArguments.isSanitizeFirst() ? ValidateAndSanitize.class : SanitizeAndValidate.class;
         List<String> trimFuzzers = this.filterFuzzersByAnnotationWhenCheckArgumentSupplied(true, filterAnnotation);
 
         return currentFuzzers.stream().filter(fuzzer -> !trimFuzzers.contains(fuzzer)).toList();

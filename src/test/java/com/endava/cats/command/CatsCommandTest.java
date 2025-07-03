@@ -135,7 +135,7 @@ class CatsCommandTest {
         Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinter"));
         Mockito.when(filterArguments.getSuppliedFuzzers()).thenReturn(List.of("FunctionalFuzzer"));
         Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
-        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethods(Mockito.any())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
         Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(Mockito.mock(CheckDeletedResourcesNotAvailableFuzzer.class)));
         Mockito.when(executionStatisticsListener.areManyIoErrors()).thenReturn(true);
         Mockito.when(executionStatisticsListener.getIoErrors()).thenReturn(10);
@@ -166,7 +166,7 @@ class CatsCommandTest {
         CatsCommand spyMain = Mockito.spy(catsMain);
         Mockito.when(filterArguments.getFirstPhaseFuzzersForPath()).thenReturn(List.of("PathTagsLinter"));
         Mockito.when(filterArguments.isHttpMethodSupplied(Mockito.any())).thenReturn(true);
-        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethods(Mockito.any())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
+        Mockito.when(filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(Mockito.any(), Mockito.anyString())).thenReturn(List.of(new PathTagsLinter(testCaseListener)));
         Mockito.when(filterArguments.getSecondPhaseFuzzers()).thenReturn(List.of(new CheckDeletedResourcesNotAvailableFuzzer(null, Mockito.mock(CatsGlobalContext.class), null)));
         Mockito.when(filterArguments.getPathsToRun(Mockito.any())).thenReturn(
                 List.of("/pet", "/pets", "/pet/findByStatus", "/pet/findByTags", "/pet/{petId}", "/pet/{petId}/uploadImage", "/store/inventory"));

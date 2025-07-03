@@ -78,7 +78,7 @@ class FilterArgumentsTest {
         List<String> fuzzers = filterArguments.getFirstPhaseFuzzersForPath();
 
         Assertions.assertThat(fuzzers).contains("LeadingControlCharsInHeadersFuzzer", "LeadingWhitespacesInHeadersFuzzer", "LeadingMultiCodePointEmojisInFieldsTrimValidateFuzzer"
-                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(172);
+                , "RemoveFieldsFuzzer", "CheckSecurityHeadersFuzzer").hasSize(177);
     }
 
     @Test
@@ -145,7 +145,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnAllRegisteredFuzzers() {
-        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(177);
+        Assertions.assertThat(filterArguments.getAllRegisteredFuzzers()).hasSize(182);
     }
 
     @Test
@@ -368,13 +368,13 @@ class FilterArgumentsTest {
 
     @Test
     void shouldReturnFuzzersAsClasses() {
-        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(104);
+        Assertions.assertThat(filterArguments.getFirstPhaseFuzzersAsFuzzers()).hasSize(109);
     }
 
     @Test
     void shouldNotReturnAllFuzzers() {
         Set<HttpMethod> httpMethods = Set.of(HttpMethod.GET);
-        List<Fuzzer> filteredFuzzers = filterArguments.filterOutFuzzersNotMatchingHttpMethods(httpMethods);
+        List<Fuzzer> filteredFuzzers = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(httpMethods, "");
         int allFuzzersSize = filterArguments.getFirstPhaseFuzzersAsFuzzers().size();
         int filteredSize = filteredFuzzers.size();
         Assertions.assertThat(filteredSize).isNotEqualTo(allFuzzersSize);
@@ -383,7 +383,7 @@ class FilterArgumentsTest {
     @Test
     void shouldReturnAllFuzzers() {
         Set<HttpMethod> httpMethods = Set.of(HttpMethod.GET, HttpMethod.POST);
-        List<Fuzzer> filteredFuzzers = filterArguments.filterOutFuzzersNotMatchingHttpMethods(httpMethods);
+        List<Fuzzer> filteredFuzzers = filterArguments.filterOutFuzzersNotMatchingHttpMethodsAndPath(httpMethods, "");
         int allFuzzersSize = filterArguments.getFirstPhaseFuzzersAsFuzzers().size();
         Assertions.assertThat(filteredFuzzers).hasSize(allFuzzersSize);
     }
@@ -398,7 +398,7 @@ class FilterArgumentsTest {
 
     @Test
     void shouldCountTotalFuzzers() {
-        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(121);
+        Assertions.assertThat(filterArguments.getTotalFuzzers()).isEqualTo(126);
     }
 
     @Test
@@ -407,7 +407,7 @@ class FilterArgumentsTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"ALL,162", "FUZZERS,121", "LINTERS,41"})
+    @CsvSource({"ALL,167", "FUZZERS,126", "LINTERS,41"})
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);
