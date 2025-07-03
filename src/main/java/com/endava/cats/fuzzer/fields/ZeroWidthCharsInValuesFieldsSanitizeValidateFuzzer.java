@@ -48,6 +48,11 @@ public class ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer extends ExpectOn
     }
 
     @Override
+    public boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
+        return testCaseListener.isFieldNotADiscriminator(fuzzedField);
+    }
+
+    @Override
     public String description() {
         return "iterate through each field and send values containing zero-width characters";
     }

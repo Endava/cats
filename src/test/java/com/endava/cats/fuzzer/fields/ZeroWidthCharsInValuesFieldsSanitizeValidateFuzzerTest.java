@@ -80,4 +80,22 @@ class ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(18)).reportResult(Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.eq(ResponseCodeFamilyPredefined.TWOXX), Mockito.eq(true), Mockito.eq(true));
     }
+
+    @Test
+    void shouldNotRunWhenFieldIsADiscriminator() {
+        FuzzingData data = Mockito.mock(FuzzingData.class);
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("name", "lastName", "address#zip"));
+        Mockito.when(data.getPayload()).thenReturn("""
+                {
+                    "name": "John",
+                    "lastName": "Doe",
+                    "address": {
+                        "zip": "12345"
+                    }
+                }
+                """);
+        Mockito.when(testCaseListener.isFieldNotADiscriminator(Mockito.anyString())).thenReturn(false);
+        zeroWidthCharsInValuesFieldsSanitizeValidateFuzzer.fuzz(data);
+        Mockito.verifyNoInteractions(serviceCaller);
+    }
 }
