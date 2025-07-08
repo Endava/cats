@@ -38,6 +38,7 @@ import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
@@ -148,6 +149,7 @@ public class ServiceCaller {
                     .connectionPool(new ConnectionPool(10, 15, TimeUnit.MINUTES))
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
                     .retryOnConnectionFailure(true)
+                    .protocols(processingArguments.isHttp2PriorKnowledge() ? List.of(Protocol.H2_PRIOR_KNOWLEDGE) : List.of(Protocol.HTTP_2, Protocol.HTTP_1_1))
                     .hostnameVerifier((hostname, session) -> true).build();
 
             logger.debug("Proxy configuration to be used: {}", authArguments.getProxy());

@@ -112,6 +112,11 @@ public class ProcessingArguments {
     private boolean resolveXxxOfCombinationForResponses;
 
 
+    @CommandLine.Option(names = {"--http2PriorKnowledge"},
+            description = "If set to @|bold true|@, it will force a http2 connection, without fallback to HTTP 1.X . Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean http2PriorKnowledge;
+
+
     /**
      * Checks if the payload matches any of the supplied --oneOfSelection or --anyOfSelection argument
      *

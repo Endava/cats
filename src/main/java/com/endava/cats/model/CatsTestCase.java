@@ -32,7 +32,9 @@ public class CatsTestCase {
                  %s \\
                   %s
             """;
-    private static final String CURL_HEADER = " -H \"%s: %s\"";
+    private static final String CURL_HEADER = """
+            -H "%s: %s" \\
+            """;
     private static final String CURL_BODY = " -d '%s'";
 
     private static final String CATS_REPLAY = "cats replay %s";
