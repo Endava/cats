@@ -24,7 +24,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <jansi.version>2.4.2</jansi.version>
         <lombok.version>1.18.38</lombok.version>
         <rgxgen.version>1.4</rgxgen.version>
