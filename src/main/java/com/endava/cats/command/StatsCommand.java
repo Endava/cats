@@ -1,8 +1,9 @@
 package com.endava.cats.command;
 
-import com.endava.cats.util.JsonUtils;
-import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.OpenApiReusabilityMetrics;
+import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -15,6 +16,7 @@ import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
 import java.lang.reflect.Field;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,6 +62,8 @@ public class StatsCommand implements Runnable {
             description = "Details to skip printing on console. JSON output will still include them", split = ",")
     private List<Details> skip = Collections.emptyList();
 
+    DecimalFormat df = new DecimalFormat("#.##");
+
     /**
      * Holds the type of details extracted from OpenAPI.
      */
@@ -73,10 +77,12 @@ public class StatsCommand implements Runnable {
         OPERATIONS("Total number of operations: {}", "operationSize"),
         DEPRECATED_OPERATIONS("{} deprecated operations: {}", "deprecatedOperations"),
         DEPRECATED_HEADERS("{} deprecated headers: {}", "deprecatedHeaders"),
+        OPERATIONS_MISSING_DESCRIPTION("{} operations missing description: {}", "operationsMissingDescription"),
         SERVERS("Servers: {}", "servers"),
         SECURITY_SCHEMES("{} global security schemes: {}", "securitySchemes"),
         UNUSED_SCHEMES("{} unused schemes: {}", "unusedSchemes"),
         TAGS("{} global tags: {}", "tags"),
+        TAGS_OPERATIONS("{} operation level tags: {}", "operationsTags"),
         VERSIONING("API versioning: {}", "apiVersions"),
         CONSUMES("Consumes content types: {}", "consumesContentTypes"),
         PRODUCES("Produces content types: {}", "producesContentTypes"),
@@ -104,6 +110,7 @@ public class StatsCommand implements Runnable {
     public void run() {
         try {
             OpenAPI openAPI = OpenApiUtils.readOpenApi(this.contract);
+            System.out.println(OpenApiReusabilityMetrics.computeAllMetrics(openAPI));
             String pathSize = String.valueOf(openAPI.getPaths().size());
             String operationsSize = String.valueOf(OpenApiUtils.getNumberOfOperations(openAPI));
             Set<String> servers = OpenApiUtils.getServers(openAPI);
@@ -116,6 +123,7 @@ public class StatsCommand implements Runnable {
             Info info = OpenApiUtils.getInfo(openAPI);
             Set<String> apiVersions = OpenApiUtils.getApiVersions(openAPI);
             Set<String> deprecatedOperations = OpenApiUtils.getDeprecatedOperations(openAPI);
+            Set<String> operationsMissingDescription = OpenApiUtils.getOperationsMissingDescription(openAPI);
             Set<String> consumesContentTypes = OpenApiUtils.getAllConsumesHeaders(openAPI);
             Set<String> producesContentTypes = OpenApiUtils.getAllProducesHeaders(openAPI);
             Set<String> rateLimitHeaders = OpenApiUtils.searchHeader(openAPI, "ratelimit");
@@ -123,6 +131,7 @@ public class StatsCommand implements Runnable {
             Set<String> idempotencyHeaders = OpenApiUtils.searchHeader(openAPI, "idempotency");
             Set<String> authenticationHeaders = OpenApiUtils.searchHeader(openAPI, "authorization", "authorisation", "token", "jwt", "apikey", "secret", "secretkey", "apisecret", "apitoken", "appkey", "appid");
             Set<String> tags = OpenApiUtils.getAllTags(openAPI);
+            Set<String> operationsTags = OpenApiUtils.getOperationTags(openAPI);
             Set<String> responseCodes = OpenApiUtils.getAllResponseCodes(openAPI);
             Set<String> deprecatedHeaders = OpenApiUtils.getDeprecatedHeaders(openAPI);
             Set<String> examples = OpenApiUtils.getExamples(openAPI).keySet();
@@ -138,8 +147,8 @@ public class StatsCommand implements Runnable {
                     .securitySchemes(securitySchemes).parameters(parameters).headers(headers)
                     .title(info.getTitle()).description(info.getDescription()).version(info.getVersion())
                     .openApiVersion(openAPI.getSpecVersion().name()).apiVersions(apiVersions).deprecatedOperations(deprecatedOperations)
-                    .consumesContentTypes(consumesContentTypes).producesContentTypes(producesContentTypes)
-                    .rateLimitHeaders(rateLimitHeaders).traceIdHeaders(traceIdHeaders).tags(tags)
+                    .operationsMissingDescription(operationsMissingDescription).consumesContentTypes(consumesContentTypes).producesContentTypes(producesContentTypes)
+                    .rateLimitHeaders(rateLimitHeaders).traceIdHeaders(traceIdHeaders).tags(tags).operationsTags(operationsTags)
                     .responseCodes(responseCodes).deprecatedHeaders(deprecatedHeaders).examples(examples)
                     .docsUrl(docsUrl).extensions(extensions).pathsMissingPagination(pathsMissingPagination)
                     .monitoringEndpoints(possibleMonitoringEndpoints).usedHttpMethods(usedHttpMethods)
@@ -248,6 +257,8 @@ public class StatsCommand implements Runnable {
         Set<String> monitoringEndpoints;
         Set<String> usedHttpMethods;
         List<String> unusedSchemes;
+        Set<String> operationsMissingDescription;
+        Set<String> operationsTags;
         String docsUrl;
     }
 }

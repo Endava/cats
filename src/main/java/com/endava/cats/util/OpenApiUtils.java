@@ -21,6 +21,7 @@ import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import io.swagger.v3.parser.core.models.SwaggerParseResult;
 import io.swagger.v3.parser.util.DeserializationUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -406,6 +407,20 @@ public abstract class OpenApiUtils {
     }
 
     /**
+     * Retrieves a set of identifiers for operations missing description or summary from the paths defined in the given OpenAPI specification.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A set of identifiers for operations that are missing both description and summary.
+     */
+    public static Set<String> getOperationsMissingDescription(OpenAPI openAPI) {
+        return openAPI.getPaths().entrySet().stream()
+                .flatMap(entry -> entry.getValue().readOperationsMap().entrySet().stream()
+                        .filter(operationEntry -> StringUtils.isBlank(operationEntry.getValue().getDescription()) && StringUtils.isBlank(operationEntry.getValue().getSummary()))
+                        .map(operationEntry -> Optional.ofNullable(operationEntry.getValue().getOperationId()).orElse(operationEntry.getKey() + " " + entry.getKey())))
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Retrieves a set of monitoring endpoints from the paths defined in the given OpenAPI specification.
      *
      * @param openAPI The OpenAPI specification containing path information.
@@ -578,6 +593,22 @@ public abstract class OpenApiUtils {
                 .orElse(Collections.emptyList())
                 .stream()
                 .map(Tag::getName)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Retrieves a set of tag defined at operation level.
+     *
+     * @param openAPI The OpenAPI specification containing path and operation information.
+     * @return A set of operation tags defined in the OpenAPI specification.
+     */
+    public static Set<String> getOperationTags(OpenAPI openAPI) {
+        return openAPI.getPaths().values().stream()
+                .flatMap(pathItem -> pathItem.readOperationsMap().values().stream())
+                .filter(Objects::nonNull)
+                .map(Operation::getTags)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
     }
 
