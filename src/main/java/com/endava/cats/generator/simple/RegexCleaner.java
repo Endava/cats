@@ -1,6 +1,7 @@
 package com.endava.cats.generator.simple;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import java.util.List;
 
@@ -28,14 +29,14 @@ public abstract class RegexCleaner {
             pattern = pattern.substring(1);
         }
         if (pattern.endsWith("$/")) {
-            pattern = StringUtils.removeEnd(pattern, "/");
+            pattern = Strings.CS.removeEnd(pattern, "/");
         }
         if (pattern.endsWith("$")) {
-            pattern = StringUtils.removeEnd(pattern, "$");
+            pattern = Strings.CS.removeEnd(pattern, "$");
         }
 
         if (pattern.startsWith("/^")) {
-            pattern = StringUtils.removeStart(pattern, "/");
+            pattern = Strings.CS.removeStart(pattern, "/");
         }
 
         pattern = pattern.replaceAll(EMPTY_PATTERN, "");

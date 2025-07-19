@@ -279,9 +279,6 @@ public class OpenApiReusabilityMetrics {
      * Compute all metrics at once for better performance
      */
     public static OpenApiMetricsResult computeAllMetrics(OpenAPI api) {
-        // This ensures the cache is populated once and reused for all metrics
-        OpenApiAnalysisCache cache = getOrCreateCache(api);
-
         return new OpenApiMetricsResult(
                 computeComponentInvocationCoverage(api),
                 computeDeadComponentRatio(api),

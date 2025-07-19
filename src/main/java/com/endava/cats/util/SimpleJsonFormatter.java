@@ -6,6 +6,10 @@ package com.endava.cats.util;
  */
 public abstract class SimpleJsonFormatter {
 
+    private SimpleJsonFormatter() {
+        // Utility class, no instantiation allowed
+    }
+
     private static boolean looksLikeJson(String str) {
         String trimmed = str.trim();
         return trimmed.startsWith("{") || trimmed.startsWith("[");
@@ -41,8 +45,7 @@ public abstract class SimpleJsonFormatter {
 
             if (!inString) {
                 switch (currentChar) {
-                    case '{':
-                    case '[':
+                    case '{', '[':
                         formatted.append(currentChar);
                         indentLevel++;
                         if (nextChar != '}' && nextChar != ']') {
@@ -50,8 +53,7 @@ public abstract class SimpleJsonFormatter {
                         }
                         break;
 
-                    case '}':
-                    case ']':
+                    case '}', ']':
                         if (prevChar != '{' && prevChar != '[' && prevChar != '\n') {
                             formatted.append('\n').append(indent.repeat(indentLevel - 1));
                         }
@@ -70,10 +72,7 @@ public abstract class SimpleJsonFormatter {
                         formatted.append(currentChar).append(' ');
                         break;
 
-                    case ' ':
-                    case '\t':
-                    case '\n':
-                    case '\r':
+                    case ' ', '\t', '\n', '\r':
                         // Skip whitespace outside strings
                         break;
 

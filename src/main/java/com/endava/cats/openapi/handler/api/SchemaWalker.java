@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -101,7 +102,7 @@ public class SchemaWalker {
         String urlEsc = JsonUtils.escape(rawUrl);
 
         item.readOperationsMap().forEach((m, op) -> {
-            String method = m.toString().toLowerCase();
+            String method = m.toString().toLowerCase(Locale.ROOT);
             String opName = Optional.ofNullable(op.getOperationId())
                     .orElse(m + " " + rawUrl);
 

@@ -380,7 +380,7 @@ public class StringGenerator {
         int max = generatorParams.max;
 
         try {
-            RgxGen rgxGen = new RgxGen(pattern);
+            RgxGen rgxGen = RgxGen.parse(pattern);
             do {
                 generatedValue = rgxGen.generate();
                 if (matchesLength(pattern, min, max, generatedValue) && generatedValue.matches(originalPattern)) {

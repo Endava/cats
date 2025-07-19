@@ -73,7 +73,7 @@ public class AdditionalPropertiesMassAssignmentFieldsFuzzer extends BaseReplaceF
                 .fieldFilter(field -> {
                     Schema<?> schema = data.getRequestPropertyTypes().get(field);
                     boolean forbidsExtras = schema != null &&
-                            (Boolean.FALSE.equals(schema.getAdditionalProperties()));
+                            Boolean.FALSE.equals(schema.getAdditionalProperties());
                     return forbidsExtras && JsonUtils.isValidMap(data.getPayload(), field);
                 })
                 .fuzzValueProducer(fuzzValueProducer)
