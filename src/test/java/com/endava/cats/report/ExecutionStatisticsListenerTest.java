@@ -63,7 +63,7 @@ class ExecutionStatisticsListenerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"2,5,false", "4,5,true"})
+    @CsvSource({"2,5,true", "4,5,true", "1,5,false", "0,5,false", "1,1,true"})
     void shouldTestForAuthErrors(int authErrors, int all, boolean expected) {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         IntStream.range(0, authErrors).forEach(element -> listener.increaseAuthErrors());
@@ -73,7 +73,7 @@ class ExecutionStatisticsListenerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"2,5,false", "4,5,true"})
+    @CsvSource({"2,5,true", "4,5,true", "1,5,false", "0,5,false", "2,2,true"})
     void shouldTestForIOErrors(int authErrors, int all, boolean expected) {
         ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
         IntStream.range(0, authErrors).forEach(element -> listener.increaseIoErrors());

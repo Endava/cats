@@ -218,6 +218,20 @@ public abstract class BaseFieldsFuzzer implements Fuzzer {
     }
 
     /**
+     * Checks if the field is skippable for special chars fuzzers.
+     * This is true if the field is not a discriminator, does not have an enum defined and is not a reference data field.
+     *
+     * @param data        the current fuzzing data context
+     * @param fuzzedField the name of the field being fuzzed
+     * @return true if the field is skippable for special chars fuzzers, false otherwise
+     */
+    public boolean isFieldSkippableForSpecialCharsFuzzers(FuzzingData data, String fuzzedField) {
+        Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
+        boolean isRefDataField = filesArguments.getRefData(data.getPath()).get(fuzzedField) != null;
+        return testCaseListener.isFieldNotADiscriminator(fuzzedField) && fuzzedFieldSchema.getEnum() == null && !isRefDataField;
+    }
+
+    /**
      * When sending large or malformed values the payload might not reach the application layer, but rather be rejected by the HTTP server.
      * In those cases response content-type is typically html which will most likely won't match the OpenAPI spec.
      * <p>

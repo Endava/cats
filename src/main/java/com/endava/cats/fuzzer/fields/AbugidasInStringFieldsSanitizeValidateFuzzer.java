@@ -11,7 +11,6 @@ import com.endava.cats.io.ServiceCaller;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
-import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
@@ -47,9 +46,7 @@ public class AbugidasInStringFieldsSanitizeValidateFuzzer extends ExpectOnly2XXB
 
     @Override
     public boolean isFuzzerWillingToFuzz(FuzzingData data, String fuzzedField) {
-        Schema<?> fuzzedFieldSchema = data.getRequestPropertyTypes().get(fuzzedField);
-        boolean isRefDataField = filesArguments.getRefData(data.getPath()).get(fuzzedField) != null;
-        return testCaseListener.isFieldNotADiscriminator(fuzzedField) && fuzzedFieldSchema.getEnum() == null && !isRefDataField;
+        return super.isFieldSkippableForSpecialCharsFuzzers(data, fuzzedField);
     }
 
     @Override
