@@ -331,7 +331,7 @@ public class OpenApiReusabilityMetrics {
 
         return api.getPaths().values().stream()
                 .flatMap(path -> path.readOperations().stream())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static Set<String> computeAllComponentNames(Components c) {

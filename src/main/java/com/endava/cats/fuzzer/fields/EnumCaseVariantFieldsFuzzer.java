@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 @Singleton
@@ -26,6 +27,7 @@ public class EnumCaseVariantFieldsFuzzer extends BaseEnumIteratorFieldsFuzzer {
     @Override
     protected BiFunction<Schema<?>, String, List<Object>> fuzzValueProducer() {
         return (schema, field) -> schema.getEnum().stream()
+                .filter(Objects::nonNull)
                 .map(Object::toString)
                 .map(CatsUtil::randomizeCase)
                 .filter(fuzzed -> !schema.getEnum().contains(fuzzed))
