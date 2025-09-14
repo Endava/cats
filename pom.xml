@@ -26,10 +26,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <jansi.version>2.4.2</jansi.version>
-        <lombok.version>1.18.38</lombok.version>
-        <rgxgen.version>3.0</rgxgen.version>
+        <lombok.version>1.18.40</lombok.version>
+        <rgxgen.version>3.1</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <openapi-generator.version>7.14.0</openapi-generator.version>
+        <openapi-generator.version>7.15.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -39,15 +39,15 @@
         <sonar.coverage.jacoco.xmlReportPaths>target/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
         <maven-site-plugin.version>4.0.0-M16</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.9.0</maven-project-info-reports-plugin.version>
-        <spotbugs-maven-plugin.version>4.9.3.2</spotbugs-maven-plugin.version>
-        <sonar-maven-plugin.version>5.1.0.4751</sonar-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.9.4.2</spotbugs-maven-plugin.version>
+        <sonar-maven-plugin.version> 5.2.0.4988</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.14</compiler.version>
         <json-path.version>2.9.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.25.2</quarkus.platform.version>
-        <surefire-plugin.version>3.5.3</surefire-plugin.version>
+        <quarkus.platform.version>3.26.3</quarkus.platform.version>
+        <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <compiler-plugin.version>3.14.0</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <spring.version>6.2.1</spring.version>
@@ -61,10 +61,10 @@
         <json-smart.version>2.6.0</json-smart.version>
         <jettison.version>1.5.4</jettison.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-        <snakeyaml.version>2.4</snakeyaml.version>
+        <snakeyaml.version>2.5</snakeyaml.version>
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.11.3</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
         <okhttp.version>5.1.0-CATS</okhttp.version>
@@ -75,8 +75,8 @@
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
-        <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
-        <jackson.version>2.19.2</jackson.version>
+        <kotlin-reflect.version>2.2.20</kotlin-reflect.version>
+        <jackson.version>2.20.0</jackson.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -301,7 +301,7 @@
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
-                <version>1.20.1</version>
+                <version>1.20.2</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.pitest</groupId>
