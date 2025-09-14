@@ -206,7 +206,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             Future<VersionChecker.CheckResult> newVersion = this.checkForNewVersion();
             testCaseListener.startSession();
             this.doLogic();
-            testCaseListener.endSession();
             this.printSuggestions();
             this.printVersion(newVersion);
         } catch (InterruptedException e) {
@@ -215,6 +214,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace: {}", e);
             exitCodeDueToErrors = 192;
+        } finally {
+            testCaseListener.endSession();
         }
     }
 

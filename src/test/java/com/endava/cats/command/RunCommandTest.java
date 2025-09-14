@@ -3,6 +3,8 @@ package com.endava.cats.command;
 import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.report.ExecutionStatisticsListener;
+import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.report.TestReportsGenerator;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.assertj.core.api.Assertions;
@@ -29,15 +31,20 @@ class RunCommandTest {
     RunCommand runCommand;
     @Inject
     CatsCommand catsCommand;
+    TestCaseListener testCaseListener;
+
     FilterArguments filterArguments;
 
     @BeforeEach
     void init() {
         filterArguments = Mockito.mock(FilterArguments.class);
+        testCaseListener = Mockito.mock(TestCaseListener.class);
+        ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         ReflectionTestUtils.setField(apiArguments, "contract", "contract");
         ReflectionTestUtils.setField(apiArguments, "server", "http://server");
         ReflectionTestUtils.setField(catsCommand, "filterArguments", filterArguments);
         ReflectionTestUtils.setField(runCommand, "catsCommand", catsCommand);
+        ReflectionTestUtils.setField(catsCommand, "testCaseListener", testCaseListener);
         CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
         ReflectionTestUtils.setField(runCommand, "spec", spec);

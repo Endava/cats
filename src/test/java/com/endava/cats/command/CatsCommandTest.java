@@ -113,13 +113,13 @@ class CatsCommandTest {
     }
 
     @Test
-    void shouldNotCallEndSessionWhenIOException() {
+    void shouldCallEndSessionWhenIOException() {
         ReflectionTestUtils.setField(apiArguments, "contract", "src/test/resources/not_existent.yml");
         ReflectionTestUtils.setField(apiArguments, "server", "http://localhost:8080");
 
         catsMain.run();
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
-        Mockito.verify(testCaseListener, Mockito.times(0)).endSession();
+        Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
         Mockito.verify(testCaseListener, Mockito.times(0)).afterFuzz(Mockito.any());
     }
 
