@@ -168,7 +168,7 @@ public abstract class JsonUtils {
 
     private static void configureObjectMapper(ObjectMapper mapper) {
         mapper.registerModule(new JavaTimeModule());
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
         mapper.disable(FAIL_ON_EMPTY_BEANS);
         mapper.enable(WRITE_ENUMS_USING_TO_STRING);
         mapper.enable(WRITE_BIGDECIMAL_AS_PLAIN);
