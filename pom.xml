@@ -75,8 +75,8 @@
         <regexp-gen.version>2.0.1</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
-        <kotlin-reflect.version>2.2.20</kotlin-reflect.version>
-        <jackson.version>2.20.0</jackson.version>
+        <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
+        <jackson.version>2.19.2</jackson.version>
     </properties>
     <dependencyManagement>
         <dependencies>
