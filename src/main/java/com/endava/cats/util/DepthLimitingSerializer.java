@@ -22,7 +22,7 @@ public class DepthLimitingSerializer extends JsonSerializer<Object> {
 
     public DepthLimitingSerializer(int depth) {
         maxDepth = depth;
-        this.mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        this.mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
     }
 
     @Override
