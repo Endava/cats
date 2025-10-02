@@ -30,7 +30,7 @@ public class RandomDummyInvalidJsonBodyFuzzer implements Fuzzer {
                     """,
             """
                     {"backslash": "\\"}
-                     """,
+                    """,
             """
                     {"ünicode": "ünicode"}
                     """,

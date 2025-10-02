@@ -812,9 +812,7 @@ class TestCaseListenerTest {
 
     @Test
     void shouldGenerateTraceId() {
-        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().build(), () -> {
-            Assertions.assertThat(testCaseListener.getTestIdentifier()).isNotNull();
-        });
+        prepareTestCaseListenerSimpleSetup(CatsResponse.builder().build(), () -> Assertions.assertThat(testCaseListener.getTestIdentifier()).isNotNull());
     }
 
     @Test

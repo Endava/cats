@@ -66,9 +66,7 @@ class BaseFieldsFuzzerTest {
         Set<String> fields = Collections.singleton("field");
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(fields);
         Mockito.when(data.getPayload()).thenReturn("{}");
-        testCaseListener.createAndExecuteTest(Mockito.mock(PrettyLogger.class), Mockito.mock(Fuzzer.class), () -> {
-            baseFieldsFuzzer.process(data, "field", FuzzingStrategy.skip().withData("Skipping test"));
-        }, data);
+        testCaseListener.createAndExecuteTest(Mockito.mock(PrettyLogger.class), Mockito.mock(Fuzzer.class), () -> baseFieldsFuzzer.process(data, "field", FuzzingStrategy.skip().withData("Skipping test")), data);
         Mockito.verify(testCaseListener).skipTest(Mockito.any(), Mockito.eq("Skipping test"));
     }
 
@@ -156,7 +154,7 @@ class BaseFieldsFuzzerTest {
     }
 
     static class MyBaseFieldsFuzzer extends BaseFieldsFuzzer {
-        private String fuzzedValue;
+        private final String fuzzedValue;
 
         public MyBaseFieldsFuzzer(ServiceCaller sc, TestCaseListener lr, FilesArguments cp, String fuzzedValue) {
             super(sc, lr, cp);

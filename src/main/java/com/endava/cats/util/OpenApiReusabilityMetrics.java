@@ -51,6 +51,36 @@ public class OpenApiReusabilityMetrics {
             this.totalRefs = countRefsInObject(apiAsMap);
             this.inlineSchemas = countInlineSchemas(apiAsMap);
         }
+
+        private static List<Operation> computeAllOperations(OpenAPI api) {
+            if (api.getPaths() == null) return Collections.emptyList();
+
+            return api.getPaths().values().stream()
+                    .flatMap(path -> path.readOperations().stream())
+                    .toList();
+        }
+
+        private static Set<String> computeAllComponentNames(Components c) {
+            if (c == null) return Collections.emptySet();
+
+            Set<String> allComponents = new HashSet<>();
+            if (c.getSchemas() != null) {
+                allComponents.addAll(c.getSchemas().keySet());
+            }
+            if (c.getResponses() != null) {
+                allComponents.addAll(c.getResponses().keySet());
+            }
+            if (c.getParameters() != null) {
+                allComponents.addAll(c.getParameters().keySet());
+            }
+            if (c.getRequestBodies() != null) {
+                allComponents.addAll(c.getRequestBodies().keySet());
+            }
+            if (c.getHeaders() != null) {
+                allComponents.addAll(c.getHeaders().keySet());
+            }
+            return allComponents;
+        }
     }
 
     /**
@@ -326,35 +356,6 @@ public class OpenApiReusabilityMetrics {
 
     // ─── Helper Methods ───────────────────────────────────────────────────────────────
 
-    private static List<Operation> computeAllOperations(OpenAPI api) {
-        if (api.getPaths() == null) return Collections.emptyList();
-
-        return api.getPaths().values().stream()
-                .flatMap(path -> path.readOperations().stream())
-                .toList();
-    }
-
-    private static Set<String> computeAllComponentNames(Components c) {
-        if (c == null) return Collections.emptySet();
-
-        Set<String> allComponents = new HashSet<>();
-        if (c.getSchemas() != null) {
-            allComponents.addAll(c.getSchemas().keySet());
-        }
-        if (c.getResponses() != null) {
-            allComponents.addAll(c.getResponses().keySet());
-        }
-        if (c.getParameters() != null) {
-            allComponents.addAll(c.getParameters().keySet());
-        }
-        if (c.getRequestBodies() != null) {
-            allComponents.addAll(c.getRequestBodies().keySet());
-        }
-        if (c.getHeaders() != null) {
-            allComponents.addAll(c.getHeaders().keySet());
-        }
-        return allComponents;
-    }
 
     private static Map<String, Object> convertToMap(Object obj) {
         if (obj == null) {
@@ -370,58 +371,71 @@ public class OpenApiReusabilityMetrics {
     }
 
     private static int countRefsInObject(Object obj) {
-        if (obj == null) {
-            return 0;
+        switch (obj) {
+            case null -> {
+                return 0;
+            }
+            case Map<?, ?> map -> {
+                int count = map.containsKey("$ref") ? 1 : 0;
+                return count + map.values().stream()
+                        .mapToInt(OpenApiReusabilityMetrics::countRefsInObject)
+                        .sum();
+            }
+            case Collection<?> collection -> {
+                return collection.stream()
+                        .mapToInt(OpenApiReusabilityMetrics::countRefsInObject)
+                        .sum();
+            }
+            default -> {
+            }
         }
 
-        if (obj instanceof Map<?, ?> map) {
-            int count = map.containsKey("$ref") ? 1 : 0;
-            return count + map.values().stream()
-                    .mapToInt(OpenApiReusabilityMetrics::countRefsInObject)
-                    .sum();
-        } else if (obj instanceof Collection<?> collection) {
-            return collection.stream()
-                    .mapToInt(OpenApiReusabilityMetrics::countRefsInObject)
-                    .sum();
-        }
         return 0;
     }
 
     private static void collectRefTargets(Object obj, Set<String> targets) {
-        if (obj == null) {
-            return;
+        switch (obj) {
+            case null -> {
+                return;
+            }
+            case Map<?, ?> map -> {
+                Object ref = map.get("$ref");
+                if (ref instanceof String refStr && refStr.startsWith("#/components/")) {
+                    String componentName = refStr.substring(refStr.lastIndexOf('/') + 1);
+                    targets.add(componentName);
+                }
+                map.values().forEach(value -> collectRefTargets(value, targets));
+            }
+            case Collection<?> collection -> collection.forEach(item -> collectRefTargets(item, targets));
+            default -> {
+            }
         }
 
-        if (obj instanceof Map<?, ?> map) {
-            Object ref = map.get("$ref");
-            if (ref instanceof String refStr && refStr.startsWith("#/components/")) {
-                String componentName = refStr.substring(refStr.lastIndexOf('/') + 1);
-                targets.add(componentName);
-            }
-            map.values().forEach(value -> collectRefTargets(value, targets));
-        } else if (obj instanceof Collection<?> collection) {
-            collection.forEach(item -> collectRefTargets(item, targets));
-        }
     }
 
     private static int countInlineSchemas(Object obj) {
-        if (obj == null) {
-            return 0;
+        switch (obj) {
+            case null -> {
+                return 0;
+            }
+            case Map<?, ?> map -> {
+                boolean isSchema = hasSchemaProperties(map);
+                boolean isReference = map.containsKey("$ref");
+
+                int count = (isSchema && !isReference) ? 1 : 0;
+                return count + map.values().stream()
+                        .mapToInt(OpenApiReusabilityMetrics::countInlineSchemas)
+                        .sum();
+            }
+            case Collection<?> collection -> {
+                return collection.stream()
+                        .mapToInt(OpenApiReusabilityMetrics::countInlineSchemas)
+                        .sum();
+            }
+            default -> {
+            }
         }
 
-        if (obj instanceof Map<?, ?> map) {
-            boolean isSchema = hasSchemaProperties(map);
-            boolean isReference = map.containsKey("$ref");
-
-            int count = (isSchema && !isReference) ? 1 : 0;
-            return count + map.values().stream()
-                    .mapToInt(OpenApiReusabilityMetrics::countInlineSchemas)
-                    .sum();
-        } else if (obj instanceof Collection<?> collection) {
-            return collection.stream()
-                    .mapToInt(OpenApiReusabilityMetrics::countInlineSchemas)
-                    .sum();
-        }
         return 0;
     }
 

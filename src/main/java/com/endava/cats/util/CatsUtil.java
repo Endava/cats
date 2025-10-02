@@ -249,7 +249,7 @@ public abstract class CatsUtil {
             }
         }
 
-        if (!result.toString().isEmpty()) {
+        if (!result.isEmpty()) {
             return StringUtils.stripStart(result.toString().trim(), ", ");
         }
 

@@ -57,7 +57,7 @@ class ClusterComputeTest {
         List<Map<String, Object>> clusters = ClusterCompute.createClusters(testCases);
 
         assertThat(clusters).hasSize(1);
-        Map<String, Object> cluster = ((List<Map<String, Object>>) clusters.get(0).get("clusters")).getFirst();
+        Map<String, Object> cluster = ((List<Map<String, Object>>) clusters.getFirst().get("clusters")).getFirst();
 
         assertThat(cluster).containsKeys("clusterId", "errorMessage", "borderColor", "paths");
         assertThat(cluster.get("paths")).isInstanceOf(List.class);

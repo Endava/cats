@@ -66,35 +66,34 @@ public abstract class RegexCleaner {
             }
 
             switch (currentChar) {
-                case '\\':
+                case '\\' -> {
                     result.append(currentChar);
                     escape = true;
-                    break;
-                case '[':
+                }
+                case '[' -> {
                     inCharClass = true;
                     result.append(currentChar);
-                    break;
-                case ']':
+                }
+                case ']' -> {
                     inCharClass = false;
                     result.append(currentChar);
-                    break;
-                case '(':
+                }
+                case '(' -> {
                     parenDepth++;
                     result.append(currentChar);
-                    break;
-                case ')':
+                }
+                case ')' -> {
                     if (parenDepth > 0) {
                         parenDepth--;
                     }
                     result.append(currentChar);
-                    break;
-                case '$':
+                }
+                case '$' -> {
                     if (shouldAppendDollar(i, regex.length(), inCharClass, parenDepth)) {
                         result.append(currentChar);
                     }
-                    break;
-                default:
-                    result.append(currentChar);
+                }
+                default -> result.append(currentChar);
             }
         }
 

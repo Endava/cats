@@ -16,7 +16,7 @@ import java.util.Map;
 @Singleton
 @Getter
 public class StringSchemaCollector implements SchemaHandler {
-    private Map<SchemaLocation, Schema<?>> stringSchemas = new LinkedHashMap<>();
+    private final Map<SchemaLocation, Schema<?>> stringSchemas = new LinkedHashMap<>();
 
     @Override
     public void handle(SchemaLocation schemaLocation, Schema<?> schema) {

@@ -398,7 +398,7 @@ class ServiceCallerTest {
 
         List<KeyValuePair<String, Object>> catsHeader = headers.stream().filter(header -> header.getKey().equalsIgnoreCase("catsFuzzedHeader")).toList();
         Assertions.assertThat(catsHeader).hasSize(1);
-        Assertions.assertThat(catsHeader.get(0).getValue()).isEqualTo("cats");
+        Assertions.assertThat(catsHeader.getFirst().getValue()).isEqualTo("cats");
     }
 
     @Test

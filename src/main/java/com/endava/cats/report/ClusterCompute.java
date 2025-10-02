@@ -185,7 +185,7 @@ public class ClusterCompute {
         for (CatsTestCaseSummary tc : cluster) {
             String path = tc.getPath();
             pathGroups.computeIfAbsent(path, k -> new StringBuilder())
-                    .append(pathGroups.get(path).length() > 0 ? ", " : "")
+                    .append(!pathGroups.get(path).isEmpty() ? ", " : "")
                     .append(String.format("<a href=\"%s.html\" target=\"_blank\">%s</a>",
                             tc.getKey(), tc.getId()));
         }

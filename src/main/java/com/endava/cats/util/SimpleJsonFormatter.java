@@ -45,39 +45,31 @@ public abstract class SimpleJsonFormatter {
 
             if (!inString) {
                 switch (currentChar) {
-                    case '{', '[':
+                    case '{', '[' -> {
                         formatted.append(currentChar);
                         indentLevel++;
                         if (nextChar != '}' && nextChar != ']') {
                             formatted.append('\n').append(indent.repeat(indentLevel));
                         }
-                        break;
-
-                    case '}', ']':
+                    }
+                    case '}', ']' -> {
                         if (prevChar != '{' && prevChar != '[' && prevChar != '\n') {
                             formatted.append('\n').append(indent.repeat(indentLevel - 1));
                         }
                         indentLevel--;
                         formatted.append(currentChar);
-                        break;
-
-                    case ',':
+                    }
+                    case ',' -> {
                         formatted.append(currentChar);
                         if (nextChar != '\n') {
                             formatted.append('\n').append(indent.repeat(indentLevel));
                         }
-                        break;
-
-                    case ':':
-                        formatted.append(currentChar).append(' ');
-                        break;
-
-                    case ' ', '\t', '\n', '\r':
+                    }
+                    case ':' -> formatted.append(currentChar).append(' ');
+                    case ' ', '\t', '\n', '\r' -> {
                         // Skip whitespace outside strings
-                        break;
-
-                    default:
-                        formatted.append(currentChar);
+                    }
+                    default -> formatted.append(currentChar);
                 }
             } else {
                 formatted.append(currentChar);
