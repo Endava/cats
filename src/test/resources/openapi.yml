@@ -16,7 +16,7 @@ externalDocs:
 x-vendor:
   custom-property: "This is a custom vendor extension"
 servers:
-  - url: /v3
+  - url: http://localhost:8080/v3
     description: This is the production server
 tags:
   - name: pet

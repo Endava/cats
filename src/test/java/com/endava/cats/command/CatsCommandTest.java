@@ -210,6 +210,7 @@ class CatsCommandTest {
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
         ReflectionTestUtils.setField(catsMain, "spec", spec);
         ReflectionTestUtils.setField(apiArguments, "server", "server");
+        ReflectionTestUtils.setField(apiArguments, "contract", null);
         Assertions.assertThatThrownBy(() -> catsMain.run()).isInstanceOf(CommandLine.ParameterException.class);
     }
 }

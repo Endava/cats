@@ -69,6 +69,6 @@ class RandomCommandTest {
         apiArguments.setContract("contract");
         apiArguments.setServer("server");
         randomCommand.apiArguments = apiArguments;
-        Assertions.assertThatThrownBy(() -> randomCommand.run()).isInstanceOf(CommandLine.ParameterException.class);
+        Assertions.assertThatThrownBy(() -> apiArguments.validateValidServer(randomCommand.spec, null)).isInstanceOf(CommandLine.ParameterException.class);
     }
 }

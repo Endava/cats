@@ -251,6 +251,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         this.prepareRun();
         OpenAPI openAPI = this.createOpenAPI();
         this.checkOpenAPI(openAPI);
+        apiArguments.validateValidServer(spec, openAPI);
+
         //reporting path is initialized only if OpenAPI spec is successfully parsed
         testCaseListener.initReportingPath();
         this.printConfiguration(openAPI);
@@ -308,6 +310,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size(), filterArguments.getTotalFuzzersOrLinters(),
                 filterArguments.getPathsToRun(openAPI).size(), openAPI.getPaths().size());
 
+        //TODO don't do this unless linting
         Set<String> refs = OpenApiRefExtractor.extractRefsFromOpenAPI(apiArguments.getContract());
         globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration,
                 filesArguments.getErrorLeaksKeywordsList(), refs);
@@ -362,7 +365,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         ConsoleUtils.initTerminalWidth(spec);
         reportingArguments.processLogData();
         apiArguments.validateRequired(spec);
-        apiArguments.validateValidServer(spec);
         filesArguments.loadConfig();
     }
 

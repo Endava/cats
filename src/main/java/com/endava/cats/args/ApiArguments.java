@@ -1,11 +1,17 @@
 package com.endava.cats.args;
 
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.OpenApiServerExtractor;
+import io.github.ludovicianul.prettylogger.PrettyLogger;
+import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
+import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import picocli.CommandLine;
+
+import java.util.List;
 
 /**
  * Holds all arguments related to API details.
@@ -13,6 +19,8 @@ import picocli.CommandLine;
 @Getter
 @Singleton
 public class ApiArguments {
+    private final PrettyLogger log = PrettyLoggerFactory.getLogger(this.getClass());
+
     @CommandLine.Option(names = {"--maxRequestsPerMinute"},
             description = "Maximum number of requests per minute; this is useful when APIs have rate limiting implemented. Default: @|bold,underline ${DEFAULT-VALUE}|@",
             defaultValue = "10000")
@@ -67,12 +75,26 @@ public class ApiArguments {
     public void validateRequired(CommandLine.Model.CommandSpec spec) {
         if (this.contract == null) {
             throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --contract=<contract>");
-        } else if (this.server == null) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --server=<server>");
         }
     }
 
-    public void validateValidServer(CommandLine.Model.CommandSpec spec) {
+    public void validateValidServer(CommandLine.Model.CommandSpec spec, OpenAPI openAPI) {
+        String serverFromInput = this.server;
+        if (openAPI != null) {
+            List<String> servers = OpenApiServerExtractor.getServerUrls(openAPI);
+            log.debug("--server not provided. Loaded from OpenAPI: {}", servers);
+            servers.stream().findFirst().ifPresent(server -> this.server = server);
+        }
+        if (this.server != null && serverFromInput != null && this.server.contains("{")) {
+            this.server = this.server.replaceAll("\\{.*?}", serverFromInput);
+        }
+        if (this.server != null && serverFromInput != null && !this.server.startsWith("http")) {
+            this.server = serverFromInput + this.server;
+        }
+
+        if (this.server == null) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --server=<server>");
+        }
         if (!CatsUtil.isValidURL(server)) {
             throw new CommandLine.ParameterException(spec.commandLine(), "You must provide a valid <server> URL which must start with http or https");
         }

@@ -111,7 +111,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Override
     public void run() {
         apiArguments.validateRequired(spec);
-        apiArguments.validateValidServer(spec);
+
         if (CatsUtil.isFileEmpty(file)) {
             throw new CommandLine.ParameterException(spec.commandLine(), "You must provide a valid non-empty <file>");
         }
