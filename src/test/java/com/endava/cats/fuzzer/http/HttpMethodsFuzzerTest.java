@@ -6,6 +6,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.Operation;
@@ -57,7 +58,7 @@ class HttpMethodsFuzzerTest {
     @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzer_thenResultsAreCorrectlyReported() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").headers(List.of(new KeyValuePair<>("Allow", "GET, PUT, DELETE"))).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         httpMethodsFuzzer.fuzz(data);
@@ -99,5 +100,45 @@ class HttpMethodsFuzzerTest {
         Mockito.verify(testCaseListener, Mockito.times(7)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
         httpMethodsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(7)).reportResultError(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 200}));
+    }
+
+    @Test
+    void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWithNon2xxNon405_thenWarningIsReported() {
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(500).httpMethod("POST").build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        httpMethodsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405, 500}));
+    }
+
+    @Test
+    void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWith405ButMissingAllowHeader_thenWarningIsReported() {
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").headers(List.of()).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        httpMethodsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq("POST"), AdditionalMatchers.aryEq(new Object[]{405}));
+    }
+
+    @Test
+    void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWith405AndAllowHeaderContainsMethod_thenWarningIsReported() {
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").headers(List.of(new KeyValuePair<>("Allow", "GET, POST, PUT"))).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        httpMethodsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("POST"), AdditionalMatchers.aryEq(new Object[]{405, "POST"}));
+    }
+
+    @Test
+    void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWith405AndValidAllowHeader_thenInfoIsReported() {
+        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").headers(List.of(new KeyValuePair<>("Allow", "GET, PUT, DELETE"))).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        httpMethodsFuzzer.fuzz(data);
+        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
     }
 }

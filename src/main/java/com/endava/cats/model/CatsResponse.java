@@ -102,7 +102,7 @@ public class CatsResponse {
      * @return A key-value pair representing the header, or {@code null} if no such header is found.
      */
     public KeyValuePair<String, String> getHeader(String name) {
-        return headers.stream()
+        return Optional.ofNullable(headers).orElse(List.of()).stream()
                 .filter(header -> WordUtils.matchesAsLowerCase(header.getKey(), name))
                 .findFirst()
                 .orElse(null);

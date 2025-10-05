@@ -6,6 +6,7 @@ import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.report.TestReportsGenerator;
+import com.endava.cats.util.KeyValuePair;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.swagger.v3.oas.models.PathItem;
@@ -51,7 +52,7 @@ class NonRestHttpMethodsFuzzerTest {
     @Test
     void shouldCallServiceAndReportInfoWhenServiceRespondsWith405() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").headers(List.of(new KeyValuePair<>("Allow", "GET"))).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
@@ -61,7 +62,7 @@ class NonRestHttpMethodsFuzzerTest {
     @Test
     void shouldCallServiceAndReportWarnWhenServiceRespondsWith400() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).httpMethod("POST").build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(400).httpMethod("POST").headers(List.of(new KeyValuePair<>("Allow","GET"))).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);
@@ -71,7 +72,7 @@ class NonRestHttpMethodsFuzzerTest {
     @Test
     void shouldRunOncePerPath() {
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).path("/test").requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").build();
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).headers(List.of(new KeyValuePair<>("Allow", "GET"))).httpMethod("POST").build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         nonRestHttpMethodsFuzzer.fuzz(data);

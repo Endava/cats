@@ -8,6 +8,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.KeyValuePair;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Inject;
@@ -63,14 +64,25 @@ public class HttpMethodFuzzerUtil {
 
     private void checkResponse(CatsResponse response, FuzzingData data) {
         if (response.getResponseCode() == 405) {
-            testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
-                    response.getHttpMethod(), response.getResponseCode());
+            this.handle405(response, data);
         } else if (ResponseCodeFamily.is2xxCode(response.getResponseCode())) {
             testCaseListener.reportResultError(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()), "Request succeeded unexpectedly for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
         } else {
             testCaseListener.reportResultWarn(logger, data, "Unexpected response code: %s".formatted(response.getResponseCode()), "Unexpected response code for http method [{}]: expected [{}], actual [{}]",
                     response.getHttpMethod(), 405, response.getResponseCode());
+        }
+    }
+
+    private void handle405(CatsResponse response, FuzzingData data) {
+        KeyValuePair<String, String> allowHeader = response.getHeader("Allow");
+        if (allowHeader == null) {
+            testCaseListener.reportResultWarn(logger, data, "Request failed as expected for http method [{}] with response code [{}], but missing Allow header", response.getHttpMethod(), response.getResponseCode());
+        } else if (allowHeader.getValue().contains(response.getHttpMethod())) {
+            testCaseListener.reportResultWarn(logger, data, "Request failed as expected for http method [{}] with response code [{}], but Allow header contains [{}]", response.getHttpMethod(), response.getResponseCode(), response.getHttpMethod());
+        } else {
+            testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
+                    response.getHttpMethod(), response.getResponseCode());
         }
     }
 }
