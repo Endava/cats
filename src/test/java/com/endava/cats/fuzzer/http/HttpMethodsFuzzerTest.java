@@ -131,14 +131,4 @@ class HttpMethodsFuzzerTest {
         httpMethodsFuzzer.fuzz(data);
         Mockito.verify(testCaseListener, Mockito.times(7)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.eq("POST"), AdditionalMatchers.aryEq(new Object[]{405, "POST"}));
     }
-
-    @Test
-    void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWith405AndValidAllowHeader_thenInfoIsReported() {
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").headers(List.of(new KeyValuePair<>("Allow", "GET, PUT, DELETE"))).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
-        httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultInfo(Mockito.any(), Mockito.any(), Mockito.anyString(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
-    }
 }

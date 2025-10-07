@@ -387,6 +387,7 @@ public class OpenApiReusabilityMetrics {
                         .sum();
             }
             default -> {
+                //don't do anything on other cases
             }
         }
 
@@ -408,6 +409,7 @@ public class OpenApiReusabilityMetrics {
             }
             case Collection<?> collection -> collection.forEach(item -> collectRefTargets(item, targets));
             default -> {
+                //don't do anything on other cases
             }
         }
 
@@ -433,6 +435,7 @@ public class OpenApiReusabilityMetrics {
                         .sum();
             }
             default -> {
+                //don't do anything for other cases
             }
         }
 

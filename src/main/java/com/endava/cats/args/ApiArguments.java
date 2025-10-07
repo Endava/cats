@@ -80,23 +80,31 @@ public class ApiArguments {
 
     public void validateValidServer(CommandLine.Model.CommandSpec spec, OpenAPI openAPI) {
         String serverFromInput = this.server;
+
         if (openAPI != null) {
             List<String> servers = OpenApiServerExtractor.getServerUrls(openAPI);
             log.debug("--server not provided. Loaded from OpenAPI: {}", servers);
-            servers.stream().findFirst().ifPresent(server -> this.server = server);
+            servers.stream().findFirst().ifPresent(theServer -> this.server = theServer);
         }
-        if (this.server != null && serverFromInput != null && this.server.contains("{")) {
-            this.server = this.server.replaceAll("\\{.*?}", serverFromInput);
-        }
-        if (this.server != null && serverFromInput != null && !this.server.startsWith("http")) {
-            this.server = serverFromInput + this.server;
+
+        if (this.server != null && serverFromInput != null) {
+            if (this.server.contains("{")) {
+                this.server = this.server.replaceAll("\\{[^}]*+}", serverFromInput);
+            }
+
+            if (!this.server.startsWith("http")) {
+                this.server = serverFromInput + this.server;
+            }
         }
 
         if (this.server == null) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "Missing required option --server=<server>");
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    "Missing required option --server=<server>");
         }
-        if (!CatsUtil.isValidURL(server)) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "You must provide a valid <server> URL which must start with http or https");
+
+        if (!CatsUtil.isValidURL(this.server)) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    "You must provide a valid <server> URL which must start with http or https");
         }
     }
 

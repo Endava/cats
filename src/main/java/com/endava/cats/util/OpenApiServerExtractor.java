@@ -16,6 +16,10 @@ import java.util.Map;
  */
 public class OpenApiServerExtractor {
 
+    private OpenApiServerExtractor() {
+        //ntd
+    }
+
     /**
      * Extracts all possible server URLs from an OpenAPI specification.
      * Handles server variables by generating all combinations.
@@ -83,7 +87,7 @@ public class OpenApiServerExtractor {
 
             // If no values found, skip this variable
             if (possibleValues.isEmpty()) {
-                continue; //return Collections.emptyList();
+                continue;
             }
 
             // Create new combinations for each possible value
