@@ -169,7 +169,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         try {
             UUID.fromString(value);
             return true;
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return false;
         }
     }
@@ -178,7 +178,7 @@ public class RandomResourcesFuzzer implements Fuzzer {
         try {
             Long.parseLong(value);
             return true;
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             return false;
         }
     }

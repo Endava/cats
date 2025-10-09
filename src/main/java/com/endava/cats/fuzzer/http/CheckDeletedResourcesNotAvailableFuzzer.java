@@ -81,7 +81,7 @@ public class CheckDeletedResourcesNotAvailableFuzzer implements Fuzzer {
     static String getRelativePath(String url) {
         try {
             return URI.create(url).toURL().getPath();
-        } catch (Exception e) {
+        } catch (Exception _) {
             return url;
         }
     }

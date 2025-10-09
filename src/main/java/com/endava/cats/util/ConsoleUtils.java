@@ -42,7 +42,7 @@ public abstract class ConsoleUtils {
     public static void initTerminalWidth(CommandLine.Model.CommandSpec spec) {
         try {
             terminalWidth = spec.usageMessage().width();
-        } catch (Exception e) {
+        } catch (Exception _) {
             terminalWidth = 80;
         }
     }

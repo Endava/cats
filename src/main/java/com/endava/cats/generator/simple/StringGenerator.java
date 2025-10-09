@@ -278,7 +278,7 @@ public class StringGenerator {
                 LOGGER.debug("Generated value " + initialVersion + " matched " + generatorParams.originalPattern());
                 return initialVersion;
             }
-        } catch (Exception e) {
+        } catch (Exception _) {
             LOGGER.debug("Generator {} failed #atempt 1", generator.getClass().getSimpleName());
         }
         try {
@@ -290,7 +290,7 @@ public class StringGenerator {
                 LOGGER.debug("Generated value with lookaheads removed " + secondVersion + " matched " + generatorParams.originalPattern());
                 return secondVersion;
             }
-        } catch (Exception e) {
+        } catch (Exception _) {
             LOGGER.debug("Generator {} failed #atempt 2", generator.getClass().getSimpleName());
         }
         return null;
@@ -417,7 +417,7 @@ public class StringGenerator {
             } else {
                 return false;
             }
-        } catch (PatternSyntaxException e) {
+        } catch (PatternSyntaxException _) {
             return false;
         }
     }

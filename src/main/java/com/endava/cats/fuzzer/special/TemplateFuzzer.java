@@ -255,7 +255,7 @@ public class TemplateFuzzer implements Fuzzer {
         }
         try {
             return FuzzingStrategy.replaceField(data.getPayload(), targetField, FuzzingStrategy.replace().withData(withData)).json();
-        } catch (JsonPathException e) {
+        } catch (JsonPathException _) {
             return data.getPayload();
         }
     }

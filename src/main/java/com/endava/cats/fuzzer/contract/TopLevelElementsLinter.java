@@ -64,7 +64,7 @@ public class TopLevelElementsLinter extends BaseLinter {
 
         super.addDefaultsForPathAgnosticFuzzers();
 
-        if (errorString.toString().isEmpty()) {
+        if (errorString.isEmpty()) {
             testCaseListener.reportResultInfo(log, data, "OpenAPI contract contains all top level relevant information!");
         } else {
             testCaseListener.reportResultError(log, data, "Missing top level elements", errorString.toString());

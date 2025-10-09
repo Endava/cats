@@ -696,7 +696,7 @@ public class FuzzingDataFactory {
                     this.inlineSchemaIfNeeded(param);
                     try {
                         headers.add(CatsHeader.fromHeaderParameter(param));
-                    } catch (IllegalArgumentException e) {
+                    } catch (IllegalArgumentException _) {
                         globalContext.recordError("A valid string could not be generated for the header '" + param.getName() + "' using the pattern '" + param.getSchema().getPattern() + "'. Please consider either changing the pattern or simplifying it.");
                         headers.add(CatsHeader.from(param.getName(), OpenAPIModelGeneratorV2.DEFAULT_STRING_WHEN_GENERATION_FAILS, param.getRequired()));
                     }

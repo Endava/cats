@@ -252,7 +252,7 @@ public abstract class JsonUtils {
         }
         try {
             return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
-        } catch (UnsupportedOperationException e) {
+        } catch (UnsupportedOperationException _) {
             String json1Unescaped = StringEscapeUtils.unescapeJson(json1).replaceAll("(^[\"'])|([\"']$)", "");
             String json2Unescaped = StringEscapeUtils.unescapeJson(json2).replaceAll("(^[\"'])|([\"']$)", "");
             return JsonPath.parse(json1Unescaped).jsonString().contentEquals(JsonPath.parse(json2Unescaped).jsonString());
@@ -300,7 +300,7 @@ public abstract class JsonUtils {
         }
         try {
             var unused = JSON_STRICT_PARSER.fromJson(text, Object.class);
-        } catch (Exception e) {
+        } catch (Exception _) {
             return false;
         }
         return text.contains("{") || text.contains("]");
@@ -332,7 +332,7 @@ public abstract class JsonUtils {
         }
         try {
             return testForPrimitiveOrThrow(payload, property);
-        } catch (InvalidPathException e) {
+        } catch (InvalidPathException _) {
             LOGGER.debug("Invalid path {}", property);
             return false;
         }
@@ -351,7 +351,7 @@ public abstract class JsonUtils {
         }
         try {
             return !testForPrimitiveOrThrow(payload, property);
-        } catch (InvalidPathException e) {
+        } catch (InvalidPathException _) {
             return false;
         }
     }
@@ -369,7 +369,7 @@ public abstract class JsonUtils {
         }
         try {
             return testForPredicateOrThrow(payload, property, JsonNode::isArray);
-        } catch (InvalidPathException e) {
+        } catch (InvalidPathException _) {
             return false;
         }
     }
@@ -398,7 +398,7 @@ public abstract class JsonUtils {
         if (StringUtils.isNotBlank(payload)) {
             try {
                 return JsonPath.parse(payload).delete(sanitizeToJsonPath(node)).jsonString();
-            } catch (PathNotFoundException e) {
+            } catch (PathNotFoundException _) {
                 return payload;
             }
         }
@@ -454,7 +454,7 @@ public abstract class JsonUtils {
         try {
             DocumentContext jsonDoc = JsonPath.parse(jsonPayload);
             return jsonDoc.read(JsonUtils.sanitizeToJsonPath(value));
-        } catch (JsonPathException | IllegalArgumentException e) {
+        } catch (JsonPathException | IllegalArgumentException _) {
             LOGGER.debug("Expected variable {} was not found. Setting to NOT_SET", value);
             return NOT_SET;
         }

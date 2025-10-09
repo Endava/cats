@@ -208,7 +208,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
             this.doLogic();
             this.printSuggestions();
             this.printVersion(newVersion);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());

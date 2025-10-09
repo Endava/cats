@@ -319,7 +319,7 @@ public abstract class CatsUtil {
             URI.create(urlString).toURL();
 
             return true;
-        } catch (Exception e) {
+        } catch (Exception _) {
             return false;
         }
     }

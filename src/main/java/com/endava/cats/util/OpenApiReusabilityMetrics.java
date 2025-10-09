@@ -365,16 +365,13 @@ public class OpenApiReusabilityMetrics {
             return JsonUtils.getSimpleObjectMapper().convertValue(obj,
                     new com.fasterxml.jackson.core.type.TypeReference<>() {
                     });
-        } catch (Exception e) {
+        } catch (Exception _) {
             return Collections.emptyMap();
         }
     }
 
     private static int countRefsInObject(Object obj) {
         switch (obj) {
-            case null -> {
-                return 0;
-            }
             case Map<?, ?> map -> {
                 int count = map.containsKey("$ref") ? 1 : 0;
                 return count + map.values().stream()

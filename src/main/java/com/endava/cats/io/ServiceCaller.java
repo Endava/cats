@@ -494,10 +494,7 @@ public class ServiceCaller {
 
     private String getResponseContentType(Response response) {
         MediaType defaultResponseMediaType = MediaType.parse(CatsResponse.unknownContentType());
-        if (response.body() != null) {
-            return String.valueOf(Optional.ofNullable(response.body().contentType()).orElse(defaultResponseMediaType));
-        }
-        return String.valueOf(defaultResponseMediaType);
+        return String.valueOf(Optional.ofNullable(response.body().contentType()).orElse(defaultResponseMediaType));
     }
 
     private void addBasicAuth(List<KeyValuePair<String, Object>> headers) {
@@ -576,11 +573,7 @@ public class ServiceCaller {
      * @throws IOException If an I/O error occurs while reading the response body.
      */
     public String getAsRawString(Response response) throws IOException {
-        if (response.body() != null) {
-            return response.body().string();
-        }
-
-        return "";
+        return response.body().string();
     }
 
     private void recordServiceData(ServiceData serviceData) {
@@ -730,7 +723,7 @@ public class ServiceCaller {
                 boolean mergeFuzzing = data.getFuzzedFields().contains(entry.getKey());
                 payload = FuzzingStrategy.replaceField(payload, entry.getKey(), fuzzingStrategy, mergeFuzzing).json();
             }
-        } catch (PathNotFoundException e) {
+        } catch (PathNotFoundException _) {
             logger.debug("Ref data key {} was not found within the payload!", entry.getKey());
         }
         return payload;
