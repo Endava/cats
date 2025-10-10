@@ -1,0 +1,37 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Test Array with Single Enum
+  description: Test case for getArrayLength when maxFromEnum is 1
+servers:
+  - url: http://test.example.com/api
+paths:
+  /test-array:
+    post:
+      operationId: testArrayWithSingleEnum
+      summary: Test array with items having single enum value
+      requestBody:
+        description: Test request with array containing single enum
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                statuses:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    enum:
+                      - ACTIVE
+      responses:
+        '200':
+          description: Success response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: string

@@ -511,7 +511,11 @@ public class OpenAPIModelGeneratorV2 {
     int getArrayLength(Schema<?> property) {
         int min = Optional.ofNullable(property.getMinItems()).orElse(1);
 
-        int max = Optional.ofNullable(property.getMaxItems())
+        int maxFromEnum = Optional.ofNullable(Optional.ofNullable(property.getItems()).
+                orElse(new Schema<>())
+                .getEnum()).map(List::size).orElse(0);
+
+        int max = maxFromEnum != 0 ? maxFromEnum : Optional.ofNullable(property.getMaxItems())
                 .filter(maxVal -> maxVal != 0)
                 .orElse(min + 1);
 
