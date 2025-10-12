@@ -275,10 +275,13 @@ public enum HttpMethod {
      * @param method   The HTTP method for which to retrieve the Operation.
      * @param pathItem The OpenAPI PathItem associated with the endpoint.
      * @return The OpenAPI Operation for the specified HTTP method and PathItem.
-     * @throws NullPointerException     If the provided HTTP method or PathItem is null.
      * @throws IllegalArgumentException If the provided HTTP method is not supported or the PathItem does not contain the specified method.
      */
     public static Operation getOperation(HttpMethod method, PathItem pathItem) {
+        Function<PathItem, Operation> extractor = OPERATIONS.get(method);
+        if (extractor == null) {
+            throw new IllegalArgumentException("Unsupported HTTP method: " + method);
+        }
         return OPERATIONS.get(method).apply(pathItem);
     }
 
