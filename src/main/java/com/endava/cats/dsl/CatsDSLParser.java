@@ -7,6 +7,8 @@ import com.endava.cats.dsl.impl.NoOpParser;
 import com.endava.cats.dsl.impl.SpringELParser;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * Allows parsing of different type of dynamic values through different parsers.
@@ -20,6 +22,7 @@ public class CatsDSLParser {
             "T(", SPRING_EL_PARSER,
             "${", SPRING_EL_PARSER,
             "auth_script", new AuthScriptProviderParser());
+    private static final Pattern SPRING_EL_PLACEHOLDER = Pattern.compile("\\$\\{([^}]*)}");
 
     private CatsDSLParser() {
         //ntd
@@ -34,6 +37,9 @@ public class CatsDSLParser {
      * @return the result after the appropriate parser runs
      */
     public static String parseAndGetResult(String valueFromFile, Map<String, String> context) {
+        if (valueFromFile == null) {
+            return null;
+        }
         return PARSERS.entrySet()
                 .stream()
                 .filter(entry -> valueFromFile.startsWith(entry.getKey()))
@@ -51,7 +57,10 @@ public class CatsDSLParser {
      * @return normalized form of the expression
      */
     private static String sanitize(String expression) {
-        return expression.replaceAll("\\$\\{([^}]*)}", "$1")
+        Objects.requireNonNull(expression, "expression to sanitize must not be null");
+
+        return SPRING_EL_PLACEHOLDER.matcher(expression)
+                .replaceAll("$1")
                 .replace("request#", "request.")
                 .replace("$request", "request");
     }

@@ -29,6 +29,11 @@ class CatsDSLParserTest {
     }
 
     @Test
+    void shouldReturnNullWhenValueIsNull() {
+        Assertions.assertThat(CatsDSLParser.parseAndGetResult(null, Map.of())).isNull();
+    }
+
+    @Test
     void shouldParseAsDate() {
         String initial = "T(java.time.OffsetDateTime).now().plusDays(2)";
         String actual = CatsDSLParser.parseAndGetResult(initial, Map.of());
