@@ -93,6 +93,10 @@ public class HttpMethodConsistencyAnalyzer {
         Map<String, Set<String>> groupToPaths = new HashMap<>();
         Map<String, Set<String>> pathToMethods = new HashMap<>();
 
+        if (openAPI == null || openAPI.getPaths() == null) {
+            return new ResourcePathData(collectionMethods, itemMethods, groupToPaths, pathToMethods);
+        }
+
         openAPI.getPaths().forEach((path, pathItem) -> {
             if (!isActionPath(path)) {
                 processResourcePath(path, pathItem, collectionMethods, itemMethods, groupToPaths, pathToMethods);
