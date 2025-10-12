@@ -42,6 +42,7 @@ import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -310,8 +311,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
                 filterArguments.getFirstPhaseFuzzersForPath().size() + filterArguments.getSecondPhaseFuzzers().size(), filterArguments.getTotalFuzzersOrLinters(),
                 filterArguments.getPathsToRun(openAPI).size(), openAPI.getPaths().size());
 
-        //TODO don't do this unless linting
-        Set<String> refs = OpenApiRefExtractor.extractRefsFromOpenAPI(apiArguments.getContract());
+        Set<String> refs = Collections.emptySet();
+        if (filterArguments.isLinting()) {
+            refs = OpenApiRefExtractor.extractRefsFromOpenAPI(apiArguments.getContract());
+        }
         globalContext.init(openAPI, processingArguments.getContentType(), filesArguments.getFuzzConfigProperties(), catsConfiguration,
                 filesArguments.getErrorLeaksKeywordsList(), refs);
 
