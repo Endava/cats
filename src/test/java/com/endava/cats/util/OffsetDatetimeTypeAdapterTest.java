@@ -58,4 +58,23 @@ class OffsetDatetimeTypeAdapterTest {
 
         Assertions.assertThat(result).isEqualTo(original);
     }
+
+    @Test
+    void testWriteNull() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(stringWriter);
+
+        adapter.write(jsonWriter, null);
+
+        Assertions.assertThat(stringWriter.toString()).isEqualTo("null");
+    }
+
+    @Test
+    void testReadNull() throws IOException {
+        JsonReader jsonReader = new JsonReader(new StringReader("null"));
+
+        OffsetDateTime result = adapter.read(jsonReader);
+
+        Assertions.assertThat(result).isNull();
+    }
 }

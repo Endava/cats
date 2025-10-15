@@ -420,6 +420,10 @@ public abstract class CatsUtil {
             return input;
         }
 
+        if (input.chars().noneMatch(Character::isLetter)) {
+            return input;
+        }
+
         String randomized;
         do {
             StringBuilder result = new StringBuilder(input.length());

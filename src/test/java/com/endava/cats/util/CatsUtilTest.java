@@ -169,4 +169,11 @@ class CatsUtilTest {
         String result = CatsUtil.randomizeCase(value);
         Assertions.assertThat(result).isNullOrEmpty();
     }
+
+    @Test
+    void shouldReturnSameWhenNoLetters() {
+        String input = "12345!";
+        String result = CatsUtil.randomizeCase(input);
+        Assertions.assertThat(result).isEqualTo(input);
+    }
 }
