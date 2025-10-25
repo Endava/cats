@@ -75,8 +75,8 @@ class HttpMethodTest {
     void requiresBodyString() {
         assertThat(HttpMethod.requiresBody("POST")).isTrue();
         assertThat(HttpMethod.requiresBody("PUT")).isTrue();
-        assertThatThrownBy(() -> HttpMethod.requiresBody("post"))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(HttpMethod.requiresBody("post")).isTrue();
+
         assertThatThrownBy(() -> HttpMethod.requiresBody("UNKNOWN"))
                 .isInstanceOf(IllegalArgumentException.class);
     }

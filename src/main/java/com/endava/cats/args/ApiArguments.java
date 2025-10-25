@@ -78,6 +78,17 @@ public class ApiArguments {
         }
     }
 
+    /**
+     * Validates the required {@code --server} argument is present and valid.
+     * If the OpenAPI spec is provided, it will attempt to load the server URL from the spec.
+     * If the server URL is not provided, it will be loaded from the spec if possible.
+     * If the server URL is provided, but it contains placeholders such as {server}, it will be replaced with the provided server URL.
+     * If the server URL is provided, but it does not start with http or https, it will be prefixed with the provided server URL.
+     * If the server URL is invalid, a {@link CommandLine.ParameterException} will be thrown.
+     *
+     * @param spec    the PicoCli command spec
+     * @param openAPI the OpenAPI spec, if provided
+     */
     public void validateValidServer(CommandLine.Model.CommandSpec spec, OpenAPI openAPI) {
         String serverFromInput = this.server;
 

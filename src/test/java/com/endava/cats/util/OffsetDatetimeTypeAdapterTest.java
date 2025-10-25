@@ -66,7 +66,7 @@ class OffsetDatetimeTypeAdapterTest {
 
         adapter.write(jsonWriter, null);
 
-        Assertions.assertThat(stringWriter.toString()).isEqualTo("null");
+        Assertions.assertThat(stringWriter).hasToString("null");
     }
 
     @Test

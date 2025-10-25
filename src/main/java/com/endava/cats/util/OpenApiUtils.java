@@ -678,11 +678,12 @@ public abstract class OpenApiUtils {
                         .filter(pathElement -> VERSION_PATH.matcher(pathElement).matches()))
                 .collect(Collectors.toSet());
 
-        openAPI.getServers().forEach(server ->
-                versions.addAll(Arrays.stream(server.getUrl().split("/"))
-                        .filter(pathElement ->
-                                VERSION_PATH.matcher(pathElement).matches())
-                        .toList()));
+        Optional.ofNullable(openAPI.getServers()).orElse(List.of())
+                .forEach(server ->
+                        versions.addAll(Arrays.stream(server.getUrl().split("/"))
+                                .filter(pathElement ->
+                                        VERSION_PATH.matcher(pathElement).matches())
+                                .toList()));
 
         Set<String> versionHeaders = new HashSet<>();
         versionHeaders.addAll(getAllConsumesHeaders(openAPI));

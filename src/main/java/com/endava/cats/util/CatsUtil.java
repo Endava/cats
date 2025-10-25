@@ -49,6 +49,7 @@ public abstract class CatsUtil {
      * with limited number of fake values.
      */
     private static final Faker FAKER = new Faker(Locale.of("ro"), random());
+    public static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE / 1000;
 
     private CatsUtil() {
         //ntd
@@ -363,9 +364,8 @@ public abstract class CatsUtil {
      * @return The maximum number of array elements that can be generated.
      */
     public static int getMaxArraySizeBasedOnFieldsLength(String fieldValue, int maxSizeFromSchema) {
-        int maxArrayLength = Integer.MAX_VALUE / 1000;
         int fieldLength = fieldValue.length();
-        int maxRepetitions = (maxArrayLength + 1) / (fieldLength + 1);
+        int maxRepetitions = (MAX_ARRAY_LENGTH + 1) / (fieldLength + 1);
 
         return Math.min(maxSizeFromSchema + 10, maxRepetitions);
     }

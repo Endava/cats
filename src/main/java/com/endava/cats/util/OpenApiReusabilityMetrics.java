@@ -135,7 +135,7 @@ public class OpenApiReusabilityMetrics {
 
     /**
      * Average References per Operation.
-     * Good: > 2. Warn: 1 - 2. Bad: < 1.
+     * Good: greater than 2. Warn: between 1 and 2. Bad: less than 1.
      */
     public static double computeAverageRefsPerOperation(OpenAPI api) {
         OpenApiAnalysisCache cache = getOrCreateCache(api);
@@ -392,10 +392,11 @@ public class OpenApiReusabilityMetrics {
     }
 
     private static void collectRefTargets(Object obj, Set<String> targets) {
+        if (obj == null) {
+            return;
+        }
+
         switch (obj) {
-            case null -> {
-                return;
-            }
             case Map<?, ?> map -> {
                 Object ref = map.get("$ref");
                 if (ref instanceof String refStr && refStr.startsWith("#/components/")) {
@@ -409,7 +410,6 @@ public class OpenApiReusabilityMetrics {
                 //don't do anything on other cases
             }
         }
-
     }
 
     private static int countInlineSchemas(Object obj) {

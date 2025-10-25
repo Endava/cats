@@ -55,6 +55,8 @@ public class OpenAPIModelGeneratorV2 {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final BigDecimal MAX = new BigDecimal("99999999999");
     public static final int LIMIT_OF_EXAMPLES = 500;
+    public static final int REQUEST_TOTAL_DEPTH = 200;
+    public static final int RESPONSE_TOTAL_DEPTH = 50;
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(OpenAPIModelGeneratorV2.class);
     private final Random random;
     private final ProcessingArguments.ExamplesFlags examplesFlags;
@@ -96,7 +98,7 @@ public class OpenAPIModelGeneratorV2 {
         this.maxArraySize = maxArraySize;
 
         this.resolveAnyOfAsMultipleSchema = true;
-        this.totalDepth = 200;
+        this.totalDepth = REQUEST_TOTAL_DEPTH;
     }
 
     /**
@@ -120,7 +122,7 @@ public class OpenAPIModelGeneratorV2 {
         this.useDefaults = useDefaults;
         this.maxArraySize = maxArraySize;
         this.resolveAnyOfAsMultipleSchema = resolveAnyOfAsMultipleSchema;
-        this.totalDepth = 50;
+        this.totalDepth = RESPONSE_TOTAL_DEPTH;
     }
 
     private void addExampleAndKeepDepth(String propertyName, Object propertyExample, Map<String, Object> newExample, List<Map<String, Object>> combinedExamples) {

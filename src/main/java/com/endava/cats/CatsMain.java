@@ -10,8 +10,8 @@ import jakarta.inject.Inject;
 import picocli.CommandLine;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
@@ -53,7 +53,7 @@ public class CatsMain implements QuarkusApplication {
         if (configFile != null && configFile.exists()) {
             logger.config("Loading config from {}", configFile.getAbsolutePath());
             Properties props = new Properties();
-            try (InputStream in = new FileInputStream(configFile)) {
+            try (InputStream in = Files.newInputStream(configFile.toPath())) {
                 props.load(in);
                 commandLine.setDefaultValueProvider(new CommandLine.PropertiesDefaultProvider(props));
             } catch (Exception e) {
