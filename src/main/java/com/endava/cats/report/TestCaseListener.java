@@ -441,7 +441,6 @@ public class TestCaseListener {
         try {
             markPreviousPathAsDone();
             renderGlobalFuzzersStatistics();
-            this.initReportingPath();
             reportingArguments.enableAdditionalLoggingIfSummary();
             testReportsGenerator.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
             testReportsGenerator.writeHelperFiles();
