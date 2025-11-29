@@ -92,7 +92,7 @@ public class ApiArguments {
     public void validateValidServer(CommandLine.Model.CommandSpec spec, OpenAPI openAPI) {
         String serverFromInput = this.server;
 
-        if (openAPI != null) {
+        if (openAPI != null && serverFromInput == null) {
             List<String> servers = OpenApiServerExtractor.getServerUrls(openAPI);
             log.debug("--server not provided. Loaded from OpenAPI: {}", servers);
             servers.stream().findFirst().ifPresent(theServer -> this.server = theServer);
