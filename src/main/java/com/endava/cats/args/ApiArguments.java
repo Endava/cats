@@ -94,8 +94,21 @@ public class ApiArguments {
 
         if (openAPI != null) {
             List<String> servers = OpenApiServerExtractor.getServerUrls(openAPI);
-            log.debug("--server not provided. Loaded from OpenAPI: {}", servers);
-            servers.stream().findFirst().ifPresent(theServer -> this.server = theServer);
+            log.debug("Servers from OpenAPI: {}", servers);
+
+            if (serverFromInput == null) {
+                // No CLI server provided, use OpenAPI server
+                servers.stream().findFirst().ifPresent(theServer -> this.server = theServer);
+            } else {
+                // CLI server provided, check if OpenAPI server has placeholders or relative paths
+                servers.stream().findFirst().ifPresent(openApiServer -> {
+                    if (openApiServer.contains("{") || !openApiServer.startsWith("http")) {
+                        // OpenAPI server has placeholders or is relative, use it for replacement
+                        this.server = openApiServer;
+                    }
+                    // Otherwise keep CLI server (concrete OpenAPI URLs don't override CLI)
+                });
+            }
         }
 
         if (this.server != null && serverFromInput != null) {
