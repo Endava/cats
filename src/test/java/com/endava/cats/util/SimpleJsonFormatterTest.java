@@ -44,4 +44,27 @@ class SimpleJsonFormatterTest {
         String result = SimpleJsonFormatter.formatJson(input);
         assertThat(result).isEqualTo(expected);
     }
+
+    @Test
+    void shouldHandleMalformedJsonWithExtraClosingBrackets() {
+        String input = "{\"key\":\"value\"}}";
+        String result = SimpleJsonFormatter.formatJson(input);
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void shouldHandleMalformedJsonWithExtraClosingSquareBrackets() {
+        String input = "[1,2,3]]";
+        String result = SimpleJsonFormatter.formatJson(input);
+        assertThat(result).isNotNull();
+    }
+
+    @Test
+    void shouldHandleNestedStructures() {
+        String input = "{\"outer\":{\"inner\":{\"deep\":\"value\"}}}";
+        String result = SimpleJsonFormatter.formatJson(input);
+        assertThat(result).contains("\"outer\":");
+        assertThat(result).contains("\"inner\":");
+        assertThat(result).contains("\"deep\": \"value\"");
+    }
 }

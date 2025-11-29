@@ -54,7 +54,7 @@ public abstract class SimpleJsonFormatter {
                     }
                     case '}', ']' -> {
                         if (prevChar != '{' && prevChar != '[' && prevChar != '\n') {
-                            formatted.append('\n').append(indent.repeat(indentLevel - 1));
+                            formatted.append('\n').append(indent.repeat(Math.max(0, indentLevel - 1)));
                         }
                         indentLevel--;
                         formatted.append(currentChar);
