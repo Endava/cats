@@ -869,6 +869,21 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldParseOpenApi311WithNullAndStringSchema() throws Exception {
+        List<FuzzingData> dataList = setupFuzzingData("/vacancies", "src/test/resources/issue_180.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.POST);
+        String example = dataList.getFirst().getPayload();
+        Assertions.assertThat(example).contains("title");
+        Assertions.assertThat(example).contains("departmentId");
+        Assertions.assertThat(example).contains("deadlineDate");
+        Assertions.assertThat(example).contains("locationId");
+        Assertions.assertThat(example).contains("messageTemplateId");
+        Assertions.assertThat(example).contains("vacancyTemplateId");
+    }
+
+    @Test
     void shouldSkipProvidedTags() throws Exception {
         Mockito.when(filterArguments.getSkippedTags()).thenReturn(List.of("pets"));
         List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");

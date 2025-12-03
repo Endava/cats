@@ -1,0 +1,75 @@
+openapi: 3.1.1
+info:
+  title: VacanciesApi.Service | v1
+  version: 1.0.0
+servers:
+  - url: https://localhost:7479
+paths:
+  /vacancies:
+    post:
+      tags:
+        - VacanciesApi.Service
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVacancyRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+      security:
+        - Bearer: [ ]
+components:
+  schemas:
+    CreateVacancyRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The localized title of the vacancy.
+        departmentId:
+          type:
+            - "null"
+            - string
+          description: The identifier of the department associated with the vacancy.
+          format: uuid
+        deadlineDate:
+          type:
+            - "null"
+            - string
+          description: The deadline date for applications to the vacancy.
+          format: date-time
+        locationId:
+          type:
+            - "null"
+            - string
+          description: The identifier of the location for the vacancy.
+          format: uuid
+        messageTemplateId:
+          type:
+            - "null"
+            - string
+          description: The identifier of the message template to use for vacancy
+            communications.
+          format: uuid
+        vacancyTemplateId:
+          type: string
+          description: The identifier of the vacancy template to use for creating the
+            vacancy.
+          format: uuid
+      description: Represents a request to create a new vacancy, including localized
+        title, department, location, and template information.
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: Json Web Token
+tags:
+  - name: VacanciesApi.Service

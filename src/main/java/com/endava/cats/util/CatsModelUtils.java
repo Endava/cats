@@ -1,9 +1,20 @@
 package com.endava.cats.util;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.BinarySchema;
+import io.swagger.v3.oas.models.media.BooleanSchema;
+import io.swagger.v3.oas.models.media.ByteArraySchema;
+import io.swagger.v3.oas.models.media.DateSchema;
+import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.IntegerSchema;
+import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.media.MapSchema;
+import io.swagger.v3.oas.models.media.NumberSchema;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.openapitools.codegen.utils.ModelUtils;
@@ -13,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -39,7 +51,7 @@ public abstract class CatsModelUtils {
     }
 
     public static boolean isStringSchema(Schema<?> schema) {
-        return ModelUtils.isStringSchema(schema);
+        return schema instanceof StringSchema || isType(schema, SchemaTypeUtil.STRING_TYPE);
     }
 
     public static boolean isEnumSchema(Schema<?> schema) {
@@ -47,15 +59,19 @@ public abstract class CatsModelUtils {
     }
 
     public static boolean isBooleanSchema(Schema<?> schema) {
-        return ModelUtils.isBooleanSchema(schema);
+        return schema instanceof BooleanSchema || isType(schema, SchemaTypeUtil.BOOLEAN_TYPE);
     }
 
     public static boolean isArraySchema(Schema<?> schema) {
-        return ModelUtils.isArraySchema(schema);
+        if (schema == null) {
+            return false;
+        } else {
+            return schema instanceof ArraySchema || isType(schema, "array");
+        }
     }
 
     public static boolean isNumberSchema(Schema<?> schema) {
-        return ModelUtils.isNumberSchema(schema);
+        return schema instanceof NumberSchema || isType(schema, SchemaTypeUtil.NUMBER_TYPE);
     }
 
     public static boolean isFloatSchema(Schema<?> schema) {
@@ -63,7 +79,7 @@ public abstract class CatsModelUtils {
     }
 
     public static boolean isDecimalSchema(Schema<?> schema) {
-        return "number".equalsIgnoreCase(schema.getFormat());
+        return SchemaTypeUtil.NUMBER_TYPE.equalsIgnoreCase(schema.getFormat());
     }
 
     public static boolean isShortIntegerSchema(Schema<?> schema) {
@@ -71,31 +87,31 @@ public abstract class CatsModelUtils {
     }
 
     public static boolean isIntegerSchema(Schema<?> schema) {
-        return ModelUtils.isIntegerSchema(schema);
+        return schema instanceof IntegerSchema || isType(schema, SchemaTypeUtil.INTEGER_TYPE);
     }
 
     public static boolean isDateSchema(Schema<?> schema) {
-        return ModelUtils.isDateSchema(schema);
+        return (schema instanceof DateSchema || isType(schema, SchemaTypeUtil.STRING_TYPE)) && SchemaTypeUtil.DATE_FORMAT.equals(schema.getFormat());
     }
 
     public static boolean isUriSchema(Schema<?> schema) {
-        return ModelUtils.isURISchema(schema);
+        return isStringSchema(schema) && "uri".equals(schema.getFormat());
     }
 
     public static boolean isUUIDSchema(Schema<?> schema) {
-        return ModelUtils.isUUIDSchema(schema);
+        return (schema instanceof UUIDSchema || isType(schema, SchemaTypeUtil.STRING_TYPE)) && SchemaTypeUtil.UUID_FORMAT.equals(schema.getFormat());
     }
 
     public static boolean isDateTimeSchema(Schema<?> schema) {
-        return ModelUtils.isDateTimeSchema(schema);
+        return (schema instanceof DateTimeSchema || isType(schema, SchemaTypeUtil.STRING_TYPE)) && SchemaTypeUtil.DATE_TIME_FORMAT.equals(schema.getFormat());
     }
 
     public static boolean isBinarySchema(Schema<?> schema) {
-        return ModelUtils.isBinarySchema(schema);
+        return (schema instanceof BinarySchema || isType(schema, SchemaTypeUtil.STRING_TYPE)) && SchemaTypeUtil.BINARY_FORMAT.equals(schema.getFormat());
     }
 
     public static boolean isByteArraySchema(Schema<?> schema) {
-        return ModelUtils.isByteArraySchema(schema);
+        return (schema instanceof ByteArraySchema || isType(schema, SchemaTypeUtil.STRING_TYPE)) && SchemaTypeUtil.BYTE_FORMAT.equals(schema.getFormat());
     }
 
 
@@ -117,7 +133,27 @@ public abstract class CatsModelUtils {
      */
     public static boolean isObjectSchema(Schema<?> schema) {
         return schema instanceof ObjectSchema ||
-                (SchemaTypeUtil.OBJECT_TYPE.equals(schema.getType()) && !(schema instanceof MapSchema) && !isComposedSchema(schema));
+                (isType(schema, SchemaTypeUtil.OBJECT_TYPE) && !(schema instanceof MapSchema) && !isComposedSchema(schema));
+    }
+
+    /**
+     * Encapsulating the test for easier maintainability.
+     *
+     * @param schema the schema being tested
+     * @return true if a composed schema, false otherwise
+     */
+    public static boolean isType(Schema<?> schema, String typeToTest) {
+        if (schema == null) {
+            return false;
+        }
+        if (schema instanceof JsonSchema jsonSchema) {
+            return Optional.ofNullable(jsonSchema.getTypes())
+                    .orElse(Set.of())
+                    .stream()
+                    .anyMatch(type -> type.equalsIgnoreCase(typeToTest));
+        }
+
+        return typeToTest.equalsIgnoreCase(schema.getType());
     }
 
     /**
