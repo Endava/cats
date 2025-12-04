@@ -3,10 +3,10 @@ package com.endava.cats.dsl.impl;
 import com.endava.cats.dsl.api.Parser;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.springframework.context.expression.MapAccessor;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.MapAccessor;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.integration.json.JsonPropertyAccessor;
+import org.springframework.integration.json.JacksonPropertyAccessor;
 
 import java.util.List;
 import java.util.Map;
@@ -45,7 +45,7 @@ public class SpringELParser implements Parser {
     private Object parseExpressionWithContext(String expression, Object context) {
         try {
             StandardEvaluationContext evaluationContext = new StandardEvaluationContext(context);
-            evaluationContext.setPropertyAccessors(List.of(new MapAccessor(), new JsonPropertyAccessor()));
+            evaluationContext.setPropertyAccessors(List.of(new MapAccessor(), new JacksonPropertyAccessor()));
 
             return spelExpressionParser.parseExpression(expression).getValue(evaluationContext);
         } catch (Exception e) {
