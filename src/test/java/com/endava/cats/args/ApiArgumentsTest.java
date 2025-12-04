@@ -99,6 +99,24 @@ class ApiArgumentsTest {
     }
 
     @Test
+    void shouldPreferCliServerOverOpenApiConcreteServer() {
+        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
+        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
+        ApiArguments args = new ApiArguments();
+        args.setServer("http://localhost:8080");
+
+        OpenAPI openAPI = new OpenAPI();
+        openAPI.setServers(Collections.singletonList(
+                new io.swagger.v3.oas.models.servers.Server().url("https://api.example.com")
+        ));
+
+        args.validateValidServer(spec, openAPI);
+
+        // CLI server should take priority over concrete OpenAPI server
+        Assertions.assertThat(args.getServer()).isEqualTo("http://localhost:8080");
+    }
+
+    @Test
     void shouldThrowExceptionWhenServerIsInvalidUrl() {
         CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
