@@ -4,11 +4,15 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import picocli.CommandLine;
 
 import java.util.Collections;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class ApiArgumentsTest {
@@ -66,54 +70,30 @@ class ApiArgumentsTest {
                 .hasMessageContaining("server");
     }
 
-    @Test
-    void shouldSetServerFromOpenApiWhenServerIsNull() {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("serverResolutionArguments")
+    void shouldResolveServerAccordingToPriority(String description, String initialServer, String openApiServerUrl, String expectedServer) {
         CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
         Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
         ApiArguments args = new ApiArguments();
-        args.setServer(null);
+        args.setServer(initialServer);
 
         OpenAPI openAPI = new OpenAPI();
         openAPI.setServers(Collections.singletonList(
-                new io.swagger.v3.oas.models.servers.Server().url("http://fromopenapi.com")
+                new io.swagger.v3.oas.models.servers.Server().url(openApiServerUrl)
         ));
 
         args.validateValidServer(spec, openAPI);
-        Assertions.assertThat(args.getServer()).isEqualTo("http://fromopenapi.com");
+
+        Assertions.assertThat(args.getServer()).isEqualTo(expectedServer);
     }
 
-    @Test
-    void shouldReplaceServerPlaceholder() {
-        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
-        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
-        ApiArguments args = new ApiArguments();
-        args.setServer("http://api.com");
-
-        OpenAPI openAPI = new OpenAPI();
-        openAPI.setServers(Collections.singletonList(
-                new io.swagger.v3.oas.models.servers.Server().url("{apiRoot}/v2")
-        ));
-        args.validateValidServer(spec, openAPI);
-        // The placeholder should be replaced
-        Assertions.assertThat(args.getServer()).isEqualTo("http://api.com/v2");
-    }
-
-    @Test
-    void shouldPreferCliServerOverOpenApiConcreteServer() {
-        CommandLine.Model.CommandSpec spec = Mockito.mock(CommandLine.Model.CommandSpec.class);
-        Mockito.when(spec.commandLine()).thenReturn(Mockito.mock(CommandLine.class));
-        ApiArguments args = new ApiArguments();
-        args.setServer("http://localhost:8080");
-
-        OpenAPI openAPI = new OpenAPI();
-        openAPI.setServers(Collections.singletonList(
-                new io.swagger.v3.oas.models.servers.Server().url("https://api.example.com")
-        ));
-
-        args.validateValidServer(spec, openAPI);
-
-        // CLI server should take priority over concrete OpenAPI server
-        Assertions.assertThat(args.getServer()).isEqualTo("http://localhost:8080");
+    private static Stream<Arguments> serverResolutionArguments() {
+        return Stream.of(
+                Arguments.of("should set server from OpenAPI when CLI server is null", null, "http://fromopenapi.com", "http://fromopenapi.com"),
+                Arguments.of("should replace OpenAPI placeholder with CLI server", "http://api.com", "{apiRoot}/v2", "http://api.com/v2"),
+                Arguments.of("should prefer CLI server over concrete OpenAPI server", "http://localhost:8080", "https://api.example.com", "http://localhost:8080")
+        );
     }
 
     @Test
@@ -137,5 +117,13 @@ class ApiArgumentsTest {
 
         Assertions.assertThatCode(() -> args.validateValidServer(spec, null))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldRemoveTrailingSlashFromServer() {
+        ApiArguments args = new ApiArguments();
+        args.setServer("http://api.com/");
+        args.validateValidServer(null, null);
+        Assertions.assertThat(args.getServer()).isEqualTo("http://api.com");
     }
 }

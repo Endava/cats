@@ -262,10 +262,11 @@ public class ServiceCaller {
      *
      * @param data             the service data context
      * @param processedPayload current payload
-     * @return an url with path params replaced by urlParams or refData + additional query params
+     * @return a url with path params replaced by urlParams or refData + additional query params
      */
     String constructUrl(ServiceData data, String processedPayload) {
         String decodedUrl = CatsUtil.unescapeCurlyBrackets(apiArguments.getServer() + data.getRelativePath());
+        logger.debug("Decoded URL: {}", decodedUrl);
         if (!data.isReplaceUrlParams()) {
             String actualUrl = this.replacePathParams(decodedUrl, processedPayload, data);
             return this.replaceRemovedParams(actualUrl);
@@ -279,6 +280,7 @@ public class ServiceCaller {
         }
         url = this.addPathParamsIfNotReplaced(url, data.getPathParamsPayload());
         url = this.addAdditionalQueryParams(url, data.getRelativePath());
+        logger.debug("Replaced URL: {}", url);
         return url;
     }
 

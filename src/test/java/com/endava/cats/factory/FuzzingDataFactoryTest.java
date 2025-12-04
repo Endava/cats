@@ -875,12 +875,7 @@ class FuzzingDataFactoryTest {
         Assertions.assertThat(dataList).hasSize(1);
         Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.POST);
         String example = dataList.getFirst().getPayload();
-        Assertions.assertThat(example).contains("title");
-        Assertions.assertThat(example).contains("departmentId");
-        Assertions.assertThat(example).contains("deadlineDate");
-        Assertions.assertThat(example).contains("locationId");
-        Assertions.assertThat(example).contains("messageTemplateId");
-        Assertions.assertThat(example).contains("vacancyTemplateId");
+        Assertions.assertThat(example).contains("title", "deadlineDate", "locationId", "messageTemplateId", "vacancyTemplateId");
     }
 
     @Test

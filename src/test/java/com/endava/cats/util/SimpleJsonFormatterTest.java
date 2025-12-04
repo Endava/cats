@@ -63,8 +63,6 @@ class SimpleJsonFormatterTest {
     void shouldHandleNestedStructures() {
         String input = "{\"outer\":{\"inner\":{\"deep\":\"value\"}}}";
         String result = SimpleJsonFormatter.formatJson(input);
-        assertThat(result).contains("\"outer\":");
-        assertThat(result).contains("\"inner\":");
-        assertThat(result).contains("\"deep\": \"value\"");
+        assertThat(result).contains("\"outer\":", "\"inner\":", "\"deep\": \"value\"");
     }
 }

@@ -121,6 +121,15 @@ public class ApiArguments {
             }
         }
 
+        this.validateURL(spec);
+
+        if (this.server.endsWith("/")) {
+            this.server = this.server.substring(0, this.server.length() - 1);
+        }
+        log.debug("Final server URL: {}", this.server);
+    }
+
+    private void validateURL(CommandLine.Model.CommandSpec spec) {
         if (this.server == null) {
             throw new CommandLine.ParameterException(spec.commandLine(),
                     "Missing required option --server=<server>");

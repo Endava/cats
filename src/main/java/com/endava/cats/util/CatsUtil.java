@@ -318,7 +318,6 @@ public abstract class CatsUtil {
     public static boolean isValidURL(String urlString) {
         try {
             URI.create(urlString).toURL();
-
             return true;
         } catch (Exception _) {
             return false;
