@@ -294,7 +294,7 @@ public class ServiceCaller {
 
         for (String pathVariable : pathVariables) {
             String pathValue = String.valueOf(JsonUtils.getVariableFromJson(pathParamsPayload, pathVariable));
-            url = url.replace("{" + pathVariable + "}", pathValue);
+            url = url.replace("{" + pathVariable + "}", URLEncoder.encode(pathValue, StandardCharsets.UTF_8));
         }
         return url;
     }
@@ -686,7 +686,7 @@ public class ServiceCaller {
 
         for (Map.Entry<String, Object> entry : currentPathRefData.entrySet()) {
             String valueToReplace = CatsDSLParser.parseAndGetResult(String.valueOf(entry.getValue()), Map.of());
-            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", valueToReplace);
+            currentUrl = currentUrl.replace("{" + entry.getKey() + "}", URLEncoder.encode(valueToReplace, StandardCharsets.UTF_8));
             data.getPathParams().add(entry.getKey());
         }
 

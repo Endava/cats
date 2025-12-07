@@ -520,6 +520,59 @@ class ServiceCallerTest {
     }
 
     @Test
+    void shouldUrlEncodePathParamsForPostMethod() {
+        String json = """
+                {
+                    "configId": "value with spaces",
+                    "tenantId": "special/chars&more"
+                }
+                """;
+        String url = "/configs/{configId}/tenants/{tenantId}";
+        ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").pathParamsPayload(json).httpMethod(HttpMethod.POST).build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).endsWith("/configs/value+with+spaces/tenants/special%2Fchars%26more");
+    }
+
+    @Test
+    void shouldUrlEncodePathParamsForPutMethod() {
+        String json = """
+                {
+                    "id": "test@email.com"
+                }
+                """;
+        String url = "/users/{id}";
+        ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").pathParamsPayload(json).httpMethod(HttpMethod.PUT).build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).endsWith("/users/test%40email.com");
+    }
+
+    @Test
+    void shouldUrlEncodePathParamsForPatchMethod() {
+        String json = """
+                {
+                    "resourceId": "path/to/resource"
+                }
+                """;
+        String url = "/resources/{resourceId}";
+        ServiceData data = ServiceData.builder().relativePath(url).payload("{123}").pathParamsPayload(json).httpMethod(HttpMethod.PATCH).build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).endsWith("/resources/path%2Fto%2Fresource");
+    }
+
+    @Test
+    void shouldUrlEncodePathParamsInAddPathParamsIfNotReplaced() {
+        String json = """
+                {
+                    "configId": "value with spaces",
+                    "tenantId": "special/chars&more"
+                }
+                """;
+        String url = "http://localhost:8080/configs/{configId}/tenants/{tenantId}";
+        String result = serviceCaller.addPathParamsIfNotReplaced(url, json);
+        Assertions.assertThat(result).isEqualTo("http://localhost:8080/configs/value+with+spaces/tenants/special%2Fchars%26more");
+    }
+
+    @Test
     void shouldAddQueryParamsFromPathParamsPayloadForPostMethod() {
         String pathParamsPayload = """
                 {
