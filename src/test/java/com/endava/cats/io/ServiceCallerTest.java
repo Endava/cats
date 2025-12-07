@@ -518,4 +518,159 @@ class ServiceCallerTest {
         String result = serviceCaller.constructUrl(data, "{}");
         Assertions.assertThat(result).endsWith("/configs/NOT_SET/tenants/NOT_SET");
     }
+
+    @Test
+    void shouldAddQueryParamsFromPathParamsPayloadForPostMethod() {
+        String pathParamsPayload = """
+                {
+                    "queryParam1": "value1",
+                    "queryParam2": "value2"
+                }
+                """;
+        String url = "/configs";
+        ServiceData data = ServiceData.builder()
+                .relativePath(url)
+                .payload("{\"body\":\"content\"}")
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Set.of("queryParam1", "queryParam2"))
+                .httpMethod(HttpMethod.POST)
+                .build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).contains("queryParam1=value1", "queryParam2=value2");
+    }
+
+    @Test
+    void shouldAddQueryParamsFromPathParamsPayloadForPutMethod() {
+        String pathParamsPayload = """
+                {
+                    "filter": "active"
+                }
+                """;
+        String url = "/items";
+        ServiceData data = ServiceData.builder()
+                .relativePath(url)
+                .payload("{\"name\":\"test\"}")
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Set.of("filter"))
+                .httpMethod(HttpMethod.PUT)
+                .build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).contains("filter=active");
+    }
+
+    @Test
+    void shouldAddQueryParamsFromPathParamsPayloadForPatchMethod() {
+        String pathParamsPayload = """
+                {
+                    "version": "v2"
+                }
+                """;
+        String url = "/resources";
+        ServiceData data = ServiceData.builder()
+                .relativePath(url)
+                .payload("{\"status\":\"updated\"}")
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Set.of("version"))
+                .httpMethod(HttpMethod.PATCH)
+                .build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).contains("version=v2");
+    }
+
+    @Test
+    void shouldNotAddQueryParamsWhenEmptyQueryParamsSet() {
+        String pathParamsPayload = """
+                {
+                    "id": "123",
+                    "param": "value"
+                }
+                """;
+        String url = "/items";
+        ServiceData data = ServiceData.builder()
+                .relativePath(url)
+                .payload("{\"body\":\"content\"}")
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Collections.emptySet())
+                .httpMethod(HttpMethod.POST)
+                .build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).doesNotContain("param=value");
+    }
+
+    @Test
+    void shouldNotAddQueryParamsWhenPathParamsPayloadIsEmpty() {
+        String url = "/items";
+        ServiceData data = ServiceData.builder()
+                .relativePath(url)
+                .payload("{\"body\":\"content\"}")
+                .pathParamsPayload("")
+                .queryParams(Set.of("param"))
+                .httpMethod(HttpMethod.POST)
+                .build();
+        String result = serviceCaller.constructUrl(data, "{}");
+        Assertions.assertThat(result).doesNotContain("param=");
+    }
+
+    @Test
+    void shouldNotAddQueryParamsForGetMethod() {
+        String pathParamsPayload = """
+                {
+                    "id": "123",
+                    "queryParam": "value"
+                }
+                """;
+        String url = "/items/{id}";
+        ServiceData data = ServiceData.builder()
+                .relativePath(url)
+                .payload("{\"id\":\"123\",\"queryParam\":\"value\"}")
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Set.of("queryParam"))
+                .httpMethod(HttpMethod.GET)
+                .build();
+        String result = serviceCaller.constructUrl(data, "{\"id\":\"123\",\"queryParam\":\"value\"}");
+        // For GET, query params are added via addUriParams, not addQueryParamsFromPathParamsPayload
+        Assertions.assertThat(result).contains("queryParam=value");
+    }
+
+    @Test
+    void shouldAddQueryParamsFromPathParamsPayloadDirectly() {
+        String pathParamsPayload = """
+                {
+                    "queryParam1": "value1",
+                    "queryParam2": "value2"
+                }
+                """;
+        String url = "http://localhost:8080/items";
+        ServiceData data = ServiceData.builder()
+                .pathParamsPayload(pathParamsPayload)
+                .queryParams(Set.of("queryParam1", "queryParam2"))
+                .httpMethod(HttpMethod.POST)
+                .build();
+        String result = serviceCaller.addQueryParamsFromPathParamsPayload(url, data);
+        Assertions.assertThat(result).contains("queryParam1=value1", "queryParam2=value2");
+    }
+
+    @Test
+    void shouldReturnOriginalUrlWhenNoQueryParams() {
+        String url = "http://localhost:8080/items";
+        ServiceData data = ServiceData.builder()
+                .pathParamsPayload("{\"param\":\"value\"}")
+                .queryParams(Collections.emptySet())
+                .httpMethod(HttpMethod.POST)
+                .build();
+        String result = serviceCaller.addQueryParamsFromPathParamsPayload(url, data);
+        Assertions.assertThat(result).isEqualTo(url);
+    }
+
+    @Test
+    void shouldReturnOriginalUrlWhenPathParamsPayloadIsNull() {
+        String url = "http://localhost:8080/items";
+        ServiceData data = ServiceData.builder()
+                .pathParamsPayload(null)
+                .queryParams(Set.of("param"))
+                .httpMethod(HttpMethod.POST)
+                .build();
+        String result = serviceCaller.addQueryParamsFromPathParamsPayload(url, data);
+        Assertions.assertThat(result).isEqualTo(url);
+    }
 }

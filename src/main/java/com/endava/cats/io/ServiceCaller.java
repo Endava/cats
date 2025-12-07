@@ -277,6 +277,8 @@ public class ServiceCaller {
         if (!HttpMethod.requiresBody(data.getHttpMethod())) {
             url = this.getPathWithRefDataReplacedForNonHttpEntityRequests(data, apiArguments.getServer() + data.getRelativePath());
             url = this.addUriParams(processedPayload, data, url);
+        } else {
+            url = this.addQueryParamsFromPathParamsPayload(url, data);
         }
         url = this.addPathParamsIfNotReplaced(url, data.getPathParamsPayload());
         url = this.addAdditionalQueryParams(url, data.getRelativePath());
@@ -295,6 +297,27 @@ public class ServiceCaller {
             url = url.replace("{" + pathVariable + "}", pathValue);
         }
         return url;
+    }
+
+    String addQueryParamsFromPathParamsPayload(String url, ServiceData data) {
+        String pathParamsPayload = data.getPathParamsPayload();
+        Set<String> queryParams = data.getQueryParams();
+
+        if (StringUtils.isEmpty(pathParamsPayload) || queryParams.isEmpty()) {
+            return url;
+        }
+
+        logger.debug("Adding query params {} from pathParamsPayload {} for body method", queryParams, pathParamsPayload);
+        HttpUrl.Builder httpUrl = HttpUrl.get(url).newBuilder();
+
+        for (String queryParam : queryParams) {
+            Object paramValue = JsonUtils.getVariableFromJson(pathParamsPayload, queryParam);
+            if (paramValue != null && !JsonUtils.NOT_SET.equals(String.valueOf(paramValue))) {
+                httpUrl.addQueryParameter(queryParam, String.valueOf(paramValue));
+            }
+        }
+
+        return httpUrl.build().toString();
     }
 
     String addAdditionalQueryParams(String startingUrl, String currentPath) {

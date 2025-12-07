@@ -3,6 +3,7 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
+import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.AdditionalMatchers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -30,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class FunctionalFuzzerTest {
@@ -307,6 +310,53 @@ class FunctionalFuzzerTest {
         spyFunctionalFuzzer.fuzz(data);
         spyFunctionalFuzzer.executeCustomFuzzerTests();
         Mockito.verifyNoInteractions(testCaseListener);
+    }
+
+    @Test
+    void shouldReplaceQueryParamValuesInPathParamsPayload() {
+        String originalPathParamsPayload = "{\"id\":\"123\", \"queryParam\":\"generatedValue\", \"anotherParam\":\"generatedAnother\"}";
+
+        Map<String, Object> testCase = new HashMap<>();
+        testCase.put("queryParam", "customQueryValue");
+        testCase.put("anotherParam", "anotherCustomValue");
+
+        String result = customFuzzerUtil.getPathParamsPayloadWithCustomValues(originalPathParamsPayload, testCase);
+
+        Assertions.assertThat(result).contains("customQueryValue");
+        Assertions.assertThat(result).contains("anotherCustomValue");
+        Assertions.assertThat(result).doesNotContain("generatedValue");
+        Assertions.assertThat(result).doesNotContain("generatedAnother");
+        Assertions.assertThat(result).contains("\"id\":\"123\"");
+    }
+
+    @Test
+    void shouldReturnEmptyPathParamsPayloadWhenEmpty() {
+        Map<String, Object> testCase = new HashMap<>();
+        testCase.put("queryParam", "customValue");
+
+        String result = customFuzzerUtil.getPathParamsPayloadWithCustomValues("", testCase);
+        Assertions.assertThat(result).isEmpty();
+
+        String nullResult = customFuzzerUtil.getPathParamsPayloadWithCustomValues(null, testCase);
+        Assertions.assertThat(nullResult).isNull();
+    }
+
+    @Test
+    void shouldNotReplaceReservedWordsInPathParamsPayload() {
+        String originalPathParamsPayload = "{\"id\":\"123\", \"queryParam\":\"generatedValue\"}";
+
+        Map<String, Object> testCase = new HashMap<>();
+        testCase.put("expectedResponseCode", "200");
+        testCase.put("httpMethod", "POST");
+        testCase.put("description", "test");
+        testCase.put("queryParam", "customQueryValue");
+
+        String result = customFuzzerUtil.getPathParamsPayloadWithCustomValues(originalPathParamsPayload, testCase);
+
+        Assertions.assertThat(result).contains("customQueryValue");
+        Assertions.assertThat(result).doesNotContain("generatedValue");
+        Assertions.assertThat(result).doesNotContain("200");
+        Assertions.assertThat(result).doesNotContain("POST");
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) {

@@ -116,9 +116,10 @@ public class CustomFuzzerUtil {
             }
 
             String servicePath = this.replacePathVariablesWithCustomValues(data, currentPathValues);
+            String pathParamsPayloadWithCustomValues = this.getPathParamsPayloadWithCustomValues(data.getPathParamsPayload(), currentPathValues);
             CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(servicePath).replaceRefData(false).httpMethod(data.getMethod())
                     .headers(headers).payload(payloadWithCustomValuesReplaced).queryParams(data.getQueryParams()).contractPath(data.getContractPath())
-                    .contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload()).build());
+                    .contentType(data.getFirstRequestContentType()).pathParamsPayload(pathParamsPayloadWithCustomValues).build());
 
             this.setOutputVariables(currentPathValues, response, payloadWithCustomValuesReplaced);
 
@@ -316,6 +317,22 @@ public class CustomFuzzerUtil {
 
     private boolean isCatsRemove(Map.Entry<String, Object> keyValue) {
         return ServiceCaller.CATS_REMOVE_FIELD.equalsIgnoreCase(String.valueOf(keyValue.getValue()));
+    }
+
+    String getPathParamsPayloadWithCustomValues(String pathParamsPayload, Map<String, Object> currentPathValues) {
+        if (StringUtils.isEmpty(pathParamsPayload)) {
+            return pathParamsPayload;
+        }
+
+        String result = pathParamsPayload;
+        for (Map.Entry<String, Object> entry : currentPathValues.entrySet()) {
+            if (this.isNotAReservedWord(entry.getKey()) && !this.isCatsRemove(entry)) {
+                result = this.replaceElementWithCustomValue(entry, result);
+            }
+        }
+
+        log.debug("PathParamsPayload after custom values replaced: [{}]", result);
+        return result;
     }
 
     /**
