@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class SchemaWalkerTest {
@@ -29,7 +30,7 @@ class SchemaWalkerTest {
             visitedSchemas.add(schema);
         };
         handlerInstance = Mockito.mock(Instance.class);
-        Mockito.when(handlerInstance.stream()).thenReturn(List.of(testHandler).stream());
+        Mockito.when(handlerInstance.stream()).thenReturn(Stream.of(testHandler));
     }
 
     private OpenAPI loadOpenApi(String resource) {
