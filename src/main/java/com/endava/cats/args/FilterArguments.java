@@ -156,11 +156,18 @@ public class FilterArguments {
             description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> skipTags;
 
+    @CommandLine.Option(names = {"--skipFuzzersForExtension", "--skipFuzzerForExtension"},
+            description = "Skip specific fuzzers for endpoints with certain OpenAPI extension values. " +
+                    "Format: @|bold x-extension-name=value:Fuzzer1,Fuzzer2|@. " +
+                    "Example: @|bold --skipFuzzersForExtension \"x-public-endpoint=true:BypassAuthentication\"|@ " +
+                    "will skip BypassAuthentication fuzzer for all endpoints that have x-public-endpoint extension set to true.", split = ",")
+    private List<String> skipFuzzersForExtension;
 
     @Setter
     private TotalCountType totalCountType = TotalCountType.FUZZERS;
 
     private Map<String, List<String>> skipPathFuzzers = new HashMap<>();
+    private Map<String, Map<String, List<String>>> skipFuzzersForExtensionMap = new HashMap<>();
 
     /**
      * Gets the list of fields to skip during processing. If the list is not set, an empty list is returned.
@@ -286,6 +293,67 @@ public class FilterArguments {
      */
     public List<String> getSkippedTags() {
         return Optional.ofNullable(this.skipTags).orElse(Collections.emptyList());
+    }
+
+    /**
+     * Parses the {@code --skipFuzzersForExtension} argument and returns a map of extension name to
+     * a map of extension value to list of fuzzers to skip.
+     * Format: x-extension-name=value:Fuzzer1,Fuzzer2
+     *
+     * @return a map of extension name -> (extension value -> list of fuzzers to skip)
+     */
+    public Map<String, Map<String, List<String>>> getSkipFuzzersForExtension() {
+        if (skipFuzzersForExtensionMap.isEmpty() && skipFuzzersForExtension != null) {
+            for (String entry : skipFuzzersForExtension) {
+                String[] parts = entry.split(":", 2);
+                if (parts.length == 2) {
+                    String[] extensionParts = parts[0].split("=", 2);
+                    if (extensionParts.length == 2) {
+                        String extensionName = extensionParts[0].trim();
+                        String extensionValue = extensionParts[1].trim();
+                        List<String> fuzzers = Stream.of(parts[1].split(","))
+                                .map(String::trim)
+                                .toList();
+                        skipFuzzersForExtensionMap
+                                .computeIfAbsent(extensionName, k -> new HashMap<>())
+                                .put(extensionValue, fuzzers);
+                    }
+                }
+            }
+        }
+        return skipFuzzersForExtensionMap;
+    }
+
+    /**
+     * Returns the list of fuzzers to skip for a given operation based on its extensions.
+     *
+     * @param operationExtensions the extensions map from the OpenAPI operation
+     * @return a list of fuzzer names to skip for this operation
+     */
+    public List<String> getFuzzersToSkipForOperationExtensions(Map<String, Object> operationExtensions) {
+        if (operationExtensions == null || operationExtensions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> fuzzersToSkip = new ArrayList<>();
+        Map<String, Map<String, List<String>>> extensionConfig = getSkipFuzzersForExtension();
+
+        for (Map.Entry<String, Object> extension : operationExtensions.entrySet()) {
+            String extensionName = extension.getKey();
+            String extensionValue = String.valueOf(extension.getValue());
+
+            Map<String, List<String>> valueToFuzzers = extensionConfig.get(extensionName);
+            if (valueToFuzzers != null) {
+                List<String> fuzzers = valueToFuzzers.get(extensionValue);
+                if (fuzzers != null) {
+                    fuzzersToSkip.addAll(fuzzers);
+                }
+            }
+        }
+
+        logger.debug("Fuzzers to skip for path based on extensions: {}", fuzzersToSkip);
+
+        return fuzzersToSkip;
     }
 
     /**

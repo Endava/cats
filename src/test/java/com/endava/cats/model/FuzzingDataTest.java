@@ -283,4 +283,41 @@ class FuzzingDataTest {
 
         return schemaMap;
     }
+
+    @Test
+    void shouldSkipFuzzerForPathWhenMatchingExtension() {
+        FuzzingData data = FuzzingData.builder()
+                .skippedFuzzersForPath(List.of("BypassAuthentication", "RemoveAuthHeaders"))
+                .build();
+
+        Assertions.assertThat(data.shouldSkipFuzzerForPath("BypassAuthenticationFuzzer")).isTrue();
+        Assertions.assertThat(data.shouldSkipFuzzerForPath("RemoveAuthHeadersFuzzer")).isTrue();
+    }
+
+    @Test
+    void shouldNotSkipFuzzerForPathWhenNoMatch() {
+        FuzzingData data = FuzzingData.builder()
+                .skippedFuzzersForPath(List.of("BypassAuthentication"))
+                .build();
+
+        Assertions.assertThat(data.shouldSkipFuzzerForPath("HappyPathFuzzer")).isFalse();
+    }
+
+    @Test
+    void shouldNotSkipFuzzerForPathWhenEmptyList() {
+        FuzzingData data = FuzzingData.builder()
+                .skippedFuzzersForPath(Collections.emptyList())
+                .build();
+
+        Assertions.assertThat(data.shouldSkipFuzzerForPath("BypassAuthenticationFuzzer")).isFalse();
+    }
+
+    @Test
+    void shouldSkipFuzzerForPathCaseInsensitive() {
+        FuzzingData data = FuzzingData.builder()
+                .skippedFuzzersForPath(List.of("bypassauthentication"))
+                .build();
+
+        Assertions.assertThat(data.shouldSkipFuzzerForPath("BypassAuthenticationFuzzer")).isTrue();
+    }
 }

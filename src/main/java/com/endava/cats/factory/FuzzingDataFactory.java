@@ -284,6 +284,7 @@ public class FuzzingDataFactory {
                             .includeFieldFormats(filterArguments.getFieldFormats())
                             .skipFieldFormats(filterArguments.getSkipFieldFormats())
                             .skippedFieldsForAllFuzzers(filterArguments.getSkipFieldsToBeSkippedForAllFuzzers())
+                            .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(operation.getExtensions()))
                             .responseHeaders(responseHeaders)
                             .pathParamsPayload(pathParamsExample)
                             .queryParams(queryParams)
@@ -368,6 +369,7 @@ public class FuzzingDataFactory {
                         .includeFieldFormats(filterArguments.getFieldFormats())
                         .skipFieldFormats(filterArguments.getSkipFieldFormats())
                         .skippedFieldsForAllFuzzers(filterArguments.getSkipFieldsToBeSkippedForAllFuzzers())
+                        .skippedFuzzersForPath(filterArguments.getFuzzersToSkipForOperationExtensions(operation.getExtensions()))
                         .responseHeaders(responseHeaders)
                         .build())
                 .toList();

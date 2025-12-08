@@ -440,6 +440,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void runSingleFuzzer(Fuzzer fuzzer, FuzzingData data) {
+        if (data.shouldSkipFuzzerForPath(fuzzer.toString())) {
+            logger.skip("Skipping Fuzzer {} for path {} due to OpenAPI extension configuration",
+                    ansi().fgYellow().a(fuzzer.toString()).reset(), data.getPath());
+            return;
+        }
+
         logFuzzerStart(fuzzer, data);
 
         if (!(fuzzer instanceof FunctionalFuzzer)) {

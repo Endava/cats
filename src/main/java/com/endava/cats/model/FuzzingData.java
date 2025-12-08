@@ -81,6 +81,8 @@ public class FuzzingData {
     @Builder.Default
     private List<String> skippedFieldsForAllFuzzers = Collections.emptyList();
 
+    @Builder.Default
+    private List<String> skippedFuzzersForPath = Collections.emptyList();
 
     @Builder.Default
     private Set<Object> examples = new HashSet<>();
@@ -112,6 +114,17 @@ public class FuzzingData {
         }
 
         return processedPayload;
+    }
+
+    /**
+     * Checks if a fuzzer should be skipped for this path based on operation extensions.
+     *
+     * @param fuzzerName the name of the fuzzer to check
+     * @return true if the fuzzer should be skipped, false otherwise
+     */
+    public boolean shouldSkipFuzzerForPath(String fuzzerName) {
+        return skippedFuzzersForPath.stream()
+                .anyMatch(skipped -> fuzzerName.toLowerCase().contains(skipped.toLowerCase()));
     }
 
     private String removeReadWrite() {

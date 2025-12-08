@@ -48,6 +48,8 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFields", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "paths", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension", null);
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtensionMap", new java.util.HashMap<>());
 
         FilterArguments.ALL_CATS_FUZZERS.clear();
         FilterArguments.FUZZERS_TO_BE_RUN.clear();
@@ -411,5 +413,85 @@ class FilterArgumentsTest {
     void shouldCountBaseOnCountType(FilterArguments.TotalCountType countType, int expectedCount) {
         filterArguments.setTotalCountType(countType);
         Assertions.assertThat(filterArguments.getTotalFuzzersOrLinters()).isEqualTo(expectedCount);
+    }
+
+    @Test
+    void shouldParseSkipFuzzersForExtension() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
+                List.of("x-public-endpoint=true:BypassAuthentication,RemoveAuthHeaders"));
+
+        var result = filterArguments.getSkipFuzzersForExtension();
+
+        Assertions.assertThat(result).containsKey("x-public-endpoint");
+        Assertions.assertThat(result.get("x-public-endpoint")).containsKey("true");
+        Assertions.assertThat(result.get("x-public-endpoint").get("true"))
+                .containsExactly("BypassAuthentication", "RemoveAuthHeaders");
+    }
+
+    @Test
+    void shouldParseMultipleSkipFuzzersForExtension() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
+                List.of("x-public-endpoint=true:BypassAuthentication", "x-auth-required=false:RemoveAuthHeaders"));
+
+        var result = filterArguments.getSkipFuzzersForExtension();
+
+        Assertions.assertThat(result).containsKeys("x-public-endpoint", "x-auth-required");
+        Assertions.assertThat(result.get("x-public-endpoint").get("true")).containsExactly("BypassAuthentication");
+        Assertions.assertThat(result.get("x-auth-required").get("false")).containsExactly("RemoveAuthHeaders");
+    }
+
+    @Test
+    void shouldReturnEmptyMapWhenNoSkipFuzzersForExtension() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension", null);
+
+        var result = filterArguments.getSkipFuzzersForExtension();
+
+        Assertions.assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldGetFuzzersToSkipForOperationExtensions() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
+                List.of("x-public-endpoint=true:BypassAuthentication,RemoveAuthHeaders"));
+
+        var extensions = new java.util.HashMap<String, Object>();
+        extensions.put("x-public-endpoint", "true");
+
+        var result = filterArguments.getFuzzersToSkipForOperationExtensions(extensions);
+
+        Assertions.assertThat(result).containsExactly("BypassAuthentication", "RemoveAuthHeaders");
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenExtensionValueDoesNotMatch() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
+                List.of("x-public-endpoint=true:BypassAuthentication"));
+
+        var extensions = new java.util.HashMap<String, Object>();
+        extensions.put("x-public-endpoint", "false");
+
+        var result = filterArguments.getFuzzersToSkipForOperationExtensions(extensions);
+
+        Assertions.assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoExtensions() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
+                List.of("x-public-endpoint=true:BypassAuthentication"));
+
+        var result = filterArguments.getFuzzersToSkipForOperationExtensions(null);
+
+        Assertions.assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenEmptyExtensions() {
+        ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension",
+                List.of("x-public-endpoint=true:BypassAuthentication"));
+
+        var result = filterArguments.getFuzzersToSkipForOperationExtensions(Collections.emptyMap());
+
+        Assertions.assertThat(result).isEmpty();
     }
 }
