@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.BinarySchema;
@@ -31,6 +32,7 @@ import java.util.regex.Pattern;
  * Wrapper on top of {@link org.openapitools.codegen.utils.ModelUtils} in order to accommodate
  * some particular conditions needed by CATS.
  */
+@RegisterForReflection
 public abstract class CatsModelUtils {
     public static final String X_CATS_FIELD_NAME = "x-cats-field-name";
     private static final Pattern GENERATED_PREFIX = Pattern.compile("generated_.*");

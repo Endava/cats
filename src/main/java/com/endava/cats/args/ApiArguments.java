@@ -92,24 +92,7 @@ public class ApiArguments {
     public void validateValidServer(CommandLine.Model.CommandSpec spec, OpenAPI openAPI) {
         String serverFromInput = this.server;
 
-        if (openAPI != null) {
-            List<String> servers = OpenApiServerExtractor.getServerUrls(openAPI);
-            log.debug("Servers from OpenAPI: {}", servers);
-
-            if (serverFromInput == null) {
-                // No CLI server provided, use OpenAPI server
-                servers.stream().findFirst().ifPresent(theServer -> this.server = theServer);
-            } else {
-                // CLI server provided, check if OpenAPI server has placeholders or relative paths
-                servers.stream().findFirst().ifPresent(openApiServer -> {
-                    if (openApiServer.contains("{") || !openApiServer.startsWith("http")) {
-                        // OpenAPI server has placeholders or is relative, use it for replacement
-                        this.server = openApiServer;
-                    }
-                    // Otherwise keep CLI server (concrete OpenAPI URLs don't override CLI)
-                });
-            }
-        }
+        this.server = extractFromOpenApi(openAPI, serverFromInput);
 
         if (this.server != null && serverFromInput != null) {
             if (this.server.contains("{")) {
@@ -127,6 +110,24 @@ public class ApiArguments {
             this.server = this.server.substring(0, this.server.length() - 1);
         }
         log.debug("Final server URL: {}", this.server);
+    }
+
+    private String extractFromOpenApi(OpenAPI openAPI, String serverFromInput) {
+        if (openAPI != null) {
+            List<String> servers = OpenApiServerExtractor.getServerUrls(openAPI);
+            log.debug("Servers from OpenAPI: {}", servers);
+
+            if (serverFromInput == null) {
+                // No CLI server provided, use OpenAPI server
+                return servers.stream().findFirst().orElse(serverFromInput);
+            } else {
+                // CLI server provided, check if OpenAPI server has placeholders or relative paths
+                return servers.stream().findFirst()
+                        .filter(openApiServer -> openApiServer.contains("{") || !openApiServer.startsWith("http"))
+                        .orElse(serverFromInput);
+            }
+        }
+        return serverFromInput;
     }
 
     private void validateURL(CommandLine.Model.CommandSpec spec) {

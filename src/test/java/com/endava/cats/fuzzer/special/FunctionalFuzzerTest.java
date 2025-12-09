@@ -3,7 +3,6 @@ package com.endava.cats.fuzzer.special;
 import com.endava.cats.args.FilesArguments;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.AdditionalMatchers;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -32,7 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @QuarkusTest
 class FunctionalFuzzerTest {
@@ -322,11 +319,11 @@ class FunctionalFuzzerTest {
 
         String result = customFuzzerUtil.getPathParamsPayloadWithCustomValues(originalPathParamsPayload, testCase);
 
-        Assertions.assertThat(result).contains("customQueryValue");
-        Assertions.assertThat(result).contains("anotherCustomValue");
-        Assertions.assertThat(result).doesNotContain("generatedValue");
-        Assertions.assertThat(result).doesNotContain("generatedAnother");
-        Assertions.assertThat(result).contains("\"id\":\"123\"");
+        Assertions.assertThat(result).contains("customQueryValue").
+                contains("anotherCustomValue")
+                .doesNotContain("generatedValue")
+                .doesNotContain("generatedAnother")
+                .contains("\"id\":\"123\"");
     }
 
     @Test

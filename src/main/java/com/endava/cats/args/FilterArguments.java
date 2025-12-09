@@ -311,12 +311,12 @@ public class FilterArguments {
                     if (extensionParts.length == 2) {
                         String extensionName = extensionParts[0].trim();
                         String extensionValue = extensionParts[1].trim();
-                        List<String> fuzzers = Stream.of(parts[1].split(","))
+                        List<String> fuzzersList = Stream.of(parts[1].split(","))
                                 .map(String::trim)
                                 .toList();
                         skipFuzzersForExtensionMap
                                 .computeIfAbsent(extensionName, k -> new HashMap<>())
-                                .put(extensionValue, fuzzers);
+                                .put(extensionValue, fuzzersList);
                     }
                 }
             }

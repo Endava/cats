@@ -96,4 +96,20 @@ class SchemaWalkerTest {
         boolean hasAdditional = visitedSchemas.stream().anyMatch(s -> s.getAdditionalProperties() != null);
         Assertions.assertThat(hasAdditional).isTrue();
     }
+
+    @Test
+    void shouldPropagatePathAndMethodContextForOperationSchemas() {
+        OpenAPI openAPI = loadOpenApi("petstore.yml");
+        SchemaWalker.walk(openAPI, testHandler);
+
+        // Schemas from paths should have non-null path and method
+        boolean hasOperationContext = visitedLocations.stream()
+                .anyMatch(loc -> loc.path() != null && loc.method() != null);
+        Assertions.assertThat(hasOperationContext).isTrue();
+
+        // Global schemas (from components) should have null path and method
+        boolean hasGlobalContext = visitedLocations.stream()
+                .anyMatch(SchemaLocation::isGlobalLocation);
+        Assertions.assertThat(hasGlobalContext).isTrue();
+    }
 }

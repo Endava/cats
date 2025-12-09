@@ -60,22 +60,10 @@ public class DuplicateKeysFieldsFuzzer implements Fuzzer {
     }
 
     private void executeFieldMutations(FuzzingData data) {
-        Set<String> fields = data.getAllFieldsByHttpMethod();
-        int executedCount = 0;
-
-        for (String field : fields) {
-            if (executedCount >= MAX_MUTATIONS_PER_REQUEST) {
-                logger.debug("Reached maximum mutations limit ({}), stopping", MAX_MUTATIONS_PER_REQUEST);
-                break;
-            }
-
-            if (shouldSkipField(field, data.getPayload())) {
-                continue;
-            }
-
-            executedCount++;
-            executeFieldDuplication(data, field);
-        }
+        data.getAllFieldsByHttpMethod().stream()
+                .filter(field -> !shouldSkipField(field, data.getPayload()))
+                .limit(MAX_MUTATIONS_PER_REQUEST)
+                .forEach(field -> executeFieldDuplication(data, field));
     }
 
     private boolean shouldSkipField(String field, String payload) {

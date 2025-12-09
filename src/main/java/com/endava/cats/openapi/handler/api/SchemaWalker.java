@@ -67,7 +67,7 @@ public class SchemaWalker {
      */
     public static void walk(OpenAPI api, SchemaHandler... handlers) {
         Objects.requireNonNull(api);
-        Set<Schema<?>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        WalkContext ctx = new WalkContext(api, Collections.newSetFromMap(new IdentityHashMap<>()), handlers, null, null);
 
         Optional.ofNullable(api.getComponents())
                 .map(Components::getSchemas)
@@ -75,29 +75,22 @@ public class SchemaWalker {
                     Deque<String> fqn = new ArrayDeque<>(List.of(name));
                     Deque<String> ptr = new ArrayDeque<>(
                             List.of("components", "schemas", JsonUtils.escape(name)));
-                    dfs(schema, api, fqn, ptr, visited, handlers, null, null);
+                    dfs(schema, fqn, ptr, ctx);
                 }));
 
         Optional.ofNullable(api.getPaths())
                 .ifPresent(paths -> paths.forEach((url, item) ->
-                        processPathItem(item, api, url, visited, handlers)));
+                        processPathItem(item, url, ctx)));
     }
 
     /**
      * Processes a PathItem and applies schema handlers to its operations.
-     * <p>
-     * This method iterates through the operations of a PathItem, extracting parameters,
-     * request bodies, and responses, and applies the provided handlers to each schema found.
      *
-     * @param item     the PathItem to process
-     * @param api      the OpenAPI document containing the PathItem
-     * @param rawUrl   the raw URL of the PathItem
-     * @param visited  a set of visited schemas to avoid processing duplicates
-     * @param handlers the handlers to apply to each schema found
+     * @param item   the PathItem to process
+     * @param rawUrl the raw URL of the PathItem
+     * @param ctx    the walk context
      */
-    private static void processPathItem(PathItem item, OpenAPI api,
-                                        String rawUrl, Set<Schema<?>> visited,
-                                        SchemaHandler[] handlers) {
+    private static void processPathItem(PathItem item, String rawUrl, WalkContext ctx) {
         if (item == null) return;
         String urlEsc = JsonUtils.escape(rawUrl);
 
@@ -107,12 +100,10 @@ public class SchemaWalker {
                     .orElse(m + " " + rawUrl);
 
             Deque<String> fqnStem = new ArrayDeque<>(List.of(opName));
+            Deque<String> ptrStem = new ArrayDeque<>(List.of("paths", urlEsc, method));
+            WalkContext opCtx = ctx.withLocation(rawUrl, m.toString());
 
-            Deque<String> ptrStem = new ArrayDeque<>(
-                    List.of("paths", urlEsc, method));
-
-            List<Parameter> params = Optional.ofNullable(op.getParameters())
-                    .orElse(List.of());
+            List<Parameter> params = Optional.ofNullable(op.getParameters()).orElse(List.of());
             for (int i = 0; i < params.size(); i++) {
                 Parameter p = params.get(i);
                 if (p.getSchema() == null) continue;
@@ -126,7 +117,7 @@ public class SchemaWalker {
                 ptr.add(Integer.toString(i));
                 ptr.add("schema");
 
-                dfs(p.getSchema(), api, fqn, ptr, visited, handlers, rawUrl, m.toString());
+                dfs(p.getSchema(), fqn, ptr, opCtx);
             }
 
             Optional.ofNullable(op.getRequestBody()).map(RequestBody::getContent)
@@ -141,7 +132,7 @@ public class SchemaWalker {
                         ptr.add(mt);
                         ptr.add("schema");
 
-                        consumeMedia(media, api, fqn, ptr, visited, handlers, rawUrl, m.toString());
+                        consumeMedia(media, fqn, ptr, opCtx);
                     }));
 
             op.getResponses().forEach((code, resp) ->
@@ -158,72 +149,47 @@ public class SchemaWalker {
                                 ptr.add(mt);
                                 ptr.add("schema");
 
-                                consumeMedia(media, api, fqn, ptr, visited, handlers,
-                                        rawUrl, m.toString());
+                                consumeMedia(media, fqn, ptr, opCtx);
                             })));
         });
     }
 
     /**
      * Consumes a MediaType schema and applies schema handlers to it.
-     * <p>
-     * This method checks if the MediaType has a schema and applies the provided handlers
-     * to the schema, using the provided FQN and pointer.
      *
-     * @param media    the MediaType to consume
-     * @param api      the OpenAPI document containing the MediaType
-     * @param fqn      the fully qualified name deque
-     * @param ptr      the pointer deque
-     * @param visited  a set of visited schemas to avoid processing duplicates
-     * @param handlers the handlers to apply to the schema found in the MediaType
-     * @param url      the URL of the operation
-     * @param method   the HTTP method of the operation
+     * @param media the MediaType to consume
+     * @param fqn   the fully qualified name deque
+     * @param ptr   the pointer deque
+     * @param ctx   the walk context
      */
-    private static void consumeMedia(MediaType media, OpenAPI api,
-                                     Deque<String> fqn, Deque<String> ptr,
-                                     Set<Schema<?>> visited,
-                                     SchemaHandler[] handlers,
-                                     String url, String method) {
+    private static void consumeMedia(MediaType media, Deque<String> fqn, Deque<String> ptr, WalkContext ctx) {
         if (media != null && media.getSchema() != null) {
-            dfs(media.getSchema(), api, fqn, ptr, visited, handlers, url, method);
+            dfs(media.getSchema(), fqn, ptr, ctx);
         }
     }
 
     /**
      * Recursively traverses a schema and applies handlers to it.
-     * <p>
-     * This method handles references, composed schemas, object properties, array items,
-     * additional properties, and the "not" schema. It uses depth-first search to traverse
-     * the schema tree and applies the provided handlers to each schema found.
      *
-     * @param schema   the schema to traverse
-     * @param api      the OpenAPI document containing the schema
-     * @param fqn      the fully qualified name deque
-     * @param ptr      the pointer deque
-     * @param visited  a set of visited schemas to avoid processing duplicates
-     * @param handlers the handlers to apply to each schema found
-     * @param url      the URL of the operation
-     * @param method   the HTTP method of the operation
+     * @param schema the schema to traverse
+     * @param fqn    the fully qualified name deque
+     * @param ptr    the pointer deque
+     * @param ctx    the walk context
      */
-    private static void dfs(Schema<?> schema, OpenAPI api,
-                            Deque<String> fqn, Deque<String> ptr,
-                            Set<Schema<?>> visited, SchemaHandler[] handlers,
-                            String url, String method) {
-
-        if (schema == null || !visited.add(schema)) return;
+    private static void dfs(Schema<?> schema, Deque<String> fqn, Deque<String> ptr, WalkContext ctx) {
+        if (schema == null || !ctx.visited().add(schema)) return;
 
         if (schema.get$ref() != null) {
             String refName = CatsModelUtils.getSimpleRefUsingOAT(schema.get$ref());
-            Schema<?> target = Optional.ofNullable(api.getComponents())
+            Schema<?> target = Optional.ofNullable(ctx.api().getComponents())
                     .map(Components::getSchemas).map(m -> m.get(refName))
                     .orElse(null);
-            dfs(target, api, fqn, ptr, visited, handlers, url, method);
+            dfs(target, fqn, ptr, ctx);
             return;
         }
 
-        SchemaLocation loc = new SchemaLocation(
-                url, method, toFqn(fqn), JsonUtils.toPointer(ptr));
-        for (SchemaHandler h : handlers) h.handle(loc, schema);
+        SchemaLocation loc = new SchemaLocation(ctx.url(), ctx.method(), toFqn(fqn), JsonUtils.toPointer(ptr));
+        for (SchemaHandler h : ctx.handlers()) h.handle(loc, schema);
 
         if (CatsModelUtils.isComposedSchema(schema)) {
             Map<String, List<Schema>> composed = Map.of(
@@ -236,7 +202,7 @@ public class SchemaWalker {
                     Deque<String> ptrN = new ArrayDeque<>(ptr);
                     ptrN.add(tag);
                     ptrN.add(Integer.toString(i));
-                    dfs(list.get(i), api, fqnN, ptrN, visited, handlers, url, method);
+                    dfs(list.get(i), fqnN, ptrN, ctx);
                 }
             });
         }
@@ -250,7 +216,7 @@ public class SchemaWalker {
                 ptrN.add("properties");
                 ptrN.add(JsonUtils.escape(prop));
 
-                dfs(sub, api, fqnN, ptrN, visited, handlers, url, method);
+                dfs(sub, fqnN, ptrN, ctx);
             });
         }
 
@@ -259,7 +225,7 @@ public class SchemaWalker {
             fqnN.add("[]");
             Deque<String> ptrN = new ArrayDeque<>(ptr);
             ptrN.add("items");
-            dfs(schema.getItems(), api, fqnN, ptrN, visited, handlers, url, method);
+            dfs(schema.getItems(), fqnN, ptrN, ctx);
         }
 
         if (schema.getAdditionalProperties() instanceof Schema<?> ap) {
@@ -267,14 +233,22 @@ public class SchemaWalker {
             fqnN.add("additionalProperties");
             Deque<String> ptrN = new ArrayDeque<>(ptr);
             ptrN.add("additionalProperties");
-            dfs(ap, api, fqnN, ptrN, visited, handlers, url, method);
+            dfs(ap, fqnN, ptrN, ctx);
         }
 
         if (schema.getNot() != null) {
             Deque<String> ptrN = new ArrayDeque<>(ptr);
             ptrN.add("not");
-            dfs(schema.getNot(), api, new ArrayDeque<>(fqn), ptrN,
-                    visited, handlers, url, method);
+            dfs(schema.getNot(), new ArrayDeque<>(fqn), ptrN, ctx);
         }
+    }
+}
+
+/**
+ * Encapsulates the traversal context for schema walking.
+ */
+record WalkContext(OpenAPI api, Set<Schema<?>> visited, SchemaHandler[] handlers, String url, String method) {
+    WalkContext withLocation(String newUrl, String newMethod) {
+        return new WalkContext(api, visited, handlers, newUrl, newMethod);
     }
 }
