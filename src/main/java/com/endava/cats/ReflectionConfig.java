@@ -168,11 +168,31 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.parser.Swagger20Parser;
 import io.swagger.parser.SwaggerParser;
 import io.swagger.parser.SwaggerResolver;
+import io.swagger.v3.core.filter.OpenAPI31SpecFilter;
+import io.swagger.v3.core.jackson.Schema31Serializer;
+import io.swagger.v3.core.jackson.mixin.Components31Mixin;
+import io.swagger.v3.core.jackson.mixin.Discriminator31Mixin;
+import io.swagger.v3.core.jackson.mixin.Info31Mixin;
+import io.swagger.v3.core.jackson.mixin.OpenAPI31Mixin;
+import io.swagger.v3.core.jackson.mixin.Schema31Mixin;
+import io.swagger.v3.core.util.ApiResponses31Deserializer;
+import io.swagger.v3.core.util.Callback31Deserializer;
+import io.swagger.v3.core.util.DeserializationModule31;
+import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.core.util.Model31Deserializer;
+import io.swagger.v3.core.util.OpenAPI30To31;
+import io.swagger.v3.core.util.OpenAPI31Deserializer;
+import io.swagger.v3.core.util.Parameter31Deserializer;
+import io.swagger.v3.core.util.Paths31Deserializer;
+import io.swagger.v3.core.util.SecurityScheme31Deserializer;
+import io.swagger.v3.core.util.Yaml31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.annotations.OpenAPI30;
+import io.swagger.v3.oas.models.annotations.OpenAPI31;
 import io.swagger.v3.oas.models.callbacks.Callback;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.headers.Header;
@@ -201,6 +221,14 @@ import io.swagger.v3.oas.models.servers.ServerVariables;
 import io.swagger.v3.oas.models.tags.Tag;
 import io.swagger.v3.parser.converter.SwaggerConverter;
 import io.swagger.v3.parser.core.extensions.SwaggerParserExtension;
+import io.swagger.v3.parser.reference.DereferencerContext;
+import io.swagger.v3.parser.reference.DereferencersFactory;
+import io.swagger.v3.parser.reference.IdsTraverser;
+import io.swagger.v3.parser.reference.OpenAPI31Traverser;
+import io.swagger.v3.parser.reference.OpenAPIDereferencer;
+import io.swagger.v3.parser.reference.Reference;
+import io.swagger.v3.parser.reference.ReferenceUtils;
+import io.swagger.v3.parser.reference.ReferenceVisitor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -297,7 +325,9 @@ import java.util.UUID;
         Name.class, Address.class, EnFile.class, FakeValuesGrouping.class, FakeValues.class, RandomService.class, FakeValuesService.class, UUID.class, net.minidev.asm.ConvertDate.class, net.minidev.asm.DefaultConverter.class, OffsetDateTime.class, LocalDateTime.class, LocalDate.class, OffsetTime.class,
         RgxGenOption.class, RgxGenProperties.class, ArrayIteratorSupplier.class, ChoiceIteratorSupplier.class, GroupIteratorSupplier.class, IncrementalLengthIteratorSupplier.class, NegativeIteratorSupplier.class, PermutationsIteratorSupplier.class, ReferenceIteratorSupplier.class, SingleCaseInsensitiveValueIteratorSupplier.class, SingleValueIteratorSupplier.class, ArrayIterator.class, CaseVariationIterator.class, ChoiceIterator.class, IncrementalLengthIterator.class, NegativeStringIterator.class, PermutationsIterator.class, ReferenceIterator.class, SingleValueIterator.class,
         StringIterator.class, Choice.class, FinalSymbol.class, Group.class, GroupRef.class, Node.class, NotSymbol.class, Repeat.class, Sequence.class, SymbolSet.class, CharIterator.class, DefaultTreeBuilder.class, NodeTreeBuilder.class, Util.class, GenerationVisitor.class,
-        GenerationVisitorBuilder.class, GenerationVisitorCaseInsensitive.class, NodeVisitor.class, NotMatchingCaseInsensitiveGenerationVisitor.class, NotMatchingGenerationVisitor.class, UniqueGenerationVisitor.class, UniqueValuesCountingVisitor.class, RgxGen.class, JavaTimeModule.class
+        GenerationVisitorBuilder.class, GenerationVisitorCaseInsensitive.class, NodeVisitor.class, NotMatchingCaseInsensitiveGenerationVisitor.class, NotMatchingGenerationVisitor.class, UniqueGenerationVisitor.class, UniqueValuesCountingVisitor.class, RgxGen.class, JavaTimeModule.class, OpenAPI30.class, OpenAPI31.class,
+        DereferencerContext.class, DereferencersFactory.class, IdsTraverser.class, OpenAPI31Traverser.class, OpenAPIDereferencer.class, Reference.class, ReferenceUtils.class, ReferenceVisitor.class, ApiResponses31Deserializer.class, Callback31Deserializer.class, DeserializationModule31.class, Json31.class, Model31Deserializer.class, OpenAPI30To31.class, OpenAPI31Deserializer.class, Parameter31Deserializer.class, Paths31Deserializer.class, SecurityScheme31Deserializer.class, Yaml31.class, OpenAPI31SpecFilter.class, Components31Mixin.class, Discriminator31Mixin.class, Info31Mixin.class,
+        OpenAPI31Mixin.class, Schema31Mixin.class, Schema31Serializer.class
 })
 public class ReflectionConfig {
 }
