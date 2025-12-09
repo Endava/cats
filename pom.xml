@@ -81,6 +81,8 @@
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
         <snakeyaml-engine.version>3.0.1</snakeyaml-engine.version>
         <jackson-core.version>3.0.3</jackson-core.version>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
+        <timestamp>${maven.build.timestamp}</timestamp>
     </properties>
     <dependencyManagement>
         <dependencies>
