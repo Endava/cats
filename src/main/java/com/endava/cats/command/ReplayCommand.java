@@ -3,12 +3,12 @@ package com.endava.cats.command;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.dsl.CatsDSLParser;
 import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
-import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -19,7 +19,9 @@ import picocli.CommandLine;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,8 +46,12 @@ import java.util.Optional;
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Replay Test 1 from the default reporting folder:",
                 "    cats replay Test1",
-                "", "  Replay Test 1 from the default reporting folder and write the new output in another folder",
-                "    cats replay Test1 --output path/to/new/folder"},
+                "", "  Replay Test 1 from the default reporting folder and write the new output in another folder:",
+                "    cats replay Test1 --output path/to/new/folder",
+                "", "  Retry all failed (error) tests from the default cats-report folder:",
+                "    cats replay --errors",
+                "", "  Retry all failed tests including warnings:",
+                "    cats replay --errors --warnings"},
         versionProvider = VersionProvider.class)
 @Unremovable
 public class ReplayCommand implements Runnable {
@@ -55,7 +61,7 @@ public class ReplayCommand implements Runnable {
 
     @CommandLine.Parameters(
             description = "The list of CATS tests. When providing a .json extension it will be considered a path, " +
-                    "otherwise it will look for that test in the cats-report folder", split = ",", arity = "1..")
+                    "otherwise it will look for that test in the cats-report folder. Not required when using --errors or --warnings", split = ",", arity = "0..")
     String[] tests;
 
     @Inject
@@ -65,6 +71,10 @@ public class ReplayCommand implements Runnable {
     @CommandLine.Option(names = {"-D", "--debug"},
             description = "Set CATS log level to ALL. Useful for diagnosing when raising bugs")
     private boolean debug;
+
+    @CommandLine.Option(names = {"-v", "--verbose"},
+            description = "More verbose output")
+    private boolean verbose;
 
     @CommandLine.Option(names = {"-H"},
             description = "Specifies the headers to be passed with all the re-played tests. It will override values from the replay files for the same header name")
@@ -77,6 +87,18 @@ public class ReplayCommand implements Runnable {
     @CommandLine.Option(names = {"-o", "--output"},
             description = "If supplied, it will create TestXXX.json files within the given folder with the updated responses received when replaying the tests")
     private String outputReportFolder;
+
+    @CommandLine.Option(names = {"--errors"},
+            description = "Retry all tests with error results from the cats-summary-report.json in the report folder")
+    private boolean errors;
+
+    @CommandLine.Option(names = {"--warnings"},
+            description = "Retry all tests with warning results from the cats-summary-report.json in the report folder. Use together with --errors")
+    private boolean warnings;
+
+    @CommandLine.Option(names = {"--reportFolder", "-r"},
+            description = "The folder containing the cats-summary-report.json file when using --errors/--warnings. Default: @|bold,underline cats-report|@")
+    private String reportFolder = "cats-report";
 
 
     /**
@@ -92,10 +114,88 @@ public class ReplayCommand implements Runnable {
     }
 
     private List<String> parseTestCases() {
-        return Arrays.stream(tests)
-                .map(testCase -> testCase.trim().strip())
-                .map(testCase -> testCase.endsWith(".json") ? testCase : "cats-report/" + testCase + ".json")
-                .toList();
+        List<String> testCaseFiles = new ArrayList<>();
+
+        // Add tests from retry options (--errors, --warnings)
+        if (errors || warnings) {
+            testCaseFiles.addAll(loadTestIdsFromSummaryReport());
+        }
+
+        // Add explicitly provided test cases
+        if (tests != null && tests.length > 0) {
+            testCaseFiles.addAll(Arrays.stream(tests)
+                    .map(testCase -> testCase.trim().strip())
+                    .map(testCase -> testCase.endsWith(".json") ? testCase : reportFolder + "/" + testCase + ".json")
+                    .toList());
+        }
+
+        return testCaseFiles;
+    }
+
+    private List<String> loadTestIdsFromSummaryReport() {
+        Path summaryPath = Paths.get(reportFolder, "cats-summary-report.json");
+        if (!Files.exists(summaryPath)) {
+            logger.error("Summary report not found at: {}", summaryPath);
+            return Collections.emptyList();
+        }
+
+        try {
+            String content = Files.readString(summaryPath);
+            SummaryReport report = JsonUtils.GSON.fromJson(content, SummaryReport.class);
+
+            if (report == null || report.testCases == null) {
+                logger.error("Invalid summary report format");
+                return Collections.emptyList();
+            }
+
+            List<String> failedIds = new ArrayList<>();
+            for (TestCaseSummaryEntry entry : report.testCases) {
+                if (shouldRetryTest(entry)) {
+                    String testId = entry.id.replace(" ", "");
+                    failedIds.add(reportFolder + "/" + testId + ".json");
+                }
+            }
+
+            if (failedIds.isEmpty()) {
+                logger.info("No failed tests found to retry");
+            } else {
+                logger.info("Found {} failed test(s) to retry", failedIds.size());
+            }
+
+            return failedIds;
+        } catch (IOException e) {
+            logger.error("Failed to read summary report: {}", e.getMessage());
+            logger.debug("Stacktrace:", e);
+            return Collections.emptyList();
+        } catch (Exception e) {
+            logger.error("Failed to parse summary report: {}", e.getMessage());
+            logger.debug("Stacktrace:", e);
+            return Collections.emptyList();
+        }
+    }
+
+    private boolean shouldRetryTest(TestCaseSummaryEntry entry) {
+        if (entry.result == null) {
+            return false;
+        }
+        boolean isError = errors && "error".equalsIgnoreCase(entry.result);
+        boolean isWarning = warnings && "warn".equalsIgnoreCase(entry.result);
+        return isError || isWarning;
+    }
+
+    /**
+     * Internal class for deserializing the summary report.
+     */
+    static class SummaryReport {
+        List<TestCaseSummaryEntry> testCases;
+    }
+
+    /**
+     * Internal class for deserializing individual test case entries from the summary.
+     */
+    static class TestCaseSummaryEntry {
+        String id;
+        String result;
     }
 
     private void executeTestCase(String testCaseFileName) throws IOException {
@@ -115,7 +215,9 @@ public class ReplayCommand implements Runnable {
                     .build();
         }
 
-        logger.complete("Response body: \n{}", response.getBody());
+        if (verbose) {
+            logger.complete("Response body: \n{}", response.getBody());
+        }
         this.writeTestJsonsIfSupplied(testCase, response);
         this.showResponseCodesDifferences(testCase, response);
     }
@@ -124,11 +226,13 @@ public class ReplayCommand implements Runnable {
         logger.noFormat("");
         logger.star("Old response code: {}", catsTestCase.getResponse().getResponseCode());
         logger.star("New response code: {}", response.getResponseCode());
+        logger.noFormat("");
 
-        logger.noFormat("");
-        logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody());
-        logger.star("New response body: {}", response.getJsonBody());
-        logger.noFormat("");
+        if (verbose) {
+            logger.star("Old response body: {}", catsTestCase.getResponse().getJsonBody());
+            logger.star("New response body: {}", response.getJsonBody());
+            logger.noFormat("");
+        }
     }
 
     void writeTestJsonsIfSupplied(CatsTestCase catsTestCase, CatsResponse response) {
@@ -155,7 +259,9 @@ public class ReplayCommand implements Runnable {
 
     private CatsTestCase loadTestCaseFile(String testCaseFileName) throws IOException {
         String testCaseFile = Files.readString(Paths.get(testCaseFileName));
-        logger.config("Loaded content: \n" + testCaseFile);
+        if (verbose) {
+            logger.config("Loaded content: \n" + testCaseFile);
+        }
         CatsTestCase testCase = JsonUtils.GSON.fromJson(testCaseFile, CatsTestCase.class);
         testCase.updateServer(server);
         return testCase;
@@ -182,16 +288,24 @@ public class ReplayCommand implements Runnable {
             CatsUtil.setCatsLogLevel("ALL");
             logger.fav("Setting CATS log level to ALL!");
         }
+
+        List<String> testCases = this.parseTestCases();
+        if (testCases.isEmpty()) {
+            logger.warning("No tests to replay. Provide test names as arguments or use --errors/--warnings");
+            return;
+        }
+
         this.initReportingPath();
-        for (String testCaseFileName : this.parseTestCases()) {
+        for (String testCaseFileName : testCases) {
             try {
+                logger.noFormat("");
                 logger.start("Executing {}", testCaseFileName);
                 this.executeTestCase(testCaseFileName);
                 logger.complete("Finish executing {}", testCaseFileName);
             } catch (IOException e) {
                 logger.debug("Exception while replaying test!", e);
                 logger.error("Something went wrong while replaying {}. If the test name ends with .json it is searched as a full path. " +
-                        "If it doesn't have an extension it will be searched in cats-report/ folder. Error message: {}", testCaseFileName, e.toString());
+                        "If it doesn't have an extension it will be searched in the {} folder. Error message: {}", testCaseFileName, reportFolder, e.toString());
             }
         }
     }

@@ -245,7 +245,7 @@ public abstract class TestCaseExporter {
             logger.noFormat(" ");
         }
         try {
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), maskingSerializer.toJson(timeExecutionDetails), StandardCharsets.UTF_8);
+            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), EXECUTION_TIME_REPORT), maskingSerializer.toJson(timeExecutionDetails).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             logger.warning("There was an issue writing the execution_times.js: {}. Please check if CATS has proper right to write in the report location: {}",
                     e.getMessage(), reportingPath.toFile().getAbsolutePath());
@@ -331,8 +331,8 @@ public abstract class TestCaseExporter {
 
         try {
             writer.flush();
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString(), StandardCharsets.UTF_8);
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), maskingSerializer.toJson(report), StandardCharsets.UTF_8);
+            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), this.getSummaryReportTitle()), writer.toString().getBytes(StandardCharsets.UTF_8));
+            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), REPORT_JS), maskingSerializer.toJson(report).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             logger.error("There was an error writing the report summary: {}. Please check if CATS has proper right to write in the report location: {}",
                     e.getMessage(), reportingPath.toFile().getAbsolutePath());
@@ -406,7 +406,8 @@ public abstract class TestCaseExporter {
     private void writeJsonTestCase(CatsTestCase testCase) {
         String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
         try {
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), maskingSerializer.toJson(testCase), StandardCharsets.UTF_8);
+            // Write raw bytes to preserve exact payload for replay - don't sanitize
+            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), maskingSerializer.toJson(testCase).getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             logger.error("There was a problem writing test case {}: {}. Please check if CATS has proper right to write in the report location: {}",
                     testCase.getTestId(), e.getMessage(), reportingPath.toFile().getAbsolutePath());
@@ -426,7 +427,7 @@ public abstract class TestCaseExporter {
         Writer writer = TEST_CASE_MUSTACHE.execute(stringWriter, context);
         String testFileName = testCase.getTestId().replace(" ", "").concat(HTML);
         try {
-            Files.writeString(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), writer.toString(), StandardCharsets.UTF_8);
+            Files.write(Paths.get(reportingPath.toFile().getAbsolutePath(), testFileName), writer.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             logger.error("There was a problem writing test case {}: {}. Please check if CATS has proper right to write in the report location: {}",
                     testCase.getTestId(), e.getMessage(), reportingPath.toFile().getAbsolutePath());
