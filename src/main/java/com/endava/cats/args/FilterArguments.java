@@ -344,9 +344,9 @@ public class FilterArguments {
 
             Map<String, List<String>> valueToFuzzers = extensionConfig.get(extensionName);
             if (valueToFuzzers != null) {
-                List<String> fuzzers = valueToFuzzers.get(extensionValue);
-                if (fuzzers != null) {
-                    fuzzersToSkip.addAll(fuzzers);
+                List<String> fuzzersFromExtension = valueToFuzzers.get(extensionValue);
+                if (fuzzersFromExtension != null) {
+                    fuzzersToSkip.addAll(fuzzersFromExtension);
                 }
             }
         }

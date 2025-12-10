@@ -350,10 +350,10 @@ class FunctionalFuzzerTest {
 
         String result = customFuzzerUtil.getPathParamsPayloadWithCustomValues(originalPathParamsPayload, testCase);
 
-        Assertions.assertThat(result).contains("customQueryValue");
-        Assertions.assertThat(result).doesNotContain("generatedValue");
-        Assertions.assertThat(result).doesNotContain("200");
-        Assertions.assertThat(result).doesNotContain("POST");
+        Assertions.assertThat(result).contains("customQueryValue")
+                .doesNotContain("generatedValue")
+                .doesNotContain("200")
+                .doesNotContain("POST");
     }
 
     private FuzzingData setContext(String fuzzerFile, String responsePayload) {

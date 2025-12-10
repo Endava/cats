@@ -480,34 +480,41 @@ public class OpenAPIModelGeneratorV2 {
         Schema itemSchema = CatsModelUtils.getSchemaItems(schema);
 
         List<Object> itemExamples = resolvePropertyToExamples(propertyName, itemSchema);
+        int arraySize = getArrayLength(schema);
+
         for (Object itemExample : itemExamples) {
             Map<String, Object> newExample = new HashMap<>();
-            int arraySize = getArrayLength(schema);
 
-            Object toAdd = itemExample;
-            if (itemExample instanceof Map map) {
-                // Attempt to unwrap primitive value
-                Object value = map.get(propertyName);
-                if (value == null && map.size() == 1) {
-                    value = map.values().iterator().next(); // fallback for primitive map
-                }
-                toAdd = value != null ? value : itemExample;
-            }
-
-            if (itemExample instanceof List<?> list) {
-                toAdd = list.stream().map(innerObj -> {
-                    if (innerObj instanceof Map map) {
-                        return Optional.ofNullable(map.get(propertyName)).orElse(Optional.ofNullable(map.get(null)).orElse(innerObj));
-                    }
-                    return innerObj;
-                }).toList();
-            }
+            Object toAdd = unwrapArrayItem(propertyName, itemExample);
 
             newExample.put(propertyName, Collections.nCopies(arraySize, toAdd));
             examples.add(newExample);
         }
 
         return examples;
+    }
+
+    private Object unwrapArrayItem(String propertyName, Object itemExample) {
+        Object toAdd = itemExample;
+        if (itemExample instanceof Map map) {
+            // Attempt to unwrap primitive value
+            Object value = map.get(propertyName);
+            if (value == null && map.size() == 1) {
+                value = map.values().iterator().next(); // fallback for primitive map
+            }
+            toAdd = value != null ? value : itemExample;
+        }
+
+        if (itemExample instanceof List<?> list) {
+            toAdd = list.stream().map(innerObj -> {
+                if (innerObj instanceof Map map) {
+                    return Optional.ofNullable(map.get(propertyName)).orElse(Optional.ofNullable(map.get(null)).orElse(innerObj));
+                }
+                return innerObj;
+            }).toList();
+        }
+
+        return toAdd;
     }
 
     int getArrayLength(Schema<?> property) {
