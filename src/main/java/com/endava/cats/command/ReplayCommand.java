@@ -242,7 +242,6 @@ public class ReplayCommand implements Runnable {
         int newCode = response.getResponseCode();
 
         boolean wasError = oldCode >= 500 || oldCode == 0;
-        boolean wasClientError = oldCode >= 400 && oldCode < 500;
         boolean isNowError = newCode >= 500 || newCode == 0;
         boolean isNowClientError = newCode >= 400 && newCode < 500;
         boolean isNowSuccess = newCode >= 200 && newCode < 300;
@@ -251,7 +250,7 @@ public class ReplayCommand implements Runnable {
             stats.unchanged++;
         } else if (isNowSuccess || (wasError && isNowClientError)) {
             stats.improved++;
-        } else if (isNowError || (wasClientError && isNowError)) {
+        } else if (isNowError) {
             stats.regressed++;
         }
     }
