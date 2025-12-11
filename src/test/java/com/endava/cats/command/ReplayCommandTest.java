@@ -106,7 +106,7 @@ class ReplayCommandTest {
         Files.writeString(reportFolder.resolve("Test12.json"), testContent);
 
         ReflectionTestUtils.setField(replayCommand, "reportFolder", reportFolder.toString());
-        ReflectionTestUtils.setField(replayCommand, "retryErrors", true);
+        ReflectionTestUtils.setField(replayCommand, "errors", true);
 
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("");
@@ -126,7 +126,7 @@ class ReplayCommandTest {
         Files.writeString(reportFolder.resolve("Test12.json"), testContent);
 
         ReflectionTestUtils.setField(replayCommand, "reportFolder", reportFolder.toString());
-        ReflectionTestUtils.setField(replayCommand, "retryWarnings", true);
+        ReflectionTestUtils.setField(replayCommand, "warnings", true);
 
         CatsResponse response = Mockito.mock(CatsResponse.class);
         Mockito.when(response.getBody()).thenReturn("");
@@ -144,7 +144,7 @@ class ReplayCommandTest {
         Files.writeString(reportFolder.resolve("cats-summary-report.json"), summaryJson);
 
         ReflectionTestUtils.setField(replayCommand, "reportFolder", reportFolder.toString());
-        ReflectionTestUtils.setField(replayCommand, "retryErrors", true);
+        ReflectionTestUtils.setField(replayCommand, "errors", true);
 
         replayCommand.run();
         Mockito.verifyNoInteractions(serviceCaller);
@@ -153,7 +153,7 @@ class ReplayCommandTest {
     @Test
     void shouldHandleMissingSummaryReport() {
         ReflectionTestUtils.setField(replayCommand, "reportFolder", "/non/existent/path");
-        ReflectionTestUtils.setField(replayCommand, "retryErrors", true);
+        ReflectionTestUtils.setField(replayCommand, "errors", true);
 
         replayCommand.run();
         Mockito.verifyNoInteractions(serviceCaller);
@@ -169,7 +169,7 @@ class ReplayCommandTest {
         Files.writeString(reportFolder.resolve("Test12.json"), testContent);
 
         ReflectionTestUtils.setField(replayCommand, "reportFolder", reportFolder.toString());
-        ReflectionTestUtils.setField(replayCommand, "retryErrors", true);
+        ReflectionTestUtils.setField(replayCommand, "errors", true);
         replayCommand.tests = new String[]{"src/test/resources/Test12.json"};
 
         CatsResponse response = Mockito.mock(CatsResponse.class);

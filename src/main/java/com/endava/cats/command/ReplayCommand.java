@@ -198,7 +198,18 @@ public class ReplayCommand implements Runnable {
         String result;
     }
 
-    private void executeTestCase(String testCaseFileName) throws IOException {
+    /**
+     * Tracks replay statistics for summary display.
+     */
+    static class ReplayStats {
+        int initialErrors;
+        int initialWarnings;
+        int unchanged;
+        int improved;
+        int regressed;
+    }
+
+    private void executeTestCase(String testCaseFileName, ReplayStats stats) throws IOException {
         CatsTestCase testCase = this.loadTestCaseFile(testCaseFileName);
         logger.start("Calling service endpoint: {}", testCase.getRequest().getUrl());
         this.loadHeadersIfSupplied(testCase);
@@ -220,6 +231,29 @@ public class ReplayCommand implements Runnable {
         }
         this.writeTestJsonsIfSupplied(testCase, response);
         this.showResponseCodesDifferences(testCase, response);
+        this.updateStats(testCase, response, stats);
+    }
+
+    private void updateStats(CatsTestCase testCase, CatsResponse response, ReplayStats stats) {
+        if (stats == null) {
+            return;
+        }
+        int oldCode = testCase.getResponse().getResponseCode();
+        int newCode = response.getResponseCode();
+
+        boolean wasError = oldCode >= 500 || oldCode == 0;
+        boolean wasClientError = oldCode >= 400 && oldCode < 500;
+        boolean isNowError = newCode >= 500 || newCode == 0;
+        boolean isNowClientError = newCode >= 400 && newCode < 500;
+        boolean isNowSuccess = newCode >= 200 && newCode < 300;
+
+        if (oldCode == newCode) {
+            stats.unchanged++;
+        } else if (isNowSuccess || (wasError && isNowClientError)) {
+            stats.improved++;
+        } else if (isNowError || (wasClientError && isNowError)) {
+            stats.regressed++;
+        }
     }
 
     void showResponseCodesDifferences(CatsTestCase catsTestCase, CatsResponse response) {
@@ -296,11 +330,13 @@ public class ReplayCommand implements Runnable {
         }
 
         this.initReportingPath();
+        ReplayStats stats = (errors || warnings) ? createInitialStats() : null;
+
         for (String testCaseFileName : testCases) {
             try {
                 logger.noFormat("");
                 logger.start("Executing {}", testCaseFileName);
-                this.executeTestCase(testCaseFileName);
+                this.executeTestCase(testCaseFileName, stats);
                 logger.complete("Finish executing {}", testCaseFileName);
             } catch (IOException e) {
                 logger.debug("Exception while replaying test!", e);
@@ -308,5 +344,49 @@ public class ReplayCommand implements Runnable {
                         "If it doesn't have an extension it will be searched in the {} folder. Error message: {}", testCaseFileName, reportFolder, e.toString());
             }
         }
+
+        if (stats != null) {
+            printSummary(stats, testCases.size());
+        }
+    }
+
+    private ReplayStats createInitialStats() {
+        ReplayStats stats = new ReplayStats();
+        Path summaryPath = Paths.get(reportFolder, "cats-summary-report.json");
+        try {
+            String content = Files.readString(summaryPath);
+            SummaryReport report = JsonUtils.GSON.fromJson(content, SummaryReport.class);
+            if (report != null && report.testCases != null) {
+                for (TestCaseSummaryEntry entry : report.testCases) {
+                    if ("error".equalsIgnoreCase(entry.result)) {
+                        stats.initialErrors++;
+                    } else if ("warn".equalsIgnoreCase(entry.result)) {
+                        stats.initialWarnings++;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Could not read initial stats: {}", e.getMessage());
+        }
+        return stats;
+    }
+
+    private void printSummary(ReplayStats stats, int totalReplayed) {
+        logger.noFormat("");
+        logger.noFormat("─".repeat(60));
+        logger.info("Replay Summary");
+        logger.noFormat("─".repeat(60));
+        logger.star("Total tests replayed: {}", totalReplayed);
+        logger.star("Initial errors in report: {}", stats.initialErrors);
+        logger.star("Initial warnings in report: {}", stats.initialWarnings);
+        logger.noFormat("");
+        logger.star("Unchanged (same response code): {}", stats.unchanged);
+        logger.complete("Improved (better response): {}", stats.improved);
+        if (stats.regressed > 0) {
+            logger.error("Regressed (worse response): {}", stats.regressed);
+        } else {
+            logger.star("Regressed (worse response): {}", stats.regressed);
+        }
+        logger.noFormat("─".repeat(60));
     }
 }
