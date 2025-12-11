@@ -156,6 +156,14 @@ public class FilterArguments {
             description = "A comma separated list of tags to ignore. If no tag is supplied, no tag will be ignored. All available tags can be listed using: @|bold cats stats -c api.yml|@", split = ",")
     private List<String> skipTags;
 
+    @CommandLine.Option(names = {"--operationIds", "--operationId"},
+            description = "A comma separated list of operationIds to include. If no operationId is supplied, all operations will be considered. All available operationIds can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
+    private List<String> operationIds;
+
+    @CommandLine.Option(names = {"--skipOperationIds", "--skipOperationId"},
+            description = "A comma separated list of operationIds to ignore. If no operationId is supplied, no operation will be ignored. All available operationIds can be listed using: @|bold cats list -p -c api.yml|@", split = ",")
+    private List<String> skipOperationIds;
+
     @CommandLine.Option(names = {"--skipFuzzersForExtension", "--skipFuzzerForExtension"},
             description = "Skip specific fuzzers for endpoints with certain OpenAPI extension values. " +
                     "Format: @|bold x-extension-name=value:Fuzzer1,Fuzzer2|@. " +
@@ -293,6 +301,26 @@ public class FilterArguments {
      */
     public List<String> getSkippedTags() {
         return Optional.ofNullable(this.skipTags).orElse(Collections.emptyList());
+    }
+
+    /**
+     * Creates a list of operationIds to be included based on the supplied {@code --operationIds} argument.
+     * If no operationId is supplied, all operations will be considered.
+     *
+     * @return the list of operationIds to include if any supplied, or an empty list otherwise
+     */
+    public List<String> getOperationIds() {
+        return Optional.ofNullable(this.operationIds).orElse(Collections.emptyList());
+    }
+
+    /**
+     * Creates a list of operationIds to be skipped based on the supplied {@code --skipOperationIds} argument.
+     * If no operationId is supplied, no operation will be skipped.
+     *
+     * @return the list of operationIds to skip if any supplied, or an empty list otherwise
+     */
+    public List<String> getSkipOperationIds() {
+        return Optional.ofNullable(this.skipOperationIds).orElse(Collections.emptyList());
     }
 
     /**

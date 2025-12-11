@@ -161,6 +161,16 @@ class FilterArgumentsTest {
     }
 
     @Test
+    void shouldReturnEmptyOnlyOperationIds() {
+        Assertions.assertThat(filterArguments.getOperationIds()).isEmpty();
+    }
+
+    @Test
+    void shouldReturnEmptySkipOperationIds() {
+        Assertions.assertThat(filterArguments.getSkipOperationIds()).isEmpty();
+    }
+
+    @Test
     void shouldSetAllFuzzersToCustomFuzzer() {
         ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", List.of("VeryLarge", "SecurityHeaders", "Jumbo"));
         Assertions.assertThat(filterArguments.getFirstPhaseFuzzersForPath()).contains("VeryLargeUnicodeStringsInFieldsFuzzer");

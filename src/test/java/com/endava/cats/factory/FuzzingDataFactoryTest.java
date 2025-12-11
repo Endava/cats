@@ -889,6 +889,35 @@ class FuzzingDataFactoryTest {
     }
 
     @Test
+    void shouldOnlyIncludeProvidedOperationIds() throws Exception {
+        Mockito.when(filterArguments.getOperationIds()).thenReturn(List.of("listPets"));
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
+    void shouldSkipProvidedOperationIds() throws Exception {
+        Mockito.when(filterArguments.getSkipOperationIds()).thenReturn(List.of("listPets", "deletePets"));
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+
+        // Only addPet operation remains (2 FuzzingData entries for POST with different content types)
+        Assertions.assertThat(dataList).hasSize(2);
+        Assertions.assertThat(dataList.stream().map(FuzzingData::getMethod).toList())
+                .containsOnly(HttpMethod.POST);
+    }
+
+    @Test
+    void shouldHandleOperationIdCaseInsensitive() throws Exception {
+        Mockito.when(filterArguments.getOperationIds()).thenReturn(List.of("LISTPETS"));
+        List<FuzzingData> dataList = setupFuzzingData("/pets", "src/test/resources/petstore-deprecated-tags.yml");
+
+        Assertions.assertThat(dataList).hasSize(1);
+        Assertions.assertThat(dataList.getFirst().getMethod()).isEqualTo(HttpMethod.GET);
+    }
+
+    @Test
     void testAnyOfPrimitiveTypes() throws Exception {
         Mockito.when(processingArguments.isResolveXxxOfCombinationForResponses()).thenReturn(true);
         List<FuzzingData> dataList = setupFuzzingData("/mfm/v1/services/", "src/test/resources/issue86.json");

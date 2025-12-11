@@ -234,6 +234,10 @@ public class FuzzingDataFactory {
             logger.info("Operation {} {} will be skipped as tag is not included", path, method);
             return Collections.emptyList();
         }
+        if (this.isNotIncludedOperationId(operation)) {
+            logger.info("Operation {} {} will be skipped as operationId [{}] is not included", path, method, operation.getOperationId());
+            return Collections.emptyList();
+        }
 
         List<FuzzingData> fuzzingDataList = new ArrayList<>();
         MediaType mediaType = this.getMediaType(operation, openAPI);
@@ -310,6 +314,20 @@ public class FuzzingDataFactory {
         return isNotIncluded || isSkipped;
     }
 
+    private boolean isNotIncludedOperationId(Operation operation) {
+        String operationId = operation.getOperationId();
+
+        boolean isNotIncluded = !filterArguments.getOperationIds().isEmpty() &&
+                (operationId == null || filterArguments.getOperationIds().stream()
+                        .noneMatch(id -> operationId.equalsIgnoreCase(id)));
+
+        boolean isSkipped = !filterArguments.getSkipOperationIds().isEmpty() && operationId != null &&
+                filterArguments.getSkipOperationIds().stream()
+                        .anyMatch(id -> operationId.equalsIgnoreCase(id));
+
+        return isNotIncluded || isSkipped;
+    }
+
     /**
      * A similar FuzzingData object will be created for GET or DELETE requests. The "payload" will be a JSON with all the query or path params.
      * In order to achieve this a synthetic object is created that will act as a root object holding all the query or path params as child schemas.
@@ -329,6 +347,10 @@ public class FuzzingDataFactory {
         }
         if (this.isNotIncludedTag(operation)) {
             logger.info("Operation {} {} will be skipped as tag is not included", path, method);
+            return Collections.emptyList();
+        }
+        if (this.isNotIncludedOperationId(operation)) {
+            logger.info("Operation {} {} will be skipped as operationId [{}] is not included", path, method, operation.getOperationId());
             return Collections.emptyList();
         }
 
