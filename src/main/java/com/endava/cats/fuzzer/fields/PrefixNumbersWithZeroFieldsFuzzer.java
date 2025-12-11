@@ -1,13 +1,12 @@
 package com.endava.cats.fuzzer.fields;
 
+import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.fuzzer.api.Fuzzer;
+import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.io.ServiceCaller;
-import com.endava.cats.io.ServiceData;
-import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -15,64 +14,107 @@ import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * This fuzzer inserts leading zeros in numeric field values.
+ * Fuzzer that sends numeric field values as strings with leading zeros.
+ * <p>
+ * This tests how APIs handle type coercion and validation when receiving
+ * string representations of numbers with leading zeros (e.g., "00123" instead of 123).
+ * </p>
+ * <p>
+ * Leading zeros in numeric strings can cause issues:
+ * <ul>
+ *   <li>Some parsers interpret leading zeros as octal numbers (0123 = 83 in decimal)</li>
+ *   <li>Type coercion may silently accept invalid input</li>
+ *   <li>String comparison vs numeric comparison issues</li>
+ *   <li>Database storage inconsistencies</li>
+ * </ul>
+ * </p>
  */
-//@Singleton
-//@FieldFuzzer
+@Singleton
+@FieldFuzzer
 public class PrefixNumbersWithZeroFieldsFuzzer implements Fuzzer {
-    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(PrefixNumbersWithZeroFieldsFuzzer.class);
-    private final ServiceCaller serviceCaller;
-    private final TestCaseListener testCaseListener;
+    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(PrefixNumbersWithZeroFieldsFuzzer.class);
+    private static final List<String> ZERO_PREFIXES = List.of("0", "00", "000");
+
+    private final SimpleExecutor simpleExecutor;
 
     /**
      * Creates a new PrefixNumbersWithZeroFieldsFuzzer instance.
      *
-     * @param sc the service caller
-     * @param lr the test case listener
+     * @param simpleExecutor the executor used to run the fuzz logic
      */
-    public PrefixNumbersWithZeroFieldsFuzzer(ServiceCaller sc, TestCaseListener lr) {
-        this.serviceCaller = sc;
-        this.testCaseListener = lr;
+    public PrefixNumbersWithZeroFieldsFuzzer(SimpleExecutor simpleExecutor) {
+        this.simpleExecutor = simpleExecutor;
     }
 
     @Override
     public void fuzz(FuzzingData data) {
         if (JsonUtils.isEmptyPayload(data.getPayload())) {
-            logger.debug("Skip fuzzer as payload is empty");
+            LOGGER.skip("Skip fuzzer as payload is empty");
             return;
         }
-        for (String fuzzedField : data.getAllFieldsByHttpMethod()
-                .stream()
-                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
-                .filter(field -> {
-                    Schema<?> fuzzedValueSchema = data.getRequestPropertyTypes().get(field);
-                    return CatsModelUtils.isNumberSchema(fuzzedValueSchema) || CatsModelUtils.isIntegerSchema(fuzzedValueSchema);
-                })
-                .collect(Collectors.toSet())) {
-            testCaseListener.createAndExecuteTest(logger, this, () -> process(data, fuzzedField), data);
+
+        Set<String> numericFields = getNumericFields(data);
+
+        if (numericFields.isEmpty()) {
+            LOGGER.skip("No numeric fields found in the request");
+            return;
+        }
+
+        for (String field : numericFields) {
+            fuzzField(data, field);
         }
     }
 
-    private void process(FuzzingData data, String fuzzedField) {
-        String fuzzValue = "00" + CatsUtil.random().nextInt();
-        String fuzzedPayload = CatsUtil.justReplaceField(data.getPayload(), fuzzedField, "MODIFIED")
-                .json()
-                .replace("\"MODIFIED\"", fuzzValue);
+    private Set<String> getNumericFields(FuzzingData data) {
+        return data.getAllFieldsByHttpMethod()
+                .stream()
+                .filter(field -> JsonUtils.isFieldInJson(data.getPayload(), field))
+                .filter(field -> {
+                    Schema<?> schema = data.getRequestPropertyTypes().get(field);
+                    return CatsModelUtils.isNumberSchema(schema) || CatsModelUtils.isIntegerSchema(schema);
+                })
+                .collect(Collectors.toSet());
+    }
 
-        testCaseListener.addScenario(logger, "Insert leading zero in numeric field values: field [{}], char [{}]",
-                fuzzedField, fuzzValue);
-        testCaseListener.addExpectedResult(logger, "Should get a [{}] response code", ResponseCodeFamilyPredefined.FOURXX.asString());
+    private void fuzzField(FuzzingData data, String field) {
+        Object currentValue = JsonUtils.getVariableFromJson(data.getPayload(), field);
 
-        CatsResponse response = serviceCaller.call(ServiceData.builder().relativePath(data.getPath()).headers(data.getHeaders())
-                .payload(fuzzedPayload).queryParams(data.getQueryParams()).httpMethod(data.getMethod())
-                .contractPath(data.getContractPath()).contentType(data.getFirstRequestContentType()).pathParamsPayload(data.getPathParamsPayload()).build());
+        if (JsonUtils.isNotSet(String.valueOf(currentValue))) {
+            LOGGER.debug("Field {} has no value set, skipping", field);
+            return;
+        }
 
-        testCaseListener.reportResult(logger, data, response, ResponseCodeFamilyPredefined.FOURXX);
+        for (String prefix : ZERO_PREFIXES) {
+            String fuzzedValue = prefix + currentValue;
+            String fuzzedPayload = createFuzzedPayload(data.getPayload(), field, fuzzedValue);
+
+            simpleExecutor.execute(
+                    SimpleExecutorContext.builder()
+                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                            .fuzzingData(data)
+                            .logger(LOGGER)
+                            .scenario("Send numeric field [%s] as string with leading zeros: [%s] (original: [%s]). This tests type validation and potential octal interpretation issues."
+                                    .formatted(field, fuzzedValue, currentValue))
+                            .fuzzer(this)
+                            .payload(fuzzedPayload)
+                            .build()
+            );
+        }
+    }
+
+    /**
+     * Creates a fuzzed payload by replacing the numeric value with a string containing leading zeros.
+     * The value is sent as a JSON string (quoted) to ensure the leading zeros are preserved.
+     */
+    private String createFuzzedPayload(String payload, String field, String fuzzedValue) {
+        return CatsUtil.justReplaceField(payload, field, fuzzedValue).json();
     }
 
     @Override
@@ -87,6 +129,6 @@ public class PrefixNumbersWithZeroFieldsFuzzer implements Fuzzer {
 
     @Override
     public String description() {
-        return "iterate through each numeric field and prefix values with zeros";
+        return "iterate through each numeric field and send values as strings with leading zeros to test type validation";
     }
 }
