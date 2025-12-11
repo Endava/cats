@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -124,7 +125,7 @@ public class FuzzingData {
      */
     public boolean shouldSkipFuzzerForPath(String fuzzerName) {
         return skippedFuzzersForPath.stream()
-                .anyMatch(skipped -> fuzzerName.toLowerCase().contains(skipped.toLowerCase()));
+                .anyMatch(skipped -> fuzzerName.toLowerCase(Locale.ROOT).contains(skipped.toLowerCase(Locale.ROOT)));
     }
 
     private String removeReadWrite() {

@@ -9,6 +9,7 @@ import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.args.UserArguments;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
@@ -169,6 +170,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Match Options (they are only active when supplying a custom dictionary):|@%n", exclusive = false)
     MatchArguments matchArguments;
+
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Security Fuzzer Options:|@%n", exclusive = false)
+    SecurityFuzzerArguments securityFuzzerArguments;
 
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;

@@ -353,7 +353,7 @@ public class FilterArguments {
 
         logger.debug("Fuzzers to skip for path based on extensions: {}", fuzzersToSkip);
 
-        return fuzzersToSkip;
+        return Collections.unmodifiableList(fuzzersToSkip);
     }
 
     /**
