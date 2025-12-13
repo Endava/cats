@@ -5,6 +5,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -126,7 +127,6 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
             }
         }
 
-        // Check for payload reflection (especially important for XSS)
         if (shouldCheckForPayloadReflection()) {
             for (String payload : getPayloadsToUse()) {
                 if (responseBody.contains(payload.toLowerCase(Locale.ROOT))) {
@@ -139,8 +139,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
             }
         }
 
-        // Server error - suspicious, needs review
-        if (responseCode >= 500) {
+        if (ResponseCodeFamily.is5xxCode(responseCode)) {
             testCaseListener.reportResultWarn(
                     logger, data, "Server error with injection payload",
                     "Server returned %d error when processing %s injection payload. This may indicate a vulnerability or improper error handling."
@@ -148,8 +147,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
             return;
         }
 
-        // 4XX - properly rejected
-        if (responseCode >= 400 && responseCode < 500) {
+        if (ResponseCodeFamily.is4xxCode(responseCode)) {
             testCaseListener.reportResultInfo(
                     logger, data, "Injection payload rejected",
                     "Server properly rejected the %s injection payload with response code %d"
@@ -157,8 +155,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
             return;
         }
 
-        // 2XX - accepted, inconclusive but worth noting
-        if (responseCode >= 200 && responseCode < 300) {
+        if (ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultWarn(
                     logger, data, "Injection payload accepted",
                     "%s injection payload was accepted (response code %d). Manual verification recommended to ensure proper sanitization."
@@ -166,7 +163,6 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
             return;
         }
 
-        // Other response codes
         testCaseListener.reportResultInfo(
                 logger, data, "Unexpected response code",
                 "Received unexpected response code %d for %s injection payload"

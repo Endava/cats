@@ -339,4 +339,220 @@ class SecurityInjectionFuzzerTest {
                     Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         }
     }
+
+    @Nested
+    @QuarkusTest
+    class SSRFInUrlFieldsFuzzerTest {
+        private SSRFInUrlFieldsFuzzer ssrfFuzzer;
+
+        @BeforeEach
+        void setup() {
+            ssrfFuzzer = new SSRFInUrlFieldsFuzzer(simpleExecutor, testCaseListener);
+        }
+
+        @Test
+        void shouldHaveDescription() {
+            Assertions.assertThat(ssrfFuzzer.description()).containsIgnoringCase("SSRF");
+        }
+
+        @Test
+        void shouldHaveToString() {
+            Assertions.assertThat(ssrfFuzzer).hasToString("SSRFInUrlFieldsFuzzer");
+        }
+
+        @Test
+        void shouldSkipForHeadAndTrace() {
+            Assertions.assertThat(ssrfFuzzer.skipForHttpMethods())
+                    .containsOnly(HttpMethod.HEAD, HttpMethod.TRACE);
+        }
+
+        @Test
+        void shouldSkipWhenNoUrlFields() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("name", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("name"));
+            Mockito.when(data.getPayload()).thenReturn("{\"name\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+
+            ssrfFuzzer.fuzz(data);
+            Mockito.verifyNoInteractions(serviceCaller);
+        }
+
+        @Test
+        void shouldRunWhenUrlFieldByNamePresent() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("callbackUrl", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("callbackUrl"));
+            Mockito.when(data.getPayload()).thenReturn("{\"callbackUrl\": \"https://example.com\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder().responseCode(400).build());
+
+            ssrfFuzzer.fuzz(data);
+
+            // All SSRF payloads for 1 URL field (URL fields are rare, so all payloads by default)
+            Mockito.verify(serviceCaller, Mockito.times(43)).call(Mockito.any());
+        }
+
+        @Test
+        void shouldRunWhenUriFormatFieldPresent() {
+            StringSchema uriSchema = new StringSchema();
+            uriSchema.setFormat("uri");
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("endpoint", uriSchema);
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("endpoint"));
+            Mockito.when(data.getPayload()).thenReturn("{\"endpoint\": \"https://api.example.com\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder().responseCode(400).build());
+
+            ssrfFuzzer.fuzz(data);
+
+            Mockito.verify(serviceCaller, Mockito.times(43)).call(Mockito.any());
+        }
+
+        @Test
+        void shouldReportErrorWhenMetadataPatternDetected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("webhookUrl", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("webhookUrl"));
+            Mockito.when(data.getPayload()).thenReturn("{\"webhookUrl\": \"https://example.com\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("{\"data\": \"ami-id: ami-12345, instance-id: i-abcdef\"}")
+                            .build());
+
+            ssrfFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("SSRF"), Mockito.anyString(), Mockito.any());
+        }
+    }
+
+    @Nested
+    @QuarkusTest
+    class MassAssignmentFuzzerTest {
+        private MassAssignmentFuzzer massAssignmentFuzzer;
+
+        @BeforeEach
+        void setup() {
+            massAssignmentFuzzer = new MassAssignmentFuzzer(simpleExecutor, testCaseListener);
+        }
+
+        @Test
+        void shouldHaveDescription() {
+            Assertions.assertThat(massAssignmentFuzzer.description()).containsIgnoringCase("mass assignment");
+        }
+
+        @Test
+        void shouldHaveToString() {
+            Assertions.assertThat(massAssignmentFuzzer).hasToString("MassAssignmentFuzzer");
+        }
+
+        @Test
+        void shouldSkipGetDeleteHeadTrace() {
+            Assertions.assertThat(massAssignmentFuzzer.skipForHttpMethods())
+                    .contains(HttpMethod.GET, HttpMethod.DELETE, HttpMethod.HEAD, HttpMethod.TRACE);
+        }
+
+        @Test
+        void shouldSkipEmptyPayload() {
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getPayload()).thenReturn("{}");
+
+            massAssignmentFuzzer.fuzz(data);
+
+            Mockito.verify(serviceCaller, Mockito.never()).call(Mockito.any());
+        }
+
+        @Test
+        void shouldAddUndeclaredFieldsToPayload() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("name", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("name"));
+            Mockito.when(data.getPayload()).thenReturn("{\"name\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder().responseCode(400).build());
+
+            massAssignmentFuzzer.fuzz(data);
+
+            Mockito.verify(serviceCaller, Mockito.atLeast(1)).call(Mockito.any());
+        }
+
+        @Test
+        void shouldReportErrorWhenFieldReflectedIn2xxResponse() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("name", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("name"));
+            Mockito.when(data.getPayload()).thenReturn("{\"name\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("{\"name\": \"test\", \"isAdmin\": true}")
+                            .build());
+
+            massAssignmentFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("Mass Assignment"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportInfoWhenFieldRejected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("name", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("name"));
+            Mockito.when(data.getPayload()).thenReturn("{\"name\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder().responseCode(400).build());
+
+            massAssignmentFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any());
+        }
+    }
 }

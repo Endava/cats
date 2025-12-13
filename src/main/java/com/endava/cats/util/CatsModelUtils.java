@@ -100,6 +100,10 @@ public abstract class CatsModelUtils {
         return isStringSchema(schema) && "uri".equals(schema.getFormat());
     }
 
+    public static boolean isUrlSchema(Schema<?> schema) {
+        return isStringSchema(schema) && "url".equals(schema.getFormat());
+    }
+
     public static boolean isUUIDSchema(Schema<?> schema) {
         return (schema instanceof UUIDSchema || isType(schema, SchemaTypeUtil.STRING_TYPE)) && SchemaTypeUtil.UUID_FORMAT.equals(schema.getFormat());
     }

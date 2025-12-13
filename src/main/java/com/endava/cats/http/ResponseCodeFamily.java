@@ -75,6 +75,16 @@ public interface ResponseCodeFamily {
     }
 
     /**
+     * Checks if the provided integer code corresponds to a 5xx HTTP response status code.
+     *
+     * @param code The integer response code to check.
+     * @return True if the code corresponds to a 5xx status code, false otherwise.
+     */
+    static boolean is5xxCode(int code) {
+        return String.valueOf(code).startsWith("5");
+    }
+
+    /**
      * Checks if the provided integer code corresponds to an HTTP response status code indicating that the operation is unimplemented (501).
      *
      * @param code The integer response code to check.
