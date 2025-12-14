@@ -34,7 +34,7 @@ public class NoSqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuz
             "admin' && this.password.match(/.*/)//+%00"
     );
 
-    private static final List<String> ALL_NOSQL_INJECTION_PAYLOADS = List.of(
+    protected static final List<String> ALL_NOSQL_INJECTION_PAYLOADS = List.of(
             "' || '1'=='1",
             "'; return true; var foo='",
             "'; return this.password; var foo='",

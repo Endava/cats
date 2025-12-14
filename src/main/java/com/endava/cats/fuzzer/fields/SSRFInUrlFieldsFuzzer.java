@@ -261,7 +261,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
         // Check field name patterns
         String lowerFieldName = fieldName.toLowerCase(Locale.ROOT);
         return URL_FIELD_PATTERNS.stream()
-                .anyMatch(pattern -> lowerFieldName.contains(pattern));
+                .anyMatch(lowerFieldName::contains);
     }
 
     private String truncatePayload(String payload) {

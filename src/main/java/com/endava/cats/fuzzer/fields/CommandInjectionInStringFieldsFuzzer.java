@@ -34,7 +34,7 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
             "| type C:\\Windows\\System32\\drivers\\etc\\hosts"
     );
 
-    private static final List<String> ALL_COMMAND_INJECTION_PAYLOADS = List.of(
+    protected static final List<String> ALL_COMMAND_INJECTION_PAYLOADS = List.of(
             "; ls -la",
             "| ls -la",
             "& ls -la",

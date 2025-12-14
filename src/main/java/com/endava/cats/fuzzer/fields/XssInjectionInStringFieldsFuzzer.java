@@ -20,7 +20,7 @@ import java.util.List;
 @FieldFuzzer
 public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzzer {
 
-    private static final List<String> TOP_XSS_PAYLOADS = List.of(
+    protected static final List<String> TOP_XSS_PAYLOADS = List.of(
             "<script>alert('XSS')</script>",
             "<img src=x onerror=alert('XSS')>",
             "<svg onload=alert('XSS')>",
@@ -33,7 +33,7 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "<iframe src=\"javascript:alert('XSS')\">"
     );
 
-    private static final List<String> ALL_XSS_PAYLOADS = List.of(
+    protected static final List<String> ALL_XSS_PAYLOADS = List.of(
             "<script>alert('XSS')</script>",
             "<script>alert(1)</script>",
             "<img src=x onerror=alert('XSS')>",

@@ -6,6 +6,7 @@ import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.generator.simple.NumberGenerator;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
@@ -106,12 +107,10 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
     private boolean isIdField(String fieldName) {
         String lowerFieldName = fieldName.toLowerCase(Locale.ROOT);
 
-        // Check exact matches
         if (ID_FIELD_PATTERNS.contains(lowerFieldName)) {
             return true;
         }
 
-        // Check suffix pattern (ends with id, uuid, guid)
         return ID_SUFFIX_PATTERN.matcher(fieldName).matches();
     }
 
@@ -148,12 +147,10 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         String valueStr = String.valueOf(currentValue);
 
         if (UUID_PATTERN.matcher(valueStr).matches()) {
-            // Generate alternative UUIDs
             alternatives.add(UUID.randomUUID().toString());
             alternatives.add("00000000-0000-0000-0000-000000000000");
             alternatives.add("11111111-1111-1111-1111-111111111111");
         } else if (NUMERIC_ID_PATTERN.matcher(valueStr).matches()) {
-            // Generate alternative numeric IDs
             long numericValue = Long.parseLong(valueStr);
             alternatives.add(numericValue + 1);
             alternatives.add(numericValue - 1);
@@ -161,7 +158,6 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
             alternatives.add(0L);
             alternatives.add(NumberGenerator.generateRandomLong(1, 999999));
         } else {
-            // String-based IDs
             alternatives.add(valueStr + "_other");
             alternatives.add("other_" + valueStr);
             alternatives.add("test_user_id");
@@ -174,14 +170,13 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
     private void checkForIdorVulnerability(CatsResponse response, FuzzingData data) {
         int responseCode = response.getResponseCode();
 
-        // If we get a 2XX response with a different ID, it might indicate IDOR
-        if (responseCode >= 200 && responseCode < 300) {
+        if (ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultError(LOGGER, data,
                     "Potential IDOR vulnerability detected",
                     "Request with modified ID returned success [{}]. The API may be exposing data belonging to other users/resources. " +
                             "Expected [4XX] response indicating unauthorized access.",
                     response.responseCodeAsString());
-        } else if (responseCode == 401 || responseCode == 403 || responseCode == 404) {
+        } else if (ResponseCodeFamily.is4xxCode(responseCode)) {
             testCaseListener.reportResultInfo(LOGGER, data,
                     "Request with modified ID correctly returned [{}] - access properly denied or resource not found",
                     response.responseCodeAsString());

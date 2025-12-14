@@ -319,11 +319,11 @@ public class FuzzingDataFactory {
 
         boolean isNotIncluded = !filterArguments.getOperationIds().isEmpty() &&
                 (operationId == null || filterArguments.getOperationIds().stream()
-                        .noneMatch(id -> operationId.equalsIgnoreCase(id)));
+                        .noneMatch(operationId::equalsIgnoreCase));
 
         boolean isSkipped = !filterArguments.getSkipOperationIds().isEmpty() && operationId != null &&
                 filterArguments.getSkipOperationIds().stream()
-                        .anyMatch(id -> operationId.equalsIgnoreCase(id));
+                        .anyMatch(operationId::equalsIgnoreCase);
 
         return isNotIncluded || isSkipped;
     }
