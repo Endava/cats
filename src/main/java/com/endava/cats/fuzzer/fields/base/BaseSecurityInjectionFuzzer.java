@@ -116,7 +116,6 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
         int responseCode = response.getResponseCode();
 
-        // Check for error patterns that indicate injection vulnerability
         for (String errorPattern : getErrorPatterns()) {
             if (responseBody.contains(errorPattern.toLowerCase(Locale.ROOT))) {
                 testCaseListener.reportResultError(
@@ -140,7 +139,7 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         }
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
-            testCaseListener.reportResultWarn(
+            testCaseListener.reportResultError(
                     logger, data, "Server error with injection payload",
                     "Server returned %d error when processing %s injection payload. This may indicate a vulnerability or improper error handling."
                             .formatted(responseCode, getInjectionType()));
@@ -156,14 +155,14 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         }
 
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
-            testCaseListener.reportResultWarn(
+            testCaseListener.reportResultInfo(
                     logger, data, "Injection payload accepted",
-                    "%s injection payload was accepted (response code %d). Manual verification recommended to ensure proper sanitization."
+                    "%s injection payload was accepted (response code %d). Payload may contain valid characters that don't require rejection."
                             .formatted(getInjectionType(), responseCode));
             return;
         }
 
-        testCaseListener.reportResultInfo(
+        testCaseListener.reportResultError(
                 logger, data, "Unexpected response code",
                 "Received unexpected response code %d for %s injection payload"
                         .formatted(responseCode, getInjectionType()));

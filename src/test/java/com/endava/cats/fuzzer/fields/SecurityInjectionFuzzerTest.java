@@ -183,7 +183,7 @@ class SecurityInjectionFuzzerTest {
 
             sqlInjectionFuzzer.fuzz(data);
 
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         }
 
@@ -214,7 +214,7 @@ class SecurityInjectionFuzzerTest {
         }
 
         @Test
-        void shouldReportWarnWhenPayloadAcceptedWith2xx() {
+        void shouldReportInfoWhenPayloadAcceptedWith2xx() {
             Map<String, Schema> reqTypes = new HashMap<>();
             reqTypes.put("username", new StringSchema());
 
@@ -234,8 +234,8 @@ class SecurityInjectionFuzzerTest {
 
             sqlInjectionFuzzer.fuzz(data);
 
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
-                    Mockito.any(), Mockito.any(), Mockito.contains("accepted"), Mockito.anyString(), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.contains("accepted"), Mockito.any());
         }
 
         @Test
@@ -259,8 +259,8 @@ class SecurityInjectionFuzzerTest {
 
             sqlInjectionFuzzer.fuzz(data);
 
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
-                    Mockito.any(), Mockito.any(), Mockito.contains("Unexpected"), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("Unexpected"), Mockito.any(), Mockito.any());
         }
     }
 
