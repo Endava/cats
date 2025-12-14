@@ -77,9 +77,9 @@ public class HttpMethodFuzzerUtil {
     private void handle405(CatsResponse response, FuzzingData data) {
         KeyValuePair<String, String> allowHeader = response.getHeader("Allow");
         if (allowHeader == null) {
-            testCaseListener.reportResultWarn(logger, data, "Request failed as expected for http method [{}] with response code [{}], but missing Allow header", response.getHttpMethod(), response.getResponseCode());
+            testCaseListener.reportResultWarn(logger, data, "Missing Allowed header", "Request failed as expected for http method [{}] with response code [{}], but missing Allow header", response.getHttpMethod(), response.getResponseCode());
         } else if (allowHeader.getValue().contains(response.getHttpMethod())) {
-            testCaseListener.reportResultWarn(logger, data, "Request failed as expected for http method [{}] with response code [{}], but Allow header contains [{}]", response.getHttpMethod(), response.getResponseCode(), response.getHttpMethod());
+            testCaseListener.reportResultWarn(logger, data, "Wrong Allowed header", "Request failed as expected for http method [{}] with response code [{}], but Allow header contains [{}]", response.getHttpMethod(), response.getResponseCode(), response.getHttpMethod());
         } else {
             testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
                     response.getHttpMethod(), response.getResponseCode());

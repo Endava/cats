@@ -327,6 +327,13 @@ public abstract class TestCaseExporter {
         var groupedTestCases = ClusterCompute.createClusters(summaries);
         context.put("GROUPED_TEST_CASES", groupedTestCases);
 
+        Map<Integer, Integer> responseCodeDistribution = executionStatisticsListener.getResponseCodeDistribution();
+        context.put("RESPONSE_CODE_DISTRIBUTION", buildResponseCodeDistributionForTemplate(responseCodeDistribution));
+        context.put("HAS_RESPONSE_CODES", !responseCodeDistribution.isEmpty());
+
+        Map<String, Integer> topFailingPaths = executionStatisticsListener.getTopFailingPaths(10);
+        context.put("TOP_FAILING_PATHS", buildTopFailingPathsForTemplate(topFailingPaths));
+        context.put("HAS_FAILING_PATHS", !topFailingPaths.isEmpty());
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
 
         try {
@@ -438,6 +445,38 @@ public abstract class TestCaseExporter {
         }
     }
 
+
+    private List<Map<String, Object>> buildResponseCodeDistributionForTemplate(Map<Integer, Integer> distribution) {
+        return distribution.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("code", entry.getKey());
+                    item.put("count", entry.getValue());
+                    item.put("family", getResponseCodeFamily(entry.getKey()));
+                    return item;
+                })
+                .toList();
+    }
+
+    private String getResponseCodeFamily(int code) {
+        if (code >= 200 && code < 300) return "2xx";
+        if (code >= 300 && code < 400) return "3xx";
+        if (code >= 400 && code < 500) return "4xx";
+        if (code >= 500 && code < 600) return "5xx";
+        return "other";
+    }
+
+    private List<Map<String, Object>> buildTopFailingPathsForTemplate(Map<String, Integer> topFailingPaths) {
+        return topFailingPaths.entrySet().stream()
+                .map(entry -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("path", entry.getKey());
+                    item.put("count", entry.getValue());
+                    return item;
+                })
+                .toList();
+    }
 
     /**
      * Indicates whether the report format involves JavaScript functionality.

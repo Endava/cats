@@ -139,6 +139,77 @@
             </div>
         </div>
     </div>
+    {{#HAS_RESPONSE_CODES}}
+    <h2 class="title-section">Statistics</h2>
+    <div class="stats-grid">
+        <div class="card-wrapper">
+            <div class="card-header">
+                <div>
+                    <h2 class="action-tag">HTTP Response Codes</h2>
+                    <p class="big-number">Distribution across all tests</p>
+                </div>
+            </div>
+            {{#JS}}
+            <div class="stats-chart-container">
+                <canvas id="responseCodeChart"></canvas>
+                <div id="response-code-legend-container" class="stats-legend-container"></div>
+            </div>
+            <script>
+                const responseCodeData = [
+                    {{#RESPONSE_CODE_DISTRIBUTION}}
+                    {code: {{code}}, count: {{count}}, family: '{{family}}'},
+                    {{/RESPONSE_CODE_DISTRIBUTION}}
+                ];
+            </script>
+            <script src="draw_response_codes_chart.js"></script>
+            {{/JS}}
+            {{^JS}}
+            <div class="response-code-list">
+                {{#RESPONSE_CODE_DISTRIBUTION}}
+                <div class="response-code-item response-code-{{family}}">
+                    <span class="response-code">{{code}}</span>
+                    <span class="response-count">{{count}}</span>
+                </div>
+                {{/RESPONSE_CODE_DISTRIBUTION}}
+            </div>
+            {{/JS}}
+        </div>
+        {{#HAS_FAILING_PATHS}}
+        <div class="card-wrapper">
+            <div class="card-header">
+                <div>
+                    <h2 class="action-tag">Top Failing Paths</h2>
+                    <p class="big-number">Paths with most errors</p>
+                </div>
+            </div>
+            {{#JS}}
+            <div class="stats-chart-container">
+                <canvas id="topFailingPathsChart"></canvas>
+                <div id="top-failing-paths-legend-container" class="stats-legend-container"></div>
+            </div>
+            <script>
+                const topFailingPathsData = [
+                    {{#TOP_FAILING_PATHS}}
+                    {path: '{{path}}', count: {{count}}},
+                    {{/TOP_FAILING_PATHS}}
+                ];
+            </script>
+            <script src="draw_top_failing_paths_chart.js"></script>
+            {{/JS}}
+            {{^JS}}
+            <div class="response-code-list">
+                {{#TOP_FAILING_PATHS}}
+                <div class="response-code-item response-code-5xx">
+                    <span class="response-code">{{path}}</span>
+                    <span class="response-count">{{count}}</span>
+                </div>
+                {{/TOP_FAILING_PATHS}}
+            </div>
+            {{/JS}}
+        </div>
+        {{/HAS_FAILING_PATHS}}
+    </div>
+    {{/HAS_RESPONSE_CODES}}
     <h2 class="title-section">Execution Details</h2>
 
     {{#GROUPED_TEST_CASES}}

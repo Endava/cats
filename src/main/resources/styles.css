@@ -1118,6 +1118,39 @@ body.dark-mode .menu button {
 	text-align: right;
 }
 
+.stats-chart-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 10px auto 0;
+}
+
+.stats-chart-container canvas {
+	max-width: 100%;
+	height: auto !important;
+}
+
+.stats-chart-container .stats-legend-container {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 15px;
+	margin-top: 15px;
+	padding: 10px;
+}
+
+.stats-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+}
+
+@media (max-width: 900px) {
+	.stats-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
 .orange_text {
 	color: #FA8C16;
 }

@@ -313,12 +313,19 @@ public class TestCaseListener {
         if (currentTestCase.isNotSkipped()) {
             testReportsGenerator.writeTestCase(currentTestCase);
             keepSummary(currentTestCase);
+            recordResponseCode(currentTestCase);
         }
         keepExecutionDetails(currentTestCase);
         testCaseMap.remove(MDC.get(ID));
         MDC.remove(ID);
         MDC.put(ID_ANSI, this.getKeyDefault());
         logger.info(SEPARATOR);
+    }
+
+    private void recordResponseCode(CatsTestCase testCase) {
+        if (testCase.getResponse() != null) {
+            executionStatisticsListener.recordResponseCode(testCase.getResponse().getResponseCode());
+        }
     }
 
     private void keepSummary(CatsTestCase testCase) {

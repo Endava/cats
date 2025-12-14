@@ -27,7 +27,7 @@ public class TestCaseExporterHtmlJsCluster extends TestCaseExporter {
 
     @Override
     public String[] getSpecificHelperFiles() {
-        return new String[]{"styles.css", "script.js", "chart.js", "draw_chart.js", "styles-cluster.css"};
+        return new String[]{"styles.css", "script.js", "chart.js", "draw_chart.js", "draw_response_codes_chart.js", "draw_top_failing_paths_chart.js", "styles-cluster.css"};
     }
 
     @Override

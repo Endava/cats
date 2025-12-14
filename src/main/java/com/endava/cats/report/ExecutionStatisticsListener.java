@@ -31,6 +31,11 @@ public class ExecutionStatisticsListener {
     private final Map<String, Integer> success = new HashMap<>();
 
     /**
+     * Map to track the distribution of HTTP response codes.
+     */
+    private final Map<Integer, Integer> responseCodes = new HashMap<>();
+
+    /**
      * Count of skipped tests.
      */
     @Getter
@@ -94,6 +99,42 @@ public class ExecutionStatisticsListener {
      */
     public void increaseSuccess(String path) {
         this.success.merge(path, 1, Integer::sum);
+    }
+
+    /**
+     * Records an HTTP response code occurrence.
+     *
+     * @param responseCode The HTTP response code to record.
+     */
+    public void recordResponseCode(int responseCode) {
+        this.responseCodes.merge(responseCode, 1, Integer::sum);
+    }
+
+    /**
+     * Gets the distribution of HTTP response codes.
+     *
+     * @return A map of response codes to their occurrence counts.
+     */
+    public Map<Integer, Integer> getResponseCodeDistribution() {
+        return new HashMap<>(this.responseCodes);
+    }
+
+    /**
+     * Gets the top failing paths sorted by error count in descending order.
+     *
+     * @param limit The maximum number of paths to return.
+     * @return A map of paths to their error counts, limited to the specified number.
+     */
+    public Map<String, Integer> getTopFailingPaths(int limit) {
+        return this.errors.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        java.util.LinkedHashMap::new
+                ));
     }
 
     /**

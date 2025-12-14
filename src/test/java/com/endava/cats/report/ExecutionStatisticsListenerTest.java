@@ -81,4 +81,88 @@ class ExecutionStatisticsListenerTest {
 
         Assertions.assertThat(listener.areManyIoErrors()).isEqualTo(expected);
     }
+
+    @Test
+    void shouldRecordResponseCodeDistribution() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.recordResponseCode(200);
+        listener.recordResponseCode(200);
+        listener.recordResponseCode(400);
+        listener.recordResponseCode(500);
+        listener.recordResponseCode(200);
+
+        var distribution = listener.getResponseCodeDistribution();
+
+        Assertions.assertThat(distribution).hasSize(3);
+        Assertions.assertThat(distribution.get(200)).isEqualTo(3);
+        Assertions.assertThat(distribution.get(400)).isEqualTo(1);
+        Assertions.assertThat(distribution.get(500)).isEqualTo(1);
+    }
+
+    @Test
+    void shouldReturnEmptyDistributionWhenNoResponseCodesRecorded() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+
+        var distribution = listener.getResponseCodeDistribution();
+
+        Assertions.assertThat(distribution).isEmpty();
+    }
+
+    @Test
+    void shouldReturnCopyOfDistributionMap() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.recordResponseCode(200);
+
+        var distribution = listener.getResponseCodeDistribution();
+        distribution.put(999, 100);
+
+        Assertions.assertThat(listener.getResponseCodeDistribution()).doesNotContainKey(999);
+    }
+
+    @Test
+    void shouldReturnTopFailingPathsSortedByErrorCount() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        listener.increaseErrors("/path1");
+        listener.increaseErrors("/path1");
+        listener.increaseErrors("/path1");
+        listener.increaseErrors("/path2");
+        listener.increaseErrors("/path2");
+        listener.increaseErrors("/path3");
+
+        var topPaths = listener.getTopFailingPaths(10);
+
+        Assertions.assertThat(topPaths).hasSize(3);
+        var entries = topPaths.entrySet().iterator();
+        var first = entries.next();
+        var second = entries.next();
+        var third = entries.next();
+
+        Assertions.assertThat(first.getKey()).isEqualTo("/path1");
+        Assertions.assertThat(first.getValue()).isEqualTo(3);
+        Assertions.assertThat(second.getKey()).isEqualTo("/path2");
+        Assertions.assertThat(second.getValue()).isEqualTo(2);
+        Assertions.assertThat(third.getKey()).isEqualTo("/path3");
+        Assertions.assertThat(third.getValue()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldLimitTopFailingPaths() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+        for (int i = 0; i < 15; i++) {
+            listener.increaseErrors("/path" + i);
+        }
+
+        var topPaths = listener.getTopFailingPaths(10);
+
+        Assertions.assertThat(topPaths).hasSize(10);
+    }
+
+    @Test
+    void shouldReturnEmptyMapWhenNoErrors() {
+        ExecutionStatisticsListener listener = new ExecutionStatisticsListener();
+
+        var topPaths = listener.getTopFailingPaths(10);
+
+        Assertions.assertThat(topPaths).isEmpty();
+    }
 }
