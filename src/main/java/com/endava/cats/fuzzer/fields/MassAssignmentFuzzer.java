@@ -169,38 +169,36 @@ public class MassAssignmentFuzzer implements Fuzzer {
 
         if (ResponseCodeFamily.is4xxCode(responseCode)) {
             testCaseListener.reportResultInfo(
-                    logger, data, "The API properly rejected the request with undeclared field [{}] (response code {})",
-                    fieldName, responseCode);
+                    logger, data, "Mass Assignment payload rejected",
+                    "The API properly rejected the request with undeclared field [%s] (response code %d)"
+                            .formatted(fieldName, responseCode));
             return;
         }
 
         if (fieldReflected && ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultError(
                     logger, data, "Mass Assignment vulnerability detected",
-                    "The undeclared field [{}] was accepted AND reflected in the response (code {}). " +
-                            "The API is vulnerable to mass assignment attacks.", fieldName, responseCode);
+                    "The undeclared field [%s] was accepted AND reflected in the response (code %d). The API is vulnerable to mass assignment attacks.".formatted(fieldName, responseCode));
             return;
         }
 
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultError(
                     logger, data, "Undeclared field accepted",
-                    "The API accepted the request with undeclared field [{}] (response code {}). " +
-                            "APIs should reject requests with undeclared fields.", fieldName, responseCode);
+                    "The API accepted the request with undeclared field [%s] (response code %d). APIs should reject requests with undeclared fields.".formatted(fieldName, responseCode));
             return;
         }
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
-            testCaseListener.reportResultWarn(
-                    logger, data, "Server error with undeclared field",
-                    "Server returned {} error when processing undeclared field [{}]. " +
-                            "This may indicate improper error handling.", responseCode, fieldName);
+            testCaseListener.reportResultError(
+                    logger, data, "Server error with Mass Assignment payload",
+                    "Server returned %d error when processing undeclared field [%s]. This may indicate improper error handling.".formatted(responseCode, fieldName));
             return;
         }
 
-        testCaseListener.reportResultWarn(
+        testCaseListener.reportResultError(
                 logger, data, "Unexpected response code",
-                "Received unexpected response code {} for undeclared field [{}]", responseCode, fieldName);
+                "Received unexpected response code %d for Mass Assignment payload".formatted(responseCode));
     }
 
     private boolean isFieldReflectedInResponse(String responseBody, String fieldName, Object fieldValue) {

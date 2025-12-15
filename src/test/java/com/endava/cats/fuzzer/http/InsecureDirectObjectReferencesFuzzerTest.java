@@ -229,7 +229,7 @@ class InsecureDirectObjectReferencesFuzzerTest {
     }
 
     @Test
-    void shouldReportWarnForUnexpectedResponseCode() {
+    void shouldReportErrorForUnexpectedResponseCode() {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("userId", new StringSchema());
 
@@ -247,7 +247,7 @@ class InsecureDirectObjectReferencesFuzzerTest {
 
         idorFuzzer.fuzz(data);
 
-        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                 Mockito.any(), Mockito.eq(data), Mockito.contains("Unexpected"), Mockito.anyString(), Mockito.any());
     }
 
@@ -318,5 +318,28 @@ class InsecureDirectObjectReferencesFuzzerTest {
 
         // Numeric IDs generate 5 alternatives
         Mockito.verify(serviceCaller, Mockito.times(5)).call(Mockito.any());
+    }
+
+    @Test
+    void shouldReportErrorFor5xxResponse() {
+        Map<String, Schema> reqTypes = new HashMap<>();
+        reqTypes.put("userId", new StringSchema());
+
+        FuzzingData data = FuzzingData.builder()
+                .reqSchema(new StringSchema())
+                .requestPropertyTypes(reqTypes)
+                .requestContentTypes(List.of("application/json"))
+                .responseCodes(Set.of("200"))
+                .method(HttpMethod.GET)
+                .build();
+        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
+
+        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(500).build();
+        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
+
+        idorFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                Mockito.any(), Mockito.eq(data), Mockito.contains("Server error"), Mockito.anyString(), Mockito.any());
     }
 }

@@ -213,7 +213,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
         }
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
-            testCaseListener.reportResultWarn(
+            testCaseListener.reportResultError(
                     logger, data, "Server error with SSRF payload",
                     "Server returned %d error when processing SSRF payload. This may indicate the server attempted to connect to the target."
                             .formatted(responseCode));
@@ -228,7 +228,7 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
             return;
         }
 
-        testCaseListener.reportResultWarn(
+        testCaseListener.reportResultError(
                 logger, data, "Unexpected response code",
                 "Received unexpected response code %d for SSRF payload"
                         .formatted(responseCode));
@@ -248,17 +248,14 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
     private boolean isUrlField(String fieldName, FuzzingData data) {
         var schema = data.getRequestPropertyTypes().get(fieldName);
 
-        // Check if schema has URI format
         if (schema != null && CatsModelUtils.isUriSchema(schema)) {
             return true;
         }
 
-        // Check if schema format is "url"
         if (schema != null && CatsModelUtils.isUrlSchema(schema)) {
             return true;
         }
 
-        // Check field name patterns
         String lowerFieldName = fieldName.toLowerCase(Locale.ROOT);
         return URL_FIELD_PATTERNS.stream()
                 .anyMatch(lowerFieldName::contains);

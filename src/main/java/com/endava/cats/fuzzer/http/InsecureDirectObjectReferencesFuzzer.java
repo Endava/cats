@@ -173,19 +173,31 @@ public class InsecureDirectObjectReferencesFuzzer implements Fuzzer {
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
             testCaseListener.reportResultError(LOGGER, data,
                     "Potential IDOR vulnerability detected",
-                    "Request with modified ID returned success [{}]. The API may be exposing data belonging to other users/resources. " +
-                            "Expected [4XX] response indicating unauthorized access.",
-                    response.responseCodeAsString());
-        } else if (ResponseCodeFamily.is4xxCode(responseCode)) {
-            testCaseListener.reportResultInfo(LOGGER, data,
-                    "Request with modified ID correctly returned [{}] - access properly denied or resource not found",
-                    response.responseCodeAsString());
-        } else {
-            testCaseListener.reportResultWarn(LOGGER, data,
-                    "Unexpected response code: %s".formatted(responseCode),
-                    "Request with modified ID returned [{}]. Expected [4XX] for proper access control.",
-                    response.responseCodeAsString());
+                    ("Request with modified ID returned success [%s]. The API may be exposing data belonging to other users/resources. " +
+                            "Expected [4XX] response indicating unauthorized access.").formatted(response.responseCodeAsString()));
+            return;
         }
+
+        if (ResponseCodeFamily.is4xxCode(responseCode)) {
+            testCaseListener.reportResultInfo(LOGGER, data,
+                    "IDOR payload rejected",
+                    "Request with modified ID correctly returned %s - access properly denied or resource not found"
+                            .formatted(response.responseCodeAsString()));
+            return;
+        }
+
+        if (ResponseCodeFamily.is5xxCode(responseCode)) {
+            testCaseListener.reportResultError(LOGGER, data,
+                    "Server error with IDOR payload",
+                    "Server returned %d error when processing modified ID. This may indicate improper error handling."
+                            .formatted(responseCode));
+            return;
+        }
+
+        testCaseListener.reportResultError(LOGGER, data,
+                "Unexpected response code",
+                "Received unexpected response code %d for IDOR payload. Expected [4XX] for proper access control."
+                        .formatted(responseCode));
     }
 
     @Override

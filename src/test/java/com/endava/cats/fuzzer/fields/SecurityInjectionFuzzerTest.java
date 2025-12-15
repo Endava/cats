@@ -546,7 +546,7 @@ class SecurityInjectionFuzzerTest {
 
             ssrfFuzzer.fuzz(data);
 
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.contains("Server error"), Mockito.anyString(), Mockito.any());
         }
 
@@ -590,7 +590,7 @@ class SecurityInjectionFuzzerTest {
 
             ssrfFuzzer.fuzz(data);
 
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.contains("Unexpected"), Mockito.anyString(), Mockito.any());
         }
 
@@ -739,7 +739,7 @@ class SecurityInjectionFuzzerTest {
 
             massAssignmentFuzzer.fuzz(data);
 
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.contains("Unexpected"), Mockito.anyString(), Mockito.any());
         }
 
@@ -761,7 +761,7 @@ class SecurityInjectionFuzzerTest {
 
             massAssignmentFuzzer.fuzz(data);
 
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.contains("Server error"), Mockito.anyString(), Mockito.any());
         }
 
