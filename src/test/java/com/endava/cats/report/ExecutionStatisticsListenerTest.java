@@ -93,10 +93,11 @@ class ExecutionStatisticsListenerTest {
 
         var distribution = listener.getResponseCodeDistribution();
 
-        Assertions.assertThat(distribution).hasSize(3);
-        Assertions.assertThat(distribution.get(200)).isEqualTo(3);
-        Assertions.assertThat(distribution.get(400)).isEqualTo(1);
-        Assertions.assertThat(distribution.get(500)).isEqualTo(1);
+        Assertions.assertThat(distribution)
+                .hasSize(3)
+                .containsEntry(200, 3)
+                .containsEntry(400, 1)
+                .containsEntry(500, 1);
     }
 
     @Test

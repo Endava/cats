@@ -10,16 +10,30 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class DateRangeInversionFuzzerTest {
     private DateRangeInversionFuzzer dateRangeInversionFuzzer;
     private SimpleExecutor executor;
+
+    public static Stream<Arguments> shouldNotRunWhenInvalidData() {
+        return Stream.of(
+                Arguments.of("{\"otherField\": \"value\"}"),
+                Arguments.of("{\"startDate\": \"not-a-date\", \"endDate\": \"also-not-a-date\"}"),
+                Arguments.of("{\"startDate\": \"2024-01-01T10:00:00Z\", \"endDate\": \"2024-12-31\"}"),
+                Arguments.of("{\"endDate\": \"2024-12-31\"}"),
+                Arguments.of("{\"startDate\": \"2024-01-01\"}")
+        );
+    }
 
     @BeforeEach
     void setup() {
@@ -129,8 +143,9 @@ class DateRangeInversionFuzzerTest {
         Mockito.verifyNoInteractions(executor);
     }
 
-    @Test
-    void shouldNotRunWhenFieldValuesNotSet() {
+    @ParameterizedTest
+    @MethodSource("shouldNotRunWhenInvalidData")
+    void shouldNotRunWhen(String payload) {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> propertyTypes = new HashMap<>();
         propertyTypes.put("startDate", new DateSchema());
@@ -138,28 +153,13 @@ class DateRangeInversionFuzzerTest {
 
         Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("startDate", "endDate"));
         Mockito.when(data.getRequestPropertyTypes()).thenReturn(propertyTypes);
-        Mockito.when(data.getPayload()).thenReturn("{\"otherField\": \"value\"}");
+        Mockito.when(data.getPayload()).thenReturn(payload);
 
         dateRangeInversionFuzzer.fuzz(data);
 
         Mockito.verifyNoInteractions(executor);
     }
 
-    @Test
-    void shouldNotRunWhenDateValuesInvalid() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Map<String, Schema> propertyTypes = new HashMap<>();
-        propertyTypes.put("startDate", new DateSchema());
-        propertyTypes.put("endDate", new DateSchema());
-
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("startDate", "endDate"));
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(propertyTypes);
-        Mockito.when(data.getPayload()).thenReturn("{\"startDate\": \"not-a-date\", \"endDate\": \"also-not-a-date\"}");
-
-        dateRangeInversionFuzzer.fuzz(data);
-
-        Mockito.verifyNoInteractions(executor);
-    }
 
     @Test
     void shouldHandleNestedDateFields() {
@@ -306,22 +306,6 @@ class DateRangeInversionFuzzerTest {
     }
 
     @Test
-    void shouldNotRunWhenMixedDateTimeAndDateValues() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Map<String, Schema> propertyTypes = new HashMap<>();
-        propertyTypes.put("startDate", new DateSchema());
-        propertyTypes.put("endDate", new DateSchema());
-
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("startDate", "endDate"));
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(propertyTypes);
-        Mockito.when(data.getPayload()).thenReturn("{\"startDate\": \"2024-01-01T10:00:00Z\", \"endDate\": \"2024-12-31\"}");
-
-        dateRangeInversionFuzzer.fuzz(data);
-
-        Mockito.verifyNoInteractions(executor);
-    }
-
-    @Test
     void shouldHandleTimeFieldsWithoutDateSuffix() {
         FuzzingData data = Mockito.mock(FuzzingData.class);
         Map<String, Schema> propertyTypes = new HashMap<>();
@@ -383,37 +367,5 @@ class DateRangeInversionFuzzerTest {
         dateRangeInversionFuzzer.fuzz(data);
 
         Mockito.verify(executor, Mockito.times(1)).execute(Mockito.any());
-    }
-
-    @Test
-    void shouldNotRunWhenOnlyStartValueIsNotSet() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Map<String, Schema> propertyTypes = new HashMap<>();
-        propertyTypes.put("startDate", new DateSchema());
-        propertyTypes.put("endDate", new DateSchema());
-
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("startDate", "endDate"));
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(propertyTypes);
-        Mockito.when(data.getPayload()).thenReturn("{\"endDate\": \"2024-12-31\"}");
-
-        dateRangeInversionFuzzer.fuzz(data);
-
-        Mockito.verifyNoInteractions(executor);
-    }
-
-    @Test
-    void shouldNotRunWhenOnlyEndValueIsNotSet() {
-        FuzzingData data = Mockito.mock(FuzzingData.class);
-        Map<String, Schema> propertyTypes = new HashMap<>();
-        propertyTypes.put("startDate", new DateSchema());
-        propertyTypes.put("endDate", new DateSchema());
-
-        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("startDate", "endDate"));
-        Mockito.when(data.getRequestPropertyTypes()).thenReturn(propertyTypes);
-        Mockito.when(data.getPayload()).thenReturn("{\"startDate\": \"2024-01-01\"}");
-
-        dateRangeInversionFuzzer.fuzz(data);
-
-        Mockito.verifyNoInteractions(executor);
     }
 }

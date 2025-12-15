@@ -15,7 +15,9 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @QuarkusTest
 class InsecureDirectObjectReferencesFuzzerTest {
@@ -31,6 +34,12 @@ class InsecureDirectObjectReferencesFuzzerTest {
     private TestCaseListener testCaseListener;
     private SimpleExecutor simpleExecutor;
     private InsecureDirectObjectReferencesFuzzer idorFuzzer;
+
+    public static Stream<Arguments> getArgumentsForShouldReportErrorWhen() {
+        return Stream.of(Arguments.of(200, "{\"data\": \"sensitive\"}", "IDOR"),
+                Arguments.of(302, "{}", "Unexpected"),
+                Arguments.of(500, "{}", "Server error"));
+    }
 
     @BeforeEach
     void setup() {
@@ -104,8 +113,9 @@ class InsecureDirectObjectReferencesFuzzerTest {
         Mockito.verify(serviceCaller, Mockito.atLeastOnce()).call(Mockito.any());
     }
 
-    @Test
-    void shouldReportErrorWhenSuccessResponseWithModifiedId() {
+    @ParameterizedTest
+    @MethodSource("getArgumentsForShouldReportErrorWhen")
+    void shouldReportErrorWhen(int responseCode, String body, String expectedMessage) {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("userId", new StringSchema());
 
@@ -118,13 +128,13 @@ class InsecureDirectObjectReferencesFuzzerTest {
                 .build();
         ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
 
-        CatsResponse catsResponse = CatsResponse.builder().body("{\"data\": \"sensitive\"}").responseCode(200).build();
+        CatsResponse catsResponse = CatsResponse.builder().body(body).responseCode(responseCode).build();
         Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
 
         idorFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
-                Mockito.any(), Mockito.eq(data), Mockito.contains("IDOR"), Mockito.anyString(), Mockito.any());
+                Mockito.any(), Mockito.eq(data), Mockito.contains(expectedMessage), Mockito.anyString(), Mockito.any());
     }
 
     @ParameterizedTest
@@ -229,29 +239,6 @@ class InsecureDirectObjectReferencesFuzzerTest {
     }
 
     @Test
-    void shouldReportErrorForUnexpectedResponseCode() {
-        Map<String, Schema> reqTypes = new HashMap<>();
-        reqTypes.put("userId", new StringSchema());
-
-        FuzzingData data = FuzzingData.builder()
-                .reqSchema(new StringSchema())
-                .requestPropertyTypes(reqTypes)
-                .requestContentTypes(List.of("application/json"))
-                .responseCodes(Set.of("200"))
-                .method(HttpMethod.GET)
-                .build();
-        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
-
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(302).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
-        idorFuzzer.fuzz(data);
-
-        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
-                Mockito.any(), Mockito.eq(data), Mockito.contains("Unexpected"), Mockito.anyString(), Mockito.any());
-    }
-
-    @Test
     void shouldReportInfoFor4xxResponse() {
         Map<String, Schema> reqTypes = new HashMap<>();
         reqTypes.put("userId", new StringSchema());
@@ -318,28 +305,5 @@ class InsecureDirectObjectReferencesFuzzerTest {
 
         // Numeric IDs generate 5 alternatives
         Mockito.verify(serviceCaller, Mockito.times(5)).call(Mockito.any());
-    }
-
-    @Test
-    void shouldReportErrorFor5xxResponse() {
-        Map<String, Schema> reqTypes = new HashMap<>();
-        reqTypes.put("userId", new StringSchema());
-
-        FuzzingData data = FuzzingData.builder()
-                .reqSchema(new StringSchema())
-                .requestPropertyTypes(reqTypes)
-                .requestContentTypes(List.of("application/json"))
-                .responseCodes(Set.of("200"))
-                .method(HttpMethod.GET)
-                .build();
-        ReflectionTestUtils.setField(data, "processedPayload", "{\"userId\": \"123\"}");
-
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(500).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
-        idorFuzzer.fuzz(data);
-
-        Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
-                Mockito.any(), Mockito.eq(data), Mockito.contains("Server error"), Mockito.anyString(), Mockito.any());
     }
 }

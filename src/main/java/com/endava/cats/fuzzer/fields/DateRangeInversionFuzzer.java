@@ -153,10 +153,10 @@ public class DateRangeInversionFuzzer implements Fuzzer {
     private OffsetDateTime parseDateTime(String value) {
         try {
             return OffsetDateTime.parse(value);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             try {
                 return OffsetDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
-            } catch (DateTimeParseException e2) {
+            } catch (DateTimeParseException _) {
                 return null;
             }
         }
@@ -165,10 +165,10 @@ public class DateRangeInversionFuzzer implements Fuzzer {
     private LocalDate parseDate(String value) {
         try {
             return LocalDate.parse(value);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             try {
                 return LocalDate.parse(value, DateTimeFormatter.ISO_LOCAL_DATE);
-            } catch (DateTimeParseException e2) {
+            } catch (DateTimeParseException _) {
                 return null;
             }
         }
