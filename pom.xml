@@ -40,21 +40,21 @@
         <maven-site-plugin.version>4.0.0-M16</maven-site-plugin.version>
         <maven-project-info-reports-plugin.version>3.9.0</maven-project-info-reports-plugin.version>
         <spotbugs-maven-plugin.version>4.9.8.2</spotbugs-maven-plugin.version>
-        <sonar-maven-plugin.version>5.4.0.6343</sonar-maven-plugin.version>
+        <sonar-maven-plugin.version>5.5.0.6356</sonar-maven-plugin.version>
         <pretty-logger.version>1.16</pretty-logger.version>
         <compiler.version>0.9.14</compiler.version>
         <json-path.version>2.10.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.30.1</quarkus.platform.version>
+        <quarkus.platform.version>3.30.4</quarkus.platform.version>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
-        <spring.version>7.0.1</spring.version>
+        <spring.version>7.0.2</spring.version>
         <assertj-core.version>4.0.0-M1</assertj-core.version>
         <maven-resources-plugin.version>3.4.0</maven-resources-plugin.version>
         <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
-        <spring-integration-core.version>7.0.0</spring-integration-core.version>
+        <spring-integration-core.version>7.0.1</spring-integration-core.version>
         <json.version>20250517</json.version>
         <error-prone.version>2.41.0</error-prone.version>
         <archunit-junit5.version>1.4.1</archunit-junit5.version>
@@ -72,7 +72,7 @@
         <okio.version>3.16.4</okio.version>
         <wiremock.version>3.12.1</wiremock.version>
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
-        <regexp-gen.version>2.0.1</regexp-gen.version>
+        <regexp-gen.version>3.0.0</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
         <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
