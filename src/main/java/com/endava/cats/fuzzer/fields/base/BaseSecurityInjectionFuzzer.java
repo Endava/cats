@@ -113,29 +113,21 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
     }
 
     private void processResponse(CatsResponse response, FuzzingData data) {
-        String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
         int responseCode = response.getResponseCode();
 
-        for (String errorPattern : getErrorPatterns()) {
-            if (responseBody.contains(errorPattern.toLowerCase(Locale.ROOT))) {
+        InjectionDetectionResult detectionResult = detectInjectionEvidence(response, data);
+        if (detectionResult.isVulnerable()) {
+            // XSS reflection is a WARN (validation concern), other injections are ERROR (actual vulnerabilities)
+            if ("XSS".equals(getInjectionType())) {
+                testCaseListener.reportResultWarn(
+                        logger, data, detectionResult.getTitle(),
+                        detectionResult.getMessage());
+            } else {
                 testCaseListener.reportResultError(
-                        logger, data, "Potential %s vulnerability".formatted(getInjectionType()),
-                        "Response contains error pattern [%s] indicating potential %s vulnerability. Response code: %d"
-                                .formatted(errorPattern, getInjectionType(), responseCode));
-                return;
+                        logger, data, detectionResult.getTitle(),
+                        detectionResult.getMessage());
             }
-        }
-
-        if (shouldCheckForPayloadReflection()) {
-            for (String payload : getPayloadsToUse()) {
-                if (responseBody.contains(payload.toLowerCase(Locale.ROOT))) {
-                    testCaseListener.reportResultError(
-                            logger, data, "Payload reflected in response",
-                            "Injection payload was reflected in the response body, indicating potential %s vulnerability. Response code: %d"
-                                    .formatted(getInjectionType(), responseCode));
-                    return;
-                }
-            }
+            return;
         }
 
         if (ResponseCodeFamily.is5xxCode(responseCode)) {
@@ -155,10 +147,17 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
         }
 
         if (ResponseCodeFamily.is2xxCode(responseCode)) {
-            testCaseListener.reportResultInfo(
-                    logger, data, "Injection payload accepted",
-                    "%s injection payload was accepted (response code %d). Payload may contain valid characters that don't require rejection."
-                            .formatted(getInjectionType(), responseCode));
+            if ("XSS".equals(getInjectionType())) {
+                testCaseListener.reportResultWarn(
+                        logger, data, "XSS payload accepted without validation",
+                        "API accepted XSS payload (response code %d). For APIs, implement input validation to reject dangerous characters (e.g., <, >, script tags) for constrained fields. APIs should store raw data, but validate to prevent abuse and unsafe usage in secondary contexts (emails, PDFs, logs, admin UIs)."
+                                .formatted(responseCode));
+            } else {
+                testCaseListener.reportResultInfo(
+                        logger, data, "Injection payload accepted",
+                        "%s injection payload was accepted (response code %d). Verify that proper input validation and output encoding are in place."
+                                .formatted(getInjectionType(), responseCode));
+            }
             return;
         }
 
@@ -206,20 +205,50 @@ public abstract class BaseSecurityInjectionFuzzer implements Fuzzer {
     protected abstract List<String> getAllInjectionPayloads();
 
     /**
-     * Returns patterns that indicate a successful injection or information disclosure.
-     * These patterns are searched in the response body (case-insensitive).
+     * Detects evidence of successful injection based on response analysis.
+     * This method allows each fuzzer to implement specific detection logic
+     * beyond simple error pattern matching.
      *
-     * @return list of error patterns to detect
+     * @param response the HTTP response to analyze
+     * @param data     the fuzzing data context
+     * @return detection result indicating if vulnerability was found
      */
-    protected abstract List<String> getErrorPatterns();
+    protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
+        return InjectionDetectionResult.notVulnerable();
+    }
 
     /**
-     * Whether to check if the payload is reflected in the response.
-     * This is particularly important for XSS detection.
-     *
-     * @return true if payload reflection should be checked
+     * Result of injection detection analysis.
      */
-    protected boolean shouldCheckForPayloadReflection() {
-        return false;
+    protected static class InjectionDetectionResult {
+        private final boolean vulnerable;
+        private final String title;
+        private final String message;
+
+        private InjectionDetectionResult(boolean vulnerable, String title, String message) {
+            this.vulnerable = vulnerable;
+            this.title = title;
+            this.message = message;
+        }
+
+        public static InjectionDetectionResult notVulnerable() {
+            return new InjectionDetectionResult(false, null, null);
+        }
+
+        public static InjectionDetectionResult vulnerable(String title, String message) {
+            return new InjectionDetectionResult(true, title, message);
+        }
+
+        public boolean isVulnerable() {
+            return vulnerable;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 }

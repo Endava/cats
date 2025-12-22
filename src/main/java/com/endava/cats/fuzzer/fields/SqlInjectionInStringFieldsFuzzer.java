@@ -4,10 +4,15 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * Fuzzer that sends SQL injection payloads in string fields.
@@ -67,47 +72,6 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "1' AND SLEEP(5)#"
     );
 
-    private static final List<String> SQL_ERROR_PATTERNS = List.of(
-            "sql syntax",
-            "mysql",
-            "mysqli",
-            "postgresql",
-            "pg_query",
-            "pg_exec",
-            "ora-",
-            "oracle",
-            "sqlite",
-            "sqlite3",
-            "sqlstate",
-            "odbc",
-            "jdbc",
-            "db2",
-            "sybase",
-            "microsoft sql",
-            "mssql",
-            "sql server",
-            "syntax error",
-            "unclosed quotation",
-            "unterminated string",
-            "quoted string not properly terminated",
-            "unexpected end of sql",
-            "invalid query",
-            "database error",
-            "db error",
-            "query failed",
-            "sql error",
-            "you have an error in your sql",
-            "warning: mysql",
-            "warning: pg_",
-            "warning: oci_",
-            "supplied argument is not a valid",
-            "division by zero",
-            "microsoft ole db provider",
-            "jet database engine",
-            "access database engine",
-            "invalid sql statement",
-            "column count doesn't match"
-    );
 
     /**
      * Creates a new SqlInjectionInStringFieldsFuzzer instance.
@@ -137,12 +101,79 @@ public class SqlInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
     }
 
     @Override
-    protected List<String> getErrorPatterns() {
-        return SQL_ERROR_PATTERNS;
-    }
-
-    @Override
     public String description() {
         return "iterate through each string field and send SQL injection payloads to detect SQL injection vulnerabilities";
+    }
+
+    private static final List<String> SQL_ERROR_KEYWORDS = List.of(
+            "sql syntax", "syntax error", "unclosed quotation", "unterminated string",
+            "unexpected end of sql", "invalid query", "database error", "db error",
+            "query failed", "sql error", "warning: mysql", "warning: pg_", "warning: oci_",
+            "supplied argument is not a valid", "microsoft sql", "sqlstate"
+    );
+
+    private static final List<String> SCHEMA_KEYWORDS = List.of(
+            "information_schema", "sys.tables", "syscolumns", "pg_catalog", "pg_class",
+            "sqlite_master", "mysql.user", "dual ", "table_schema", "column_name"
+    );
+
+    @Override
+    protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
+        String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
+        int responseCode = response.getResponseCode();
+
+        List<String> indicators = new ArrayList<>();
+
+        if (hasUnionSelectWithData(responseBody)) {
+            indicators.add("UNION SELECT output");
+        }
+
+        if (containsSchemaDetails(responseBody)) {
+            indicators.add("database schema information");
+        }
+
+        if (containsSqlErrorMessage(responseBody) && !indicators.isEmpty()) {
+            indicators.add("SQL error response");
+        }
+
+        if (indicators.size() >= 2) {
+            String evidenceSummary = indicators.stream().collect(Collectors.joining(", "));
+            return InjectionDetectionResult.vulnerable(
+                    "SQL injection vulnerability detected",
+                    "Response shows multiple independent SQL indicators (%s). Response code: %d"
+                            .formatted(evidenceSummary, responseCode));
+        }
+
+        return InjectionDetectionResult.notVulnerable();
+    }
+
+    private boolean hasUnionSelectWithData(String responseBody) {
+        boolean hasUnionSelect = responseBody.contains("union") && responseBody.contains("select");
+        if (!hasUnionSelect) {
+            return false;
+        }
+
+        boolean hasFromClause = responseBody.contains(" from ") || responseBody.contains("from ");
+        boolean hasSchemaKeyword = containsAny(responseBody, SCHEMA_KEYWORDS);
+        boolean hasColumnStructure = responseBody.contains("|") && responseBody.contains("----");
+
+        return (hasFromClause || hasSchemaKeyword || hasColumnStructure);
+    }
+
+    private boolean containsSchemaDetails(String responseBody) {
+        return containsAny(responseBody, SCHEMA_KEYWORDS);
+    }
+
+    private boolean containsSqlErrorMessage(String responseBody) {
+        return containsAny(responseBody, SQL_ERROR_KEYWORDS);
+    }
+
+    private boolean containsAny(String responseBody, List<String> keywords) {
+        for (String keyword : keywords) {
+            if (responseBody.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

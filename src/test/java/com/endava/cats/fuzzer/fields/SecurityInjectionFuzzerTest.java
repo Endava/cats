@@ -139,33 +139,7 @@ class SecurityInjectionFuzzerTest {
         }
 
         @Test
-        void shouldReportErrorWhenSqlErrorPatternDetected() {
-            Map<String, Schema> reqTypes = new HashMap<>();
-            reqTypes.put("username", new StringSchema());
-
-            FuzzingData data = Mockito.mock(FuzzingData.class);
-            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("username"));
-            Mockito.when(data.getPayload()).thenReturn("{\"username\": \"test\"}");
-            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
-            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
-            Mockito.when(data.getHeaders()).thenReturn(Set.of());
-            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
-
-            // Return response with SQL error message
-            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
-                    CatsResponse.builder()
-                            .responseCode(500)
-                            .body("Error: You have an error in your SQL syntax near...")
-                            .build());
-
-            sqlInjectionFuzzer.fuzz(data);
-
-            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
-                    Mockito.any(), Mockito.any(), Mockito.contains("SQL"), Mockito.anyString(), Mockito.any());
-        }
-
-        @Test
-        void shouldReportWarnWhenServerError() {
+        void shouldReportErrorWhenServerError() {
             Map<String, Schema> reqTypes = new HashMap<>();
             reqTypes.put("username", new StringSchema());
 
@@ -187,7 +161,7 @@ class SecurityInjectionFuzzerTest {
             sqlInjectionFuzzer.fuzz(data);
 
             Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
-                    Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+                    Mockito.any(), Mockito.any(), Mockito.contains("Server error"), Mockito.anyString(), Mockito.any());
         }
 
         @Test
@@ -265,6 +239,63 @@ class SecurityInjectionFuzzerTest {
             Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.contains("Unexpected"), Mockito.any(), Mockito.any());
         }
+
+        @Test
+        void shouldNotReportErrorWhenUnionSelectPayloadReflectedOnly() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("username", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("username"));
+            Mockito.when(data.getPayload()).thenReturn("{\"username\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("{\"username\": \"' UNION SELECT NULL--\"}")
+                            .build());
+
+            sqlInjectionFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.contains("accepted"), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("SQL injection"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportErrorWhenMultipleSqlIndicatorsDetected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("username", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("username"));
+            Mockito.when(data.getPayload()).thenReturn("{\"username\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("""
+                                    [
+                                      {"username": "admin", "password": "secret"},
+                                      "UNION SELECT username, password FROM information_schema.users"
+                                    ]
+                                    """)
+                            .build());
+
+            sqlInjectionFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("SQL injection"), Mockito.anyString(), Mockito.any());
+        }
     }
 
     @Nested
@@ -278,11 +309,6 @@ class SecurityInjectionFuzzerTest {
         }
 
         @Test
-        void shouldReturnTrueForCheckForPayloadReflection() {
-            Assertions.assertThat(xssFuzzer.shouldCheckForPayloadReflection()).isTrue();
-        }
-
-        @Test
         void shouldReturnAllInjectionTypes() {
             Assertions.assertThat(xssFuzzer.getAllInjectionPayloads()).containsAll(XssInjectionInStringFieldsFuzzer.ALL_XSS_PAYLOADS);
         }
@@ -293,7 +319,7 @@ class SecurityInjectionFuzzerTest {
         }
 
         @Test
-        void shouldReportErrorWhenPayloadReflected() {
+        void shouldReportWarnWhenXssPayloadReflected() {
             Map<String, Schema> reqTypes = new HashMap<>();
             reqTypes.put("comment", new StringSchema());
 
@@ -314,8 +340,89 @@ class SecurityInjectionFuzzerTest {
 
             xssFuzzer.fuzz(data);
 
+            // Should WARN about reflection (validation concern), not ERROR
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+                    Mockito.any(), Mockito.any(), Mockito.contains("reflected"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportWarnWhenXssPayloadAcceptedWithout2xxButNotReflected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("name", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("name"));
+            Mockito.when(data.getPayload()).thenReturn("{\"name\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            // Return 200 but payload NOT reflected (e.g., sanitized or stored differently)
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("{\"name\": \"test\", \"id\": 123}")
+                            .build());
+
+            xssFuzzer.fuzz(data);
+
+            // Should WARN about accepting without validation (from base class 2xx handler)
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultWarn(
+                    Mockito.any(), Mockito.any(), Mockito.contains("validation"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportInfoWhenXssPayloadRejectedWith4xx() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("name", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("name"));
+            Mockito.when(data.getPayload()).thenReturn("{\"name\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(400)
+                            .body("{\"error\": \"Invalid input\"}")
+                            .build());
+
+            xssFuzzer.fuzz(data);
+
+            // Should report INFO when properly rejected
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.contains("rejected"), Mockito.any());
+        }
+
+        @Test
+        void shouldReportErrorWhenXssPayloadCauses5xx() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("description", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("description"));
+            Mockito.when(data.getPayload()).thenReturn("{\"description\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            // Server error with XSS payload
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(500)
+                            .body("Internal Server Error")
+                            .build());
+
+            xssFuzzer.fuzz(data);
+
+            // Should report ERROR for 5xx
             Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
-                    Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.contains("XSS"), Mockito.any());
+                    Mockito.any(), Mockito.any(), Mockito.contains("Server error"), Mockito.anyString(), Mockito.any());
         }
     }
 
@@ -364,6 +471,58 @@ class SecurityInjectionFuzzerTest {
             Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
         }
+
+        @Test
+        void shouldReportErrorWhenMultipleCommandIndicatorsDetected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("filename", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("filename"));
+            Mockito.when(data.getPayload()).thenReturn("{\"filename\": \"test.txt\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("uid=0(root) gid=0(root) groups=0(root)\\nroot:x:0:0:root:/root:/bin/bash")
+                            .build());
+
+            commandFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("Command injection"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportInfoWhenNoCommandIndicatorsDetected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("filename", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("filename"));
+            Mockito.when(data.getPayload()).thenReturn("{\"filename\": \"test.txt\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("{\"status\": \"ok\"}")
+                            .build());
+
+            commandFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.contains("accepted"), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("Command injection"), Mockito.anyString(), Mockito.any());
+        }
     }
 
     @Nested
@@ -410,6 +569,118 @@ class SecurityInjectionFuzzerTest {
 
             Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
                     Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldNotReportErrorWhenPayloadJustReflected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("filter", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("filter"));
+            Mockito.when(data.getPayload()).thenReturn("{\"filter\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("{\"filter\": \"{\\\"$where\\\": \\\"1==1\\\"}\"}")
+                            .build());
+
+            noSqlFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.contains("accepted"), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("NoSQL injection"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportErrorWhenMultipleNosqlIndicatorsDetected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("query", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("query"));
+            Mockito.when(data.getPayload()).thenReturn("{\"query\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("""
+                                    {
+                                      "result": [
+                                        {"username": "admin", "password": "secret"}
+                                      ],
+                                      "error": "MongoError: unknown operator: $where",
+                                      "details": "db.users.find({$where: function() { return this.password != '' }})"
+                                    }
+                                    """)
+                            .build());
+
+            noSqlFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("NoSQL injection"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportErrorWhenOperatorAndInternalsDetected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("query", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("query"));
+            Mockito.when(data.getPayload()).thenReturn("{\"query\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("db.users.find({$where: function() { return true; }}) returned ObjectId(\"abc123\")")
+                            .build());
+
+            noSqlFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("NoSQL injection"), Mockito.anyString(), Mockito.any());
+        }
+
+        @Test
+        void shouldReportInfoWhenNoNosqlIndicatorsDetected() {
+            Map<String, Schema> reqTypes = new HashMap<>();
+            reqTypes.put("query", new StringSchema());
+
+            FuzzingData data = Mockito.mock(FuzzingData.class);
+            Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("query"));
+            Mockito.when(data.getPayload()).thenReturn("{\"query\": \"test\"}");
+            Mockito.when(data.getRequestPropertyTypes()).thenReturn(reqTypes);
+            Mockito.when(data.getMethod()).thenReturn(HttpMethod.POST);
+            Mockito.when(data.getHeaders()).thenReturn(Set.of());
+            Mockito.when(data.getFirstRequestContentType()).thenReturn("application/json");
+
+            Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(
+                    CatsResponse.builder()
+                            .responseCode(200)
+                            .body("{\"status\": \"ok\"}")
+                            .build());
+
+            noSqlFuzzer.fuzz(data);
+
+            Mockito.verify(testCaseListener, Mockito.atLeastOnce()).reportResultInfo(
+                    Mockito.any(), Mockito.any(), Mockito.contains("accepted"), Mockito.any());
+            Mockito.verify(testCaseListener, Mockito.never()).reportResultError(
+                    Mockito.any(), Mockito.any(), Mockito.contains("NoSQL injection"), Mockito.anyString(), Mockito.any());
         }
     }
 

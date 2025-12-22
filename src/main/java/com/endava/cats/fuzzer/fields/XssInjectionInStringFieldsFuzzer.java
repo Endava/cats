@@ -4,16 +4,27 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Fuzzer that sends XSS (Cross-Site Scripting) payloads in string fields.
  * <p>
- * This fuzzer tests for XSS vulnerabilities by sending common XSS payloads
- * and checking if they are reflected in the response without proper encoding.
+ * This fuzzer tests for input validation by sending common XSS payloads.
+ * For APIs, the focus is on proper input validation and constraints, not output encoding.
+ * APIs should store/return raw data; the front-end/renderer is responsible for output encoding.
+ * </p>
+ * <p>
+ * The fuzzer warns when potentially dangerous input (HTML/script tags, event handlers)
+ * is accepted without validation, as this can lead to:
+ * - Storage/delivery mechanism for abuse
+ * - Unsafe usage in secondary contexts (emails, PDFs, admin UIs, logs)
+ * - XSS vulnerabilities in downstream consumers
  * </p>
  */
 @Singleton
@@ -66,19 +77,6 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
             "<embed src=\"javascript:alert(1)\">"
     );
 
-    private static final List<String> XSS_ERROR_PATTERNS = List.of(
-            "<script>",
-            "javascript:",
-            "onerror=",
-            "onload=",
-            "onmouseover=",
-            "onfocus=",
-            "onclick=",
-            "onmouseout=",
-            "onkeypress=",
-            "onsubmit="
-    );
-
     /**
      * Creates a new XssInjectionInStringFieldsFuzzer instance.
      *
@@ -107,17 +105,31 @@ public class XssInjectionInStringFieldsFuzzer extends BaseSecurityInjectionFuzze
     }
 
     @Override
-    protected List<String> getErrorPatterns() {
-        return XSS_ERROR_PATTERNS;
-    }
-
-    @Override
-    protected boolean shouldCheckForPayloadReflection() {
-        return true;
-    }
-
-    @Override
     public String description() {
         return "iterate through each string field and send XSS payloads to detect Cross-Site Scripting vulnerabilities";
+    }
+
+    @Override
+    protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
+        String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
+        int responseCode = response.getResponseCode();
+
+        // Check if dangerous XSS patterns are reflected in the response
+        // This is a WARN (not ERROR) because APIs should return raw data,
+        // but reflection indicates missing input validation
+        if (responseBody.contains("<script>") || 
+            (responseBody.contains("<img") && responseBody.contains("onerror=")) ||
+            (responseBody.contains("<svg") && responseBody.contains("onload=")) ||
+            (responseBody.contains("<iframe") && responseBody.contains("javascript:")) ||
+            responseBody.contains("onmouseover=") ||
+            responseBody.contains("onfocus=")) {
+            
+            return InjectionDetectionResult.vulnerable(
+                    "XSS payload reflected in response",
+                    "Dangerous XSS payload was reflected in the response (response code: %d). While APIs should return raw data, accepting and storing such input without validation can lead to abuse and XSS vulnerabilities in downstream consumers (emails, PDFs, admin UIs, logs). Implement input validation to reject dangerous characters for constrained fields."
+                            .formatted(responseCode));
+        }
+
+        return InjectionDetectionResult.notVulnerable();
     }
 }

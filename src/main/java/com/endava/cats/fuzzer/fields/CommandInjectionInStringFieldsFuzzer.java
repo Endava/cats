@@ -4,10 +4,13 @@ import com.endava.cats.annotations.FieldFuzzer;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.fields.base.BaseSecurityInjectionFuzzer;
+import com.endava.cats.model.CatsResponse;
+import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
 import jakarta.inject.Singleton;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Fuzzer that sends OS command injection payloads in string fields.
@@ -79,40 +82,6 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
             "a]); system('cat /etc/passwd'); //"
     );
 
-    private static final List<String> COMMAND_ERROR_PATTERNS = List.of(
-            "root:",
-            "/bin/bash",
-            "/bin/sh",
-            "uid=",
-            "gid=",
-            "groups=",
-            "linux",
-            "darwin",
-            "windows",
-            "total ",
-            "drwx",
-            "-rw-",
-            "volume serial number",
-            "directory of",
-            "command not found",
-            "not recognized as an internal",
-            "sh:",
-            "bash:",
-            "/etc/passwd",
-            "permission denied",
-            "cannot access",
-            "no such file",
-            "syntax error",
-            "unexpected token",
-            "bin/",
-            "sbin/",
-            "usr/",
-            "home/",
-            "var/",
-            "etc/",
-            "system32",
-            "program files"
-    );
 
     /**
      * Creates a new CommandInjectionInStringFieldsFuzzer instance.
@@ -142,12 +111,59 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
     }
 
     @Override
-    protected List<String> getErrorPatterns() {
-        return COMMAND_ERROR_PATTERNS;
+    public String description() {
+        return "iterate through each string field and send OS command injection payloads to detect command injection vulnerabilities";
     }
 
     @Override
-    public String description() {
-        return "iterate through each string field and send OS command injection payloads to detect command injection vulnerabilities";
+    protected InjectionDetectionResult detectInjectionEvidence(CatsResponse response, FuzzingData data) {
+        String responseBody = response.getBody() != null ? response.getBody().toLowerCase(Locale.ROOT) : "";
+        int responseCode = response.getResponseCode();
+
+        int executionEvidenceCount = 0;
+        StringBuilder evidenceFound = new StringBuilder();
+
+        if (responseBody.contains("root:") && responseBody.contains("/bin/")) {
+            executionEvidenceCount++;
+            evidenceFound.append("passwd file content, ");
+        }
+
+        if ((responseBody.contains("uid=") && responseBody.contains("gid=")) ||
+                (responseBody.contains("uid=") && responseBody.contains("groups="))) {
+            executionEvidenceCount++;
+            evidenceFound.append("id command output, ");
+        }
+
+        if (responseBody.contains("total ") && (responseBody.contains("drwx") || responseBody.contains("-rw-"))) {
+            executionEvidenceCount++;
+            evidenceFound.append("ls command output, ");
+        }
+
+        if ((responseBody.contains("linux") || responseBody.contains("darwin")) &&
+                (responseBody.contains("kernel") || responseBody.contains("gnu"))) {
+            executionEvidenceCount++;
+            evidenceFound.append("uname command output, ");
+        }
+
+        if (responseBody.contains("directory of") && responseBody.contains("volume serial number")) {
+            executionEvidenceCount++;
+            evidenceFound.append("Windows dir command output, ");
+        }
+
+        if (executionEvidenceCount >= 2) {
+            return InjectionDetectionResult.vulnerable(
+                    "Command injection vulnerability detected",
+                    "Response contains multiple indicators of command execution: %s. Response code: %d. This strongly suggests the command was executed on the server."
+                            .formatted(evidenceFound.toString().replaceAll(", $", ""), responseCode));
+        }
+
+        if (executionEvidenceCount == 1) {
+            return InjectionDetectionResult.vulnerable(
+                    "Possible command injection vulnerability",
+                    "Response contains indicators of command execution: %s. Response code: %d. Manual verification recommended."
+                            .formatted(evidenceFound.toString().replaceAll(", $", ""), responseCode));
+        }
+
+        return InjectionDetectionResult.notVulnerable();
     }
 }
