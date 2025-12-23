@@ -38,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.fusesource.jansi.Ansi.ansi;
 
@@ -100,7 +101,7 @@ public class CatsGlobalContext {
         this.getSchemaMap().remove("");
         this.catsConfiguration = catsConfiguration;
         this.openAPI = openAPI;
-        this.errorLeaksKeywords.addAll(errorLeaksKeywords);
+        this.errorLeaksKeywords.addAll(errorLeaksKeywords.stream().map(String::toLowerCase).collect(Collectors.toSet()));
         this.refs.addAll(refs);
     }
 

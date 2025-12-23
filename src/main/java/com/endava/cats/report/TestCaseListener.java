@@ -294,7 +294,9 @@ public class TestCaseListener {
      */
     public void addResponse(CatsResponse response) {
         currentTestCase().setResponse(response);
-        extractErrorLeaks();
+        if (!ignoreArguments.isIgnoreErrorLeaksCheck()) {
+            extractErrorLeaks();
+        }
     }
 
     /**
@@ -526,7 +528,8 @@ public class TestCaseListener {
         if (testCase.getResponse() == null) {
             return;
         }
-        List<String> keywords = WordUtils.getKeywordsMatching(testCase.getResponse().getBody(), globalContext.getErrorLeaksKeywords());
+        String bodyToLowerCase = testCase.getResponse().getBody().toLowerCase(Locale.ROOT);
+        List<String> keywords = WordUtils.getKeywordsMatching(bodyToLowerCase, globalContext.getErrorLeaksKeywords());
         testCase.setErrorLeaks(keywords);
     }
 

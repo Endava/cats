@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 public abstract class WordUtils {
     private static final Set<String> ERROR_KEYWORDS = Set.of(
             "StackTrace", "BadRequest", "InternalServerError", "Unauthorized",
-            "Forbidden", "ServiceUnavailable", "Timeout", "PermissionDenied", "InvalidToken",
+            "Forbidden", "ServiceUnavailable", "SocketTimeout", "PermissionDenied", "InvalidToken",
+            "ReadTimeout", "WriteTimeout", "ConnectTimeout", "RequestTimeout", "ResponseTimeout",
             "MethodNotAllowed", "ResourceNotFound", "RateLimitExceeded", "ClientError", "ServerError",
             "AuthenticationFailed", "AuthenticationError", "AuthorizationError", "ConnectionTimeout",
             "SSLHandshakeError", "ConnectionRefused", "MalformedRequest", "MissingParameter",
@@ -81,7 +82,7 @@ public abstract class WordUtils {
             // Swift
             "IndexOutOfRange", "UnexpectedNil", "TypeMismatch", "OutOfBounds",
             "UnwrapError", "Segfault", "DivideByZero", "DecodingError", "KeyDecodingError"
-    );
+    ).stream().map(String::toLowerCase).collect(Collectors.toSet());
 
     private static final List<String> DELIMITERS = List.of("", "-", "_");
 
@@ -153,8 +154,8 @@ public abstract class WordUtils {
             return List.of();
         }
         Set<String> toCheck = providedKeywords.isEmpty() ? ERROR_KEYWORDS : providedKeywords;
-        return toCheck.stream()
-                .filter(keyword -> response.toLowerCase(Locale.ROOT).contains(keyword.toLowerCase(Locale.ROOT)))
+        return toCheck.parallelStream()
+                .filter(response::contains)
                 .toList();
     }
 }
