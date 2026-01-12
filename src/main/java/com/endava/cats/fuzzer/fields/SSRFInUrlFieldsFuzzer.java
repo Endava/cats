@@ -243,55 +243,83 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
                             .formatted(truncatePayload(payload), responseCode));
         }
 
-        for (String pattern : List.of("ami-id", "instance-id", "security-credentials", "iam/security-credentials",
-                "computemetadata", "service-accounts/default", "subscriptionid", "resourcegroupname")) {
-            if (responseLower.contains(pattern)) {
-                return SSRFDetectionResult.vulnerable(
-                        "Cloud metadata service accessed",
-                        "Response contains cloud metadata indicator [%s]. This strongly suggests successful SSRF to cloud metadata service. Response code: %d"
-                                .formatted(pattern, responseCode));
-            }
+        SSRFDetectionResult cloudMetadataResult = checkCloudMetadataPatterns(responseLower, responseCode);
+        if (cloudMetadataResult.vulnerable()) {
+            return cloudMetadataResult;
         }
 
-        for (String pattern : List.of("root:x:0:0", "root:*:0:0", "/bin/bash", "/bin/sh", "/etc/passwd", "/etc/shadow")) {
-            if (responseLower.contains(pattern)) {
-                return SSRFDetectionResult.vulnerable(
-                        "File content exposed via SSRF",
-                        "Response contains file system content indicator [%s]. This indicates successful file:// protocol SSRF. Response code: %d"
-                                .formatted(pattern, responseCode));
-            }
+        SSRFDetectionResult fileContentResult = checkFileContentPatterns(responseLower, responseCode);
+        if (fileContentResult.vulnerable()) {
+            return fileContentResult;
         }
 
-        for (String pattern : List.of("connection refused", "connection timed out", "no route to host", "network unreachable")) {
-            if (responseLower.contains(pattern)) {
-                return SSRFDetectionResult.vulnerable(
-                        "Network error reveals SSRF attempt",
-                        "Response contains network error [%s] indicating the server attempted to connect to the SSRF target. Response code: %d"
-                                .formatted(pattern, responseCode));
-            }
+        SSRFDetectionResult networkErrorResult = checkNetworkErrorPatterns(responseLower, responseCode);
+        if (networkErrorResult.vulnerable()) {
+            return networkErrorResult;
         }
 
-        for (String pattern : List.of("could not resolve host", "getaddrinfo", "name or service not known")) {
-            if (responseLower.contains(pattern)) {
-                return SSRFDetectionResult.vulnerable(
-                        "DNS resolution error reveals SSRF attempt",
-                        "Response contains DNS error [%s] indicating the server attempted to resolve the SSRF target hostname. Response code: %d"
-                                .formatted(pattern, responseCode));
-            }
+        SSRFDetectionResult dnsErrorResult = checkDnsErrorPatterns(responseLower, responseCode);
+        if (dnsErrorResult.vulnerable()) {
+            return dnsErrorResult;
         }
 
-        for (String pattern : List.of("curl error", "urlopen error", "socket error", "failed to connect")) {
-            if (responseLower.contains(pattern)) {
-                return SSRFDetectionResult.vulnerable(
-                        "HTTP client error reveals SSRF attempt",
-                        "Response contains HTTP client error [%s] indicating the server attempted to make an outbound request. Response code: %d"
-                                .formatted(pattern, responseCode));
-            }
+        SSRFDetectionResult httpClientErrorResult = checkHttpClientErrorPatterns(responseLower, responseCode);
+        if (httpClientErrorResult.vulnerable()) {
+            return httpClientErrorResult;
         }
 
-        // Check for localhost/internal IP reflection (only if pattern is in payload to reduce false positives)
+        SSRFDetectionResult internalTargetResult = checkInternalTargetReflection(responseLower, payload, responseCode);
+        if (internalTargetResult.vulnerable()) {
+            return internalTargetResult;
+        }
+
+        return SSRFDetectionResult.notVulnerable();
+    }
+
+    private SSRFDetectionResult checkCloudMetadataPatterns(String responseLower, int responseCode) {
+        return checkPatternMatch(responseLower,
+                List.of("ami-id", "instance-id", "security-credentials", "iam/security-credentials",
+                        "computemetadata", "service-accounts/default", "subscriptionid", "resourcegroupname"),
+                "Cloud metadata service accessed",
+                "Response contains cloud metadata indicator [%s]. This strongly suggests successful SSRF to cloud metadata service. Response code: %d",
+                responseCode);
+    }
+
+    private SSRFDetectionResult checkFileContentPatterns(String responseLower, int responseCode) {
+        return checkPatternMatch(responseLower,
+                List.of("root:x:0:0", "root:*:0:0", "/bin/bash", "/bin/sh", "/etc/passwd", "/etc/shadow"),
+                "File content exposed via SSRF",
+                "Response contains file system content indicator [%s]. This indicates successful file:// protocol SSRF. Response code: %d",
+                responseCode);
+    }
+
+    private SSRFDetectionResult checkNetworkErrorPatterns(String responseLower, int responseCode) {
+        return checkPatternMatch(responseLower,
+                List.of("connection refused", "connection timed out", "no route to host", "network unreachable"),
+                "Network error reveals SSRF attempt",
+                "Response contains network error [%s] indicating the server attempted to connect to the SSRF target. Response code: %d",
+                responseCode);
+    }
+
+    private SSRFDetectionResult checkDnsErrorPatterns(String responseLower, int responseCode) {
+        return checkPatternMatch(responseLower,
+                List.of("could not resolve host", "getaddrinfo", "name or service not known"),
+                "DNS resolution error reveals SSRF attempt",
+                "Response contains DNS error [%s] indicating the server attempted to resolve the SSRF target hostname. Response code: %d",
+                responseCode);
+    }
+
+    private SSRFDetectionResult checkHttpClientErrorPatterns(String responseLower, int responseCode) {
+        return checkPatternMatch(responseLower,
+                List.of("curl error", "urlopen error", "socket error", "failed to connect"),
+                "HTTP client error reveals SSRF attempt",
+                "Response contains HTTP client error [%s] indicating the server attempted to make an outbound request. Response code: %d",
+                responseCode);
+    }
+
+    private SSRFDetectionResult checkInternalTargetReflection(String responseLower, String payload, int responseCode) {
+        String payloadLower = payload.toLowerCase(Locale.ROOT);
         for (String pattern : List.of("localhost", "127.0.0.1", "0.0.0.0", "169.254.169.254", "metadata.google.internal", "metadata.azure.com")) {
-            String payloadLower = payload.toLowerCase(Locale.ROOT);
             if (responseLower.contains(pattern) && payloadLower.contains(pattern)) {
                 return SSRFDetectionResult.vulnerable(
                         "Internal target reflected in response",
@@ -299,7 +327,15 @@ public class SSRFInUrlFieldsFuzzer implements Fuzzer {
                                 .formatted(pattern, responseCode));
             }
         }
+        return SSRFDetectionResult.notVulnerable();
+    }
 
+    private SSRFDetectionResult checkPatternMatch(String responseLower, List<String> patterns, String title, String messageTemplate, int responseCode) {
+        for (String pattern : patterns) {
+            if (responseLower.contains(pattern)) {
+                return SSRFDetectionResult.vulnerable(title, messageTemplate.formatted(pattern, responseCode));
+            }
+        }
         return SSRFDetectionResult.notVulnerable();
     }
 

@@ -123,29 +123,27 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
         int executionEvidenceCount = 0;
         StringBuilder evidenceFound = new StringBuilder();
 
-        if (responseBody.contains("root:") && responseBody.contains("/bin/")) {
+        if (hasPasswdFileContent(responseBody)) {
             executionEvidenceCount++;
             evidenceFound.append("passwd file content, ");
         }
 
-        if ((responseBody.contains("uid=") && responseBody.contains("gid=")) ||
-                (responseBody.contains("uid=") && responseBody.contains("groups="))) {
+        if (hasIdCommandOutput(responseBody)) {
             executionEvidenceCount++;
             evidenceFound.append("id command output, ");
         }
 
-        if (responseBody.contains("total ") && (responseBody.contains("drwx") || responseBody.contains("-rw-"))) {
+        if (hasLsCommandOutput(responseBody)) {
             executionEvidenceCount++;
             evidenceFound.append("ls command output, ");
         }
 
-        if ((responseBody.contains("linux") || responseBody.contains("darwin")) &&
-                (responseBody.contains("kernel") || responseBody.contains("gnu"))) {
+        if (hasUnameCommandOutput(responseBody)) {
             executionEvidenceCount++;
             evidenceFound.append("uname command output, ");
         }
 
-        if (responseBody.contains("directory of") && responseBody.contains("volume serial number")) {
+        if (hasWindowsDirOutput(responseBody)) {
             executionEvidenceCount++;
             evidenceFound.append("Windows dir command output, ");
         }
@@ -165,5 +163,27 @@ public class CommandInjectionInStringFieldsFuzzer extends BaseSecurityInjectionF
         }
 
         return InjectionDetectionResult.notVulnerable();
+    }
+
+    private boolean hasPasswdFileContent(String responseBody) {
+        return responseBody.contains("root:") && responseBody.contains("/bin/");
+    }
+
+    private boolean hasIdCommandOutput(String responseBody) {
+        return (responseBody.contains("uid=") && responseBody.contains("gid=")) ||
+                (responseBody.contains("uid=") && responseBody.contains("groups="));
+    }
+
+    private boolean hasLsCommandOutput(String responseBody) {
+        return responseBody.contains("total ") && (responseBody.contains("drwx") || responseBody.contains("-rw-"));
+    }
+
+    private boolean hasUnameCommandOutput(String responseBody) {
+        return (responseBody.contains("linux") || responseBody.contains("darwin")) &&
+                (responseBody.contains("kernel") || responseBody.contains("gnu"));
+    }
+
+    private boolean hasWindowsDirOutput(String responseBody) {
+        return responseBody.contains("directory of") && responseBody.contains("volume serial number");
     }
 }
