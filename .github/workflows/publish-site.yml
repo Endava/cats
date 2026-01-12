@@ -37,8 +37,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '18.x'
-          cache: npm           
+          node-version: '25.x'
+          cache: npm
       - name: Install dependencies
         run: yarn install --frozen-lockfile --non-interactive
       - name: Build
