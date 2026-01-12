@@ -45,6 +45,20 @@ Understanding the `Result Reason` values:
 - `Response content type not matching the contract` - reported as `warn` if the content type received in response does not match the one defined in the contract for the received http response code
 - `Error details leak` - reported as `error` if the response body contains sensitive information
 - `Not Implemented` - reported as `warn` if response code is `501`
+- `Mass Assignment vulnerability detected` - reported as `error` if the service allows mass assignment
+- `Server error with injection payload` - reported as `error` if the service returns is vulnerable to injection attacks
+- `SSRF payload reflected in response` - reported as `error` if the service is vulnerable to SSRF attacks
+- `Cloud metadata service accessed` - reported as `error` if the service leaks cloud metadata
+- `File content exposed via SSRF` - reported as `error` if the service leaks file content via SSRF
+- `Sensitive data leak` - reported as `error` if the service leaks sensitive data
+- `Network error reveals SSRF attempt` - reported as `error` if the service is vulnerable to SSRF attacks
+- `DNS resolution error reveals SSRF attempt` - reported as `error` if the service is vulnerable to SSRF attacks
+- `HTTP client error reveals SSRF attempt` - reported as `error` if the service is vulnerable to SSRF attacks
+- `Internal target reflected in response` - reported as `error` if the service is vulnerable to SSRF attacks
+- `Missing recommended security headers` - reported as `error` if the http response does not have the recommended security headers
+- `Missing response headers` - reported as `error` if the http response does not contain all the headers defined in the contract
+- `Potential IDOR vulnerability detected` - reported as `error` if the service is vulnerable to IDOR attacks
+- `Server error with IDOR payload` - reported as `error` if the service is vulnerable to IDOR attacks
 
 This is what you get when you click on a specific test:
 

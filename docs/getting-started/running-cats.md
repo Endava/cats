@@ -13,6 +13,12 @@ Blackbox mode means that CATS doesn't need any specific context. You just need t
 cats --contract=openapi.yaml --server=http://localhost:8080 --headers=headers.yml --blackbox
 ```
 
+Shorter version:
+
+```bash
+cats -c openapi.yaml -s http://localhost:8080 -H header=value -b
+```
+
 In blackbox mode CATS will only report `errors` if the received HTTP response code is a `5XX` (except `501`).
 Any other mismatch between what the Fuzzer expects vs what the service returns (for example service returns `400` and CATS expects `200`) will be reported as `success`.
 

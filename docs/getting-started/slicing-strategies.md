@@ -28,6 +28,9 @@ You can use various arguments like `--fuzzers=Fuzzer1,Fuzzer2` or `-skipFuzzers=
 For example, you can run all Fuzzers except for the `Boundary` Fuzzers like this: `--skipFuzzers=Boundary`. This will skip all Fuzzers containing `Boundary` in their name.
 After, you can create an additional run only with these Fuzzers using`--fuzzers=Boundary`.
 
+## Slide by Tags
+You can use the `--tag=TAG` argument to run CATS sequentially for each tag. You can also supply a comma separated list of tags to run CATS for multiple tags like this: `--tags=tag1,tag2`.
+
 These are just some recommendations. Depending on how complex your API is, you might go with a combination of the above or with even more granular splits.
 
 :::note

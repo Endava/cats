@@ -17,3 +17,7 @@ They are all in the `9XX` range. The current defined ones are as follows:
 - `999` - when something unexpected happened which is not part of the above errors
 
 If the entire communication is successful i.e. request was fully sent and response was fully consumed the HTTP response code will be used.
+
+:::tip
+You can use `cats explain -t RESPONSE_CODE 953` to get more details about a specific response code.
+:::

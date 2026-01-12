@@ -36,3 +36,15 @@ This is achieved using the `--server` argument.
 :::note
 Please note that you only need to provide the base URL of the service in the `--server` argument.
 :::
+
+# Replaying Errors
+
+You can replay failed tests using the `--errors` argument. This will replay all failed tests that were flagged as `error` from the last run. 
+You can supply the path to the reporting folder using the `--reportFolder` argument.
+
+# Replaying Warnings
+
+You can replay tests that were flagged as `warn` using the `--warnings` argument. This will replay all tests that were flagged as `warn` from the last run. 
+You can supply the path to the reporting folder using the `--reportFolder` argument.
+
+

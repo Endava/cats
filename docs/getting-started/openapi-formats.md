@@ -48,3 +48,5 @@ This is explicitly mentioned in the mapping table.
 :::info
 Whenever you see a `camelCase` naming, CATS also checks for `snake_case` and `kebab-case`. For example, for `countryCode` CATS will also match properties ending in `country-code` and `country_code`. 
 :::
+
+CATS generators are continuously evolving so this page might not have listed all. You can see all formats supported by CATS by running `cats list --formats`.

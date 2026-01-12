@@ -8,7 +8,7 @@ These are some of the common reasons why CATS might appear to be stuck:
 - **Server issues**: The server might be slow or unresponsive. Check the server logs and the server status.
 - **Many fields inside the request(s)**: If the request has many fields, CATS might take longer to generate the tests, as many fuzzers are running for each field. You can limit the number of fields to be fuzzed using `--limitFuzzedFields` argument.
 - **Usage of anyOf/oneOf in request schemas**: If the request schema contains `anyOf` or `oneOf`, CATS will generate tests for all possible combinations. This can lead to a large number of tests being generated. 
-You can limit the number of combinations by using the `--limitXxxCombinations` argument. For example, `--limitOneOfCombinations=10` will limit the number of combinations for all `oneOf/anyOf` to 10.
+You can limit the number of combinations by using the `--limitXxxCombinations` argument. For example, `--limitXxxOfCombinations=10` will limit the number of combinations for all `oneOf/anyOf` to 10.
 - **Self-reference in the request schema**: If the request schema contains self-references, when CATS generates the request sample it might enter an infinite loop. You can limit the depth of the schema by using the `--selfReferenceDepth` argument. For example, `--selfReferenceDepth=3` will limit the self-reference depth of the schema to 3.
 
 When running in default mode, CATS will print progress as it processes paths and displays the current fuzzer that is being run. If you see that the same fuzzer is being run for a long time, it might be stuck. You can stop CATS by pressing `Ctrl+C` and run again with `--verbosity=DETAILED --debug` to see more details.
@@ -59,6 +59,10 @@ If you think some of the test cases generated are not valid in your scenario you
 - **Filter out specific request headers**: You can use the `--skipHeader` argument to filter out specific request headers that are generating invalid test cases
 
 If you think there might be a bug in CATS, please open an issue on the [GitHub repository](https://github.com/Endava/cats/issues/new/choose).
+
+## Change expected response code for specific fuzzers
+
+You can check expected response codes for each fuzzer using [Customize the Default Response Code](https://endava.github.io/cats/docs/advanced-topics/fuzzers-config/).
 
 ## CATS generates requests that are not valid
 

@@ -22,7 +22,7 @@ The Fuzzers have the following support for media types and HTTP methods:
 - HTTP methods: `POST`, `PUT`, `PATCH`, `GET` and `DELETE`
 
 ## Additional Parameters
-If a response contains a free Map specified using the `additionalParameters` tag CATS will issue a `warn` log message as it won't be able to validate that the response matches the schema.
+If a response contains a free Map specified using the `additionalParameters` tag CATS will flag results as `warn` as it won't be able to validate that the response matches the schema.
 
 ## Regexes within 'pattern'
-CATS uses a mix of regex and data/format driven generators in order to generate Strings based on regexes. This has certain limitations mostly with complex patterns.
+CATS uses a mix of regex and data/format driven generators in order to generate Strings based on `patern` and `format`. This has certain limitations mostly with complex patterns.
