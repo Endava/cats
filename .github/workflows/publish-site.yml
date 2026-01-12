@@ -39,7 +39,6 @@ jobs:
         with:
           node-version: '18.x'
           cache: yarn            # <-- match yarn
-          cache-dependency-path: yarn.lock
       - name: Install dependencies
         run: yarn install --frozen-lockfile --non-interactive
       - name: Build
