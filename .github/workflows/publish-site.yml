@@ -38,7 +38,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '18.x'
-          cache: yarn            # <-- match yarn
+          cache: npm           
       - name: Install dependencies
         run: yarn install --frozen-lockfile --non-interactive
       - name: Build
