@@ -5,8 +5,8 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.headers.base.BaseRandomHeadersFuzzer;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsRandom;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.function.Function;
 
@@ -35,6 +35,6 @@ public class LargeNumberOfRandomAlphanumericHeadersFuzzer extends BaseRandomHead
 
     @Override
     protected Function<Integer, String> randomHeadersValueFunction() {
-        return RandomStringUtils.secure()::nextAlphanumeric;
+        return CatsRandom::alphanumeric;
     }
 }

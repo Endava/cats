@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -17,7 +18,7 @@ public class RandomMinValuesMutator implements BodyMutator {
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        Object toReplaceWith = MIN_VALUES.get(CatsUtil.random().nextInt(MIN_VALUES.size()));
+        Object toReplaceWith = MIN_VALUES.get(CatsRandom.instance().nextInt(MIN_VALUES.size()));
         return CatsUtil.justReplaceField(inputJson, selectedField, toReplaceWith).json();
     }
 

@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.math.BigDecimal;
 
@@ -25,7 +25,7 @@ public class RandomLargeDecimalsMutator implements BodyMutator {
             if (i == ITERATIONS) {
                 largeNumberBuilder.append(".");
             }
-            largeNumberBuilder.append(RandomStringUtils.secure().nextNumeric(LENGTH));
+            largeNumberBuilder.append(CatsRandom.numeric(LENGTH));
         }
 
         return CatsUtil.justReplaceField(inputJson, selectedField, new BigDecimal(largeNumberBuilder.toString())).json();

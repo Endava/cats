@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.args.IgnoreArguments;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
@@ -53,6 +54,8 @@ class TestCaseListenerTest {
     ReportingArguments reportingArguments;
     @Inject
     CatsGlobalContext catsGlobalContext;
+    @Inject
+    ProcessingArguments processingArguments;
 
     private PrettyLogger logger;
     private Fuzzer fuzzer;

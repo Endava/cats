@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -32,7 +33,7 @@ public class RandomLanguageIdentifiersMutator implements BodyMutator {
     public String mutate(String inputJson, String selectedField) {
         List<String> randomKeywordsList = selectRandomKeywords();
 
-        String randomKeywords = CatsUtil.random().ints(0, randomKeywordsList.size())
+        String randomKeywords = CatsRandom.instance().ints(0, randomKeywordsList.size())
                 .limit(4)
                 .mapToObj(randomKeywordsList::get)
                 .collect(Collectors.joining(" "));
@@ -42,7 +43,7 @@ public class RandomLanguageIdentifiersMutator implements BodyMutator {
     }
 
     private static List<String> selectRandomKeywords() {
-        int randomNumber = CatsUtil.random().nextInt(15);
+        int randomNumber = CatsRandom.instance().nextInt(15);
         return switch (randomNumber) {
             case 0 -> JAVA_KEYWORDS;
             case 1 -> PYTHON_KEYWORDS;

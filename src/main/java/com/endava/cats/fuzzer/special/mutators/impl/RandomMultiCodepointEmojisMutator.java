@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -26,8 +27,8 @@ public class RandomMultiCodepointEmojisMutator implements BodyMutator {
         int maxLowSurrogate = 0xDFFF; // End of low surrogate range
 
         for (int i = 0; i < BOUND; i++) {
-            int highSurrogate = CatsUtil.random().nextInt(maxHighSurrogate - minHighSurrogate + 1) + minHighSurrogate;
-            int lowSurrogate = CatsUtil.random().nextInt(maxLowSurrogate - minLowSurrogate + 1) + minLowSurrogate;
+            int highSurrogate = CatsRandom.instance().nextInt(maxHighSurrogate - minHighSurrogate + 1) + minHighSurrogate;
+            int lowSurrogate = CatsRandom.instance().nextInt(maxLowSurrogate - minLowSurrogate + 1) + minLowSurrogate;
 
             sb.append(Character.toChars(highSurrogate));
             sb.append(Character.toChars(lowSurrogate));

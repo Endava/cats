@@ -2,7 +2,7 @@ package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -17,7 +17,7 @@ import java.util.List;
 public class PeriodGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        return Period.of(CatsUtil.random().nextInt(30), CatsUtil.random().nextInt(26), CatsUtil.random().nextInt(22));
+        return Period.of(CatsRandom.instance().nextInt(30), CatsRandom.instance().nextInt(26), CatsRandom.instance().nextInt(22));
     }
 
     @Override

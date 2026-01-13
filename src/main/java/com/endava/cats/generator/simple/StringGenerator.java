@@ -1,18 +1,15 @@
 package com.endava.cats.generator.simple;
 
 import com.endava.cats.util.CatsModelUtils;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import com.github.curiousoddman.rgxgen.RgxGen;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.swagger.v3.oas.models.media.Schema;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.cornutum.regexpgen.RandomGen;
 import org.cornutum.regexpgen.RegExpGen;
 import org.cornutum.regexpgen.RegExpGenBuilder;
 import org.cornutum.regexpgen.js.Provider;
-import org.cornutum.regexpgen.random.RandomBoundsGen;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Arrays;
@@ -104,7 +101,6 @@ public class StringGenerator {
             "text/plain",
             "text/xml");
 
-    private static final RandomGen REGEXP_RANDOM_GEN = new RandomBoundsGen();
     private static final org.cornutum.regexpgen.Provider REGEXPGEN_PROVIDER = Provider.forEcmaScript();
 
     private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(StringGenerator.class);
@@ -121,7 +117,7 @@ public class StringGenerator {
      * @return a random alphanumeric string
      */
     public static String generateRandomString() {
-        return FUZZ + RandomStringUtils.secure().nextAlphabetic(4);
+        return FUZZ + CatsRandom.alphabetic(4);
     }
 
     /**
@@ -310,7 +306,7 @@ public class StringGenerator {
             if (min == max) {
                 min = 0;
             }
-            String generated = generator.generate(REGEXP_RANDOM_GEN, min, max);
+            String generated = generator.generate(CatsRandom.regexpRandomGen(), min, max);
 
             if (generated.matches(originalPattern)) {
                 LOGGER.debug("Generated using REGEXP {} matches {}", generated, pattern);
@@ -322,7 +318,7 @@ public class StringGenerator {
         return RegExpGenBuilder.generateRegExp(REGEXPGEN_PROVIDER)
                 .exactly()
                 .matching(ALPHANUMERIC_PLUS)
-                .generate(REGEXP_RANDOM_GEN, min, max);
+                .generate(CatsRandom.regexpRandomGen(), min, max);
     }
 
     private static String generateUsingCatsRegexGenerator(GeneratorParams generatorParams) {
@@ -386,7 +382,7 @@ public class StringGenerator {
         try {
             RgxGen rgxGen = RgxGen.parse(pattern);
             do {
-                generatedValue = rgxGen.generate();
+                generatedValue = rgxGen.generate(CatsRandom.instance());
                 if (matchesLength(pattern, min, max, generatedValue) && generatedValue.matches(originalPattern)) {
                     return generatedValue;
                 }
@@ -465,7 +461,7 @@ public class StringGenerator {
         }
 
         if (trimmed.length() > max) {
-            int randomReduction = max == min ? 0 : CatsUtil.random().nextInt(max - min + 1);
+            int randomReduction = max == min ? 0 : CatsRandom.instance().nextInt(max - min + 1);
             int newLength = max - randomReduction;
             trimmed = new StringBuilder(trimmed.substring(0, newLength));
         }
@@ -512,7 +508,7 @@ public class StringGenerator {
     public static String generateLeftBoundString(Schema<?> schema) {
         if (schema.getEnum() != null) {
             String value = String.valueOf(schema.getEnum().getFirst());
-            return RandomStringUtils.secure().nextAlphanumeric(Math.max(DEFAULT_MIN_WHEN_NOT_PRESENT, value.length()));
+            return CatsRandom.alphanumeric(Math.max(DEFAULT_MIN_WHEN_NOT_PRESENT, value.length()));
         }
 
         int minLength = schema.getMinLength() != null ? schema.getMinLength() - 1 : 0;
@@ -535,7 +531,7 @@ public class StringGenerator {
 
         int count = 1000;
         while (count > 0) {
-            int codePoint = CatsUtil.random().nextInt(Character.MAX_CODE_POINT + 1);
+            int codePoint = CatsRandom.instance().nextInt(Character.MAX_CODE_POINT + 1);
             int type = Character.getType(codePoint);
 
             if (!Character.isDefined(codePoint) || type == Character.PRIVATE_USE || type == Character.SURROGATE || type == Character.UNASSIGNED) {
@@ -612,24 +608,24 @@ public class StringGenerator {
     }
 
     public static String generateFixedLengthEmail(int length) {
-        String domain = DOMAINS[CatsUtil.random().nextInt(DOMAINS.length)];
-        String tld = TLDS[CatsUtil.random().nextInt(TLDS.length)];
+        String domain = DOMAINS[CatsRandom.instance().nextInt(DOMAINS.length)];
+        String tld = TLDS[CatsRandom.instance().nextInt(TLDS.length)];
 
         int localPartLength = length - domain.length() - tld.length() - 1; // -1 for '@'
 
         StringBuilder localPart = new StringBuilder();
         for (int i = 0; i < localPartLength; i++) {
-            localPart.append(ALPHANUMERIC.charAt(CatsUtil.random().nextInt(ALPHANUMERIC.length())));
+            localPart.append(ALPHANUMERIC.charAt(CatsRandom.instance().nextInt(ALPHANUMERIC.length())));
         }
 
         return localPart + "@" + domain + tld;
     }
 
     public static String generateFixedLengthUri(int length) {
-        String scheme = URI_SCHEMES[CatsUtil.random().nextInt(URI_SCHEMES.length)];
+        String scheme = URI_SCHEMES[CatsRandom.instance().nextInt(URI_SCHEMES.length)];
 
-        String domain = DOMAINS[CatsUtil.random().nextInt(DOMAINS.length)];
-        String tld = TLDS[CatsUtil.random().nextInt(TLDS.length)];
+        String domain = DOMAINS[CatsRandom.instance().nextInt(DOMAINS.length)];
+        String tld = TLDS[CatsRandom.instance().nextInt(TLDS.length)];
 
         String fixedPart = scheme + "://" + domain + tld;
 
@@ -641,7 +637,7 @@ public class StringGenerator {
         StringBuilder path = new StringBuilder();
         path.append("/");
         for (int i = 0; i < pathLength - 1; i++) {
-            path.append(ALPHANUMERIC.charAt(CatsUtil.random().nextInt(ALPHANUMERIC.length())));
+            path.append(ALPHANUMERIC.charAt(CatsRandom.instance().nextInt(ALPHANUMERIC.length())));
         }
 
         return fixedPart + path;
@@ -674,7 +670,7 @@ public class StringGenerator {
             return generateFixedLengthEmail(length);
         }
         if (isPassword(pattern, lowerCaseFieldName)) {
-            return "catsISC00l#" + RandomStringUtils.secure().nextPrint(length - 11);
+            return "catsISC00l#" + CatsRandom.ascii(length - 11);
         }
 
         return null;

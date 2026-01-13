@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -25,7 +26,7 @@ public class RandomSingleCodepointEmojisMutator implements BodyMutator {
         int emojiRange = maxEmojiCodePoint - minEmojiCodePoint + 1;
 
         for (int i = 0; i < BOUND; i++) {
-            int emojiCodePoint = CatsUtil.random().nextInt(emojiRange) + minEmojiCodePoint;
+            int emojiCodePoint = CatsRandom.instance().nextInt(emojiRange) + minEmojiCodePoint;
             sb.append(Character.toChars(emojiCodePoint));
         }
         return sb.toString();

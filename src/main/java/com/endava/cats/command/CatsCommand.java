@@ -24,6 +24,7 @@ import com.endava.cats.openapi.handler.api.SchemaWalker;
 import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.OpenApiRefExtractor;
@@ -370,6 +371,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     void prepareRun() throws IOException {
         //this is a hack to set terminal width here in order to avoid importing a full-blown library like jline
         // just for getting the terminal width
+        CatsRandom.initRandom(processingArguments.getSeed());
         ConsoleUtils.initTerminalWidth(spec);
         reportingArguments.processLogData();
         apiArguments.validateRequired(spec);

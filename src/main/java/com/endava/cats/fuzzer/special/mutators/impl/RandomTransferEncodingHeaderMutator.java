@@ -3,9 +3,9 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 import com.endava.cats.fuzzer.special.mutators.api.HeadersMutator;
 import com.endava.cats.generator.Cloner;
 import com.endava.cats.model.CatsHeader;
+import com.endava.cats.util.CatsRandom;
 import com.google.common.net.HttpHeaders;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.Collection;
 import java.util.Set;
@@ -20,7 +20,7 @@ public class RandomTransferEncodingHeaderMutator implements HeadersMutator {
         Set<CatsHeader> clone = Cloner.cloneMe(headers);
         clone.add(CatsHeader.builder()
                 .name(HttpHeaders.TRANSFER_ENCODING)
-                .value(RandomStringUtils.secure().next(10))
+                .value(CatsRandom.next(10))
                 .build());
         return clone;
     }

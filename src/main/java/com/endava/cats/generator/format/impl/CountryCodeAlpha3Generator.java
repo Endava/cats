@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -21,7 +21,7 @@ public class CountryCodeAlpha3Generator implements ValidDataFormatGenerator, Inv
     @Override
     public Object generate(Schema<?> schema) {
         Set<String> isoCountries = Locale.getISOCountries(Locale.IsoCountryCode.PART1_ALPHA3);
-        return isoCountries.stream().skip(CatsUtil.random().nextInt(isoCountries.size())).findFirst().orElse(Locale.ROOT.getISO3Country());
+        return isoCountries.stream().skip(CatsRandom.instance().nextInt(isoCountries.size())).findFirst().orElse(Locale.ROOT.getISO3Country());
     }
 
     @Override

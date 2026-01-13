@@ -1,5 +1,6 @@
 package com.endava.cats.generator.format.impl;
 
+import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
@@ -13,6 +14,7 @@ class ISBN10GeneratorTest {
     @Test
     void shouldGenerate() {
         ISBN10Generator isbn10Generator = new ISBN10Generator();
+        CatsRandom.initRandom(0);
         Assertions.assertThat(isbn10Generator.generate(new Schema<>()).toString()).matches("[0-9]{10}");
     }
 

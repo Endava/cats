@@ -2,6 +2,7 @@ package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.exception.CatsException;
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
@@ -39,7 +40,7 @@ public class BigListOfNaughtyStringsMutator implements BodyMutator {
     @Override
     public String mutate(String inputJson, String selectedField) {
         String randomNaughtyString = CatsUtil.selectRandom(NAUGHTY_STRINGS);
-        if (CatsUtil.random().nextBoolean()) {
+        if (CatsRandom.instance().nextBoolean()) {
             randomNaughtyString = randomNaughtyString + JsonUtils.getVariableFromJson(inputJson, selectedField);
         }
         return CatsUtil.justReplaceField(inputJson, selectedField, randomNaughtyString).json();

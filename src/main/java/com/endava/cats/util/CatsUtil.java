@@ -24,9 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -48,7 +46,7 @@ public abstract class CatsUtil {
      * Custom Faker instance for generating fake data. Uses romanian locale as a tweak to load CATS specific file
      * with limited number of fake values.
      */
-    private static final Faker FAKER = new Faker(Locale.of("ro"), random());
+    private static Faker faker;
     public static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE / 1000;
 
     private CatsUtil() {
@@ -269,7 +267,7 @@ public abstract class CatsUtil {
         int count = 0;
 
         for (T element : iterable) {
-            if (random().nextInt(++count) == 0) {
+            if (CatsRandom.instance().nextInt(++count) == 0) {
                 selected = element;
             }
         }
@@ -285,20 +283,12 @@ public abstract class CatsUtil {
      * @return a string of random characters from the given list
      */
     public static String selectRandom(List<String> chars, int length) {
-        return random()
+        return CatsRandom.instance()
                 .ints(length, 0, chars.size())
                 .mapToObj(chars::get)
                 .collect(Collectors.joining());
     }
 
-    /**
-     * Returns a Random for random generation.
-     *
-     * @return a Random
-     */
-    public static Random random() {
-        return ThreadLocalRandom.current();
-    }
 
     /**
      * Returns a shared Faker instance for valid fake data.
@@ -306,7 +296,10 @@ public abstract class CatsUtil {
      * @return a common shared Faker instance
      */
     public static Faker faker() {
-        return FAKER;
+        if (faker == null) {
+            faker = new Faker(Locale.of("ro"), CatsRandom.instance());
+        }
+        return faker;
     }
 
     /**
@@ -429,7 +422,7 @@ public abstract class CatsUtil {
             for (int i = 0; i < input.length(); i++) {
                 char ch = input.charAt(i);
                 if (Character.isLetter(ch)) {
-                    result.append(random().nextBoolean() ? Character.toLowerCase(ch) : Character.toUpperCase(ch));
+                    result.append(CatsRandom.instance().nextBoolean() ? Character.toLowerCase(ch) : Character.toUpperCase(ch));
                 } else {
                     result.append(ch);
                 }

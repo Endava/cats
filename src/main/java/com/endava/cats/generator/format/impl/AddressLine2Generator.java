@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.DataFormat;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -29,7 +29,7 @@ public class AddressLine2Generator implements ValidDataFormatGenerator, OpenAPIF
 
     @Override
     public Object generate(Schema<?> schema) {
-        String finalAddress = "Floor " + CatsUtil.random().nextInt(20) + ", Suite " + CatsUtil.random().nextInt(10);
+        String finalAddress = "Floor " + CatsRandom.instance().nextInt(20) + ", Suite " + CatsRandom.instance().nextInt(10);
 
         return DataFormat.matchesPatternOrNull(schema, finalAddress);
     }

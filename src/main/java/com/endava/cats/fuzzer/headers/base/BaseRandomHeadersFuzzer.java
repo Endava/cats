@@ -9,10 +9,10 @@ import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ public abstract class BaseRandomHeadersFuzzer implements Fuzzer {
 
         for (int i = 0; i < processingArguments.getRandomHeadersNumber(); i++) {
             headers.add(CatsHeader.builder()
-                    .name(RandomStringUtils.secure().nextAlphanumeric(10))
+                    .name(CatsRandom.alphanumeric(10))
                     .required(false)
                     .value(this.randomHeadersValueFunction().apply(10)).build());
         }

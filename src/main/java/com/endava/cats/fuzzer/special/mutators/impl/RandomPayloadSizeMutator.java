@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -12,7 +13,7 @@ public class RandomPayloadSizeMutator implements BodyMutator {
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        int size = CatsUtil.random().nextInt(inputJson.length());
+        int size = CatsRandom.instance().nextInt(inputJson.length());
         return CatsUtil.justReplaceField(inputJson, selectedField, inputJson.substring(0, size)).json();
     }
 

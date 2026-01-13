@@ -5,6 +5,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.factory.FuzzingDataFactory;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.VersionProvider;
@@ -85,6 +86,10 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
                     "Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private Boolean useExamples;
 
+    @CommandLine.Option(names = {"--seed"},
+            description = "The seed to be used for random number generation. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private long seed;
+
     FuzzingDataFactory fuzzingDataFactory;
     CatsGlobalContext globalContext;
     ProcessingArguments processingArguments;
@@ -103,6 +108,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
         try {
             processingArguments.setSelfReferenceDepth(this.selfReferenceDepth);
             processingArguments.setUseExamples(this.useExamples);
+            CatsRandom.initRandom(seed);
 
             if (!debug) {
                 PrettyLogger.enableLevels(PrettyLevel.CONFIG, PrettyLevel.FATAL);

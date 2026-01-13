@@ -4,7 +4,6 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
-import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.args.UserArguments;
@@ -17,6 +16,7 @@ import com.endava.cats.model.CatsConfiguration;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.VersionProvider;
@@ -155,9 +155,9 @@ public class TemplateFuzzCommand implements Runnable {
             description = "When set to @|bold true|@, it will run continuous fuzzing. You must also supply a `--stopXXX` argument in order for the execution to stop. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean random;
 
-
-    @Inject
-    ProcessingArguments processingArguments;
+    @CommandLine.Option(names = {"--seed"},
+            description = "The seed to be used for random number generation. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private long seed;
 
     @Override
     public void run() {
@@ -185,6 +185,7 @@ public class TemplateFuzzCommand implements Runnable {
 
     private void init() {
         testCaseListener.startSession();
+        CatsRandom.initRandom(seed);
         reportingArguments.processLogData();
         ConsoleUtils.initTerminalWidth(spec);
         validateRequiredFields();

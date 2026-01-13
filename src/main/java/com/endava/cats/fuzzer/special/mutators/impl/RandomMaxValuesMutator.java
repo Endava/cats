@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
 
@@ -16,7 +17,7 @@ public class RandomMaxValuesMutator implements BodyMutator {
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        Object toReplaceWith = MAX_VALUES.get(CatsUtil.random().nextInt(MAX_VALUES.size()));
+        Object toReplaceWith = MAX_VALUES.get(CatsRandom.instance().nextInt(MAX_VALUES.size()));
         return CatsUtil.justReplaceField(inputJson, selectedField, toReplaceWith).json();
     }
 

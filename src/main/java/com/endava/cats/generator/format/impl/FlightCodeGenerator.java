@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.DataFormat;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -39,8 +39,8 @@ public class FlightCodeGenerator implements ValidDataFormatGenerator, OpenAPIFor
 
     @Override
     public Object generate(Schema<?> schema) {
-        String airlineCode = AIRLINE_CODES.get(CatsUtil.random().nextInt(AIRLINE_CODES.size()));
-        int flightNumber = 100 + CatsUtil.random().nextInt(900);
+        String airlineCode = AIRLINE_CODES.get(CatsRandom.instance().nextInt(AIRLINE_CODES.size()));
+        int flightNumber = 100 + CatsRandom.instance().nextInt(900);
         String generated = airlineCode + flightNumber;
 
         return DataFormat.matchesPatternOrNull(schema, generated);

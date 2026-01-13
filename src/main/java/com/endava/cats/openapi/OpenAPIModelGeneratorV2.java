@@ -5,7 +5,7 @@ import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.generator.format.api.ValidDataFormat;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.util.CatsModelUtils;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -89,7 +89,7 @@ public class OpenAPIModelGeneratorV2 {
      */
     public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize) {
         this.globalContext = catsGlobalContext;
-        this.random = CatsUtil.random();
+        this.random = CatsRandom.instance();
         this.examplesFlags = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
@@ -114,7 +114,7 @@ public class OpenAPIModelGeneratorV2 {
      */
     public OpenAPIModelGeneratorV2(CatsGlobalContext catsGlobalContext, ValidDataFormat validDataFormat, ProcessingArguments.ExamplesFlags useExamplesArgument, int selfReferenceDepth, boolean useDefaults, int maxArraySize, boolean resolveAnyOfAsMultipleSchema) {
         this.globalContext = catsGlobalContext;
-        this.random = CatsUtil.random();
+        this.random = CatsRandom.instance();
         this.examplesFlags = useExamplesArgument;
         this.selfReferenceDepth = selfReferenceDepth;
         this.validDataFormat = validDataFormat;
@@ -757,7 +757,7 @@ public class OpenAPIModelGeneratorV2 {
                     .toList();
 
             if (!nonNullEnumValues.isEmpty()) {
-                return nonNullEnumValues.get(CatsUtil.random().nextInt(nonNullEnumValues.size()));
+                return nonNullEnumValues.get(CatsRandom.instance().nextInt(nonNullEnumValues.size()));
             }
 
             return enumValues.getFirst(); // fallback if all were null

@@ -3,7 +3,7 @@ package com.endava.cats.report;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseSummary;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -186,10 +186,10 @@ class ClusterComputeTest {
         CatsTestCase testCase = new CatsTestCase();
         testCase.setResponse(CatsResponse.builder().responseCode(httpResponseCode).body(responseBody).build());
         testCase.setResult(result);
-        testCase.setPath("/path/" + CatsUtil.random().nextInt(1000));
+        testCase.setPath("/path/" + CatsRandom.instance().nextInt(1000));
         testCase.setContractPath(testCase.getPath());
         testCase.setResultReason(resultReason);
-        testCase.setTestId(CatsUtil.random().nextInt(2000) + "");
+        testCase.setTestId(CatsRandom.instance().nextInt(2000) + "");
         return CatsTestCaseSummary.fromCatsTestCase(testCase);
     }
 }

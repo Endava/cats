@@ -11,6 +11,7 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.model.NoMediaType;
 import com.endava.cats.openapi.OpenAPIModelGeneratorV2;
 import com.endava.cats.util.CatsModelUtils;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
@@ -29,7 +30,6 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -471,7 +471,7 @@ public class FuzzingDataFactory {
                     composedSchema.getOneOf().forEach(innerSchema -> reqSchemas.add(calculateSchemaRef(innerSchema)));
                 }
             } else {
-                String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.secure().nextAlphabetic(5);
+                String refForSchema = SYNTH_SCHEMA_NAME + CatsRandom.alphabetic(5);
                 reqSchemas.add(refForSchema);
                 globalContext.putSchemaReference(refForSchema, mediaType.getSchema());
             }
@@ -481,7 +481,7 @@ public class FuzzingDataFactory {
 
     private String calculateSchemaRef(Schema innerSchema) {
         if (innerSchema.get$ref() == null) {
-            String refForSchema = SYNTH_SCHEMA_NAME + RandomStringUtils.secure().nextAlphabetic(5);
+            String refForSchema = SYNTH_SCHEMA_NAME + CatsRandom.alphabetic(5);
             globalContext.putSchemaReference(refForSchema, innerSchema);
             return refForSchema;
         }
@@ -698,7 +698,7 @@ public class FuzzingDataFactory {
     }
 
     private String extractSchemaRef(Schema<?> respSchema, Operation operation, String responseCode) {
-        String refKey = Optional.ofNullable(operation.getOperationId()).orElse(RandomStringUtils.secure().nextAlphabetic(5)) + responseCode;
+        String refKey = Optional.ofNullable(operation.getOperationId()).orElse(CatsRandom.alphabetic(5)) + responseCode;
         String finalRef = refKey;
 
         if (CatsModelUtils.isArraySchema(respSchema)) {

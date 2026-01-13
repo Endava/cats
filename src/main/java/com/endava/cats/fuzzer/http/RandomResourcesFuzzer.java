@@ -10,15 +10,15 @@ import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
+import com.endava.cats.util.OpenApiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -143,12 +143,12 @@ public class RandomResourcesFuzzer implements Fuzzer {
     }
 
     private static Object generateNewValue() {
-        int randomChoice = CatsUtil.random().nextInt(3);
-        int randomLength = CatsUtil.random().nextInt(32);
+        int randomChoice = CatsRandom.instance().nextInt(3);
+        int randomLength = CatsRandom.instance().nextInt(32);
         return switch (randomChoice) {
             case 0 -> UUID.randomUUID().toString();
             case 1 -> NumberGenerator.generateRandomLong(0, Long.MAX_VALUE);
-            default -> RandomStringUtils.secure().nextAlphanumeric(randomLength);
+            default -> CatsRandom.alphanumeric(randomLength);
         };
     }
 

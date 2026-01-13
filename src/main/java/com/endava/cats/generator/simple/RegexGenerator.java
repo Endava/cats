@@ -1,5 +1,7 @@
 package com.endava.cats.generator.simple;
 
+import com.endava.cats.util.CatsRandom;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,10 +35,10 @@ public class RegexGenerator {
      */
     public static String generate(Pattern pattern, String prefix, int min, int max) {
         String result = generateString(pattern, prefix, min, max);
-        int interations = 0;
-        while (result.equalsIgnoreCase(DEFAULT) && interations < MAX_ITERATIONS) {
+        int iterations = 0;
+        while (result.equalsIgnoreCase(DEFAULT) && iterations < MAX_ITERATIONS) {
             result = generateString(pattern, prefix, min, max);
-            interations++;
+            iterations++;
         }
 
         return result;
@@ -50,7 +52,7 @@ public class RegexGenerator {
         }
         List<Character> candidates = new ArrayList<>();
         generateCandidates(candidates, pattern, prefix);
-        Collections.shuffle(candidates);
+        Collections.shuffle(candidates, CatsRandom.instance());
         return verifyAndReturn(pattern, prefix, min, max, candidates);
     }
 

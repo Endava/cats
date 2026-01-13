@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -25,7 +25,7 @@ public class CountryCodeGenerator implements ValidDataFormatGenerator, InvalidDa
     public Object generate(Schema<?> schema) {
         String[] isoCountries = Locale.getISOCountries();
         String randomCountry = Arrays.stream(Locale.getISOCountries())
-                .skip(CatsUtil.random().nextInt(isoCountries.length))
+                .skip(CatsRandom.instance().nextInt(isoCountries.length))
                 .findFirst()
                 .orElse(Locale.UK.getCountry());
 

@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -23,7 +23,7 @@ public class CurrencyCodeGenerator implements ValidDataFormatGenerator, InvalidD
     @Override
     public Object generate(Schema<?> schema) {
         Set<Currency> currencySet = Currency.getAvailableCurrencies();
-        return currencySet.stream().skip(CatsUtil.random().nextInt(currencySet.size())).findFirst().orElse(Currency.getInstance(Locale.UK)).getCurrencyCode();
+        return currencySet.stream().skip(CatsRandom.instance().nextInt(currencySet.size())).findFirst().orElse(Currency.getInstance(Locale.UK)).getCurrencyCode();
     }
 
     @Override

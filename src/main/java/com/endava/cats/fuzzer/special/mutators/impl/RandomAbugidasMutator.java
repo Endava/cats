@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
@@ -35,17 +36,17 @@ public class RandomAbugidasMutator implements BodyMutator {
     }
 
     public static String generateRandomTeluguCharacter() {
-        String consonant = TELUGU_CONSONANTS[CatsUtil.random().nextInt(TELUGU_CONSONANTS.length)];
-        String vowel = TELUGU_VOWELS[CatsUtil.random().nextInt(TELUGU_VOWELS.length)];
-        String modifier = TELUGU_MODIFIERS[CatsUtil.random().nextInt(TELUGU_MODIFIERS.length)];
+        String consonant = TELUGU_CONSONANTS[CatsRandom.instance().nextInt(TELUGU_CONSONANTS.length)];
+        String vowel = TELUGU_VOWELS[CatsRandom.instance().nextInt(TELUGU_VOWELS.length)];
+        String modifier = TELUGU_MODIFIERS[CatsRandom.instance().nextInt(TELUGU_MODIFIERS.length)];
 
         return consonant + "\u200C" + vowel + modifier;
     }
 
     public static String generateRandomBengaliCharacter() {
-        String consonant = BENGALI_CONSONANTS[CatsUtil.random().nextInt(BENGALI_CONSONANTS.length)];
-        String vowel = BENGALI_VOWELS[CatsUtil.random().nextInt(BENGALI_VOWELS.length)];
-        String modifier = BENGALI_MODIFIERS[CatsUtil.random().nextInt(BENGALI_MODIFIERS.length)];
+        String consonant = BENGALI_CONSONANTS[CatsRandom.instance().nextInt(BENGALI_CONSONANTS.length)];
+        String vowel = BENGALI_VOWELS[CatsRandom.instance().nextInt(BENGALI_VOWELS.length)];
+        String modifier = BENGALI_MODIFIERS[CatsRandom.instance().nextInt(BENGALI_MODIFIERS.length)];
 
         return consonant + "\u200C" + vowel + modifier;
     }

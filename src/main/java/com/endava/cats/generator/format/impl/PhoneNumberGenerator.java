@@ -4,6 +4,7 @@ import com.endava.cats.generator.format.api.DataFormat;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
@@ -35,7 +36,7 @@ public class PhoneNumberGenerator implements ValidDataFormatGenerator, OpenAPIFo
         if (schema.getPattern() != null && (schema.getPattern().startsWith("^\\+") || schema.getPattern().startsWith("\\+"))) {
             pattern = "+40### ### ###";
         } else {
-            pattern = FORMATS.get(CatsUtil.random().nextInt(FORMATS.size()));
+            pattern = FORMATS.get(CatsRandom.instance().nextInt(FORMATS.size()));
         }
         String generated = CatsUtil.faker().numerify(pattern);
 

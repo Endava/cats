@@ -1,7 +1,7 @@
 package com.endava.cats.generator.simple;
 
 import com.endava.cats.util.CatsModelUtils;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,7 +53,7 @@ public class NumberGenerator {
      * @return a random long matching the given boundaries
      */
     public static long generateRandomLong(long min, long max) {
-        return min + CatsUtil.random().nextLong(max - min);
+        return min + CatsRandom.instance().nextLong(max - min);
     }
 
     /**

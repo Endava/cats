@@ -1,9 +1,9 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
 
 
 /**
@@ -15,8 +15,8 @@ public class RandomNumberMutator implements BodyMutator {
 
     @Override
     public String mutate(String inputJson, String selectedField) {
-        int size = CatsUtil.random().nextInt(BOUND);
-        return CatsUtil.justReplaceField(inputJson, selectedField, RandomStringUtils.secure().nextNumeric(size)).json();
+        int size = CatsRandom.instance().nextInt(BOUND);
+        return CatsUtil.justReplaceField(inputJson, selectedField, CatsRandom.numeric(size)).json();
     }
 
     @Override

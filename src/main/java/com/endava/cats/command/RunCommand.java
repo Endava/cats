@@ -100,6 +100,10 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
                     " which result in multiple payloads for a single endpoint and http method")
     Map<String, String> xxxOfSelections;
 
+    @CommandLine.Option(names = {"--seed"},
+            description = "The seed to be used for random number generation. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private long seed;
+
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Ignore Options:|@%n", exclusive = false)
@@ -131,6 +135,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
             catsCommand.filesArguments.setQueryFile(queryFile);
             catsCommand.processingArguments.setContentType(this.contentType);
             catsCommand.processingArguments.setXxxOfSelections(this.xxxOfSelections);
+            catsCommand.processingArguments.setSeed(seed);
             catsCommand.run();
         } catch (IOException e) {
             logger.debug("Exception while processing file!", e);

@@ -116,6 +116,10 @@ public class ProcessingArguments {
             description = "If set to @|bold true|@, it will force a http2 connection, without fallback to HTTP 1.X . Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean http2PriorKnowledge;
 
+    @Setter
+    @CommandLine.Option(names = {"--seed"},
+            description = "The seed to be used for random number generation. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private long seed;
 
     /**
      * Checks if the payload matches any of the supplied --oneOfSelection or --anyOfSelection argument

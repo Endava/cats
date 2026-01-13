@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -24,7 +24,7 @@ public class CardNumberGenerator implements ValidDataFormatGenerator, InvalidDat
 
     @Override
     public Object generate(Schema<?> schema) {
-        return CARDS.get(CatsUtil.random().nextInt(CARDS.size()));
+        return CARDS.get(CatsRandom.instance().nextInt(CARDS.size()));
     }
 
     @Override

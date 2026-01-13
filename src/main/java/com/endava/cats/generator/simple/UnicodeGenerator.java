@@ -1,6 +1,6 @@
 package com.endava.cats.generator.simple;
 
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -253,7 +253,7 @@ public abstract class UnicodeGenerator {
             char randomChar;
             do {
                 // Generate a random char value
-                randomChar = (char) CatsUtil.random().nextInt(Character.MAX_VALUE);
+                randomChar = (char) CatsRandom.instance().nextInt(Character.MAX_VALUE);
             } while (!predicate.test(randomChar));
             stringBuilder.append(randomChar);
         }

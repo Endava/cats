@@ -3,9 +3,9 @@ package com.endava.cats.generator.format.impl;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.util.List;
 
@@ -19,7 +19,7 @@ public class ISBN13Generator implements ValidDataFormatGenerator, OpenAPIFormat 
 
     @Override
     public Object generate(Schema<?> schema) {
-        return RandomStringUtils.secure().nextNumeric(13, 13);
+        return CatsRandom.numeric(13, 13);
     }
 
     @Override

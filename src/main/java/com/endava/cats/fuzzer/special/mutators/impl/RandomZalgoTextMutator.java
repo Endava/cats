@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.special.mutators.impl;
 
 import com.endava.cats.fuzzer.special.mutators.api.BodyMutator;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
@@ -39,9 +40,9 @@ public class RandomZalgoTextMutator implements BodyMutator {
         for (int i = 0; i < inputText.length(); i++) {
             zalgoText.append(inputText.charAt(i));
 
-            int numZalgoChars = 3 + CatsUtil.random().nextInt(7);
+            int numZalgoChars = 3 + CatsRandom.instance().nextInt(7);
             for (int j = 0; j < numZalgoChars; j++) {
-                zalgoText.append(ZALGO_CHARACTERS[CatsUtil.random().nextInt(ZALGO_CHARACTERS.length)]);
+                zalgoText.append(ZALGO_CHARACTERS[CatsRandom.instance().nextInt(ZALGO_CHARACTERS.length)]);
             }
         }
 

@@ -1,7 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.model.CatsTestCaseSummary;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -313,9 +313,9 @@ public class ClusterCompute {
      * @return Random hex color string
      */
     private static String generateRandomHexColor() {
-        int r = CatsUtil.random().nextInt(256);
-        int g = CatsUtil.random().nextInt(256);
-        int b = CatsUtil.random().nextInt(256);
+        int r = CatsRandom.instance().nextInt(256);
+        int g = CatsRandom.instance().nextInt(256);
+        int b = CatsRandom.instance().nextInt(256);
         return String.format("#%02x%02x%02x", r, g, b);
     }
 }

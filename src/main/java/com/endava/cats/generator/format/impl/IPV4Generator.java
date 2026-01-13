@@ -4,7 +4,7 @@ import com.endava.cats.generator.format.api.InvalidDataFormatGenerator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -22,7 +22,7 @@ public class IPV4Generator implements ValidDataFormatGenerator, InvalidDataForma
     @Override
     public Object generate(Schema<?> schema) {
         return IntStream.range(0, 4)
-                .mapToObj(i -> String.valueOf(CatsUtil.random().nextInt(254) + 1))
+                .mapToObj(i -> String.valueOf(CatsRandom.instance().nextInt(254) + 1))
                 .collect(Collectors.joining("."));
     }
 
