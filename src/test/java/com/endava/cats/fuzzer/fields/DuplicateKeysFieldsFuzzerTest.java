@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QuarkusTest
 class DuplicateKeysFieldsFuzzerTest {
@@ -85,6 +86,94 @@ class DuplicateKeysFieldsFuzzerTest {
         duplicateKeysFieldsFuzzer.fuzz(data);
 
         Mockito.verify(testCaseListener, Mockito.times(0)).reportResult(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    void shouldHandleNestedObjectDuplication() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"parent\":{\"child\":\"value\"}}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("parent#child"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldHandleArrayWithDuplicateKey() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"items\":[{\"field\":\"value1\"},{\"field\":\"value2\"}]}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("items"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldHandleArrayOfPrimitives() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"numbers\":[1,2,3]}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("numbers"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldHandleDeepNestedStructure() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"level1\":{\"level2\":{\"level3\":\"value\"}}}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("level1#level2#level3"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldHandleEmptyArray() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"items\":[]}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("items"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldHandleMultipleFieldsWithLimit() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"field1\":\"value1\",\"field2\":\"value2\",\"field3\":\"value3\"}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Set.of("field1", "field2", "field3"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(3)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldHandleComplexNestedArrays() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"data\":{\"items\":[{\"id\":1},{\"id\":2}]}}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("data#items"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
+    }
+
+    @Test
+    void shouldHandleSpecialCharactersInKeys() {
+        setup(HttpMethod.POST);
+        Mockito.when(data.getPayload()).thenReturn("{\"field-with-dash\":\"value\"}");
+        Mockito.when(data.getAllFieldsByHttpMethod()).thenReturn(Collections.singleton("field-with-dash"));
+
+        duplicateKeysFieldsFuzzer.fuzz(data);
+
+        Mockito.verify(testCaseListener, Mockito.times(1)).reportResult(Mockito.any(), Mockito.eq(data), Mockito.eq(catsResponse), Mockito.eq(ResponseCodeFamilyPredefined.FOURXX));
     }
 
     private void setup(HttpMethod method) {

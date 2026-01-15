@@ -499,7 +499,7 @@ public class MiniDslParser implements Parser {
     }
 
     private boolean looksLikeIdentifierOrPath(String s) {
-        return s.matches("[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*");
+        return s.matches("[A-Za-z_]\\w*(\\.[A-Za-z_]\\w*)*");
     }
 
     private boolean isStringLiteral(String s) {
