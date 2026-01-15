@@ -1,6 +1,7 @@
 package com.endava.cats.fuzzer.fields;
 
 import com.endava.cats.annotations.FieldFuzzer;
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
@@ -43,14 +44,17 @@ public class PrefixNumbersWithZeroFieldsFuzzer implements Fuzzer {
     private static final List<String> ZERO_PREFIXES = List.of("0", "00", "000");
 
     private final SimpleExecutor simpleExecutor;
+    private final ProcessingArguments processingArguments;
 
     /**
      * Creates a new PrefixNumbersWithZeroFieldsFuzzer instance.
      *
      * @param simpleExecutor the executor used to run the fuzz logic
+     * @param processingArguments the processing arguments
      */
-    public PrefixNumbersWithZeroFieldsFuzzer(SimpleExecutor simpleExecutor) {
+    public PrefixNumbersWithZeroFieldsFuzzer(SimpleExecutor simpleExecutor, ProcessingArguments processingArguments) {
         this.simpleExecutor = simpleExecutor;
+        this.processingArguments = processingArguments;
     }
 
     @Override
@@ -97,7 +101,8 @@ public class PrefixNumbersWithZeroFieldsFuzzer implements Fuzzer {
 
             simpleExecutor.execute(
                     SimpleExecutorContext.builder()
-                            .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                            .expectedResponseCode(processingArguments.isAllowLeadingZeroInNumbers() ? 
+                                    ResponseCodeFamilyPredefined.TWOXX : ResponseCodeFamilyPredefined.FOURXX)
                             .fuzzingData(data)
                             .logger(LOGGER)
                             .scenario("Send numeric field [%s] as string with leading zeros: [%s] (original: [%s]). This tests type validation and potential octal interpretation issues."

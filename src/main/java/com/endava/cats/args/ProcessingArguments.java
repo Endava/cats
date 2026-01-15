@@ -94,6 +94,11 @@ public class ProcessingArguments {
     private boolean allowInvalidEnumValues;
 
     @Setter
+    @CommandLine.Option(names = {"--allowLeadingZeroInNumbers"}, negatable = true, defaultValue = "true", fallbackValue = "true",
+            description = "When set to @|bold true|@, the PrefixNumbersWithZeroFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean allowLeadingZeroInNumbers = true;
+
+    @Setter
     @CommandLine.Option(names = {"--limitXxxOfCombinations"},
             description = "Max number of anyOf/oneOf combinations. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private int limitXxxOfCombinations = 20;
