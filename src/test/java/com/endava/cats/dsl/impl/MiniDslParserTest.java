@@ -752,26 +752,11 @@ class MiniDslParserTest {
             assertThat(result).isEqualTo("123");
         }
 
-        @Test
-        @DisplayName("Should handle LocalDateTime now")
-        void shouldHandleLocalDateTimeNow() {
-            String result = parser.parse("T(java.time.LocalDateTime).now()", context);
-
-            assertThat(result).isNotEmpty();
-        }
-
-        @Test
-        @DisplayName("Should handle ZonedDateTime now")
-        void shouldHandleZonedDateTimeNow() {
-            String result = parser.parse("T(java.time.ZonedDateTime).now()", context);
-
-            assertThat(result).isNotEmpty();
-        }
-
-        @Test
-        @DisplayName("Should handle Instant now")
-        void shouldHandleInstantNow() {
-            String result = parser.parse("T(java.time.Instant).now()", context);
+        @ParameterizedTest
+        @CsvSource("T(java.time.LocalDateTime).now(),T(java.time.ZonedDateTime).now(),T(java.time.Instant).now()")
+        @DisplayName("Should handle dates now")
+        void shouldHandleLocalDateTimeNow(String expression) {
+            String result = parser.parse(expression, context);
 
             assertThat(result).isNotEmpty();
         }

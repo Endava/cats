@@ -8,7 +8,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.naming.OperationNotSupportedException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -80,7 +80,7 @@ public class MiniDslParser implements Parser {
         }
     }
 
-    private Object eval(String expr, Map<String, String> ctx) throws Exception {
+    private Object eval(String expr, Map<String, String> ctx) throws InvocationTargetException, IllegalAccessException {
         expr = expr == null ? "" : expr.trim();
 
         if (ctx.containsKey(expr)) {
@@ -332,19 +332,19 @@ public class MiniDslParser implements Parser {
         return -1;
     }
 
-    private Object evalTypeChain(String expr, Map<String, String> ctx) throws Exception {
+    private Object evalTypeChain(String expr, Map<String, String> ctx) throws InvocationTargetException, IllegalAccessException {
         int open = expr.indexOf('(');
         int close = findMatchingParen(expr, open);
         String fqcn = expr.substring(open + 1, close).trim();
 
         Class<?> type = ALLOWED_TYPES.get(fqcn);
         if (type == null) {
-            throw new OperationNotSupportedException("Type not allowed: " + fqcn);
+            throw new SecurityException("Type not allowed: " + fqcn);
         }
 
         String rest = expr.substring(close + 1).trim();
         if (!rest.startsWith(".")) {
-            throw new IllegalArgumentException("Expected method chain after T(" + fqcn + ")");
+            throw new SecurityException("Expected method chain after T(" + fqcn + ")");
         }
 
         Object current = type;
@@ -374,7 +374,7 @@ public class MiniDslParser implements Parser {
         return current;
     }
 
-    private Object[] parseArgs(String argsInside, Map<String, String> ctx) throws Exception {
+    private Object[] parseArgs(String argsInside, Map<String, String> ctx) throws InvocationTargetException, IllegalAccessException {
         if (argsInside.isEmpty()) {
             return new Object[0];
         }
@@ -386,20 +386,20 @@ public class MiniDslParser implements Parser {
         return out;
     }
 
-    private Object invokeStaticAllowed(Class<?> cls, String method, Object[] args) throws Exception {
+    private Object invokeStaticAllowed(Class<?> cls, String method, Object[] args) throws InvocationTargetException, IllegalAccessException {
         if (DENY_METHODS.contains(method)) {
-            throw new OperationNotSupportedException("Method not allowed: " + method);
+            throw new SecurityException("Method not allowed: " + method);
         }
         Method m = findBestMethod(cls, method, true, args);
         return m.invoke(null, coerceArgs(m.getParameterTypes(), args));
     }
 
-    private Object invokeAnyAllowed(Object target, String method, Object[] args) throws Exception {
+    private Object invokeAnyAllowed(Object target, String method, Object[] args) throws InvocationTargetException, IllegalAccessException {
         if (target == null) {
             return null;
         }
         if (DENY_METHODS.contains(method)) {
-            throw new OperationNotSupportedException("Method not allowed: " + method);
+            throw new SecurityException("Method not allowed: " + method);
         }
 
         if ("toString".equals(method) && args.length == 0) {
@@ -411,7 +411,7 @@ public class MiniDslParser implements Parser {
             return m.invoke(target, coerceArgs(m.getParameterTypes(), args));
         }
 
-        throw new OperationNotSupportedException("Instance calls not allowed on: " + target.getClass().getName());
+        throw new SecurityException("Instance calls not allowed on: " + target.getClass().getName());
     }
 
     private Method findBestMethod(Class<?> cls, String name, boolean wantStatic, Object[] args) {
