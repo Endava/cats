@@ -180,15 +180,12 @@ public class MiniDslParser implements Parser {
         if (open < 0) return -1;
 
         int depth = 0;
-        boolean inSingle = false, inDouble = false;
+        boolean[] quoteState = new boolean[2];
         for (int i = open; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '\'' && !inDouble) {
-                inSingle = !inSingle;
-            } else if (c == '"' && !inSingle) {
-                inDouble = !inDouble;
-            }
-            if (inSingle || inDouble) {
+            updateQuoteState(c, quoteState);
+
+            if (quoteState[0] || quoteState[1]) {
                 continue;
             }
 
@@ -246,7 +243,7 @@ public class MiniDslParser implements Parser {
         if (json == null || json.isBlank()) return null;
         try {
             return JsonPath.read(json, path);
-        } catch (Exception ignored) {
+        } catch (Exception _) {
             return null;
         }
     }
@@ -286,17 +283,14 @@ public class MiniDslParser implements Parser {
 
     private int findTopLevelDotBeforeMethodCall(String expr) {
         int depthParen = 0;
-        boolean inSingle = false, inDouble = false;
+        boolean[] quoteState = new boolean[2];
 
         for (int i = 0; i < expr.length(); i++) {
             char c = expr.charAt(i);
 
-            if (c == '\'' && !inDouble) {
-                inSingle = !inSingle;
-            } else if (c == '"' && !inSingle) {
-                inDouble = !inDouble;
-            }
-            if (inSingle || inDouble) {
+            updateQuoteState(c, quoteState);
+
+            if (quoteState[0] || quoteState[1]) {
                 continue;
             }
 
@@ -458,6 +452,7 @@ public class MiniDslParser implements Parser {
                     continue;
                 }
                 default -> {
+                    //do nothing
                 }
             }
 

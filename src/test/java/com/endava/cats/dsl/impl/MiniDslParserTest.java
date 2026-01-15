@@ -59,7 +59,7 @@ class MiniDslParserTest {
         void shouldHandleWhitespaceExpression() {
             String result = parser.parse("   ", context);
 
-            assertThat(result).isEqualTo("");
+            assertThat(result).isEmpty();
         }
     }
 
@@ -216,8 +216,7 @@ class MiniDslParserTest {
         void shouldEvaluateCatsRandomAlphanumeric() {
             String result = parser.parse("T(com.endava.cats.util.CatsRandom).alphanumeric(10)", context);
 
-            assertThat(result).hasSize(10);
-            assertThat(result).matches("[a-zA-Z0-9]+");
+            assertThat(result).hasSize(10).matches("[a-zA-Z0-9]+");
         }
 
         @Test
@@ -225,8 +224,7 @@ class MiniDslParserTest {
         void shouldEvaluateCatsRandomAlphabetic() {
             String result = parser.parse("T(com.endava.cats.util.CatsRandom).alphabetic(5)", context);
 
-            assertThat(result).hasSize(5);
-            assertThat(result).matches("[a-zA-Z]+");
+            assertThat(result).hasSize(5).matches("[a-zA-Z]+");
         }
 
         @Test
@@ -234,8 +232,7 @@ class MiniDslParserTest {
         void shouldEvaluateCatsRandomNumeric() {
             String result = parser.parse("T(com.endava.cats.util.CatsRandom).numeric(8)", context);
 
-            assertThat(result).hasSize(8);
-            assertThat(result).matches("[0-9]+");
+            assertThat(result).hasSize(8).matches("[0-9]+");
         }
 
         @Test
@@ -672,7 +669,7 @@ class MiniDslParserTest {
         void shouldHandleExpressionWithOnlyWhitespaceAfterTrim() {
             String result = parser.parse("   ", context);
 
-            assertThat(result).isEqualTo("");
+            assertThat(result).isEmpty();
         }
 
         @Test
@@ -726,8 +723,7 @@ class MiniDslParserTest {
         void shouldHandleNumericRangeInCatsRandom() {
             String result = parser.parse("T(com.endava.cats.util.CatsRandom).numeric(5, 10)", context);
 
-            assertThat(result).hasSizeBetween(5, 9);
-            assertThat(result).matches("[0-9]+");
+            assertThat(result).hasSizeBetween(5, 9).matches("[0-9]+");
         }
 
         @Test
@@ -799,8 +795,7 @@ class MiniDslParserTest {
         void shouldHandleRandomStringUtilsRandom() {
             String result = parser.parse("T(org.apache.commons.lang3.RandomStringUtils).randomAlphabetic(5)", context);
 
-            assertThat(result).hasSize(5);
-            assertThat(result).matches("[a-zA-Z]+");
+            assertThat(result).hasSize(5).matches("[a-zA-Z]+");
         }
 
         @Test
