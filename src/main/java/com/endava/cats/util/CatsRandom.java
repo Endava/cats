@@ -16,6 +16,11 @@ public abstract class CatsRandom {
     private static Random random;
     private static RandomGen regexpRandomGen;
 
+
+    private CatsRandom() {
+        //ntd
+    }
+
     /**
      * Returns the current random generator.
      *

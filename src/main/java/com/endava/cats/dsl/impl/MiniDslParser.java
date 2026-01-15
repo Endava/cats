@@ -92,18 +92,13 @@ public class MiniDslParser implements Parser {
             return val != null ? val : inner;
         }
 
-        // 3) replace embedded ${...}
         expr = substituteEmbeddedPlaceholders(expr, ctx);
-
-        // 3b) after sanitize(): "${variable}-02-02" becomes "variable-02-02"
         expr = substituteLeadingTokenTemplates(expr, ctx);
 
-        // 4) T(...) chain first
         if (expr.startsWith("T(")) {
             return evalTypeChain(expr, ctx);
         }
 
-        // 5) instance call chain: request.expiry.toString(), name.substring(...).toUpperCase(), etc.
         InstanceCall call = tryParseInstanceCall(expr);
         if (call != null) {
             Object current = eval(call.target, ctx);
@@ -112,7 +107,7 @@ public class MiniDslParser implements Parser {
             String remainder = call.remainder;
             while (remainder != null && remainder.startsWith(".")) {
                 String next = remainder.substring(1).trim();
-                InstanceCall nextCall = tryParseInstanceCall("x." + next); // fake target
+                InstanceCall nextCall = tryParseInstanceCall("x." + next);
                 if (nextCall == null) {
                     throw new IllegalArgumentException("Invalid chain remainder: " + remainder);
                 }
@@ -123,33 +118,36 @@ public class MiniDslParser implements Parser {
             return current;
         }
 
-        // 6) literals
-        if (isStringLiteral(expr)) return unquote(expr);
-        if (expr.matches("-?\\d+")) return Integer.parseInt(expr);
-        if ("true".equalsIgnoreCase(expr) || "false".equalsIgnoreCase(expr)) return Boolean.parseBoolean(expr);
+        if (isStringLiteral(expr)) {
+            return unquote(expr);
+        }
+        if (expr.matches("-?\\d+")) {
+            return Integer.parseInt(expr);
+        }
+        if ("true".equalsIgnoreCase(expr) || "false".equalsIgnoreCase(expr)) {
+            return Boolean.parseBoolean(expr);
+        }
 
-        // 7) identifier/path
         if (looksLikeIdentifierOrPath(expr)) {
             Object v = resolveValue(expr, ctx);
             if (v != null) return v;
             return expr;
         }
 
-        // 8) last resort
         if (ctx.containsKey(expr)) {
             return ctx.get(expr);
         }
         return expr;
     }
 
-    /* ---------------- Placeholder handling ---------------- */
-
     private boolean isSinglePlaceholder(String expr) {
         return expr.startsWith("${") && expr.endsWith("}") && findMatchingBrace(expr, 0) == expr.length() - 1;
     }
 
     private String resolvePlaceholder(String key, Map<String, String> ctx) {
-        if (ctx.containsKey(key)) return ctx.get(key);
+        if (ctx.containsKey(key)) {
+            return ctx.get(key);
+        }
         Object v = resolveValue(key, ctx);
         return v == null ? null : String.valueOf(v);
     }
@@ -185,12 +183,18 @@ public class MiniDslParser implements Parser {
         boolean inSingle = false, inDouble = false;
         for (int i = open; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '\'' && !inDouble) inSingle = !inSingle;
-            else if (c == '"' && !inSingle) inDouble = !inDouble;
-            if (inSingle || inDouble) continue;
+            if (c == '\'' && !inDouble) {
+                inSingle = !inSingle;
+            } else if (c == '"' && !inSingle) {
+                inDouble = !inDouble;
+            }
+            if (inSingle || inDouble) {
+                continue;
+            }
 
-            if (c == '{') depth++;
-            else if (c == '}') {
+            if (c == '{') {
+                depth++;
+            } else if (c == '}') {
                 depth--;
                 if (depth == 0) return i;
             }
@@ -200,7 +204,9 @@ public class MiniDslParser implements Parser {
 
     private String substituteLeadingTokenTemplates(String expr, Map<String, String> ctx) {
         int dash = expr.indexOf('-');
-        if (dash <= 0) return expr;
+        if (dash <= 0) {
+            return expr;
+        }
 
         String prefix = expr.substring(0, dash);
         if (prefix.matches("[A-Za-z_][A-Za-z0-9_]*") && ctx.containsKey(prefix)) {
@@ -209,10 +215,10 @@ public class MiniDslParser implements Parser {
         return expr;
     }
 
-    /* ---------------- Value resolution (context + JSON) ---------------- */
-
     private Object resolveValue(String key, Map<String, String> ctx) {
-        if (ctx.containsKey(key)) return ctx.get(key);
+        if (ctx.containsKey(key)) {
+            return ctx.get(key);
+        }
 
         String requestJson = firstNonNull(ctx.get(Parser.REQUEST), ctx.get("request"));
         String responseJson = firstNonNull(ctx.get(Parser.RESPONSE), ctx.get("response"));
@@ -225,7 +231,9 @@ public class MiniDslParser implements Parser {
         }
 
         Object fromResp = readJsonPath(responseJson, "$." + key);
-        if (fromResp != null) return fromResp;
+        if (fromResp != null) {
+            return fromResp;
+        }
 
         return readJsonPath(requestJson, "$." + key);
     }
@@ -243,29 +251,35 @@ public class MiniDslParser implements Parser {
         }
     }
 
-    /* ---------------- Instance calls ---------------- */
-
     private record InstanceCall(String target, String method, String argsInside, String remainder) {
     }
 
     private InstanceCall tryParseInstanceCall(String expr) {
         int dot = findTopLevelDotBeforeMethodCall(expr);
-        if (dot < 0) return null;
+        if (dot < 0) {
+            return null;
+        }
 
         String target = expr.substring(0, dot).trim();
         String afterDot = expr.substring(dot + 1).trim();
 
         String method = readIdentifier(afterDot);
-        if (method.isEmpty()) return null;
+        if (method.isEmpty()) {
+            return null;
+        }
 
         String rest = afterDot.substring(method.length()).trim();
-        if (!rest.startsWith("(")) return null;
+        if (!rest.startsWith("(")) {
+            return null;
+        }
 
         int argsEnd = findMatchingParen(rest, 0);
         String argsInside = rest.substring(1, argsEnd).trim();
         String remainder = rest.substring(argsEnd + 1).trim();
 
-        if (!remainder.isEmpty() && !remainder.startsWith(".")) return null;
+        if (!remainder.isEmpty() && !remainder.startsWith(".")) {
+            return null;
+        }
 
         return new InstanceCall(target, method, argsInside, remainder);
     }
@@ -277,27 +291,44 @@ public class MiniDslParser implements Parser {
         for (int i = 0; i < expr.length(); i++) {
             char c = expr.charAt(i);
 
-            if (c == '\'' && !inDouble) inSingle = !inSingle;
-            else if (c == '"' && !inSingle) inDouble = !inDouble;
-            if (inSingle || inDouble) continue;
+            if (c == '\'' && !inDouble) {
+                inSingle = !inSingle;
+            } else if (c == '"' && !inSingle) {
+                inDouble = !inDouble;
+            }
+            if (inSingle || inDouble) {
+                continue;
+            }
 
-            if (c == '(') depthParen++;
-            else if (c == ')') depthParen--;
+            if (c == '(') {
+                depthParen++;
+            } else if (c == ')') {
+                depthParen--;
+            }
 
             if (c == '.' && depthParen == 0) {
                 int j = i + 1;
-                while (j < expr.length() && Character.isWhitespace(expr.charAt(j))) j++;
+                while (j < expr.length() && Character.isWhitespace(expr.charAt(j))) {
+                    j++;
+                }
 
-                if (j >= expr.length() || !(Character.isLetter(expr.charAt(j)) || expr.charAt(j) == '_')) continue;
+                if (j >= expr.length() || !(Character.isLetter(expr.charAt(j)) || expr.charAt(j) == '_')) {
+                    continue;
+                }
 
                 int k = j;
                 while (k < expr.length()) {
                     char cc = expr.charAt(k);
-                    if (Character.isLetterOrDigit(cc) || cc == '_') k++;
-                    else break;
+                    if (Character.isLetterOrDigit(cc) || cc == '_') {
+                        k++;
+                    } else {
+                        break;
+                    }
                 }
 
-                while (k < expr.length() && Character.isWhitespace(expr.charAt(k))) k++;
+                while (k < expr.length() && Character.isWhitespace(expr.charAt(k))) {
+                    k++;
+                }
                 if (k < expr.length() && expr.charAt(k) == '(') {
                     return i;
                 }
@@ -306,27 +337,31 @@ public class MiniDslParser implements Parser {
         return -1;
     }
 
-    /* ---------------- T(...) chain evaluation ---------------- */
-
     private Object evalTypeChain(String expr, Map<String, String> ctx) throws Exception {
         int open = expr.indexOf('(');
         int close = findMatchingParen(expr, open);
         String fqcn = expr.substring(open + 1, close).trim();
 
         Class<?> type = ALLOWED_TYPES.get(fqcn);
-        if (type == null) throw new SecurityException("Type not allowed: " + fqcn);
+        if (type == null) {
+            throw new SecurityException("Type not allowed: " + fqcn);
+        }
 
         String rest = expr.substring(close + 1).trim();
-        if (!rest.startsWith(".")) throw new IllegalArgumentException("Expected method chain after T(" + fqcn + ")");
+        if (!rest.startsWith(".")) {
+            throw new IllegalArgumentException("Expected method chain after T(" + fqcn + ")");
+        }
 
-        Object current = type; // static calls start from Class
+        Object current = type;
 
         while (rest.startsWith(".")) {
             rest = rest.substring(1).trim();
             String method = readIdentifier(rest);
             rest = rest.substring(method.length()).trim();
 
-            if (!rest.startsWith("(")) throw new IllegalArgumentException("Expected '(' after " + method);
+            if (!rest.startsWith("(")) {
+                throw new IllegalArgumentException("Expected '(' after " + method);
+            }
 
             int argsEnd = findMatchingParen(rest, 0);
             String argsInside = rest.substring(1, argsEnd).trim();
@@ -345,7 +380,9 @@ public class MiniDslParser implements Parser {
     }
 
     private Object[] parseArgs(String argsInside, Map<String, String> ctx) throws Exception {
-        if (argsInside.isEmpty()) return new Object[0];
+        if (argsInside.isEmpty()) {
+            return new Object[0];
+        }
         List<String> parts = splitTopLevel(argsInside);
         Object[] out = new Object[parts.size()];
         for (int i = 0; i < parts.size(); i++) {
@@ -354,43 +391,48 @@ public class MiniDslParser implements Parser {
         return out;
     }
 
-    /* ---------------- Invocation (generic) ---------------- */
-
     private Object invokeStaticAllowed(Class<?> cls, String method, Object[] args) throws Exception {
-        if (DENY_METHODS.contains(method)) throw new SecurityException("Method not allowed: " + method);
+        if (DENY_METHODS.contains(method)) {
+            throw new SecurityException("Method not allowed: " + method);
+        }
         Method m = findBestMethod(cls, method, true, args);
         return m.invoke(null, coerceArgs(m.getParameterTypes(), args));
     }
 
     private Object invokeAnyAllowed(Object target, String method, Object[] args) throws Exception {
-        if (target == null) return null;
-        if (DENY_METHODS.contains(method)) throw new SecurityException("Method not allowed: " + method);
+        if (target == null) {
+            return null;
+        }
+        if (DENY_METHODS.contains(method)) {
+            throw new SecurityException("Method not allowed: " + method);
+        }
 
-        // Allow toString universally (handy for JsonPath values)
         if ("toString".equals(method) && args.length == 0) {
             return String.valueOf(target);
         }
 
-        // Only allow calls on "safe" receiver categories.
-        // - String: allowed
-        // - java.time: allowed
-        // - primitives wrappers/Boolean/Number: allowed only toString (already handled)
-        // - any other object: allowed ONLY if it's from a whitelisted type chain (OffsetDateTime/LocalDate)
         if (target instanceof String || target instanceof OffsetDateTime || target instanceof LocalDate) {
             Method m = findBestMethod(target.getClass(), method, false, args);
             return m.invoke(target, coerceArgs(m.getParameterTypes(), args));
         }
 
-        // For non-String/Date types, keep it strict. If you want to allow more, add them here deliberately.
         throw new SecurityException("Instance calls not allowed on: " + target.getClass().getName());
     }
 
     private Method findBestMethod(Class<?> cls, String name, boolean wantStatic, Object[] args) {
         for (Method m : cls.getMethods()) {
-            if (!m.getName().equals(name)) continue;
-            if (Modifier.isStatic(m.getModifiers()) != wantStatic) continue;
-            if (m.getParameterCount() != args.length) continue;
-            if (!areArgsCompatible(m.getParameterTypes(), args)) continue;
+            if (!m.getName().equals(name)) {
+                continue;
+            }
+            if (Modifier.isStatic(m.getModifiers()) != wantStatic) {
+                continue;
+            }
+            if (m.getParameterCount() != args.length) {
+                continue;
+            }
+            if (!areArgsCompatible(m.getParameterTypes(), args)) {
+                continue;
+            }
             return m;
         }
         throw new IllegalArgumentException("No matching method: " + cls.getName() + "." + name + "/" + args.length);
@@ -399,15 +441,29 @@ public class MiniDslParser implements Parser {
     private boolean areArgsCompatible(Class<?>[] params, Object[] args) {
         for (int i = 0; i < params.length; i++) {
             Object a = args[i];
-            if (a == null) continue;
+            if (a == null) {
+                continue;
+            }
 
             Class<?> p = wrap(params[i]);
 
-            if (a instanceof Integer && p == Long.class) continue;
-            if (a instanceof String && p == CharSequence.class) continue;
-            if (a instanceof String s && p == Character.class && s.length() == 1) continue;
+            switch (a) {
+                case Integer _ when p == Long.class -> {
+                    continue;
+                }
+                case String _ when p == CharSequence.class -> {
+                    continue;
+                }
+                case String s when p == Character.class && s.length() == 1 -> {
+                    continue;
+                }
+                default -> {
+                }
+            }
 
-            if (!p.isAssignableFrom(a.getClass())) return false;
+            if (!p.isAssignableFrom(a.getClass())) {
+                return false;
+            }
         }
         return true;
     }
@@ -430,15 +486,23 @@ public class MiniDslParser implements Parser {
     }
 
     private static Class<?> wrap(Class<?> c) {
-        if (!c.isPrimitive()) return c;
-        if (c == int.class) return Integer.class;
-        if (c == long.class) return Long.class;
-        if (c == boolean.class) return Boolean.class;
-        if (c == char.class) return Character.class;
+        if (!c.isPrimitive()) {
+            return c;
+        }
+        if (c == int.class) {
+            return Integer.class;
+        }
+        if (c == long.class) {
+            return Long.class;
+        }
+        if (c == boolean.class) {
+            return Boolean.class;
+        }
+        if (c == char.class) {
+            return Character.class;
+        }
         return c;
     }
-
-    /* ---------------- Parsing helpers ---------------- */
 
     private boolean looksLikeIdentifierOrPath(String s) {
         return s.matches("[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*");
@@ -457,25 +521,41 @@ public class MiniDslParser implements Parser {
         int i = 0;
         while (i < s.length()) {
             char c = s.charAt(i);
-            if (Character.isLetterOrDigit(c) || c == '_') i++;
-            else break;
+            if (Character.isLetterOrDigit(c) || c == '_') {
+                i++;
+            } else {
+                break;
+            }
         }
         return i == 0 ? "" : s.substring(0, i);
     }
 
+    private void updateQuoteState(char c, boolean[] quoteState) {
+        boolean inSingle = quoteState[0];
+        boolean inDouble = quoteState[1];
+
+        if (c == '\'' && !inDouble) {
+            quoteState[0] = !inSingle;
+        } else if (c == '"' && !inSingle) {
+            quoteState[1] = !inDouble;
+        }
+    }
+
     private int findMatchingParen(String s, int openIndex) {
         int depth = 0;
-        boolean inSingle = false, inDouble = false;
+        boolean[] quoteState = new boolean[2];
         for (int i = openIndex; i < s.length(); i++) {
             char c = s.charAt(i);
 
-            if (c == '\'' && !inDouble) inSingle = !inSingle;
-            else if (c == '"' && !inSingle) inDouble = !inDouble;
+            updateQuoteState(c, quoteState);
 
-            if (inSingle || inDouble) continue;
+            if (quoteState[0] || quoteState[1]) {
+                continue;
+            }
 
-            if (c == '(') depth++;
-            else if (c == ')') {
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
                 depth--;
                 if (depth == 0) return i;
             }
@@ -487,18 +567,19 @@ public class MiniDslParser implements Parser {
         List<String> out = new ArrayList<>();
         StringBuilder cur = new StringBuilder();
         int depth = 0;
-        boolean inSingle = false, inDouble = false;
+        boolean[] quoteState = new boolean[2];
 
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
 
-            if (c == '\'' && !inDouble) inSingle = !inSingle;
-            else if (c == '"' && !inSingle) inDouble = !inDouble;
+            updateQuoteState(c, quoteState);
 
-            if (!inSingle && !inDouble) {
-                if (c == '(') depth++;
-                else if (c == ')') depth--;
-                else if (c == ',' && depth == 0) {
+            if (!quoteState[0] && !quoteState[1]) {
+                if (c == '(') {
+                    depth++;
+                } else if (c == ')') {
+                    depth--;
+                } else if (c == ',' && depth == 0) {
                     out.add(cur.toString().trim());
                     cur.setLength(0);
                     continue;
@@ -508,7 +589,9 @@ public class MiniDslParser implements Parser {
         }
 
         String last = cur.toString().trim();
-        if (!last.isEmpty()) out.add(last);
+        if (!last.isEmpty()) {
+            out.add(last);
+        }
         return out;
     }
 }
