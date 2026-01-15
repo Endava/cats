@@ -4,6 +4,7 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.CatsResultFactory;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -55,6 +56,7 @@ public class ExplainCommand implements Runnable {
 
     @Override
     public void run() {
+        CatsRandom.initRandom(0);
         switch (type) {
             case FUZZER -> displayFuzzerInfo();
             case MUTATOR -> displayMutatorInfo();

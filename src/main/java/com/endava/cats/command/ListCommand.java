@@ -17,6 +17,7 @@ import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.AnnotationUtils;
+import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiUtils;
@@ -97,6 +98,7 @@ public class ListCommand implements Runnable {
 
     @Override
     public void run() {
+        CatsRandom.initRandom(0);
         if (listCommandGroups.listFuzzersGroup != null && listCommandGroups.listFuzzersGroup.fuzzers) {
             listFuzzers();
         }
