@@ -8,6 +8,7 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.naming.OperationNotSupportedException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -338,7 +339,7 @@ public class MiniDslParser implements Parser {
 
         Class<?> type = ALLOWED_TYPES.get(fqcn);
         if (type == null) {
-            throw new SecurityException("Type not allowed: " + fqcn);
+            throw new OperationNotSupportedException("Type not allowed: " + fqcn);
         }
 
         String rest = expr.substring(close + 1).trim();
@@ -387,7 +388,7 @@ public class MiniDslParser implements Parser {
 
     private Object invokeStaticAllowed(Class<?> cls, String method, Object[] args) throws Exception {
         if (DENY_METHODS.contains(method)) {
-            throw new SecurityException("Method not allowed: " + method);
+            throw new OperationNotSupportedException("Method not allowed: " + method);
         }
         Method m = findBestMethod(cls, method, true, args);
         return m.invoke(null, coerceArgs(m.getParameterTypes(), args));
@@ -398,7 +399,7 @@ public class MiniDslParser implements Parser {
             return null;
         }
         if (DENY_METHODS.contains(method)) {
-            throw new SecurityException("Method not allowed: " + method);
+            throw new OperationNotSupportedException("Method not allowed: " + method);
         }
 
         if ("toString".equals(method) && args.length == 0) {
@@ -410,7 +411,7 @@ public class MiniDslParser implements Parser {
             return m.invoke(target, coerceArgs(m.getParameterTypes(), args));
         }
 
-        throw new SecurityException("Instance calls not allowed on: " + target.getClass().getName());
+        throw new OperationNotSupportedException("Instance calls not allowed on: " + target.getClass().getName());
     }
 
     private Method findBestMethod(Class<?> cls, String name, boolean wantStatic, Object[] args) {
@@ -469,12 +470,10 @@ public class MiniDslParser implements Parser {
             Object a = args[i];
             Class<?> p = params[i];
 
-            if (a instanceof Integer aInt && (p == long.class || p == Long.class)) {
-                out[i] = aInt.longValue();
-            } else if (a instanceof String s && (p == char.class || p == Character.class) && s.length() == 1) {
-                out[i] = s.charAt(0);
-            } else {
-                out[i] = a;
+            switch (a) {
+                case Integer aInt when (p == long.class || p == Long.class) -> out[i] = aInt.longValue();
+                case String s when (p == char.class || p == Character.class) && s.length() == 1 -> out[i] = s.charAt(0);
+                case null, default -> out[i] = a;
             }
         }
         return out;

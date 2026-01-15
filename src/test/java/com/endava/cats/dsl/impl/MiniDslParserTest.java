@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -925,10 +927,11 @@ class MiniDslParserTest {
     @DisplayName("Method Resolution Tests")
     class MethodResolutionTests {
 
-        @Test
+        @ParameterizedTest
+        @CsvSource("T(java.util.UUID).randomUUID(),T(java.time.LocalDate).now().toString(),T(java.time.OffsetDateTime).now().toString()")
         @DisplayName("Should resolve static method")
-        void shouldResolveStaticMethod() {
-            String result = parser.parse("T(java.util.UUID).randomUUID()", context);
+        void shouldResolveStaticMethod(String expression) {
+            String result = parser.parse(expression, context);
 
             assertThat(result).isNotEmpty();
         }
@@ -941,22 +944,6 @@ class MiniDslParserTest {
             String result = parser.parse("text.toUpperCase()", context);
 
             assertThat(result).isEqualTo("HELLO");
-        }
-
-        @Test
-        @DisplayName("Should resolve instance method on LocalDate")
-        void shouldResolveInstanceMethodOnLocalDate() {
-            String result = parser.parse("T(java.time.LocalDate).now().toString()", context);
-
-            assertThat(result).isNotEmpty();
-        }
-
-        @Test
-        @DisplayName("Should resolve instance method on OffsetDateTime")
-        void shouldResolveInstanceMethodOnOffsetDateTime() {
-            String result = parser.parse("T(java.time.OffsetDateTime).now().toString()", context);
-
-            assertThat(result).isNotEmpty();
         }
 
         @Test

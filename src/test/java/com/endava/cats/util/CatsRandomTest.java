@@ -72,8 +72,7 @@ class CatsRandomTest {
         void shouldGenerateAlphanumericString() {
             String result = CatsRandom.alphanumeric(10);
 
-            assertThat(result).hasSize(10);
-            assertThat(result).matches("[a-zA-Z0-9]+");
+            assertThat(result).hasSize(10).matches("[a-zA-Z0-9]+");
         }
 
         @Test
@@ -106,8 +105,7 @@ class CatsRandomTest {
         void shouldGenerateAlphabeticString() {
             String result = CatsRandom.alphabetic(10);
 
-            assertThat(result).hasSize(10);
-            assertThat(result).matches("[a-zA-Z]+");
+            assertThat(result).hasSize(10).matches("[a-zA-Z]+");
         }
 
         @Test
@@ -140,8 +138,7 @@ class CatsRandomTest {
         void shouldGenerateNumericString() {
             String result = CatsRandom.numeric(10);
 
-            assertThat(result).hasSize(10);
-            assertThat(result).matches("[0-9]+");
+            assertThat(result).hasSize(10).matches("[0-9]+");
         }
 
         @Test
@@ -174,8 +171,7 @@ class CatsRandomTest {
         void shouldGenerateNumericStringWithinRange() {
             String result = CatsRandom.numeric(5, 10);
 
-            assertThat(result).hasSizeBetween(5, 9);
-            assertThat(result).matches("[0-9]+");
+            assertThat(result).hasSizeBetween(5, 9).matches("[0-9]+");
         }
 
         @Test
@@ -183,8 +179,7 @@ class CatsRandomTest {
         void shouldGenerateNumericStringWithEqualMinMax() {
             String result = CatsRandom.numeric(5, 5);
 
-            assertThat(result).hasSize(5);
-            assertThat(result).matches("[0-9]+");
+            assertThat(result).hasSize(5).matches("[0-9]+");
         }
 
         @Test
