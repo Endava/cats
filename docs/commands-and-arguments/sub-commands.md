@@ -41,7 +41,10 @@ All available subcommands are listed below:
 
 - `cats random` does continuous fuzzing based on mutators until a certain stop condition is hit
 
+- `cats explain` will explain a given response code or reason message
+
+- `cats generate` will generate a request based on a given OpenAPI contract
 
 :::tip
-Each sub-command has its own help. You can run `cats sub-command -h` to check all available arguments: `cats fuzz -h`.
+Each sub-command has its own help. You can run `cats sub-command -h` to check all available arguments: `cats template -h`.
 :::

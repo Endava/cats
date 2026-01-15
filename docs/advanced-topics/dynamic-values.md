@@ -28,7 +28,7 @@ This is `FunctionalFuzzer` file using the above dynamic value:
 ```
 
 You can check the responses using a similar syntax and also take into consideration the response. 
-This will check if the `expiry` field returned within the json response, parsed as date, is after the current date ` T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))`: 
+This will check if the `expiry` field returned within the json response, parsed as date, is after the current date ` T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry))`: 
 
 ```yaml
 /path:
@@ -45,14 +45,14 @@ This will check if the `expiry` field returned within the json response, parsed 
         expectedResponseCode: HTTP_CODE
         httpMethod: HTTP_NETHOD
         verify:
-          checkBoolean: T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry.toString()))
+          checkBoolean: T(java.time.LocalDate).now().isBefore(T(java.time.LocalDate).parse(expiry))
 ```
 
 :::info
 Notice the keyword `checkBoolean` which will test if the expression is `true`. This is very useful when doing assertions on response data when running functional tests.
 :::
 
-The syntax of dynamically setting dates is compliant with the [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs.
+The syntax of dynamically setting dates is similar with [Spring Expression Language](https://docs.spring.io/spring-framework/docs/3.0.x/reference/expressions.html) specs. It's not a full implementation though, so it supports only basic operations.
 
 Dynamic expressions can also refer variables or request/response fields internally. In the example above, `expiry` is a field returned in the response.
 If you want to refer a variable created in a previous test, let's call it `petName`, you can do so as: `T(org.apache.commons.lang3.StringUtils).substringAfterLast(${petName},'a')`.

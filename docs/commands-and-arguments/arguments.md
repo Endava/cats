@@ -107,6 +107,17 @@ You can get the full list of arguments by running `cats -h`. Below is a short de
 - `--stopAfterTimeInSec=<stopAfterTimeInSec>` Amount of time in seconds for how long the continuous fuzzing will run before stopping. Only available in `cats random` sub-command.
 - `--pathsRunOrder=<pathsOrderFile>` A file with the order in which the paths will be executed. The paths are on each line. The order from file will drive the execution order
 - `--errorLeaksKeywords=<errorLeaksKeywords>` A properties file with error leaks keywords that will be used when processing responses to detect potential error leaks. If one of these keyword is found, the test case will be marked as error
+- `-P name=value` A list of `name=value` pairs that will be used to replace url params for all paths
+- `-H name=value` A list of `name=value` pairs that will be used to replace headers for all paths
+- `-Q name=value` A list of `name=value` pairs that will be used to replace query params for all paths
+- `-R name=value` A list of `name=value` pairs that will be used as reference data for all paths
+- `--operationIds=<operationIds>` A comma separated list of operationIds to include. If no operationId is supplied, all operationIds will be considered.
+- `--skipOperationIds=<skipOperationIds>` A comma separated list of operationIds to ignore. If no operationId is supplied, no operationId will be ignored.
+- `--skipFuzzersForExtension` Skip specific fuzzers for endpoints with certain OpenAPI extension values. Format: x-extension-name=value:Fuzzer1,Fuzzer2.
+- `--resolveXxxOfCombinationForResponses` Resolve anyOf/oneOf combinations for responses. Default: false
+- `--http2PriorKnowledge` If set to `true`, it will force a http2 connection, without fallback to HTTP 1.X
+- `--includeAllInjectionPayloads` Include all injection payloads for security fuzzers (SQL, XSS, Command, NoSQL injection). By default, only a curated top 10 payloads are used per injection type to reduce execution time.
+- `--seed=<value>` a seed used for deterministic generation of the random values
 
 :::tip
 When you want to skip fuzzing entirely for a specific JSON object or specific fields you must prefix the field name from the `--skipFields` argument with `!`.

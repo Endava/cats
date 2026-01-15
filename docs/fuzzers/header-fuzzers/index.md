@@ -1,6 +1,7 @@
 # Header Fuzzers
-CATS has currently 38 registered `Header`  Fuzzers:
+CATS has currently 39 registered `Header`  Fuzzers:
 - `AbugidasCharsInHeadersFuzzer` -  iterate through each header and send requests with abugidas chars in the targeted header
+- `AcceptLanguageHeaders` - send a request with a locale Accept-Language header and expect to get 200 code
 - `CRLFHeaders` - iterate through each header and send CR & LF characters in the targeted header
 - `CheckSecurityHeadersFuzzer` - check all responses for good practices around Security related headers like: [{name=Cache-Control, value=no-store}, {name=X-XSS-Protection, value=1; mode=block}, {name=X-Content-Type-Options, value=nosniff}, {name=X-Frame-Options, value=DENY}]
 - `DummyAcceptHeadersFuzzer` - send a request with a dummy Accept header and expect to get 406 code

@@ -1,5 +1,5 @@
 # HTTP Fuzzers
-CATS has currently 25 registered `HTTP` Fuzzers:
+CATS has currently 26 registered `HTTP` Fuzzers:
 - `BypassAuthenticationFuzzer` - check if an authentication header is supplied; if yes try to make requests without it
 - `CheckDeletedResourcesNotAvailableFuzzer` - checks that resources are not available through `GET` after a successful `DELETE`
 - `CustomHttpMethods` - iterate through a list of hypothetical HTTP methods that are not expected to be implemented by REST APIs
@@ -9,6 +9,7 @@ CATS has currently 25 registered `HTTP` Fuzzers:
 - `EmptyJsonBody` - send a request with a empty json body
 - `HappyFuzzer` - send a request with all fields and headers populated
 - `HttpMethodsFuzzer` - iterate through each undocumented HTTP method and send an empty request
+- `InsecureDirectObjectReferences` - detects Insecure Direct Object Reference (IDOR) vulnerabilities by replacing ID fields with alternative values
 - `InsertRandomValuesInBody` - insert invalid data within a valid request body
 - `MalformedJsonFuzzer` - send a malformed json request which has the String 'bla' at the end
 - `NonRestHttpMethodsFuzzer` - iterate through a list of HTTP method specific to the WebDav protocol that are not expected to be implemented by REST APIs

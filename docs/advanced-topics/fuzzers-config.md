@@ -13,6 +13,22 @@ You can achieve this by providing a properties file using the `--fuzzersConfig` 
 In this file, the keys correspond to the fuzzer names and configuration names, while the values represent the desired HTTP code to expect.
 At the moment, the only supported configuration is `expectedResponseCode`.
 
+The format of the keys in the properties file is as follows:
+
+```properties
+fuzzerName.[path].[method].expectedResponseCode=value
+```
+
+where:
+- `fuzzerName` is the name of the fuzzer
+- `path` is the path of the endpoint exactly as it appears in the contract and it's optional
+- `method` is the HTTP method of the endpoint and it's optional
+- `value` is the expected HTTP response code
+
+:::note
+The most specific value will be picked up first.
+:::
+
 This is an example (file name `fuzzConfig.properties`):
 
 ```properties
