@@ -214,7 +214,7 @@ class StringGeneratorTest {
 
             try {
                 Assertions.assertThat(generated).matches(regex);
-            } catch (StackOverflowError e) {
+            } catch (StackOverflowError _) {
                 Assertions.assertThat(generated).isNotEmpty();
             }
         } catch (IllegalArgumentException e) {

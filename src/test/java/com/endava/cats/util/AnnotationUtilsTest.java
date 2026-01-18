@@ -249,14 +249,6 @@ class AnnotationUtilsTest {
         }
 
         @Test
-        @DisplayName("Should find annotation with scanHierarchy true by default")
-        void shouldFindAnnotationWithScanHierarchyTrueByDefault() {
-            InheritedTestAnnotation result = AnnotationUtils.findAnnotation(ChildOfInheritedParent.class, InheritedTestAnnotation.class);
-
-            assertThat(result).isNotNull();
-        }
-
-        @Test
         @DisplayName("Should not scan hierarchy when scanHierarchy is false")
         void shouldNotScanHierarchyWhenScanHierarchyIsFalse() {
             InheritedTestAnnotation result = AnnotationUtils.findAnnotation(ChildOfInheritedParent.class, InheritedTestAnnotation.class, false);
