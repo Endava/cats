@@ -404,6 +404,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
         logger.config(ansi().bold().a("How the service handles whitespaces and random unicodes: edgeSpacesStrategy {}, sanitizationStrategy {}").reset().toString(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getEdgeSpacesStrategy()).reset().bold(),
                 ansi().fg(Ansi.Color.BLUE).a(processingArguments.getSanitizationStrategy()).reset().bold());
+        logger.config(ansi().bold().a("Seed value: {}").reset().toString(),
+                ansi().fg(Ansi.Color.BLUE).a(CatsRandom.getStoredSeed()).reset().bold());
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
         logger.config(ansi().bold().a("Total number of OpenAPI operations: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(nofOfOperations));

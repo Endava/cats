@@ -1,6 +1,7 @@
 package com.endava.cats.util;
 
 
+import lombok.Getter;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.cornutum.regexpgen.RandomGen;
 import org.cornutum.regexpgen.random.RandomBoundsGen;
@@ -15,6 +16,8 @@ public abstract class CatsRandom {
 
     private static Random random;
     private static RandomGen regexpRandomGen;
+    @Getter
+    private static long storedSeed;
 
 
     private CatsRandom() {
@@ -49,7 +52,8 @@ public abstract class CatsRandom {
         if (seed == 0) {
             seed = randomSeed();
         }
-        random = new Random(seed);
+        storedSeed = seed;
+        random = new Random(storedSeed);
         regexpRandomGen = new RandomBoundsGen(random);
     }
 
