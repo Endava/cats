@@ -255,6 +255,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator {
     }
 
     private void doLogic() throws IOException {
+        filterArguments.applyProfile(spec);
         this.prepareRun();
         OpenAPI openAPI = this.createOpenAPI();
         this.checkOpenAPI(openAPI);

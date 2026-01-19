@@ -13,6 +13,7 @@ import com.endava.cats.annotations.TrimAndValidate;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
 import com.endava.cats.annotations.WhitespaceFuzzer;
+import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.AnnotationUtils;
@@ -28,6 +29,8 @@ import lombok.Setter;
 import picocli.CommandLine;
 
 import java.lang.annotation.Annotation;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -76,6 +79,8 @@ public class FilterArguments {
     @Inject
     @Getter
     UserArguments userArguments;
+    @Inject
+    ProfileLoader profileLoader;
 
     enum FieldType {
         STRING, NUMBER, INTEGER, BOOLEAN
@@ -170,6 +175,16 @@ public class FilterArguments {
                     "Example: @|bold --skipFuzzersForExtension \"x-public-endpoint=true:BypassAuthentication\"|@ " +
                     "will skip BypassAuthentication fuzzer for all endpoints that have x-public-endpoint extension set to true.", split = ",")
     private List<String> skipFuzzersForExtension;
+
+    @CommandLine.Option(
+            names = {"--profile"},
+            description = "Use a predefined fuzzer profile: security, quick, compliance, ci, full (default: full)")
+    private String profile = "full";
+
+    @CommandLine.Option(
+            names = {"--profileFile"},
+            description = "Path to custom profile configuration file (YAML)")
+    private Path customProfileFile;
 
     @Setter
     private TotalCountType totalCountType = TotalCountType.FUZZERS;
@@ -581,6 +596,47 @@ public class FilterArguments {
                 .filter(fuzzer ->
                         fuzzersToExclude.stream().noneMatch(fuzzer::contains))
                 .toList();
+    }
+
+    /**
+     * Applies the selected fuzzer profile to filter which fuzzers will run.
+     * If a custom profile file is provided, it will be loaded first.
+     * If the profile specifies an empty fuzzer list, all fuzzers will run (full profile).
+     * If user also specified --fuzzers, the intersection of profile and user fuzzers will be used.
+     *
+     * @param spec the PicoCli command spec for error reporting
+     */
+    public void applyProfile(CommandLine.Model.CommandSpec spec) {
+        if (customProfileFile != null && Files.exists(customProfileFile)) {
+            profileLoader.loadCustomProfiles(customProfileFile);
+        }
+
+        Optional<ProfileLoader.Profile> selectedProfile = profileLoader.getProfile(profile);
+
+        if (selectedProfile.isEmpty()) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    "Profile '" + profile + "' not found. Available profiles: " + profileLoader.getAvailableProfiles());
+        }
+
+        ProfileLoader.Profile profileConfig = selectedProfile.get();
+
+        if (profileConfig.fuzzers().isEmpty()) {
+            logger.info("Using profile '{}' - ALL fuzzers enabled", profile);
+            return;
+        }
+
+        Set<String> profileFuzzers = new HashSet<>(profileConfig.fuzzers());
+
+        if (suppliedFuzzers != null && !suppliedFuzzers.isEmpty()) {
+            Set<String> userFuzzers = new HashSet<>(suppliedFuzzers);
+            profileFuzzers.retainAll(userFuzzers);
+            logger.info("Using profile '{}' with user-specified fuzzers: {} fuzzers",
+                    profile, profileFuzzers.size());
+        } else {
+            logger.info("Using profile '{}': {} fuzzers", profile, profileFuzzers.size());
+        }
+
+        this.suppliedFuzzers = List.copyOf(profileFuzzers);
     }
 
     /**

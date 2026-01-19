@@ -1,0 +1,248 @@
+# CATS Fuzzer Profiles
+# Built-in profiles for common testing scenarios
+
+profiles:
+
+  # ============================================
+  # SECURITY PROFILE
+  # Focus: Security vulnerabilities and attack vectors
+  # ============================================
+  security:
+    description: "Security-focused fuzzers targeting OWASP vulnerabilities and attack vectors"
+    fuzzers:
+      # Injection Attacks
+      - SqlInjectionInStringFieldsFuzzer
+      - NoSqlInjectionInStringFieldsFuzzer
+      - CommandInjectionInStringFieldsFuzzer
+      - XssInjectionInStringFieldsFuzzer
+      - SSRFInUrlFieldsFuzzer
+
+      # Authentication & Authorization
+      - BypassAuthenticationFuzzer
+      - InsecureDirectObjectReferencesFuzzer
+
+      # Mass Assignment
+      - MassAssignmentFuzzer
+      - AdditionalPropertiesMassAssignmentFieldsFuzzer
+
+      # Security Headers
+      - CheckSecurityHeadersFuzzer
+      - ResponseHeadersMatchContractHeadersFuzzer
+
+      # Malicious Input
+      - VeryLargeStringsInFieldsFuzzer
+      - VeryLargeUnicodeStringsInFieldsFuzzer
+      - VeryLargeIntegersInNumericFieldsFuzzer
+      - VeryLargeDecimalsInNumericFieldsFuzzer
+      - VeryLargeStringsInHeadersFuzzer
+      - VeryLargeUnicodeStringsInHeadersFuzzer
+
+      # Unicode Attacks
+      - ZalgoTextInFieldsSanitizeValidateFuzzer
+      - ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer
+      - BidirectionalOverrideFieldsFuzzer
+
+      # HTTP Method Manipulation
+      - CustomHttpMethodsFuzzer
+      - NonRestHttpMethodsFuzzer
+      - HttpMethodsFuzzer
+
+      # Header Manipulation
+      - CRLFHeadersFuzzer
+      - DuplicateHeadersFuzzer
+      - LargeNumberOfRandomHeadersFuzzer
+
+      # Resource Manipulation
+      - CheckDeletedResourcesNotAvailableFuzzer
+      - RandomResourcesFuzzer
+      - InvalidReferencesFieldsFuzzer
+
+  # ============================================
+  # QUICK PROFILE
+  # Focus: Fast smoke test for CI/CD
+  # ============================================
+  quick:
+    description: "Fast smoke test covering critical test scenarios"
+    fuzzers:
+      # Happy Path
+      - HappyPathFuzzer
+
+      # Required Fields
+      - RemoveFieldsFuzzer
+      - NullValuesInFieldsFuzzer
+      - EmptyStringsInFieldsFuzzer
+
+      # Type Validation
+      - StringsInNumericFieldsFuzzer
+      - RandomStringsInBooleanFieldsFuzzer
+      - DecimalNumbersInIntegerFieldsFuzzer
+
+      # Boundary Testing (Key ones only)
+      - IntegerFieldsLeftBoundaryFuzzer
+      - IntegerFieldsRightBoundaryFuzzer
+      - StringFieldsLeftBoundaryFuzzer
+      - StringFieldsRightBoundaryFuzzer
+
+      # Format Validation
+      - StringFormatTotallyWrongValuesFuzzer
+      - InvalidValuesInEnumsFieldsFuzzer
+
+      # Security Essentials
+      - BypassAuthenticationFuzzer
+      - MassAssignmentFuzzer
+      - SqlInjectionInStringFieldsFuzzer
+
+      # HTTP Basics
+      - HttpMethodsFuzzer
+      - DummyContentTypeHeadersFuzzer
+      - UnsupportedContentTypesHeadersFuzzer
+
+      # Malformed Requests
+      - MalformedJsonFuzzer
+      - EmptyJsonBodyFuzzer
+
+  # ============================================
+  # COMPLIANCE PROFILE
+  # Focus: OWASP API Security Top 10 (2023)
+  # ============================================
+  compliance:
+    description: "OWASP API Security Top 10 compliance testing"
+    fuzzers:
+      # API1:2023 - Broken Object Level Authorization
+      - InsecureDirectObjectReferencesFuzzer
+      - RandomResourcesFuzzer
+      - InvalidReferencesFieldsFuzzer
+      - CheckDeletedResourcesNotAvailableFuzzer
+
+      # API2:2023 - Broken Authentication
+      - BypassAuthenticationFuzzer
+      - RemoveHeadersFuzzer
+
+      # API3:2023 - Broken Object Property Level Authorization
+      - MassAssignmentFuzzer
+      - AdditionalPropertiesMassAssignmentFieldsFuzzer
+      - NewFieldsFuzzer
+
+      # API4:2023 - Unrestricted Resource Consumption
+      - VeryLargeStringsInFieldsFuzzer
+      - VeryLargeIntegersInNumericFieldsFuzzer
+      - VeryLargeDecimalsInNumericFieldsFuzzer
+      - VeryLargeUnicodeStringsInFieldsFuzzer
+      - OverflowArraySizeFieldsFuzzer
+      - OverflowMapSizeFieldsFuzzer
+      - VeryLargeStringsInHeadersFuzzer
+      - LargeNumberOfRandomHeadersFuzzer
+      - LargeNumberOfRandomAlphanumericHeadersFuzzer
+
+      # API5:2023 - Broken Function Level Authorization
+      - HttpMethodsFuzzer
+      - CustomHttpMethodsFuzzer
+      - NonRestHttpMethodsFuzzer
+
+      # API6:2023 - Unrestricted Access to Sensitive Business Flows
+      # (Covered by rate limiting - out of scope for schema-based testing)
+
+      # API7:2023 - Server Side Request Forgery
+      - SSRFInUrlFieldsFuzzer
+
+      # API8:2023 - Security Misconfiguration
+      - CheckSecurityHeadersFuzzer
+      - ResponseHeadersMatchContractHeadersFuzzer
+      - DummyAcceptHeadersFuzzer
+      - UnsupportedAcceptHeadersFuzzer
+      - UnsupportedContentTypesHeadersFuzzer
+
+      # API9:2023 - Improper Inventory Management
+      # (Documentation quality - covered by linters)
+
+      # API10:2023 - Unsafe Consumption of APIs
+      - SqlInjectionInStringFieldsFuzzer
+      - NoSqlInjectionInStringFieldsFuzzer
+      - CommandInjectionInStringFieldsFuzzer
+      - XssInjectionInStringFieldsFuzzer
+
+      # Additional Security Best Practices
+      - StringFormatTotallyWrongValuesFuzzer
+      - InvalidValuesInEnumsFieldsFuzzer
+      - RemoveFieldsFuzzer
+      - NullValuesInFieldsFuzzer
+
+  # ============================================
+  # CI PROFILE
+  # Focus: Optimized for CI/CD pipelines
+  # Balance: Coverage vs Speed
+  # ============================================
+  ci:
+    description: "Balanced test suite optimized for CI/CD pipelines"
+    fuzzers:
+      # Functional Correctness
+      - HappyPathFuzzer
+      - DefaultValuesInFieldsFuzzer
+      - ExamplesFieldsFuzzer
+
+      # Required Field Validation
+      - RemoveFieldsFuzzer
+      - NullValuesInFieldsFuzzer
+      - EmptyStringsInFieldsFuzzer
+
+      # Type Validation
+      - StringsInNumericFieldsFuzzer
+      - RandomStringsInBooleanFieldsFuzzer
+      - DecimalNumbersInIntegerFieldsFuzzer
+      - ReplaceObjectsWithPrimitivesFieldsFuzzer
+      - ReplacePrimitivesWithObjectsFieldsFuzzer
+      - ReplaceArraysWithPrimitivesFieldsFuzzer
+
+      # Boundary Testing
+      - IntegerFieldsLeftBoundaryFuzzer
+      - IntegerFieldsRightBoundaryFuzzer
+      - DecimalFieldsLeftBoundaryFuzzer
+      - DecimalFieldsRightBoundaryFuzzer
+      - StringFieldsLeftBoundaryFuzzer
+      - StringFieldsRightBoundaryFuzzer
+      - MinimumExactNumbersInNumericFieldsFuzzer
+      - MaximumExactNumbersInNumericFieldsFuzzer
+      - MinLengthExactValuesInStringFieldsFuzzer
+      - MaxLengthExactValuesInStringFieldsFuzzer
+
+      # Format & Enum Validation
+      - StringFormatTotallyWrongValuesFuzzer
+      - StringFormatAlmostValidValuesFuzzer
+      - InvalidValuesInEnumsFieldsFuzzer
+      - EnumCaseVariantFieldsFuzzer
+
+      # Business Logic
+      - MinGreaterThanMaxFieldsFuzzer
+      - DateRangeInversionFuzzer
+      - TemporalLogicFieldsFuzzer
+
+      # Security Essentials
+      - BypassAuthenticationFuzzer
+      - MassAssignmentFuzzer
+      - SqlInjectionInStringFieldsFuzzer
+      - XssInjectionInStringFieldsFuzzer
+      - SSRFInUrlFieldsFuzzer
+      - InsecureDirectObjectReferencesFuzzer
+
+      # HTTP Protocol
+      - HttpMethodsFuzzer
+      - DummyContentTypeHeadersFuzzer
+      - UnsupportedContentTypesHeadersFuzzer
+      - CheckSecurityHeadersFuzzer
+
+      # Malformed Input
+      - MalformedJsonFuzzer
+      - EmptyJsonBodyFuzzer
+      - DummyRequestFuzzer
+
+      # Array/Object Validation
+      - OverflowArraySizeFieldsFuzzer
+      - DuplicateKeysFieldsFuzzer
+
+  # ============================================
+  # FULL PROFILE (Default)
+  # Focus: Comprehensive testing
+  # ============================================
+  full:
+    description: "Complete test suite - all fuzzers enabled (default behavior)"
+    fuzzers: []  # Empty means ALL fuzzers

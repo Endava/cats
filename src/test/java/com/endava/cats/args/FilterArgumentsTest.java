@@ -36,6 +36,8 @@ class FilterArgumentsTest {
 
     ProcessingArguments processingArguments;
 
+    picocli.CommandLine.Model.CommandSpec spec;
+
     @BeforeEach
     void setup() {
         checkArguments = new CheckArguments();
@@ -48,6 +50,10 @@ class FilterArgumentsTest {
         ReflectionTestUtils.setField(filterArguments, "skipFields", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "paths", Collections.emptyList());
         ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
+
+        // Create a mock CommandSpec for testing
+        picocli.CommandLine commandLine = new picocli.CommandLine(filterArguments);
+        spec = commandLine.getCommandSpec();
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtension", null);
         ReflectionTestUtils.setField(filterArguments, "skipFuzzersForExtensionMap", new java.util.HashMap<>());
 
@@ -503,5 +509,89 @@ class FilterArgumentsTest {
         var result = filterArguments.getFuzzersToSkipForOperationExtensions(Collections.emptyMap());
 
         Assertions.assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldApplySecurityProfile() {
+        ReflectionTestUtils.setField(filterArguments, "profile", "security");
+
+        filterArguments.applyProfile(spec);
+
+        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
+        Assertions.assertThat(suppliedFuzzers)
+                .contains("SqlInjectionInStringFieldsFuzzer", "MassAssignmentFuzzer", "BypassAuthenticationFuzzer");
+    }
+
+    @Test
+    void shouldApplyQuickProfile() {
+        ReflectionTestUtils.setField(filterArguments, "profile", "quick");
+
+        filterArguments.applyProfile(spec);
+
+        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
+        Assertions.assertThat(suppliedFuzzers)
+                .contains("HappyPathFuzzer", "RemoveFieldsFuzzer", "NullValuesInFieldsFuzzer");
+    }
+
+    @Test
+    void shouldApplyFullProfileWithoutFiltering() {
+        ReflectionTestUtils.setField(filterArguments, "profile", "full");
+        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers", null);
+
+        filterArguments.applyProfile(spec);
+
+        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
+        Assertions.assertThat(suppliedFuzzers).isNullOrEmpty();
+    }
+
+    @Test
+    void shouldIntersectProfileWithUserSuppliedFuzzers() {
+        ReflectionTestUtils.setField(filterArguments, "profile", "security");
+        ReflectionTestUtils.setField(filterArguments, "suppliedFuzzers",
+                List.of("SqlInjectionInStringFieldsFuzzer", "HappyPathFuzzer"));
+
+        filterArguments.applyProfile(spec);
+
+        List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
+        Assertions.assertThat(suppliedFuzzers)
+                .contains("SqlInjectionInStringFieldsFuzzer")
+                .doesNotContain("HappyPathFuzzer", "MassAssignmentFuzzer");
+    }
+
+    @Test
+    void shouldThrowExceptionForInvalidProfile() {
+        ReflectionTestUtils.setField(filterArguments, "profile", "non-existent-profile");
+
+        Assertions.assertThatThrownBy(() -> filterArguments.applyProfile(spec))
+                .isInstanceOf(picocli.CommandLine.ParameterException.class)
+                .hasMessageContaining("Profile 'non-existent-profile' not found");
+    }
+
+    @Test
+    void shouldLoadCustomProfileFile() throws Exception {
+        String customProfileContent = """
+                profiles:
+                  custom-test:
+                    description: "Custom test profile"
+                    fuzzers:
+                      - HappyPathFuzzer
+                      - RemoveFieldsFuzzer
+                """;
+
+        java.nio.file.Path tempFile = java.nio.file.Files.createTempFile("custom-profile", ".yml");
+        java.nio.file.Files.writeString(tempFile, customProfileContent);
+
+        try {
+            ReflectionTestUtils.setField(filterArguments, "profile", "custom-test");
+            ReflectionTestUtils.setField(filterArguments, "customProfileFile", tempFile);
+
+            filterArguments.applyProfile(spec);
+
+            List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
+            Assertions.assertThat(suppliedFuzzers)
+                    .containsExactlyInAnyOrder("HappyPathFuzzer", "RemoveFieldsFuzzer");
+        } finally {
+            java.nio.file.Files.deleteIfExists(tempFile);
+        }
     }
 }
