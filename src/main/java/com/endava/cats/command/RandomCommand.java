@@ -7,6 +7,7 @@ import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.fuzzer.FuzzerTypes;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.VersionProvider;
 import io.quarkus.arc.Unremovable;
@@ -51,7 +52,7 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
-    AuthArguments authArgs;
+    AuthArguments authArguments;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
@@ -100,7 +101,7 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
         // these are all throwing a ParameterException in case a mandatory argument is not provided
         apiArguments.validateRequired(spec);
 
-        catsCommand.filterArguments.customFilter("RandomFuzzer");
+        catsCommand.filterArguments.customFilter(FuzzerTypes.RANDOM);
         catsCommand.filesArguments = filesArguments;
         catsCommand.processingArguments.setContentType(this.contentType);
         catsCommand.processingArguments.setXxxOfSelections(this.xxxOfSelections);

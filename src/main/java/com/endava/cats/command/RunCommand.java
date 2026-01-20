@@ -5,6 +5,7 @@ import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.fuzzer.FuzzerTypes;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.VersionProvider;
@@ -61,7 +62,7 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
-    AuthArguments authArgs;
+    AuthArguments authArguments;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
@@ -122,10 +123,10 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
         try {
             if (this.isFunctionalFuzzerFile()) {
-                catsCommand.filterArguments.customFilter("FunctionalFuzzer");
+                catsCommand.filterArguments.customFilter(FuzzerTypes.FUNCTIONAL);
                 catsCommand.filesArguments.setCustomFuzzerFile(file);
             } else {
-                catsCommand.filterArguments.customFilter("SecurityFuzzer");
+                catsCommand.filterArguments.customFilter(FuzzerTypes.SECURITY);
                 catsCommand.filesArguments.setSecurityFuzzerFile(file);
             }
             catsCommand.filesArguments.setHeadersFile(headersFile);

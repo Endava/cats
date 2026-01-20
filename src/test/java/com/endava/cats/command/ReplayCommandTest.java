@@ -37,7 +37,7 @@ class ReplayCommandTest {
     @BeforeEach
     void setup() throws IOException {
         replayCommand = new ReplayCommand(serviceCaller, testCaseListener);
-        replayCommand.authArgs = Mockito.mock(AuthArguments.class);
+        replayCommand.authArguments = Mockito.mock(AuthArguments.class);
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
         if (tempDir == null) {
             tempDir = Files.createTempDirectory("replay-test-temp");

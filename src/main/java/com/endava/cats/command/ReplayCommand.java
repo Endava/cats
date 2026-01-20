@@ -66,7 +66,7 @@ public class ReplayCommand implements Runnable {
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
-    AuthArguments authArgs;
+    AuthArguments authArguments;
 
     @CommandLine.Option(names = {"-D", "--debug"},
             description = "Set CATS log level to ALL. Useful for diagnosing when raising bugs")
@@ -287,7 +287,7 @@ public class ReplayCommand implements Runnable {
         headersFromFile.addAll(headersMap.entrySet().stream().map(entry -> new KeyValuePair<>(entry.getKey(), entry.getValue())).toList());
 
         //see if any header is dynamic and it needs a parser
-        headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArgs.getAuthScriptAsMap())));
+        headersFromFile.forEach(header -> header.setValue(CatsDSLParser.parseAndGetResult(header.getValue().toString(), authArguments.getAuthScriptAsMap())));
     }
 
     private CatsTestCase loadTestCaseFile(String testCaseFileName) throws IOException {

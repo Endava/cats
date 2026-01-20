@@ -95,7 +95,7 @@ public class TemplateFuzzCommand implements Runnable {
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
-    AuthArguments authArgs;
+    AuthArguments authArguments;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Reporting Options:|@%n", exclusive = false)
@@ -238,7 +238,7 @@ public class TemplateFuzzCommand implements Runnable {
                 .stream()
                 .map(entry -> CatsHeader.builder()
                         .name(entry.getKey().trim())
-                        .value(CatsDSLParser.parseAndGetResult(entry.getValue().trim(), authArgs.getAuthScriptAsMap()))
+                        .value(CatsDSLParser.parseAndGetResult(entry.getValue().trim(), authArguments.getAuthScriptAsMap()))
                         .build())
                 .collect(Collectors.toSet());
     }

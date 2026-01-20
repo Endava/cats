@@ -24,6 +24,7 @@ import com.endava.cats.openapi.handler.api.SchemaWalker;
 import com.endava.cats.openapi.handler.index.SpecPositionIndex;
 import com.endava.cats.report.ExecutionStatisticsListener;
 import com.endava.cats.report.TestCaseListener;
+import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
@@ -38,7 +39,6 @@ import io.swagger.v3.oas.models.PathItem;
 import jakarta.inject.Inject;
 import lombok.Getter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.fusesource.jansi.Ansi;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
@@ -57,8 +57,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Main application command.
@@ -139,11 +137,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Authentication Options:|@%n", exclusive = false)
-    AuthArguments authArgs;
+    AuthArguments authArguments;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Check Options:|@%n", exclusive = false)
-    CheckArguments checkArgs;
+    CheckArguments checkArguments;
 
     @Inject
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Files Options:|@%n", exclusive = false)
@@ -231,26 +229,9 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         VersionChecker.CheckResult checkResult = newVersion.get();
         logger.debug("Current version {}. Latest version {}", appVersion, checkResult.getVersion());
         if (checkResult.isNewVersion()) {
-            String message = ansi()
-                    .bold()
-                    .fgBrightBlue()
-                    .a("A new version is available: {}. Download url: {}")
-                    .reset()
-                    .toString();
-            String currentVersionFormatted = ansi()
-                    .bold()
-                    .fgBrightBlue()
-                    .a(checkResult.getVersion())
-                    .reset()
-                    .bold()
-                    .fgBrightBlue()
-                    .toString();
-            String downloadUrlFormatted = ansi()
-                    .bold()
-                    .fgGreen()
-                    .a(checkResult.getDownloadUrl())
-                    .reset()
-                    .toString();
+            String message = AnsiUtils.boldBrightBlue("A new version is available: {}. Download url: {}");
+            String currentVersionFormatted = AnsiUtils.boldBrightBlue(checkResult.getVersion());
+            String downloadUrlFormatted = AnsiUtils.boldGreen(checkResult.getDownloadUrl());
             logger.star(message, currentVersionFormatted, downloadUrlFormatted);
         }
     }
@@ -295,21 +276,11 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     private void printSuggestions() {
         if (executionStatisticsListener.areManyAuthErrors()) {
-            String message = ansi()
-                    .bold()
-                    .fgBrightYellow()
-                    .a("There were {} tests failing with authorisation errors. Either supply authentication details or check if the supplied credentials are correct!")
-                    .reset()
-                    .toString();
+            String message = AnsiUtils.boldYellow("There were {} tests failing with authorisation errors. Either supply authentication details or check if the supplied credentials are correct!");
             logger.star(message, executionStatisticsListener.getAuthErrors());
         }
         if (executionStatisticsListener.areManyIoErrors()) {
-            String message = ansi()
-                    .bold()
-                    .fgBrightYellow()
-                    .a("There were {} tests failing with i/o errors. Make sure that you have access to the service or that the --server url is correct!")
-                    .reset()
-                    .toString();
+            String message = AnsiUtils.boldYellow("There were {} tests failing with i/o errors. Make sure that you have access to the service or that the --server url is correct!");
             logger.star(message, executionStatisticsListener.getIoErrors());
         }
     }
@@ -363,7 +334,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     OpenAPI createOpenAPI() throws IOException {
-        String finishMessage = ansi().fgGreen().a("Finished parsing the contract in {} ms").reset().toString();
+        String finishMessage = AnsiUtils.green("Finished parsing the contract in {} ms");
         long t0 = System.currentTimeMillis();
         OpenAPI openAPI = OpenApiUtils.readOpenApi(apiArguments.getContract());
         logger.debug(finishMessage, (System.currentTimeMillis() - t0));
@@ -381,41 +352,41 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void printConfiguration(OpenAPI openAPI) {
-        logger.config(ansi().bold().a("OpenAPI specs: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(apiArguments.getContract()).reset());
-        logger.config(ansi().bold().a("API base url: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(apiArguments.getServer()).reset());
-        logger.config(ansi().bold().a("Reporting path: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(reportingArguments.getOutputReportFolder()).reset());
-        logger.config(ansi().bold().a("{} configured fuzzers out of {} total fuzzers").bold().reset().toString(),
-                ansi().fg(Ansi.Color.BLUE).a(filterArguments.getFirstPhaseFuzzersForPath().size()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(filterArguments.getAllRegisteredFuzzers().size()).reset().bold());
-        logger.config(ansi().bold().a("{} configured paths out of {} total OpenAPI paths").bold().reset().toString(),
-                ansi().fg(Ansi.Color.BLUE).a(filterArguments.getPathsToRun(openAPI).size()).bold().reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(openAPI.getPaths().size()).reset().bold());
-        logger.config(ansi().bold().a("HTTP methods in scope: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(filterArguments.getHttpMethods()).reset());
-        logger.config(ansi().bold().bold().a("Example flags: useRequestBodyExamples {}, useSchemaExamples {}, usePropertyExamples {}, useResponseBodyExamples {}, useDefaults {}").reset().toString(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseRequestBodyExamples()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseSchemaExamples()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUsePropertyExamples()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseResponseBodyExamples()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.isUseDefaults()).reset().bold());
-        logger.config(ansi().bold().a("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, limitFuzzedFields {}, limitXxxOfCombinations {}").reset().toString(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getSelfReferenceDepth()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLargeStringsSize()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getRandomHeadersNumber()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLimitNumberOfFields()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getLimitXxxOfCombinations()).reset().bold());
-        logger.config(ansi().bold().a("How the service handles whitespaces and random unicodes: edgeSpacesStrategy {}, sanitizationStrategy {}").reset().toString(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getEdgeSpacesStrategy()).reset().bold(),
-                ansi().fg(Ansi.Color.BLUE).a(processingArguments.getSanitizationStrategy()).reset().bold());
-        logger.config(ansi().bold().a("Seed value: {}").reset().toString(),
-                ansi().fg(Ansi.Color.BLUE).a(CatsRandom.getStoredSeed()).reset().bold());
+        logger.config(AnsiUtils.bold("OpenAPI specs: {}"), AnsiUtils.blue(apiArguments.getContract()));
+        logger.config(AnsiUtils.bold("API base url: {}"), AnsiUtils.blue(apiArguments.getServer()));
+        logger.config(AnsiUtils.bold("Reporting path: {}"), AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
+        logger.config(AnsiUtils.bold("{} configured fuzzers out of {} total fuzzers"),
+                AnsiUtils.boldBlue(filterArguments.getFirstPhaseFuzzersForPath().size()),
+                AnsiUtils.boldBlue(filterArguments.getAllRegisteredFuzzers().size()));
+        logger.config(AnsiUtils.bold("{} configured paths out of {} total OpenAPI paths"),
+                AnsiUtils.boldBlue(filterArguments.getPathsToRun(openAPI).size()),
+                AnsiUtils.boldBlue(openAPI.getPaths().size()));
+        logger.config(AnsiUtils.bold("HTTP methods in scope: {}"), AnsiUtils.blue(filterArguments.getHttpMethods()));
+        logger.config(AnsiUtils.bold("Example flags: useRequestBodyExamples {}, useSchemaExamples {}, usePropertyExamples {}, useResponseBodyExamples {}, useDefaults {}"),
+                AnsiUtils.boldBlue(processingArguments.isUseRequestBodyExamples()),
+                AnsiUtils.boldBlue(processingArguments.isUseSchemaExamples()),
+                AnsiUtils.boldBlue(processingArguments.isUsePropertyExamples()),
+                AnsiUtils.boldBlue(processingArguments.isUseResponseBodyExamples()),
+                AnsiUtils.boldBlue(processingArguments.isUseDefaults()));
+        logger.config(AnsiUtils.bold("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, limitFuzzedFields {}, limitXxxOfCombinations {}"),
+                AnsiUtils.boldBlue(processingArguments.getSelfReferenceDepth()),
+                AnsiUtils.boldBlue(processingArguments.getLargeStringsSize()),
+                AnsiUtils.boldBlue(processingArguments.getRandomHeadersNumber()),
+                AnsiUtils.boldBlue(processingArguments.getLimitNumberOfFields()),
+                AnsiUtils.boldBlue(processingArguments.getLimitXxxOfCombinations()));
+        logger.config(AnsiUtils.bold("How the service handles whitespaces and random unicodes: edgeSpacesStrategy {}, sanitizationStrategy {}"),
+                AnsiUtils.boldBlue(processingArguments.getEdgeSpacesStrategy()),
+                AnsiUtils.boldBlue(processingArguments.getSanitizationStrategy()));
+        logger.config(AnsiUtils.bold("Seed value: {}"),
+                AnsiUtils.boldBlue(CatsRandom.getStoredSeed()));
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
-        logger.config(ansi().bold().a("Total number of OpenAPI operations: {}").reset().toString(), ansi().fg(Ansi.Color.BLUE).a(nofOfOperations));
+        logger.config(AnsiUtils.bold("Total number of OpenAPI operations: {}"), AnsiUtils.blue(nofOfOperations));
     }
 
     private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {
         /* WE NEED TO ITERATE THROUGH EACH HTTP OPERATION CORRESPONDING TO THE CURRENT PATH ENTRY*/
-        String ansiString = ansi().bold().a("Start fuzzing path {}").reset().toString();
+        String ansiString = AnsiUtils.bold("Start fuzzing path {}");
         logger.start(ansiString, pathItemEntry.getKey());
         List<FuzzingData> fuzzingDataList = fuzzingDataFactory.fromPathItem(pathItemEntry.getKey(), pathItemEntry.getValue(), openAPI);
 
@@ -453,7 +424,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     private void runSingleFuzzer(Fuzzer fuzzer, FuzzingData data) {
         if (data.shouldSkipFuzzerForPath(fuzzer.toString())) {
             logger.skip("Skipping Fuzzer {} for path {} due to OpenAPI extension configuration",
-                    ansi().fgYellow().a(fuzzer.toString()).reset(), data.getPath());
+                    AnsiUtils.yellow(fuzzer.toString()), data.getPath());
             return;
         }
 
@@ -473,12 +444,12 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void logFuzzerEnd(Fuzzer fuzzer, FuzzingData data) {
-        logger.complete("Finishing Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
+        logger.complete("Finishing Fuzzer {}, http method {}, path {}", AnsiUtils.green(fuzzer.toString()), data.getMethod(), data.getPath());
         logger.info("{}", SEPARATOR);
     }
 
     private void logFuzzerStart(Fuzzer fuzzer, FuzzingData data) {
-        logger.start("Starting Fuzzer {}, http method {}, path {}", ansi().fgGreen().a(fuzzer.toString()).reset(), data.getMethod(), data.getPath());
+        logger.start("Starting Fuzzer {}, http method {}, path {}", AnsiUtils.green(fuzzer.toString()), data.getMethod(), data.getPath());
         logger.debug("Fuzzing payload: {}", data.getPayload());
     }
 

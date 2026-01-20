@@ -4,6 +4,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.ConfigOptions;
+import com.endava.cats.fuzzer.FuzzerTypes;
 import com.endava.cats.util.VersionProvider;
 import io.quarkus.arc.Unremovable;
 import jakarta.inject.Inject;
@@ -70,7 +71,7 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
     public void run() {
         catsCommand.apiArguments.setContract(contract);
         catsCommand.apiArguments.setServer("http://empty");
-        catsCommand.filterArguments.customFilter("Linter");
+        catsCommand.filterArguments.customFilter(FuzzerTypes.LINTER);
         catsCommand.filterArguments.setSkipFuzzers(Optional.ofNullable(skipLinters).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getSkipPaths().addAll(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
         catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
