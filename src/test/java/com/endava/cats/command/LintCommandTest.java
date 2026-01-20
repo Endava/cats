@@ -28,16 +28,20 @@ class LintCommandTest {
     TestCaseListener testCaseListener;
     @Inject
     FilterArguments filterArguments;
+    picocli.CommandLine.Model.CommandSpec spec;
 
 
     @BeforeEach
     void init() {
+        picocli.CommandLine commandLine = new picocli.CommandLine(lintCommand);
+        spec = commandLine.getCommandSpec();
         ReflectionTestUtils.setField(lintCommand, "contract", "contract");
         ReflectionTestUtils.setField(filterArguments, "fuzzersToBeRunComputed", false);
+        ReflectionTestUtils.setField(filterArguments, "profile", "full");
         ReflectionTestUtils.setField(lintCommand, "catsCommand", catsCommand);
+        ReflectionTestUtils.setField(catsCommand, "spec", spec);
         ReflectionTestUtils.setField(lintCommand, "skipLinters", Collections.emptyList());
         ReflectionTestUtils.setField(testCaseListener, "testReportsGenerator", Mockito.mock(TestReportsGenerator.class));
-
     }
 
     @Test
