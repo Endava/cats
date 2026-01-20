@@ -101,12 +101,10 @@ public class ProfileLoader {
         LOGGER.info("Available profiles:");
         profiles.values().stream()
                 .sorted(Comparator.comparing(Profile::name))
-                .forEach(profile -> {
-                    LOGGER.noFormat("  {} - {} ({} fuzzers)",
-                            profile.name(),
-                            profile.description(),
-                            profile.fuzzers().isEmpty() ? "ALL" : profile.fuzzers().size());
-                });
+                .forEach(profile -> LOGGER.noFormat("  {} - {} ({} fuzzers)",
+                        profile.name(),
+                        profile.description(),
+                        profile.fuzzers().isEmpty() ? "ALL" : profile.fuzzers().size()));
     }
 
     public record Profile(String name, String description, List<String> fuzzers) {

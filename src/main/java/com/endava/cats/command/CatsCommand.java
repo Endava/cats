@@ -474,7 +474,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
