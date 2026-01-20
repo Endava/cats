@@ -51,7 +51,7 @@ class RandomCommandTest {
         catsCommand.filterArguments = Mockito.mock(FilterArguments.class);
         catsCommand.processingArguments = Mockito.mock(ProcessingArguments.class);
         randomCommand.run();
-        Mockito.verify(catsCommand, Mockito.times(1)).run();
+        Mockito.verify(catsCommand, Mockito.times(1)).runWithContext(Mockito.any());
     }
 
     @Test

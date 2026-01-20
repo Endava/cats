@@ -6,6 +6,7 @@ import com.endava.cats.args.FilesArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.StopArguments;
+import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.fuzzer.FuzzerTypes;
 import com.endava.cats.http.HttpMethod;
@@ -101,14 +102,16 @@ public class RandomCommand implements Runnable, CommandLine.IExitCodeGenerator {
         // these are all throwing a ParameterException in case a mandatory argument is not provided
         apiArguments.validateRequired(spec);
 
-        catsCommand.filterArguments.customFilter(FuzzerTypes.RANDOM);
-        catsCommand.filesArguments = filesArguments;
-        catsCommand.processingArguments.setContentType(this.contentType);
-        catsCommand.processingArguments.setXxxOfSelections(this.xxxOfSelections);
-        catsCommand.processingArguments.setSeed(seed);
-        catsCommand.filterArguments.setPaths(List.of(path));
-        catsCommand.filterArguments.setHttpMethods(List.of(httpMethod));
-        catsCommand.run();
+        CommandContext context = new CommandContext();
+        context.setFuzzerType(FuzzerTypes.RANDOM);
+        context.setFilesArguments(filesArguments);
+        context.setContentType(contentType);
+        context.setXxxOfSelections(xxxOfSelections);
+        context.setSeed(seed);
+        context.setPaths(List.of(path));
+        context.setHttpMethods(List.of(httpMethod));
+
+        catsCommand.runWithContext(context);
     }
 
     @Override

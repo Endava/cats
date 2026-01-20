@@ -3,6 +3,7 @@ package com.endava.cats.command;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.NamingArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.fuzzer.FuzzerTypes;
 import com.endava.cats.util.VersionProvider;
@@ -69,16 +70,20 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
 
     @Override
     public void run() {
-        catsCommand.apiArguments.setContract(contract);
-        catsCommand.apiArguments.setServer("http://empty");
-        catsCommand.filterArguments.customFilter(FuzzerTypes.LINTER);
-        catsCommand.filterArguments.setSkipFuzzers(Optional.ofNullable(skipLinters).orElse(Collections.emptyList()));
-        catsCommand.filterArguments.getSkipPaths().addAll(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
-        catsCommand.filterArguments.getCheckArguments().setIncludeContract(true);
+        CommandContext context = new CommandContext();
+        context.setContract(contract);
+        context.setServer("http://empty");
+        context.setFuzzerType(FuzzerTypes.LINTER);
+        context.setSkipFuzzers(Optional.ofNullable(skipLinters).orElse(Collections.emptyList()));
+        context.setSkipPaths(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
+        context.setIncludeContract(true);
+        context.setLimitXxxOfCombinations(6);
+
+        // This needs to be set directly as it's not part of context
         catsCommand.filterArguments.setTotalCountType(FilterArguments.TotalCountType.LINTERS);
-        catsCommand.processingArguments.setLimitXxxOfCombinations(6);
         namingArguments.loadVerbMapFile();
-        catsCommand.run();
+
+        catsCommand.runWithContext(context);
     }
 
     @Override

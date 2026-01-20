@@ -11,6 +11,7 @@ import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.args.UserArguments;
+import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.exception.CatsException;
@@ -204,6 +205,48 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
      */
     public CatsCommand() {
         logger = PrettyLoggerFactory.getLogger(CatsCommand.class);
+    }
+
+    /**
+     * Run with explicit context (used by subcommands).
+     * This is the preferred method for subcommands to use.
+     * Applies context properties to arguments before running normal execution.
+     *
+     * @param context the command context containing configuration
+     */
+    public void runWithContext(CommandContext context) {
+        // Apply context to arguments
+        context.getFuzzerType().ifPresent(filterArguments::customFilter);
+        context.getCustomFuzzerFile().ifPresent(filesArguments::setCustomFuzzerFile);
+        context.getSecurityFuzzerFile().ifPresent(filesArguments::setSecurityFuzzerFile);
+        context.getHeadersFile().ifPresent(filesArguments::setHeadersFile);
+        context.getHeadersMap().ifPresent(filesArguments::setHeadersMap);
+        context.getCreateRefData().ifPresent(filesArguments::setCreateRefData);
+        context.getRefDataFile().ifPresent(filesArguments::setRefDataFile);
+        context.getQueryFile().ifPresent(filesArguments::setQueryFile);
+        context.getContentType().ifPresent(processingArguments::setContentType);
+        context.getXxxOfSelections().ifPresent(processingArguments::setXxxOfSelections);
+        context.getSeed().ifPresent(processingArguments::setSeed);
+        context.getPaths().ifPresent(filterArguments::setPaths);
+        context.getHttpMethods().ifPresent(methods -> {
+            @SuppressWarnings("unchecked")
+            List<HttpMethod> httpMethods = (List<HttpMethod>) methods;
+            filterArguments.setHttpMethods(httpMethods);
+        });
+        context.getSkipFuzzers().ifPresent(filterArguments::setSkipFuzzers);
+        context.getSkipPaths().ifPresent(skipPaths -> filterArguments.getSkipPaths().addAll(skipPaths));
+        context.getIncludeContract().ifPresent(include -> {
+            if (filterArguments.getCheckArguments() != null) {
+                filterArguments.getCheckArguments().setIncludeContract(include);
+            }
+        });
+        context.getContract().ifPresent(apiArguments::setContract);
+        context.getServer().ifPresent(apiArguments::setServer);
+        context.getLimitXxxOfCombinations().ifPresent(processingArguments::setLimitXxxOfCombinations);
+        context.getFilesArguments().ifPresent(fa -> filesArguments = (FilesArguments) fa);
+
+        // Run normal execution
+        this.run();
     }
 
     @Override

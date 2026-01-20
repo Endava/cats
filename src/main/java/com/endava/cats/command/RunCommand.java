@@ -4,6 +4,7 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.AuthArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.ReportingArguments;
+import com.endava.cats.command.model.CommandContext;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.fuzzer.FuzzerTypes;
 import com.endava.cats.util.CatsDSLWords;
@@ -122,22 +123,29 @@ public class RunCommand implements Runnable, CommandLine.IExitCodeGenerator {
         }
 
         try {
+            CommandContext context = new CommandContext();
+
+            // Set fuzzer type based on file content
             if (this.isFunctionalFuzzerFile()) {
-                catsCommand.filterArguments.customFilter(FuzzerTypes.FUNCTIONAL);
-                catsCommand.filesArguments.setCustomFuzzerFile(file);
+                context.setFuzzerType(FuzzerTypes.FUNCTIONAL);
+                context.setCustomFuzzerFile(file);
             } else {
-                catsCommand.filterArguments.customFilter(FuzzerTypes.SECURITY);
-                catsCommand.filesArguments.setSecurityFuzzerFile(file);
+                context.setFuzzerType(FuzzerTypes.SECURITY);
+                context.setSecurityFuzzerFile(file);
             }
-            catsCommand.filesArguments.setHeadersFile(headersFile);
-            catsCommand.filesArguments.setHeadersMap(headersMap);
-            catsCommand.filesArguments.setCreateRefData(createRefData);
-            catsCommand.filesArguments.setRefDataFile(refDataFile);
-            catsCommand.filesArguments.setQueryFile(queryFile);
-            catsCommand.processingArguments.setContentType(this.contentType);
-            catsCommand.processingArguments.setXxxOfSelections(this.xxxOfSelections);
-            catsCommand.processingArguments.setSeed(seed);
-            catsCommand.run();
+
+            // Set other context properties
+            context.setHeadersFile(headersFile);
+            context.setHeadersMap(headersMap);
+            context.setCreateRefData(createRefData);
+            context.setRefDataFile(refDataFile);
+            context.setQueryFile(queryFile);
+            context.setContentType(contentType);
+            context.setXxxOfSelections(xxxOfSelections);
+            context.setSeed(seed);
+
+            // Execute with context
+            catsCommand.runWithContext(context);
         } catch (IOException e) {
             logger.debug("Exception while processing file!", e);
             logger.error("Something went wrong while processing input file: {}. The file might not exist or is not reachable. Error message: {}", file, e.getMessage());
