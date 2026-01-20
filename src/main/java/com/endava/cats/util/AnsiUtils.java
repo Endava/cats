@@ -45,6 +45,16 @@ public abstract class AnsiUtils {
     }
 
     /**
+     * Formats text in red color.
+     *
+     * @param value the value to format
+     * @return ANSI-formatted string
+     */
+    public static String red(Object value) {
+        return ansi().fg(Ansi.Color.RED).a(value).reset().toString();
+    }
+
+    /**
      * Formats text in bold.
      *
      * @param text the text to format

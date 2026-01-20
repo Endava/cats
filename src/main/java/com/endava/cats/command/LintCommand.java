@@ -78,9 +78,8 @@ public class LintCommand implements Runnable, CommandLine.IExitCodeGenerator {
         context.setSkipPaths(Optional.ofNullable(skipPaths).orElse(Collections.emptyList()));
         context.setIncludeContract(true);
         context.setLimitXxxOfCombinations(6);
+        context.setTotalCountType(FilterArguments.TotalCountType.LINTERS);
 
-        // This needs to be set directly as it's not part of context
-        catsCommand.filterArguments.setTotalCountType(FilterArguments.TotalCountType.LINTERS);
         namingArguments.loadVerbMapFile();
 
         catsCommand.runWithContext(context);

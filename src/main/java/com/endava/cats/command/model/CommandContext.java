@@ -1,5 +1,7 @@
 package com.endava.cats.command.model;
 
+import com.endava.cats.args.FilterArguments;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
@@ -219,5 +221,13 @@ public class CommandContext {
 
     public Optional<Object> getFilesArguments() {
         return get("filesArguments", Object.class);
+    }
+
+    public void setTotalCountType(FilterArguments.TotalCountType totalCountType) {
+        set("totalCountType", totalCountType);
+    }
+
+    public Optional<FilterArguments.TotalCountType> getTotalCountType() {
+        return get("totalCountType", FilterArguments.TotalCountType.class);
     }
 }

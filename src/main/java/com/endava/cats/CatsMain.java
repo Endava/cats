@@ -2,6 +2,7 @@ package com.endava.cats;
 
 import com.endava.cats.command.CatsCommand;
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.util.CatsParamExceptionHandler;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import io.quarkus.runtime.QuarkusApplication;
@@ -42,7 +43,8 @@ public class CatsMain implements QuarkusApplication {
                 .setCaseInsensitiveEnumValuesAllowed(true)
                 .setColorScheme(colorScheme())
                 .setAbbreviatedOptionsAllowed(true)
-                .setAbbreviatedSubcommandsAllowed(true);
+                .setAbbreviatedSubcommandsAllowed(true)
+                .setParameterExceptionHandler(new CatsParamExceptionHandler());
 
         loadConfigIfSupplied(commandLine, args);
         return commandLine.execute(args);

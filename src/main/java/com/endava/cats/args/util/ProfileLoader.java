@@ -18,7 +18,7 @@ import java.util.Set;
 
 @Singleton
 public class ProfileLoader {
-    private static final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ProfileLoader.class);
+    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ProfileLoader.class);
     private static final String BUILT_IN_PROFILES = "fuzzer-profiles.yml";
 
     private Map<String, Profile> profiles;
@@ -53,7 +53,7 @@ public class ProfileLoader {
                 profiles.put(profileName, profile);
             }
 
-            LOGGER.info("Loaded {} built-in profiles", profiles.size());
+            LOGGER.debug("Loaded {} built-in profiles", profiles.size());
         } catch (Exception e) {
             LOGGER.error("Failed to load built-in profiles", e);
             profiles = new HashMap<>();
@@ -83,7 +83,7 @@ public class ProfileLoader {
                 profiles.put(profileName, profile);
             }
 
-            LOGGER.info("Loaded custom profiles from: {}", customProfileFile);
+            LOGGER.debug("Loaded custom profiles from: {}", customProfileFile);
         } catch (Exception e) {
             LOGGER.error("Failed to load custom profiles from: {}", customProfileFile, e);
         }

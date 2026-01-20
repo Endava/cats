@@ -365,8 +365,11 @@ public class TestCaseListener {
     }
 
     private void renderGlobalFuzzersStatistics() {
-        String toRenderPreviousPath = "global" + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath("N/A");
-        ConsoleUtils.renderNewRow(toRenderPreviousPath, '✔');
+        long executions = executionStatisticsListener.getExecutionsPerPath("N/A");
+        if (executions > 0) {
+            String toRenderPreviousPath = "global" + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath("N/A");
+            ConsoleUtils.renderNewRow(toRenderPreviousPath, '✔');
+        }
     }
 
     private void markPreviousPathAsDone() {

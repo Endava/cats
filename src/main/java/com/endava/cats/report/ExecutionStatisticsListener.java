@@ -203,4 +203,14 @@ public class ExecutionStatisticsListener {
         String successString = Ansi.ansi().bold().fg(Ansi.Color.GREEN).a("S " + success.getOrDefault(path, 0)).reset().toString();
         return "%s, %s, %s".formatted(errorsString, warnsString, successString);
     }
+
+    /**
+     * Gets the total count of all executions (successes + warnings + errors) for a specific path.
+     *
+     * @param path The path for which to get the total count of executions.
+     * @return The total count of executions for the specified path.
+     */
+    public long getExecutionsPerPath(String path) {
+        return this.errors.getOrDefault(path, 0) + this.warns.getOrDefault(path, 0) + this.success.getOrDefault(path, 0);
+    }
 }

@@ -244,6 +244,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         context.getServer().ifPresent(apiArguments::setServer);
         context.getLimitXxxOfCombinations().ifPresent(processingArguments::setLimitXxxOfCombinations);
         context.getFilesArguments().ifPresent(fa -> filesArguments = (FilesArguments) fa);
+        context.getTotalCountType().ifPresent(filterArguments::setTotalCountType);
 
         // Run normal execution
         this.run();
@@ -280,7 +281,6 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void doLogic() throws IOException {
-        filterArguments.applyProfile(spec);
         this.prepareRun();
         OpenAPI openAPI = this.createOpenAPI();
         this.checkOpenAPI(openAPI);
@@ -392,6 +392,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         reportingArguments.processLogData();
         apiArguments.validateRequired(spec);
         filesArguments.loadConfig();
+        filterArguments.applyProfile(spec);
     }
 
     private void printConfiguration(OpenAPI openAPI) {
