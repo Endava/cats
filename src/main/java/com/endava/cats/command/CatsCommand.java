@@ -287,7 +287,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         OpenAPI openAPI = this.createOpenAPI();
         this.checkOpenAPI(openAPI);
         apiArguments.validateValidServer(spec, openAPI);
-
+        filterArguments.validateValidPaths(openAPI);
         //reporting path is initialized only if OpenAPI spec is successfully parsed
         testCaseListener.initReportingPath();
         this.printConfiguration(openAPI);

@@ -9,6 +9,7 @@ import picocli.CommandLine;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -64,7 +65,7 @@ public class QualityGateArguments {
     private boolean evaluateFailOn(int errors, int warnings) {
         List<String> conditions = Arrays.stream(failOn.split(","))
                 .map(String::trim)
-                .map(String::toLowerCase)
+                .map(s -> s.toLowerCase(Locale.ROOT))
                 .toList();
 
         boolean failOnError = conditions.contains("error");
@@ -141,7 +142,7 @@ public class QualityGateArguments {
             return false;
         }
 
-        String metric = parts[0].trim().toLowerCase();
+        String metric = parts[0].trim().toLowerCase(Locale.ROOT);
         String thresholdStr = parts[1].trim();
 
         if (!metrics.containsKey(metric)) {

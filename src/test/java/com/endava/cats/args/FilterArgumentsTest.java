@@ -594,4 +594,31 @@ class FilterArgumentsTest {
             java.nio.file.Files.deleteIfExists(tempFile);
         }
     }
+
+    @Test
+    void shouldNotThrowIllegalArgumentWhenPathsNotSupplied() {
+        Assertions.assertThatNoException().isThrownBy(() -> filterArguments.validateValidPaths(null));
+    }
+
+    @Test
+    void shouldThrowIllegalArgumentExceptionWhenPathNotExistsInOpenAPI() {
+        filterArguments.setPaths(List.of("/non-existent-path"));
+        OpenAPI spec = Mockito.mock(OpenAPI.class);
+        Paths paths = Mockito.mock(Paths.class);
+        Mockito.when(paths.containsKey("/non-existent-path")).thenReturn(false);
+        Mockito.when(spec.getPaths()).thenReturn(paths);
+        Assertions.assertThatThrownBy(() -> filterArguments.validateValidPaths(spec))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("No paths available to run. Use 'cats list -p -c api.yml' to list available paths");
+    }
+
+    @Test
+    void shouldNotThrowExceptionWhenPathExists() {
+        filterArguments.setPaths(List.of("/non-existent-path"));
+        OpenAPI spec = Mockito.mock(OpenAPI.class);
+        Paths paths = Mockito.mock(Paths.class);
+        Mockito.when(paths.containsKey("/non-existent-path")).thenReturn(true);
+        Mockito.when(spec.getPaths()).thenReturn(paths);
+        Assertions.assertThatNoException().isThrownBy(() -> filterArguments.validateValidPaths(spec));
+    }
 }
