@@ -1,6 +1,7 @@
 package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.util.AnsiUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -9,7 +10,6 @@ import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
-import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
 import java.io.File;
@@ -163,8 +163,8 @@ public class FilesArguments {
         }
         pathsOrder = Files.readAllLines(pathsOrderFile.toPath());
 
-        log.config(Ansi.ansi().bold().a("Paths order file: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(pathsOrderFile.getCanonicalPath()));
+        log.config(AnsiUtils.bold("Paths order file: {}"),
+                AnsiUtils.blue(pathsOrderFile.getCanonicalPath()));
     }
 
     public void loadMutators() throws IOException {
@@ -172,8 +172,8 @@ public class FilesArguments {
             log.debug("No custom Mutators folder provided");
             return;
         }
-        log.config(Ansi.ansi().bold().a("Custom Mutators folder: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(mutatorsFolder.getCanonicalPath()));
+        log.config(AnsiUtils.bold("Custom Mutators folder: {}"),
+                AnsiUtils.blue(mutatorsFolder.getCanonicalPath()));
     }
 
     /**
@@ -231,8 +231,8 @@ public class FilesArguments {
                 .toList());
 
         if (!urlParams.isEmpty()) {
-            log.config(Ansi.ansi().bold().a("URL parameters: {}").reset().toString(),
-                    Ansi.ansi().fg(Ansi.Color.BLUE).a(urlParams));
+            log.config(AnsiUtils.bold("URL parameters: {}"),
+                    AnsiUtils.blue(urlParams));
         }
     }
 
@@ -367,8 +367,8 @@ public class FilesArguments {
             return;
         }
 
-        log.config(Ansi.ansi().bold().a("Fuzzers custom configuration: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(fuzzersConfig));
+        log.config(AnsiUtils.bold("Fuzzers custom configuration: {}"),
+                AnsiUtils.blue(fuzzersConfig));
         try (InputStream stream = new FileInputStream(fuzzersConfig)) {
             fuzzConfigProperties.load(stream);
         }
@@ -388,8 +388,8 @@ public class FilesArguments {
 
         errorLeaksKeywordsList = new HashSet<>(Files.readAllLines(errorLeaksKeywords.toPath()));
 
-        log.config(Ansi.ansi().bold().a("Error leaks keywords file: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(errorLeaksKeywords.getCanonicalPath()));
+        log.config(AnsiUtils.bold("Error leaks keywords file: {}"),
+                AnsiUtils.blue(errorLeaksKeywords.getCanonicalPath()));
     }
 
 
@@ -414,8 +414,8 @@ public class FilesArguments {
                 return new HashMap<>();
             }
 
-            log.config(Ansi.ansi().bold().a("{} file: {}").reset().toString(), fileType,
-                    Ansi.ansi().fg(Ansi.Color.BLUE).a(file.getCanonicalPath()));
+            log.config(AnsiUtils.bold("{} file: {}"), fileType,
+                    AnsiUtils.blue(file.getCanonicalPath()));
             Map<String, Map<String, Object>> fromFile = parseYaml(file.getCanonicalPath());
             log.debug("{} file loaded successfully: {}", fileType, fromFile);
 

@@ -12,6 +12,7 @@ import com.endava.cats.model.CatsTestReport;
 import com.endava.cats.model.TimeExecution;
 import com.endava.cats.model.TimeExecutionDetails;
 import com.endava.cats.model.ann.ExcludeTestCaseStrategy;
+import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.KeyValueSerializer;
@@ -57,7 +58,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * This class is responsible for writing the final report file(s).
@@ -181,7 +181,7 @@ public abstract class TestCaseExporter {
         if (resultReasonCounts.isEmpty()) {
             return;
         }
-        String redCross = ansi().fgRed().a("✖").reset().toString();
+        String redCross = AnsiUtils.red("✖");
         ConsoleUtils.emptyLine();
         logger.info("Errors by reason:");
         resultReasonCounts.forEach((reason, count) ->
@@ -244,10 +244,10 @@ public abstract class TestCaseExporter {
                 .executions(executions).build();
 
 
-        logger.info("Details for path {} ", ansi().fg(Ansi.Color.GREEN).a(timeExecutionDetails.getPath()).reset());
-        logger.timer(ansi().fgYellow().a("Average response time: {}ms").reset().toString(), ansi().bold().a(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
-        logger.timer(ansi().fgRed().a("Worst case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getWorstCase().executionTimeString()));
-        logger.timer(ansi().fgGreen().a("Best case response time: {}").reset().toString(), ansi().bold().a(timeExecutionDetails.getBestCase().executionTimeString()));
+        logger.info("Details for path {} ", AnsiUtils.green(timeExecutionDetails.getPath()));
+        logger.timer(AnsiUtils.yellow("Average response time: {}ms"), AnsiUtils.bold(NumberFormat.getInstance().format(timeExecutionDetails.getAverage())));
+        logger.timer(AnsiUtils.red("Worst case response time: {}"), AnsiUtils.bold(timeExecutionDetails.getWorstCase().executionTimeString()));
+        logger.timer(AnsiUtils.green("Best case response time: {}"), AnsiUtils.bold(timeExecutionDetails.getBestCase().executionTimeString()));
         ConsoleUtils.emptyLine();
 
         if (reportingArguments.isPrintDetailedExecutionStatistics()) {
@@ -268,11 +268,11 @@ public abstract class TestCaseExporter {
      * It also provides a message with a link to the generated report if available.
      */
     public void printExecutionDetails() {
-        String catsFinished = ansi().fgBlue().a("CATS finished in {}. Total requests {}. ").toString();
-        String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
-        String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
-        String errors = ansi().fgRed().bold().a("‼ errors: {}").toString();
-        String check = ansi().reset().fgBlue().a(String.format("You can open the report here: %s ", reportingPath.toUri() + getSummaryReportTitle())).reset().toString();
+        String catsFinished = AnsiUtils.blue("CATS finished in {}. Total requests {}. ");
+        String passed = AnsiUtils.boldGreen("✔ Passed {}, ");
+        String warnings = AnsiUtils.boldYellow("⚠ warnings: {}, ");
+        String errors = AnsiUtils.boldRed("‼ errors: {}");
+        String check = AnsiUtils.blue(String.format("You can open the report here: %s ", reportingPath.toUri() + getSummaryReportTitle()));
         String finalMessage = catsFinished + passed + warnings + errors;
         String duration = Duration.ofMillis(System.currentTimeMillis() - t0).toString().toLowerCase(Locale.ROOT).substring(2);
 
@@ -282,9 +282,9 @@ public abstract class TestCaseExporter {
         // Print quality gate result
         boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
         String qualityGateStatus = qualityGatePassed
-                ? ansi().fgGreen().bold().a("✔ Quality gate PASSED").reset().toString()
-                : ansi().fgRed().bold().a("✖ Quality gate FAILED").reset().toString();
-        String qualityGateDescription = ansi().fgBlue().a(" [{}]").reset().toString();
+                ? AnsiUtils.boldGreen("✔ Quality gate PASSED")
+                : AnsiUtils.boldRed("✖ Quality gate FAILED");
+        String qualityGateDescription = AnsiUtils.blue(" [{}]");
         logger.complete(qualityGateStatus + qualityGateDescription, qualityGateArguments.getQualityGateDescription());
         
         logger.complete(check);

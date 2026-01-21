@@ -4,6 +4,7 @@ import com.endava.cats.util.CatsModelUtils;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.OpenApiReusabilityMetrics;
 import com.endava.cats.util.OpenApiUtils;
+import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.VersionProvider;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
@@ -176,12 +177,12 @@ public class StatsCommand implements Runnable {
 
         for (Details details : toDisplay) {
             if (details.text.startsWith("{}")) {
-                logger.config(Ansi.ansi().bold().a(details.text).reset().toString(),
-                        Ansi.ansi().fgBlue().a(this.getFieldSize(stats, details.property)).reset().bold(),
-                        Ansi.ansi().fgBlue().a(this.getField(stats, details.property)).reset().bold());
+                logger.config(AnsiUtils.bold(details.text),
+                        AnsiUtils.boldBlue(this.getFieldSize(stats, details.property)),
+                        AnsiUtils.boldBlue(this.getField(stats, details.property)));
             } else {
-                logger.config(Ansi.ansi().bold().a(details.text).reset().toString(),
-                        Ansi.ansi().fgBlue().a(this.getField(stats, details.property)).reset().bold());
+                logger.config(AnsiUtils.bold(details.text),
+                        AnsiUtils.boldBlue(this.getField(stats, details.property)));
             }
         }
 
@@ -211,9 +212,9 @@ public class StatsCommand implements Runnable {
     }
 
     void renderComponentSection(String textToPrint, Set<String> componentsSection) {
-        String outputMessage = Ansi.ansi().bold().a("{} ") +
-                Ansi.ansi().fgBlue().a(textToPrint).reset().bold().toString()
-                + Ansi.ansi().a(" defined in components").reset().toString()
+        String outputMessage = AnsiUtils.bold("{} ") +
+                AnsiUtils.boldBlue(textToPrint)
+                + " defined in components"
                 + (detailed ? ": {}" : "");
 
         logger.config(outputMessage, componentsSection.size(), componentsSection);

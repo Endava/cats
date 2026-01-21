@@ -1,6 +1,8 @@
 package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
+import com.endava.cats.http.HttpMethod;
+import com.endava.cats.util.AnsiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
@@ -74,8 +76,8 @@ public class NamingArguments {
             return;
         }
 
-        log.config(Ansi.ansi().bold().a("Loading operationId prefix mapping custom configuration: {}").reset().toString(),
-                Ansi.ansi().fg(Ansi.Color.BLUE).a(operationPrefixMapFile));
+        log.config(AnsiUtils.bold("Loading operationId prefix mapping custom configuration: {}"),
+                AnsiUtils.blue(operationPrefixMapFile));
 
         try (InputStream stream = new FileInputStream(operationPrefixMapFile)) {
             Properties verbMappingAsProperties = new Properties();

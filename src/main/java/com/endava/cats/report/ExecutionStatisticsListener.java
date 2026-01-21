@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.util.AnsiUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Getter;
 import org.fusesource.jansi.Ansi;
@@ -198,9 +199,9 @@ public class ExecutionStatisticsListener {
      * @return A formatted string representation of the execution results.
      */
     public String resultAsStringPerPath(String path) {
-        String errorsString = Ansi.ansi().bold().fg(Ansi.Color.RED).a("E " + errors.getOrDefault(path, 0)).reset().toString();
-        String warnsString = Ansi.ansi().bold().fg(Ansi.Color.YELLOW).a("W " + warns.getOrDefault(path, 0)).reset().toString();
-        String successString = Ansi.ansi().bold().fg(Ansi.Color.GREEN).a("S " + success.getOrDefault(path, 0)).reset().toString();
+        String errorsString = AnsiUtils.boldRed("E " + errors.getOrDefault(path, 0));
+        String warnsString = AnsiUtils.boldYellow("W " + warns.getOrDefault(path, 0));
+        String successString = AnsiUtils.boldGreen("S " + success.getOrDefault(path, 0));
         return "%s, %s, %s".formatted(errorsString, warnsString, successString);
     }
 

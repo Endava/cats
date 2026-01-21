@@ -16,6 +16,7 @@ import com.endava.cats.model.CatsTestCase;
 import com.endava.cats.model.CatsTestCaseExecutionSummary;
 import com.endava.cats.model.CatsTestCaseSummary;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.WordUtils;
@@ -54,7 +55,6 @@ import java.util.regex.Pattern;
 import static com.endava.cats.context.CatsGlobalContext.CONTRACT_PATH;
 import static com.endava.cats.context.CatsGlobalContext.HTTP_METHOD;
 import static com.endava.cats.model.CatsTestCase.SKIP_REPORTING;
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * This class exposes methods to record the progress of a test case
@@ -352,7 +352,7 @@ public class TestCaseListener {
             return;
         }
         String fuzzer = MDC.get(FUZZER);
-        String prefix = ansi().fgBlue().a("(" + runPerPathListener.size() + "/" + globalContext.getCatsConfiguration().pathsToRun() + ") ").fgDefault().toString();
+        String prefix = AnsiUtils.blue("(" + runPerPathListener.size() + "/" + globalContext.getCatsConfiguration().pathsToRun() + ") ");
         String printPath = prefix + path + " " + fuzzer + ConsoleUtils.SEPARATOR + executionStatisticsListener.resultAsStringPerPath(path);
 
         if (runPerPathListener.contains(path)) {
@@ -402,11 +402,11 @@ public class TestCaseListener {
         String osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
 
         ConsoleUtils.emptyLine();
-        logger.start(ansi().bold().a("Starting {}-{}, build time {} UTC, platform {}").reset().toString(),
-                ansi().fg(Ansi.Color.GREEN).a(appName),
-                ansi().fg(Ansi.Color.GREEN).a(appVersion),
-                ansi().fg(Ansi.Color.GREEN).a(appBuildTime),
-                ansi().fg(Ansi.Color.GREEN).a(osDetails).reset());
+        logger.start(AnsiUtils.bold("Starting {}-{}, build time {} UTC, platform {}"),
+                AnsiUtils.green(appName),
+                AnsiUtils.green(appVersion),
+                AnsiUtils.green(appBuildTime),
+                AnsiUtils.green(osDetails));
     }
 
     /**

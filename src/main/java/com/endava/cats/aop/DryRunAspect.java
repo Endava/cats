@@ -5,6 +5,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.model.CatsResponse;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -18,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * Aspect used to suspend CATS logic when running in dryRun mode.
@@ -99,7 +99,7 @@ public class DryRunAspect {
             logger.noFormat("\n");
             CatsUtil.setCatsLogLevel("INFO");
             logger.noFormat("Number of tests that will be run with this configuration: {}", paths.values().stream().reduce(0, Integer::sum));
-            paths.forEach((s, integer) -> logger.noFormat(ansi().fgBrightYellow().bold().a(" -> path {}: {} tests").toString(), s, integer));
+            paths.forEach((s, integer) -> logger.noFormat(AnsiUtils.boldYellow(" -> path {}: {} tests"), s, integer));
         }
         return null;
     }

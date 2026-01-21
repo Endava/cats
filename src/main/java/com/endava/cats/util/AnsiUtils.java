@@ -103,4 +103,36 @@ public abstract class AnsiUtils {
     public static String boldGreen(Object value) {
         return ansi().bold().fgGreen().a(value).reset().toString();
     }
+
+    /**
+     * Formats text in bold red color.
+     *
+     * @param value the value to format
+     * @return ANSI-formatted string
+     */
+    public static String boldRed(Object value) {
+        return ansi().bold().fgRed().a(value).reset().toString();
+    }
+
+    /**
+     * Formats text in bold with specific Ansi.Color.
+     *
+     * @param value the value to format
+     * @param color the Ansi color
+     * @return ANSI-formatted string
+     */
+    public static String boldColor(Object value, Ansi.Color color) {
+        return ansi().bold().fg(color).a(value).reset().toString();
+    }
+
+    /**
+     * Formats text in specific Ansi.Color.
+     *
+     * @param value the value to format
+     * @param color the Ansi color
+     * @return ANSI-formatted string
+     */
+    public static String color(Object value, Ansi.Color color) {
+        return ansi().fg(color).a(value).reset().toString();
+    }
 }

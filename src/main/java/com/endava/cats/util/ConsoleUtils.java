@@ -56,7 +56,7 @@ public abstract class ConsoleUtils {
      * @return The centered string with ANSI color.
      */
     public static String centerWithAnsiColor(String str, int padding, Ansi.Color color) {
-        String strAnsi = Ansi.ansi().fg(color).bold().a(str).reset().toString();
+        String strAnsi = AnsiUtils.boldColor(str, color);
         int paddingLength = strAnsi.length() - str.length() + padding;
         return StringUtils.center(strAnsi, paddingLength, "*");
     }
@@ -135,7 +135,7 @@ public abstract class ConsoleUtils {
         int dots = Math.max(terminalWidth - withoutAnsi.length() - 2, 1);
         String firstPart = path.substring(0, path.indexOf(SEPARATOR));
         String secondPart = path.substring(path.indexOf(SEPARATOR) + 1);
-        String toPrint = Ansi.ansi().bold().a(prefix + firstPart + " " + ".".repeat(dots) + secondPart + " " + progressChar).reset().toString();
+        String toPrint = AnsiUtils.bold(prefix + firstPart + " " + ".".repeat(dots) + secondPart + " " + progressChar);
 
         //we just use system.out as the logger adds a new line
         System.out.print(toPrint);
@@ -159,7 +159,7 @@ public abstract class ConsoleUtils {
     public static void renderHeader(String header) {
         LOGGER.noFormat(" ");
         int equalsNo = (terminalWidth - header.length()) / 2;
-        LOGGER.noFormat(Ansi.ansi().bold().a("=".repeat(equalsNo) + header + "=".repeat(equalsNo)).reset().toString());
+        LOGGER.noFormat(AnsiUtils.bold("=".repeat(equalsNo) + header + "=".repeat(equalsNo)));
     }
 
     /**

@@ -16,6 +16,7 @@ import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
+import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.AnnotationUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
@@ -45,7 +46,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.fusesource.jansi.Ansi.ansi;
 
 /**
  * List various information such as: OpenAPI paths, fuzzers list, format supported by CATS and so on.
@@ -128,7 +128,7 @@ public class ListCommand implements Runnable {
             List<FuzzerListEntry> fuzzerEntries = List.of(new FuzzerListEntry().category("Linters").fuzzers(linters));
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(fuzzerEntries));
         } else {
-            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered linters:").reset().toString();
+            String message = AnsiUtils.boldGreen("CATS has {} registered linters:");
             logger.noFormat(message, fuzzersList.size());
             displayFuzzers(linters, Linter.class);
         }
@@ -146,7 +146,7 @@ public class ListCommand implements Runnable {
         if (json) {
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(CustomMutatorConfig.Type.values()));
         } else {
-            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered custom mutator types: {}").reset().toString();
+            String message = AnsiUtils.boldGreen("CATS has {} registered custom mutator types: {}");
             logger.noFormat(message, CustomMutatorConfig.Type.values().length, Arrays.toString(CustomMutatorConfig.Type.values()));
         }
     }
@@ -155,10 +155,10 @@ public class ListCommand implements Runnable {
         if (json) {
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(mutators));
         } else {
-            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered Mutators:").reset().toString();
+            String message = AnsiUtils.boldGreen("CATS has {} registered Mutators:");
             logger.noFormat(message, mutators.size());
             mutators.stream()
-                    .map(m -> " ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(m.name()).reset() + " - " + m.description())
+                    .map(m -> " ◼ " + AnsiUtils.boldGreen(m.name()) + " - " + m.description())
                     .forEach(logger::noFormat);
         }
     }
@@ -209,7 +209,7 @@ public class ListCommand implements Runnable {
         if (json) {
             logger.noFormat(JsonUtils.GSON.toJson(pathDetailsEntry));
         } else {
-            logger.noFormat(ansi().bold().a(path + ":").reset().toString());
+            logger.noFormat(AnsiUtils.bold(path + ":"));
             for (PathDetailsEntry.OperationDetails operation : pathDetailsEntry.getOperations()) {
                 logger.noFormat(ConsoleUtils.SEPARATOR);
                 logger.noFormat(" ◼ Operation: " + operation.getOperationId());
@@ -290,7 +290,7 @@ public class ListCommand implements Runnable {
                     new FuzzerListEntry().category("Linters").fuzzers(contractInfo));
             PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(fuzzerEntries));
         } else {
-            String message = ansi().bold().fg(Ansi.Color.GREEN).a("CATS has {} registered fuzzers:").reset().toString();
+            String message = AnsiUtils.boldGreen("CATS has {} registered fuzzers:");
             logger.noFormat(message, fuzzersList.size());
             displayFuzzers(fieldFuzzers, FieldFuzzer.class);
             displayFuzzers(headerFuzzers, HeaderFuzzer.class);
@@ -307,11 +307,11 @@ public class ListCommand implements Runnable {
     }
 
     void displayFuzzers(List<Fuzzer> fuzzers, Class<? extends Annotation> annotation) {
-        String message = ansi().bold().fg(Ansi.Color.CYAN).a("{} {}:").reset().toString();
+        String message = AnsiUtils.boldColor("{} {}:", Ansi.Color.CYAN);
         String typeOfFuzzers = annotation.getSimpleName().replace("Fuzzer", "");
         logger.noFormat(" ");
         logger.noFormat(message, fuzzers.size(), typeOfFuzzers);
-        fuzzers.stream().map(fuzzer -> " ◼ " + ansi().bold().fg(Ansi.Color.GREEN).a(ConsoleUtils.removeTrimSanitize(fuzzer.toString())).reset().a(" - " + fuzzer.description()).reset()).forEach(logger::noFormat);
+        fuzzers.stream().map(fuzzer -> " ◼ " + AnsiUtils.boldGreen(ConsoleUtils.removeTrimSanitize(fuzzer.toString())) + " - " + fuzzer.description()).forEach(logger::noFormat);
     }
 
     static class ListCommandGroups {
