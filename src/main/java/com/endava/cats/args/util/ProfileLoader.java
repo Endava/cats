@@ -8,8 +8,8 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,14 +97,8 @@ public class ProfileLoader {
         return profiles.keySet();
     }
 
-    public void listProfiles() {
-        LOGGER.info("Available profiles:");
-        profiles.values().stream()
-                .sorted(Comparator.comparing(Profile::name))
-                .forEach(profile -> LOGGER.noFormat("  {} - {} ({} fuzzers)",
-                        profile.name(),
-                        profile.description(),
-                        profile.fuzzers().isEmpty() ? "ALL" : profile.fuzzers().size()));
+    public Collection<Profile> getAvailableProfilesDetails() {
+        return profiles.values();
     }
 
     public record Profile(String name, String description, List<String> fuzzers) {

@@ -1,5 +1,6 @@
 package com.endava.cats.command;
 
+import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
@@ -27,11 +28,25 @@ class ListCommandTest {
     @Inject
     Instance<Mutator> mutators;
 
+    @Inject
+    ProfileLoader profileLoader;
+
     private ListCommand listCommand;
 
     @BeforeEach
     void setup() {
-        listCommand = new ListCommand(fuzzers, formats, mutators);
+        listCommand = new ListCommand(profileLoader, fuzzers, formats, mutators);
+    }
+
+
+    @Test
+    void shouldListProfiles() {
+        ListCommand spyListCommand = Mockito.spy(listCommand);
+        CommandLine commandLine = new CommandLine(spyListCommand);
+        commandLine.execute("--profiles");
+        Mockito.verify(spyListCommand, Mockito.times(1)).listProfiles();
+        commandLine.execute("--profiles", "-j");
+        Mockito.verify(spyListCommand, Mockito.times(2)).listProfiles();
     }
 
     @Test

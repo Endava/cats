@@ -6,6 +6,7 @@ import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.annotations.Linter;
 import com.endava.cats.annotations.ValidateAndSanitize;
 import com.endava.cats.annotations.ValidateAndTrim;
+import com.endava.cats.args.util.ProfileLoader;
 import com.endava.cats.command.model.FuzzerListEntry;
 import com.endava.cats.command.model.MutatorEntry;
 import com.endava.cats.command.model.PathDetailsEntry;
@@ -16,8 +17,8 @@ import com.endava.cats.fuzzer.special.mutators.api.Mutator;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.model.FuzzingData;
-import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.AnnotationUtils;
+import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsRandom;
 import com.endava.cats.util.ConsoleUtils;
 import com.endava.cats.util.JsonUtils;
@@ -31,6 +32,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.Instance;
+import lombok.extern.slf4j.Slf4j;
 import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
@@ -38,6 +40,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -50,6 +53,7 @@ import java.util.stream.Collectors;
 /**
  * List various information such as: OpenAPI paths, fuzzers list, format supported by CATS and so on.
  */
+@Slf4j
 @CommandLine.Command(
         name = "list",
         mixinStandardHelpOptions = true,
@@ -72,6 +76,7 @@ public class ListCommand implements Runnable {
 
     private final List<String> formats;
     private final List<MutatorEntry> mutators;
+    private ProfileLoader profileLoader;
 
     @CommandLine.ArgGroup(multiplicity = "1")
     ListCommandGroups listCommandGroups;
@@ -82,16 +87,19 @@ public class ListCommand implements Runnable {
     /**
      * Constructs a new instance of the {@code ListCommand} class.
      *
-     * @param fuzzersList an instance containing a list of fuzzers, excluding those annotated with {@code ValidateAndTrim} or {@code ValidateAndSanitize}
-     * @param formats     an instance containing a list of OpenAPI formats, including their matching formats
+     * @param fuzzersList   an instance containing a list of fuzzers, excluding those annotated with {@code ValidateAndTrim} or {@code ValidateAndSanitize}
+     * @param formats       an instance containing a list of OpenAPI formats, including their matching formats
+     * @param mutators      an instance containing a list of mutators
+     * @param profileLoader an instance of the {@code ProfileLoader} class
      */
-    public ListCommand(@Any Instance<Fuzzer> fuzzersList, @Any Instance<OpenAPIFormat> formats, @Any Instance<Mutator> mutators) {
+    public ListCommand(ProfileLoader profileLoader, @Any Instance<Fuzzer> fuzzersList, @Any Instance<OpenAPIFormat> formats, @Any Instance<Mutator> mutators) {
         this.fuzzersList = fuzzersList.stream()
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndTrim.class) == null)
                 .filter(fuzzer -> AnnotationUtils.findAnnotation(fuzzer.getClass(), ValidateAndSanitize.class) == null)
                 .toList();
         this.formats = formats.stream().flatMap(format -> format.matchingFormats().stream()).sorted().toList();
         this.mutators = mutators.stream().map(m -> new MutatorEntry(m.getClass().getSimpleName(), m.description())).sorted().toList();
+        this.profileLoader = profileLoader;
     }
 
     @Override
@@ -119,6 +127,22 @@ public class ListCommand implements Runnable {
 
         if (listCommandGroups.listMutatorsGroup != null && listCommandGroups.listMutatorsGroup.customMutatorTypes) {
             listMutatorsTypes();
+        }
+
+        if (listCommandGroups.listProfilesGroup != null && listCommandGroups.listProfilesGroup.profiles) {
+            listProfiles();
+        }
+    }
+
+    void listProfiles() {
+        Collection<ProfileLoader.Profile> profiles = profileLoader.getAvailableProfilesDetails();
+        if (json) {
+            PrettyLoggerFactory.getConsoleLogger().noFormat(JsonUtils.GSON.toJson(profiles));
+        } else {
+            logger.noFormat(AnsiUtils.boldGreen("Registered profiles:"));
+            profiles.stream()
+                    .map(profile -> " ◼ " + AnsiUtils.boldGreen(profile.name()) + " (" + profile.description() + "): " + profile.fuzzers() + System.lineSeparator())
+                    .forEach(logger::noFormat);
         }
     }
 
@@ -329,6 +353,9 @@ public class ListCommand implements Runnable {
 
         @CommandLine.ArgGroup(exclusive = false, heading = "List Supported OpenAPI Formats%n")
         ListFormats listFormats;
+
+        @CommandLine.ArgGroup(exclusive = false, heading = "List Profiles%n")
+        ListProfilesGroup listProfilesGroup;
     }
 
     static class ListFormats {
@@ -357,6 +384,13 @@ public class ListCommand implements Runnable {
                 names = {"-l", "--linters", "linters"},
                 description = "Display all current registered Linters")
         boolean linters;
+    }
+
+    static class ListProfilesGroup {
+        @CommandLine.Option(
+                names = {"--profiles", "profiles"},
+                description = "Display all current registered Profiles")
+        boolean profiles;
     }
 
     static class ListMutatorsGroup {
