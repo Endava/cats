@@ -1,5 +1,6 @@
 package com.endava.cats.fuzzer.http;
 
+import com.endava.cats.args.ProcessingArguments;
 import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
@@ -24,16 +25,20 @@ public class HttpMethodFuzzerUtil {
 
     private final SimpleExecutor simpleExecutor;
 
+    private final ProcessingArguments processingArguments;
+
     /**
      * Creates a new HttpMethodFuzzerUtil instance.
      *
      * @param tcl the test case listener
      * @param se  the executor
+     * @param processingArguments the processing arguments
      */
     @Inject
-    public HttpMethodFuzzerUtil(TestCaseListener tcl, SimpleExecutor se) {
+    public HttpMethodFuzzerUtil(TestCaseListener tcl, SimpleExecutor se, ProcessingArguments processingArguments) {
         this.testCaseListener = tcl;
         this.simpleExecutor = se;
+        this.processingArguments = processingArguments;
     }
 
     /**
@@ -75,6 +80,12 @@ public class HttpMethodFuzzerUtil {
     }
 
     private void handle405(CatsResponse response, FuzzingData data) {
+        if (!processingArguments.isCheckAllowHeader()) {
+            testCaseListener.reportResultInfo(logger, data, "Request failed as expected for http method [{}] with response code [{}]",
+                    response.getHttpMethod(), response.getResponseCode());
+            return;
+        }
+
         KeyValuePair<String, String> allowHeader = response.getHeader("Allow");
         if (allowHeader == null) {
             testCaseListener.reportResultWarn(logger, data, "Missing Allowed header", "Request failed as expected for http method [{}] with response code [{}], but missing Allow header", response.getHttpMethod(), response.getResponseCode());
