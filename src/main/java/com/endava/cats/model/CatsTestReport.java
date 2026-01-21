@@ -18,10 +18,10 @@ import java.util.stream.Collectors;
 @Builder
 public class CatsTestReport {
     private final List<CatsTestCaseSummary> testCases;
-    private final int totalTests;
-    private final int success;
-    private final int warnings;
-    private final int errors;
+    private final long totalTests;
+    private final long success;
+    private final long warnings;
+    private final long errors;
     private final long executionTime;
     private final String timestamp;
     private final String catsVersion;

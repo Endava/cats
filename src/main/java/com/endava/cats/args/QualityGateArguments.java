@@ -40,7 +40,7 @@ public class QualityGateArguments {
      * @param warnings the number of warnings reported
      * @return true if quality gate is violated (should exit with error), false otherwise
      */
-    public boolean shouldFailBuild(int errors, int warnings) {
+    public boolean shouldFailBuild(long errors, long warnings) {
         // Check qualityGate thresholds first (more specific)
         if (qualityGate != null && !qualityGate.trim().isEmpty()) {
             return evaluateQualityGate(errors, warnings);
@@ -62,7 +62,7 @@ public class QualityGateArguments {
      * @param warnings the number of warnings
      * @return true if should fail based on failOn conditions
      */
-    private boolean evaluateFailOn(int errors, int warnings) {
+    private boolean evaluateFailOn(long errors, long warnings) {
         List<String> conditions = Arrays.stream(failOn.split(","))
                 .map(String::trim)
                 .map(s -> s.toLowerCase(Locale.ROOT))
@@ -91,8 +91,8 @@ public class QualityGateArguments {
      * @param warnings the number of warnings
      * @return true if any quality gate threshold is violated
      */
-    private boolean evaluateQualityGate(int errors, int warnings) {
-        Map<String, Integer> metrics = new HashMap<>();
+    private boolean evaluateQualityGate(long errors, long warnings) {
+        Map<String, Long> metrics = new HashMap<>();
         metrics.put("errors", errors);
         metrics.put("warns", warnings);
         metrics.put("warnings", warnings); // Support both "warns" and "warnings"
@@ -121,7 +121,7 @@ public class QualityGateArguments {
      * @param metrics the current metric values
      * @return true if the gate is violated
      */
-    private boolean evaluateSingleGate(String gate, Map<String, Integer> metrics) {
+    private boolean evaluateSingleGate(String gate, Map<String, Long> metrics) {
         // Parse gate: metric<threshold or metric>threshold
         String operator;
         String[] parts;
@@ -152,7 +152,7 @@ public class QualityGateArguments {
 
         try {
             int threshold = Integer.parseInt(thresholdStr);
-            int actualValue = metrics.get(metric);
+            long actualValue = metrics.get(metric);
 
             boolean violated = switch (operator) {
                 case "<" -> actualValue >= threshold; // Fail if actual >= threshold (want actual < threshold)

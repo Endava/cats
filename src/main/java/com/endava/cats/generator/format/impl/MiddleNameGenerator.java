@@ -24,7 +24,7 @@ public class MiddleNameGenerator implements ValidDataFormatGenerator, OpenAPIFor
 
     @Override
     public List<String> matchingFormats() {
-        return List.of("middleNAme", "middlename", "middle-name", "middle_name");
+        return List.of("middleName", "middlename", "middle-name", "middle_name");
     }
 
     @Override

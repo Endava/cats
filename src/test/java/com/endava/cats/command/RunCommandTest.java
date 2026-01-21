@@ -83,8 +83,8 @@ class RunCommandTest {
     @Test
     void shouldReturnNonZeroExitCode() {
         ExecutionStatisticsListener listener = Mockito.mock(ExecutionStatisticsListener.class);
-        Mockito.when(listener.getErrors()).thenReturn(10);
-        Mockito.when(listener.getWarns()).thenReturn(0);
+        Mockito.when(listener.getErrors()).thenReturn(10L);
+        Mockito.when(listener.getWarns()).thenReturn(0L);
         ReflectionTestUtils.setField(catsCommand, "executionStatisticsListener", listener);
         int exitCode = runCommand.getExitCode();
         Assertions.assertThat(exitCode).isEqualTo(1);

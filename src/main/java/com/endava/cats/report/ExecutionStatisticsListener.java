@@ -4,7 +4,6 @@ import com.endava.cats.annotations.DryRun;
 import com.endava.cats.util.AnsiUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Getter;
-import org.fusesource.jansi.Ansi;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,17 +18,17 @@ public class ExecutionStatisticsListener {
     /**
      * Map to track the count of errors per path.
      */
-    private final Map<String, Integer> errors = new HashMap<>();
+    private final Map<String, Long> errors = new HashMap<>();
 
     /**
      * Map to track the count of warnings per path.
      */
-    private final Map<String, Integer> warns = new HashMap<>();
+    private final Map<String, Long> warns = new HashMap<>();
 
     /**
      * Map to track the count of successful executions per path.
      */
-    private final Map<String, Integer> success = new HashMap<>();
+    private final Map<String, Long> success = new HashMap<>();
 
     /**
      * Map to track the distribution of HTTP response codes.
@@ -81,7 +80,7 @@ public class ExecutionStatisticsListener {
      * @param path The path for which errors are increased.
      */
     public void increaseErrors(String path) {
-        this.errors.merge(path, 1, Integer::sum);
+        this.errors.merge(path, 1L, Long::sum);
     }
 
     /**
@@ -90,7 +89,7 @@ public class ExecutionStatisticsListener {
      * @param path The path for which warnings are increased.
      */
     public void increaseWarns(String path) {
-        this.warns.merge(path, 1, Integer::sum);
+        this.warns.merge(path, 1L, Long::sum);
     }
 
     /**
@@ -99,7 +98,7 @@ public class ExecutionStatisticsListener {
      * @param path The path for which successful executions are increased.
      */
     public void increaseSuccess(String path) {
-        this.success.merge(path, 1, Integer::sum);
+        this.success.merge(path, 1L, Long::sum);
     }
 
     /**
@@ -126,9 +125,9 @@ public class ExecutionStatisticsListener {
      * @param limit The maximum number of paths to return.
      * @return A map of paths to their error counts, limited to the specified number.
      */
-    public Map<String, Integer> getTopFailingPaths(int limit) {
+    public Map<String, Long> getTopFailingPaths(int limit) {
         return this.errors.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(limit)
                 .collect(java.util.stream.Collectors.toMap(
                         Map.Entry::getKey,
@@ -143,8 +142,8 @@ public class ExecutionStatisticsListener {
      *
      * @return The total count of errors.
      */
-    public int getErrors() {
-        return this.errors.values().stream().reduce(0, Integer::sum);
+    public long getErrors() {
+        return this.errors.values().stream().reduce(0L, Long::sum);
     }
 
     /**
@@ -152,8 +151,8 @@ public class ExecutionStatisticsListener {
      *
      * @return The total count of warnings.
      */
-    public int getWarns() {
-        return this.warns.values().stream().reduce(0, Integer::sum);
+    public long getWarns() {
+        return this.warns.values().stream().reduce(0L, Long::sum);
     }
 
     /**
@@ -161,8 +160,8 @@ public class ExecutionStatisticsListener {
      *
      * @return The total count of successful executions.
      */
-    public int getSuccess() {
-        return this.success.values().stream().reduce(0, Integer::sum);
+    public long getSuccess() {
+        return this.success.values().stream().reduce(0L, Long::sum);
     }
 
     /**
@@ -170,7 +169,7 @@ public class ExecutionStatisticsListener {
      *
      * @return The total count of all executions.
      */
-    public int getAll() {
+    public long getAll() {
         return this.getSuccess() + this.getWarns() + this.getErrors();
     }
 
@@ -199,9 +198,9 @@ public class ExecutionStatisticsListener {
      * @return A formatted string representation of the execution results.
      */
     public String resultAsStringPerPath(String path) {
-        String errorsString = AnsiUtils.boldRed("E " + errors.getOrDefault(path, 0));
-        String warnsString = AnsiUtils.boldYellow("W " + warns.getOrDefault(path, 0));
-        String successString = AnsiUtils.boldGreen("S " + success.getOrDefault(path, 0));
+        String errorsString = AnsiUtils.boldRed("E " + errors.getOrDefault(path, 0L));
+        String warnsString = AnsiUtils.boldYellow("W " + warns.getOrDefault(path, 0L));
+        String successString = AnsiUtils.boldGreen("S " + success.getOrDefault(path, 0L));
         return "%s, %s, %s".formatted(errorsString, warnsString, successString);
     }
 
@@ -212,6 +211,6 @@ public class ExecutionStatisticsListener {
      * @return The total count of executions for the specified path.
      */
     public long getExecutionsPerPath(String path) {
-        return this.errors.getOrDefault(path, 0) + this.warns.getOrDefault(path, 0) + this.success.getOrDefault(path, 0);
+        return this.errors.getOrDefault(path, 0L) + this.warns.getOrDefault(path, 0L) + this.success.getOrDefault(path, 0L);
     }
 }

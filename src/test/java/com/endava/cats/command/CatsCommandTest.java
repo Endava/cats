@@ -187,16 +187,16 @@ class CatsCommandTest {
 
     @Test
     void shouldReturnErrorsExitCode() {
-        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(190);
-        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(0);
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(190L);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(0L);
 
         Assertions.assertThat(catsMain.getExitCode()).isEqualTo(1);
     }
 
     @Test
     void shouldReturnOkWhenNoErrors() {
-        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(0);
-        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(10);
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(0L);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(10L);
 
         Assertions.assertThat(catsMain.getExitCode()).isEqualTo(0);
     }
@@ -206,9 +206,9 @@ class CatsCommandTest {
         QualityGateArguments qualityGate = new QualityGateArguments();
         ReflectionTestUtils.setField(qualityGate, "failOn", "warn");
         ReflectionTestUtils.setField(catsMain, "qualityGateArguments", qualityGate);
-        
-        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(0);
-        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(5);
+
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(0L);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(5L);
 
         Assertions.assertThat(catsMain.getExitCode()).isEqualTo(1);
     }
@@ -218,15 +218,15 @@ class CatsCommandTest {
         QualityGateArguments qualityGate = new QualityGateArguments();
         ReflectionTestUtils.setField(qualityGate, "qualityGate", "errors<10,warns<20");
         ReflectionTestUtils.setField(catsMain, "qualityGateArguments", qualityGate);
-        
+
         // Below thresholds - should pass
-        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(5);
-        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(15);
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(5L);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(15L);
         Assertions.assertThat(catsMain.getExitCode()).isEqualTo(0);
-        
+
         // At threshold - should fail
-        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(10);
-        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(15);
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(10L);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(15L);
         Assertions.assertThat(catsMain.getExitCode()).isEqualTo(1);
     }
 

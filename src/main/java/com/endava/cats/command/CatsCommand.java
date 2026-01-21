@@ -403,7 +403,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         logger.config(AnsiUtils.bold("Reporting path: {}"), AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
         logger.config(AnsiUtils.bold("{} configured fuzzers out of {} total fuzzers"),
                 AnsiUtils.boldBlue(filterArguments.getFirstPhaseFuzzersForPath().size()),
-                AnsiUtils.boldBlue(filterArguments.getAllRegisteredFuzzers().size()));
+                AnsiUtils.boldBlue(filterArguments.getTotalFuzzersOrLinters()));
         logger.config(AnsiUtils.bold("{} configured paths out of {} total OpenAPI paths"),
                 AnsiUtils.boldBlue(filterArguments.getPathsToRun(openAPI).size()),
                 AnsiUtils.boldBlue(openAPI.getPaths().size()));
@@ -516,8 +516,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
             return exitCodeDueToErrors;
         }
 
-        int errors = executionStatisticsListener.getErrors();
-        int warnings = executionStatisticsListener.getWarns();
+        long errors = executionStatisticsListener.getErrors();
+        long warnings = executionStatisticsListener.getWarns();
 
         if (qualityGateArguments.shouldFailBuild(errors, warnings)) {
             logger.debug("Build failed due to quality gate: {}", qualityGateArguments.getQualityGateDescription());

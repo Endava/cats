@@ -29,7 +29,6 @@ import jakarta.inject.Inject;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.fusesource.jansi.Ansi;
 
 import java.io.File;
 import java.io.IOException;
@@ -102,9 +101,9 @@ public abstract class TestCaseExporter {
     /**
      * Constructs a TestCaseExporter with the specified reporting arguments and global context.
      *
-     * @param reportingArguments the reporting arguments
-     * @param catsGlobalContext  the global context
-     * @param qualityGateArguments the quality gate arguments
+     * @param reportingArguments          the reporting arguments
+     * @param catsGlobalContext           the global context
+     * @param qualityGateArguments        the quality gate arguments
      * @param executionStatisticsListener the execution statistics listener
      */
     @Inject
@@ -278,7 +277,7 @@ public abstract class TestCaseExporter {
 
         ConsoleUtils.emptyLine();
         logger.complete(finalMessage, duration, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
-        
+
         // Print quality gate result
         boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
         String qualityGateStatus = qualityGatePassed
@@ -286,7 +285,7 @@ public abstract class TestCaseExporter {
                 : AnsiUtils.boldRed("✖ Quality gate FAILED");
         String qualityGateDescription = AnsiUtils.blue(" [{}]");
         logger.complete(qualityGateStatus + qualityGateDescription, qualityGateArguments.getQualityGateDescription());
-        
+
         logger.complete(check);
     }
 
@@ -348,7 +347,7 @@ public abstract class TestCaseExporter {
         context.put("RESPONSE_CODE_DISTRIBUTION", buildResponseCodeDistributionForTemplate(responseCodeDistribution));
         context.put("HAS_RESPONSE_CODES", !responseCodeDistribution.isEmpty());
 
-        Map<String, Integer> topFailingPaths = executionStatisticsListener.getTopFailingPaths(10);
+        Map<String, Long> topFailingPaths = executionStatisticsListener.getTopFailingPaths(10);
         context.put("TOP_FAILING_PATHS", buildTopFailingPathsForTemplate(topFailingPaths));
         context.put("HAS_FAILING_PATHS", !topFailingPaths.isEmpty());
         Writer writer = this.getSummaryTemplate().execute(new StringWriter(), context);
@@ -484,7 +483,7 @@ public abstract class TestCaseExporter {
         return "other";
     }
 
-    private List<Map<String, Object>> buildTopFailingPathsForTemplate(Map<String, Integer> topFailingPaths) {
+    private List<Map<String, Object>> buildTopFailingPathsForTemplate(Map<String, Long> topFailingPaths) {
         return topFailingPaths.entrySet().stream()
                 .map(entry -> {
                     Map<String, Object> item = new HashMap<>();
