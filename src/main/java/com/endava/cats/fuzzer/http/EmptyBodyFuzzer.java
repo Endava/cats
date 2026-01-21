@@ -2,6 +2,8 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -31,6 +33,14 @@ public class EmptyBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     @Override
     protected String getPayload(FuzzingData data) {
         return "";
+    }
+
+    @Override
+    protected ResponseCodeFamily getExpectedResponseCode(FuzzingData data) {
+        if (data.getAllRequiredFields().isEmpty()) {
+            return ResponseCodeFamilyPredefined.TWOXX;
+        }
+        return super.getExpectedResponseCode(data);
     }
 
     @Override

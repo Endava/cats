@@ -4,10 +4,11 @@ import com.endava.cats.fuzzer.api.Fuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.fuzzer.executor.SimpleExecutorContext;
 import com.endava.cats.http.HttpMethod;
+import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.JsonUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 
@@ -35,7 +36,7 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
 
         simpleExecutor.execute(
                 SimpleExecutorContext.builder()
-                        .expectedResponseCode(ResponseCodeFamilyPredefined.FOURXX)
+                        .expectedResponseCode(this.getExpectedResponseCode(data))
                         .fuzzingData(data)
                         .logger(logger)
                         .replaceRefData(false)
@@ -45,6 +46,16 @@ public abstract class BaseHttpWithPayloadSimpleFuzzer implements Fuzzer {
                         .payload(this.getPayload(data))
                         .build()
         );
+    }
+
+    /**
+     * By default, expect a 4XX response. This can be overridden by subclasses to expect other response codes.
+     *
+     * @param data the data to fuzz
+     * @return the expected response code family for the fuzzing operation
+     */
+    protected ResponseCodeFamily getExpectedResponseCode(FuzzingData data) {
+        return ResponseCodeFamilyPredefined.FOURXX;
     }
 
     @Override

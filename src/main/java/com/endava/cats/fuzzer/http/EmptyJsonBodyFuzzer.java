@@ -2,6 +2,8 @@ package com.endava.cats.fuzzer.http;
 
 import com.endava.cats.annotations.HttpFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
+import com.endava.cats.http.ResponseCodeFamily;
+import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.FuzzingData;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -34,7 +36,20 @@ public class EmptyJsonBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
     }
 
     @Override
+    protected ResponseCodeFamily getExpectedResponseCode(FuzzingData data) {
+        if (doesNotHaveRequiredFieldsInRoot(data)) {
+            return ResponseCodeFamilyPredefined.TWOXX;
+        }
+        return super.getExpectedResponseCode(data);
+    }
+
+    @Override
     public String description() {
         return "send a request with a empty json body";
+    }
+
+
+    private boolean doesNotHaveRequiredFieldsInRoot(FuzzingData data) {
+        return data.getAllRequiredFields().stream().allMatch(field -> field.contains("#"));
     }
 }
