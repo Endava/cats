@@ -17,17 +17,21 @@ import java.util.List;
 @Singleton
 public class TestReportsGenerator {
     private final List<TestCaseExporter> testCaseExporters;
+    private final ExecutionStatisticsListener executionStatisticsListener;
 
     /**
      * Constructs a new TestReportsGenerator with the specified test case exporters and reporting arguments.
      *
      * @param testCaseExporters  the instance of TestCaseExporter to be used for generating reports
      * @param reportingArguments the reporting arguments that determine the report format
+     * @param executionStatisticsListener the execution statistics listener
      */
-    public TestReportsGenerator(Instance<TestCaseExporter> testCaseExporters, ReportingArguments reportingArguments) {
+    public TestReportsGenerator(Instance<TestCaseExporter> testCaseExporters, ReportingArguments reportingArguments,
+                                ExecutionStatisticsListener executionStatisticsListener) {
         this.testCaseExporters = testCaseExporters.stream()
                 .filter(exporter -> reportingArguments.getReportFormat().contains(exporter.reportFormat()))
                 .toList();
+        this.executionStatisticsListener = executionStatisticsListener;
     }
 
 
@@ -62,10 +66,9 @@ public class TestReportsGenerator {
     /**
      * Writes a summary of the test case execution details.
      *
-     * @param testCaseSummaryDetails      the list of test case summaries to be written
-     * @param executionStatisticsListener the listener for execution statistics
+     * @param testCaseSummaryDetails the list of test case summaries to be written
      */
-    public void writeSummary(List<CatsTestCaseSummary> testCaseSummaryDetails, ExecutionStatisticsListener executionStatisticsListener) {
+    public void writeSummary(List<CatsTestCaseSummary> testCaseSummaryDetails) {
         testCaseExporters.forEach(testCaseExporter -> testCaseExporter.writeSummary(testCaseSummaryDetails, executionStatisticsListener));
     }
 
@@ -90,10 +93,8 @@ public class TestReportsGenerator {
 
     /**
      * Prints the execution details using the first available test case exporter.
-     *
-     * @param executionStatisticsListener the listener for execution statistics
      */
-    public void printExecutionDetails(ExecutionStatisticsListener executionStatisticsListener) {
-        testCaseExporters.getFirst().printExecutionDetails(executionStatisticsListener);
+    public void printExecutionDetails() {
+        testCaseExporters.getFirst().printExecutionDetails();
     }
 }

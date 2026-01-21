@@ -1,6 +1,7 @@
 package com.endava.cats.report;
 
 import com.endava.cats.annotations.DryRun;
+import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.context.CatsGlobalContext;
 import com.endava.cats.model.CatsConfiguration;
@@ -76,6 +77,8 @@ public abstract class TestCaseExporter {
 
     final ReportingArguments reportingArguments;
     final CatsGlobalContext catsGlobalContext;
+    final com.endava.cats.args.QualityGateArguments qualityGateArguments;
+    final ExecutionStatisticsListener executionStatisticsListener;
 
     private Path reportingPath;
     private long t0;
@@ -97,14 +100,21 @@ public abstract class TestCaseExporter {
 
 
     /**
-     * Constructs a new instance of TestCaseExporter with the specified reporting arguments.
+     * Constructs a TestCaseExporter with the specified reporting arguments and global context.
      *
-     * @param reportingArguments the reporting arguments for configuring the TestCaseExporter
+     * @param reportingArguments the reporting arguments
+     * @param catsGlobalContext  the global context
+     * @param qualityGateArguments the quality gate arguments
+     * @param executionStatisticsListener the execution statistics listener
      */
     @Inject
-    protected TestCaseExporter(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext) {
+    protected TestCaseExporter(ReportingArguments reportingArguments, CatsGlobalContext catsGlobalContext,
+                               QualityGateArguments qualityGateArguments,
+                               ExecutionStatisticsListener executionStatisticsListener) {
         this.reportingArguments = reportingArguments;
         this.catsGlobalContext = catsGlobalContext;
+        this.qualityGateArguments = qualityGateArguments;
+        this.executionStatisticsListener = executionStatisticsListener;
         maskingSerializer = new GsonBuilder()
                 .setStrictness(Strictness.LENIENT)
                 .setPrettyPrinting()
@@ -256,10 +266,8 @@ public abstract class TestCaseExporter {
     /**
      * Prints the execution details including the overall CATS execution time, the total number of requests, and statistics on passed, warnings, and errors.
      * It also provides a message with a link to the generated report if available.
-     *
-     * @param executionStatisticsListener the listener providing statistics on CATS execution
      */
-    public void printExecutionDetails(ExecutionStatisticsListener executionStatisticsListener) {
+    public void printExecutionDetails() {
         String catsFinished = ansi().fgBlue().a("CATS finished in {}. Total requests {}. ").toString();
         String passed = ansi().fgGreen().bold().a("✔ Passed {}, ").toString();
         String warnings = ansi().fgYellow().bold().a("⚠ warnings: {}, ").toString();
@@ -270,6 +278,15 @@ public abstract class TestCaseExporter {
 
         ConsoleUtils.emptyLine();
         logger.complete(finalMessage, duration, executionStatisticsListener.getAll(), executionStatisticsListener.getSuccess(), executionStatisticsListener.getWarns(), executionStatisticsListener.getErrors(), executionStatisticsListener.getSkipped());
+        
+        // Print quality gate result
+        boolean qualityGatePassed = !qualityGateArguments.shouldFailBuild(executionStatisticsListener.getErrors(), executionStatisticsListener.getWarns());
+        String qualityGateStatus = qualityGatePassed
+                ? ansi().fgGreen().bold().a("✔ Quality gate PASSED").reset().toString()
+                : ansi().fgRed().bold().a("✖ Quality gate FAILED").reset().toString();
+        String qualityGateDescription = ansi().fgBlue().a(" [{}]").reset().toString();
+        logger.complete(qualityGateStatus + qualityGateDescription, qualityGateArguments.getQualityGateDescription());
+        
         logger.complete(check);
     }
 

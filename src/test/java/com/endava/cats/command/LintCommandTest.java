@@ -57,6 +57,7 @@ class LintCommandTest {
     void shouldReturnNonZeroExitCode() {
         ExecutionStatisticsListener listener = Mockito.mock(ExecutionStatisticsListener.class);
         Mockito.when(listener.getErrors()).thenReturn(10);
+        Mockito.when(listener.getWarns()).thenReturn(0);
         ReflectionTestUtils.setField(catsCommand, "executionStatisticsListener", listener);
         int exitCode = lintCommand.getExitCode();
         Assertions.assertThat(exitCode).isEqualTo(1);

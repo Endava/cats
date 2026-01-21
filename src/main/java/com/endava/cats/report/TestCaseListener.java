@@ -454,11 +454,11 @@ public class TestCaseListener {
             markPreviousPathAsDone();
             renderGlobalFuzzersStatistics();
             reportingArguments.enableAdditionalLoggingIfSummary();
-            testReportsGenerator.writeSummary(testCaseSummaryDetails, executionStatisticsListener);
+            testReportsGenerator.writeSummary(testCaseSummaryDetails);
             testReportsGenerator.writeHelperFiles();
             testReportsGenerator.writeErrorsByReason(testCaseSummaryDetails);
             testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
-            testReportsGenerator.printExecutionDetails(executionStatisticsListener);
+            testReportsGenerator.printExecutionDetails();
             writeRecordedErrorsIfPresent();
         } catch (Exception e) {
             logger.error("Error while ending sessions {}", e.getMessage());

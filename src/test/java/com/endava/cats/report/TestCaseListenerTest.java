@@ -117,7 +117,7 @@ class TestCaseListenerTest {
         testCaseListener.endSession();
 
         Mockito.verify(testReportsGenerator, Mockito.times(1)).writeHelperFiles();
-        Mockito.verify(testReportsGenerator, Mockito.times(1)).writeSummary(Mockito.anyList(), Mockito.any());
+        Mockito.verify(testReportsGenerator, Mockito.times(1)).writeSummary(Mockito.anyList());
     }
 
     @Test

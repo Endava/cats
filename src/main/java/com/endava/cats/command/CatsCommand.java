@@ -8,6 +8,7 @@ import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.IgnoreArguments;
 import com.endava.cats.args.MatchArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.args.SecurityFuzzerArguments;
 import com.endava.cats.args.UserArguments;
@@ -173,6 +174,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     @CommandLine.ArgGroup(heading = "%n@|bold,underline Security Fuzzer Options:|@%n", exclusive = false)
     SecurityFuzzerArguments securityFuzzerArguments;
 
+    @Inject
+    @CommandLine.ArgGroup(heading = "%n@|bold,underline Quality Gate Options:|@%n", exclusive = false)
+    QualityGateArguments qualityGateArguments;
+
     @CommandLine.Spec
     CommandLine.Model.CommandSpec spec;
 
@@ -195,7 +200,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     @ConfigProperty(name = "quarkus.application.version", defaultValue = "1.0.0")
     String appVersion;
 
-    private int exitCodeDueToErrors;
+    private int exitCodeDueToErrors = CommandLine.ExitCode.OK;
 
     /**
      * Creates a new instance of CatsCommand.
@@ -420,6 +425,8 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
                 AnsiUtils.boldBlue(processingArguments.getSanitizationStrategy()));
         logger.config(AnsiUtils.bold("Seed value: {}"),
                 AnsiUtils.boldBlue(CatsRandom.getStoredSeed()));
+        logger.config(AnsiUtils.bold("Quality gate: {}"),
+                AnsiUtils.boldBlue(qualityGateArguments.getQualityGateDescription()));
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
         logger.config(AnsiUtils.bold("Total number of OpenAPI operations: {}"), AnsiUtils.blue(nofOfOperations));
@@ -508,7 +515,16 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         if (exitCodeDueToErrors > 0) {
             return exitCodeDueToErrors;
         }
-        return executionStatisticsListener.getErrors() > 0 ? CommandLine.ExitCode.SOFTWARE : CommandLine.ExitCode.OK;
+
+        int errors = executionStatisticsListener.getErrors();
+        int warnings = executionStatisticsListener.getWarns();
+
+        if (qualityGateArguments.shouldFailBuild(errors, warnings)) {
+            logger.debug("Build failed due to quality gate: {}", qualityGateArguments.getQualityGateDescription());
+            return CommandLine.ExitCode.SOFTWARE;
+        }
+
+        return CommandLine.ExitCode.OK;
     }
 
     @Override

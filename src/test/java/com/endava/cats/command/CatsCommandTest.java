@@ -4,6 +4,7 @@ import com.endava.cats.args.ApiArguments;
 import com.endava.cats.args.CheckArguments;
 import com.endava.cats.args.FilterArguments;
 import com.endava.cats.args.ProcessingArguments;
+import com.endava.cats.args.QualityGateArguments;
 import com.endava.cats.args.ReportingArguments;
 import com.endava.cats.command.model.ConfigOptions;
 import com.endava.cats.context.CatsGlobalContext;
@@ -108,8 +109,6 @@ class CatsCommandTest {
         Mockito.verify(testCaseListener, Mockito.times(1)).startSession();
         Mockito.verify(testCaseListener, Mockito.times(1)).endSession();
         Mockito.verify(testCaseListener, Mockito.times(0)).afterFuzz(Mockito.any());
-        ReflectionTestUtils.setField(apiArguments, "contract", "empty");
-        ReflectionTestUtils.setField(apiArguments, "server", "empty");
     }
 
     @Test
@@ -189,7 +188,45 @@ class CatsCommandTest {
     @Test
     void shouldReturnErrorsExitCode() {
         Mockito.when(executionStatisticsListener.getErrors()).thenReturn(190);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(0);
 
+        Assertions.assertThat(catsMain.getExitCode()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldReturnOkWhenNoErrors() {
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(0);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(10);
+
+        Assertions.assertThat(catsMain.getExitCode()).isEqualTo(0);
+    }
+
+    @Test
+    void shouldRespectQualityGateWithFailOnWarn() {
+        QualityGateArguments qualityGate = new QualityGateArguments();
+        ReflectionTestUtils.setField(qualityGate, "failOn", "warn");
+        ReflectionTestUtils.setField(catsMain, "qualityGateArguments", qualityGate);
+        
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(0);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(5);
+
+        Assertions.assertThat(catsMain.getExitCode()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldRespectQualityGateThresholds() {
+        QualityGateArguments qualityGate = new QualityGateArguments();
+        ReflectionTestUtils.setField(qualityGate, "qualityGate", "errors<10,warns<20");
+        ReflectionTestUtils.setField(catsMain, "qualityGateArguments", qualityGate);
+        
+        // Below thresholds - should pass
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(5);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(15);
+        Assertions.assertThat(catsMain.getExitCode()).isEqualTo(0);
+        
+        // At threshold - should fail
+        Mockito.when(executionStatisticsListener.getErrors()).thenReturn(10);
+        Mockito.when(executionStatisticsListener.getWarns()).thenReturn(15);
         Assertions.assertThat(catsMain.getExitCode()).isEqualTo(1);
     }
 
