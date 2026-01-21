@@ -37,7 +37,7 @@ public class EmptyBodyFuzzer extends BaseHttpWithPayloadSimpleFuzzer {
 
     @Override
     protected ResponseCodeFamily getExpectedResponseCode(FuzzingData data) {
-        if (data.getAllRequiredFields().isEmpty()) {
+        if (data.getAllRequiredFields().isEmpty() && !data.isRequestBodyRequired()) {
             return ResponseCodeFamilyPredefined.TWOXX;
         }
         return super.getExpectedResponseCode(data);

@@ -45,11 +45,12 @@ class EmptyBodyFuzzerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"FOURXX,true", "TWOXX,false"})
-    void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported(ResponseCodeFamilyPredefined responseCodeFamily, boolean required) {
+    @CsvSource({"FOURXX,true,false", "TWOXX,false,false", "FOURXX,true,true", "FOURXX,false,true"})
+    void givenAHttpMethodWithPayload_whenApplyingTheMalformedJsonFuzzer_thenTheResultsAreCorrectlyReported(ResponseCodeFamilyPredefined responseCodeFamily, boolean requiredFields, boolean requiredBody) {
         FuzzingData data = FuzzingData.builder().method(HttpMethod.POST).reqSchema(new StringSchema())
                 .requestContentTypes(List.of("application/json"))
-                .allRequiredFields(required ? List.of("required") : List.of())
+                .allRequiredFields(requiredFields ? List.of("required") : List.of())
+                .isRequestBodyRequired(requiredBody)
                 .responseCodes(Set.of("400")).build();
         ReflectionTestUtils.setField(data, "processedPayload", "{\"id\": 1}");
 

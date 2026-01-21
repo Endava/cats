@@ -274,6 +274,7 @@ public class FuzzingDataFactory {
                             .reqSchema(globalContext.getSchemaFromReference(reqSchemaName))
                             .pathItem(item).responseContentTypes(responsesContentTypes)
                             .requestContentTypes(requestContentTypes)
+                            .isRequestBodyRequired(this.isRequestBodyRequired(operation))
                             .schemaMap(globalContext.getSchemaMap())
                             .responses(responses)
                             .requestPropertyTypes(generationResult.requestDataTypes())
@@ -296,6 +297,10 @@ public class FuzzingDataFactory {
         }
 
         return List.copyOf(fuzzingDataList);
+    }
+
+    private boolean isRequestBodyRequired(Operation operation) {
+        return operation.getRequestBody() != null && Boolean.TRUE.equals(operation.getRequestBody().getRequired());
     }
 
     private boolean isDeprecated(Operation operation) {

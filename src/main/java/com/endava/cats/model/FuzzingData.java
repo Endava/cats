@@ -63,6 +63,7 @@ public class FuzzingData {
     private int selfReferenceDepth;
     private int limitNumberOfFields;
     private String pathParamsPayload;
+    private boolean isRequestBodyRequired;
 
     @Builder.Default
     private final Map<String, List<String>> responseContentTypes = Collections.emptyMap();
