@@ -190,7 +190,7 @@ class CatsCommandTest {
     void shouldReturnErrorsExitCode() {
         Mockito.when(executionStatisticsListener.getErrors()).thenReturn(190);
 
-        Assertions.assertThat(catsMain.getExitCode()).isEqualTo(190);
+        Assertions.assertThat(catsMain.getExitCode()).isEqualTo(1);
     }
 
     @Test

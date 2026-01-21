@@ -4,6 +4,9 @@ import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import picocli.CommandLine;
 
+/**
+ * Custom exception handler for picocli.
+ */
 public class CatsParamExceptionHandler implements CommandLine.IParameterExceptionHandler {
     private final PrettyLogger logger = PrettyLoggerFactory.getLogger(CatsParamExceptionHandler.class);
 
@@ -12,6 +15,6 @@ public class CatsParamExceptionHandler implements CommandLine.IParameterExceptio
         logger.fatal(AnsiUtils.red("{}"), ex.getMessage());
         logger.fatal(AnsiUtils.bold("Try cats --help for the full list of arguments"));
 
-        return 191;
+        return CommandLine.ExitCode.USAGE;
     }
 }

@@ -80,6 +80,6 @@ class GenerateCommandTest {
     void shouldThrowExceptionWhenContractIssues(String contract) {
         CommandLine commandLine = new CommandLine(generateCommand);
         commandLine.execute("--contract", contract, "--path", "/pet", "--debug");
-        Assertions.assertThat(generateCommand.getExitCode()).isEqualTo(192);
+        Assertions.assertThat(generateCommand.getExitCode()).isEqualTo(1);
     }
 }

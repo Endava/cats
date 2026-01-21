@@ -84,8 +84,6 @@ import java.util.stream.Collectors;
         versionProvider = VersionProvider.class,
         commandListHeading = "%n@|bold,underline Commands:|@%n",
         defaultValueProvider = CommandLine.PropertiesDefaultProvider.class,
-        exitCodeOnInvalidInput = 191,
-        exitCodeOnExecutionException = 192,
         resourceBundle = "version",
         abbreviateSynopsis = true,
         synopsisHeading = "@|bold,underline Usage:|@%n",
@@ -93,9 +91,8 @@ import java.util.stream.Collectors;
                 "@|bold cats (list | replay | run | template | lint | info | stats | validate | random | generate | explain)|@ [OPTIONS]", "%n"},
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:Successful program execution",
-                "@|bold 191|@:Usage error: user input for the command was incorrect",
-                "@|bold 192|@:Internal execution error: an exception occurred when executing command",
-                "@|bold ERR|@:Where ERR is the number of errors reported by cats"},
+                "@|bold 2|@:Usage error: user input for the command was incorrect",
+                "@|bold 1|@:Internal execution error: an exception occurred when executing command"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Run CATS in blackbox mode and only report 500 http error codes:",
                 "    cats -c openapi.yml -s http://localhost:8080 -b -k",
@@ -263,7 +260,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         } catch (CatsException | IOException | ExecutionException | IllegalArgumentException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace: {}", e);
-            exitCodeDueToErrors = 192;
+            exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
         } finally {
             testCaseListener.endSession();
         }
@@ -508,7 +505,10 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
 
     @Override
     public int getExitCode() {
-        return exitCodeDueToErrors + executionStatisticsListener.getErrors();
+        if (exitCodeDueToErrors > 0) {
+            return exitCodeDueToErrors;
+        }
+        return executionStatisticsListener.getErrors() > 0 ? CommandLine.ExitCode.SOFTWARE : CommandLine.ExitCode.OK;
     }
 
     @Override

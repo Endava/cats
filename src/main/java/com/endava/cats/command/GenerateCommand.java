@@ -32,13 +32,11 @@ import java.util.Set;
         name = "generate",
         mixinStandardHelpOptions = true,
         usageHelpAutoWidth = true,
-        exitCodeOnInvalidInput = 191,
-        exitCodeOnExecutionException = 192,
         description = "Generates valid requests based on the given OpenAPI spec",
         exitCodeListHeading = "%n@|bold,underline Exit Codes:|@%n",
         exitCodeList = {"@|bold  0|@:Successful program execution",
-                "@|bold 191|@:Usage error: user input for the command was incorrect",
-                "@|bold 192|@:Internal execution error: an exception occurred when executing command"},
+                "@|bold 2|@:Usage error: user input for the command was incorrect",
+                "@|bold 1|@:Internal execution error: an exception occurred when executing command"},
         footerHeading = "%n@|bold,underline Examples:|@%n",
         footer = {"  Generate payloads for a POST on /test from a given OpenAPI contract:",
                 "    cats generate -c openapi.yml -X POST -p /test",
@@ -101,7 +99,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
         this.processingArguments = processingArguments;
     }
 
-    private int exitCodeDueToErrors = 0;
+    private int exitCodeDueToErrors = CommandLine.ExitCode.OK;
 
     @Override
     public void run() {
@@ -133,7 +131,7 @@ public class GenerateCommand implements Runnable, CommandLine.IExitCodeGenerator
         } catch (IOException | IllegalArgumentException e) {
             logger.fatal("Something went wrong while running CATS: {}", e.toString());
             logger.debug("Stacktrace: {}", e);
-            exitCodeDueToErrors = 192;
+            exitCodeDueToErrors = CommandLine.ExitCode.SOFTWARE;
         }
     }
 

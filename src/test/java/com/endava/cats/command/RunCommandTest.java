@@ -86,7 +86,7 @@ class RunCommandTest {
         Mockito.when(listener.getErrors()).thenReturn(10);
         ReflectionTestUtils.setField(catsCommand, "executionStatisticsListener", listener);
         int exitCode = runCommand.getExitCode();
-        Assertions.assertThat(exitCode).isEqualTo(10);
+        Assertions.assertThat(exitCode).isEqualTo(1);
     }
 
     @Test
