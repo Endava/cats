@@ -18,6 +18,7 @@ public class ClusterCompute {
 
     private static final int MIN_HTTP_SUCCESS_CODE = 200;
     private static final int MAX_HTTP_SUCCESS_CODE = 300;
+    private static final int COMPARE_PREFIX_LENGTH = 200;
 
     private ClusterCompute() {
         // Prevent instantiation of utility class
@@ -201,7 +202,8 @@ public class ClusterCompute {
     }
 
     /**
-     * Clusters test cases by similarity using the provided similarity checker.
+     * Clusters test cases by similarity using pattern-based pre-clustering for performance.
+     * First groups by normalized pattern (fast), then does detailed similarity checks only within groups.
      *
      * @param testCases         List of test cases to cluster
      * @param similarityChecker Predicate to determine error similarity
@@ -219,14 +221,58 @@ public class ClusterCompute {
             return new ArrayList<>(List.of(testCases));
         }
 
+        // First pass: group by normalized pattern (cheap operation)
+        Map<String, List<CatsTestCaseSummary>> patternGroups = new HashMap<>();
+
+        for (CatsTestCaseSummary tc : testCases) {
+            if (tc.getResponseBody() == null || tc.getResponseBody().trim().isEmpty()) {
+                continue;
+            }
+
+            String prefix = tc.getResponseBody().length() <= COMPARE_PREFIX_LENGTH
+                    ? tc.getResponseBody()
+                    : tc.getResponseBody().substring(0, COMPARE_PREFIX_LENGTH);
+            String pattern = ErrorSimilarityDetector.normalizeErrorMessage(prefix);
+
+            patternGroups.computeIfAbsent(pattern, k -> new ArrayList<>()).add(tc);
+        }
+
+        // If everything has the same pattern, return single cluster (huge performance win)
+        if (patternGroups.size() == 1) {
+            return new ArrayList<>(List.of(new ArrayList<>(testCases)));
+        }
+
+        // Second pass: do expensive similarity checks only within pattern groups
+        List<List<CatsTestCaseSummary>> clusters = new ArrayList<>();
+
+        for (List<CatsTestCaseSummary> group : patternGroups.values()) {
+            if (group.size() == 1) {
+                clusters.add(new ArrayList<>(group));
+            } else {
+                // Only do expensive comparisons within same-pattern groups
+                clusters.addAll(clusterByDetailedSimilarity(group, similarityChecker));
+            }
+        }
+
+        return clusters;
+    }
+
+    /**
+     * Performs detailed similarity-based clustering on a group of test cases.
+     * This is the expensive operation, so it's only called on smaller pre-filtered groups.
+     *
+     * @param testCases         List of test cases to cluster
+     * @param similarityChecker Predicate to determine error similarity
+     * @return List of test case clusters
+     */
+    private static List<List<CatsTestCaseSummary>> clusterByDetailedSimilarity(
+            List<CatsTestCaseSummary> testCases,
+            BiPredicate<String, String> similarityChecker) {
+
         List<List<CatsTestCaseSummary>> clusters = new ArrayList<>();
         Map<CatsTestCaseSummary, Boolean[]> comparisonTracker = new HashMap<>();
 
         for (CatsTestCaseSummary current : testCases) {
-            if (current.getResponseBody() == null || current.getResponseBody().trim().isEmpty()) {
-                continue;
-            }
-
             boolean addedToCluster = tryAddToExistingCluster(current, clusters, comparisonTracker, similarityChecker);
 
             if (!addedToCluster) {
