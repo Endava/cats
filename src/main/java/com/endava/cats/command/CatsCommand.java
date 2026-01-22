@@ -230,11 +230,7 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
         context.getXxxOfSelections().ifPresent(processingArguments::setXxxOfSelections);
         context.getSeed().ifPresent(processingArguments::setSeed);
         context.getPaths().ifPresent(filterArguments::setPaths);
-        context.getHttpMethods().ifPresent(methods -> {
-            @SuppressWarnings("unchecked")
-            List<HttpMethod> httpMethods = (List<HttpMethod>) methods;
-            filterArguments.setHttpMethods(httpMethods);
-        });
+        context.getHttpMethods().ifPresent(methods -> filterArguments.setHttpMethods(methods));
         context.getSkipFuzzers().ifPresent(filterArguments::setSkipFuzzers);
         context.getSkipPaths().ifPresent(skipPaths -> filterArguments.getSkipPaths().addAll(skipPaths));
         context.getIncludeContract().ifPresent(include -> {
@@ -398,38 +394,38 @@ public class CatsCommand implements Runnable, CommandLine.IExitCodeGenerator, Au
     }
 
     private void printConfiguration(OpenAPI openAPI) {
-        logger.config(AnsiUtils.bold("OpenAPI specs: {}"), AnsiUtils.blue(apiArguments.getContract()));
-        logger.config(AnsiUtils.bold("API base url: {}"), AnsiUtils.blue(apiArguments.getServer()));
-        logger.config(AnsiUtils.bold("Reporting path: {}"), AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
-        logger.config(AnsiUtils.bold("{} configured fuzzers out of {} total fuzzers"),
-                AnsiUtils.boldBlue(filterArguments.getFirstPhaseFuzzersForPath().size()),
-                AnsiUtils.boldBlue(filterArguments.getTotalFuzzersOrLinters()));
-        logger.config(AnsiUtils.bold("{} configured paths out of {} total OpenAPI paths"),
-                AnsiUtils.boldBlue(filterArguments.getPathsToRun(openAPI).size()),
-                AnsiUtils.boldBlue(openAPI.getPaths().size()));
-        logger.config(AnsiUtils.bold("HTTP methods in scope: {}"), AnsiUtils.blue(filterArguments.getHttpMethods()));
-        logger.config(AnsiUtils.bold("Example flags: useRequestBodyExamples {}, useSchemaExamples {}, usePropertyExamples {}, useResponseBodyExamples {}, useDefaults {}"),
-                AnsiUtils.boldBlue(processingArguments.isUseRequestBodyExamples()),
-                AnsiUtils.boldBlue(processingArguments.isUseSchemaExamples()),
-                AnsiUtils.boldBlue(processingArguments.isUsePropertyExamples()),
-                AnsiUtils.boldBlue(processingArguments.isUseResponseBodyExamples()),
-                AnsiUtils.boldBlue(processingArguments.isUseDefaults()));
-        logger.config(AnsiUtils.bold("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, limitFuzzedFields {}, limitXxxOfCombinations {}"),
-                AnsiUtils.boldBlue(processingArguments.getSelfReferenceDepth()),
-                AnsiUtils.boldBlue(processingArguments.getLargeStringsSize()),
-                AnsiUtils.boldBlue(processingArguments.getRandomHeadersNumber()),
-                AnsiUtils.boldBlue(processingArguments.getLimitNumberOfFields()),
-                AnsiUtils.boldBlue(processingArguments.getLimitXxxOfCombinations()));
-        logger.config(AnsiUtils.bold("How the service handles whitespaces and random unicodes: edgeSpacesStrategy {}, sanitizationStrategy {}"),
-                AnsiUtils.boldBlue(processingArguments.getEdgeSpacesStrategy()),
-                AnsiUtils.boldBlue(processingArguments.getSanitizationStrategy()));
-        logger.config(AnsiUtils.bold("Seed value: {}"),
-                AnsiUtils.boldBlue(CatsRandom.getStoredSeed()));
-        logger.config(AnsiUtils.bold("Quality gate: {}"),
-                AnsiUtils.boldBlue(qualityGateArguments.getQualityGateDescription()));
+        logger.config("OpenAPI specs: {}", AnsiUtils.blue(apiArguments.getContract()));
+        logger.config("API base url: {}", AnsiUtils.blue(apiArguments.getServer()));
+        logger.config("Reporting path: {}", AnsiUtils.blue(reportingArguments.getOutputReportFolder()));
+        logger.config("{} configured fuzzers out of {} total fuzzers",
+                AnsiUtils.blue(filterArguments.getFirstPhaseFuzzersForPath().size()),
+                AnsiUtils.blue(filterArguments.getTotalFuzzersOrLinters()));
+        logger.config("{} configured paths out of {} total OpenAPI paths",
+                AnsiUtils.blue(filterArguments.getPathsToRun(openAPI).size()),
+                AnsiUtils.blue(openAPI.getPaths().size()));
+        logger.config("HTTP methods in scope: {}", AnsiUtils.blue(filterArguments.getHttpMethods()));
+        logger.config("Example flags: useRequestBodyExamples {}, useSchemaExamples {}, usePropertyExamples {}, useResponseBodyExamples {}, useDefaults {}",
+                AnsiUtils.blue(processingArguments.isUseRequestBodyExamples()),
+                AnsiUtils.blue(processingArguments.isUseSchemaExamples()),
+                AnsiUtils.blue(processingArguments.isUsePropertyExamples()),
+                AnsiUtils.blue(processingArguments.isUseResponseBodyExamples()),
+                AnsiUtils.blue(processingArguments.isUseDefaults()));
+        logger.config("selfReferenceDepth {}, largeStringsSize {}, randomHeadersNumber {}, limitFuzzedFields {}, limitXxxOfCombinations {}",
+                AnsiUtils.blue(processingArguments.getSelfReferenceDepth()),
+                AnsiUtils.blue(processingArguments.getLargeStringsSize()),
+                AnsiUtils.blue(processingArguments.getRandomHeadersNumber()),
+                AnsiUtils.blue(processingArguments.getLimitNumberOfFields()),
+                AnsiUtils.blue(processingArguments.getLimitXxxOfCombinations()));
+        logger.config("How the service handles whitespaces and random unicodes: edgeSpacesStrategy {}, sanitizationStrategy {}",
+                AnsiUtils.blue(processingArguments.getEdgeSpacesStrategy()),
+                AnsiUtils.blue(processingArguments.getSanitizationStrategy()));
+        logger.config("Seed value: {}",
+                AnsiUtils.blue(CatsRandom.getStoredSeed()));
+        logger.config("Quality gate: {}",
+                AnsiUtils.blue(qualityGateArguments.getQualityGateDescription()));
 
         int nofOfOperations = OpenApiUtils.getNumberOfOperations(openAPI);
-        logger.config(AnsiUtils.bold("Total number of OpenAPI operations: {}"), AnsiUtils.blue(nofOfOperations));
+        logger.config("Total number of OpenAPI operations: {}", AnsiUtils.blue(nofOfOperations));
     }
 
     private void fuzzPath(Map.Entry<String, PathItem> pathItemEntry, OpenAPI openAPI) {

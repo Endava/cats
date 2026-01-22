@@ -402,7 +402,7 @@ public class TestCaseListener {
         String osDetails = System.getProperty("os.name") + "-" + System.getProperty("os.version") + "-" + System.getProperty("os.arch");
 
         ConsoleUtils.emptyLine();
-        logger.start(AnsiUtils.bold("Starting {}-{}, build time {} UTC, platform {}"),
+        logger.start("Starting {}-{}, build time {} UTC, platform {}",
                 AnsiUtils.green(appName),
                 AnsiUtils.green(appVersion),
                 AnsiUtils.green(appBuildTime),
