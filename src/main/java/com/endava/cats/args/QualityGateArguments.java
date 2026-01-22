@@ -166,7 +166,7 @@ public class QualityGateArguments {
             }
 
             return violated;
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             logger.warn("Invalid threshold value in quality gate: {}. Expected integer.", thresholdStr);
             return false;
         }

@@ -519,7 +519,7 @@ class FilterArgumentsTest {
 
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
-                .contains("SqlInjectionInStringFieldsFuzzer", "MassAssignmentFuzzer", "BypassAuthenticationFuzzer");
+                .contains("SqlInjectionInStringFields", "MassAssignment", "BypassAuthentication");
     }
 
     @Test
@@ -530,7 +530,7 @@ class FilterArgumentsTest {
 
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
-                .contains("HappyPathFuzzer", "RemoveFieldsFuzzer", "NullValuesInFieldsFuzzer");
+                .contains("HappyPath", "RemoveFields", "NullValuesInFields");
     }
 
     @Test
@@ -603,11 +603,11 @@ class FilterArgumentsTest {
     @Test
     void shouldThrowIllegalArgumentExceptionWhenPathNotExistsInOpenAPI() {
         filterArguments.setPaths(List.of("/non-existent-path"));
-        OpenAPI spec = Mockito.mock(OpenAPI.class);
+        OpenAPI openApi = Mockito.mock(OpenAPI.class);
         Paths paths = Mockito.mock(Paths.class);
         Mockito.when(paths.containsKey("/non-existent-path")).thenReturn(false);
-        Mockito.when(spec.getPaths()).thenReturn(paths);
-        Assertions.assertThatThrownBy(() -> filterArguments.validateValidPaths(spec))
+        Mockito.when(openApi.getPaths()).thenReturn(paths);
+        Assertions.assertThatThrownBy(() -> filterArguments.validateValidPaths(openApi))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("No paths available to run. Use 'cats list -p -c api.yml' to list available paths");
     }
@@ -615,11 +615,11 @@ class FilterArgumentsTest {
     @Test
     void shouldNotThrowExceptionWhenPathExists() {
         filterArguments.setPaths(List.of("/non-existent-path"));
-        OpenAPI spec = Mockito.mock(OpenAPI.class);
+        OpenAPI openApi = Mockito.mock(OpenAPI.class);
         Paths paths = Mockito.mock(Paths.class);
         Mockito.when(paths.containsKey("/non-existent-path")).thenReturn(true);
-        Mockito.when(spec.getPaths()).thenReturn(paths);
-        Assertions.assertThatNoException().isThrownBy(() -> filterArguments.validateValidPaths(spec));
+        Mockito.when(openApi.getPaths()).thenReturn(paths);
+        Assertions.assertThatNoException().isThrownBy(() -> filterArguments.validateValidPaths(openApi));
     }
 
     @Test
@@ -630,7 +630,7 @@ class FilterArgumentsTest {
 
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
-                .containsExactly("HappyPathFuzzer")
+                .containsExactly("HappyPath")
                 .hasSize(1);
     }
 
@@ -643,7 +643,7 @@ class FilterArgumentsTest {
 
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
-                .containsExactly("HappyPathFuzzer")
+                .containsExactly("HappyPath")
                 .hasSize(1);
     }
 
@@ -656,7 +656,7 @@ class FilterArgumentsTest {
 
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
-                .contains("HappyPathFuzzer", "RemoveFieldsFuzzer", "SqlInjectionInStringFieldsFuzzer")
+                .contains("HappyPath", "RemoveFields", "SqlInjectionInStringFields")
                 .hasSizeGreaterThan(10);
     }
 
@@ -710,8 +710,8 @@ class FilterArgumentsTest {
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
                 .isNotEmpty()
-                .contains("SqlInjectionInStringFieldsFuzzer", "MassAssignmentFuzzer")
-                .doesNotContain("HappyPathFuzzer");
+                .contains("SqlInjectionInStringFields", "MassAssignment")
+                .doesNotContain("HappyPath");
     }
 
     @Test
@@ -723,7 +723,7 @@ class FilterArgumentsTest {
 
         List<String> suppliedFuzzers = (List<String>) ReflectionTestUtils.getField(filterArguments, "suppliedFuzzers");
         Assertions.assertThat(suppliedFuzzers)
-                .containsExactly("HappyPathFuzzer")
+                .containsExactly("HappyPath")
                 .hasSize(1);
     }
 }

@@ -39,7 +39,7 @@ class ProfileLoaderTest {
                     .contains("health check")
                     .containsIgnoringCase("reachable");
             Assertions.assertThat(profile.get().fuzzers())
-                    .containsExactly("HappyPathFuzzer")
+                    .containsExactly("HappyPath")
                     .hasSize(1);
         }
 
@@ -51,7 +51,7 @@ class ProfileLoaderTest {
             Assertions.assertThat(profile).isPresent();
             Assertions.assertThat(profile.get().fuzzers())
                     .hasSize(1)
-                    .contains("HappyPathFuzzer");
+                    .contains("HappyPath");
         }
     }
 
@@ -78,11 +78,11 @@ class ProfileLoaderTest {
             Assertions.assertThat(profile.get().description()).contains("Security-focused");
             Assertions.assertThat(profile.get().fuzzers())
                     .contains(
-                            "SqlInjectionInStringFieldsFuzzer",
-                            "NoSqlInjectionInStringFieldsFuzzer",
-                            "XssInjectionInStringFieldsFuzzer",
-                            "BypassAuthenticationFuzzer",
-                            "MassAssignmentFuzzer"
+                            "SqlInjectionInStringFields",
+                            "NoSqlInjectionInStringFields",
+                            "XssInjectionInStringFields",
+                            "BypassAuthentication",
+                            "MassAssignment"
                     );
         }
 
@@ -96,9 +96,9 @@ class ProfileLoaderTest {
             Assertions.assertThat(profile.get().description()).contains("Fast smoke test");
             Assertions.assertThat(profile.get().fuzzers())
                     .contains(
-                            "HappyPathFuzzer",
-                            "RemoveFieldsFuzzer",
-                            "NullValuesInFieldsFuzzer"
+                            "HappyPath",
+                            "RemoveFields",
+                            "NullValuesInFields"
                     );
         }
 
@@ -112,9 +112,9 @@ class ProfileLoaderTest {
             Assertions.assertThat(profile.get().description()).contains("OWASP");
             Assertions.assertThat(profile.get().fuzzers())
                     .contains(
-                            "InsecureDirectObjectReferencesFuzzer",
-                            "MassAssignmentFuzzer",
-                            "SSRFInUrlFieldsFuzzer"
+                            "InsecureDirectObjectReferences",
+                            "MassAssignment",
+                            "SSRFInUrlFields"
                     );
         }
 
@@ -128,9 +128,9 @@ class ProfileLoaderTest {
             Assertions.assertThat(profile.get().description()).contains("CI/CD");
             Assertions.assertThat(profile.get().fuzzers())
                     .contains(
-                            "HappyPathFuzzer",
-                            "MinGreaterThanMaxFieldsFuzzer",
-                            "DateRangeInversionFuzzer"
+                            "HappyPath",
+                            "MinGreaterThanMaxFields",
+                            "DateRangeInversion"
                     );
         }
 
@@ -167,8 +167,8 @@ class ProfileLoaderTest {
                       custom-test:
                         description: "Custom test profile"
                         fuzzers:
-                          - HappyPathFuzzer
-                          - SqlInjectionInStringFieldsFuzzer
+                          - HappyPath
+                          - SqlInjectionInStringFields
                     """;
 
             Path tempFile = Files.createTempFile("custom-profile", ".yml");
@@ -184,7 +184,7 @@ class ProfileLoaderTest {
                 Assertions.assertThat(profile.get().name()).isEqualTo("custom-test");
                 Assertions.assertThat(profile.get().description()).isEqualTo("Custom test profile");
                 Assertions.assertThat(profile.get().fuzzers())
-                        .containsExactly("HappyPathFuzzer", "SqlInjectionInStringFieldsFuzzer");
+                        .containsExactly("HappyPath", "SqlInjectionInStringFields");
             } finally {
                 Files.deleteIfExists(tempFile);
             }
@@ -199,7 +199,7 @@ class ProfileLoaderTest {
                       security:
                         description: "My custom security profile"
                         fuzzers:
-                          - HappyPathFuzzer
+                          - HappyPath
                     """;
 
             Path tempFile = Files.createTempFile("override-profile", ".yml");
@@ -213,7 +213,7 @@ class ProfileLoaderTest {
                 // Then
                 Assertions.assertThat(profile).isPresent();
                 Assertions.assertThat(profile.get().description()).isEqualTo("My custom security profile");
-                Assertions.assertThat(profile.get().fuzzers()).containsExactly("HappyPathFuzzer");
+                Assertions.assertThat(profile.get().fuzzers()).containsExactly("HappyPath");
             } finally {
                 Files.deleteIfExists(tempFile);
             }
@@ -228,11 +228,11 @@ class ProfileLoaderTest {
                       profile1:
                         description: "First profile"
                         fuzzers:
-                          - HappyPathFuzzer
+                          - HappyPath
                       profile2:
                         description: "Second profile"
                         fuzzers:
-                          - RemoveFieldsFuzzer
+                          - RemoveFields
                     """;
 
             Path tempFile = Files.createTempFile("multi-profile", ".yml");
@@ -251,8 +251,8 @@ class ProfileLoaderTest {
 
                 Assertions.assertThat(profile1).isPresent();
                 Assertions.assertThat(profile2).isPresent();
-                Assertions.assertThat(profile1.get().fuzzers()).containsExactly("HappyPathFuzzer");
-                Assertions.assertThat(profile2.get().fuzzers()).containsExactly("RemoveFieldsFuzzer");
+                Assertions.assertThat(profile1.get().fuzzers()).containsExactly("HappyPath");
+                Assertions.assertThat(profile2.get().fuzzers()).containsExactly("RemoveFields");
             } finally {
                 Files.deleteIfExists(tempFile);
             }

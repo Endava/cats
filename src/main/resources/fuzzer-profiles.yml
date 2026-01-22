@@ -11,51 +11,51 @@ profiles:
     description: "Security-focused fuzzers targeting OWASP vulnerabilities and attack vectors"
     fuzzers:
       # Injection Attacks
-      - SqlInjectionInStringFieldsFuzzer
-      - NoSqlInjectionInStringFieldsFuzzer
-      - CommandInjectionInStringFieldsFuzzer
-      - XssInjectionInStringFieldsFuzzer
-      - SSRFInUrlFieldsFuzzer
+      - SqlInjectionInStringFields
+      - NoSqlInjectionInStringFields
+      - CommandInjectionInStringFields
+      - XssInjectionInStringFields
+      - SSRFInUrlFields
 
       # Authentication & Authorization
-      - BypassAuthenticationFuzzer
-      - InsecureDirectObjectReferencesFuzzer
+      - BypassAuthentication
+      - InsecureDirectObjectReferences
 
       # Mass Assignment
-      - MassAssignmentFuzzer
-      - AdditionalPropertiesMassAssignmentFieldsFuzzer
+      - MassAssignment
+      - AdditionalPropertiesMassAssignmentFields
 
       # Security Headers
-      - CheckSecurityHeadersFuzzer
-      - ResponseHeadersMatchContractHeadersFuzzer
+      - CheckSecurityHeaders
+      - ResponseHeadersMatchContractHeaders
 
       # Malicious Input
-      - VeryLargeStringsInFieldsFuzzer
-      - VeryLargeUnicodeStringsInFieldsFuzzer
-      - VeryLargeIntegersInNumericFieldsFuzzer
-      - VeryLargeDecimalsInNumericFieldsFuzzer
-      - VeryLargeStringsInHeadersFuzzer
-      - VeryLargeUnicodeStringsInHeadersFuzzer
+      - VeryLargeStringsInFields
+      - VeryLargeUnicodeStringsInFields
+      - VeryLargeIntegersInNumericFields
+      - VeryLargeDecimalsInNumericFields
+      - VeryLargeStringsInHeaders
+      - VeryLargeUnicodeStringsInHeaders
 
       # Unicode Attacks
-      - ZalgoTextInFieldsSanitizeValidateFuzzer
-      - ZeroWidthCharsInValuesFieldsSanitizeValidateFuzzer
-      - BidirectionalOverrideFieldsFuzzer
+      - ZalgoTextInFields
+      - ZeroWidthCharsInValuesFields
+      - BidirectionalOverrideFields
 
       # HTTP Method Manipulation
-      - CustomHttpMethodsFuzzer
-      - NonRestHttpMethodsFuzzer
-      - HttpMethodsFuzzer
+      - CustomHttpMethods
+      - NonRestHttpMethods
+      - HttpMethods
 
       # Header Manipulation
-      - CRLFHeadersFuzzer
-      - DuplicateHeadersFuzzer
-      - LargeNumberOfRandomHeadersFuzzer
+      - CRLFHeaders
+      - DuplicateHeaders
+      - LargeNumberOfRandomHeaders
 
       # Resource Manipulation
-      - CheckDeletedResourcesNotAvailableFuzzer
-      - RandomResourcesFuzzer
-      - InvalidReferencesFieldsFuzzer
+      - CheckDeletedResourcesNotAvailable
+      - RandomResources
+      - InvalidReferencesFields
 
   # ============================================
   # HEALTH-CHECK PROFILE
@@ -65,7 +65,7 @@ profiles:
     description: "Minimal health check to verify API endpoints are reachable and responding"
     fuzzers:
       # Happy Path - verify basic connectivity and response
-      - HappyPathFuzzer
+      - HappyPath
 
   # ============================================
   # QUICK PROFILE
@@ -75,41 +75,41 @@ profiles:
     description: "Fast smoke test covering critical test scenarios"
     fuzzers:
       # Happy Path
-      - HappyPathFuzzer
+      - HappyPath
 
       # Required Fields
-      - RemoveFieldsFuzzer
-      - NullValuesInFieldsFuzzer
-      - EmptyStringsInFieldsFuzzer
+      - RemoveFields
+      - NullValuesInFields
+      - EmptyStringsInFields
 
       # Type Validation
-      - StringsInNumericFieldsFuzzer
-      - RandomStringsInBooleanFieldsFuzzer
-      - DecimalNumbersInIntegerFieldsFuzzer
+      - StringsInNumericFields
+      - RandomStringsInBooleanFields
+      - DecimalNumbersInIntegerFields
 
       # Boundary Testing (Key ones only)
-      - IntegerFieldsLeftBoundaryFuzzer
-      - IntegerFieldsRightBoundaryFuzzer
-      - StringFieldsLeftBoundaryFuzzer
-      - StringFieldsRightBoundaryFuzzer
+      - IntegerFieldsLeftBoundary
+      - IntegerFieldsRightBoundary
+      - StringFieldsLeftBoundary
+      - StringFieldsRightBoundary
 
       # Format Validation
-      - StringFormatTotallyWrongValuesFuzzer
-      - InvalidValuesInEnumsFieldsFuzzer
+      - StringFormatTotallyWrongValues
+      - InvalidValuesInEnumsFields
 
       # Security Essentials
-      - BypassAuthenticationFuzzer
-      - MassAssignmentFuzzer
-      - SqlInjectionInStringFieldsFuzzer
+      - BypassAuthentication
+      - MassAssignment
+      - SqlInjectionInStringFields
 
       # HTTP Basics
-      - HttpMethodsFuzzer
-      - DummyContentTypeHeadersFuzzer
-      - UnsupportedContentTypesHeadersFuzzer
+      - HttpMethods
+      - DummyContentTypeHeaders
+      - UnsupportedContentTypesHeaders
 
       # Malformed Requests
-      - MalformedJsonFuzzer
-      - EmptyJsonBodyFuzzer
+      - MalformedJson
+      - EmptyJsonBody
 
   # ============================================
   # COMPLIANCE PROFILE
@@ -119,63 +119,63 @@ profiles:
     description: "OWASP API Security Top 10 compliance testing"
     fuzzers:
       # API1:2023 - Broken Object Level Authorization
-      - InsecureDirectObjectReferencesFuzzer
-      - RandomResourcesFuzzer
-      - InvalidReferencesFieldsFuzzer
-      - CheckDeletedResourcesNotAvailableFuzzer
+      - InsecureDirectObjectReferences
+      - RandomResources
+      - InvalidReferencesFields
+      - CheckDeletedResourcesNotAvailable
 
       # API2:2023 - Broken Authentication
-      - BypassAuthenticationFuzzer
-      - RemoveHeadersFuzzer
+      - BypassAuthentication
+      - RemoveHeaders
 
       # API3:2023 - Broken Object Property Level Authorization
-      - MassAssignmentFuzzer
-      - AdditionalPropertiesMassAssignmentFieldsFuzzer
-      - NewFieldsFuzzer
+      - MassAssignment
+      - AdditionalPropertiesMassAssignmentFields
+      - NewFields
 
       # API4:2023 - Unrestricted Resource Consumption
-      - VeryLargeStringsInFieldsFuzzer
-      - VeryLargeIntegersInNumericFieldsFuzzer
-      - VeryLargeDecimalsInNumericFieldsFuzzer
-      - VeryLargeUnicodeStringsInFieldsFuzzer
-      - OverflowArraySizeFieldsFuzzer
-      - OverflowMapSizeFieldsFuzzer
-      - VeryLargeStringsInHeadersFuzzer
-      - LargeNumberOfRandomHeadersFuzzer
-      - LargeNumberOfRandomAlphanumericHeadersFuzzer
+      - VeryLargeStringsInFields
+      - VeryLargeIntegersInNumericFields
+      - VeryLargeDecimalsInNumericFields
+      - VeryLargeUnicodeStringsInFields
+      - OverflowArraySizeFields
+      - OverflowMapSizeFields
+      - VeryLargeStringsInHeaders
+      - LargeNumberOfRandomHeaders
+      - LargeNumberOfRandomAlphanumericHeaders
 
       # API5:2023 - Broken Function Level Authorization
-      - HttpMethodsFuzzer
-      - CustomHttpMethodsFuzzer
-      - NonRestHttpMethodsFuzzer
+      - HttpMethods
+      - CustomHttpMethods
+      - NonRestHttpMethods
 
       # API6:2023 - Unrestricted Access to Sensitive Business Flows
       # (Covered by rate limiting - out of scope for schema-based testing)
 
       # API7:2023 - Server Side Request Forgery
-      - SSRFInUrlFieldsFuzzer
+      - SSRFInUrlFields
 
       # API8:2023 - Security Misconfiguration
-      - CheckSecurityHeadersFuzzer
-      - ResponseHeadersMatchContractHeadersFuzzer
-      - DummyAcceptHeadersFuzzer
-      - UnsupportedAcceptHeadersFuzzer
-      - UnsupportedContentTypesHeadersFuzzer
+      - CheckSecurityHeaders
+      - ResponseHeadersMatchContractHeaders
+      - DummyAcceptHeaders
+      - UnsupportedAcceptHeaders
+      - UnsupportedContentTypesHeaders
 
       # API9:2023 - Improper Inventory Management
       # (Documentation quality - covered by linters)
 
       # API10:2023 - Unsafe Consumption of APIs
-      - SqlInjectionInStringFieldsFuzzer
-      - NoSqlInjectionInStringFieldsFuzzer
-      - CommandInjectionInStringFieldsFuzzer
-      - XssInjectionInStringFieldsFuzzer
+      - SqlInjectionInStringFields
+      - NoSqlInjectionInStringFields
+      - CommandInjectionInStringFields
+      - XssInjectionInStringFields
 
       # Additional Security Best Practices
-      - StringFormatTotallyWrongValuesFuzzer
-      - InvalidValuesInEnumsFieldsFuzzer
-      - RemoveFieldsFuzzer
-      - NullValuesInFieldsFuzzer
+      - StringFormatTotallyWrongValues
+      - InvalidValuesInEnumsFields
+      - RemoveFields
+      - NullValuesInFields
 
   # ============================================
   # CI PROFILE
@@ -186,68 +186,68 @@ profiles:
     description: "Balanced test suite optimized for CI/CD pipelines"
     fuzzers:
       # Functional Correctness
-      - HappyPathFuzzer
-      - DefaultValuesInFieldsFuzzer
-      - ExamplesFieldsFuzzer
+      - HappyPath
+      - DefaultValuesInFields
+      - ExamplesFields
 
       # Required Field Validation
-      - RemoveFieldsFuzzer
-      - NullValuesInFieldsFuzzer
-      - EmptyStringsInFieldsFuzzer
+      - RemoveFields
+      - NullValuesInFields
+      - EmptyStringsInFields
 
       # Type Validation
-      - StringsInNumericFieldsFuzzer
-      - RandomStringsInBooleanFieldsFuzzer
-      - DecimalNumbersInIntegerFieldsFuzzer
-      - ReplaceObjectsWithPrimitivesFieldsFuzzer
-      - ReplacePrimitivesWithObjectsFieldsFuzzer
-      - ReplaceArraysWithPrimitivesFieldsFuzzer
+      - StringsInNumericFields
+      - RandomStringsInBooleanFields
+      - DecimalNumbersInIntegerFields
+      - ReplaceObjectsWithPrimitivesFields
+      - ReplacePrimitivesWithObjectsFields
+      - ReplaceArraysWithPrimitivesFields
 
       # Boundary Testing
-      - IntegerFieldsLeftBoundaryFuzzer
-      - IntegerFieldsRightBoundaryFuzzer
-      - DecimalFieldsLeftBoundaryFuzzer
-      - DecimalFieldsRightBoundaryFuzzer
-      - StringFieldsLeftBoundaryFuzzer
-      - StringFieldsRightBoundaryFuzzer
-      - MinimumExactNumbersInNumericFieldsFuzzer
-      - MaximumExactNumbersInNumericFieldsFuzzer
-      - MinLengthExactValuesInStringFieldsFuzzer
-      - MaxLengthExactValuesInStringFieldsFuzzer
+      - IntegerFieldsLeftBoundary
+      - IntegerFieldsRightBoundary
+      - DecimalFieldsLeftBoundary
+      - DecimalFieldsRightBoundary
+      - StringFieldsLeftBoundary
+      - StringFieldsRightBoundary
+      - MinimumExactNumbersInNumericFields
+      - MaximumExactNumbersInNumericFields
+      - MinLengthExactValuesInStringFields
+      - MaxLengthExactValuesInStringFields
 
       # Format & Enum Validation
-      - StringFormatTotallyWrongValuesFuzzer
-      - StringFormatAlmostValidValuesFuzzer
-      - InvalidValuesInEnumsFieldsFuzzer
-      - EnumCaseVariantFieldsFuzzer
+      - StringFormatTotallyWrongValues
+      - StringFormatAlmostValidValues
+      - InvalidValuesInEnumsFields
+      - EnumCaseVariantFields
 
       # Business Logic
-      - MinGreaterThanMaxFieldsFuzzer
-      - DateRangeInversionFuzzer
-      - TemporalLogicFieldsFuzzer
+      - MinGreaterThanMaxFields
+      - DateRangeInversion
+      - TemporalLogicFields
 
       # Security Essentials
-      - BypassAuthenticationFuzzer
-      - MassAssignmentFuzzer
-      - SqlInjectionInStringFieldsFuzzer
-      - XssInjectionInStringFieldsFuzzer
-      - SSRFInUrlFieldsFuzzer
-      - InsecureDirectObjectReferencesFuzzer
+      - BypassAuthentication
+      - MassAssignment
+      - SqlInjectionInStringFields
+      - XssInjectionInStringFields
+      - SSRFInUrlFields
+      - InsecureDirectObjectReferences
 
       # HTTP Protocol
-      - HttpMethodsFuzzer
-      - DummyContentTypeHeadersFuzzer
-      - UnsupportedContentTypesHeadersFuzzer
-      - CheckSecurityHeadersFuzzer
+      - HttpMethods
+      - DummyContentTypeHeaders
+      - UnsupportedContentTypesHeaders
+      - CheckSecurityHeaders
 
       # Malformed Input
-      - MalformedJsonFuzzer
-      - EmptyJsonBodyFuzzer
-      - DummyRequestFuzzer
+      - MalformedJson
+      - EmptyJsonBody
+      - DummyRequest
 
       # Array/Object Validation
-      - OverflowArraySizeFieldsFuzzer
-      - DuplicateKeysFieldsFuzzer
+      - OverflowArraySizeFields
+      - DuplicateKeysFields
 
   # ============================================
   # FULL PROFILE (Default)
@@ -255,4 +255,4 @@ profiles:
   # ============================================
   full:
     description: "Complete test suite - all fuzzers enabled (default behavior)"
-    fuzzers: []  # Empty means ALL fuzzers
+    fuzzers: [ ]  # Empty means ALL fuzzers

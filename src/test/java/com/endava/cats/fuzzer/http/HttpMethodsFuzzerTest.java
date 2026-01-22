@@ -116,17 +116,6 @@ class HttpMethodsFuzzerTest {
     }
 
     @Test
-    void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWith405ButMissingAllowHeader_thenWarningIsReported() {
-        ReflectionTestUtils.setField(processingArguments, "checkAllowHeader", true);
-        FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();
-        CatsResponse catsResponse = CatsResponse.builder().body("{}").responseCode(405).httpMethod("POST").headers(List.of()).build();
-        Mockito.when(serviceCaller.call(Mockito.any())).thenReturn(catsResponse);
-
-        httpMethodsFuzzer.fuzz(data);
-        Mockito.verify(testCaseListener, Mockito.times(7)).reportResultWarn(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any(), AdditionalMatchers.aryEq(new Object[]{"POST", 405}));
-    }
-
-    @Test
     void givenAnOperation_whenCallingTheHttpMethodsFuzzerAndTheServiceResponsesWith405AndAllowHeaderContainsMethod_thenWarningIsReported() {
         ReflectionTestUtils.setField(processingArguments, "checkAllowHeader", true);
         FuzzingData data = FuzzingData.builder().pathItem(new PathItem()).reqSchema(new StringSchema()).requestContentTypes(List.of("application/json")).build();

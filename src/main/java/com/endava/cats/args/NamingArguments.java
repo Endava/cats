@@ -1,14 +1,12 @@
 package com.endava.cats.args;
 
 import com.endava.cats.exception.CatsException;
-import com.endava.cats.http.HttpMethod;
 import com.endava.cats.util.AnsiUtils;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
 import io.github.ludovicianul.prettylogger.PrettyLoggerFactory;
 import jakarta.inject.Singleton;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.fusesource.jansi.Ansi;
 import picocli.CommandLine;
 
 import java.io.File;
