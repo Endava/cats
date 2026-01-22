@@ -18,7 +18,7 @@ import java.util.Set;
 
 @Singleton
 public class ProfileLoader {
-    private final PrettyLogger LOGGER = PrettyLoggerFactory.getLogger(ProfileLoader.class);
+    private final PrettyLogger logger = PrettyLoggerFactory.getLogger(ProfileLoader.class);
     private static final String BUILT_IN_PROFILES = "fuzzer-profiles.yml";
 
     private Map<String, Profile> profiles;
@@ -30,11 +30,6 @@ public class ProfileLoader {
     @SuppressWarnings("unchecked")
     private void loadBuiltInProfiles() {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(BUILT_IN_PROFILES)) {
-            if (is == null) {
-                LOGGER.error("Built-in profiles file not found: {}", BUILT_IN_PROFILES);
-                profiles = new HashMap<>();
-                return;
-            }
 
             Yaml yaml = new Yaml();
             Map<String, Object> data = yaml.load(is);
@@ -53,9 +48,9 @@ public class ProfileLoader {
                 profiles.put(profileName, profile);
             }
 
-            LOGGER.debug("Loaded {} built-in profiles", profiles.size());
+            logger.debug("Loaded {} built-in profiles", profiles.size());
         } catch (Exception e) {
-            LOGGER.error("Failed to load built-in profiles", e);
+            logger.error("Failed to load built-in profiles", e);
             profiles = new HashMap<>();
         }
     }
@@ -78,14 +73,14 @@ public class ProfileLoader {
                 );
 
                 if (profiles.containsKey(profileName)) {
-                    LOGGER.info("Overriding built-in profile: {}", profileName);
+                    logger.info("Overriding built-in profile: {}", profileName);
                 }
                 profiles.put(profileName, profile);
             }
 
-            LOGGER.debug("Loaded custom profiles from: {}", customProfileFile);
+            logger.debug("Loaded custom profiles from: {}", customProfileFile);
         } catch (Exception e) {
-            LOGGER.error("Failed to load custom profiles from: {}", customProfileFile, e);
+            logger.error("Failed to load custom profiles from: {}", customProfileFile, e);
         }
     }
 

@@ -602,7 +602,8 @@ public class FilterArguments {
      * Applies the selected fuzzer profile to filter which fuzzers will run.
      * If a custom profile file is provided, it will be loaded first.
      * If the profile specifies an empty fuzzer list, all fuzzers will run (full profile).
-     * If user also specified --fuzzers, the intersection of profile and user fuzzers will be used.
+     * If user also specified --fuzzers, the user's fuzzer selection takes precedence and profile is ignored.
+     * If --health-check flag is set, the health-check profile will be used regardless of other profile settings.
      *
      * @param spec the PicoCli command spec for error reporting
      */
@@ -611,7 +612,19 @@ public class FilterArguments {
             profileLoader.loadCustomProfiles(customProfileFile);
         }
 
-        Optional<ProfileLoader.Profile> selectedProfile = profileLoader.getProfile(profile);
+        // If user explicitly specified fuzzers, prioritize that over profile
+        if (suppliedFuzzers != null && !suppliedFuzzers.isEmpty()) {
+            logger.info("Using user-specified fuzzers: {} fuzzers (profile ignored)", suppliedFuzzers.size());
+            return;
+        }
+
+        // Override profile selection if health-check flag is set
+        String effectiveProfile = processingArguments.isHealthCheck() ? "health-check" : profile;
+        if (processingArguments.isHealthCheck()) {
+            logger.info("Health check mode enabled - using 'health-check' profile");
+        }
+
+        Optional<ProfileLoader.Profile> selectedProfile = profileLoader.getProfile(effectiveProfile);
 
         if (selectedProfile.isEmpty()) {
             throw new CommandLine.ParameterException(spec.commandLine(),
@@ -621,22 +634,12 @@ public class FilterArguments {
         ProfileLoader.Profile profileConfig = selectedProfile.get();
 
         if (profileConfig.fuzzers().isEmpty()) {
-            logger.info("Using profile '{}' - ALL fuzzers enabled", profile);
+            logger.info("Using profile '{}' - ALL fuzzers enabled", effectiveProfile);
             return;
         }
 
-        Set<String> profileFuzzers = new HashSet<>(profileConfig.fuzzers());
-
-        if (suppliedFuzzers != null && !suppliedFuzzers.isEmpty()) {
-            Set<String> userFuzzers = new HashSet<>(suppliedFuzzers);
-            profileFuzzers.retainAll(userFuzzers);
-            logger.info("Using profile '{}' with user-specified fuzzers: {} fuzzers",
-                    profile, profileFuzzers.size());
-        } else {
-            logger.info("Using profile '{}': {} fuzzers", profile, profileFuzzers.size());
-        }
-
-        this.suppliedFuzzers = List.copyOf(profileFuzzers);
+        logger.info("Using profile '{}': {} fuzzers", effectiveProfile, profileConfig.fuzzers().size());
+        this.suppliedFuzzers = List.copyOf(profileConfig.fuzzers());
     }
 
     /**

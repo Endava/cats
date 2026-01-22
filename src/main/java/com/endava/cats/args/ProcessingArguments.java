@@ -97,6 +97,10 @@ public class ProcessingArguments {
             description = "When set to @|bold true|@, the XXXHttpMethodsFuzzer will check that the Allow header is provided in response and contains the allowed methods. Default: @|bold,underline ${DEFAULT-VALUE}|@")
     private boolean checkAllowHeader;
 
+    @CommandLine.Option(names = {"--health-check"},
+            description = "When set to @|bold true|@, runs a minimal health check using the 'health-check' profile to verify API endpoints are reachable before full fuzzing. Default: @|bold,underline ${DEFAULT-VALUE}|@")
+    private boolean healthCheck;
+
     @Setter
     @CommandLine.Option(names = {"--allowLeadingZeroInNumbers"}, negatable = true, defaultValue = "true", fallbackValue = "true",
             description = "When set to @|bold true|@, the PrefixNumbersWithZeroFieldsFuzzer will expect a 2XX response code instead of 4XX. Default: @|bold,underline ${DEFAULT-VALUE}|@")

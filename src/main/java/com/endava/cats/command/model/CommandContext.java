@@ -1,6 +1,7 @@
 package com.endava.cats.command.model;
 
 import com.endava.cats.args.FilterArguments;
+import com.endava.cats.http.HttpMethod;
 
 import java.io.File;
 import java.util.HashMap;
@@ -150,15 +151,15 @@ public class CommandContext {
                 .map(v -> (List<String>) v);
     }
 
-    public void setHttpMethods(List<?> httpMethods) {
+    public void setHttpMethods(List<HttpMethod> httpMethods) {
         set("httpMethods", httpMethods);
     }
 
     @SuppressWarnings("unchecked")
-    public Optional<List<?>> getHttpMethods() {
+    public Optional<List<HttpMethod>> getHttpMethods() {
         return Optional.ofNullable(properties.get("httpMethods"))
                 .filter(List.class::isInstance)
-                .map(v -> (List<?>) v);
+                .map(v -> (List<HttpMethod>) v);
     }
 
     public void setSkipFuzzers(List<String> skipFuzzers) {

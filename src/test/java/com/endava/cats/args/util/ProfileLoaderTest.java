@@ -2,6 +2,7 @@ package com.endava.cats.args.util;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,10 +19,40 @@ class ProfileLoaderTest {
 
     ProfileLoader profileLoader;
 
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     void setUp() {
         // Create a fresh ProfileLoader instance for each test to avoid state pollution
         profileLoader = new ProfileLoader();
+    }
+
+    @Nested
+    @DisplayName("Health-Check Profile Tests")
+    class HealthCheckProfileTests {
+        @Test
+        @DisplayName("Should load health-check profile")
+        void shouldLoadHealthCheckProfile() {
+            Optional<ProfileLoader.Profile> profile = profileLoader.getProfile("health-check");
+
+            Assertions.assertThat(profile).isPresent();
+            Assertions.assertThat(profile.get().name()).isEqualTo("health-check");
+            Assertions.assertThat(profile.get().description())
+                    .contains("health check")
+                    .containsIgnoringCase("reachable");
+            Assertions.assertThat(profile.get().fuzzers())
+                    .containsExactly("HappyPathFuzzer")
+                    .hasSize(1);
+        }
+
+        @Test
+        @DisplayName("Should have minimal fuzzers for quick API verification")
+        void shouldHaveMinimalFuzzersForHealthCheck() {
+            Optional<ProfileLoader.Profile> profile = profileLoader.getProfile("health-check");
+
+            Assertions.assertThat(profile).isPresent();
+            Assertions.assertThat(profile.get().fuzzers())
+                    .hasSize(1)
+                    .contains("HappyPathFuzzer");
+        }
     }
 
     @Nested
@@ -34,7 +65,7 @@ class ProfileLoaderTest {
             Set<String> availableProfiles = profileLoader.getAvailableProfiles();
 
             Assertions.assertThat(availableProfiles)
-                    .containsExactlyInAnyOrder("security", "quick", "compliance", "ci", "full");
+                    .containsExactlyInAnyOrder("security", "quick", "compliance", "ci", "full", "health-check");
         }
 
         @Test
