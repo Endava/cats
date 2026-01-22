@@ -58,6 +58,16 @@ profiles:
       - InvalidReferencesFieldsFuzzer
 
   # ============================================
+  # HEALTH-CHECK PROFILE
+  # Focus: Verify API is reachable before fuzzing
+  # ============================================
+  health-check:
+    description: "Minimal health check to verify API endpoints are reachable and responding"
+    fuzzers:
+      # Happy Path - verify basic connectivity and response
+      - HappyPathFuzzer
+
+  # ============================================
   # QUICK PROFILE
   # Focus: Fast smoke test for CI/CD
   # ============================================
