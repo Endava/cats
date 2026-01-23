@@ -97,4 +97,8 @@ public class TestReportsGenerator {
     public void printExecutionDetails() {
         testCaseExporters.getFirst().printExecutionDetails();
     }
+
+    public void writeTopFuzzers(List<CatsTestCaseSummary> testCaseSummaries) {
+        testCaseExporters.getFirst().writeTopFuzzers(testCaseSummaries);
+    }
 }

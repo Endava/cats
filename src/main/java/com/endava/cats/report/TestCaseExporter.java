@@ -426,6 +426,27 @@ public abstract class TestCaseExporter {
         writeJsonTestCase(testCase);
     }
 
+    public void writeTopFuzzers(List<CatsTestCaseSummary> summaries) {
+        List<Map.Entry<String, Long>> topFuzzers = summaries.stream()
+                .filter(CatsTestCaseSummary::getError)          // only issues
+                .collect(Collectors.groupingBy(
+                        CatsTestCaseSummary::getFuzzer,
+                        Collectors.counting()
+                ))
+                .entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(5)
+                .toList();
+        if (topFuzzers.isEmpty()) {
+            return;
+        }
+        ConsoleUtils.emptyLine();
+        logger.info("Top 5 fuzzers with most errors:");
+        for (Map.Entry<String, Long> fuzzer : topFuzzers) {
+            logger.noFormat(" ◼ {} - {} errors", fuzzer.getKey(), fuzzer.getValue());
+        }
+    }
+
     private void writeJsonTestCase(CatsTestCase testCase) {
         String testFileName = testCase.getTestId().replace(" ", "").concat(JSON);
         try {
@@ -530,4 +551,5 @@ public abstract class TestCaseExporter {
      * @return The title for the summary report.
      */
     public abstract String getSummaryReportTitle();
+
 }

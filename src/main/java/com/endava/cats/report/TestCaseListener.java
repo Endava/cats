@@ -457,6 +457,7 @@ public class TestCaseListener {
             testReportsGenerator.writeSummary(testCaseSummaryDetails);
             testReportsGenerator.writeHelperFiles();
             testReportsGenerator.writeErrorsByReason(testCaseSummaryDetails);
+            testReportsGenerator.writeTopFuzzers(testCaseSummaryDetails);
             testReportsGenerator.writePerformanceReport(testCaseExecutionDetails);
             testReportsGenerator.printExecutionDetails();
             writeRecordedErrorsIfPresent();
