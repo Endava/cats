@@ -29,7 +29,7 @@
         <lombok.version>1.18.42</lombok.version>
         <rgxgen.version>3.1</rgxgen.version>
         <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
-        <openapi-generator.version>7.18.0</openapi-generator.version>
+        <openapi-generator.version>7.19.0</openapi-generator.version>
         <sonar.coverage.exclusions>
             **/*TestCaseExporter*.*, **/*CatsTestCase*.*, **/*CatsTestReport*.*, **/*Aspect*.*, **/*CatsMain*.*,
             **/*VersionProvider*.*, **/*ReflectionConfig*.*,**/*TimeExecution*.*, **/*FormEncoder*.*,
@@ -46,7 +46,7 @@
         <json-path.version>2.10.0</json-path.version>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <quarkus.platform.version>3.30.6</quarkus.platform.version>
+        <quarkus.platform.version>3.31.0</quarkus.platform.version>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -75,11 +75,11 @@
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
         <javafaker.version>1.0.2</javafaker.version>
         <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
-        <jackson.version>2.20.1</jackson.version>
+        <jackson.version>2.21.0</jackson.version>
         <pitest-maven.version>1.22.0</pitest-maven.version>
         <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
         <snakeyaml-engine.version>3.0.1</snakeyaml-engine.version>
-        <jackson-core.version>3.0.3</jackson-core.version>
+        <jackson-core.version>3.0.4</jackson-core.version>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
     </properties>
