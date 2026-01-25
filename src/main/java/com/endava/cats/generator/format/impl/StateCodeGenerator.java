@@ -29,7 +29,7 @@ public class StateCodeGenerator implements ValidDataFormatGenerator, OpenAPIForm
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().address().stateAbbr();
+        String generated = CatsUtil.catsFaker().address().stateAbbr();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

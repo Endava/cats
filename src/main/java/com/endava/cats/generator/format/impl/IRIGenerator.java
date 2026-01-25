@@ -17,7 +17,7 @@ import java.util.Locale;
 public class IRIGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().ancient().god().toLowerCase(Locale.ROOT);
+        String generated = CatsUtil.catsFaker().ancient().god().toLowerCase(Locale.ROOT);
 
         return "https://ë-%s.com/cats".formatted(generated);
     }

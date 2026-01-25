@@ -22,8 +22,8 @@ public class EmailGenerator implements ValidDataFormatGenerator, InvalidDataForm
 
     @Override
     public Object generate(Schema<?> schema) {
-        String hero = CatsUtil.faker().ancient().hero().toLowerCase(Locale.ROOT);
-        String color = CatsUtil.faker().color().name().toLowerCase(Locale.ROOT);
+        String hero = CatsUtil.catsFaker().ancient().hero().toLowerCase(Locale.ROOT);
+        String color = CatsUtil.catsFaker().color().name().toLowerCase(Locale.ROOT);
 
         return "%s.%s@cats.io".formatted(hero, color).replace(" ", "-");
     }

@@ -34,7 +34,7 @@ public class BusinessNameGenerator implements ValidDataFormatGenerator, OpenAPIF
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().company().name();
+        String generated = CatsUtil.catsFaker().company().name();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

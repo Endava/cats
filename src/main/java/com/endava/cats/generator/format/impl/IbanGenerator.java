@@ -29,7 +29,7 @@ public class IbanGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().finance().iban();
+        String generated = CatsUtil.catsFaker().finance().iban();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

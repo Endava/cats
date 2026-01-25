@@ -29,7 +29,7 @@ public class FirstNameGenerator implements ValidDataFormatGenerator, OpenAPIForm
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().name().firstName();
+        String generated = CatsUtil.catsFaker().name().firstName();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

@@ -30,7 +30,7 @@ public class TitleGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().book().title();
+        String generated = CatsUtil.catsFaker().book().title();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

@@ -34,7 +34,7 @@ public class PostCodeGenerator implements ValidDataFormatGenerator, OpenAPIForma
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().address().zipCode();
+        String generated = CatsUtil.catsFaker().address().zipCode();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

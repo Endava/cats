@@ -8,10 +8,8 @@ import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -36,9 +34,8 @@ public class DateOfBirthGenerator implements ValidDataFormatGenerator, OpenAPIFo
 
     @Override
     public Object generate(Schema<?> schema) {
-        Date generated = CatsUtil.faker().date().birthday();
-        LocalDateTime localDateTime = generated.toInstant().atZone(ZoneId.of("GMT")).toLocalDateTime();
+        LocalDate generated = CatsUtil.catsFaker().date().birthday();
 
-        return DataFormat.matchesPatternOrNull(schema, DATE_FORMATTER.format(localDateTime));
+        return DataFormat.matchesPatternOrNull(schema, DATE_FORMATTER.format(generated));
     }
 }

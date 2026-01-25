@@ -29,7 +29,7 @@ public class CardholderNameGenerator implements ValidDataFormatGenerator, OpenAP
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().name().name();
+        String generated = CatsUtil.catsFaker().name().name();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

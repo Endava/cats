@@ -17,7 +17,7 @@ import java.util.Locale;
 public class IdnHostnameGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().ancient().titan().toLowerCase(Locale.ROOT);
+        String generated = CatsUtil.catsFaker().ancient().titan().toLowerCase(Locale.ROOT);
 
         return "www.ë%s.com".formatted(generated);
     }

@@ -30,7 +30,7 @@ public class StateGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().address().state();
+        String generated = CatsUtil.catsFaker().address().state();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

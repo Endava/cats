@@ -37,7 +37,7 @@ public class BicGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().finance().bic();
+        String generated = CatsUtil.catsFaker().finance().bic();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

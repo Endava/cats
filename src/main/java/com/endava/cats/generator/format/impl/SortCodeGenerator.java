@@ -29,7 +29,7 @@ public class SortCodeGenerator implements ValidDataFormatGenerator, OpenAPIForma
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().numerify("## ## ##");
+        String generated = CatsUtil.catsFaker().numerify("## ## ##");
 
         return DataFormat.matchesPatternOrNullWithCombinations(schema, generated);
     }

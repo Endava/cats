@@ -29,7 +29,7 @@ public class UsernameGenerator implements ValidDataFormatGenerator, OpenAPIForma
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().name().username();
+        String generated = CatsUtil.catsFaker().name().username();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

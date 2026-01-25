@@ -17,7 +17,7 @@ import java.util.Locale;
 public class IdnEmailGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
     @Override
     public Object generate(Schema<?> schema) {
-        return CatsUtil.faker().ancient().primordial().toLowerCase(Locale.ROOT) + ".cööl.cats@cats.io";
+        return CatsUtil.catsFaker().ancient().primordial().toLowerCase(Locale.ROOT) + ".cööl.cats@cats.io";
     }
 
     @Override

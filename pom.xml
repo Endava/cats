@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.endava</groupId>
     <artifactId>cats</artifactId>
@@ -73,7 +74,6 @@
         <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
         <regexp-gen.version>3.0.0</regexp-gen.version>
         <slf4j-ext.version>2.0.12</slf4j-ext.version>
-        <javafaker.version>1.0.2</javafaker.version>
         <kotlin-reflect.version>2.1.20</kotlin-reflect.version>
         <jackson.version>2.21.0</jackson.version>
         <pitest-maven.version>1.22.0</pitest-maven.version>
@@ -627,17 +627,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-ext</artifactId>
             <version>${slf4j-ext.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.javafaker</groupId>
-            <artifactId>javafaker</artifactId>
-            <version>${javafaker.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>

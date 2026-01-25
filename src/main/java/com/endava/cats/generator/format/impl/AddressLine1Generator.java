@@ -5,7 +5,6 @@ import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
 import com.endava.cats.util.CatsUtil;
-import com.github.javafaker.Address;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
@@ -31,9 +30,8 @@ public class AddressLine1Generator implements ValidDataFormatGenerator, OpenAPIF
 
     @Override
     public Object generate(Schema<?> schema) {
-        Address generated = CatsUtil.faker().address();
-        String finalAddress = generated.streetAddress() + ", Apt. " + generated.buildingNumber();
+        String generated = CatsUtil.catsFaker().address().streetAddress();
 
-        return DataFormat.matchesPatternOrNull(schema, finalAddress);
+        return DataFormat.matchesPatternOrNull(schema, generated);
     }
 }

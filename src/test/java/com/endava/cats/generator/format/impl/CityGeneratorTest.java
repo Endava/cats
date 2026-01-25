@@ -1,14 +1,21 @@
 package com.endava.cats.generator.format.impl;
 
 import io.quarkus.test.junit.QuarkusTest;
+import com.endava.cats.util.CatsRandom;
 import io.swagger.v3.oas.models.media.Schema;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 @QuarkusTest
 class CityGeneratorTest {
+
+    @BeforeEach
+    void setUp() {
+        CatsRandom.initRandom(0);
+    }
 
     @Test
     void shouldGenerate() {

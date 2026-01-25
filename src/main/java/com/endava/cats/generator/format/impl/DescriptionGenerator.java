@@ -29,7 +29,7 @@ public class DescriptionGenerator implements ValidDataFormatGenerator, OpenAPIFo
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().chuckNorris().fact();
+        String generated = CatsUtil.catsFaker().chuckNorris().fact();
 
         return DataFormat.matchesPatternOrNull(schema, generated);
     }

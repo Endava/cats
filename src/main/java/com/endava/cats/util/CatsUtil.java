@@ -5,7 +5,6 @@ import com.endava.cats.dsl.api.Parser;
 import com.endava.cats.exception.CatsException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.github.javafaker.Faker;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import io.github.ludovicianul.prettylogger.PrettyLogger;
@@ -46,7 +45,7 @@ public abstract class CatsUtil {
      * Custom Faker instance for generating fake data. Uses romanian locale as a tweak to load CATS specific file
      * with limited number of fake values.
      */
-    private static Faker faker;
+    private static CatsFaker catsFaker;
     public static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE / 1000;
 
     private CatsUtil() {
@@ -289,17 +288,17 @@ public abstract class CatsUtil {
                 .collect(Collectors.joining());
     }
 
-
     /**
-     * Returns a shared Faker instance for valid fake data.
+     * Returns a shared CatsFaker instance for valid fake data.
+     * This is a custom implementation that reads from data.yml file.
      *
-     * @return a common shared Faker instance
+     * @return a common shared CatsFaker instance
      */
-    public static Faker faker() {
-        if (faker == null) {
-            faker = new Faker(Locale.of("ro"), CatsRandom.instance());
+    public static CatsFaker catsFaker() {
+        if (catsFaker == null) {
+            catsFaker = new CatsFaker();
         }
-        return faker;
+        return catsFaker;
     }
 
     /**
