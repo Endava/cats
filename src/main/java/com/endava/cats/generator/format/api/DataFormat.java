@@ -59,4 +59,22 @@ public abstract class DataFormat<T extends DataFormatGenerator> {
 
         return attempt;
     }
+
+    /**
+     * Tries multiple generated values and returns the first one that matches the schema pattern.
+     * Useful for generators that support multiple regional formats.
+     *
+     * @param schema     The schema to validate against
+     * @param candidates List of candidate values to try
+     * @return The first matching value, or null if none match
+     */
+    public static Object matchesPatternOrNullFromList(Schema<?> schema, List<String> candidates) {
+        for (String candidate : candidates) {
+            Object attempt = DataFormat.matchesPatternOrNullWithCombinations(schema, candidate);
+            if (attempt != null) {
+                return attempt;
+            }
+        }
+        return null;
+    }
 }

@@ -1,22 +1,22 @@
 package com.endava.cats.generator.format.impl;
 
 import com.endava.cats.generator.format.api.DataFormat;
+import com.endava.cats.generator.format.api.FormatGeneratorUtil;
 import com.endava.cats.generator.format.api.OpenAPIFormat;
 import com.endava.cats.generator.format.api.PropertySanitizer;
 import com.endava.cats.generator.format.api.ValidDataFormatGenerator;
-import com.endava.cats.util.CatsRandom;
-import com.endava.cats.util.CatsUtil;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Generates real bank account numbers.
+ * Generates real bank account numbers for multiple countries.
+ * Supports: US, UK, Germany, France, Italy, Spain, Romania, Netherlands formats.
  */
 @Singleton
 public class BankAccountNumberGenerator implements ValidDataFormatGenerator, OpenAPIFormat {
-    private static final String[] FORMATS = new String[]{"## ## ## ##", "## ## ## ## ##"};
 
     @Override
     public boolean appliesTo(String format, String propertyName) {
@@ -32,8 +32,40 @@ public class BankAccountNumberGenerator implements ValidDataFormatGenerator, Ope
 
     @Override
     public Object generate(Schema<?> schema) {
-        String generated = CatsUtil.faker().numerify(FORMATS[CatsRandom.instance().nextInt(FORMATS.length)]);
+        List<String> candidates = new ArrayList<>();
 
-        return DataFormat.matchesPatternOrNullWithCombinations(schema, generated);
+        // US: 12 digits (routing + account)
+        candidates.add(FormatGeneratorUtil.randomDigits(9) + FormatGeneratorUtil.randomDigits(12));
+
+        // UK: 8 digits (sort code + account number)
+        candidates.add(FormatGeneratorUtil.randomDigits(6) + FormatGeneratorUtil.randomDigits(8));
+
+        // Germany: 10 digits
+        candidates.add(FormatGeneratorUtil.randomDigits(10));
+
+        // France: 23 digits (bank code + branch + account + key)
+        candidates.add(FormatGeneratorUtil.randomDigits(5) +
+                FormatGeneratorUtil.randomDigits(5) +
+                FormatGeneratorUtil.randomDigits(11) +
+                FormatGeneratorUtil.randomDigits(2));
+
+        // Italy: 12 digits
+        candidates.add(FormatGeneratorUtil.randomDigits(12));
+
+        // Spain: 20 digits (bank + branch + check + account)
+        candidates.add(FormatGeneratorUtil.randomDigits(4) +
+                FormatGeneratorUtil.randomDigits(4) +
+                FormatGeneratorUtil.randomDigits(2) +
+                FormatGeneratorUtil.randomDigits(10));
+
+        // Romania: 24 characters (RO + 2 check + bank code + account)
+        candidates.add("RO" + FormatGeneratorUtil.randomDigits(2) +
+                FormatGeneratorUtil.randomLetters(4) +
+                FormatGeneratorUtil.randomDigits(16));
+
+        // Netherlands: 10 digits
+        candidates.add(FormatGeneratorUtil.randomDigits(10));
+
+        return DataFormat.matchesPatternOrNullFromList(schema, candidates);
     }
 }
