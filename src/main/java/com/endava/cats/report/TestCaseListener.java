@@ -19,9 +19,9 @@ import com.endava.cats.model.FuzzingData;
 import com.endava.cats.util.AnsiUtils;
 import com.endava.cats.util.CatsUtil;
 import com.endava.cats.util.ConsoleUtils;
+import com.endava.cats.util.CyclingCharIterator;
 import com.endava.cats.util.WordUtils;
-import com.google.common.collect.Iterators;
-import com.google.common.net.MediaType;
+import com.endava.cats.util.external.MediaType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -41,7 +41,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -62,7 +61,7 @@ import static com.endava.cats.model.CatsTestCase.SKIP_REPORTING;
 @ApplicationScoped
 @DryRun
 public class TestCaseListener {
-    private static final Iterator<Character> cycle = Iterators.cycle('\\', '\\', '\\', '|', '|', '|', '/', '/', '/', '-', '-', '-');
+    private static final CyclingCharIterator cycle = new CyclingCharIterator('\\', '\\', '\\', '|', '|', '|', '/', '/', '/', '-', '-', '-');
     private static final String DEFAULT = "*******";
     static final String ID = "id";
     private static final String FUZZER_KEY = "fuzzerKey";

@@ -9,7 +9,7 @@ import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.google.common.net.HttpHeaders;
+import com.endava.cats.util.HttpHeaders;
 import jakarta.inject.Singleton;
 
 import java.util.Arrays;

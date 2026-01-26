@@ -16,14 +16,14 @@ import com.endava.cats.report.TestCaseListener;
 import com.endava.cats.strategy.FuzzingStrategy;
 import com.endava.cats.util.CatsDSLWords;
 import com.endava.cats.util.CatsUtil;
+import com.endava.cats.util.RateLimiter;
+import com.endava.cats.util.HttpHeaders;
 import com.endava.cats.util.JsonUtils;
 import com.endava.cats.util.KeyValuePair;
 import com.endava.cats.util.OpenApiUtils;
 import com.endava.cats.util.WordUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.net.HttpHeaders;
-import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -83,7 +83,6 @@ import static com.endava.cats.util.JsonUtils.NOT_SET;
  * This class is responsible for the HTTP interaction with the target server supplied in the {@code --server} parameter
  */
 @ApplicationScoped
-@SuppressWarnings("UnstableApiUsage")
 public class ServiceCaller {
     /**
      * Marker for fields to be removed before calling the service.
@@ -129,7 +128,7 @@ public class ServiceCaller {
      */
     @PostConstruct
     public void initRateLimiter() {
-        rateLimiter = RateLimiter.create(1.0 * apiArguments.getMaxRequestsPerMinute() / 60);
+        rateLimiter = new RateLimiter(apiArguments.getMaxRequestsPerMinute());
     }
 
     /**
@@ -150,7 +149,7 @@ public class ServiceCaller {
                     .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
                     .retryOnConnectionFailure(true)
                     .protocols(processingArguments.isHttp2PriorKnowledge() ? List.of(Protocol.H2_PRIOR_KNOWLEDGE) : List.of(Protocol.HTTP_2, Protocol.HTTP_1_1))
-                    .hostnameVerifier((hostname, session) -> true).build();
+                    .hostnameVerifier((_, _) -> true).build();
 
             logger.debug("Proxy configuration to be used: {}", authArguments.getProxy());
         } catch (GeneralSecurityException | IOException e) {
@@ -647,7 +646,7 @@ public class ServiceCaller {
         headers.removeIf(headersToFilter);
 
         LongStream.range(0, howManyHeadersToRemove)
-                .forEach(iteration -> headers.add(new KeyValuePair<>(headerName, headerValue)));
+                .forEach(_ -> headers.add(new KeyValuePair<>(headerName, headerValue)));
     }
 
     private boolean isSuppliedHeaderInFuzzData(ServiceData data, Map.Entry<String, String> suppliedHeader) {
@@ -668,7 +667,7 @@ public class ServiceCaller {
         if (!data.getFuzzedHeaders().contains(suppliedHeader.getKey())) {
             replaceHeaderWithUserSuppliedHeader(headers, suppliedHeader.getKey(), suppliedHeader.getValue());
         } else {
-            /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behaviour on a valid header value */
+            /* There are 2 cases when we want to mix the supplied header with the fuzzed one: if the fuzzing is TRAIL or PREFIX we want to try this behavior on a valid header value */
             KeyValuePair<String, Object> existingHeader = headers.stream()
                     .filter(header -> header.getKey().equalsIgnoreCase(suppliedHeader.getKey()))
                     .findFirst()

@@ -7,10 +7,10 @@ import com.endava.cats.generator.Cloner;
 import com.endava.cats.http.HttpMethod;
 import com.endava.cats.http.ResponseCodeFamily;
 import com.endava.cats.http.ResponseCodeFamilyPredefined;
-import com.endava.cats.util.JsonUtils;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.google.common.net.HttpHeaders;
+import com.endava.cats.util.HttpHeaders;
+import com.endava.cats.util.JsonUtils;
 import jakarta.inject.Singleton;
 
 import java.util.Arrays;

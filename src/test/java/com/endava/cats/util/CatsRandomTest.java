@@ -237,7 +237,8 @@ class CatsRandomTest {
             String result = CatsRandom.ascii(10);
 
             assertThat(result).hasSize(10);
-            for (char c : result.toCharArray()) {
+            for (int i = 0; i < result.length(); i++) {
+                char c = result.charAt(i);
                 assertThat(c).isBetween((char) 32, (char) 126);
             }
         }

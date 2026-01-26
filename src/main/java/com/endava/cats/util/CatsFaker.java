@@ -5,6 +5,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -36,7 +37,6 @@ public class CatsFaker {
         Map<String, Object> fullData = yaml.load(inputStream);
         this.data = (Map<String, Object>) ((Map<String, Object>) fullData.get("ro")).get("faker");
 
-        // Initialize singleton instances
         this.bookFaker = new BookFaker();
         this.colorFaker = new ColorFaker();
         this.ancientFaker = new AncientFaker();
@@ -49,6 +49,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached book faker helper.
+     *
      * @return singleton accessor for book fakery utilities.
      */
     public BookFaker book() {
@@ -56,6 +58,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached color faker helper.
+     *
      * @return singleton accessor for color fakery utilities.
      */
     public ColorFaker color() {
@@ -63,6 +67,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached ancient myth faker helper.
+     *
      * @return singleton accessor for ancient myth fakery utilities.
      */
     public AncientFaker ancient() {
@@ -70,6 +76,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached address faker helper.
+     *
      * @return singleton accessor for address fakery utilities.
      */
     public AddressFaker address() {
@@ -77,6 +85,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached company faker helper.
+     *
      * @return singleton accessor for company fakery utilities.
      */
     public CompanyFaker company() {
@@ -84,6 +94,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached person name faker helper.
+     *
      * @return singleton accessor for name fakery utilities.
      */
     public NameFaker name() {
@@ -91,6 +103,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached Chuck Norris fact helper.
+     *
      * @return singleton accessor for chuck norris facts.
      */
     public ChuckNorrisFaker chuckNorris() {
@@ -98,6 +112,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached date faker helper.
+     *
      * @return singleton accessor for date fakery utilities.
      */
     public DateFaker date() {
@@ -105,6 +121,8 @@ public class CatsFaker {
     }
 
     /**
+     * Provides access to the cached finance faker helper.
+     *
      * @return singleton accessor for finance fakery utilities.
      */
     public FinanceFaker finance() {
@@ -146,6 +164,8 @@ public class CatsFaker {
      */
     public class BookFaker {
         /**
+         * Generates a random book title from the configured dataset.
+         *
          * @return random book title.
          */
         public String title() {
@@ -160,6 +180,8 @@ public class CatsFaker {
      */
     public class ColorFaker {
         /**
+         * Generates a random color name from the configured dataset.
+         *
          * @return random color name.
          */
         public String name() {
@@ -174,6 +196,8 @@ public class CatsFaker {
      */
     public class AncientFaker {
         /**
+         * Generates a random deity name from the ancient listing.
+         *
          * @return random god name.
          */
         public String god() {
@@ -183,6 +207,8 @@ public class CatsFaker {
         }
 
         /**
+         * Generates a random primordial entity name.
+         *
          * @return random primordial entity name.
          */
         public String primordial() {
@@ -192,6 +218,8 @@ public class CatsFaker {
         }
 
         /**
+         * Generates a random titan name.
+         *
          * @return random titan name.
          */
         public String titan() {
@@ -201,6 +229,8 @@ public class CatsFaker {
         }
 
         /**
+         * Generates a random hero name from the ancient section.
+         *
          * @return random hero name.
          */
         public String hero() {
@@ -215,6 +245,8 @@ public class CatsFaker {
      */
     public class AddressFaker {
         /**
+         * Builds a synthetic city name using prefix/suffix combos.
+         *
          * @return synthetic city name.
          */
         public String city() {
@@ -225,6 +257,8 @@ public class CatsFaker {
         }
 
         /**
+         * Picks a random country from the locale dataset.
+         *
          * @return random country name.
          */
         public String country() {
@@ -234,6 +268,8 @@ public class CatsFaker {
         }
 
         /**
+         * Picks a random ISO-like country code.
+         *
          * @return ISO style two-letter country code.
          */
         public String countryCode() {
@@ -243,6 +279,8 @@ public class CatsFaker {
         }
 
         /**
+         * Selects a random US state name.
+         *
          * @return random US state.
          */
         public String state() {
@@ -252,6 +290,8 @@ public class CatsFaker {
         }
 
         /**
+         * Selects a random US state abbreviation.
+         *
          * @return random US state abbreviation.
          */
         public String stateAbbr() {
@@ -261,6 +301,8 @@ public class CatsFaker {
         }
 
         /**
+         * Generates a random postal code based on the configured patterns.
+         *
          * @return random zip/postal code.
          */
         public String zipCode() {
@@ -270,6 +312,8 @@ public class CatsFaker {
         }
 
         /**
+         * Composes a postal-style full address including city/state/zip.
+         *
          * @return formatted full street address.
          */
         public String fullAddress() {
@@ -278,6 +322,8 @@ public class CatsFaker {
         }
 
         /**
+         * Composes an abbreviated street address consisting of number and suffix.
+         *
          * @return simple street address.
          */
         public String streetAddress() {
@@ -291,6 +337,8 @@ public class CatsFaker {
      */
     public class CompanyFaker {
         /**
+         * Generates a company name using last name plus suffix.
+         *
          * @return generated company name.
          */
         public String name() {
@@ -301,6 +349,8 @@ public class CatsFaker {
         }
 
         /**
+         * Picks a random industry label.
+         *
          * @return random industry label.
          */
         public String industry() {
@@ -310,6 +360,8 @@ public class CatsFaker {
         }
 
         /**
+         * Picks a random profession label.
+         *
          * @return random profession label.
          */
         public String profession() {
@@ -324,6 +376,8 @@ public class CatsFaker {
      */
     public class NameFaker {
         /**
+         * Generates a random first name entry.
+         *
          * @return random first name.
          */
         public String firstName() {
@@ -333,6 +387,8 @@ public class CatsFaker {
         }
 
         /**
+         * Generates a random last name entry.
+         *
          * @return random last name.
          */
         public String lastName() {
@@ -342,6 +398,8 @@ public class CatsFaker {
         }
 
         /**
+         * Generates a random honorific/prefix.
+         *
          * @return honorific title.
          */
         public String prefix() {
@@ -351,6 +409,8 @@ public class CatsFaker {
         }
 
         /**
+         * Generates a random suffix such as Jr. or Sr.
+         *
          * @return suffix such as Jr. or Sr.
          */
         public String suffix() {
@@ -360,6 +420,8 @@ public class CatsFaker {
         }
 
         /**
+         * Builds a full name using random first and last names.
+         *
          * @return formatted full name.
          */
         public String fullName() {
@@ -367,6 +429,8 @@ public class CatsFaker {
         }
 
         /**
+         * Alias for {@link #fullName()} to mimic Faker API.
+         *
          * @return alias for {@link #fullName()}.
          */
         public String name() {
@@ -374,10 +438,12 @@ public class CatsFaker {
         }
 
         /**
+         * Builds a username from lowercase first/last name pair.
+         *
          * @return username built from first/last name.
          */
         public String username() {
-            return firstName().toLowerCase() + "." + lastName().toLowerCase();
+            return firstName().toLowerCase(Locale.ROOT) + "." + lastName().toLowerCase(Locale.ROOT);
         }
     }
 
@@ -386,6 +452,8 @@ public class CatsFaker {
      */
     public class ChuckNorrisFaker {
         /**
+         * Provides a humorous Chuck Norris fact.
+         *
          * @return random Chuck Norris fact.
          */
         public String fact() {
@@ -400,6 +468,8 @@ public class CatsFaker {
      */
     public static class DateFaker {
         /**
+         * Generates a random birthday within a realistic range.
+         *
          * @return random birthday within a realistic range.
          */
         public java.time.LocalDate birthday() {
@@ -415,6 +485,8 @@ public class CatsFaker {
      */
     public class FinanceFaker {
         /**
+         * Generates a pseudo IBAN constructed from country code and digits.
+         *
          * @return pseudo IBAN constructed from country code and digits.
          */
         public String iban() {
@@ -423,6 +495,8 @@ public class CatsFaker {
         }
 
         /**
+         * Selects a pseudo BIC from the predefined list.
+         *
          * @return pseudo BIC selected from a curated list.
          */
         public String bic() {

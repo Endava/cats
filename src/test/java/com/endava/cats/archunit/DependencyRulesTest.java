@@ -108,6 +108,8 @@ class DependencyRulesTest {
                     .and()
                     .areNotAssignableFrom("com.endava.cats.util.CatsModelUtils")
                     .and()
+                    .areNotAssignableFrom("com.endava.cats.util.external.ModelUtils")
+                    .and()
                     .areNotAssignableFrom("com.endava.cats.ReflectionConfig")
                     .should()
                     .dependOnClassesThat(new DescribedPredicate<>("not using extensions of Schema") {

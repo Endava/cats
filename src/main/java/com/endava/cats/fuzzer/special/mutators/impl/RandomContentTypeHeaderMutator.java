@@ -5,7 +5,7 @@ import com.endava.cats.generator.Cloner;
 import com.endava.cats.generator.simple.StringGenerator;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.util.CatsRandom;
-import com.google.common.net.HttpHeaders;
+import com.endava.cats.util.HttpHeaders;
 import jakarta.inject.Singleton;
 
 import java.util.Collection;

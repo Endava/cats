@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.base.Splitter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -250,12 +249,21 @@ public abstract class JsonUtils {
         if (!isValidJson(json1) || !isValidJson(json2)) {
             return json1.equalsIgnoreCase(json2);
         }
+
         try {
-            return JsonPath.parse(json1).jsonString().contentEquals(JsonPath.parse(json2).jsonString());
-        } catch (UnsupportedOperationException _) {
-            String json1Unescaped = StringEscapeUtils.unescapeJson(json1).replaceAll("(^[\"'])|([\"']$)", "");
-            String json2Unescaped = StringEscapeUtils.unescapeJson(json2).replaceAll("(^[\"'])|([\"']$)", "");
-            return JsonPath.parse(json1Unescaped).jsonString().contentEquals(JsonPath.parse(json2Unescaped).jsonString());
+            JsonNode n1 = SIMPLE_OBJECT_MAPPER.readTree(json1);
+            JsonNode n2 = SIMPLE_OBJECT_MAPPER.readTree(json2);
+            return n1.equals(n2); // object key order does NOT matter
+        } catch (Exception e1) {
+            try {
+                String j1 = StringEscapeUtils.unescapeJson(json1).replaceAll("(^[\"'])|([\"']$)", "");
+                String j2 = StringEscapeUtils.unescapeJson(json2).replaceAll("(^[\"'])|([\"']$)", "");
+                JsonNode n1 = SIMPLE_OBJECT_MAPPER.readTree(j1);
+                JsonNode n2 = SIMPLE_OBJECT_MAPPER.readTree(j2);
+                return n1.equals(n2);
+            } catch (Exception e2) {
+                return json1.equalsIgnoreCase(json2);
+            }
         }
     }
 
@@ -281,9 +289,12 @@ public abstract class JsonUtils {
         if (JsonUtils.isValidJson(payload) || !payload.contains("=")) {
             return JsonUtils.parseAsJsonElement(payload);
         }
-        Map<String, String> keyValueMap = Splitter.on('&')
-                .withKeyValueSeparator('=')
-                .split(payload);
+        Map<String, String> keyValueMap = Arrays.stream(payload.split("&"))
+                .map(pair -> pair.split("=", 2))
+                .collect(Collectors.toMap(
+                        arr -> arr[0],
+                        arr -> arr.length > 1 ? arr[1] : ""
+                ));
 
         return JsonUtils.parseAsJsonElement(GSON.toJson(keyValueMap));
     }

@@ -4,7 +4,7 @@ import com.endava.cats.annotations.HeaderFuzzer;
 import com.endava.cats.fuzzer.executor.SimpleExecutor;
 import com.endava.cats.model.CatsHeader;
 import com.endava.cats.model.FuzzingData;
-import com.google.common.net.HttpHeaders;
+import com.endava.cats.util.HttpHeaders;
 import jakarta.inject.Singleton;
 
 import java.util.Collection;

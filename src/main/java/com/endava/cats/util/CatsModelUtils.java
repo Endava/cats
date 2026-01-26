@@ -1,5 +1,6 @@
 package com.endava.cats.util;
 
+import com.endava.cats.util.external.ModelUtils;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
@@ -18,7 +19,6 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.media.UUIDSchema;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.openapitools.codegen.utils.ModelUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Wrapper on top of {@link org.openapitools.codegen.utils.ModelUtils} in order to accommodate
+ * Wrapper on top of {@link com.endava.cats.util.external.ModelUtils} in order to accommodate
  * some particular conditions needed by CATS.
  */
 @RegisterForReflection
